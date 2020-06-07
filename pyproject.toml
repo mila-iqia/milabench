@@ -1,0 +1,34 @@
+[tool.poetry]
+name = "milarun"
+version = "0.1.0"
+description = "Mila's benchmarking utility"
+authors = ["Olivier Breuleux <breuleux@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.scripts]
+milarun = 'milarun.cli:main'
+
+[tool.poetry.dependencies]
+python = "^3.7"
+Cython = "^0.29.19"
+a2c-ppo-acktr = {git = "git://github.com/breuleux/pytorch-a2c-ppo-acktr-gail", branch = "milatweak"}
+apex = {git = "git://github.com/breuleux/apex", branch = "milatweak"}
+baselines = {git = "git://github.com/breuleux/baselines", branch = "milatweak"}
+blessed = "^1.17.5"
+coleo = "^0.1.4"
+gitpython = "^3.1.2"
+gym = {extras = ["atari"], version = "^0.17.2"}
+hrepr = "^0.2.4"
+jinja2 = "^2.11.2"
+mlperf_compliance = "^0.0.10"
+pandas = "^1.0.3"
+pycocotools = "^2.0.0"
+torch = "1.5.0"
+torchvision = "^0.6.0"
+tqdm = "^4.46.0"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
