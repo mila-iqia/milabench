@@ -197,6 +197,7 @@ class Experiment:
         self.tmp = outdir or tempfile.mkdtemp()
         self.chronos = Chronos()
         self.metrics = {}
+        self.timings = {}
         self.results = {
             "name": self.name,
             "job_id": job_id,
@@ -227,6 +228,7 @@ class Experiment:
             k: chrono.report()
             for k, chrono in self.chronos.chronos.items()
         }
+        timings = {**timings, **self.timings}
         metrics = self.metrics
         for report in timings.values():
             metrics.update(report.get("metrics", {}))

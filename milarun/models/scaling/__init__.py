@@ -1,1 +1,1 @@
-from .micro_bench import main
+from .scaling import main
