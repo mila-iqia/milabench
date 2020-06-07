@@ -171,6 +171,7 @@ def run_benchmarking(exp, wrapper, net, batch_size, run_fp16, dataparallel,
     optimizer = torch.optim.SGD(param_copy, lr=0.01, momentum=0.9)
 
     rank = distributed_parameters.get('rank', -1)
+    world_size = distributed_parameters.get('world_size', 1)
 
     ## benchmark.
     print("INFO: running the benchmark..")

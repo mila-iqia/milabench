@@ -130,7 +130,7 @@ def command_rerun(subargv):
     subprocess.run(cmd, env={**os.environ, **job["environ"]})
 
 
-def _launch_job(jobdata, definition, cgexec):
+def _launch_job(jobdata, definition, cgexec, subargv):
     psch = definition.get("partition_scheme", None)
     psch_type = psch and psch["type"]
 
@@ -191,6 +191,7 @@ def _launch_job(jobdata, definition, cgexec):
                 cmd.append(k)
             else:
                 cmd.extend((k, str(v)))
+        cmd.extend(subargv)
 
         print("Running:", " ".join(cmd))
         if exec_type == "Popen":
@@ -252,7 +253,7 @@ def command_jobs(subargv):
                     "run": i,
                     "out": out,
                 }
-                _launch_job(jobdata, definition, cgexec)
+                _launch_job(jobdata, definition, cgexec, subargv)
 
 
 def command_report(subargv):
