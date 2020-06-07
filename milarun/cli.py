@@ -147,7 +147,7 @@ def _launch_job(jobdata, definition, cgexec):
             env = {
                 "CUDA_VISIBLE_DEVICES": str(device_id),
             }
-            process_data.append((partial_args, env))
+            process_data.append((partial_args, env, "Popen"))
 
     elif psch_type == "gpu-progression":
         import torch
@@ -159,17 +159,17 @@ def _launch_job(jobdata, definition, cgexec):
             env = {
                 "CUDA_VISIBLE_DEVICES": ",".join(map(str, range(device_id + 1))),
             }
-            process_data.append((partial_args, env))
+            process_data.append((partial_args, env, "run"))
 
     elif psch_type is None or psch_type == "normal":
-        process_data.append(({}, {}))
+        process_data.append(({}, {}, "Popen"))
 
     else:
         raise Exception(f"Unknown partition_scheme: {psch_type}")
 
     processes = []
 
-    for partial_args, env in process_data:
+    for partial_args, env, exec_type in process_data:
         args = {
             "--experiment-name": f"{jobdata['suite']}.{jobdata['name']}",
             "--job-id": run_id,
@@ -193,12 +193,18 @@ def _launch_job(jobdata, definition, cgexec):
                 cmd.extend((k, str(v)))
 
         print("Running:", " ".join(cmd))
-        processes.append(
-            subprocess.Popen(
+        if exec_type == "Popen":
+            processes.append(
+                subprocess.Popen(
+                    cmd,
+                    env={**os.environ, **env},
+                )
+            )
+        else:
+            subprocess.run(
                 cmd,
                 env={**os.environ, **env},
             )
-        )
 
     for process in processes:
         try:
