@@ -29,11 +29,13 @@ def main(exp, argv):
             "--dist-url", "tcp://localhost:8181",
             *argv
         ]
-        process = subprocess.Popen(cmd)
+        process = subprocess.Popen(cmd, env={**os.environ, "CUDA_VISIBLE_DEVICES": str(i)})
         processes.append(process)
 
     for process in processes:
         process.wait()
+        if process.returncode != 0:
+            return
 
     for i in range(device_count):
         results = json.load(open(os.path.join(rdir, f"results-{i}.json")))

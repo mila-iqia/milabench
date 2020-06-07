@@ -170,40 +170,15 @@ def run_benchmarking(exp, wrapper, net, batch_size, run_fp16, dataparallel,
 
     optimizer = torch.optim.SGD(param_copy, lr=0.01, momentum=0.9)
 
+    rank = distributed_parameters.get('rank', -1)
+
     ## benchmark.
     print("INFO: running the benchmark..")
     tm = time.time()
     while not wrapper.done():
         with wrapper(count=batch_size) as it:
             forwardbackward(inp, optimizer, network, target)
-            it.log(eta=True)
+            if rank <= 0:
+                it.log(ndev=num_devices)
 
     torch.cuda.synchronize()
-
-    # tm2 = time.time()
-    # # time_per_batch = (tm2 - tm) / iterations
-    # rank = distributed_parameters.get('rank', -1)
-    # world_size = distributed_parameters.get('world_size', 1)
-
-    # process_report = {
-    #     'model': net,
-    #     'rank': rank,
-    #     'num_device': num_devices,
-    #     'batch_size': batch_size,
-    #     # 'batch_time': time_per_batch,
-    #     # 'speed': batch_size / time_per_batch
-    # }
-
-    # tmp = exp.results_directory()
-    # with open(f'{tmp}/process_report_{rank}.json', 'w') as report:
-    #     json.dump(process_report, report)
-
-    # if rank == 0:
-    #     overall_report = {
-    #         'world_size': world_size,
-    #         'batch_size': batch_size * world_size,
-    #         # 'batch_time': time_per_batch,
-    #         # 'speed': batch_size * world_size / time_per_batch
-    #     }
-    #     with open(f'{tmp}/overall_report.json', 'w') as report:
-    #         json.dump(overall_report, report)
