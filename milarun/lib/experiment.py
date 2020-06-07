@@ -78,8 +78,8 @@ class RateLogger:
         self.max_count = max_count
         self.total_count = 0
         self.sync = sync
-        self.start = None
-        self.end = None
+        self.start = 0
+        self.end = 0
         self.total_time = 0
         self.metrics = {}
         if self.sync:
@@ -131,7 +131,7 @@ class RateLogger:
 
     @contextmanager
     def __call__(self, *, count=1, key=None):
-        if self.start is None:
+        if not self.start:
             self.start = time.time()
         count = Counter(count=count, metrics=self.metrics)
         start = time.time()
@@ -154,7 +154,7 @@ class RateLogger:
 
     def report(self):
         self.finalize()
-        wall_time = self.end - self.start
+        wall_time = self.end - self.start if self.start and self.end else 0
         return {
             "type": "milabench.experiment.RateLogger",
             "start": str(datetime.fromtimestamp(self.start)),
