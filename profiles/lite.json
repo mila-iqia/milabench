@@ -131,6 +131,18 @@
             "cgroup": "student{CUDA_VISIBLE_DEVICES}"
         }
     },
+    "minigrid": {
+        "experiment": "milarun.models.minigrid:main",
+        "arguments": {
+            "--env": "BabyAI-UnlockPickup-v0",
+            "--cuda": true,
+            "--max-count": 10000
+        },
+        "partition_scheme": {
+            "type": "per-gpu",
+            "cgroup": "student{CUDA_VISIBLE_DEVICES}"
+        }
+    },
     "atari": {
         "experiment": "milarun.models.atari:main",
         "arguments": {
