@@ -9,6 +9,7 @@ import json
 import sys
 import shutil
 import pkg_resources
+import time
 import traceback
 import subprocess
 
@@ -244,6 +245,7 @@ def command_jobs(subargv):
         print(f"Could not find job(s): {not_found}", file=sys.stderr)
         sys.exit(1)
 
+    start = time.time()
     for i in range(repeat):
         for jobname, definition in jobs_data.items():
             if not name or jobname in name:
@@ -254,6 +256,8 @@ def command_jobs(subargv):
                     "out": out,
                 }
                 _launch_job(jobdata, definition, cgexec, subargv)
+    end = time.time()
+    print(f"Total time: {end - start:.2f}s")
 
 
 def command_report(subargv):
