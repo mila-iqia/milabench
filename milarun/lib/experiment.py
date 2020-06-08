@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from collections import deque
 from contextlib import contextmanager
+import numpy as np
 import time
 import traceback
 import socket
@@ -10,6 +11,7 @@ import json
 import os
 import tempfile
 
+from .monitor import GPUMonitor
 from .helpers import resolve
 
 
@@ -189,11 +191,12 @@ class Chronos:
 
 
 class Experiment:
-    def __init__(self, name, job_id, dataroot, outdir=None):
+    def __init__(self, name, job_id, dataroot, outdir=None, monitor_gpu_usage=True):
         self.name = name
         self.job_id = job_id
         self.dataroot = dataroot
         self.outdir = outdir
+        self.monitor_gpu_usage = monitor_gpu_usage
         self.tmp = outdir or tempfile.mkdtemp()
         self.chronos = Chronos()
         self.metrics = {}
@@ -204,8 +207,12 @@ class Experiment:
             "dataroot": dataroot,
             "outdir": outdir,
         }
+        self.usage = None
 
     def execute(self, fn):
+        if self.monitor_gpu_usage:
+            monitor = GPUMonitor(1)
+            monitor.start()
         try:
             fn()
         except Exception as e:
@@ -216,6 +223,19 @@ class Experiment:
         else:
             self.results["success"] = True
             self.results["error"] = None
+        if self.monitor_gpu_usage:
+            monitor.stop()
+            self.usage = {
+                gid: {
+                    k: {
+                        "min": np.min(v),
+                        "mean": np.mean(v),
+                        "max": np.max(v),
+                    }
+                    for k, v in gdata.items()
+                }
+                for gid, gdata in monitor.data.items()
+            }
 
     def __getitem__(self, key):
         return self.results[key]
@@ -240,6 +260,7 @@ class Experiment:
             "environ": {k: v for k, v in os.environ.items() if k in _environ_save},
             "metrics": metrics,
             "timings": timings,
+            "gpu_monitor": self.usage,
         }
 
     def experiment_string(self, include_failure=False):
