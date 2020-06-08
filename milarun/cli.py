@@ -32,23 +32,18 @@ def _get_entries():
         _entries[entry_point.name]["dataset"] = entry_point
 
 
-# def command_dataset_create(subargv):
-#     # The name of the dataset generator
-#     # [positional]
-#     generator: Argument & resolve
+def command_dataset_download(subargv):
+    # Name of the dataset to resolve
+    # [positional: +]
+    name: Argument & resolve
 
-#     # Root path for all the data
-#     # [alias: -d]
-#     dataroot: Argument = default(os.getenv("MILARUN_DATAROOT"))
+    # Root directory for datasets
+    # [alias: -d]
+    dataroot: Argument = default(os.getenv("MILARUN_DATAROOT"))
 
-#     if not dataroot:
-#         print("No dataroot specified.")
-#         sys.exit(1)
-#     else:
-#         real_dataroot = os.path.realpath(os.path.expanduser(dataroot))
-
-#     print(real_dataroot)
-#     print(generator())
+    for dataset_gen in name:
+        dataset = dataset_gen(dataroot)
+        dataset.download()
 
 
 def command_run(subargv):

@@ -1,5 +1,6 @@
 import torch
 import os
+import subprocess
 from os import listdir
 from PIL import Image
 
@@ -50,8 +51,17 @@ class BSDS500Reso:
     def download(self):
         if os.path.exists(self.path):
             return
-        raise Exception("TODO")
+        os.makedirs(self.path, exist_ok=True)
+        subprocess.run(
+            f"""
+            cd {self.path}
+            wget http://www.eecs.berkeley.edu/Research/Projects/CS/vision/grouping/BSR/BSR_bsds500.tgz
+            tar -xzf BSR_bsds500.tgz
+            rm BSR_bsds500.tgz
+            """,
+            shell=True
+        )
 
 
-def bsds500_reso(path, input_transform, target_transform):
+def bsds500_reso(path, input_transform=None, target_transform=None):
     return BSDS500Reso(path, input_transform, target_transform)

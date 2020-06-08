@@ -1,4 +1,5 @@
 import os
+import subprocess
 import torch
 
 
@@ -62,6 +63,7 @@ class Corpus(object):
 
 class Wiki2:
     def __init__(self, path, pad_to_multiple_of):
+        self.dataroot = path
         self.path = os.path.join(path, "wikitext-2")
         self.pad_to_multiple_of = pad_to_multiple_of
 
@@ -73,7 +75,16 @@ class Wiki2:
     def download(self):
         if os.path.exists(self.path):
             return
-        raise Exception("TODO")
+        os.makedirs(self.path, exist_ok=True)
+        subprocess.run(
+            f"""
+            cd {self.dataroot}
+            wget https://s3.amazonaws.com/research.metamind.io/wikitext/wikitext-2-v1.zip
+            unzip wikitext-2-v1.zip
+            rm wikitext-2-v1.zip
+            """,
+            shell=True
+        )
 
 
 def wiki2(path, pad_to_multiple_of=1):

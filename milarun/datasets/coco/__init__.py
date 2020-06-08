@@ -25,8 +25,26 @@ class Coco:
     def download(self):
         if os.path.exists(self.path):
             return
-        raise Exception("TODO")
+        os.makedirs(self.path, exist_ok=True)
+        subprocess.run(
+            f"""
+            cd {self.path}
+
+            wget http://images.cocodataset.org/zips/train2017.zip
+            unzip -u train2017.zip
+            rm train2017.zip
+
+            wget http://images.cocodataset.org/zips/val2017.zip
+            unzip -u val2017.zip
+            rm val2017.zip
+
+            wget http://images.cocodataset.org/annotations/annotations_trainval2017.zip
+            unzip -u annotations_trainval2017.zip
+            rm annotations_trainval2017.zip
+            """,
+            shell=True
+        )
 
 
-def coco(path, train_transform, val_transform):
+def coco(path, train_transform=None, val_transform=None):
     return Coco(path, train_transform, val_transform)
