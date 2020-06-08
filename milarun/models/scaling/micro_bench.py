@@ -180,6 +180,6 @@ def run_benchmarking(exp, wrapper, net, batch_size, run_fp16, dataparallel,
         with wrapper(count=batch_size) as it:
             forwardbackward(inp, optimizer, network, target)
             if rank <= 0:
-                it.log(ndev=num_devices)
+                it.log(world_size=world_size)
 
     torch.cuda.synchronize()
