@@ -1,7 +1,11 @@
 
 import os
+import subprocess
 from milarun.models.seq2seq.data.dataset import ParallelDataset
 from milarun.models.seq2seq.data.tokenizer import Tokenizer
+
+
+here = os.path.dirname(__file__)
 
 
 class WMT16:
@@ -30,8 +34,10 @@ class WMT16:
     def download(self):
         if os.path.exists(self.path):
             return
-        raise Exception("TODO")
+
+        os.makedirs(self.path, exist_ok=True)
+        subprocess.run(["sh", f"{here}/wmt16.sh", self.path, here])
 
 
-def wmt16(path, config, min_length, max_length, max_size):
+def wmt16(path, config=None, min_length=None, max_length=None, max_size=None):
     return WMT16(path, config, min_length, max_length, max_size)

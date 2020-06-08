@@ -58,9 +58,9 @@ class FakeImagenet:
     def __init__(self, path, transform):
         self.path = os.path.join(path, "ImageNet")
         self.size = 512
-        self.n_train = 100000 // 100
-        self.n_val = 5000 // 100
-        self.n_test = 5000 // 100
+        self.n_train = 100000
+        self.n_val = 5000
+        self.n_test = 5000
         self.transform = transform
 
     def avail(self, download=True):
