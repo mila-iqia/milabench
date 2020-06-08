@@ -1,4 +1,14 @@
 {
+    "*": {
+        "prepare": [
+            "sync",
+            "sysctl vm.drop_caches=3"
+        ],
+        "partition_scheme": {
+            "type": "per-gpu",
+            "cgroup": "student{CUDA_VISIBLE_DEVICES}"
+        }
+    },
     "toy_reg": {
         "experiment": "milarun.models.polynome:main",
         "arguments": {
@@ -6,10 +16,6 @@
             "--batch-size": 256,
             "--cuda": true,
             "--max-count": 1000000
-        },
-        "partition_scheme": {
-            "type": "per-gpu",
-            "cgroup": "student{CUDA_VISIBLE_DEVICES}"
         }
     },
     "toy_lstm": {
@@ -19,10 +25,6 @@
             "--samples": 100,
             "--cuda": true,
             "--max-count": 1000
-        },
-        "partition_scheme": {
-            "type": "per-gpu",
-            "cgroup": "student{CUDA_VISIBLE_DEVICES}"
         }
     },
     "vae": {
@@ -32,10 +34,6 @@
             "--batch-size": 64,
             "--cuda": true,
             "--max-count": 10000
-        },
-        "partition_scheme": {
-            "type": "per-gpu",
-            "cgroup": "student{CUDA_VISIBLE_DEVICES}"
         }
     },
     "loader": {
@@ -46,10 +44,6 @@
             "--workers": 8,
             "--cuda": true,
             "--max-count": 10000
-        },
-        "partition_scheme": {
-            "type": "per-gpu",
-            "cgroup": "student{CUDA_VISIBLE_DEVICES}"
         }
     },
     "reso": {
@@ -62,10 +56,6 @@
             "--workers": 8,
             "--cuda": true,
             "--max-count": 1000
-        },
-        "partition_scheme": {
-            "type": "per-gpu",
-            "cgroup": "student{CUDA_VISIBLE_DEVICES}"
         }
     },
     "translator": {
@@ -77,10 +67,6 @@
             "--workers": 8,
             "--cuda": true,
             "--max-count": 256
-        },
-        "partition_scheme": {
-            "type": "per-gpu",
-            "cgroup": "student{CUDA_VISIBLE_DEVICES}"
         }
     },
     "wlm": {
@@ -94,10 +80,6 @@
             "--model": "GRU",
             "--cuda": true,
             "--max-count": 5000
-        },
-        "partition_scheme": {
-            "type": "per-gpu",
-            "cgroup": "student{CUDA_VISIBLE_DEVICES}"
         }
     },
     "wlmfp16": {
@@ -111,10 +93,6 @@
             "--model": "GRU",
             "--cuda": true,
             "--max-count": 5000
-        },
-        "partition_scheme": {
-            "type": "per-gpu",
-            "cgroup": "student{CUDA_VISIBLE_DEVICES}"
         }
     },
     "cart": {
@@ -125,10 +103,6 @@
             "--episode-length": 500,
             "--no-cuda": true,
             "--max-count": 10000
-        },
-        "partition_scheme": {
-            "type": "per-gpu",
-            "cgroup": "student{CUDA_VISIBLE_DEVICES}"
         }
     },
     "minigrid": {
@@ -137,10 +111,6 @@
             "--env": "BabyAI-UnlockPickup-v0",
             "--cuda": true,
             "--max-count": 10000
-        },
-        "partition_scheme": {
-            "type": "per-gpu",
-            "cgroup": "student{CUDA_VISIBLE_DEVICES}"
         }
     },
     "atari": {
@@ -158,10 +128,6 @@
             "--entropy-coef": 0.01,
             "--cuda": true,
             "--max-count": 500
-        },
-        "partition_scheme": {
-            "type": "per-gpu",
-            "cgroup": "student{CUDA_VISIBLE_DEVICES}"
         }
     },
     "ssd": {
@@ -171,10 +137,6 @@
             "--batch-size": 32,
             "--cuda": true,
             "--max-count": 1000
-        },
-        "partition_scheme": {
-            "type": "per-gpu",
-            "cgroup": "student{CUDA_VISIBLE_DEVICES}"
         }
     },
     "fast_style": {
@@ -187,10 +149,6 @@
             "--workers": 8,
             "--cuda": true,
             "--max-count": 1000
-        },
-        "partition_scheme": {
-            "type": "per-gpu",
-            "cgroup": "student{CUDA_VISIBLE_DEVICES}"
         }
     },
     "dcgan": {
@@ -202,10 +160,6 @@
             "--workers": 8,
             "--cuda": true,
             "--max-count": 10000
-        },
-        "partition_scheme": {
-            "type": "per-gpu",
-            "cgroup": "student{CUDA_VISIBLE_DEVICES}"
         }
     },
     "convnet": {
@@ -218,10 +172,6 @@
             "--workers": 8,
             "--cuda": true,
             "--max-count": 1000
-        },
-        "partition_scheme": {
-            "type": "per-gpu",
-            "cgroup": "student{CUDA_VISIBLE_DEVICES}"
         }
     },
     "convnet_fp16": {
@@ -235,10 +185,6 @@
             "--workers": 8,
             "--cuda": true,
             "--max-count": 1000
-        },
-        "partition_scheme": {
-            "type": "per-gpu",
-            "cgroup": "student{CUDA_VISIBLE_DEVICES}"
         }
     },
     "recom": {
@@ -252,10 +198,6 @@
             "--workers": 8,
             "--cuda": true,
             "--max-count": 10000
-        },
-        "partition_scheme": {
-            "type": "per-gpu",
-            "cgroup": "student{CUDA_VISIBLE_DEVICES}"
         }
     },
     "scaling": {

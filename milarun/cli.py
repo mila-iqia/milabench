@@ -147,6 +147,10 @@ def _launch_job(jobdata, definition, cgexec, subargv):
     process_data = []
     run_id = jobdata["run"]
 
+    for cmd in definition.get("prepare", []):
+        print("+", cmd)
+        subprocess.run(cmd, shell=True)
+
     if psch_type == "per-gpu":
         import torch
         device_count = max(torch.cuda.device_count(), 1)
@@ -248,6 +252,14 @@ def command_jobs(subargv):
     name: Argument = default([])
 
     jobs_data = jobs.read()
+
+    # Merge the common fields
+    common = jobs_data.pop("*", None)
+    if common:
+        jobs_data = {
+            name: {**common, **job}
+            for name, job in jobs_data.items()
+        }
 
     name = set(name)
     not_found = name and name - set(jobs_data.keys())
