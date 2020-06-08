@@ -32,12 +32,18 @@ def _get_entries():
         _entries[entry_point.name]["dataset"] = entry_point
 
 
-def command_dataset_download(subargv):
-    # Name of the dataset to resolve
+def command_dataset(subargv):
+    """Download a dataset.
+
+    Positional argument must point to a Python function in
+    a module, using the entry point syntax.
+    """
+    # Name(s) of the dataset(s) to download (e.g. milarun.datasets:mnist)
     # [positional: +]
     name: Argument & resolve
 
-    # Root directory for datasets
+    # Root directory for datasets (default: $MILARUN_DATAROOT)
+    # [metavar: PATH]
     # [alias: -d]
     dataroot: Argument = default(os.getenv("MILARUN_DATAROOT"))
 
@@ -47,23 +53,30 @@ def command_dataset_download(subargv):
 
 
 def command_run(subargv):
+    """Run a benchmark.
+
+    Positional argument must point to a Python function in
+    a module, using the entry point syntax.
+    """
     # [positional]
-    # Name of the experiment to run
+    # Name of the experiment to run (e.g. milarun.models.polynome:main)
     function: Argument
 
     # File/directory where to put the results. Assumed to be a directory
     # unless the name ends in .json
+    # [metavar: PATH]
     # [alias: -o]
     out: Argument = default(None)
     out = out and os.path.realpath(os.path.expanduser(out))
 
-    # Name of the experiment
+    # Name of the experiment (optional)
     experiment_name: Argument = default(None)
 
-    # ID of the job
+    # ID of the job (optional)
     job_id: Argument = default(None)
 
-    # Root directory for datasets
+    # Root directory for datasets (default: $MILARUN_DATAROOT)
+    # [metavar: PATH]
     # [alias: -d]
     dataroot: Argument = default(os.getenv("MILARUN_DATAROOT"))
 
@@ -87,6 +100,7 @@ def command_run(subargv):
 
 
 def command_rerun(subargv):
+    """Re-run a benchmark, using the JSON output of a previous run."""
     # JSON results file
     # [positional]
     job: Argument & config
@@ -211,6 +225,7 @@ def _launch_job(jobdata, definition, cgexec, subargv):
 
 
 def command_jobs(subargv):
+    """Run benchmarks defined in JSON jobs file."""
     # [positional]
     # File containing the job definitions
     jobs: Argument & ConfigFile
@@ -256,6 +271,7 @@ def command_jobs(subargv):
 
 
 def command_report(subargv):
+    """Output a report from the results of the jobs command."""
     reports: Argument & os.path.abspath
     baselines: Argument & ConfigFile
     suite: Argument = default("fast")

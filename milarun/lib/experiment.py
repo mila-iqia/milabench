@@ -212,6 +212,7 @@ class Experiment:
     def execute(self, fn):
         if self.monitor_gpu_usage:
             monitor = GPUMonitor(1)
+            monitor.setDaemon(True)
             monitor.start()
         try:
             fn()
