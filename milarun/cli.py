@@ -198,6 +198,7 @@ def _launch_job(jobdata, definition, cgexec, subargv):
         cgroup = cgexec and psch and psch.get("cgroup", None)
         if cgroup:
             cmd += ["cgexec", "-g", cgroup.format(**env)]
+        cmd += definition.get("exec_prefix", [])
 
         cmd += ["milarun", "run", definition['experiment']]
         for k, v in args.items():
