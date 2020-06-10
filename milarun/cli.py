@@ -47,6 +47,16 @@ def command_dataset(subargv):
     # [alias: -d]
     dataroot: Argument = default(os.getenv("MILARUN_DATAROOT"))
 
+    if not dataroot:
+        print(
+            "milarun: error: no dataroot specified, ",
+            "please use --dataroot/-d or set $MILARUN_DATAROOT"
+            file=sys.stderr
+        )
+        sys.exit(1)
+
+    dataroot = os.path.realpath(os.path.expanduser(dataroot))
+
     for dataset_gen in name:
         dataset = dataset_gen(dataroot)
         dataset.download()
@@ -80,12 +90,22 @@ def command_run(subargv):
     # [alias: -d]
     dataroot: Argument = default(os.getenv("MILARUN_DATAROOT"))
 
+    if not dataroot:
+        print(
+            "milarun: error: no dataroot specified, ",
+            "please use --dataroot/-d or set $MILARUN_DATAROOT"
+            file=sys.stderr
+        )
+        sys.exit(1)
+
+    dataroot = os.path.realpath(os.path.expanduser(dataroot))
+
     run = resolve(function)
 
     experiment = Experiment(
         name=experiment_name or function,
         job_id=job_id,
-        dataroot=dataroot and os.path.realpath(os.path.expanduser(dataroot)),
+        dataroot=dataroot,
         outdir=out,
     )
     experiment["call"] = {
