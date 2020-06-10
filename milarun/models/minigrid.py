@@ -27,6 +27,7 @@ from milarun.lib import init_torch, iteration_wrapper
 
 
 def main(exp, argv):
+    os.environ["BABYAI_STORAGE"] = exp.results_directory()
 
     # Parse arguments
     parser = ArgumentParser()
