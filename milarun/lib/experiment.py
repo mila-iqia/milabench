@@ -229,9 +229,9 @@ class Experiment:
             self.usage = {
                 gid: {
                     k: {
-                        "min": np.min(v),
-                        "mean": np.mean(v),
-                        "max": np.max(v),
+                        "min": np.min(v) if v else -1,
+                        "mean": np.mean(v) if v else -1,
+                        "max": np.max(v) if v else -1,
                     }
                     for k, v in gdata.items()
                 }
