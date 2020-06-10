@@ -102,7 +102,7 @@ def main(exp, argv):
         obss_preprocessor = utils.ObssPreprocessor(args.model, envs[0].observation_space, args.pretrained_model)
 
     # Define actor-critic model
-    acmodel = utils.load_model(args.model, raise_not_found=False)
+    # acmodel = utils.load_model(args.model, raise_not_found=False)
     if acmodel is None:
         if args.pretrained_model:
             acmodel = utils.load_model(args.pretrained_model, raise_not_found=True)
@@ -112,7 +112,7 @@ def main(exp, argv):
                             not args.no_instr, args.instr_arch, not args.no_mem, args.arch)
 
     obss_preprocessor.vocab.save()
-    utils.save_model(acmodel, args.model)
+    # utils.save_model(acmodel, args.model)
 
     if torch_settings.cuda:
         acmodel.cuda()
@@ -146,24 +146,24 @@ def main(exp, argv):
                 'num_episodes': 0,
                 'num_frames': 0}
 
-    # Define logger and Tensorboard writer and CSV writer
+    # # Define logger and Tensorboard writer and CSV writer
 
-    header = (["update", "episodes", "frames", "FPS", "duration"]
-            + ["return_" + stat for stat in ['mean', 'std', 'min', 'max']]
-            + ["success_rate"]
-            + ["num_frames_" + stat for stat in ['mean', 'std', 'min', 'max']]
-            + ["entropy", "value", "policy_loss", "value_loss", "loss", "grad_norm"])
-    if args.tb:
-        from tensorboardX import SummaryWriter
+    # header = (["update", "episodes", "frames", "FPS", "duration"]
+    #         + ["return_" + stat for stat in ['mean', 'std', 'min', 'max']]
+    #         + ["success_rate"]
+    #         + ["num_frames_" + stat for stat in ['mean', 'std', 'min', 'max']]
+    #         + ["entropy", "value", "policy_loss", "value_loss", "loss", "grad_norm"])
+    # if args.tb:
+    #     from tensorboardX import SummaryWriter
 
-        writer = SummaryWriter(utils.get_log_dir(args.model))
-    csv_path = os.path.join(utils.get_log_dir(args.model), 'log.csv')
-    first_created = not os.path.exists(csv_path)
-    # we don't buffer data going in the csv log, cause we assume
-    # that one update will take much longer that one write to the log
-    csv_writer = csv.writer(open(csv_path, 'a', 1))
-    if first_created:
-        csv_writer.writerow(header)
+    #     writer = SummaryWriter(utils.get_log_dir(args.model))
+    # csv_path = os.path.join(utils.get_log_dir(args.model), 'log.csv')
+    # first_created = not os.path.exists(csv_path)
+    # # we don't buffer data going in the csv log, cause we assume
+    # # that one update will take much longer that one write to the log
+    # csv_writer = csv.writer(open(csv_path, 'a', 1))
+    # if first_created:
+    #     csv_writer.writerow(header)
 
     # Log code state, command, availability of CUDA and model
 
