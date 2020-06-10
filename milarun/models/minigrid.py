@@ -103,6 +103,7 @@ def main(exp, argv):
 
     # Define actor-critic model
     # acmodel = utils.load_model(args.model, raise_not_found=False)
+    acmodel = None
     if acmodel is None:
         if args.pretrained_model:
             acmodel = utils.load_model(args.pretrained_model, raise_not_found=True)
