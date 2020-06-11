@@ -50,7 +50,7 @@ def command_dataset(subargv):
     if not dataroot:
         print(
             "milarun: error: no dataroot specified, ",
-            "please use --dataroot/-d or set $MILARUN_DATAROOT"
+            "please use --dataroot/-d or set $MILARUN_DATAROOT",
             file=sys.stderr
         )
         sys.exit(1)
@@ -85,6 +85,10 @@ def command_run(subargv):
     # ID of the job (optional)
     job_id: Argument = default(None)
 
+    # Extra information (optional)
+    extra: Argument = default("{}")
+    extra = json.loads(extra)
+
     # Root directory for datasets (default: $MILARUN_DATAROOT)
     # [metavar: PATH]
     # [alias: -d]
@@ -93,7 +97,7 @@ def command_run(subargv):
     if not dataroot:
         print(
             "milarun: error: no dataroot specified, ",
-            "please use --dataroot/-d or set $MILARUN_DATAROOT"
+            "please use --dataroot/-d or set $MILARUN_DATAROOT",
             file=sys.stderr
         )
         sys.exit(1)
@@ -108,6 +112,7 @@ def command_run(subargv):
         dataroot=dataroot,
         outdir=out,
     )
+    experiment.set_fields(extra)
     experiment["call"] = {
         "function": function,
         "argv": subargv,
@@ -171,6 +176,10 @@ def _launch_job(jobdata, definition, cgexec, subargv):
         print("+", cmd)
         subprocess.run(cmd, shell=True)
 
+    extra = {
+        "job": definition
+    }
+
     if psch_type == "per-gpu":
         import torch
         device_count = max(torch.cuda.device_count(), 1)
@@ -181,18 +190,22 @@ def _launch_job(jobdata, definition, cgexec, subargv):
             env = {
                 "CUDA_VISIBLE_DEVICES": str(device_id),
             }
+            extra["device"] = device_id
+            extra["devices"] = [device_id]
             process_data.append((partial_args, env, "Popen"))
 
     elif psch_type == "gpu-progression":
         import torch
         device_count = max(torch.cuda.device_count(), 1)
         for device_id in range(device_count):
+            device_list = list(range(device_id + 1))
             partial_args = {
                 "--job-id": f"{run_id}.{device_id}",
             }
             env = {
-                "CUDA_VISIBLE_DEVICES": ",".join(map(str, range(device_id + 1))),
+                "CUDA_VISIBLE_DEVICES": ",".join(map(str, device_list)),
             }
+            extra["devices"] = device_list
             process_data.append((partial_args, env, "run"))
 
     elif psch_type is None or psch_type == "normal":
@@ -208,6 +221,7 @@ def _launch_job(jobdata, definition, cgexec, subargv):
             "--experiment-name": f"{jobdata['suite']}.{jobdata['name']}",
             "--job-id": run_id,
             "--out": jobdata["out"],
+            "--extra": json.dumps(extra),
             **partial_args,
             "--": True,
             **definition["arguments"],

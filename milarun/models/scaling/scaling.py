@@ -20,6 +20,7 @@ def main(exp, argv):
             "milarun",
             "run",
             "--out", outfile,
+            "--extra", json.dumps({"sub_job": True}),
             "milarun.models.scaling.micro_bench:main",
             "--",
             "--distributed-dataparallel",

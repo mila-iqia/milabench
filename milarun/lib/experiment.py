@@ -10,6 +10,7 @@ import sys
 import json
 import os
 import tempfile
+import torch
 
 from .monitor import GPUMonitor
 from .helpers import resolve
@@ -22,7 +23,6 @@ _environ_save = {
 
 
 def get_gpu_name():
-    import torch
     current_device = torch.cuda.current_device()
     return torch.cuda.get_device_name(current_device)
 
@@ -244,6 +244,9 @@ class Experiment:
     def __setitem__(self, key, value):
         self.results[key] = value
 
+    def set_fields(self, fields):
+        self.results.update(fields)
+
     def report(self):
         timings = {
             k: chrono.report()
@@ -258,6 +261,7 @@ class Experiment:
             **self.results,
             "hostname": socket.gethostname(),
             "gpu": get_gpu_name(),
+            "device_count": torch.cuda.device_count(),
             "environ": {k: v for k, v in os.environ.items() if k in _environ_save},
             "metrics": metrics,
             "timings": timings,
