@@ -130,7 +130,7 @@ class PassFail(WithClass):
     def __init__(self, value, passfail):
         self.passfail = "PASS" if passfail else "FAIL"
         super().__init__(
-            value=f"{value:.2%} ({self.passfail})",
+            value=f"{value:10.2%} ({self.passfail})",
             klass=self.passfail
         )
 
@@ -275,18 +275,18 @@ def make_report(
         failure_rate = df["fail"].sum() / df["n"].sum()
         scores = {
             "Failure rate": PassFail(failure_rate, failure_rate <= 0.01),
-            "Score": WithClass(f"{score:.2f}", "score"),
+            "Score": WithClass(f"{score:10.2f}", "score"),
         }
-        if price:
-            rpp = price / score
-            scores["Price"] = f"${price:.2f}"
-            scores["RPP (Price / Score)"] = WithClass(f"{rpp:.2f}", "rpp")
         if compare:
             score_base = _score('perf_base_adj')
             scores.update({
                 "Score (baseline)": score_base,
                 "Ratio": score / score_base
             })
+        if price:
+            rpp = price / score
+            scores["Price ($)"] = f"{price:10.2f}"
+            scores["RPP (Price / Score)"] = WithClass(f"{rpp:10.2f}", "rpp")
         out.print(Table(scores))
 
     if compare_gpus:
