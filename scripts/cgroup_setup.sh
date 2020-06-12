@@ -2,6 +2,12 @@
 
 set -e
 
+SUDO=""
+
+if [[ "$EUID" -ne 0 ]]; then
+    SUDO="sudo"
+fi
+
 if [[ ! -f /sys/fs//cgroup/memory/student0/memory.limit_in_bytes ]]; then
     SCRIPT_PATH=$(dirname "$0")
     source $SCRIPT_PATH/compute_resource.sh

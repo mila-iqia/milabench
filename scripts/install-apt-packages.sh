@@ -2,7 +2,13 @@
 
 set -ex
 
+SUDO=""
+
+if [[ "$EUID" -ne 0 ]]; then
+    SUDO="sudo"
+fi
+
 SCRIPT_PATH=$(dirname "$0")
 
-sudo apt-get update
-sudo apt-get install -y $(cat ${SCRIPT_PATH}/apt_packages)
+$SUDO apt-get update
+$SUDO apt-get install -y $(cat ${SCRIPT_PATH}/apt_packages)

@@ -3,12 +3,40 @@
 
 * Tested on **python 3.7** with **pytorch 1.5**
 
-## Install
+# Install
+
+You can either build a Docker image or install the benchmark software manually.
+
+
+## Docker
+
+**Build**
+
+```bash
+docker build -t my_docker -f Dockerfile .
+```
+
+The build might seem to hang at `poetry install`, but just wait it out.
+
+**Run: Important:** Because the benchmarks use cgroups, it is necessary to run the image in privileged mode, e.g.:
+
+```bash
+# Interactive session (need to specify bash)
+sudo docker run --cap-add=SYS_ADMIN --security-opt=apparmor:unconfined -it my_docker bash
+
+# Run
+sudo docker run --cap-add=SYS_ADMIN --security-opt=apparmor:unconfined my_docker milarun
+```
+
+The entry point for the image will set up the cgroups automatically (for testing purposes, passing `--no-cgexec` to the `milarun jobs` command will deactivate the feature, which lets you run the image in user mode).
+
+
+## Manual install
 
 1. Install apt requirements
 
 ```bash
-sudo scripts/install-apt-packages.sh
+scripts/install-apt-packages.sh
 ```
 
 2. Install Poetry
@@ -35,6 +63,8 @@ poetry shell
 ```
 
 This will give you access to the `milarun` command.
+
+Note: it is also possible to use `conda` (this is what the Docker image does). In that case, create and activate the conda environment before running `poetry install`, and everything will be installed in the conda environment (no need for `poetry shell` in this case, just activate the conda environment).
 
 ## Set up
 
