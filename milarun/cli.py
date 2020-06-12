@@ -376,6 +376,9 @@ def command_report(subargv):
     # Price of the configuration, to compute score/price ratio
     price: Argument & float = default(None)
 
+    # Title to give to the report
+    title: Argument = default(None)
+
     reports = os.path.realpath(os.path.expanduser(reports))
 
     results = summarize(reports, filter=_filter, group=_group)
@@ -386,6 +389,7 @@ def command_report(subargv):
         html=html,
         compare_gpus=compare_gpus,
         price=price,
+        title=title,
     )
 
 

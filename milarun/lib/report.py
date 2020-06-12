@@ -203,9 +203,10 @@ class Outputter:
 
     def title(self, title):
         self._html(f'<html><head><title>{title}</title></head><body>')
-        self.text("=" * len(title))
-        self.text(title)
-        self.text("=" * len(title))
+        self.html(H.h2(title))
+        self._text("=" * len(title))
+        self._text(title)
+        self._text("=" * len(title))
 
     def finalize(self):
         self.html("</body>")
@@ -233,6 +234,7 @@ def make_report(
     html=None,
     compare_gpus=False,
     price=None,
+    title=None,
 ):
     all_keys = list(sorted({
         *(summary.keys() if summary else []),
@@ -256,9 +258,7 @@ def make_report(
         html=html
     )
 
-    out.title("Hello!")
-
-    out.section("Test results")
+    out.title(title or "Benchmark results")
     out.print(df)
 
     if weights:
