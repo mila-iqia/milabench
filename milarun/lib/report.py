@@ -1,8 +1,9 @@
-from hrepr import HTML
+from hrepr import hrepr, HTML
 from collections import defaultdict
 from functools import reduce
 import json
 import os
+import sys
 import numpy as np
 import glob
 import operator
@@ -12,236 +13,301 @@ import math
 from itertools import chain
 
 
+nan = math.nan
+
 H = HTML()
 
 
-def extract_reports(report_folder, report_names):
-    filenames = chain(
-        glob.glob(f'{report_folder}/**/{report_names}.*.json'),
-        glob.glob(f'{report_folder}/{report_names}.*.json')
-    )
-    reports = defaultdict(list)
-    for filename in filenames:
-        entry = json.load(open(filename, 'r'))
-        entry['__path__'] = filename
-        reports[entry['name']].append(entry)
-    return reports
+def extract_reports2(report_folder, filter, group):
+    results = defaultdict(list)
+    for root, _, files in os.walk(report_folder):
+        for filename in files:
+            filename = os.path.join(root, filename)
+            if filename.endswith(".json"):
+                with open(filename) as f:
+                    contents = json.load(f)
+                    if filter(contents, filename):
+                        contents["__path__"] = filename
+                        gr = group(contents)
+                        contents["__group__"] = gr
+                        results[gr].append(contents)
+    return results
 
 
-def _report_nans(reports, nans=None):
-    nans = [] if nans is None else nans
-    for name, entries in reports.items():
-        for entry in entries:
-            # if any(math.isnan(x) for x in entry['batch_loss']):
-            if "loss" in entry and math.isnan(entry["loss"]):
-                entry['failure'] = 'A nan was found in batch_loss'
-                entries.remove(entry)
-                nans.append(entry)
-    return nans
-
-
-def _report_failures(reports, fails=None):
-    fails = [] if fails is None else fails
-    for name, entries in reports.items():
-        for entry in list(entries):
-            if 'success' in entry and not entry['success']:
-                entry['failure'] = 'The test did not succeed'
-                entries.remove(entry)
-                fails.append(entry)
-    return fails
-
-
-def _report_pergpu(baselines, reports, measure='mean'):
-    results = defaultdict(lambda: defaultdict(list))
-    all_devices = set()
-    for name, entries in reports.items():
-        for entry in entries:
-            devices = [int(device_id) for device_id in entry['vcd'].split(',')]
-            if len(devices) == 1:
-                device, = devices
-                all_devices.add(device)
-                results[name][device].append(entry['train_item']['avg'])
-
-    all_devices = list(sorted(all_devices))
-
-    results = {
-        name: {device: getattr(Series(data), measure)()
-               for device, data in device_results.items()}
-        for name, device_results in results.items()
-    }
-    results = {
-        k: v for k, v in
-        sorted(results.items(), key=lambda x: x[0] or "_")
+def _metrics(samples):
+    return {
+        "n": len(samples),
+        "min": float(np.min(samples)),
+        "max": float(np.max(samples)),
+        "mean": float(np.mean(samples)),
+        "std": float(np.std(samples)),
     }
 
-    df = DataFrame(results).transpose()
-    df = df.reindex(columns=all_devices)
 
-    maxes = df.loc[:, all_devices].max(axis=1).transpose()
+def _successful(entries):
+    return [
+        entry for entry in entries
+        if entry["success"] and all(
+            not math.isnan(value)
+            for value in entry["metrics"].values()
+        )
+    ]
+
+
+def summarize_group(group):
+    n = len(group)
+    good = _successful(group)
+    failures = n - len(good)
+    group = good
+    total = [entry["timings"]["program"]["time"] for entry in group]
+    rates = []
+    pergpu = defaultdict(list)
+    for entry in group:
+        for k, v in entry["timings"].items():
+            if k.startswith("train"):
+                mean = np.mean(v["rates"][-20:-2])
+                rates.append(mean)
+                device = entry["environ"].get("CUDA_VISIBLE_DEVICES", ",").split(",")
+                if len(device) == 1:
+                    device, = device
+                    pergpu[int(device)].append(mean)
+    assert n > 0
+
+    return {
+        "n": n,
+        "failures": failures,
+        "total": _metrics(total),
+        "train": _metrics(rates),
+        "pergpu": {
+            device_id: _metrics(results)
+            for device_id, results in pergpu.items()
+        }
+    }
+
+
+def summarize(report_folder, filter, group):
+    reports = extract_reports2(report_folder, filter, group)
+    return {
+        group_name: summarize_group(group)
+        for group_name, group in sorted(reports.items())
+    }
+
+
+def _make_row(summary, compare, weights):
+    row = {}
+    if weights is not None:
+        row["weight"] = weights["weight"] if weights else nan
+    row["n"] = summary["n"] if summary else nan
+    row["fail"] = summary["failures"] if summary else nan
+    row["perf"] = summary["train"]["mean"] if summary else nan
+    if compare is not None:
+        row["perf_base"] = compare["train"]["mean"] if compare else nan
+        row["perf_ratio"] = row["perf"] / row["perf_base"]
+    # row["std"] = summary["train"]["std"] if summary else nan
+    row["std%"] = summary["train"]["std"] / summary["train"]["mean"] if summary else nan
+    row["perf_adj"] = (1 - row["fail"] / row["n"]) * (
+        row["perf"] - min(summary["train"]["std"], row["perf"])
+    ) if summary else nan
+    if compare is not None:
+        row["perf_base_adj"] = row["perf_base"] - min(compare["train"]["std"], row["perf_base"]) if compare else nan
+        row["perf_ratio_adj"] = row["perf_adj"] / row["perf_base_adj"]
+    return row
+
+
+class WithClass:
+    def __init__(self, value, klass):
+        self.value = value
+        self.klass = klass
+
+    def __str__(self):
+        return str(self.value)
+
+    def __hrepr__(self, H, hrepr):
+        return H.span[self.klass](str(self.value))
+
+
+class PassFail(WithClass):
+    def __init__(self, value, passfail):
+        self.passfail = "PASS" if passfail else "FAIL"
+        super().__init__(
+            value=f"{value:.2%} ({self.passfail})",
+            klass=self.passfail
+        )
+
+
+class Table:
+    def __init__(self, fields):
+        self.fields = fields
+
+    def __hrepr__(self, H, hrepr):
+        tb = H.table["table"]()
+        for k, v in self.fields.items():
+            if isinstance(v, float):
+                entry = H.td["float"](f"{v:.2f}")
+            else:
+                entry = H.td(hrepr(v))
+            tb = tb(H.tr(
+                H.th(k), entry
+            ))
+        return tb
+
+    def __str__(self):
+        l = max(map(len, self.fields.keys())) + 2
+        lines = []
+        for k, v in self.fields.items():
+            v = f"{v:10.2f}" if isinstance(v, float) else v
+            lines.append(f"{k + ':':{l}} {v}")
+        return "\n".join(lines)
+
+
+class Outputter:
+    def __init__(self, stdout, html):
+        self.stdout = stdout
+        self.html_file = html and open(html, 'w')
+        self._html(_table_style)
+
+    def _html(self, contents):
+        if self.html_file:
+            print(contents, file=self.html_file)
+
+    def _text(self, text):
+        if self.stdout:
+            print(text, file=self.stdout)
+
+    def html(self, x):
+        if not self.html_file:
+            return
+        if isinstance(x, DataFrame):
+            sty = _style(x)
+            self._html(sty._repr_html_())
+        else:
+            self._html(hrepr(x))
+
+    def text(self, x):
+        if not self.stdout:
+            return
+        if isinstance(x, DataFrame):
+            self._text(x.to_string(formatters=_formatters))
+        else:
+            self._text(str(x))
+
+    def print(self, x):
+        self.text(x)
+        self.html(x)
+
+    def section(self, title):
+        self.text("")
+        self.text(title)
+        self.text(f"-" * len(title))
+        self.html(H.h2(title))
+
+    def title(self, title):
+        self._html(f'<html><head><title>{title}</title></head><body>')
+        self.text("=" * len(title))
+        self.text(title)
+        self.text("=" * len(title))
+
+    def finalize(self):
+        self.html("</body>")
+
+
+def _report_pergpu(entries, measure='mean'):
+    ngpus = max(len(v["pergpu"]) for v in entries.values())
+
+    df = DataFrame({
+        k: {i: v["pergpu"][i][measure] for i in range(ngpus)}
+        for k, v in entries.items()
+        if set(v["pergpu"].keys()) == set(range(ngpus))
+    }).transpose()
+
+    maxes = df.loc[:, list(range(ngpus))].max(axis=1).transpose()
     df = (df.transpose() / maxes).transpose()
 
     return df
 
 
-_table_style = H.style("""
-body {
-    font-family: monospace;
-}
-td, th {
-    text-align: right;
-    min-width: 75px;
-}
-.result-PASS {
-    color: green;
-    font-weight: bold;
-}
-.result-FAIL {
-    color: red;
-    font-weight: bold;
-}
-.score, .rpp {
-    color: blue;
-    font-weight: bold;
-}
-""")
-
-
-def _style(df):
-
-    def _redgreen(value):
-        return 'color: green' if value else 'color: red'
-
-    def _gpu_pct(value):
-        if value >= 0.9:
-            color = '#080'
-        elif value >= 0.8:
-            color = '#880'
-        elif value >= 0.7:
-            color = '#F80'
-        else:
-            color = '#F00'
-        return f'color: {color}'
-
-    def _perf(values):
-        return (values >= df['perf_tgt']).map(_redgreen)
-
-    def _sd(values):
-        return (values <= df['sd%_tgt']).map(_redgreen)
-
-    # Text formatting
-    sty = df.style
-    sty = sty.format(_formatters)
-
-    # Format GPU efficiency map columns
-    gpu_columns = set(range(16)) & set(df.columns)
-    sty = sty.applymap(_gpu_pct, subset=list(gpu_columns))
-
-    # Format perf column
-    if 'perf' in df.columns and 'perf_tgt' in df.columns:
-        sty = sty.apply(_perf, subset=['perf'])
-        sty = sty.applymap(
-            lambda x: 'font-weight: bold' if x >= 1 else '',
-            subset=['perf']
-        )
-
-    # Format sd% column
-    if 'sd%' in df.columns and 'sd%_tgt' in df.columns:
-        sty = sty.apply(_sd, subset=['sd%'])
-
-    # Format pass/fail column
-    for col in ['pass', 'sd%_pass', 'perf_pass']:
-        if col in df.columns:
-            sty = sty.applymap(_redgreen, subset=[col])
-
-    return sty
-
-
-def _display_title(file, title, stdout_display=True):
-    if stdout_display:
-        print()
-        print('=' * len(title))
-        print(title)
-        print('=' * len(title))
-        print()
-
-    if file:
-        print(H.h2(title), file=file)
-
-
-def _display_table(file, title, table, stdout_display=True):
-    _display_title(file, title, stdout_display=stdout_display)
-
-    if stdout_display:
-        print(table.to_string(formatters=_formatters))
-
-    if file:
-        sty = _style(table)
-        print(sty._repr_html_(), file=file)
-
-
-def _report_global(baselines, reports):
-    for name, entries in sorted(
-        reports.items(),
-        key=lambda x: x[0] or "_"
-    ):
-        print("---", name, len(entries))
-        for x in entries:
-            print(len(x["timings"]["train"]["times"]))
+def make_report(
+    summary,
+    compare=None,
+    weights=None,
+    html=None,
+    compare_gpus=False,
+    price=None,
+):
+    all_keys = list(sorted({
+        *(summary.keys() if summary else []),
+        *(compare.keys() if compare else []),
+        *(weights.keys() if weights else []),
+    }))
 
     df = DataFrame(
         {
-            name: {
-                'n': len(entries),
-                'mean': Series(
-                    reduce(operator.add, [
-                        x["timings"]["train"]["times"]
-                        for x in entries
-                    ])
-                ).mean(),
-                'sd': Series(
-                    reduce(operator.add, [
-                        x["timings"]["train"]["times"]
-                        for x in entries
-                    ])
-                ).std(),
-            }
-            for name, entries in sorted(
-                reports.items(),
-                key=lambda x: x[0] or "_"
+            key: _make_row(
+                summary.get(key, {}),
+                compare and compare.get(key, {}),
+                weights and weights.get(key, {}),
             )
-            if isinstance(name, str) and len(entries) > 0
+            for key in all_keys
         }
     ).transpose()
-    has_baselines = baselines is not None
-    if has_baselines:
-        baselines = DataFrame(baselines).transpose()
-        df['target'] = baselines['target']
-        df['perf_tgt'] = baselines['perf_target']
-        df['sd%_tgt'] = baselines['sd_target']
-        df['perf'] = df['mean'] / df['target']
-    df['sd%'] = df['sd'] / df['mean']
-    if has_baselines:
-        df['perf_pass'] = df['perf'] >= df['perf_tgt']
-        df['sd%_pass'] = df['sd%'] <= df['sd%_tgt']
-        df['pass'] = df['perf_pass'] & df['sd%_pass']
-    return df
 
+    out = Outputter(
+        stdout=sys.stdout,
+        html=html
+    )
 
-def passfail(x):
-    return 'PASS' if x else 'FAIL'
+    out.title("Hello!")
+
+    out.section("Test results")
+    out.print(df)
+
+    if weights:
+        out.section("Scores")
+
+        def _score(column):
+            # This computes a weighted geometric mean
+            perf = df[column]
+            weights = df["weight"]
+            logscore = np.sum(np.log(perf) * weights) / np.sum(weights)
+            return np.exp(logscore)
+
+        score = _score('perf_adj')
+        failure_rate = df["fail"].sum() / df["n"].sum()
+        scores = {
+            "Failure rate": PassFail(failure_rate, failure_rate <= 0.01),
+            "Score": WithClass(f"{score:.2f}", "score"),
+        }
+        if price:
+            rpp = price / score
+            scores["Price"] = f"${price:.2f}"
+            scores["RPP (Price / Score)"] = WithClass(f"{rpp:.2f}", "rpp")
+        if compare:
+            score_base = _score('perf_base_adj')
+            scores.update({
+                "Score (baseline)": score_base,
+                "Ratio": score / score_base
+            })
+        out.print(Table(scores))
+
+    if compare_gpus:
+        for measure in ['mean', 'min', 'max']:
+            df = _report_pergpu(summary, measure=measure)
+            out.section(f"GPU comparison ({measure})")
+            out.print(df)
 
 
 _formatters = {
     'n': '{:.0f}'.format,
-    'target': '{:10.2f}'.format,
-    'sd%_tgt': '{:10.0%}'.format,
-    'mean': '{:10.2f}'.format,
-    'sd': '{:10.2f}'.format,
+    'fail': '{:.0f}'.format,
+    'std': '{:10.2f}'.format,
     'perf': '{:10.2f}'.format,
-    'sd%': '{:10.1%}'.format,
-    'pass': passfail,
-    'sd%_pass': passfail,
-    'perf_pass': passfail,
+    'perf_base': '{:10.2f}'.format,
+    'perf_adj': '{:10.2f}'.format,
+    'perf_ratio': '{:10.2f}'.format,
+    'perf_base_adj': '{:10.2f}'.format,
+    'perf_ratio_adj': '{:10.2f}'.format,
+    'std%': '{:10.1%}'.format,
+    'weight': '{:4.2f}'.format,
     0: '{:.0%}'.format,
     1: '{:.0%}'.format,
     2: '{:.0%}'.format,
@@ -261,166 +327,92 @@ _formatters = {
 }
 
 
-def _format_df(df):
-    return df.to_string(formatters=_formatters)
+_table_style = H.style("""
+body {
+    font-family: monospace;
+}
+td, th {
+    text-align: right;
+    min-width: 75px;
+}
+.table th {
+    text-align: left;
+}
+.PASS {
+    color: green;
+    font-weight: bold;
+}
+.FAIL {
+    color: red;
+    font-weight: bold;
+}
+.score, .rpp {
+    color: blue;
+    font-weight: bold;
+}
+""")
 
 
-def generate_report(args):
-    reports = extract_reports(args.reports, args.jobs)
-    nreports = sum(len(entries) for entries in reports.values())
+def _style(df):
 
-    failures = []
+    def _redgreen(value):
+        return 'color: green' if value else 'color: red'
 
-    # Fail check
-    _report_failures(reports, failures)
-    _report_nans(reports, failures)
+    def _redblack(value):
+        return 'color: red; font-weight: bold' if value else 'color: black'
 
-    nfailures = len(failures)
+    def _greyblack(value):
+        return 'color: #888' if value else 'color: black'
 
-    baselines = args.baselines
+    def _gpu_pct(value):
+        if value >= 0.9:
+            color = '#080'
+        elif value >= 0.8:
+            color = '#880'
+        elif value >= 0.7:
+            color = '#F80'
+        else:
+            color = '#F00'
+        return f'color: {color}'
 
-    outd = True
-    title = args.title or args.html.replace('.html', '')
+    def _ratio(value):
+        if value >= 1.1:
+            color = '#080'
+        elif value >= 0.9:
+            color = '#880'
+        elif value >= 0.75:
+            color = '#F80'
+        else:
+            color = '#F00'
+        return f'color: {color}'
 
-    html = args.html and open(args.html, 'w')
-    print(f'<html><head><title>{title}</title></head><body>', file=html)
-    print(_table_style, file=html)
+    def _fail(values):
+        return (values > 0).map(_redblack)
 
-    _display_title(
-        title=f'{title} ({args.reports})',
-        file=html,
-        stdout_display=outd
-    )
+    def _weight(values):
+        return (values < 1).map(_greyblack)
 
-    df_global = _report_global(baselines, reports)
-    df = df_global.reindex(
-        columns=(
-            'n',
-            'target',
-            'perf_tgt',
-            'sd%_tgt',
-            'mean',
-            # 'sd',
-            'perf',
-            'perf_pass',
-            'sd%',
-            'sd%_pass',
-            # 'pass',
-        )
-    )
-    _display_table(
-        title=f'Results',
-        table=df,
-        file=html,
-        stdout_display=outd,
-    )
+    # Text formatting
+    sty = df.style
+    sty = sty.format(_formatters)
 
-    fail_ratio = nfailures / nreports
-    fail_criterion = fail_ratio <= 0.01
+    # Format GPU efficiency map columns
+    gpu_columns = set(range(16)) & set(df.columns)
+    sty = sty.applymap(_gpu_pct, subset=list(gpu_columns))
 
-    if failures:
-        fail_crit_pf = passfail(fail_criterion)
+    # sty.apply(_row, axis=1)
 
-        _display_title(title='Failures', file=html, stdout_display=outd)
+    # Format fail column
+    if 'fail' in df.columns:
+        sty = sty.apply(_fail, subset=['fail'])
 
-        ratio = nfailures / nreports
-        msg = f'{nfailures} failures / {nreports} results ({fail_ratio:.2%})'
-        print(msg, '--', fail_crit_pf)
-        print()
-        print(H.div(msg, " ", H.span[f'result-{fail_crit_pf}'](fail_crit_pf)),
-              file=html)
-        print(H.br(), file=html)
+    # Format weight column
+    if 'weight' in df.columns:
+        sty = sty.apply(_weight, subset=['weight'])
 
-        for entry in failures:
-            message = f'Failure in {entry["__path__"]}: {entry["failure"]}'
-            print(message)
-            print(H.div(message), file=html)
+    # Format performance ratios
+    for col in ['perf_ratio', 'perf_ratio_adj']:
+        if col in df.columns:
+            sty = sty.applymap(_ratio, subset=[col])
 
-    # _display_title(title='Global performance', file=html, stdout_display=outd)
-
-    # try:
-    #     df_perf = df.drop('scaling')
-    # except KeyError:
-    #     df_perf = df
-    # perf = (df_perf['perf'].prod()) ** (1/df_perf['perf'].count())
-    # minreq = 0.9
-    # success = perf > minreq
-
-    # pm = df_global['perf_pass'].sum() / df_global['perf_pass'].count()
-    # st = df_global['sd%_pass'].sum() / df_global['sd%_pass'].count()
-    # xpm = 2 * pm
-    # xperf = 5 * perf
-    # xst = 1 * st
-    # grade = fail_criterion * (xpm + xst + xperf)
-    # grade_success = True
-    # if args.price:
-    #     if grade > 0:
-    #         rpp = args.price / grade
-    #         rpp = f'{rpp:.2f}'
-    #     else:
-    #         rpp = 'n/a'
-    # else:
-    #     rpp = 'n/a'
-
-    # if outd:
-    #     print(f'Well functioning score (BF):     {fail_criterion:.2f}')
-    #     print(f'Minimal performance score (PM):  {pm:.2f}')
-    #     print(f'Standard deviation score (ST):   {st:.2f}')
-    #     print(f'Mean performance (geomean) (PG): {perf:.2f}')
-    #     print(f'Score (BF(2PM + ST + 5PG)):      {grade:.2f}')
-    #     if args.price:
-    #         print(f'Price:                           ${args.price:.2f}')
-    #         print(f'RPP (Price/Score):               {rpp}')
-
-    # if html:
-    #     tb = H.table(
-    #         H.tr(
-    #             H.th('Well functioning score (BF)'),
-    #             H.td(f'{fail_criterion:.2f}'),
-    #         ),
-    #         H.tr(
-    #             H.th('Minimal performance score (PM)'),
-    #             H.td(f'{pm:.2f}'),
-    #         ),
-    #         H.tr(
-    #             H.th('Standard deviation score (ST)'),
-    #             H.td(f'{st:.2f}'),
-    #         ),
-    #         H.tr(
-    #             H.th('Mean performance (geomean) (PG)'),
-    #             H.td(f'{perf:.2f}'),
-    #         ),
-    #         H.tr(
-    #             H.th('Score (BF(2PM + ST + 5PG))'),
-    #             H.td[f'XXresult-{passfail(grade_success)}']['score'](
-    #                 f'{grade:.2f}'
-    #             ),
-    #         ),
-    #     )
-    #     if args.price:
-    #         tb = tb(
-    #             H.tr(
-    #                 H.th('Price'),
-    #                 H.td(
-    #                     H.span['price'](f'${args.price:.2f}')
-    #                 ),
-    #             ),
-    #             H.tr(
-    #                 H.th('RPP (Price/Score)'),
-    #                 H.td[f'XXresult-{passfail(grade_success)}'](
-    #                     H.span['rpp'](f'{rpp}')
-    #                 ),
-    #             ),
-    #         )
-    #     print(tb, file=html)
-
-    # for measure in ['mean', 'min', 'max']:
-    #     df = _report_pergpu(baselines, reports, measure=measure)
-    #     _display_table(
-    #         title=f'Relative GPU performance ({measure})',
-    #         table=df,
-    #         file=html,
-    #         stdout_display=outd,
-    #     )
-
-    html.write('</body></html>')
+    return sty

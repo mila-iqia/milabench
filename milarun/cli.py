@@ -2,7 +2,7 @@ from coleo import auto_cli, config, Argument, ConfigFile, default, tooled
 from types import SimpleNamespace as NS
 from .lib.experiment import Experiment
 from .lib.helpers import resolve
-from .lib.report import extract_reports, generate_report
+from .lib.report import make_report, summarize
 import os
 import blessed
 import json
@@ -318,23 +318,74 @@ def command_jobs(subargv):
     print(f"Total time: {end - start:.2f}s")
 
 
+def _filter(x, path):
+    return x.get("job_id", None) is not None and not x.get("sub_job", False)
+
+
+def _group(x):
+    scheme = x["job"]["partition_scheme"]
+    if scheme["type"] == "per-gpu":
+        return x["name"]
+    elif scheme["type"] == "gpu-progression":
+        return f"{x['name']}.{x['device_count']}"
+    else:
+        return x["name"]
+
+
+def command_summary(subargv):
+    """Output a JSON summary of the results of the jobs command."""
+
+    # Directory in which the reports are
+    # [positional]
+    reports: Argument
+
+    # JSON file where to output the summary
+    # [alias: -o]
+    out: Argument = default(None)
+
+    reports = os.path.realpath(os.path.expanduser(reports))
+    out = out and os.path.realpath(os.path.expanduser(out))
+
+    results = summarize(reports, filter=_filter, group=_group)
+
+    if out:
+        json.dump(results, open(out, "w"), indent=4)
+    else:
+        print(json.dumps(results, indent=4))
+
+
 def command_report(subargv):
     """Output a report from the results of the jobs command."""
-    reports: Argument & os.path.abspath
-    baselines: Argument & ConfigFile
-    suite: Argument = default("fast")
-    html: Argument
 
-    generate_report(
-        NS(
-            title="Hello!",
-            reports=reports,
-            jobs=suite,
-            html=html,
-            baselines=baselines.read(),
-            gpu_model=None,
-            price=None,
-        )
+    # Directory in which the reports are
+    # [positional]
+    reports: Argument
+
+    # Comparison file
+    compare: Argument & config = default(None)
+
+    # Weights file to compute the score
+    weights: Argument & config = default(None)
+
+    # Path to the HTML file to generate
+    html: Argument = default(None)
+
+    # Compare the configuration's individual GPUs
+    compare_gpus: Argument & bool = default(False)
+
+    # Price of the configuration, to compute score/price ratio
+    price: Argument & float = default(None)
+
+    reports = os.path.realpath(os.path.expanduser(reports))
+
+    results = summarize(reports, filter=_filter, group=_group)
+    make_report(
+        results,
+        compare=compare,
+        weights=weights,
+        html=html,
+        compare_gpus=compare_gpus,
+        price=price,
     )
 
 
