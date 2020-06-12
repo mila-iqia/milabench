@@ -183,7 +183,7 @@ The cgroups are used to emulate multiple users and force the resources of each u
 
 **Does the cgroups setup affect the results of the benchmark?**
 
-Yes. Because of resource segregation, the multiple experiments launched by `milarun` in parallel will not fight for resources, leading to reduced variance and different performance characteristics. This will indeed affect the score.
+Yes. Because of resource segregation, the multiple experiments launched by `milarun` in parallel will not fight for resources, leading to reduced variance and different performance characteristics (some tests may do a little better, some others may do a little worse). According to our experiments, using the cgroup setup can increase the score by 2 to 3%.
 
 **Can we run the benchmarks without the cgroups?**
 
@@ -238,11 +238,16 @@ These warnings can be ignored.
 * Is there a multi-node benchmark in convnets ? If yes, what was the reference run configuration ?
     * There are no multi-node benchmarks. Only Single Node Multi-GPU -->
 
+**What is standard.scaling.1 to standard.scaling.8 in the report?**
+
+The scaling test performs an experiment on 1 GPU, then 2 GPUs, up to N GPUs. These have obviously different performance characteristics and therefore cannot be aggregated, so `standard.scaling.1` represents the results on 1 GPU,  `standard.scaling.2` represents the results of the algorithm distributed on 2 GPUs, and so on.
+
+
 # Details
 
 ## Datasets
 
-The benchmarks require approximatively 50 GiB of data:
+The benchmarks require approximatively 50 GiB of storage:
 
 ```
 du -hd 2 data

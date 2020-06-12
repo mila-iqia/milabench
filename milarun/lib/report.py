@@ -306,7 +306,7 @@ _formatters = {
     'perf_ratio': '{:10.2f}'.format,
     'perf_base_adj': '{:10.2f}'.format,
     'perf_ratio_adj': '{:10.2f}'.format,
-    'std%': '{:10.1%}'.format,
+    'std%': '{:6.1%}'.format,
     'weight': '{:4.2f}'.format,
     0: '{:.0%}'.format,
     1: '{:.0%}'.format,
