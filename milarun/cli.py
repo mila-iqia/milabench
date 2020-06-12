@@ -223,6 +223,7 @@ def _launch_job(jobdata, definition, cgexec, subargv):
             "--experiment-name": f"{jobdata['suite']}.{jobdata['name']}",
             "--job-id": run_id,
             "--out": jobdata["out"],
+            "--dataroot": jobdata["dataroot"],
             **partial_args,
             "--": True,
             **definition["arguments"],
@@ -287,6 +288,21 @@ def command_jobs(subargv):
     # [nargs: +]
     name: Argument = default([])
 
+    # Root directory for datasets (default: $MILARUN_DATAROOT)
+    # [metavar: PATH]
+    # [alias: -d]
+    dataroot: Argument = default(os.getenv("MILARUN_DATAROOT"))
+
+    if not dataroot:
+        print(
+            "milarun: error: no dataroot specified, ",
+            "please use --dataroot/-d or set $MILARUN_DATAROOT",
+            file=sys.stderr
+        )
+        sys.exit(1)
+
+    dataroot = os.path.realpath(os.path.expanduser(dataroot))
+
     jobs_data = jobs.read()
 
     # Merge the common fields
@@ -312,6 +328,7 @@ def command_jobs(subargv):
                     "suite": os.path.splitext(os.path.basename(jobs.filename))[0],
                     "run": i,
                     "out": out,
+                    "dataroot": dataroot,
                 }
                 _launch_job(jobdata, definition, cgexec, subargv)
     end = time.time()
