@@ -26,6 +26,8 @@ exec bash
 poetry install
 ```
 
+This assumes Python 3.7 is installed on the system, which it should be if the apt packages were installed in the first step.
+
 Once the software is installed, you can start a shell within the environment as follows:
 
 ```bash
