@@ -66,24 +66,26 @@ This will give you access to the `milarun` command.
 
 Note: it is also possible to use `conda` (this is what the Docker image does). In that case, create and activate the conda environment before running `poetry install`, and everything will be installed in the conda environment (no need for `poetry shell` in this case, just activate the conda environment).
 
-## Set up
 
-1. Set up the cgroups
+4. Set up the cgroups
 
 ```bash
 sudo scripts/cgroup_setup.sh
 ```
 
-2. Download the datasets (this might take a while)
+# Download
+
+First run `poetry shell` to activate the virtualenv. Download the datasets (this might take a while).
 
 ```bash
 # Download the data into ~/data, or a directory of your choosing
-poetry run scripts/download.sh -d $DATAROOT
+scripts/download.sh -d $DATAROOT
 ```
 
-It is important to run this script before the benchmarks.
+It is important to run this script before the benchmarks. This will use ~50 GiB of storage. You can run the command using the Docker image, with `$DATAROOT` pointing to a mounted volume.
 
-## Run the benchmarks
+
+# Run the benchmarks
 
 First run `poetry shell` to activate the virtualenv. Alternatively, you can prefix calls to `milarun` with `poetry run`.
 
@@ -160,7 +162,7 @@ Notes:
 * `score = exp(sum(log(perf_adj) * weight) / sum(weight))` -- this is the weighted geometric mean of `perf_adj`.
 
 
-## Compare results
+### Compare results
 
 You may compare with a baseline using the `--compare` argument:
 
@@ -179,7 +181,7 @@ You will get a comparison for each test as well as a comparison of the scores in
 The command also accepts a `--price` argument (in dollars) to compute the price/score ratio.
 
 
-## GPU comparisons
+### GPU comparisons
 
 The `--compare-gpus` option will provide more information in the form of comparison matrices for individual GPUs (this information will be more reliable if there are multiple runs of the suite, for example if you use `milarun jobs profiles/standard.json -o $OUTDIR --repeat 10`).
 
