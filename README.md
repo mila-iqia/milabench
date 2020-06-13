@@ -73,7 +73,7 @@ Note: it is also possible to use `conda` (this is what the Docker image does). I
 sudo scripts/cgroup_setup.sh
 ```
 
-# Download
+# Download the datasets
 
 First run `poetry shell` to activate the virtualenv. Download the datasets (this might take a while).
 
@@ -82,7 +82,7 @@ First run `poetry shell` to activate the virtualenv. Download the datasets (this
 scripts/download.sh -d $DATAROOT
 ```
 
-It is important to run this script before the benchmarks. This will use ~50 GiB of storage. You can run the command using the Docker image, with `$DATAROOT` pointing to a mounted volume.
+It is important to run this script before the benchmarks. This will use ~50 GiB of storage. You can run the command using the Docker image, with `$DATAROOT` pointing to a mounted volume on the container.
 
 
 # Run the benchmarks
