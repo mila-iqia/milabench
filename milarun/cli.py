@@ -398,7 +398,11 @@ def command_report(subargv):
 
     reports = os.path.realpath(os.path.expanduser(reports))
 
-    results = summarize(reports, filter=_filter, group=_group)
+    if os.path.isdir(reports):
+        results = summarize(reports, filter=_filter, group=_group)
+    else:
+        results = json.load(open(reports))
+
     make_report(
         results,
         compare=compare,
