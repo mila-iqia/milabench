@@ -167,7 +167,7 @@ Notes:
 You may compare with a baseline using the `--compare` argument:
 
 ```bash
-milarun report $OUTDIR --compare baselines/v100.json --html results.html
+milarun report $OUTDIR --compare baselines/standard/v100.json --html results.html
 ```
 
 A baseline can be produced with `milarun summary`:
