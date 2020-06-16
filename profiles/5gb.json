@@ -1,0 +1,204 @@
+{
+    "*": {
+        "prepare": [
+            "sync",
+            "sysctl vm.drop_caches=3"
+        ],
+        "exec_prefix": ["nocache"],
+        "partition_scheme": {
+            "type": "per-gpu",
+            "cgroup": "cpuset,memory:student{CUDA_VISIBLE_DEVICES}"
+        }
+    },
+    "toy_reg": {
+        "experiment": "milarun.models.polynome:main",
+        "arguments": {
+            "--poly-degree": 4,
+            "--batch-size": 256,
+            "--cuda": true,
+            "--max-count": 20000000
+        }
+    },
+    "toy_lstm": {
+        "experiment": "milarun.models.sine_wave:main",
+        "arguments": {
+            "--dtype": "float32",
+            "--samples": 100,
+            "--cuda": true,
+            "--max-count": 8000
+        }
+    },
+    "vae": {
+        "experiment": "milarun.models.vae:main",
+        "arguments": {
+            "--dataset": "milarun.datasets:mnist",
+            "--batch-size": 128,
+            "--cuda": true,
+            "--max-count": 500000
+        }
+    },
+    "loader": {
+        "experiment": "milarun.models.loader:main",
+        "arguments": {
+            "--dataset": "milarun.datasets:fake_imagenet",
+            "--batch-size": 256,
+            "--workers": 8,
+            "--cuda": true,
+            "--max-count": 25000
+        }
+    },
+    "reso": {
+        "experiment": "milarun.models.subpixel:main",
+        "arguments": {
+            "--dataset": "milarun.datasets:bsds500_reso",
+            "--batch-size": 64,
+            "--lr": 0.1,
+            "--upscale-factor": 2,
+            "--workers": 8,
+            "--cuda": true,
+            "--max-count": 20000
+        }
+    },
+    "translator": {
+        "experiment": "milarun.models.rnn_translator:main",
+        "arguments": {
+            "--dataset": "milarun.datasets:wmt16",
+            "--batch-size": 32,
+            "--target-bleu": 21.80,
+            "--workers": 8,
+            "--cuda": true,
+            "--max-count": 10000
+        }
+    },
+    "wlm": {
+        "experiment": "milarun.models.wlm:main",
+        "arguments": {
+            "--dataset": "milarun.datasets:wiki2",
+            "--batch-size": 64,
+            "--emsize": 656,
+            "--nhid": 656,
+            "--dropout": 0.5,
+            "--model": "GRU",
+            "--cuda": true,
+            "--max-count": 50000
+        }
+    },
+    "wlmfp16": {
+        "experiment": "milarun.models.wlm:main_fp16",
+        "arguments": {
+            "--dataset": "milarun.datasets:wiki2",
+            "--batch-size": 128,
+            "--emsize": 656,
+            "--nhid": 656,
+            "--dropout": 0.5,
+            "--model": "GRU",
+            "--cuda": true,
+            "--max-count": 100000
+        }
+    },
+    "cart": {
+        "experiment": "milarun.models.cart_pole:main",
+        "arguments": {
+            "--gamma": 0.99,
+            "--no-render": true,
+            "--episode-length": 500,
+            "--no-cuda": true,
+            "--max-count": 100000
+        }
+    },
+    "minigrid": {
+        "experiment": "milarun.models.minigrid:main",
+        "arguments": {
+            "--env": "BabyAI-UnlockPickup-v0",
+            "--cuda": true,
+            "--max-count": 50000
+        }
+    },
+    "atari": {
+        "experiment": "milarun.models.atari:main",
+        "arguments": {
+            "--env-name": "PongNoFrameskip-v4",
+            "--num-steps": 128,
+            "--num-processes": 16,
+            "--algo": "ppo",
+            "--use-gae": true,
+            "--clip-param": 0.1,
+            "--value-loss-coef": 0.5,
+            "--num-mini-batch": 4,
+            "--use-linear-lr-decay": true,
+            "--entropy-coef": 0.01,
+            "--cuda": true,
+            "--max-count": 1000
+        }
+    },
+    "ssd": {
+        "experiment": "milarun.models.ssd:main",
+        "arguments": {
+            "--dataset": "milarun.datasets:coco",
+            "--batch-size": 16,
+            "--cuda": true,
+            "--max-count": 2500
+        }
+    },
+    "fast_style": {
+        "experiment": "milarun.models.neural_style:main",
+        "arguments": {
+            "--dataset": "milarun.datasets:fake_imagenet",
+            "--batch-size": 64,
+            "--image-size": 64,
+            "--style-size": 64,
+            "--workers": 8,
+            "--cuda": true,
+            "--max-count": 20000
+        }
+    },
+    "dcgan": {
+        "experiment": "milarun.models.dcgan:main",
+        "arguments": {
+            "--dataset": "milarun.datasets:fake_imagenet",
+            "--batch-size": 128,
+            "--image-size": 64,
+            "--workers": 8,
+            "--cuda": true,
+            "--max-count": 20000
+        }
+    },
+    "convnet": {
+        "experiment": "milarun.models.convnet:conv_simple",
+        "arguments": {
+            "--dataset": "milarun.datasets:fake_imagenet",
+            "--arch": "resnet50",
+            "--batch-size": 32,
+            "--lr": 0.1,
+            "--workers": 8,
+            "--cuda": true,
+            "--max-count": 5000
+        }
+    },
+    "convnet_fp16": {
+        "experiment": "milarun.models.convnet:conv_simple",
+        "arguments": {
+            "--dataset": "milarun.datasets:fake_imagenet",
+            "--arch": "resnet50",
+            "--batch-size": 64,
+            "--lr": 0.1,
+            "--half": true,
+            "--workers": 8,
+            "--cuda": true,
+            "--max-count": 10000
+        }
+    },
+    "recom": {
+        "experiment": "milarun.models.recommendation:main",
+        "arguments": {
+            "--dataset": "milarun.datasets:ml20m",
+            "--layers": "256,256,128,64",
+            "-f": 64,
+            "-l": 0.0005,
+            "--batch-size": 2048,
+            "--workers": 8,
+            "--cuda": true,
+            "--max-count": 1000000
+        }
+    }
+}
