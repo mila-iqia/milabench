@@ -136,6 +136,10 @@ Instead of using a jobs file, you can run a test directly with `milarun run`, li
 milarun run milabench.models.polynome:main -d $DATAROOT -o polynome-results.json -- --poly-degree 6 --batch-size 1024 --max-count 1_000_000
 ```
 
+### Benchmarks for lower memory
+
+Use `profiles/<N>gb.json` instead of `profiles/standard.json` to run the benchmarks on GPUs with at most N GB of memory. There are also weights in `weights/<N>gb.json` to compute a score for these modified benchmarks.
+
 ### Tweaks
 
 You can create tweaked baselines by modifying a copy of `standard.json`. These tweaked baselines may be used to either test something different, debug, or demonstrate further capacities, if needed.
