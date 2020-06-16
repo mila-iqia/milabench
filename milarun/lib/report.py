@@ -62,7 +62,10 @@ def summarize_group(group):
     total = [entry["timings"]["program"]["time"] for entry in group]
     rates = []
     pergpu = defaultdict(list)
+    peak_memory = 0
     for entry in group:
+        for _, v in entry["gpu_monitor"].items():
+            peak_memory = max(peak_memory, v["memory"]["max"])
         for k, v in entry["timings"].items():
             if k.startswith("train"):
                 mean = np.mean(v["rates"][-20:-2])
@@ -81,7 +84,8 @@ def summarize_group(group):
         "pergpu": {
             device_id: _metrics(results)
             for device_id, results in pergpu.items()
-        }
+        },
+        "peak_memory": peak_memory
     }
 
 
