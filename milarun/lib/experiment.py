@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from datetime import datetime
 from collections import deque
 from contextlib import contextmanager
@@ -56,10 +55,10 @@ class SimpleTimer:
         }
 
 
-@dataclass
 class Counter:
-    count: int
-    metrics: dict
+    def __init__(self, count, metrics):
+        self.count = count
+        self.metrics = metrics
 
     def add(self, n):
         self.count += n
