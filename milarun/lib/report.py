@@ -100,7 +100,7 @@ def summarize(report_folder, filter, group):
     }
 
 
-def _make_row(summary, compare, weights):
+def _make_row(summary, compare, weights, penalize_variance=False):
     row = {}
     if weights is not None:
         row["weight"] = weights["weight"] if weights else nan
@@ -112,11 +112,21 @@ def _make_row(summary, compare, weights):
         row["perf_ratio"] = row["perf"] / row["perf_base"]
     # row["std"] = summary["train"]["std"] if summary else nan
     row["std%"] = summary["train"]["std"] / summary["train"]["mean"] if summary else nan
+    if penalize_variance:
+        penalty = min(summary["train"]["std"], row["perf"])
+    else:
+        penalty = 0
     row["perf_adj"] = (1 - row["fail"] / row["n"]) * (
-        row["perf"] - min(summary["train"]["std"], row["perf"])
+        row["perf"] - penalty
     ) if summary else nan
     if compare is not None:
-        row["perf_base_adj"] = row["perf_base"] - min(compare["train"]["std"], row["perf_base"]) if compare else nan
+        if penalize_variance:
+            penalty = min(compare["train"]["std"], row["perf_base"]) if compare else nan
+        else:
+            penalty = 0
+        row["perf_base_adj"] = (
+            row["perf_base"] - penalty if compare else nan
+        )
         row["perf_ratio_adj"] = row["perf_adj"] / row["perf_base_adj"]
     return row
 
@@ -242,6 +252,7 @@ def make_report(
     compare_gpus=False,
     price=None,
     title=None,
+    penalize_variance=False,
 ):
     all_keys = list(sorted({
         *(summary.keys() if summary else []),
@@ -255,6 +266,7 @@ def make_report(
                 summary.get(key, {}),
                 compare and compare.get(key, {}),
                 weights and weights.get(key, {}),
+                penalize_variance=penalize_variance,
             )
             for key in all_keys
         }

@@ -390,6 +390,9 @@ def command_report(subargv):
     # Compare the configuration's individual GPUs
     compare_gpus: Argument & bool = default(False)
 
+    # Whether to penalize variance in the score (defaults to False)
+    penalize_variance: Argument & bool = default(False)
+
     # Price of the configuration, to compute score/price ratio
     price: Argument & float = default(None)
 
@@ -411,6 +414,7 @@ def command_report(subargv):
         compare_gpus=compare_gpus,
         price=price,
         title=title,
+        penalize_variance=penalize_variance,
     )
 
 

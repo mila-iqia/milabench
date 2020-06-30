@@ -162,7 +162,8 @@ milarun report $OUTDIR --html results.html --weights weights/standard.json
 
 Notes:
 
-* `perf_adj = perf * (1 - std%) * (1 - fail/n)` -- it is a measure of performance that penalizes variance and test failures.
+* `perf_adj = perf * (1 - fail/n)` -- it is a measure of performance that penalizes test failures.
+  * If the `--penalize-variance` flag is given (this is off by default): `perf_adj = perf * (1 - std%) * (1 - fail/n)` -- in this case we penalize variance by subtracting one standard deviation.
 * `score = exp(sum(log(perf_adj) * weight) / sum(weight))` -- this is the weighted geometric mean of `perf_adj`.
 
 
@@ -219,7 +220,7 @@ The cgroups are used to emulate multiple users and force the resources of each u
 
 **Does the cgroups setup affect the results of the benchmark?**
 
-Yes. Because of resource segregation, the multiple experiments launched by `milarun` in parallel will not fight for resources, leading to reduced variance and different performance characteristics (some tests may do a little better, some others may do a little worse). According to our experiments, using the cgroup setup can increase the score by 2 to 3%.
+Yes. Because of resource segregation, the multiple experiments launched by `milarun` in parallel will not fight for resources, leading to reduced variance and different performance characteristics (some tests do a little better, but most do a little worse). According to our experiments, using the cgroup setup increases the score by about 1%.
 
 **Can we run the benchmarks without the cgroups?**
 
