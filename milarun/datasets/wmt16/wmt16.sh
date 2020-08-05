@@ -2,6 +2,7 @@
 OUTPUT_DIR=$1
 SCRIPT_PATH=$2
 OUTPUT_DIR_DATA="${OUTPUT_DIR}/data"
+BUCKET=http://milabench.s3-website.us-east-2.amazonaws.com/data/wmt16
 
 echo $OUTPUT_DIR
 echo $SCRIPT_PATH
@@ -9,22 +10,23 @@ echo $SCRIPT_PATH
 mkdir -p $OUTPUT_DIR_DATA
 
 echo "Downloading Europarl v7. This may take a while..."
-wget -nc http://www.statmt.org/europarl/v7/de-en.tgz -O ${OUTPUT_DIR_DATA}/europarl-v7-de-en.tgz
+wget -nc -O ${OUTPUT_DIR_DATA}/europarl-v7-de-en.tgz \
+    ${BUCKET}/europarl-v7-de-en.tgz
 
 echo "Downloading Common Crawl corpus. This may take a while..."
 wget -nc -O ${OUTPUT_DIR_DATA}/common-crawl.tgz \
-    http://www.statmt.org/wmt13/training-parallel-commoncrawl.tgz
+    ${BUCKET}/training-parallel-commoncrawl.tgz
 
 echo "Downloading News Commentary v11. This may take a while..."
 wget -nc -O ${OUTPUT_DIR_DATA}/nc-v11.tgz \
-    http://data.statmt.org/wmt16/translation-task/training-parallel-nc-v11.tgz
+    ${BUCKET}/training-parallel-nc-v11.tgz
 
 echo "Downloading dev/test sets"
 wget -nc -O  ${OUTPUT_DIR_DATA}/dev.tgz \
-    http://data.statmt.org/wmt16/translation-task/dev.tgz
+    ${BUCKET}/translation-task-dev.tgz
 
 wget -nc -O  ${OUTPUT_DIR_DATA}/test.tgz \
-    http://data.statmt.org/wmt16/translation-task/test.tgz
+    ${BUCKET}/translation-task-test.tgz
 
 # Extract everything
 echo "Extracting all files..."
