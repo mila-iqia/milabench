@@ -10,28 +10,59 @@ You can either build a Docker image or install the benchmark software manually.
 
 ## Docker
 
-**Build**
+### Build
 
 ```bash
-docker build -t my_docker -f Dockerfile .
+docker build -t milabench_img -f Dockerfile .
 ```
 
 The build might seem to hang at `poetry install`, but just wait it out.
 
-**Run: Important:** Because the benchmarks use cgroups, it is necessary to run the image in privileged mode, e.g.:
+
+### Flags
+
+The container should be run with the following flags, with appropriate adjustments to the image name or the path to mount:
 
 ```bash
 # Interactive session (need to specify bash)
-sudo docker run --cap-add=SYS_ADMIN --security-opt=apparmor:unconfined -it my_docker bash
+sudo docker run --cap-add=SYS_ADMIN --security-opt=apparmor:unconfined --mount type=bind,source=/localnvme/milabench,target=/root/milabench --gpus all --shm-size=16GB -it milabench_img bash
 
 # Run
-sudo docker run --cap-add=SYS_ADMIN --security-opt=apparmor:unconfined my_docker milarun
+sudo docker run --cap-add=SYS_ADMIN --security-opt=apparmor:unconfined --mount type=bind,source=/localnvme/milabench,target=/root/milabench --gpus all --shm-size=16GB milabench_img milarun ...
 ```
 
-The entry point for the image will set up the cgroups automatically (for testing purposes, passing `--no-cgexec` to the `milarun jobs` command will deactivate the feature, which lets you run the image in user mode).
+(Note: `/localnvme/milabench` is just a path to demonstrate where we expect the data to be physically located, the only thing that matters is that this is on the NVMe drive.)
+
+Further explanations/precisions:
+
+* When using Docker, the data directory for the test, and the output directory for the results, should be outside of the image and mounted using `--mount`.
+  * The source *must* be physically located on the local NVMe drive. The path `/localnvme/milabench` is arbitrary, it can be anything as long as it is on the aforementioned drive.
+  * The target should be `/root/milabench`. This is where the scripts expect to find the data, and this is where they will save the results.
+* Because the benchmarks use cgroups, it is necessary to run the image in privileged mode.
+  * The entry point for the image will set up the cgroups automatically.
+  * For debugging purposes only: passing `--no-cgexec` to the `milarun jobs` command will deactivate the feature, which lets you run the image in user mode.
+* In order for some tests to run it may be necessary to set a sufficient size for `/dev/shm` using `--shm-size`. We're not certain what the minimal size is exactly but 16GB should work.
+
+
+### Download the datasets
+
+In the container, run:
+
+```bash
+scripts/download.sh
+```
+
+Verify that the dataset is indeed downloaded into the `data/` subdirectory of the mounted directory.
+
+### Benchmarks and reports
+
+If everything went well, refer to the Benchmarks and Report sections further down.
 
 
 ## Manual install
+
+Skip this section if you are using the Docker set up described above.
+
 
 1. Install apt requirements
 
@@ -73,35 +104,47 @@ Note: it is also possible to use `conda` (this is what the Docker image does). I
 sudo scripts/cgroup_setup.sh
 ```
 
+
+5. Set up environment variables
+
+The benchmarks will need the following two environment variables: `$MILARUN_DATAROOT` is where the datasets will be located, and they must point to a directory which physically resides on the machine's local NVMe drive. `$MILARUN_OUTROOT` is where the results directories will be saved.
+
+For example:
+
+```bash
+export MILARUN_DATAROOT=~/milabench/data/
+export MILARUN_OUTROOT=~/milabench/
+```
+
+The above is equivalent to giving the command line options `-d ~/milabench/data/ -o ~/milabench/results-$(date '+%Y-%m-%d.%H:%M:%S')` to `milarun`.
+
+
+5. Download the datasets
+
+Once the environment variables are set, run `poetry shell` to activate the virtualenv. Then, run:
+
+```bash
 # Download the datasets
-
-First run `poetry shell` to activate the virtualenv. Download the datasets (this might take a while).
-
-```bash
-# Download the data into ~/data, or a directory of your choosing
-scripts/download.sh -d $DATAROOT
+scripts/download.sh
 ```
 
-It is important to run this script before the benchmarks. This will use ~50 GiB of storage. You can run the command using the Docker image, with `$DATAROOT` pointing to a mounted volume on the container.
 
+# Benchmarks
 
-# Run the benchmarks
-
-First run `poetry shell` to activate the virtualenv. Alternatively, you can prefix calls to `milarun` with `poetry run`.
+**Note:** Unless you are running Docker, which has an entry script that does this for you, you must first run `poetry shell` to activate the virtualenv. Alternatively, you can prefix calls to `milarun` with `poetry run`.
 
 ```bash
-milarun jobs profiles/standard.json -d $DATAROOT -o $OUTDIR
+milarun jobs profiles/standard.json
 
-# To repeat 10 times
-milarun jobs profiles/standard.json -d $DATAROOT -o $OUTDIR --repeat 10
+# To repeat 5 times
+milarun jobs profiles/standard.json --repeat 5
 ```
 
-We suggest outputting to a different results directory for each run, for example by embedding the date, like so:
+This will put the output into `$MILARUN_OUTROOT/results-$(date '+%Y-%m-%d.%H:%M:%S')` (if using Docker, `$MILARUN_OUTROOT` is set to `/root/milabench` which should correspond to the directory you mounted). When debugging, it may be less cumbersome to specify a directory with `-o`:
 
 ```bash
-export DATAROOT=~/data/
-export OUTDIR=~/results-$(date '+%Y-%m-%d.%H:%M:%S')/
-milarun jobs profiles/standard.json -d $DATAROOT -o $OUTDIR
+# Note that this bypasses $MILARUN_OUTROOT entirely
+milarun jobs profiles/standard.json -o test-results
 ```
 
 The test results will be stored as json files in the specified outdir, one file for each test. A result will have a name such as `standard.vae.J0.0.20200106-160000-123456.json`, which means the test named `vae` from the jobs file `profiles/standard.json`, run 0, device 0, and then the date and time. If the tests are run 10 times and there are 8 GPUs, you should get 80 of these files for each test (`J0.0` through `J9.7`). If a test fails, the filename will also contain the word `FAIL`.
@@ -111,11 +154,11 @@ The test results will be stored as json files in the specified outdir, one file 
 Use the `--name` flag to run a specific test (look in `profiles/standard.json` for the available names). You can also change its parameters by putting extra arguments after the double dash separator `--`.
 
 ```bash
-milarun jobs profiles/standard.json -d $DATAROOT --name vae
-milarun jobs profiles/standard.json -d $DATAROOT --name vae -- --batch-size 32 --max-count 3000
+milarun jobs profiles/standard.json --name vae
+milarun jobs profiles/standard.json --name vae -- --batch-size 32 --max-count 3000
 ```
 
-Note that the `-d` and `-o` flags go before the `--`, because they are parameters to milarun, not parameters to the test. If `-o` is not specified, the JSON will be output on stdout.
+Note that `--name` (and `-d` and `-o` if using these flags) go before the `--`, because they are parameters to milarun, not parameters to the test.
 
 All tests take a `--max-count` parameter which controls for how long they run.
 
@@ -133,8 +176,10 @@ milarun rerun results/standard.vae.J0.0.20200106-160000-123456.json -- --batch-s
 Instead of using a jobs file, you can run a test directly with `milarun run`, like so:
 
 ```bash
-milarun run milabench.models.polynome:main -d $DATAROOT -o polynome-results.json -- --poly-degree 6 --batch-size 1024 --max-count 1_000_000
+milarun run milabench.models.polynome:main -o polynome-results.json -- --poly-degree 6 --batch-size 1024 --max-count 1_000_000
 ```
+
+Here we only have a single result rather than a directory with multiple results, so we can use the `-o` option to save in a specific `json` file.
 
 ### Benchmarks for lower memory
 
@@ -149,16 +194,18 @@ cp profiles/standard.json profiles/tweaked.json
 
 # modify tweaked.json to reflect the device capacity
 
-milarun jobs profiles/tweaked.json -d $DATAROOT -o $OUTDIR
+milarun jobs profiles/tweaked.json
 ```
 
 # Report the results
 
-This will print out a summary of the results as a table, as well as a global score, which is the weighted geometric mean of the adjusted test scores (the `perf_adj` column) using the provided weights file, and will also output a prettier HTML file (note: all arguments save for `$OUTDIR` are optional).
+This will print out a summary of the results as a table, as well as a global score, which is the weighted geometric mean of the adjusted test scores (the `perf_adj` column) using the provided weights file, and will also output a prettier HTML file (note: all arguments save for `RESULTS_DIR` are optional).
 
 ```bash
-milarun report $OUTDIR --html results.html --weights weights/standard.json
+milarun report RESULTS_DIR --html results.html --weights weights/standard.json
 ```
+
+`RESULTS_DIR` should be the path to the results to analyze, e.g. `/root/milabench/results-2020-02-22.22:22:22`. Be careful to use the right directory, if you have several.
 
 Notes:
 
@@ -172,13 +219,13 @@ Notes:
 You may compare with a baseline using the `--compare` argument:
 
 ```bash
-milarun report $OUTDIR --compare baselines/standard/v100.json --html results.html
+milarun report RESULTS_DIR --compare baselines/standard/v100.json --html results.html
 ```
 
 A baseline can be produced with `milarun summary`:
 
 ```bash
-milarun summary $OUTDIR -o our-config.json
+milarun summary RESULTS_DIR -o our-config.json
 ```
 
 You will get a comparison for each test as well as a comparison of the scores in the form of performance ratios (>1.00 = you are doing better than the baseline, <1.00 = you are doing worse).
@@ -188,10 +235,10 @@ The command also accepts a `--price` argument (in dollars) to compute the price/
 
 ### GPU comparisons
 
-The `--compare-gpus` option will provide more information in the form of comparison matrices for individual GPUs (this information will be more reliable if there are multiple runs of the suite, for example if you use `milarun jobs profiles/standard.json -o $OUTDIR --repeat 10`).
+The `--compare-gpus` option will provide more information in the form of comparison matrices for individual GPUs (this information will be more reliable if there are multiple runs of the suite, for example if you use `milarun jobs profiles/standard.json -o RESULTS_DIR --repeat 10`).
 
 ```bash
-milarun report $OUTDIR --compare-gpus
+milarun report RESULTS_DIR --compare-gpus
 ```
 
 
@@ -204,7 +251,7 @@ milarun report $OUTDIR --compare-gpus
 
 * Some tasks are allowed to use the machine entirely (`scaling`)
 
-* `milarun report $OUTDIR` can be used at any time to check current results.
+* `milarun report RESULTS_DIR` can be used at any time to check current results.
 
 * Stop a run that is in progress
     * `kill -9 $(ps | grep milarun | awk '{print $1}' | paste -s -d ' ')`
@@ -278,6 +325,13 @@ These warnings can be ignored.
 **What is standard.scaling.1 to standard.scaling.8 in the report?**
 
 The scaling test performs an experiment on 1 GPU, then 2 GPUs, up to N GPUs. These have obviously different performance characteristics and therefore cannot be aggregated, so `standard.scaling.1` represents the results on 1 GPU,  `standard.scaling.2` represents the results of the algorithm distributed on 2 GPUs, and so on.
+
+
+**I get crashes with massive core dumps.**
+
+If using Docker, something like this has happened when there is insufficient space available in `/dev/shm`, which you can increase with `--shm-size` on the docker command.
+
+As a small hack, you can try to run the `milarun` command from a directory that's in the mounted drive, e.g. from `~/milabench/workdir` so that the core dumps are written over there and don't fill up the cointainer.
 
 
 # Details
