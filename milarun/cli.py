@@ -70,7 +70,16 @@ def _compute_outdir(out):
         dirname = now.strftime("results-%Y-%m-%d.%H:%M:%S")
         out = os.path.join(outroot, dirname)
 
-    return out and os.path.realpath(os.path.expanduser(out))
+    out = out and os.path.realpath(os.path.expanduser(out))
+    if out is None:
+        print(
+            "milarun: error: no output directory specified, ",
+            "please use --out/-o or set $MILARUN_OUTROOT",
+            file=sys.stderr
+        )
+        sys.exit(1)
+
+    return out
 
 
 def command_run(subargv):
