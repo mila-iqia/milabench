@@ -1,4 +1,5 @@
 from coleo import auto_cli, config, Argument, ConfigFile, default, tooled
+from datetime import datetime
 from types import SimpleNamespace as NS
 from .lib.experiment import Experiment
 from .lib.helpers import resolve
@@ -62,6 +63,16 @@ def command_dataset(subargv):
         dataset.download()
 
 
+def _compute_outdir(out):
+    outroot = os.getenv("MILARUN_OUTROOT")
+    if out is None and outroot is not None:
+        now = datetime.now()
+        dirname = now.strftime("results-%Y-%m-%d.%H:%M:%S")
+        out = os.path.join(outroot, dirname)
+
+    return out and os.path.realpath(os.path.expanduser(out))
+
+
 def command_run(subargv):
     """Run a benchmark.
 
@@ -77,7 +88,7 @@ def command_run(subargv):
     # [metavar: PATH]
     # [alias: -o]
     out: Argument = default(None)
-    out = out and os.path.realpath(os.path.expanduser(out))
+    out = _compute_outdir(out)
 
     # Name of the experiment (optional)
     experiment_name: Argument = default(None)
@@ -283,6 +294,7 @@ def command_jobs(subargv):
     # Directory where to put the results
     # [alias: -o]
     out: Argument & os.path.abspath = default(None)
+    out = _compute_outdir(out)
 
     # Name(s) of the job to run
     # [nargs: +]
