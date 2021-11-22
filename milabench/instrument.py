@@ -64,7 +64,7 @@ def dash(runner, gv):
 
 
 def stop(runner, gv):
-    n = runner.config.niters
+    n = int(runner.config.stop)
     gv["?metric"].count(scan=True).map(
         lambda x: dict(progress=x, total=n, descr="Progress", silent=True)
     ).give()

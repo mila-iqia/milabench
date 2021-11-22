@@ -62,18 +62,21 @@ def split_script(script):
     return new_module, found
 
 
-def resolve(mod, default_field=None):
+def resolve(config, mod, default_field=None):
     if ":" in mod:
         mod, field = mod.split(":", 1)
     elif default_field is not None:
         field = default_field
     else:
         mod, field = "milabench.instrument", mod
+    if default_field is None and "=" in field:
+        field, arg = field.split("=", 1)
+        config[field] = arg
     return mod, field
 
 
-def fetch(mod, default_field=None):
-    mod, field = resolve(mod, default_field)
+def fetch(config, mod, default_field=None):
+    mod, field = resolve(config, mod, default_field)
 
     if os.path.exists(mod):
         glb = runpy.run_path(mod)
@@ -106,7 +109,7 @@ def main():
 
     # Configuration
     # [alias: -c]
-    config: Option & configuration = default(None)
+    config: Option & configuration = default({})
 
     # Path to the script
     # [positional]
@@ -116,7 +119,7 @@ def main():
     # [positional: --]
     args: Option
 
-    script, field = resolve(script, "__main__")
+    script, field = resolve(None, script, "__main__")
 
     node, mainsection = split_script(script)
     mod = ModuleType("__main__")
@@ -133,6 +136,6 @@ def main():
     return BenchmarkRunner(
         fn=glb[field],
         config=config,
-        bridge=bridge and fetch(bridge),
-        instruments=[fetch(inst) for inst in instrumenter],
+        bridge=bridge and fetch(config, bridge),
+        instruments=[fetch(config, inst) for inst in instrumenter],
     )
