@@ -88,7 +88,7 @@ def fetch(config, mod, default_field=None):
 
 
 def cli():
-    runner = run_cli(main)
+    runner = run_cli(Main)
     runner()
 
 
@@ -97,45 +97,46 @@ def _runmain(script, node, glb):
     return lambda: exec(code, glb, glb)
 
 
-def main():
-    # Instrumenting functions
-    # [alias: -i]
-    # [action: append]
-    instrumenter: Option = default([])
+class Main:
+    def run():
+        # Instrumenting functions
+        # [alias: -i]
+        # [action: append]
+        instrumenter: Option = default([])
 
-    # Bridge
-    # [alias: -b]
-    bridge: Option = default(None)
+        # Bridge
+        # [alias: -b]
+        bridge: Option = default(None)
 
-    # Configuration
-    # [alias: -c]
-    config: Option & configuration = default({})
+        # Configuration
+        # [alias: -c]
+        config: Option & configuration = default({})
 
-    # Path to the script
-    # [positional]
-    script: Option
+        # Path to the script
+        # [positional]
+        script: Option
 
-    # Arguments to the script
-    # [positional: --]
-    args: Option
+        # Arguments to the script
+        # [positional: --]
+        args: Option
 
-    script, field = resolve(None, script, "__main__")
+        script, field = resolve(None, script, "__main__")
 
-    node, mainsection = split_script(script)
-    mod = ModuleType("__main__")
-    glb = vars(mod)
-    glb["__file__"] = script
-    sys.modules["__main__"] = mod
-    code = compile(node, script, "exec")
-    exec(code, glb, glb)
-    glb["__main__"] = _runmain(script, mainsection, glb)
+        node, mainsection = split_script(script)
+        mod = ModuleType("__main__")
+        glb = vars(mod)
+        glb["__file__"] = script
+        sys.modules["__main__"] = mod
+        code = compile(node, script, "exec")
+        exec(code, glb, glb)
+        glb["__main__"] = _runmain(script, mainsection, glb)
 
-    sys.argv = [script, *args]
-    sys.path.insert(0, os.path.abspath(os.curdir))
+        sys.argv = [script, *args]
+        sys.path.insert(0, os.path.abspath(os.curdir))
 
-    return BenchmarkRunner(
-        fn=glb[field],
-        config=config,
-        bridge=bridge and fetch(config, bridge),
-        instruments=[fetch(config, inst) for inst in instrumenter],
-    )
+        return BenchmarkRunner(
+            fn=glb[field],
+            config=config,
+            bridge=bridge and fetch(config, bridge),
+            instruments=[fetch(config, inst) for inst in instrumenter],
+        )
