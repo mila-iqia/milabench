@@ -1,9 +1,13 @@
+import os
+import sys
 import time
 from contextlib import contextmanager
 from queue import Empty, Queue
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 
 from giving import give, given
+
+from .utils import exec_node, split_script
 
 
 class StopProgram(Exception):
@@ -47,3 +51,23 @@ class BenchmarkRunner:
 
         except StopProgram:
             pass
+
+
+def make_runner(script, field, args, bridge, instruments):
+    node, mainsection = split_script(script)
+    mod = ModuleType("__main__")
+    glb = vars(mod)
+    glb["__file__"] = script
+    sys.modules["__main__"] = mod
+    code = compile(node, script, "exec")
+    exec(code, glb, glb)
+    glb["__main__"] = exec_node(script, mainsection, glb)
+
+    sys.argv = [script, *args]
+
+    return BenchmarkRunner(
+        fn=glb[field],
+        config={},
+        bridge=bridge,
+        instruments=instruments,
+    )

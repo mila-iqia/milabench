@@ -63,8 +63,9 @@ def dash(runner, gv):
                 table.add_row(k, rows[k])
 
 
-def stop(runner, gv):
-    n = int(runner.config.stop)
+def stop(runner, gv, *, arg):
+    assert arg is not None
+    n = arg
     gv["?metric"].count(scan=True).map(
         lambda x: dict(progress=x, total=n, descr="Progress", silent=True)
     ).give()
