@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from queue import Empty, Queue
 from types import ModuleType, SimpleNamespace
 
@@ -15,10 +15,9 @@ class StopProgram(Exception):
 
 
 class BenchmarkRunner:
-    def __init__(self, fn, config, bridge, instruments):
+    def __init__(self, fn, bridges, instruments):
         self.fn = fn
-        self.config = SimpleNamespace(**config) if isinstance(config, dict) else config
-        self.bridge = bridge or self._null_bridge
+        self.bridges = bridges
         self.instruments = instruments
         self._queue = Queue()
 
@@ -43,9 +42,12 @@ class BenchmarkRunner:
                         except Empty:
                             break
 
-                with self.bridge(self, gv):
-                    for instrument in self.instruments:
-                        instrument(self, gv)
+                with ExitStack() as stack:
+                    for fn in [*self.bridges, *self.instruments]:
+                        ctx = fn(self, gv)
+                        if hasattr(ctx, "__enter__"):
+                            stack.enter_context(ctx)
+
                     with give.wrap("run"):
                         self.fn()
 
@@ -53,7 +55,7 @@ class BenchmarkRunner:
             pass
 
 
-def make_runner(script, field, args, bridge, instruments):
+def make_runner(script, field, args, bridges, instruments):
     node, mainsection = split_script(script)
     mod = ModuleType("__main__")
     glb = vars(mod)
@@ -67,7 +69,6 @@ def make_runner(script, field, args, bridge, instruments):
 
     return BenchmarkRunner(
         fn=glb[field],
-        config={},
-        bridge=bridge,
+        bridges=bridges,
         instruments=instruments,
     )

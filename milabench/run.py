@@ -68,10 +68,10 @@ def _get_multipack():
     return MultiPackage(objects)
 
 
-def simple_bridge(selector):
+def simple_bridge(*selectors):
     @contextmanager
     def bridge(runner, gv):
-        with probing(selector) as prb:
+        with probing(*selectors) as prb:
             prb.give()
             yield
 
@@ -87,11 +87,8 @@ class Main:
 
         # Bridge
         # [alias: -b]
+        # [action: append]
         bridge: Option = default(None)
-
-        # Configuration
-        # [alias: -c]
-        config: Option & configuration = default({})
 
         # Path to the script
         # [positional]
@@ -103,17 +100,14 @@ class Main:
 
         script, field, _ = resolve(script, "__main__")
 
-        if bridge and ">" in bridge:
-            bridge = simple_bridge(bridge)
-        elif bridge:
-            bridge = fetch(bridge)
+        bridges = [simple_bridge(b) if ">" in b else fetch(b) for b in bridge]
 
         return make_runner(
             script=script,
             field=field,
             args=args,
             instruments=[fetch(inst) for inst in instrumenter],
-            bridge=bridge,
+            bridges=bridges,
         )
 
     def install():

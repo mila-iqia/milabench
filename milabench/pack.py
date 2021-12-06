@@ -74,6 +74,6 @@ class Package:
             field=field,
             args=args,
             instruments=instruments,
-            bridge=self.bridge,
+            bridge=[self.bridge],
         )
         runner()
