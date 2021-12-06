@@ -60,6 +60,9 @@ class Package:
         args = [str(x) for x in args]
         return self._nox_session.run(*args, **kwargs, external=True)
 
+    def bridge(self, runner, gv):
+        pass
+
     def run_script(self, script, args=(), instruments=None, field="__main__"):
         if instruments is None:
             instruments = self.config["instruments"]
@@ -73,7 +76,6 @@ class Package:
             script=script,
             field=field,
             args=args,
-            instruments=instruments,
-            bridge=[self.bridge],
+            instruments=[self.bridge, *instruments],
         )
         runner()

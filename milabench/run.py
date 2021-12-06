@@ -2,6 +2,7 @@ import os
 import runpy
 import sys
 from contextlib import contextmanager
+from functools import partial
 
 from coleo import Option
 from coleo import config as configuration
@@ -83,12 +84,16 @@ class Main:
         # Instrumenting functions
         # [alias: -i]
         # [action: append]
-        instrumenter: Option = default([])
+        instrument: Option = default([])
 
-        # Bridge
-        # [alias: -b]
+        # Probe(s) to bridge data collection
+        # [alias: -p]
         # [action: append]
-        bridge: Option = default(None)
+        probe: Option = default([])
+
+        # Configuration file
+        # [alias: -c]
+        config: Option & configuration = default(None)
 
         # Path to the script
         # [positional]
@@ -100,14 +105,20 @@ class Main:
 
         script, field, _ = resolve(script, "__main__")
 
-        bridges = [simple_bridge(b) if ">" in b else fetch(b) for b in bridge]
+        instruments = [fetch(inst) for inst in instrument]
+        if config:
+            for name, arg in config.get("instruments", {}).items():
+                instruments.append(partial(fetch(name), arg=arg))
+            probe += config.get("probes", [])
+
+        if probe:
+            instruments.insert(0, simple_bridge(*probe))
 
         return make_runner(
             script=script,
             field=field,
             args=args,
-            instruments=[fetch(inst) for inst in instrumenter],
-            bridges=bridges,
+            instruments=instruments,
         )
 
     def install():

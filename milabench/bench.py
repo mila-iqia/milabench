@@ -15,19 +15,14 @@ class StopProgram(Exception):
 
 
 class BenchmarkRunner:
-    def __init__(self, fn, bridges, instruments):
+    def __init__(self, fn, instruments):
         self.fn = fn
-        self.bridges = bridges
         self.instruments = instruments
         self._queue = Queue()
 
     def give(self, **data):
         data["#queued"] = time.time()
         self._queue.put(data)
-
-    @contextmanager
-    def _null_bridge(self, _, __):
-        yield
 
     def __call__(self):
         try:
@@ -43,7 +38,7 @@ class BenchmarkRunner:
                             break
 
                 with ExitStack() as stack:
-                    for fn in [*self.bridges, *self.instruments]:
+                    for fn in self.instruments:
                         ctx = fn(self, gv)
                         if hasattr(ctx, "__enter__"):
                             stack.enter_context(ctx)
@@ -55,7 +50,7 @@ class BenchmarkRunner:
             pass
 
 
-def make_runner(script, field, args, bridges, instruments):
+def make_runner(script, field, args, instruments):
     node, mainsection = split_script(script)
     mod = ModuleType("__main__")
     glb = vars(mod)
@@ -67,8 +62,4 @@ def make_runner(script, field, args, bridges, instruments):
 
     sys.argv = [script, *args]
 
-    return BenchmarkRunner(
-        fn=glb[field],
-        bridges=bridges,
-        instruments=instruments,
-    )
+    return BenchmarkRunner(fn=glb[field], instruments=instruments)
