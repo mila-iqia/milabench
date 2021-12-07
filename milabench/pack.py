@@ -1,10 +1,11 @@
 from argparse import Namespace as NS
 from sys import version_info as pyv
 
+from giving import give
 from nox.sessions import Session, SessionRunner
 
-from .bench import make_runner
 from .fs import XPath
+from .runner import make_runner
 from .utils import extract_instruments
 
 

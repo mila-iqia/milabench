@@ -6,14 +6,14 @@ from coleo import Option
 from coleo import config as configuration
 from coleo import default, run_cli, tooled
 
-from .bench import make_runner
 from .fs import XPath
 from .merge import self_merge
 from .multi import MultiPackage
+from .runner import make_runner
 from .utils import extract_instruments, fetch, resolve, simple_bridge
 
 
-def cli():
+def main():
     sys.path.insert(0, os.path.abspath(os.curdir))
     runner = run_cli(Main)
     if runner is not None:

@@ -1,4 +1,3 @@
-import os
 import sys
 import time
 from contextlib import ExitStack, contextmanager
@@ -14,7 +13,7 @@ class StopProgram(Exception):
     """Raise to stop the benchmark."""
 
 
-class BenchmarkRunner:
+class Runner:
     StopProgram = StopProgram
 
     def __init__(self, fn, instruments):
@@ -72,4 +71,4 @@ def make_runner(script, field, args, instruments):
 
     sys.argv = [script, *args]
 
-    return BenchmarkRunner(fn=glb[field], instruments=instruments)
+    return Runner(fn=glb[field], instruments=instruments)
