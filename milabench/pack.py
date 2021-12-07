@@ -5,7 +5,7 @@ from nox.sessions import Session, SessionRunner
 
 from .bench import make_runner
 from .fs import XPath
-from .utils import fetch
+from .utils import extract_instruments
 
 
 class Package:
@@ -63,11 +63,9 @@ class Package:
     def bridge(self, runner, gv):
         pass
 
-    def run_script(self, script, args=(), instruments=None, field="__main__"):
-        if instruments is None:
-            instruments = self.config["instruments"]
-
-        instruments = [fetch(inst, arg=param) for inst, param in instruments.items()]
+    def run_script(self, script, args=(), instruments={}, field="__main__"):
+        instruments = extract_instruments({"instruments": instruments})
+        instruments += extract_instruments(self.config)
 
         if not XPath(script).is_absolute():
             script = str(self.dirs.code / script)

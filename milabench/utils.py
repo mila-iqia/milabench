@@ -3,7 +3,10 @@ import importlib
 import json
 import os
 import runpy
+from contextlib import contextmanager
 from functools import partial
+
+from ptera import probing
 
 
 class Named:
@@ -36,7 +39,11 @@ def resolve(mod, default_field=None, may_have_arg=True):
         mod, field = "milabench.instrument", mod
     if may_have_arg and "=" in field:
         field, arg = field.split("=", 1)
-        arg = json.loads(arg)
+        try:
+            arg = json.loads(arg)
+        except json.decoder.JSONDecodeError:
+            # Keep arg as a string if it is not valid json
+            pass
     else:
         arg = MISSING
     return mod, field, arg
@@ -58,6 +65,30 @@ def fetch(mod, default_field=None, arg=MISSING):
         return partial(glb[field], arg=arg)
     else:
         return glb[field]
+
+
+def simple_bridge(*selectors):
+    @contextmanager
+    def bridge(runner, gv):
+        with probing(*selectors) as prb:
+            prb.give()
+            yield
+
+    return bridge
+
+
+def extract_instruments(config):
+    probes = config.get("probes", [])
+    if probes:
+        instruments = [simple_bridge(*probes)]
+    else:
+        instruments = []
+
+    instruments += [
+        partial(fetch(name), arg=arg)
+        for name, arg in config.get("instruments", {}).items()
+    ]
+    return instruments
 
 
 def split_script(script):

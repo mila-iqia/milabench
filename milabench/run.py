@@ -1,19 +1,16 @@
 import os
 import runpy
 import sys
-from contextlib import contextmanager
-from functools import partial
 
 from coleo import Option
 from coleo import config as configuration
 from coleo import default, run_cli, tooled
-from ptera import probing
 
 from .bench import make_runner
 from .fs import XPath
 from .merge import self_merge
 from .multi import MultiPackage
-from .utils import fetch, resolve
+from .utils import extract_instruments, fetch, resolve, simple_bridge
 
 
 def cli():
@@ -69,16 +66,6 @@ def _get_multipack():
     return MultiPackage(objects)
 
 
-def simple_bridge(*selectors):
-    @contextmanager
-    def bridge(runner, gv):
-        with probing(*selectors) as prb:
-            prb.give()
-            yield
-
-    return bridge
-
-
 class Main:
     def run():
         # Instrumenting functions
@@ -93,7 +80,7 @@ class Main:
 
         # Configuration file
         # [alias: -c]
-        config: Option & configuration = default(None)
+        config: Option & configuration = default({})
 
         # Path to the script
         # [positional]
@@ -105,11 +92,8 @@ class Main:
 
         script, field, _ = resolve(script, "__main__")
 
-        instruments = [fetch(inst) for inst in instrument]
-        if config:
-            for name, arg in config.get("instruments", {}).items():
-                instruments.append(partial(fetch(name), arg=arg))
-            probe += config.get("probes", [])
+        instruments = extract_instruments(config)
+        instruments += [fetch(inst) for inst in instrument]
 
         if probe:
             instruments.insert(0, simple_bridge(*probe))

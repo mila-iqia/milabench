@@ -66,13 +66,13 @@ def dash(runner, gv):
 def stop(runner, gv, *, arg):
     assert arg is not None
     n = arg
+    gv["?metric"].skip(n).subscribe(runner.stop)
     gv["?metric"].count(scan=True).map(
         lambda x: dict(progress=x, total=n, descr="Progress", silent=True)
     ).give()
-    gv["?metric"].skip(n).fail(exc_type=StopProgram)
 
 
-def timings(runner, gv):
+def timings(runner, gv, *, arg):
     times = (
         gv["?metric"]
         .map(lambda _: time.time())

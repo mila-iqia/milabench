@@ -3,7 +3,7 @@ import sys
 import time
 from contextlib import ExitStack, contextmanager
 from queue import Empty, Queue
-from types import ModuleType, SimpleNamespace
+from types import ModuleType
 
 from giving import give, given
 
@@ -15,21 +15,31 @@ class StopProgram(Exception):
 
 
 class BenchmarkRunner:
+    StopProgram = StopProgram
+
     def __init__(self, fn, instruments):
         self.fn = fn
         self.instruments = instruments
         self._queue = Queue()
 
-    def give(self, **data):
+    def stop(self, message=None):
+        """Stop the program."""
+        raise StopProgram(message)
+
+    def queue(self, **data):
+        """Give data into a queue, typically from other threads."""
         data["#queued"] = time.time()
         self._queue.put(data)
 
     def __call__(self):
+        """Run the program."""
         try:
             with given() as gv:
 
                 @gv.where("!#queued").subscribe
                 def _(_):
+                    # Insert the queued data into the given() stream
+                    # whenever other data comes in
                     while True:
                         try:
                             data = self._queue.get_nowait()
