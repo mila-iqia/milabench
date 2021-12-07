@@ -1,6 +1,9 @@
 import json
 import subprocess
+import time
 from copy import deepcopy
+
+from giving import give, given
 
 from .merge import merge
 
@@ -42,30 +45,64 @@ def per_gpu(cfg):
 def njobs(cfg, n):
     for i in range(n):
         gcfg = {
-            "tag": [f"X{i}"],
+            "tag": [f"{i}"],
             "job-number": i,
         }
         yield clone_with(cfg, gcfg)
+
+
+def multiread(pipes):
+    import os
+    import time
+
+    for (_, __, p) in pipes.values():
+        os.set_blocking(p.stdout.fileno(), False)
+
+    while pipes:
+        for tag, (pack, run, proc) in list(pipes.items()):
+            while True:
+                line = proc.stdout.readline()
+                if not line:
+                    if proc.poll() is not None:
+                        # We do not read a line and the process is over
+                        del pipes[tag]
+                    break
+                try:
+                    data = json.loads(line.decode("utf8"))
+                except json.JSONDecodeError:
+                    data = {"#unknown": line}
+                data["#pack"] = pack
+                data["#run"] = run
+                give(**data)
+        time.sleep(0.1)
 
 
 class MultiPackage:
     def __init__(self, packs):
         self.packs = packs
 
-    def do_install(self):
-        for name, pack in self.packs.items():
-            pack.do_install()
+    def do_install(self, dash):
+        with given() as gv, dash(gv):
+            for name, pack in self.packs.items():
+                pack.do_install()
 
-    def do_run(self):
-        for name, pack in self.packs.items():
-            processes = []
-            cfg = pack.config
-            plan = deepcopy(cfg["plan"])
-            method = get_planning_method(plan.pop("method"))
-            for run in method(cfg, **plan):
-                process = subprocess.Popen(
-                    ["milarun", "job", json.dumps(run)], env=pack._nox_session.env
-                )
-                processes.append(process)
-            for p in processes:
-                p.wait()
+    def do_run(self, dash, report):
+        with given() as gv, dash(gv), report(gv):
+            for name, pack in self.packs.items():
+                processes = {}
+                cfg = pack.config
+                plan = deepcopy(cfg["plan"])
+                method = get_planning_method(plan.pop("method"))
+                for run in method(cfg, **plan):
+                    tag = ".".join(run["tag"])
+                    give(**{"#pack": pack, "#run": run, "#start": time.time()})
+                    process = subprocess.Popen(
+                        ["milarun", "job", json.dumps(run)],
+                        env=pack._nox_session.env,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                    )
+                    assert tag not in processes
+                    processes[tag] = (pack, run, process)
+
+                multiread(processes)

@@ -1,10 +1,18 @@
+import datetime
+import itertools
+import json
 import os
+import random
 import runpy
 import sys
+from contextlib import contextmanager
+from functools import partial
 
 from coleo import Option
 from coleo import config as configuration
 from coleo import default, run_cli, tooled
+from giving import ObservableProxy
+from giving import operators as op
 
 from .fs import XPath
 from .merge import self_merge
@@ -66,6 +74,64 @@ def _get_multipack():
     return MultiPackage(objects)
 
 
+@contextmanager
+def _simple_dash(gv):
+    @gv.subscribe
+    def _(data):
+        data = dict(data)
+        run = data.pop("#run")
+        pack = data.pop("#pack")
+        print(
+            ".".join(run["tag"]),
+            json.dumps(data),
+        )
+
+    yield
+
+
+vowels = list("aeiou")
+consonants = list("bdfgjklmnprstvz")
+syllables = ["".join(letters) for letters in itertools.product(consonants, vowels)]
+
+
+def blabla(n=4):
+    return "".join([random.choice(syllables) for _ in range(n)])
+
+
+@contextmanager
+def _simple_report(gv):
+    def _to_line(data):
+        data = dict(data)
+        data.pop("#run")
+        data.pop("#pack")
+        return json.dumps(data) + "\n"
+
+    now = str(datetime.datetime.today()).replace(" ", "_")
+    bla = blabla()
+    rundir = f"{bla}.{now}"
+
+    grouped = gv.group_by(lambda data: tuple(data["#run"]["tag"]))
+
+    @grouped.subscribe
+    def _(stream):
+        stream = ObservableProxy(stream)
+
+        batches = stream.buffer_with_time(1.0).filter(lambda entries: len(entries) > 0)
+
+        @batches.subscribe
+        def __(entries):
+            d0 = entries[0]
+            tag = ".".join(d0["#run"]["tag"])
+            base = d0["#pack"].dirs.runs / rundir
+            os.makedirs(base, exist_ok=True)
+
+            entries = [_to_line(data) for data in entries]
+            with open(base / f"{tag}.json", "a", encoding="utf8") as f:
+                f.writelines(entries)
+
+    yield
+
+
 class Main:
     def run():
         # Instrumenting functions
@@ -107,11 +173,11 @@ class Main:
 
     def install():
         mp = _get_multipack()
-        return mp.do_install
+        return partial(mp.do_install, dash=_simple_dash)
 
     def jobs():
         mp = _get_multipack()
-        return mp.do_run
+        return partial(mp.do_run, dash=_simple_dash, report=_simple_report)
 
     def job():
         # Configuration for the job
