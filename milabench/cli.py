@@ -43,32 +43,18 @@ def _get_multipack():
     config: Option & configuration
     config = self_merge(config)
 
-    dirs = config["dirs"]
-
-    def _resolvedir(name):
-        result = XPath(dirs.get(name, name)).expanduser()
-        if result.is_absolute():
-            return result
-        else:
-            base = XPath(dirs["base"]).expanduser()
-            return base / result
-
-    dirs["code"] = _resolvedir("code")
-    dirs["venv"] = _resolvedir("venv")
-    dirs["data"] = _resolvedir("data")
-    dirs["runs"] = _resolvedir("runs")
-
     objects = {}
 
     for name, defn in config["benchmarks"].items():
         defn.setdefault("name", name)
         defn["tag"] = [defn["name"]]
-        defn["dirs"] = {
-            "code": str(dirs["code"] / name),
-            "venv": str(dirs["venv"] / name),
-            "data": str(dirs["data"]),
-            "runs": str(dirs["runs"]),
+        dirs = {
+            k: XPath(v.format(**defn)).expanduser() for k, v in defn["dirs"].items()
         }
+        dirs = {
+            k: str(v if v.is_absolute() else dirs["base"] / v) for k, v in dirs.items()
+        }
+        defn["dirs"] = dirs
         objects[name] = get_pack(defn)
 
     return MultiPackage(objects)
