@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import time
 from copy import deepcopy
@@ -52,28 +53,34 @@ def njobs(cfg, n):
 
 
 def multiread(pipes):
-    import os
-    import time
-
     for (_, __, p) in pipes.values():
         os.set_blocking(p.stdout.fileno(), False)
 
     while pipes:
         for tag, (pack, run, proc) in list(pipes.items()):
-            while True:
-                line = proc.stdout.readline()
-                if not line:
-                    if proc.poll() is not None:
-                        # We do not read a line and the process is over
-                        del pipes[tag]
-                    break
-                try:
-                    data = json.loads(line.decode("utf8"))
-                except json.JSONDecodeError:
-                    data = {"#unknown": line}
+
+            def _give(data):
                 data["#pack"] = pack
                 data["#run"] = run
                 give(**data)
+
+            while True:
+                line = proc.stdout.readline()
+                if not line:
+                    ret = proc.poll()
+                    if ret is not None:
+                        # We do not read a line and the process is over
+                        del pipes[tag]
+                        _give({"#end": time.time(), "#return_code": ret})
+                    break
+                line = line.decode("utf8")
+                try:
+                    data = json.loads(line)
+                    if not isinstance(data, dict):
+                        data = {"#stdout": data}
+                except json.JSONDecodeError:
+                    data = {"#stdout": line}
+                _give(data)
         time.sleep(0.1)
 
 
@@ -100,7 +107,10 @@ class MultiPackage:
                         ["milarun", "job", json.dumps(run)],
                         env=pack._nox_session.env,
                         stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE,
+                        # NOTE: the forward instrumenter will tag stderr lines
+                        # on stdout, so we don't really lose information by
+                        # forwarding stderr to stdout here
+                        stderr=subprocess.STDOUT,
                     )
                     assert tag not in processes
                     processes[tag] = (pack, run, process)

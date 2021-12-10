@@ -1,4 +1,3 @@
-import datetime
 import itertools
 import json
 import os
@@ -6,6 +5,7 @@ import random
 import runpy
 import sys
 from contextlib import contextmanager
+from datetime import datetime
 from functools import partial
 
 from coleo import Option
@@ -62,15 +62,50 @@ def _get_multipack():
 
 @contextmanager
 def _simple_dash(gv):
+    import rich
+    from blessed import Terminal
+
+    T = Terminal()
+
+    colors = [T.cyan, T.magenta, T.yellow, T.red, T.green, T.blue]
+    headers = {}
+    newline = True
+
+    def bold(txt, color=""):
+        return T.bold(txt)
+
     @gv.subscribe
     def _(data):
+        nonlocal newline
+
+        def line(*contents, end="\n"):
+            print(headers[tg], *contents, end=end)
+
         data = dict(data)
         run = data.pop("#run")
         pack = data.pop("#pack")
-        print(
-            ".".join(run["tag"]),
-            json.dumps(data),
-        )
+        ks = set(data.keys())
+        tg = ".".join(run["tag"])
+        if tg not in headers:
+            headers[tg] = colors[len(headers) % len(colors)](bold(tg))
+
+        if ks != {"#stdout"} and not newline:
+            print()
+
+        if ks == {"#stdout"}:
+            txt = data["#stdout"]
+            if newline:
+                line(">", txt, end="")
+            else:
+                print(txt, end="")
+            newline = txt.endswith("\n")
+        elif ks == {"#start"}:
+            line(bold("Start:"), datetime.fromtimestamp(data["#start"]))
+        elif ks == {"#end", "#return_code"}:
+            line(bold("End:"), datetime.fromtimestamp(data["#end"]))
+            line(bold("Return code:"), data["#return_code"])
+        else:
+            rich.print(data)
 
     yield
 
@@ -92,7 +127,7 @@ def _simple_report(gv):
         data.pop("#pack")
         return json.dumps(data) + "\n"
 
-    now = str(datetime.datetime.today()).replace(" ", "_")
+    now = str(datetime.today()).replace(" ", "_")
     bla = blabla()
     rundir = f"{bla}.{now}"
 
@@ -179,4 +214,4 @@ class Main:
             sys.exit("Not in venv")
 
         pack = get_pack(config)
-        return pack.main
+        return pack.do_main
