@@ -36,7 +36,7 @@ def resolve(mod, default_field=None, may_have_arg=True):
     elif default_field is not None:
         field = default_field
     else:
-        mod, field = "milabench.instrument", mod
+        mod, field = "milarun.instrument", mod
     if may_have_arg and "=" in field:
         field, arg = field.split("=", 1)
         try:

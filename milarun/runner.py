@@ -30,7 +30,7 @@ class Runner:
         data["#queued"] = time.time()
         self._queue.put(data)
 
-    def __call__(self):
+    def __call__(self, *args, **kwargs):
         """Run the program."""
         try:
             with given() as gv:
@@ -53,7 +53,7 @@ class Runner:
                             stack.enter_context(ctx)
 
                     with give.wrap("run"):
-                        self.fn()
+                        self.fn(*args, **kwargs)
 
         except StopProgram:
             pass

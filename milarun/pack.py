@@ -5,7 +5,7 @@ from giving import give
 from nox.sessions import Session, SessionRunner
 
 from .fs import XPath
-from .runner import make_runner
+from .runner import Runner, make_runner
 from .utils import extract_instruments
 
 
@@ -46,6 +46,9 @@ class Package:
         self.setup()
         self.pack_path.copy(self.dirs.code / "__bench__.py")
 
+    def do_main(self, *args):
+        return self.run_function(self.main, args)
+
     def setup(self):
         pass
 
@@ -64,9 +67,13 @@ class Package:
     def bridge(self, runner, gv):
         pass
 
-    def run_script(self, script, args=(), instruments={}, field="__main__"):
+    def complete_instruments(self, instruments):
         instruments = extract_instruments({"instruments": instruments})
         instruments += extract_instruments(self.config)
+        return instruments
+
+    def run_script(self, script, args=(), instruments={}, field="__main__"):
+        instruments = self.complete_instruments(instruments)
 
         if not XPath(script).is_absolute():
             script = str(self.dirs.code / script)
@@ -77,4 +84,10 @@ class Package:
             args=args,
             instruments=[self.bridge, *instruments],
         )
-        runner()
+        return runner()
+
+    def run_function(self, fn, args=(), instruments={}):
+        instruments = self.complete_instruments(instruments)
+
+        runner = Runner(fn, instruments=instruments)
+        return runner(*args)
