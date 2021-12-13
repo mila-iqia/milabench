@@ -20,6 +20,8 @@ from .multi import MultiPackage
 from .runner import make_runner
 from .utils import extract_instruments, fetch, resolve, simple_bridge
 
+REAL_STDOUT = sys.stdout
+
 
 def main():
     sys.path.insert(0, os.path.abspath(os.curdir))
@@ -43,9 +45,27 @@ def _get_multipack():
     config: Option & configuration
     config = self_merge(config)
 
+    # Packs to select
+    select: Option & str = default("")
+
+    # Packs to exclude
+    # [option: --except]
+    except_: Option & str = default("")
+
+    if select:
+        select = select.split(",")
+
+    if except_:
+        except_ = except_.split(",")
+
     objects = {}
 
     for name, defn in config["benchmarks"].items():
+        if select and name not in select:
+            continue
+        if except_ and name in except_:
+            continue
+
         defn.setdefault("name", name)
         defn["tag"] = [defn["name"]]
         dirs = {
@@ -70,42 +90,61 @@ def _simple_dash(gv):
     colors = [T.cyan, T.magenta, T.yellow, T.red, T.green, T.blue]
     headers = {}
     newline = True
-
-    def bold(txt, color=""):
-        return T.bold(txt)
+    rc = None
 
     @gv.subscribe
     def _(data):
-        nonlocal newline
+        nonlocal newline, rc
+
+        def pr(*args, **kwargs):
+            print(*args, **kwargs, file=REAL_STDOUT)
 
         def line(*contents, end="\n"):
-            print(headers[tg], *contents, end=end)
+            pr(headers[tg], *contents, end=end)
 
         data = dict(data)
-        run = data.pop("#run")
-        pack = data.pop("#pack")
+        run = data.pop("#run", None)
+        pack = data.pop("#pack", None)
         ks = set(data.keys())
-        tg = ".".join(run["tag"])
+        tg = ".".join(run["tag"]) if run else pack.config["name"]
         if tg not in headers:
-            headers[tg] = colors[len(headers) % len(colors)](bold(tg))
+            headers[tg] = colors[len(headers) % len(colors)](T.bold(tg))
 
         if ks != {"#stdout"} and not newline:
-            print()
+            pr()
 
         if ks == {"#stdout"}:
             txt = data["#stdout"]
             if newline:
                 line(">", txt, end="")
             else:
-                print(txt, end="")
+                pr(txt, end="")
             newline = txt.endswith("\n")
         elif ks == {"#start"}:
-            line(bold("Start:"), datetime.fromtimestamp(data["#start"]))
+            line(
+                T.bold_green("Start:"),
+                T.green(str(datetime.fromtimestamp(data["#start"]))),
+            )
+        elif ks == {"#error"}:
+            rc = "ERROR"
+            line("", end="")
+            rich.print(data, file=REAL_STDOUT)
         elif ks == {"#end", "#return_code"}:
-            line(bold("End:"), datetime.fromtimestamp(data["#end"]))
-            line(bold("Return code:"), data["#return_code"])
+            if rc is None:
+                rc = data["#return_code"]
+            if rc == 0:
+                line(
+                    T.bold_green("End:"),
+                    T.green(str(datetime.fromtimestamp(data["#end"]))),
+                )
+            else:
+                line(
+                    T.bold_red(f"End ({rc}):"),
+                    T.red(str(datetime.fromtimestamp(data["#end"]))),
+                )
         else:
-            rich.print(data)
+            line("", end="")
+            rich.print(data, file=REAL_STDOUT)
 
     yield
 

@@ -3,9 +3,10 @@ import importlib
 import json
 import os
 import runpy
-from contextlib import contextmanager
+from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from functools import partial
 
+from giving import give
 from ptera import probing
 
 
@@ -31,14 +32,8 @@ MISSING = Named("MISSING")
 
 
 def resolve(mod, default_field=None, may_have_arg=True):
-    if ":" in mod:
-        mod, field = mod.split(":", 1)
-    elif default_field is not None:
-        field = default_field
-    else:
-        mod, field = "milarun.instrument", mod
-    if may_have_arg and "=" in field:
-        field, arg = field.split("=", 1)
+    if may_have_arg and "=" in mod:
+        mod, arg = mod.split("=", 1)
         try:
             arg = json.loads(arg)
         except json.decoder.JSONDecodeError:
@@ -46,6 +41,13 @@ def resolve(mod, default_field=None, may_have_arg=True):
             pass
     else:
         arg = MISSING
+
+    if ":" in mod:
+        mod, field = mod.split(":", 1)
+    elif default_field is not None:
+        field = default_field
+    else:
+        mod, field = "milarun.instrument", mod
     return mod, field, arg
 
 
@@ -144,3 +146,20 @@ def split_script(script):
 def exec_node(script, node, glb):
     code = compile(node, script, "exec")
     return lambda: exec(code, glb, glb)
+
+
+class FileGiver:
+    def __init__(self, name):
+        self.name = name
+
+    def write(self, x):
+        give(**{self.name: x})
+
+    def flush(self):
+        pass
+
+
+@contextmanager
+def give_std():
+    with (redirect_stdout(FileGiver("#stdout")), redirect_stderr(FileGiver("#stderr"))):
+        yield

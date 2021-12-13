@@ -7,6 +7,7 @@ from copy import deepcopy
 from giving import give, given
 
 from .merge import merge
+from .utils import give_std
 
 planning_methods = {}
 
@@ -89,13 +90,14 @@ class MultiPackage:
         self.packs = packs
 
     def do_install(self, dash):
-        with given() as gv, dash(gv):
-            for name, pack in self.packs.items():
-                pack.do_install()
+        with given() as gv, dash(gv), give_std():
+            for pack in self.packs.values():
+                with give.inherit(**{"#pack": pack}):
+                    pack.do_install()
 
     def do_run(self, dash, report):
         with given() as gv, dash(gv), report(gv):
-            for name, pack in self.packs.items():
+            for pack in self.packs.values():
                 processes = {}
                 cfg = pack.config
                 plan = deepcopy(cfg["plan"])

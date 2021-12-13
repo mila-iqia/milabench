@@ -42,9 +42,14 @@ class Package:
         self._nox_runner._create_venv()
 
     def do_install(self):
+        bench_path = self.dirs.code / "__bench__.py"
+        if bench_path.exists():
+            name = self.config["name"]
+            print(f"Benchmark {name} is already installed")
+            return
         self.install(".")
         self.setup()
-        self.pack_path.copy(self.dirs.code / "__bench__.py")
+        self.pack_path.copy(bench_path)
 
     def do_main(self, *args):
         return self.run_function(self.main, args)
@@ -54,11 +59,11 @@ class Package:
 
     def install(self, *args, **kwargs):
         args = [str(x) for x in args]
-        return self._nox_session.install(*args, **kwargs)
+        return self._nox_session.install(*args, **kwargs, silent=False)
 
     def conda_install(self, *args, **kwargs):
         args = [str(x) for x in args]
-        return self._nox_session.conda_install(*args, **kwargs)
+        return self._nox_session.conda_install(*args, **kwargs, silent=False)
 
     def run(self, *args, **kwargs):
         args = [str(x) for x in args]
