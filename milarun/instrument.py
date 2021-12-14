@@ -1,6 +1,11 @@
+import json
 import time
+from contextlib import contextmanager
 
-from .bench import StopProgram
+from giving import give
+
+from .runner import StopProgram
+from .utils import REAL_STDOUT, give_std
 
 
 class Plain:
@@ -72,6 +77,10 @@ def stop(runner, gv, *, arg):
     ).give()
 
 
+def to_accuracy(runner, gv, *, arg):
+    gv["?metric"].average(scan=10).filter(lambda m: m < arg).subscribe(runner.stop)
+
+
 def timings(runner, gv, *, arg):
     times = (
         gv["?metric"]
@@ -94,10 +103,41 @@ def dump(runner, gv):
     gv.display()
 
 
-def wandb(runner, gv):
+class _Encoder(json.JSONEncoder):
+    def default(self, obj):
+        if not isinstance(obj, float) and hasattr(obj, "__float__"):
+            return float(obj)
+        elif isinstance(obj, Exception):
+            return {
+                "type": type(obj).__name__,
+                "message": str(obj),
+            }
+        else:
+            return super().default(obj)
+
+
+@contextmanager
+def forward(runner, gv, arg):
+    keys = arg.split(",") if isinstance(arg, str) else arg
+
+    @gv.keep("#stdout", "#stderr", "#error", "#end", *keys).subscribe
+    def _(data):
+        REAL_STDOUT.write(json.dumps(data, cls=_Encoder) + "\n")
+        REAL_STDOUT.flush()
+
+    with give_std():
+        try:
+            yield
+        except StopProgram:
+            give(**{"#aborted": True})
+        except Exception as exc:
+            give(**{"#error": exc})
+
+
+def wandb(runner, gv, *, arg):
     import wandb
 
-    entity, project = runner.config.wandb.split(":")
+    entity, project = arg.split(":")
 
     @gv["?args"].subscribe
     def _(args):

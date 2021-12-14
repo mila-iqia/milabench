@@ -8,19 +8,20 @@ from contextlib import contextmanager
 from datetime import datetime
 from functools import partial
 
-from coleo import Option
-from coleo import config as configuration
-from coleo import default, run_cli, tooled
-from giving import ObservableProxy
-from giving import operators as op
+from coleo import Option, config as configuration, default, run_cli, tooled
+from giving import ObservableProxy, operators as op
 
 from .fs import XPath
 from .merge import self_merge
 from .multi import MultiPackage
 from .runner import make_runner
-from .utils import extract_instruments, fetch, resolve, simple_bridge
-
-REAL_STDOUT = sys.stdout
+from .utils import (
+    REAL_STDOUT,
+    extract_instruments,
+    fetch,
+    resolve,
+    simple_bridge,
+)
 
 
 def main():
