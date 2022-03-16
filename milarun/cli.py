@@ -245,6 +245,13 @@ class Main:
         # [positional]
         config: Option & configuration
 
+        # # Name of the job to run
+        # # [positional]
+        # name: Option & str = default(None)
+
+        # if name is not None:
+        #     config = config["benchmarks"][name]
+
         bench = XPath(config["dirs"]["code"]) / "__bench__.py"
         if not bench.exists():
             sys.exit("Benchmark is not installed")
