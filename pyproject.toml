@@ -1,12 +1,12 @@
 [tool.poetry]
-name = "milarun"
+name = "milabench"
 version = "0.1.0"
 description = "Benchmarking suite for machine learning algorithms"
 authors = ["Olivier Breuleux <breuleux@gmail.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.8"
 giving = "^0.3.7"
 ptera = "^1.0.1"
 rich = "^10.13.0"
@@ -30,11 +30,14 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-milarun = "milarun.cli:main"
+milabench = "milabench.cli:main"
+
+[tool.poetry.plugins."voir.instrument"]
+profile_gpu = "milabench.instruments:profile_gpu"
+display = "milabench.instruments:display"
+stop = "milabench.instruments:stop"
 
 [tool.isort]
-known_first_party = "ptera"
-known_third_party = "numpy,torch,torchvision"
 multi_line_output = 3
 include_trailing_comma = true
 combine_as_imports = true

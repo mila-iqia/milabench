@@ -5,6 +5,7 @@ import time
 from copy import deepcopy
 
 from giving import give, given
+from voir.forward import MultiReader
 
 from .merge import merge
 from .utils import give_std
@@ -85,6 +86,21 @@ def multiread(pipes):
         time.sleep(0.1)
 
 
+def _assemble_options(options):
+    args = []
+    for k, v in options.items():
+        if v is None:
+            continue
+        if v is True:
+            args.append(k)
+        elif v is False:
+            raise ValueError()
+        else:
+            args.append(k)
+            args.append(",".join(map(str, v)) if isinstance(v, list) else str(v))
+    return args
+
+
 class MultiPackage:
     def __init__(self, packs):
         self.packs = packs
@@ -95,26 +111,32 @@ class MultiPackage:
                 with give.inherit(**{"#pack": pack}):
                     pack.do_install()
 
+    def do_prepare(self, dash):
+        with given() as gv, dash(gv), give_std():
+            for pack in self.packs.values():
+                with give.inherit(**{"#pack": pack}):
+                    mr = MultiReader()
+                    process = pack.prepare()
+                    if isinstance(process, subprocess.Popen):
+                        mr.add_process(process, info={"#pack": pack})
+                        for _ in mr:
+                            time.sleep(0.1)
+
     def do_run(self, dash, report):
         with given() as gv, dash(gv), report(gv):
             for pack in self.packs.values():
-                processes = {}
                 cfg = pack.config
                 plan = deepcopy(cfg["plan"])
                 method = get_planning_method(plan.pop("method"))
+                mr = MultiReader()
                 for run in method(cfg, **plan):
-                    tag = ".".join(run["tag"])
                     give(**{"#pack": pack, "#run": run, "#start": time.time()})
-                    process = subprocess.Popen(
-                        ["milarun", "job", json.dumps(run)],
-                        env=pack._nox_session.env,
-                        stdout=subprocess.PIPE,
-                        # NOTE: the forward instrumenter will tag stderr lines
-                        # on stdout, so we don't really lose information by
-                        # forwarding stderr to stdout here
-                        stderr=subprocess.STDOUT,
-                    )
-                    assert tag not in processes
-                    processes[tag] = (pack, run, process)
+                    voirargs = _assemble_options(run.get("voir", {}))
+                    args = _assemble_options(run.get("argv", {}))
+                    env = run.get("env", {})
 
-                multiread(processes)
+                    process = pack.launch(args=args, voirargs=voirargs, env=env)
+                    mr.add_process(process, info={"#pack": pack, "#run": run})
+
+                for _ in mr:
+                    time.sleep(0.1)

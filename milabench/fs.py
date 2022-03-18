@@ -39,7 +39,10 @@ class XPath(type(Path())):
         path = XPath(path)
         if not path.exists():
             os.makedirs(path.parent, exist_ok=True)
-        shutil.copy(self, path)
+        if self.is_dir():
+            shutil.copytree(self, path)
+        else:
+            shutil.copy(self, path)
 
     def sub(self, pattern, replacement):
         """Replace parts of the file using a regular expression.
@@ -99,3 +102,10 @@ class XPath(type(Path())):
         shutil.move(path, dest)
         shutil.rmtree(tmp)
         return dest
+
+    def rm(self):
+        """Remove this file or directory tree."""
+        if self.is_dir():
+            shutil.rmtree(self)
+        else:
+            self.unlink()

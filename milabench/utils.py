@@ -8,7 +8,6 @@ from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from functools import partial
 
 from giving import give
-
 from ptera import probing
 
 REAL_STDOUT = sys.stdout

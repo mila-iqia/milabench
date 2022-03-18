@@ -1,12 +1,10 @@
+import subprocess
 from argparse import Namespace as NS
 from sys import version_info as pyv
 
-from giving import give
 from nox.sessions import Session, SessionRunner
 
 from .fs import XPath
-from .runner import Runner, make_runner
-from .utils import extract_instruments
 
 
 class Package:
@@ -42,17 +40,20 @@ class Package:
         self._nox_runner._create_venv()
 
     def do_install(self):
-        bench_path = self.dirs.code / "__bench__.py"
-        if bench_path.exists():
+        sentinel = self.dirs.code / "installed"
+        if sentinel.exists():
             name = self.config["name"]
             print(f"Benchmark {name} is already installed")
             return
-        self.install(".")
-        self.setup()
-        self.pack_path.copy(bench_path)
 
-    def do_main(self, *args):
-        return self.run_function(self.main, args)
+        if self.dirs.code.exists():
+            self.dirs.code.rm()
+        self.pack_path.copy(self.dirs.code)
+
+        self.install("-e", ".")
+        self.install("-e", "../voir")
+        self.setup()
+        sentinel.touch()
 
     def setup(self):
         pass
@@ -67,32 +68,20 @@ class Package:
 
     def run(self, *args, **kwargs):
         args = [str(x) for x in args]
-        return self._nox_session.run(*args, **kwargs, external=True)
+        return self._nox_session.run(*args, **kwargs, external=True, silent=False)
 
-    def bridge(self, runner, gv):
-        pass
-
-    def complete_instruments(self, instruments):
-        instruments = extract_instruments({"instruments": instruments})
-        instruments += extract_instruments(self.config)
-        return instruments
-
-    def run_script(self, script, args=(), instruments={}, field="__main__"):
-        instruments = self.complete_instruments(instruments)
-
+    def launch_script(self, script, args=(), voirargs=(), env={}):
         if not XPath(script).is_absolute():
             script = str(self.dirs.code / script)
 
-        runner = make_runner(
-            script=script,
-            field=field,
-            args=args,
-            instruments=[self.bridge, *instruments],
+        command = ["voir", *voirargs, script, *args]
+        process = subprocess.Popen(
+            command,
+            env={"PYTHONUNBUFFERED": "1", **self._nox_session.env, **env},
+            stdout=subprocess.PIPE,
+            # NOTE: the forward instrumenter will tag stderr lines
+            # on stdout, so we don't really lose information by
+            # forwarding stderr to stdout here
+            stderr=subprocess.STDOUT,
         )
-        return runner()
-
-    def run_function(self, fn, args=(), instruments={}):
-        instruments = self.complete_instruments(instruments)
-
-        runner = Runner(fn, instruments=instruments)
-        return runner(*args)
+        return process
