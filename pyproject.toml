@@ -7,8 +7,8 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-giving = "^0.3.7"
-ptera = "^1.0.1"
+giving = "^0.3.10"
+ptera = "^1.2.0"
 rich = "^10.13.0"
 coleo = "^0.3.0"
 requests = "^2.26.0"
@@ -17,6 +17,7 @@ GitPython = "^3.1.24"
 PyYAML = "^6.0"
 ovld = "^0.3.2"
 GPUtil = "^1.4.0"
+hrepr = "^0.4.0"
 
 [tool.poetry.dev-dependencies]
 black = "^21.10b0"
@@ -33,10 +34,12 @@ build-backend = "poetry.core.masonry.api"
 milabench = "milabench.cli:main"
 
 [tool.poetry.plugins."voir.instrument"]
-profile_gpu = "milabench.instruments:profile_gpu"
+dash = "milabench.instruments:dash"
 display = "milabench.instruments:display"
+loading_rate = "milabench.instruments:loading_rate"
+profile_gpu = "milabench.instruments:profile_gpu"
 stop = "milabench.instruments:stop"
-rates = "milabench.instruments:rates"
+train_rate = "milabench.instruments:train_rate"
 
 [tool.isort]
 multi_line_output = 3

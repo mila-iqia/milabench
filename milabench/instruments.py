@@ -1,7 +1,10 @@
 import time
 from threading import Thread
 
+from hrepr import trepr
 from voir.tools import gated, parametrized
+
+from .utils import REAL_STDOUT
 
 
 @gated("--display", "Display given")
@@ -9,16 +12,91 @@ def display(ov):
     ov.given.display()
 
 
+class Plain:
+    def __init__(self, x, fmt="{}"):
+        self._object = x
+        self.fmt = fmt
+
+    def __rich__(self):
+        return self.fmt.format(str(trepr(self._object, max_depth=2, sequence_max=10)))
+
+
+@gated("--dash", "Display dash")
+def dash(ov):
+    """Create a simple terminal dashboard using rich.
+
+    This displays a live table of the last value for everything given.
+    """
+    yield ov.phases.init
+
+    from rich.console import Console, Group
+    from rich.live import Live
+    from rich.pretty import Pretty
+    from rich.progress import ProgressBar
+    from rich.table import Table
+
+    gv = ov.given
+
+    # Current rows are stored here
+    rows = {}
+
+    # First, a table with the latest value of everything that was given
+    table = Table.grid(padding=(0, 3, 0, 0))
+    table.add_column("key", style="bold green")
+    table.add_column("value")
+
+    console = Console(color_system="standard", file=REAL_STDOUT)
+
+    @ (gv["?#stdout"].roll(10) | gv["?#stderr"].roll(10)).subscribe
+    def _(txt):
+        ov.give(stdout="".join(txt))
+
+    # This updates the table every time we get new values
+    @gv.where("!silent").subscribe
+    def _(values):
+        if {"total", "progress", "descr"}.issubset(values.keys()):
+            k = values["descr"]
+            k = f"\\[{k}]"
+            if k not in rows:
+                progress_bar = ProgressBar(finished_style="blue", width=50)
+                table.add_row(k, progress_bar)
+                rows[k] = progress_bar
+            progress_bar = rows[k]
+            progress_bar.update(total=values["total"], completed=values["progress"])
+            return
+
+        units = values.get("units", None)
+
+        for k, v in values.items():
+            if k.startswith("$") or k.startswith("#") or k == "units":
+                continue
+            if k in rows:
+                rows[k]._object = v
+            else:
+                if units:
+                    rows[k] = Plain(v, f"{{}} {units}")
+                else:
+                    rows[k] = Plain(v)
+                table.add_row(k, rows[k])
+
+    with Live(table, refresh_per_second=4, console=console):
+        yield ov.phases.run_script
+
+
 @parametrized("--stop", type=int, default=0, help="Number of iterations to run for")
 def stop(ov):
-    yield ov.phases.load_script
+    yield ov.phases.load_script(priority=-100)
     stop = ov.options.stop
     if stop:
-        ov.given.where("step").skip(stop) >> ov.stop
+        steps = ov.given.where("step")
+        steps.map_indexed(
+            lambda _, idx: {"progress": idx, "total": stop, "descr": "train"}
+        ).give()
+        steps.skip(stop) >> ov.stop
 
 
-@gated("--rates")
-def rates(ov):
+@gated("--train-rate")
+def train_rate(ov):
     yield ov.phases.load_script
 
     sync = None
@@ -33,8 +111,10 @@ def rates(ov):
     ov.given["?use_cuda"].first_or_default(False) >> setsync
 
     times = (
-        ov.given.keep("step", "batch_size")
+        ov.given.where("step", "batch")
+        .kmap(batch_size=lambda batch: len(batch))
         .augment(time=lambda: time.time_ns())
+        .keep("time", "batch_size")
         .pairwise()
         .buffer_with_time(1.0)
     )
@@ -52,7 +132,36 @@ def rates(ov):
         n = sum(e1["batch_size"] for e1, e2 in elems)
         t /= 1_000_000_000
 
-        ov.give(rate=n / t)
+        if t:
+            ov.give(rate=n / t, units="items/s")
+
+
+@gated("--loading-rate")
+def loading_rate(ov):
+    yield ov.phases.load_script
+
+    def _timing():
+        t0 = time.time_ns()
+        results = yield
+        t1 = time.time_ns()
+        if "batch" in results:
+            seconds = (t1 - t0) / 1000000000
+            data = results["batch"]
+            if isinstance(data, list):
+                data = data[0]
+            return len(data) / seconds
+        else:
+            return None
+
+    @ov.given.where("loader").ksubscribe
+    def _(loader):
+        typ = type(iter(loader))
+        (
+            ov.probe("typ.next(!$x:@enter, #value as batch, !!$y:@exit)")
+            .wmap(_timing)
+            .map(lambda x: {"loading_rate": x, "units": "items/s"})
+            .give()
+        )
 
 
 class GPUMonitor(Thread):
