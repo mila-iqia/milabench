@@ -48,7 +48,7 @@ class Package:
 
         if self.dirs.code.exists():
             self.dirs.code.rm()
-        self.pack_path.copy(self.dirs.code)
+        self.pack_path.merge_into(self.dirs.code, self.pack_path / "manifest")
 
         self.install("-e", ".")
         self.install("-e", "../voir")
@@ -83,5 +83,6 @@ class Package:
             # on stdout, so we don't really lose information by
             # forwarding stderr to stdout here
             stderr=subprocess.STDOUT,
+            cwd=self.dirs.code,
         )
         return process

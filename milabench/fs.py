@@ -5,8 +5,21 @@ import tempfile
 from pathlib import Path
 from urllib.parse import urlparse
 
+import pathspec
 import requests
-from git import Repo
+from git import GitCommandNotFound, Repo
+
+
+def manifest_ignorer(manifest):
+    with open(manifest, "r") as mf:
+        spec = pathspec.PathSpec.from_lines(pathspec.patterns.GitWildMatchPattern, mf)
+
+    def ignore(directory, files):
+        n = len(directory)
+        file_paths = [str(XPath(directory) / file) for file in files]
+        return [p[n + 1 :] for p in file_paths if not spec.match_file(p)]
+
+    return ignore
 
 
 class XPath(type(Path())):
@@ -44,6 +57,24 @@ class XPath(type(Path())):
         else:
             shutil.copy(self, path)
 
+    def merge_into(self, dest, manifest="*", move=False):
+        if isinstance(manifest, Path) and manifest.exists():
+            manifest = manifest.open().read()
+        manifest = manifest.splitlines()
+        spec = pathspec.PathSpec.from_lines("gitwildmatch", manifest)
+        for rel_file in spec.match_tree(self):
+            filepath = self / rel_file
+            if filepath.is_dir():
+                self.mkdir(exist_ok=True)
+            else:
+                destpath = dest / rel_file
+                if not destpath.parent.exists():
+                    destpath.parent.mkdir(exist_ok=True)
+                if move:
+                    shutil.move(filepath, destpath)
+                else:
+                    shutil.copy(filepath, destpath)
+
     def sub(self, pattern, replacement):
         """Replace parts of the file using a regular expression.
 
@@ -71,7 +102,7 @@ class XPath(type(Path())):
                 f.write(chunk)
                 f.flush()
 
-    def clone_subtree(self, remote, commit, subtree, dest=None):
+    def clone_subtree(self, remote, commit, subtree=None, dest=None):
         """Clone a subtree of a git repository and move it to the given destination.
 
         Arguments:
@@ -81,25 +112,27 @@ class XPath(type(Path())):
             dest: Path to which the subtree should be moved (must not already exist).
         """
         if dest is None:
-            dest = Path(subtree).name
-        dest = self / dest
-
-        if dest.exists():
-            raise shutil.Error(f"Destination path {dest} already exists")
+            dest = self
+        elif not dest.is_absolute():
+            dest = self / dest
 
         tmp = tempfile.mkdtemp()
         repo = Repo.init(tmp)
         origin = repo.create_remote("origin", remote)
         origin.fetch(commit, depth=1)
-        repo.git.sparse_checkout("init")
-        repo.git.sparse_checkout("set", subtree)
+        if subtree is not None:
+            try:
+                repo.git.sparse_checkout("init")
+                repo.git.sparse_checkout("set", subtree)
+            except GitCommandNotFound:
+                print("git sparse-checkout not available; doing a full checkout")
         repo.git.checkout(commit)
 
-        path = Path(tmp) / subtree
-        if not path.is_dir():
-            dest.parent.mkdir(exist_ok=True)
-
-        shutil.move(path, dest)
+        if subtree:
+            path = XPath(tmp) / subtree
+        else:
+            path = XPath(tmp)
+        path.merge_into(dest, move=True)
         shutil.rmtree(tmp)
         return dest
 
