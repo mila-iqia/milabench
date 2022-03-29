@@ -104,6 +104,7 @@ def _assemble_options(options):
 class MultiPackage:
     def __init__(self, packs):
         self.packs = packs
+        (self.rundir,) = {p.dirs.runs for p in packs.values()}
 
     def do_install(self, dash):
         with given() as gv, dash(gv), give_std():
@@ -123,7 +124,7 @@ class MultiPackage:
                             time.sleep(0.1)
 
     def do_run(self, dash, report):
-        with given() as gv, dash(gv), report(gv):
+        with given() as gv, dash(gv), report(gv, self.rundir):
             for pack in self.packs.values():
                 cfg = pack.config
                 plan = deepcopy(cfg["plan"])

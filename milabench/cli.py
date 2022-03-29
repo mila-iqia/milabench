@@ -1,6 +1,7 @@
 import os
 import runpy
 import sys
+from functools import partial
 
 from coleo import Option, config as configuration, default, run_cli, tooled
 
@@ -66,8 +67,11 @@ def _get_multipack():
 
 class Main:
     def run():
+        # Name of the run
+        run: Option = None
+
         mp = _get_multipack()
-        mp.do_run(dash=simple_dash, report=simple_report)
+        mp.do_run(dash=simple_dash, report=partial(simple_report, runname=run))
 
     def prepare():
         mp = _get_multipack()

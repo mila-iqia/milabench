@@ -2,12 +2,15 @@ import itertools
 import json
 import os
 import random
+import sys
 from contextlib import contextmanager
 from datetime import datetime
 
 from giving import ObservableProxy
 
 from milabench.utils import REAL_STDOUT
+
+from .fs import XPath
 
 
 @contextmanager
@@ -89,7 +92,7 @@ def blabla(n=4):
 
 
 @contextmanager
-def simple_report(gv):
+def simple_report(gv, rundir, runname=None):
     def _to_line(data):
         data = dict(data)
         data.pop("#run")
@@ -97,8 +100,18 @@ def simple_report(gv):
         return json.dumps(data) + "\n"
 
     now = str(datetime.today()).replace(" ", "_")
-    bla = blabla()
-    rundir = f"{bla}.{now}"
+
+    if runname is None:
+        bla = blabla()
+        runname = f"{bla}.{now}"
+
+    rundir = XPath(rundir) / runname
+    if XPath(rundir).exists():
+        print(f"Rundir {rundir} already exists", file=sys.stderr)
+        sys.exit(1)
+    os.makedirs(rundir, exist_ok=True)
+
+    print(f"[BEGIN] Reports directory: {rundir}")
 
     grouped = gv.group_by(lambda data: tuple(data["#run"]["tag"]))
 
@@ -112,11 +125,10 @@ def simple_report(gv):
         def __(entries):
             d0 = entries[0]
             tag = ".".join(d0["#run"]["tag"])
-            base = d0["#pack"].dirs.runs / rundir
-            os.makedirs(base, exist_ok=True)
-
             entries = [_to_line(data) for data in entries]
-            with open(base / f"{tag}.json", "a", encoding="utf8") as f:
+            with open(rundir / f"{tag}.json", "a", encoding="utf8") as f:
                 f.writelines(entries)
 
     yield
+
+    print(f"[DONE] Reports directory: {rundir}")
