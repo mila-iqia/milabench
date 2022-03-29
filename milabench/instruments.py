@@ -133,7 +133,7 @@ def train_rate(ov):
         t /= 1_000_000_000
 
         if t:
-            ov.give(rate=n / t, units="items/s")
+            ov.give(train_rate=n / t, units="items/s")
 
 
 @gated("--loading-rate")
@@ -162,6 +162,30 @@ def loading_rate(ov):
             .map(lambda x: {"loading_rate": x, "units": "items/s"})
             .give()
         )
+
+
+@gated("--compute-rate")
+def compute_rate(ov):
+    yield ov.phases.load_script
+
+    def _timing():
+        t0 = time.time_ns()
+        results = yield
+        t1 = time.time_ns()
+        if "batch" in results:
+            seconds = (t1 - t0) / 1000000000
+            data = results["batch"]
+            if isinstance(data, list):
+                data = data[0]
+            return len(data) / seconds
+        else:
+            return None
+
+    (
+        ov.given.wmap("compute_start", _timing)
+        .map(lambda x: {"compute_rate": x, "units": "items/s"})
+        .give()
+    )
 
 
 class GPUMonitor(Thread):
