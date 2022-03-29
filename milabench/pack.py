@@ -39,9 +39,9 @@ class Package:
         self._nox_session = Session(self._nox_runner)
         self._nox_runner._create_venv()
 
-    def do_install(self):
+    def do_install(self, force=False):
         sentinel = self.dirs.code / "installed"
-        if sentinel.exists():
+        if not force and sentinel.exists():
             name = self.config["name"]
             print(f"Benchmark {name} is already installed")
             return

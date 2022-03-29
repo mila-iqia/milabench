@@ -106,11 +106,11 @@ class MultiPackage:
         self.packs = packs
         (self.rundir,) = {p.dirs.runs for p in packs.values()}
 
-    def do_install(self, dash):
+    def do_install(self, dash, force=False):
         with given() as gv, dash(gv), give_std():
             for pack in self.packs.values():
                 with give.inherit(**{"#pack": pack}):
-                    pack.do_install()
+                    pack.do_install(force=force)
 
     def do_prepare(self, dash):
         with given() as gv, dash(gv), give_std():

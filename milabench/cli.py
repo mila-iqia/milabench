@@ -29,7 +29,9 @@ def _get_multipack():
     # Configuration file
     # [positional]
     config: Option & configuration
-    config = self_merge(config)
+
+    # Base path for code, venvs, data and runs
+    base: Option & str = None
 
     # Packs to select
     select: Option & str = default("")
@@ -42,6 +44,10 @@ def _get_multipack():
 
     if exclude:
         exclude = exclude.split(",")
+
+    if base is not None:
+        config["defaults"]["dirs"]["base"] = base
+    config = self_merge(config)
 
     objects = {}
 
@@ -78,5 +84,8 @@ class Main:
         mp.do_prepare(dash=simple_dash)
 
     def install():
+        # Force install
+        force: Option & bool = False
+
         mp = _get_multipack()
-        mp.do_install(dash=simple_dash)
+        mp.do_install(dash=simple_dash, force=force)
