@@ -33,6 +33,9 @@ def _get_multipack():
     # Base path for code, venvs, data and runs
     base: Option & str = None
 
+    # Whether to use the current environment
+    use_current_env: Option & bool = False
+
     # Packs to select
     select: Option & str = default("")
 
@@ -59,6 +62,16 @@ def _get_multipack():
 
         defn.setdefault("name", name)
         defn["tag"] = [defn["name"]]
+
+        if use_current_env or defn["dirs"].get("venv", None) is None:
+            venv = os.environ.get("CONDA_PREFIX", None)
+            if venv is None:
+                venv = os.environ.get("VIRTUAL_ENV", None)
+            if venv is None:
+                print("Could not find virtual environment", file=sys.stderr)
+                sys.exit(1)
+            defn["dirs"]["venv"] = venv
+
         dirs = {
             k: XPath(v.format(**defn)).expanduser() for k, v in defn["dirs"].items()
         }
