@@ -9,16 +9,16 @@ class MNISTPack(Package):
     def setup(self):
         code = self.dirs.code
         code.clone_subtree("https://github.com/pytorch/examples", BRANCH, "mnist")
-        main = code / "mnist" / "main.py"
+        main = code / "main.py"
         main.sub("../data", str(self.dirs.data))
-        self.install("-r", code / "mnist" / "requirements.txt")
+        self.install("-r", code / "requirements.txt")
 
     def prepare(self):
         # return self.launch_script("prepare.py", args=[self.dirs.data], voir=False)
         self.run("python", self.dirs.code / "prepare.py", self.dirs.data)
 
     def launch(self, args, voirargs, env):
-        return self.launch_script("mnist/main.py", args=args, voirargs=voirargs, env=env)
+        return self.launch_script("main.py", args=args, voirargs=voirargs, env=env)
 
 
 __pack__ = MNISTPack
