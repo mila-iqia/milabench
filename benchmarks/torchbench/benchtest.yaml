@@ -1,0 +1,44 @@
+defaults: &defaults
+  dirs:
+    code: code/{name}
+    venv: null
+    data: data
+    runs: runs
+
+  venv:
+    type: virtualenv
+
+  plan:
+    method: njobs
+    n: 1
+  voir:
+    --stop: 10
+    --forward:
+      - "#stdout"
+      - "#stderr"
+      - "#end"
+      - loss
+      - compute_rate
+      - train_rate
+      - loading_rate
+      - descr
+      - progress
+      - total
+    --compute-rate: true
+    --train-rate: true
+    --loading-rate: true
+  argv:
+    --batch-size: 64
+
+benchmarks:
+  resnet18:
+    <<<: *defaults
+
+    definition: ./
+    model: resnet18
+
+  hf_Bert:
+    <<<: *defaults
+
+    definition: ./
+    model: hf_Bert
