@@ -17,8 +17,11 @@ def main():
 
 
 def get_pack(defn):
-    pack = defn["definition"]
-    pack_glb = runpy.run_path(XPath(pack) / "benchfile.py")
+    pack = XPath(defn["definition"]).expanduser()
+    if not pack.is_absolute():
+        pack = XPath(defn["config_base"]) / pack
+        defn["definition"] = str(pack)
+    pack_glb = runpy.run_path(pack / "benchfile.py")
     pack_cls = pack_glb["__pack__"]
     pack_obj = pack_cls(defn)
     return pack_obj
@@ -28,7 +31,7 @@ def get_pack(defn):
 def _get_multipack():
     # Configuration file
     # [positional]
-    config: Option & configuration
+    config: Option & str
 
     # Base path for code, venvs, data and runs
     base: Option & str = None
@@ -48,6 +51,9 @@ def _get_multipack():
     if exclude:
         exclude = exclude.split(",")
 
+    config_base = str(XPath(config).parent)
+    config = configuration(config)
+    config["defaults"]["config_base"] = config_base
     if base is not None:
         config["defaults"]["dirs"]["base"] = base
     config = self_merge(config)

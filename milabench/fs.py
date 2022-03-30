@@ -58,18 +58,21 @@ class XPath(type(Path())):
             shutil.copy(self, path)
 
     def merge_into(self, dest, manifest="*", move=False):
-        if isinstance(manifest, Path) and manifest.exists():
-            manifest = manifest.open().read()
+        if isinstance(manifest, Path):
+            if manifest.exists():
+                manifest = manifest.open().read()
+            else:
+                manifest = ""
         manifest = manifest.splitlines()
         spec = pathspec.PathSpec.from_lines("gitwildmatch", manifest)
         for rel_file in spec.match_tree(self):
             filepath = self / rel_file
             if filepath.is_dir():
-                self.mkdir(exist_ok=True)
+                os.makedirs(self, exist_ok=True)
             else:
                 destpath = dest / rel_file
                 if not destpath.parent.exists():
-                    destpath.parent.mkdir(exist_ok=True)
+                    os.makedirs(destpath.parent, exist_ok=True)
                 if move:
                     shutil.move(filepath, destpath)
                 else:

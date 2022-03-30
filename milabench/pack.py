@@ -1,3 +1,5 @@
+import json
+import os
 import subprocess
 from argparse import Namespace as NS
 from sys import version_info as pyv
@@ -7,7 +9,7 @@ from nox.sessions import Session, SessionRunner
 from .fs import XPath
 
 
-class Package:
+class BasePackage:
     def __init__(self, config):
         self.config = config
         self.pack_path = XPath(config["definition"])
@@ -50,13 +52,13 @@ class Package:
             self.dirs.code.rm()
         self.pack_path.merge_into(self.dirs.code, self.pack_path / "manifest")
 
-        self.install("-e", ".")
-        self.install("-e", "../voir")
+        devreqs = os.environ.get("MILABENCH_DEV", None)
+        if devreqs:
+            self.install("-r", devreqs)
+        else:
+            self.install("milabench", "voir")
         self.setup()
         sentinel.touch()
-
-    def setup(self):
-        pass
 
     def install(self, *args, **kwargs):
         args = [str(x) for x in args]
@@ -66,9 +68,16 @@ class Package:
         args = [str(x) for x in args]
         return self._nox_session.conda_install(*args, **kwargs, silent=False)
 
-    def run(self, *args, **kwargs):
+    def run(self, *args, cwd=None, **kwargs):
         args = [str(x) for x in args]
-        return self._nox_session.run(*args, **kwargs, external=True, silent=False)
+        curdir = os.getcwd()
+        if cwd is None:
+            cwd = self.dirs.code
+        try:
+            os.chdir(cwd)
+            return self._nox_session.run(*args, **kwargs, external=True, silent=False)
+        finally:
+            os.chdir(curdir)
 
     def launch_script(self, script, args=(), voirargs=(), env={}):
         if not XPath(script).is_absolute():
@@ -86,3 +95,20 @@ class Package:
             cwd=self.dirs.code,
         )
         return process
+
+
+class Package(BasePackage):
+    prepare_script = "prepare.py"
+
+    def setup(self):
+        reqs = self.dirs.code / "requirements.txt"
+        if reqs.exists():
+            self.install("-r", reqs)
+
+    def prepare(self):
+        self.run(
+            "python",
+            self.dirs.code / self.prepare_script,
+            "--bench-config",
+            json.dumps(self.config),
+        )

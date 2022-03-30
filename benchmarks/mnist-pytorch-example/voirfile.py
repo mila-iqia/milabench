@@ -1,4 +1,3 @@
-
 def instrument_probes(ov):
     yield ov.phases.load_script
     ov.probe("//train > loss").kmap(loss=lambda loss: float(loss)).give()
