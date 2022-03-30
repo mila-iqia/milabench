@@ -52,8 +52,7 @@ def dash(ov):
         ov.give(stdout="".join(txt))
 
     # This updates the table every time we get new values
-    @gv.where("!silent").subscribe
-    def _(values):
+    def update_with(values):
         if {"total", "progress", "descr"}.issubset(values.keys()):
             k = values["descr"]
             k = f"\\[{k}]"
@@ -79,8 +78,11 @@ def dash(ov):
                     rows[k] = Plain(v)
                 table.add_row(k, rows[k])
 
+    gv.where("!silent").subscribe(update_with)
+    ov.send = update_with
+
     with Live(table, refresh_per_second=4, console=console):
-        yield ov.phases.run_script
+        yield ov.phases.finalize(-1000)
 
 
 @parametrized("--stop", type=int, default=0, help="Number of iterations to run for")
@@ -213,3 +215,29 @@ def profile_gpu(ov):
     monitor.start()
     yield ov.phases.run_script
     monitor.stop()
+
+
+@gated("--verify", "Verify the benchmark")
+def verify(ov):
+    yield ov.phases.parse_args
+    ov.require(dash.instrument)
+    ov.require(train_rate.instrument)
+    ov.require(loading_rate.instrument)
+    ov.require(compute_rate.instrument)
+
+    losses = ov.given["?loss"]
+
+    # Verify that the loss decreases
+    first_loss = losses.first()
+    first_loss.give("initial_loss")
+    last_loss = losses.last()
+    (first_loss | last_loss).pairwise().starmap(lambda fl, ll: ll < fl).as_("verify.loss_decreases") >> ov.send
+
+    # Verify that the loss is below threshold
+    last_loss.map(lambda x: x < 1).as_("verify.loss_below_threshold") >> ov.send
+
+    # Verify the presence of certain fields
+    for field in ["train_rate", "loading_rate", "compute_rate"]:
+        ov.given.getitem(field, strict=False).is_empty().map(lambda x: not x).as_(f"verify.has_{field}") >> ov.send
+
+    yield ov.phases.finalize

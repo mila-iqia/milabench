@@ -48,6 +48,9 @@ class BasePackage:
             print(f"Benchmark {name} is already installed")
             return
 
+        if self.dirs.code == self.path_pack:
+            return
+
         if self.dirs.code.exists():
             self.dirs.code.rm()
         self.pack_path.merge_into(self.dirs.code, self.pack_path / "manifest")

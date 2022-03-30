@@ -53,6 +53,13 @@ def simple_dash(gv):
             else:
                 pr(txt, end="")
             newline = txt.endswith("\n")
+        elif ks == {"#stderr"}:
+            txt = data["#stderr"]
+            if newline:
+                line(">!", txt, end="")
+            else:
+                pr(txt, end="")
+            newline = txt.endswith("\n")
         elif ks == {"#start"}:
             line(
                 T.bold_green("Start:"),
