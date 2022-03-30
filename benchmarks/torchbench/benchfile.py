@@ -18,9 +18,14 @@ class TorchBenchmarkPack(Package):
     def prepare(self):
         pass
 
-    # def launch(self, args, voirargs, env):
-    #     args.extend(["--data", self.dirs.data / "FakeImageNet"])
-    #     return self.launch_script("main.py", args=args, voirargs=voirargs, env=env)
+    def launch(self, args, voirargs, env):
+        args.insert(0, self.config["model"])
+        return self.launch_script(
+            "run.py",
+            args=args,
+            voirargs=voirargs,
+            env=env
+        )
 
 
 __pack__ = TorchBenchmarkPack
