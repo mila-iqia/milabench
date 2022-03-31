@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Instrumenting code &mdash; milabench  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> milabench
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html#using-milabench">Using milabench</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">Benchmark configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="new_benchmarks.html">Creating a new benchmark</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">milabench</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Instrumenting code</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/instrument.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="instrumenting-code">
+<h1>Instrumenting code<a class="headerlink" href="#instrumenting-code" title="Permalink to this headline"></a></h1>
+<p>Prior to creating a new benchmark, let us see how to instrument existing code in order to extract the desired metrics.</p>
+<p>Suppose you have this simple script in <code class="docutils literal notranslate"><span class="pre">main.py</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">import</span> <span class="nn">torchvision.datasets</span> <span class="k">as</span> <span class="nn">datasets</span>
+<span class="kn">import</span> <span class="nn">torchvision.models</span> <span class="k">as</span> <span class="nn">tvmodels</span>
+<span class="kn">import</span> <span class="nn">torchvision.transforms</span> <span class="k">as</span> <span class="nn">transforms</span>
+
+<span class="k">def</span> <span class="nf">train_epoch</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">criterion</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">loader</span><span class="p">,</span> <span class="n">device</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">inp</span><span class="p">,</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">loader</span><span class="p">:</span>
+        <span class="n">inp</span> <span class="o">=</span> <span class="n">inp</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">inp</span><span class="p">)</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+        <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+        <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+        <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="mi">1234</span><span class="p">)</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span><span class="p">)</span>
+
+    <span class="n">model</span> <span class="o">=</span> <span class="n">tvmodels</span><span class="o">.</span><span class="n">resnet18</span><span class="p">()</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">CrossEntropyLoss</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">SGD</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="mf">0.1</span><span class="p">)</span>
+    <span class="n">train</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">ImageFolder</span><span class="p">(</span><span class="s2">&quot;some_data_folder&quot;</span><span class="p">)</span>
+    <span class="n">train_loader</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">(</span><span class="n">train</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+        <span class="n">train_epoch</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">criterion</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">train_loader</span><span class="p">,</span> <span class="n">device</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+</div>
+<section id="probe-example">
+<h2>Probe example<a class="headerlink" href="#probe-example" title="Permalink to this headline"></a></h2>
+<p>To instrument this code, simply create a file named <code class="docutils literal notranslate"><span class="pre">voirfile.py</span></code> in the current directory. In that file, you can write <em>instruments</em> which will be activated by running <code class="docutils literal notranslate"><span class="pre">voir</span> <span class="pre">&lt;VOIR_OPTIONS&gt;</span> <span class="pre">main.py</span> <span class="pre">&lt;SCRIPT_OPTIONS&gt;</span></code>. For example, this instrument will print out the losses as they are calculated:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">instrument_probes</span><span class="p">(</span><span class="n">ov</span><span class="p">):</span>
+    <span class="k">yield</span> <span class="n">ov</span><span class="o">.</span><span class="n">phases</span><span class="o">.</span><span class="n">load_script</span>
+    <span class="n">ov</span><span class="o">.</span><span class="n">probe</span><span class="p">(</span><span class="s2">&quot;//train_epoch &gt; loss&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">display</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><strong>Explanation:</strong></p>
+<ul class="simple">
+<li><p>An instrument is a function or generator defined in <code class="docutils literal notranslate"><span class="pre">voirfile.py</span></code> with a name that starts with <code class="docutils literal notranslate"><span class="pre">instrument_</span></code>.</p></li>
+<li><p>It takes one parameter, an <code class="docutils literal notranslate"><span class="pre">Overseer</span></code>.</p></li>
+<li><p>By yielding <code class="docutils literal notranslate"><span class="pre">ov.phases.load_script</span></code>, the instrument asks the overseer to resume the instrument’s execution once the script is loaded, but before it is executed.
+* The following phases are available:
+* <code class="docutils literal notranslate"><span class="pre">ov.phases.init</span></code>: When the overseer is created, but before the arguments are parsed. You can add new options to <code class="docutils literal notranslate"><span class="pre">voir</span></code> in <code class="docutils literal notranslate"><span class="pre">ov.argparser</span></code>.
+* <code class="docutils literal notranslate"><span class="pre">ov.phases.parse_args</span></code>: voir’s command line arguments have been parsed and are accessible in <code class="docutils literal notranslate"><span class="pre">ov.options</span></code>.
+* <code class="docutils literal notranslate"><span class="pre">ov.phases.load_script</span></code>: The script has been loaded.
+* <code class="docutils literal notranslate"><span class="pre">ov.phases.run_script</span></code>: The script has been executed.
+* <code class="docutils literal notranslate"><span class="pre">ov.phases.finalize</span></code>: After <code class="docutils literal notranslate"><span class="pre">ov.given</span></code> has been terminated (so reductions etc have been run).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ov.probe</span></code> sets a probe in the script’s code (and/or in any module’s code)
+* <code class="docutils literal notranslate"><span class="pre">//train_epoch</span> <span class="pre">&gt;</span> <span class="pre">loss</span></code> is shorthand for <code class="docutils literal notranslate"><span class="pre">/__main__/train_epoch</span> <span class="pre">&gt;</span> <span class="pre">loss</span></code> and it means: “instrument the loss variable inside the train_epoch function that’s in the module with __name__ == ‘__main__’”.
+* For more information about probing, see <a class="reference external" href="https://ptera.readthedocs.io/en/latest/guide.html">ptera</a>.
+* For more information about “absolute” probes (with a leading <code class="docutils literal notranslate"><span class="pre">/</span></code>), see <a class="reference external" href="https://ptera.readthedocs.io/en/latest/guide.html#absolute-references">ptera</a>.</p></li>
+</ul>
+</section>
+<section id="giving-and-using-data-and-metrics">
+<h2>Giving and using data and metrics<a class="headerlink" href="#giving-and-using-data-and-metrics" title="Permalink to this headline"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">ov.given</span></code> is an instance of <a href="#id2"><span class="problematic" id="id3">`Given&lt;https://giving.readthedocs.io/en/latest/ref-gvn.html#giving.gvn.Given&gt;`_</span></a> and is where various instruments contribute data and read data from other instruments.</p>
+<p><strong>Contributing data</strong></p>
+<ul class="simple">
+<li><p>Calling <code class="docutils literal notranslate"><span class="pre">giving.give(key=value,</span> <span class="pre">...)</span></code> in the script or in an instrument.</p></li>
+<li><p>Calling <code class="docutils literal notranslate"><span class="pre">ov.probe(...).give()</span></code>.</p></li>
+</ul>
+<p><strong>Using data</strong></p>
+<ul class="simple">
+<li><p>Using <code class="docutils literal notranslate"><span class="pre">ov.given</span></code>’s various methods.</p></li>
+</ul>
+<p><strong>Example</strong></p>
+<p>This example probes the loss using one instrument and then displays the minimum loss using a second instrument.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">instrument_probes</span><span class="p">(</span><span class="n">ov</span><span class="p">):</span>
+    <span class="k">yield</span> <span class="n">ov</span><span class="o">.</span><span class="n">phases</span><span class="o">.</span><span class="n">load_script</span>
+    <span class="n">ov</span><span class="o">.</span><span class="n">probe</span><span class="p">(</span><span class="s2">&quot;//train_epoch &gt; loss&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">give</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">instrument_display_min</span><span class="p">(</span><span class="n">ov</span><span class="p">):</span>
+    <span class="k">yield</span> <span class="n">ov</span><span class="o">.</span><span class="n">phases</span><span class="o">.</span><span class="n">init</span>
+    <span class="n">ov</span><span class="o">.</span><span class="n">given</span><span class="p">[</span><span class="s2">&quot;?loss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Minimum loss: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You can run the instruments with <code class="docutils literal notranslate"><span class="pre">voir</span> <span class="pre">main.py</span></code>. In addition to that, <code class="docutils literal notranslate"><span class="pre">voir</span> <span class="pre">--dash</span> <span class="pre">main.py</span></code> will display everything that is given, so you will see the values of <code class="docutils literal notranslate"><span class="pre">loss</span></code> (as well as anything you give) change in real time.</p>
+</section>
+<section id="probing-for-milabench">
+<h2>Probing for milabench<a class="headerlink" href="#probing-for-milabench" title="Permalink to this headline"></a></h2>
+<p>Milabench adds a few instruments to <code class="docutils literal notranslate"><span class="pre">voir</span></code> that can be enabled using flags, such as <code class="docutils literal notranslate"><span class="pre">--train-rates</span></code>. To turn them all on and see whether you are instrumenting what needs to be instrumented for a benchmark, run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">voir</span> <span class="o">--</span><span class="n">verify</span> <span class="n">main</span><span class="o">.</span><span class="n">py</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Mila IDT.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

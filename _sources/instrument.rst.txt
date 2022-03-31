@@ -1,0 +1,113 @@
+
+Instrumenting code
+------------------
+
+Prior to creating a new benchmark, let us see how to instrument existing code in order to extract the desired metrics.
+
+Suppose you have this simple script in ``main.py``:
+
+.. code-block:: python
+
+    import torch
+    import torch.nn as nn
+    import torchvision.datasets as datasets
+    import torchvision.models as tvmodels
+    import torchvision.transforms as transforms
+
+    def train_epoch(model, criterion, optimizer, loader, device):
+        for inp, target in loader:
+            inp = inp.to(device)
+            target = target.to(device)
+            output = model(inp)
+            loss = criterion(output, target)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+    def main():
+        torch.cuda.manual_seed(1234)
+        device = torch.device("cuda")
+
+        model = tvmodels.resnet18()
+        model.to(device)
+
+        criterion = nn.CrossEntropyLoss().to(device)
+        optimizer = torch.optim.SGD(model.parameters(), 0.1)
+        train = datasets.ImageFolder("some_data_folder")
+        train_loader = torch.utils.data.DataLoader(train, batch_size=64, shuffle=True)
+
+        for epoch in range(10):
+            train_epoch(model, criterion, optimizer, train_loader, device)
+
+    if __name__ == "__main__":
+        main()
+
+
+Probe example
+~~~~~~~~~~~~~
+
+To instrument this code, simply create a file named ``voirfile.py`` in the current directory. In that file, you can write *instruments* which will be activated by running ``voir <VOIR_OPTIONS> main.py <SCRIPT_OPTIONS>``. For example, this instrument will print out the losses as they are calculated:
+
+.. code-block:: python
+
+    def instrument_probes(ov):
+        yield ov.phases.load_script
+        ov.probe("//train_epoch > loss").display()
+
+**Explanation:**
+
+* An instrument is a function or generator defined in ``voirfile.py`` with a name that starts with ``instrument_``.
+* It takes one parameter, an ``Overseer``.
+* By yielding ``ov.phases.load_script``, the instrument asks the overseer to resume the instrument's execution once the script is loaded, but before it is executed.
+  * The following phases are available:
+  * ``ov.phases.init``: When the overseer is created, but before the arguments are parsed. You can add new options to ``voir`` in ``ov.argparser``.
+  * ``ov.phases.parse_args``: voir's command line arguments have been parsed and are accessible in ``ov.options``.
+  * ``ov.phases.load_script``: The script has been loaded.
+  * ``ov.phases.run_script``: The script has been executed.
+  * ``ov.phases.finalize``: After ``ov.given`` has been terminated (so reductions etc have been run).
+* ``ov.probe`` sets a probe in the script's code (and/or in any module's code)
+  * ``//train_epoch > loss`` is shorthand for ``/__main__/train_epoch > loss`` and it means: "instrument the loss variable inside the train_epoch function that's in the module with __name__ == '__main__'".
+  * For more information about probing, see `ptera <https://ptera.readthedocs.io/en/latest/guide.html>`_.
+  * For more information about "absolute" probes (with a leading ``/``), see `ptera <https://ptera.readthedocs.io/en/latest/guide.html#absolute-references>`_.
+
+
+Giving and using data and metrics
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``ov.given`` is an instance of `Given<https://giving.readthedocs.io/en/latest/ref-gvn.html#giving.gvn.Given>`_ and is where various instruments contribute data and read data from other instruments.
+
+**Contributing data**
+
+* Calling ``giving.give(key=value, ...)`` in the script or in an instrument.
+* Calling ``ov.probe(...).give()``.
+
+**Using data**
+
+* Using ``ov.given``'s various methods. 
+
+**Example**
+
+This example probes the loss using one instrument and then displays the minimum loss using a second instrument.
+
+.. code-block:: python
+
+    def instrument_probes(ov):
+        yield ov.phases.load_script
+        ov.probe("//train_epoch > loss").give()
+
+    def instrument_display_min(ov):
+        yield ov.phases.init
+        ov.given["?loss"].min().print(f"Minimum loss: {}")
+
+You can run the instruments with ``voir main.py``. In addition to that, ``voir --dash main.py`` will display everything that is given, so you will see the values of ``loss`` (as well as anything you give) change in real time.
+
+
+Probing for milabench
+~~~~~~~~~~~~~~~~~~~~~
+
+Milabench adds a few instruments to ``voir`` that can be enabled using flags, such as ``--train-rates``. To turn them all on and see whether you are instrumenting what needs to be instrumented for a benchmark, run:
+
+.. code-block::
+
+    voir --verify main.py
+
