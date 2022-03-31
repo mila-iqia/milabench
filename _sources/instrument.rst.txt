@@ -74,7 +74,7 @@ To instrument this code, simply create a file named ``voirfile.py`` in the curre
 Giving and using data and metrics
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``ov.given`` is an instance of `Given<https://giving.readthedocs.io/en/latest/ref-gvn.html#giving.gvn.Given>`_ and is where various instruments contribute data and read data from other instruments.
+``ov.given`` is an instance of `Given <https://giving.readthedocs.io/en/latest/ref-gvn.html#giving.gvn.Given>`_ and is where various instruments contribute data and read data from other instruments.
 
 **Contributing data**
 
@@ -105,9 +105,34 @@ You can run the instruments with ``voir main.py``. In addition to that, ``voir -
 Probing for milabench
 ~~~~~~~~~~~~~~~~~~~~~
 
-Milabench adds a few instruments to ``voir`` that can be enabled using flags, such as ``--train-rates``. To turn them all on and see whether you are instrumenting what needs to be instrumented for a benchmark, run:
+Milabench adds a few instruments to ``voir`` that can be enabled using flags, such as ``--train-rate``. To turn them all on and see whether you are instrumenting what needs to be instrumented for a benchmark, run:
 
 .. code-block::
 
     voir --verify main.py
 
+--train-rate
+++++++++++++
+
+**Requires**
+
+* ``use_cuda``: True if using cuda, False otherwise
+* ``step + batch``: Both should be given at the same time. ``batch`` should be a tensor such that the first element of its shape is the batch size. ``step`` can be anything, typically just the boolean ``True``. It merely indicates that this is the end of a training step.
+
+**Gives**
+
+* ``train_rate + units``: ``train_rate`` is the training rate in items per second. ``units`` are the units (in this case, ``"items/s"``).
+
+**Example**
+
+This is how you would provide the information using the example ``main.py`` above:
+
+.. note::
+    The special marker ``#endloop_X`` can be used in a probe to denote the end of a for loop that has iteration variable ``X``.
+
+.. code-block:: python
+
+    def instrument_probe_for_train_rate(ov):
+        yield ov.phases.load_script
+        ov.give(use_cuda=True)
+        ov.probe("//train_epoch(inp as batch) > #endloop_inp as step")
