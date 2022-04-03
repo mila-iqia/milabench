@@ -85,7 +85,7 @@ class XPath(type(Path())):
             pattern: The pattern to replace.
             replacement: The replacement.
         """
-        new_content = re.sub(pattern, replacement, self.read_text())
+        new_content = re.sub(pattern, str(replacement), self.read_text())
         self.write_text(new_content)
 
     def download(self, url, dest=None):

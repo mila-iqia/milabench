@@ -1,14 +1,11 @@
-import argparse
-import json
+#!/usr/bin/env python
+
+import os
 
 from torchvision.datasets import MNIST
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser("Prepare the benchmark")
-    parser.add_argument("--bench-config", help="Benchmark configuration")
-    args = parser.parse_args()
-    config = json.loads(args.bench_config)
-    dest = config["dirs"]["data"]
+    dest = os.environ["MILABENCH_DIR_DATA"]
     print(f"Downloading MNIST into {dest}/MNIST...")
     MNIST(dest, download=True)
     print("Done!")

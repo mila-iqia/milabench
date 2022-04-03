@@ -1,31 +1,19 @@
 from milabench.pack import Package
 
-BRANCH = "main"
+BRANCH = "ff7114655294aa3ba57127a260dbd1ef5190f610"
 
 
 class TorchBenchmarkPack(Package):
-    def setup(self):
+    def install(self):
         code = self.dirs.code
         code.clone_subtree("https://github.com/pytorch/benchmark", BRANCH)
-        self.install("-r", self.dirs.code / "requirements-bench.txt")
-        self.run(
-            "python",
-            "install.py",
-            "--models",
-            self.config["model"],
-        )
+        self.pip_install("-r", code / "requirements-bench.txt")
+        self.python("install.py", "--models", self.config["model"])
 
-    def prepare(self):
-        pass
-
-    def launch(self, args, voirargs, env):
+    def run(self, args, voirargs, env):
         args.insert(0, self.config["model"])
-        return self.launch_script(
-            "run.py",
-            args=args,
-            voirargs=voirargs,
-            env=env
-        )
+        super().run
+        return self.launch("run.py", args=args, voirargs=voirargs, env=env)
 
 
 __pack__ = TorchBenchmarkPack

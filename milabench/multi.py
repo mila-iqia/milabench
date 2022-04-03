@@ -110,7 +110,7 @@ class MultiPackage:
         with given() as gv, dash(gv), give_std():
             for pack in self.packs.values():
                 with give.inherit(**{"#pack": pack}):
-                    pack.do_install(force=force)
+                    pack.checked_install(force=force)
 
     def do_prepare(self, dash):
         with given() as gv, dash(gv), give_std():
@@ -135,8 +135,7 @@ class MultiPackage:
                     voirargs = _assemble_options(run.get("voir", {}))
                     args = _assemble_options(run.get("argv", {}))
                     env = run.get("env", {})
-
-                    process = pack.launch(args=args, voirargs=voirargs, env=env)
+                    process = pack.run(args=args, voirargs=voirargs, env=env)
                     mr.add_process(process, info={"#pack": pack, "#run": run})
 
                 for _ in mr:

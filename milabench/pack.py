@@ -41,7 +41,10 @@ class BasePackage:
         self._nox_session = Session(self._nox_runner)
         self._nox_runner._create_venv()
 
-    def do_install(self, force=False):
+    def make_env(self):
+        return {}
+
+    def checked_install(self, force=False):
         sentinel = self.dirs.code / "installed"
         if not force and sentinel.exists():
             name = self.config["name"]
@@ -52,19 +55,25 @@ class BasePackage:
             print(f"Cannot install if the code destination is the same as the source")
             return
 
+        self.install_code()
+        self.install_milabench()
+        self.install()
+        sentinel.touch()
+
+    def install_code(self):
         if self.dirs.code.exists():
+            print(f"Clearing existing data in {self.dirs.code}")
             self.dirs.code.rm()
         self.pack_path.merge_into(self.dirs.code, self.pack_path / "manifest")
 
-        devreqs = os.environ.get("MILABENCH_DEV", None)
+    def install_milabench(self):
+        devreqs = os.environ.get("MILABENCH_DEVREQS", None)
         if devreqs:
-            self.install("-r", devreqs)
+            self.pip_install("-r", devreqs)
         else:
-            self.install("milabench", "voir")
-        self.setup()
-        sentinel.touch()
+            self.pip_install("milabench", "voir")
 
-    def install(self, *args, **kwargs):
+    def pip_install(self, *args, **kwargs):
         args = [str(x) for x in args]
         return self._nox_session.install(*args, **kwargs, silent=False)
 
@@ -72,7 +81,7 @@ class BasePackage:
         args = [str(x) for x in args]
         return self._nox_session.conda_install(*args, **kwargs, silent=False)
 
-    def run(self, *args, cwd=None, **kwargs):
+    def execute(self, *args, cwd=None, **kwargs):
         args = [str(x) for x in args]
         curdir = os.getcwd()
         if cwd is None:
@@ -83,7 +92,10 @@ class BasePackage:
         finally:
             os.chdir(curdir)
 
-    def launch_script(self, script, args=(), voirargs=(), env={}):
+    def python(self, *args, cwd=None, **kwargs):
+        self.execute("python", *args, **kwargs, cwd=cwd)
+
+    def launch(self, script, args=(), voirargs=(), env={}):
         if not XPath(script).is_absolute():
             script = str(self.dirs.code / script)
 
@@ -102,17 +114,34 @@ class BasePackage:
 
 
 class Package(BasePackage):
+    main_script = "main.py"
     prepare_script = "prepare.py"
+    requirements_file = "requirements.txt"
 
-    def setup(self):
-        reqs = self.dirs.code / "requirements.txt"
-        if reqs.exists():
-            self.install("-r", reqs)
+    def make_env(self):
+        env = {
+            f"MILABENCH_DIR_{name.upper()}": path
+            for name, path in self.config["dirs"].items()
+        }
+        env["MILABENCH_CONFIG"] = json.dumps(self.config)
+        return env
+
+    def install(self):
+        if self.requirements_file is not None:
+            reqs = self.dirs.code / self.requirements_file
+            if reqs.exists():
+                self.pip_install("-r", reqs)
 
     def prepare(self):
-        self.run(
-            "python",
-            self.dirs.code / self.prepare_script,
-            "--bench-config",
-            json.dumps(self.config),
-        )
+        if self.prepare_script is not None:
+            prep = self.dirs.code / self.prepare_script
+            if prep.exists():
+                self.execute(prep, json.dumps(self.config), env=self.make_env())
+
+    def run(self, args, voirargs, env):
+        main = self.dirs.code / self.main_script
+        if not main.exists():
+            raise FileNotFoundError(f"Cannot run main script because it does not exist: {main}")
+
+        env.update(self.make_env())
+        return self.launch(self.main_script, args=args, voirargs=voirargs, env=env)
