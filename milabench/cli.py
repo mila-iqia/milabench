@@ -51,7 +51,7 @@ def _get_multipack():
     if exclude:
         exclude = exclude.split(",")
 
-    config_base = str(XPath(config).parent)
+    config_base = str(XPath(config).parent.absolute())
     config = configuration(config)
     config["defaults"]["config_base"] = config_base
     if base is not None:

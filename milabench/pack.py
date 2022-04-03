@@ -48,7 +48,8 @@ class BasePackage:
             print(f"Benchmark {name} is already installed")
             return
 
-        if self.dirs.code == self.path_pack:
+        if self.dirs.code == self.pack_path:
+            print(f"Cannot install if the code destination is the same as the source")
             return
 
         if self.dirs.code.exists():
