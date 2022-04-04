@@ -1,7 +1,7 @@
 defaults: &defaults
   dirs:
-    code: code
-    venv: null
+    code: ./_dev_{name}
+    venv: venv/{name}
     data: data
     runs: runs
 
@@ -30,7 +30,7 @@ defaults: &defaults
     --loading-rate: true
 
 benchmarks:
-  test:
+  {{STEM}}:
     <<<: *defaults
 
     definition: ./

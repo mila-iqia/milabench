@@ -7,7 +7,7 @@
 
 def main():
     # Write code here
-    ...
+    print("Hello this is the benchmark!")
 
 
 if __name__ == "__main__":

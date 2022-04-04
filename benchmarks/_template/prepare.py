@@ -11,6 +11,6 @@ if __name__ == "__main__":
     # Download (or generate) the needed dataset(s). You are responsible
     # to check if it has already been properly downloaded or not, and to
     # do nothing if it has been.
-    ...
+    print("Hello I am doing some data stuff!")
 
     # If there is nothing to download or generate, just delete this file.
