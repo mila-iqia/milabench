@@ -97,16 +97,39 @@ class Main:
         # Name of the run
         run: Option = None
 
+        # Dev mode (adds --sync, only one run, no logging)
+        dev: Option & bool = False
+
+        # Sync changes to the benchmark directory
+        sync: Option & bool = False
+
         mp = _get_multipack()
-        mp.do_run(dash=simple_dash, report=partial(simple_report, runname=run))
+
+        if dev or sync:
+            mp.do_install(dash=simple_dash, sync=True)
+
+        if dev:
+            mp.do_dev(dash=simple_dash)
+        else:
+            mp.do_run(dash=simple_dash, report=partial(simple_report, runname=run))
 
     def prepare():
+        # Dev mode (does install --sync)
+        # [alias: --sync]
+        dev: Option & bool = False
+
         mp = _get_multipack()
+
+        if dev:
+            mp.do_install(dash=simple_dash, sync=True)
+
         mp.do_prepare(dash=simple_dash)
 
     def install():
         # Force install
         force: Option & bool = False
+
+        # Sync changes to the benchmark directory
         sync: Option & bool = False
 
         mp = _get_multipack()

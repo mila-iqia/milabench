@@ -13,12 +13,8 @@ Try out the template:
 
 ```bash
 milabench install benchmarks/mybench/dev.yaml
-milabench prepare benchmarks/mybench/dev.yaml
-milabench run benchmarks/mybench/dev.yaml
+milabench prepare benchmarks/mybench/dev.yaml --dev
+milabench run benchmarks/mybench/dev.yaml --dev
 ```
 
-If you change anything in the benchmark directory and you want to test, you can sync the changes to the copy of the code in `$MILABENCH_BASE` with:
-
-```bash
-milabench install benchmarks/mybench/dev.yaml --sync
-```
+The `--dev` flag will sync any of your changes to the copy of the code in `$MILABENCH_BASE` and it will force the use of only one job. (There is also `--sync` to only do the sync).

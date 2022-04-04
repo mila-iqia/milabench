@@ -140,3 +140,26 @@ class MultiPackage:
 
                 for _ in mr:
                     time.sleep(0.1)
+
+    def do_dev(self, dash):
+        # TODO: share the common code between do_run and do_dev
+        with given() as gv, dash(gv):
+            for pack in self.packs.values():
+                cfg = pack.config
+                plan = {
+                    "method": "njobs",
+                    "n": 1
+                }
+                method = get_planning_method(plan.pop("method"))
+                mr = MultiReader()
+                for run in method(cfg, **plan):
+                    run["tag"] = [run["name"]]
+                    give(**{"#pack": pack, "#run": run, "#start": time.time()})
+                    voirargs = _assemble_options(run.get("voir", {}))
+                    args = _assemble_options(run.get("argv", {}))
+                    env = run.get("env", {})
+                    process = pack.run(args=args, voirargs=voirargs, env=env)
+                    mr.add_process(process, info={"#pack": pack, "#run": run})
+
+                for _ in mr:
+                    time.sleep(0.1)
