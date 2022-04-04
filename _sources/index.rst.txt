@@ -10,6 +10,7 @@ Welcome to milabench's documentation!
    config.rst
    instrument.rst
    new_benchmarks.rst
+   reference.rst
 
 
 Indices and tables

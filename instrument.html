@@ -46,12 +46,15 @@
 <li class="toctree-l2"><a class="reference internal" href="#probe-example">Probe example</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#giving-and-using-data-and-metrics">Giving and using data and metrics</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#probing-for-milabench">Probing for milabench</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#train-rate">–train-rate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#essential-probes">Essential probes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#additional-readings">Additional readings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#example">Example</a></li>
 </ul>
 </li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="new_benchmarks.html">Creating a new benchmark</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
 </ul>
 
         </div>
@@ -129,17 +132,23 @@
 <ul class="simple">
 <li><p>An instrument is a function or generator defined in <code class="docutils literal notranslate"><span class="pre">voirfile.py</span></code> with a name that starts with <code class="docutils literal notranslate"><span class="pre">instrument_</span></code>.</p></li>
 <li><p>It takes one parameter, an <code class="docutils literal notranslate"><span class="pre">Overseer</span></code>.</p></li>
-<li><p>By yielding <code class="docutils literal notranslate"><span class="pre">ov.phases.load_script</span></code>, the instrument asks the overseer to resume the instrument’s execution once the script is loaded, but before it is executed.
-* The following phases are available:
-* <code class="docutils literal notranslate"><span class="pre">ov.phases.init</span></code>: When the overseer is created, but before the arguments are parsed. You can add new options to <code class="docutils literal notranslate"><span class="pre">voir</span></code> in <code class="docutils literal notranslate"><span class="pre">ov.argparser</span></code>.
-* <code class="docutils literal notranslate"><span class="pre">ov.phases.parse_args</span></code>: voir’s command line arguments have been parsed and are accessible in <code class="docutils literal notranslate"><span class="pre">ov.options</span></code>.
-* <code class="docutils literal notranslate"><span class="pre">ov.phases.load_script</span></code>: The script has been loaded.
-* <code class="docutils literal notranslate"><span class="pre">ov.phases.run_script</span></code>: The script has been executed.
-* <code class="docutils literal notranslate"><span class="pre">ov.phases.finalize</span></code>: After <code class="docutils literal notranslate"><span class="pre">ov.given</span></code> has been terminated (so reductions etc have been run).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ov.probe</span></code> sets a probe in the script’s code (and/or in any module’s code)
-* <code class="docutils literal notranslate"><span class="pre">//train_epoch</span> <span class="pre">&gt;</span> <span class="pre">loss</span></code> is shorthand for <code class="docutils literal notranslate"><span class="pre">/__main__/train_epoch</span> <span class="pre">&gt;</span> <span class="pre">loss</span></code> and it means: “instrument the loss variable inside the train_epoch function that’s in the module with __name__ == ‘__main__’”.
-* For more information about probing, see <a class="reference external" href="https://ptera.readthedocs.io/en/latest/guide.html">ptera</a>.
-* For more information about “absolute” probes (with a leading <code class="docutils literal notranslate"><span class="pre">/</span></code>), see <a class="reference external" href="https://ptera.readthedocs.io/en/latest/guide.html#absolute-references">this section</a>.</p></li>
+<li><p>By yielding <code class="docutils literal notranslate"><span class="pre">ov.phases.load_script</span></code>, the instrument asks the overseer to resume the instrument’s execution once the script is loaded, but before it is executed.</p>
+<ul>
+<li><p>The following phases are available:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ov.phases.init</span></code>: When the overseer is created, but before the arguments are parsed. You can add new options to <code class="docutils literal notranslate"><span class="pre">voir</span></code> in <code class="docutils literal notranslate"><span class="pre">ov.argparser</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ov.phases.parse_args</span></code>: voir’s command line arguments have been parsed and are accessible in <code class="docutils literal notranslate"><span class="pre">ov.options</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ov.phases.load_script</span></code>: The script has been loaded.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ov.phases.run_script</span></code>: The script has been executed.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ov.phases.finalize</span></code>: After <code class="docutils literal notranslate"><span class="pre">ov.given</span></code> has been terminated (so reductions etc have been run).</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ov.probe</span></code> sets a probe in the script’s code (and/or in any module’s code)</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">//train_epoch</span> <span class="pre">&gt;</span> <span class="pre">loss</span></code> is shorthand for <code class="docutils literal notranslate"><span class="pre">/__main__/train_epoch</span> <span class="pre">&gt;</span> <span class="pre">loss</span></code> and it means: “instrument the loss variable inside the train_epoch function that’s in the module with <code class="docutils literal notranslate"><span class="pre">__name__</span> <span class="pre">==</span> <span class="pre">&quot;__main__&quot;</span></code>.</p></li>
+<li><p>For more information about probing, see <a class="reference external" href="https://ptera.readthedocs.io/en/latest/guide.html">ptera</a>.</p></li>
+<li><p>For more information about “absolute” probes (with a leading <code class="docutils literal notranslate"><span class="pre">/</span></code>), see <a class="reference external" href="https://ptera.readthedocs.io/en/latest/guide.html#absolute-references">this section</a>.</p></li>
+</ul>
+</li>
 </ul>
 </section>
 <section id="giving-and-using-data-and-metrics">
@@ -147,8 +156,9 @@
 <p><code class="docutils literal notranslate"><span class="pre">ov.given</span></code> is an instance of <a class="reference external" href="https://giving.readthedocs.io/en/latest/ref-gvn.html#giving.gvn.Given">Given</a> and is where various instruments contribute data and read data from other instruments.</p>
 <p><strong>Contributing data</strong></p>
 <ul class="simple">
-<li><p>Calling <code class="docutils literal notranslate"><span class="pre">giving.give(key=value,</span> <span class="pre">...)</span></code> in the script or in an instrument.</p></li>
-<li><p>Calling <code class="docutils literal notranslate"><span class="pre">ov.probe(...).give()</span></code>.</p></li>
+<li><p>Calling <code class="docutils literal notranslate"><span class="pre">ov.give(key=value,</span> <span class="pre">...)</span></code> in an instrument.</p></li>
+<li><p>Calling <code class="docutils literal notranslate"><span class="pre">ov.probe(...).give()</span></code> in an instrument.</p></li>
+<li><p>Calling <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">giving</span> <span class="pre">import</span> <span class="pre">give;</span> <span class="pre">give(key=value,</span> <span class="pre">...)</span></code> in a script.</p></li>
 </ul>
 <p><strong>Using data</strong></p>
 <ul class="simple">
@@ -168,33 +178,74 @@
 <p>You can run the instruments with <code class="docutils literal notranslate"><span class="pre">voir</span> <span class="pre">main.py</span></code>. In addition to that, <code class="docutils literal notranslate"><span class="pre">voir</span> <span class="pre">--dash</span> <span class="pre">main.py</span></code> will display everything that is given, so you will see the values of <code class="docutils literal notranslate"><span class="pre">loss</span></code> (as well as anything you give) change in real time.</p>
 </section>
 <section id="probing-for-milabench">
-<h2>Probing for milabench<a class="headerlink" href="#probing-for-milabench" title="Permalink to this headline"></a></h2>
+<span id="probingmb"></span><h2>Probing for milabench<a class="headerlink" href="#probing-for-milabench" title="Permalink to this headline"></a></h2>
 <p>Milabench adds a few instruments to <code class="docutils literal notranslate"><span class="pre">voir</span></code> that can be enabled using flags, such as <code class="docutils literal notranslate"><span class="pre">--train-rate</span></code>. To turn them all on and see whether you are instrumenting what needs to be instrumented for a benchmark, run:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">voir</span> <span class="o">--</span><span class="n">verify</span> <span class="n">main</span><span class="o">.</span><span class="n">py</span>
 </pre></div>
 </div>
-<section id="train-rate">
-<h3>–train-rate<a class="headerlink" href="#train-rate" title="Permalink to this headline"></a></h3>
-<p><strong>Requires</strong></p>
+<p>You typically don’t need to do much except write a few probes. The various instruments provided by <code class="docutils literal notranslate"><span class="pre">milabench</span></code> will look for data with specific names and types.</p>
+<section id="essential-probes">
+<h3>Essential probes<a class="headerlink" href="#essential-probes" title="Permalink to this headline"></a></h3>
+<p>The <strong>essential</strong> probes to provide are those that allow the computation of the training rate.</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">use_cuda</span></code>: True if using cuda, False otherwise</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">step</span> <span class="pre">+</span> <span class="pre">batch</span></code>: Both should be given at the same time. <code class="docutils literal notranslate"><span class="pre">batch</span></code> should be a tensor such that the first element of its shape is the batch size. <code class="docutils literal notranslate"><span class="pre">step</span></code> can be anything, typically just the boolean <code class="docutils literal notranslate"><span class="pre">True</span></code>. It merely indicates that this is the end of a training step.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">loss</span></code>: The current training loss. This is used as a sanity check, to verify that the algorithm is doing something.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">step</span> <span class="pre">+</span> <span class="pre">batch</span></code>: Both should be probed/given at the same time.</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">batch</span></code> should be a tensor such that the first element of its shape is the batch size.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">step</span></code> can be anything, typically just the boolean <code class="docutils literal notranslate"><span class="pre">True</span></code>. It merely indicates that this is the end of a training step.</p></li>
 </ul>
-<p><strong>Gives</strong></p>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">use_cuda</span></code>: True if using cuda for training, False otherwise. If using CUDA, cuda.synchronize will be periodically called to get more accurate readings.</p></li>
+</ul>
+</section>
+<section id="additional-readings">
+<h3>Additional readings<a class="headerlink" href="#additional-readings" title="Permalink to this headline"></a></h3>
+<p>These readings can be very useful, but they are not strictly speaking necessary and may not always be available or easy to extract.</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">train_rate</span> <span class="pre">+</span> <span class="pre">units</span></code>: <code class="docutils literal notranslate"><span class="pre">train_rate</span></code> is the training rate in items per second. <code class="docutils literal notranslate"><span class="pre">units</span></code> are the units (in this case, <code class="docutils literal notranslate"><span class="pre">&quot;items/s&quot;</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">options</span></code>: The parsed command line options. If the script is using the standard argparse module, you can import the already-made instrumenter in the voirfile: <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">milabench.opt</span> <span class="pre">import</span> <span class="pre">instrument_argparse</span></code>. Since the name starts with <code class="docutils literal notranslate"><span class="pre">instrument_</span></code>, it is sufficient to import it to activate it.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">model</span></code>: The model object (PyTorch/etc.) that contains the parameters.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">loader</span></code>: The DataLoader that is being iterated on during training. The <code class="docutils literal notranslate"><span class="pre">--loading-rate</span></code> flag will attempt to instrument it, although that may not always work.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">batch</span> <span class="pre">+</span> <span class="pre">compute_start</span> <span class="pre">+</span> <span class="pre">compute_end</span></code>: This one is a bit trickier and uses <a class="reference external" href="https://ptera.readthedocs.io/en/latest/guide.html#wrapper-probe">the wrapper probe feature</a> in ptera. The <code class="docutils literal notranslate"><span class="pre">--compute-rate</span></code> flag uses this to calculate the time spent between the beginning and end of a loop iteration.</p></li>
 </ul>
-<p><strong>Example</strong></p>
-<p>This is how you would provide the information using the example <code class="docutils literal notranslate"><span class="pre">main.py</span></code> above:</p>
+</section>
+<section id="example">
+<h3>Example<a class="headerlink" href="#example" title="Permalink to this headline"></a></h3>
+<p>This is how you would provide this information for the example <code class="docutils literal notranslate"><span class="pre">main.py</span></code> above:</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The special marker <code class="docutils literal notranslate"><span class="pre">#endloop_X</span></code> can be used in a probe to denote the end of a for loop that has iteration variable <code class="docutils literal notranslate"><span class="pre">X</span></code>.</p>
+<p>The special marker <code class="docutils literal notranslate"><span class="pre">#endloop_X</span></code> can be used in a probe to denote the end of a for loop that has iteration variable <code class="docutils literal notranslate"><span class="pre">X</span></code>. <code class="docutils literal notranslate"><span class="pre">#loop_X</span></code> can be used to tag the beginning.</p>
 </div>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">instrument_probe_for_train_rate</span><span class="p">(</span><span class="n">ov</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Instrument argparse</span>
+<span class="kn">from</span> <span class="nn">milabench.opt</span> <span class="kn">import</span> <span class="n">instrument_argparse</span>
+
+<span class="k">def</span> <span class="nf">instrument_probes</span><span class="p">(</span><span class="n">ov</span><span class="p">):</span>
     <span class="k">yield</span> <span class="n">ov</span><span class="o">.</span><span class="n">phases</span><span class="o">.</span><span class="n">load_script</span>
+
+    <span class="c1"># Give the loss</span>
+    <span class="n">ov</span><span class="o">.</span><span class="n">probe</span><span class="p">(</span><span class="s2">&quot;//train_epoch &gt; loss&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">give</span><span class="p">()</span>
+
+    <span class="c1"># Give batch + step</span>
+    <span class="n">ov</span><span class="o">.</span><span class="n">probe</span><span class="p">(</span><span class="s2">&quot;//train_epoch(inp as batch) &gt; #endloop_inp as step&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">give</span><span class="p">()</span>
+
+    <span class="c1"># Always use CUDA</span>
     <span class="n">ov</span><span class="o">.</span><span class="n">give</span><span class="p">(</span><span class="n">use_cuda</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">ov</span><span class="o">.</span><span class="n">probe</span><span class="p">(</span><span class="s2">&quot;//train_epoch(inp as batch) &gt; #endloop_inp as step&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Give the model</span>
+    <span class="n">ov</span><span class="o">.</span><span class="n">probe</span><span class="p">(</span><span class="s2">&quot;//main &gt; model&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">give</span><span class="p">()</span>
+
+    <span class="c1"># Give the loader</span>
+    <span class="n">ov</span><span class="o">.</span><span class="n">probe</span><span class="p">(</span><span class="s2">&quot;//main &gt; train_loader as loader&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">give</span><span class="p">()</span>
+
+    <span class="c1"># Compute start/end</span>
+    <span class="c1"># This basically creates a probe that has two trigger points, one</span>
+    <span class="c1"># for ! and another for !!.</span>
+    <span class="n">ov</span><span class="o">.</span><span class="n">probe</span><span class="p">(</span><span class="s2">&quot;//train_epoch(inp as batch, !#loop_inp as compute_start, !!#endloop_inp as compute_end)&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">give</span><span class="p">()</span>
 </pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If, instead of being in the main script at <code class="docutils literal notranslate"><span class="pre">main.py</span></code>, the <code class="docutils literal notranslate"><span class="pre">train_epoch</span></code> function is in <code class="docutils literal notranslate"><span class="pre">somepackage/train.py</span></code>, you can simply use <code class="docutils literal notranslate"><span class="pre">/somepackage.train/train_epoch</span></code> instead of <code class="docutils literal notranslate"><span class="pre">//train_epoch</span></code>.</p>
+<p>The syntax can be a bit tricky, so if you want you can also import the function from inside the instrumenter and use its name directly without slashes at the beginning. You can also print out the result of <code class="docutils literal notranslate"><span class="pre">ptera.refstring(f)</span></code> to get the string to use for the probe.</p>
 </div>
 </section>
 </section>
