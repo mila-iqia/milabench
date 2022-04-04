@@ -83,9 +83,14 @@ def _get_multipack(dev=False):
                 sys.exit(1)
             defn["dirs"]["venv"] = venv
 
-        dirs = {
-            k: XPath(v.format(**defn)).expanduser() for k, v in defn["dirs"].items()
-        }
+        def _format_path(pth):
+            formatted = pth.format(**defn)
+            xpth = XPath(formatted).expanduser()
+            if formatted.startswith("."):
+                xpth = xpth.absolute()
+            return xpth
+
+        dirs = {k: _format_path(v) for k, v in defn["dirs"].items()}
         dirs = {
             k: str(v if v.is_absolute() else dirs["base"] / v) for k, v in dirs.items()
         }
