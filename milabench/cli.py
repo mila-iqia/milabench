@@ -59,8 +59,10 @@ def _get_multipack(dev=False):
     config["defaults"]["config_base"] = config_base
     if base is not None:
         config["defaults"]["dirs"]["base"] = base
-    elif "MILABENCH_BASE" in os.environ:
+    elif os.environ.get("MILABENCH_BASE", None):
         config["defaults"]["dirs"]["base"] = os.environ["MILABENCH_BASE"]
+    elif not config["defaults"]["dirs"].get("base", None):
+        sys.exit("Error: Neither --base nor $MILABENCH_BASE are set.")
     config = self_merge(config)
 
     objects = {}
