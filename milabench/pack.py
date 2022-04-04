@@ -66,7 +66,7 @@ class BasePackage:
         """Return a dict of environment variables to use for prepare/run."""
         return {}
 
-    def checked_install(self, force=False):
+    def checked_install(self, force=False, sync=False):
         """Entry method to install the benchmark.
 
         * Check if the benchmark is installed.
@@ -77,9 +77,10 @@ class BasePackage:
         Arguments:
             force: Whether to force installation if the benchmark
                 is already installed.
+            sync: Whether to only sync changed files in the manifest.
         """
         sentinel = self.dirs.code / "installed"
-        if not force and sentinel.exists():
+        if not force and not sync and sentinel.exists():
             name = self.config["name"]
             print(f"Benchmark {name} is already installed")
             return
@@ -88,17 +89,26 @@ class BasePackage:
             print(f"Cannot install if the code destination is the same as the source")
             return
 
-        self.install_code()
+        self.install_code(sync=sync)
+        if sync:
+            return
         self.install_milabench()
         self.install()
         sentinel.touch()
 
-    def install_code(self):
+    def install_code(self, sync=False):
         """Copy the contents of the manifest into ``self.dirs.code``.
 
-        If the directory already exists, it is cleared out beforehand.
+        If the directory already exists, it is cleared out beforehand,
+        unless ``sync == True``.
+
+        Arguments:
+            sync: Whether we are performing a simple sync, in which case
+                existing code is not cleared.
         """
-        if self.dirs.code.exists():
+        if sync:
+            print(f"Syncing changes into {self.dirs.code}")
+        elif self.dirs.code.exists():
             print(f"Clearing existing data in {self.dirs.code}")
             self.dirs.code.rm()
         self.pack_path.merge_into(self.dirs.code, self.pack_path / "manifest")

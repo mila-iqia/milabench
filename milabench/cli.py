@@ -107,6 +107,7 @@ class Main:
     def install():
         # Force install
         force: Option & bool = False
+        sync: Option & bool = False
 
         mp = _get_multipack()
-        mp.do_install(dash=simple_dash, force=force)
+        mp.do_install(dash=simple_dash, force=force, sync=sync)
