@@ -105,6 +105,8 @@ This example probes the loss using one instrument and then displays the minimum 
 You can run the instruments with ``voir main.py``. In addition to that, ``voir --dash main.py`` will display everything that is given, so you will see the values of ``loss`` (as well as anything you give) change in real time.
 
 
+.. _probingmb:
+
 Probing for milabench
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -140,7 +142,7 @@ These readings can be very useful, but they are not strictly speaking necessary 
 * ``options``: The parsed command line options. If the script is using the standard argparse module, you can import the already-made instrumenter in the voirfile: ``from milabench.opt import instrument_argparse``. Since the name starts with ``instrument_``, it is sufficient to import it to activate it.
 * ``model``: The model object (PyTorch/etc.) that contains the parameters.
 * ``loader``: The DataLoader that is being iterated on during training. The ``--loading-rate`` flag will attempt to instrument it, although that may not always work.
-* ``batch + compute_start + compute_end``: This one is a bit trickier and uses `the wrapper probe feature<https://ptera.readthedocs.io/en/latest/guide.html#wrapper-probe>`_ in ptera. The ``--compute-rate`` flag uses this to calculate the time spent between the beginning and end of a loop iteration.
+* ``batch + compute_start + compute_end``: This one is a bit trickier and uses `the wrapper probe feature <https://ptera.readthedocs.io/en/latest/guide.html#wrapper-probe>`_ in ptera. The ``--compute-rate`` flag uses this to calculate the time spent between the beginning and end of a loop iteration.
 
 
 Example
@@ -167,9 +169,6 @@ This is how you would provide this information for the example ``main.py`` above
 
         # Always use CUDA
         ov.give(use_cuda=True)
-
-        # Give the loss
-        ov.probe("//train_epoch > loss").give()
 
         # Give the model
         ov.probe("//main > model").give()

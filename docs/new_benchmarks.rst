@@ -72,7 +72,7 @@ If you are writing a benchmark from scratch, using pip installable libraries:
 * Put the requirements in ``requirements.txt``. It's unlikely you have to do anything fancier than that, but if you do, you can run arbitrary commands in ``install`` in the benchfile.
 * If you need to download or generate data, write the code in ``prepare.py``. Remember that the root data directory is in ``$MILABENCH_DIR_DATA``, but do not store data directly in there, store it in the appropriate subdirectory. Do not repeat work if the data is already there.
 * Write the main code in ``main.py``.
-* Write a ``voirfile.py`` that corresponds to the directions in :ref:`probing for milabench`.
+* Write a ``voirfile.py`` that corresponds to the directions in :ref:`probingmb`.
 * You can check the progress of your probing with ``voir --verify main.py``
 
 
@@ -110,7 +110,7 @@ If a dataset is needed on disk, write the code in ``prepare.py``. Remember that 
 
 Once it works, run it with ``voir --verify train.py``, which shouldn't give you much new information. But now you can follow these steps in a loop:
 
-* Modify ``voirfile.py`` *in the benchmark directory* accordingly to the directions in :ref:`probing for milabench`.
+* Modify ``voirfile.py`` *in the benchmark directory* accordingly to the directions in :ref:`probingmb`.
 * Run ``milabench install dev.yaml --sync`` to transfer your changes to the dev directory.
 * Run ``voir --verify train.py`` again, until everything looks good.
 
