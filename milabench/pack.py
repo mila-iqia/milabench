@@ -116,7 +116,7 @@ class BasePackage:
     def install_milabench(self):
         """Install milabench in the virtual environment.
 
-        Essentially runs ``pip install milabench voir``.
+        Essentially runs ``pip install milabench``.
 
         The ``$MILABENCH_DEVREQS`` environment variable can be set to point
         to a requirements file to use instead of the standard command.
@@ -125,7 +125,7 @@ class BasePackage:
         if devreqs:
             self.pip_install("-r", devreqs)
         else:
-            self.pip_install("milabench", "voir")
+            self.pip_install("milabench")
 
     def pip_install(self, *args, **kwargs):
         """Install a package in the virtual environment.
