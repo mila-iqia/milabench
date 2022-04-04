@@ -28,7 +28,7 @@ def get_pack(defn):
 
 
 @tooled
-def _get_multipack():
+def _get_multipack(dev=False):
     # Configuration file
     # [positional]
     config: Option & str
@@ -38,6 +38,9 @@ def _get_multipack():
 
     # Whether to use the current environment
     use_current_env: Option & bool = False
+
+    if dev:
+        use_current_env = True
 
     # Packs to select
     select: Option & str = default("")
@@ -97,13 +100,13 @@ class Main:
         # Name of the run
         run: Option = None
 
-        # Dev mode (adds --sync, only one run, no logging)
+        # Dev mode (adds --sync, current venv, only one run, no logging)
         dev: Option & bool = False
 
         # Sync changes to the benchmark directory
         sync: Option & bool = False
 
-        mp = _get_multipack()
+        mp = _get_multipack(dev=dev)
 
         if dev or sync:
             mp.do_install(dash=simple_dash, sync=True)
@@ -114,13 +117,15 @@ class Main:
             mp.do_run(dash=simple_dash, report=partial(simple_report, runname=run))
 
     def prepare():
-        # Dev mode (does install --sync)
-        # [alias: --sync]
+        # Dev mode (does install --sync, uses current venv)
         dev: Option & bool = False
 
-        mp = _get_multipack()
+        # Sync changes to the benchmark directory
+        sync: Option & bool = False
 
-        if dev:
+        mp = _get_multipack(dev=dev)
+
+        if dev or sync:
             mp.do_install(dash=simple_dash, sync=True)
 
         mp.do_prepare(dash=simple_dash)
@@ -132,5 +137,8 @@ class Main:
         # Sync changes to the benchmark directory
         sync: Option & bool = False
 
-        mp = _get_multipack()
+        # Dev mode (adds --sync, use current venv)
+        dev: Option & bool = False
+
+        mp = _get_multipack(dev=dev)
         mp.do_install(dash=simple_dash, force=force, sync=sync)
