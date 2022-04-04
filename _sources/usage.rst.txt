@@ -2,17 +2,20 @@
 Install
 -------
 
-To install for development, clone the repo and use branch ``v2``:
+To install for development, clone the repo (and also the ``voir`` repo) and use branch ``v2``:
 
 .. code-block:: bash
 
-    git -b v2 clone git@github.com:mila-iqia/milabench.git
+    git clone git@github.com:breuleux/voir.git
+    git clone -b v2 git@github.com:mila-iqia/milabench.git
     cd milabench
     # <Activate virtual environment>
     # Install in editable mode
     pip install -e .
 
 This will install two commands, ``milabench`` and ``voir``.
+
+There is an important second step, which is to set the environment variable ``$MILABENCH_DEVREQS`` to ``devreq.txt``. This will make ``milabench`` install your working versions of ``milabench`` and ``voir`` into the benchmark venvs. Otherwise it won't work at all because it will try to get them on pip. As that file is written, it will only work if you call ``milabench`` from the ``milabench`` root directory, but you can edit them to point to the absolute locations if you want.
 
 
 Using milabench

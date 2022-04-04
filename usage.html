@@ -49,7 +49,9 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Benchmark configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="instrument.html">Instrumenting code</a></li>
 <li class="toctree-l1"><a class="reference internal" href="new_benchmarks.html">Creating a new benchmark</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
 </ul>
 
         </div>
@@ -78,8 +80,9 @@
              
   <section id="install">
 <h1>Install<a class="headerlink" href="#install" title="Permalink to this headline"></a></h1>
-<p>To install for development, clone the repo and use branch <code class="docutils literal notranslate"><span class="pre">v2</span></code>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git -b v2 clone git@github.com:mila-iqia/milabench.git
+<p>To install for development, clone the repo (and also the <code class="docutils literal notranslate"><span class="pre">voir</span></code> repo) and use branch <code class="docutils literal notranslate"><span class="pre">v2</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone git@github.com:breuleux/voir.git
+git clone -b v2 git@github.com:mila-iqia/milabench.git
 <span class="nb">cd</span> milabench
 <span class="c1"># &lt;Activate virtual environment&gt;</span>
 <span class="c1"># Install in editable mode</span>
@@ -87,6 +90,7 @@ pip install -e .
 </pre></div>
 </div>
 <p>This will install two commands, <code class="docutils literal notranslate"><span class="pre">milabench</span></code> and <code class="docutils literal notranslate"><span class="pre">voir</span></code>.</p>
+<p>There is an important second step, which is to set the environment variable <code class="docutils literal notranslate"><span class="pre">$MILABENCH_DEVREQS</span></code> to <code class="docutils literal notranslate"><span class="pre">devreq.txt</span></code>. This will make <code class="docutils literal notranslate"><span class="pre">milabench</span></code> install your working versions of <code class="docutils literal notranslate"><span class="pre">milabench</span></code> and <code class="docutils literal notranslate"><span class="pre">voir</span></code> into the benchmark venvs. Otherwise it won’t work at all because it will try to get them on pip. As that file is written, it will only work if you call <code class="docutils literal notranslate"><span class="pre">milabench</span></code> from the <code class="docutils literal notranslate"><span class="pre">milabench</span></code> root directory, but you can edit them to point to the absolute locations if you want.</p>
 </section>
 <section id="using-milabench">
 <h1>Using milabench<a class="headerlink" href="#using-milabench" title="Permalink to this headline"></a></h1>
