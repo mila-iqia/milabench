@@ -22,6 +22,12 @@ def manifest_ignorer(manifest):
     return ignore
 
 
+def _restat(file, orperm=0o000, andperm=0o777):
+    stat = os.stat(file)
+    new_status = (stat.st_mode | orperm) & andperm
+    os.chmod(file, new_status)
+
+
 class XPath(type(Path())):
     def open(self, mode="r", buffering=-1, encoding=None, errors=None, newline=None):
         if encoding is None and "b" not in mode:
@@ -57,7 +63,7 @@ class XPath(type(Path())):
         else:
             shutil.copy(self, path)
 
-    def merge_into(self, dest, manifest="*", move=False):
+    def merge_into(self, dest, manifest="*", move=False, readonly=False):
         if isinstance(manifest, Path):
             if manifest.exists():
                 manifest = manifest.open().read()
@@ -73,10 +79,14 @@ class XPath(type(Path())):
                 destpath = dest / rel_file
                 if not destpath.parent.exists():
                     os.makedirs(destpath.parent, exist_ok=True)
+                if destpath.exists():
+                    _restat(destpath, orperm=0o200)
                 if move:
                     shutil.move(filepath, destpath)
                 else:
                     shutil.copy(filepath, destpath)
+                if readonly:
+                    _restat(destpath, andperm=0o555)
 
     def sub(self, pattern, replacement):
         """Replace parts of the file using a regular expression.

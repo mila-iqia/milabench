@@ -111,7 +111,7 @@ class BasePackage:
         elif self.dirs.code.exists():
             print(f"Clearing existing data in {self.dirs.code}")
             self.dirs.code.rm()
-        self.pack_path.merge_into(self.dirs.code, self.pack_path / "manifest")
+        self.pack_path.merge_into(self.dirs.code, self.pack_path / "manifest", readonly=True)
 
     def install_milabench(self):
         """Install milabench in the virtual environment.
