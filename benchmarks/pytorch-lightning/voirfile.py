@@ -1,8 +1,9 @@
 # Import this to instrument the ArgumentParser, remove if no such thing
 from milabench.opt import instrument_argparse
+from voir.overseer import Overseer
 
 
-def instrument_probes(ov):
+def instrument_probes(ov: Overseer):
     # Probe for the necessary data. More information here:
     # https://breuleux.github.io/milabench/instrument.html#probing-for-milabench
 
@@ -10,6 +11,7 @@ def instrument_probes(ov):
 
     # loss
     ...
+    # ov.probe("//Model/training_step_end > loss").give()
 
     # batch + step
     ...
@@ -25,3 +27,8 @@ def instrument_probes(ov):
 
     # batch + compute_start + compute_end
     ...
+
+
+# def instrument_display_min(ov):
+#     yield ov.phases.init
+#     ov.given["?loss"].min().print("Minimum loss: {}")

@@ -5,35 +5,29 @@ clone_subtree in the benchfile.py, in which case this file can simply
 be deleted.
 """
 from __future__ import annotations
+import contextlib
+import inspect
 
 import inspect
+import io
 import os
-import typing
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Mapping, TypeVar
-
-# import pl_bolts.datamodules
+from typing import Callable
+from typing_extensions import ParamSpec
 import torch
-from torch import Tensor
 from pl_bolts.datamodules import CIFAR10DataModule
 from pl_bolts.datamodules.vision_datamodule import VisionDataModule
-from pytorch_lightning import LightningDataModule, LightningModule, Trainer
-from simple_parsing import ArgumentParser, Serializable, choice, field
+from pytorch_lightning import Trainer
+from simple_parsing import ArgumentParser, choice
+from simple_parsing.helpers.serialization.serializable import Serializable
 from pytorch_lightning.callbacks.progress.rich_progress import RichProgressBar
-from torch import Tensor, nn
-from torch.optim import Adam
-from torch.nn import functional as F
-from torch.optim.optimizer import Optimizer
-from torchmetrics import Metric
-from torchmetrics.classification import (
-    Accuracy,
-    F1Score,
-    Precision,
-    Recall,
-)
-from torchvision import models
 import pl_bolts.datamodules
+
+# "Relative" imports.
+from giving_callback import GivingCallback
+from model import Model
+
 
 # TODO maybe use this so we don't have to download the datasets, or use milatools/milavision.
 torchvision_dir: Path | None = Path("/network/datasets/torchvision")
@@ -51,98 +45,26 @@ VISION_DATAMODULES: dict[str, type[VisionDataModule]] = {
     if inspect.isclass(cls) and issubclass(cls, VisionDataModule)
 }
 
-BACKBONES: dict[str, type[nn.Module]] = {
-    name: cls
-    for name, cls in vars(models).items()
-    if inspect.isclass(cls) and issubclass(cls, nn.Module)
-}
 
+def recommended_n_workers() -> int:
+    """ try to compute a suggested max number of worker based on system's resource s"""
+    # NOTE: Not quite sure what this does, was taken from the code of DataLoader class.
+    if hasattr(os, "sched_getaffinity"):
+        try:
+            return len(os.sched_getaffinity(0))
+        except Exception:
+            pass
 
-class MyModel(LightningModule):
-    @dataclass
-    class HParams(Serializable):
-        backbone: type[nn.Module] = choice(
-            BACKBONES,
-            default=models.resnet18,
-            encoding_fn=lambda x: x.__name__,
-            decoding_fn=BACKBONES.get,
-        )
-        lr: float = field(default=3e-4)
-
-    def __init__(self, n_classes: int, hp: HParams | None = None) -> None:
-        super().__init__()
-        self.hp: MyModel.HParams = hp or self.HParams()
-        self.backbone = self.hp.backbone()
-        in_features = self.backbone.fc.in_features
-        self.backbone.fc = nn.Identity()
-        self.output = nn.Linear(in_features, n_classes)
-        self.loss = nn.CrossEntropyLoss(reduction="none")
-        self.metrics: Mapping[str, Metric] = nn.ModuleDict(
-            {
-                metric_class.__name__.lower(): metric_class(num_classes=n_classes)
-                for metric_class in [
-                    Accuracy,
-                    # Precision,
-                    # Recall,
-                    # F1Score,
-                    # ConfusionMatrix,
-                ]
-            }
-        )
-        self.save_hyperparameters({"hp": self.hp.to_dict()})
-
-    def configure_optimizers(self) -> Optimizer:
-        return Adam(self.parameters(), lr=self.hp.lr)
-
-    def forward(self, x: Tensor) -> Tensor:
-        h_x = self.backbone(x)
-        logits = self.output(h_x)
-        return logits
-
-    def training_step(
-        self, batch: tuple[Tensor, Tensor], batch_idx: int
-    ) -> dict[str, Tensor]:
-        return self.shared_step(batch, batch_idx, phase="train")
-
-    def validation_step(
-        self, batch: tuple[Tensor, Tensor], batch_idx: int
-    ) -> dict[str, Tensor]:
-        return self.shared_step(batch, batch_idx, phase="val")
-
-    def shared_step(
-        self, batch: tuple[Tensor, Tensor], batch_idx: int, phase: str
-    ) -> dict:
-        x, y = batch
-        y = y.to(self.device)
-        logits = self.forward(x)
-        loss: Tensor = self.loss(logits, y)  # partial loss (batch_size, n_classes)
-        return {
-            "loss": loss,
-            "logits": logits,
-            "y": y,
-        }
-
-    def training_step_end(self, step_output: Tensor | dict[str, Tensor]) -> Tensor:
-        return self.shared_step_end(step_output, phase="train")
-
-    def validation_step_end(self, step_output: Tensor | dict[str, Tensor]) -> Tensor:
-        return self.shared_step_end(step_output, phase="val")
-
-    def shared_step_end(
-        self, step_output: Tensor | dict[str, Tensor], phase: str
-    ) -> Tensor:
-        assert isinstance(step_output, dict)
-        loss = step_output["loss"]  # un-reduced loss (batch_size, n_classes)
-        y = step_output["y"]
-        logits = step_output["logits"]
-        for name, metric in self.metrics.items():
-            metric(logits, y)
-            self.log(f"{phase}/{name}", metric)
-        return loss.mean()
+    # os.cpu_count() could return Optional[int]
+    # get cpu count first and check None in order to satify mypy check
+    cpu_count = os.cpu_count()
+    if cpu_count is not None:
+        return cpu_count
+    return torch.multiprocessing.cpu_count()
 
 
 @dataclass
-class Options(Serializable):
+class DataOptions(Serializable):
     datamodule: type[VisionDataModule] = choice(
         VISION_DATAMODULES, default=CIFAR10DataModule
     )
@@ -151,57 +73,131 @@ class Options(Serializable):
     data_dir: Path = DEFAULT_DATA_DIR
     """ The directory to use for load / download datasets. """
 
-    train_epochs: int = 1
-    """ Number of training epochs to perform. """
+    # train_epochs: int = 1
+    # """ Number of training epochs to perform. """
 
-    batch_size: int = 256
-    """ Batch size (in total). Gets divided evenly among the devices. """
+    # n_gpus: int = torch.cuda.device_count()
+    # """ Number of GPUs to use. """
 
-    n_gpus: int = torch.cuda.device_count()
-    """ Number of GPUs to use. """
+    # n_nodes: int = 1
+    # """ Number of nodes to use. """
 
-    n_workers: int = 4
+    n_workers: int = 16
     """ number of workers to use for data loading. """
 
-    accelerator: str = choice("cpu", "gpu", "tpu", "hpu", default="gpu")
-    """ Accelerator to use. """
+    # accelerator: str = choice("cpu", "gpu", "tpu", "hpu", default="gpu")
+    # """ Accelerator to use. """
 
-    enable_checkpointing: bool = False
-    """ Wether to enable checkpointing or not. """
+    # enable_checkpointing: bool = False
+    # """ Wether to enable checkpointing or not. """
+
+    # strategy: str = choice("dp", "ddp", default="ddp")
+    # """ Which strategy to use."""
 
 
-def main():
-    # os.environ["MILABENCH_DIR_DATA"]
-    parser = ArgumentParser()
-    parser.add_arguments(Options, "options")
-    parser.add_arguments(MyModel.HParams, "hparams")
+P = ParamSpec("P")
+
+
+def run(
+    model_type: type[Model] = Model,
+    data_options_type: type[DataOptions] = DataOptions,
+    trainer_type: type[Callable[P, Trainer]] = Trainer,
+    *trainer_args: P.args,
+    **trainer_defaults: P.kwargs,
+):
+    """
+    Runs a PyTorch-Lightning benchmark, using the command-line arguments.
+    
+    The benchmark consists of training a model of type `model_type`, using a `Trainer`, on the 
+    `LightningDataModule` that is created from the options of type `data_options_type`.
+    
+    Default values for the keyword arguments of the `Trainer` class can be overridden by
+    datamodule to train a model of type `model_type`
+
+    NOTE: trainer_type is just used so we can get nice type-checks for the trainer kwargs. We
+    don't actually expect a different subclass of Trainer to be passed.
+    """
+    # Create a parser so we can extract all the args of the Trainer class, and add it to our own,
+    # (better) ArgumentParser.
+    trainer_parser = ArgumentParser(add_help=False)
+    trainer_parser = Trainer.add_argparse_args(trainer_parser)
+
+    # Copy the arguments from the Trainer parser, and then add our own.
+    parser = ArgumentParser(parents=[trainer_parser], add_help=True)
+
+    trainer_parser.set_defaults(enable_checkpointing=False)
+
+    trainer_signature = inspect.signature(Trainer)
+    if trainer_defaults:
+        # Overwrite the default values with those from the `trainer_defaults` dict.
+        sig = trainer_signature.bind_partial(**trainer_defaults)
+        print(f"Overwriting default values for the Trainer: {sig.arguments}")
+        trainer_parser.set_defaults(**sig.arguments)
+
+    # Add the arguments for the Model:
+    parser.add_arguments(model_type.HParams, "hparams")
+
+    # Add arguments for the dataset choice / setup:
+    parser.add_arguments(data_options_type, "options")
 
     args = parser.parse_args()
-    options: Options = args.options
-    hparams: MyModel.HParams = args.hparams
+    args_dict = vars(args)
 
-    print(f"Options: \n{options.dumps_yaml()}")
+    # NOTE: Instead of creating the Trainer from the args directly, we instead create it from the
+    # kwargs, so we can have better control over some args like `callbacks`, `logger`, etc that
+    # accept objects.
+    # trainer = Trainer.from_argparse_args(args)
+
+    hparams: Model.HParams = args_dict.pop("hparams")
+    options: DataOptions = args_dict.pop("options")
+
+    trainer_kwargs = trainer_defaults.copy()
+    trainer_kwargs.update(**args_dict)
+    print(f"Trainer kwargs: \n {trainer_kwargs}")
+    trainer = trainer_type(**trainer_kwargs)
+
+    # options: Options = args.options
+    # print(f"Options: \n{options.dumps_yaml()}")
     print(f"HParams: \n{hparams.dumps_yaml()}")
 
     datamodule = options.datamodule(
-        str(options.data_dir),
-        num_workers=options.n_workers,
-        batch_size=options.batch_size,
+        str(options.data_dir), num_workers=options.n_workers, pin_memory=True,
     )
+    assert hasattr(datamodule, "num_classes")
+    n_classes = getattr(datamodule, "num_classes")
+    assert isinstance(n_classes, int)
 
-    trainer = Trainer(
+    model = model_type(n_classes=n_classes, hp=hparams)
+
+    # NOTE: Haven't used this new method much yet. Seems to be useful when doing profiling / auto-lr
+    # auto batch-size stuff, but those don't work well anyway. Leaving it here for now.
+    trainer.tune(model, datamodule=datamodule)
+
+    # Train the model on the provided datamodule.
+    trainer.fit(model, datamodule=datamodule)
+    output = io.StringIO()
+    with contextlib.redirect_stdout(output):
+        trainer.profiler.describe()
+    output.seek(0)
+    print("---Profiler output:")
+    print(output.read())
+    print("---End of profiler output")
+    validation_results = trainer.validate(model, datamodule=datamodule)
+    # TODO: Figure out how to get the profiler output as an object, instead of a string on stdout.
+    print(validation_results)
+
+
+def main():
+    run(
+        model_type=Model,
+        data_options_type=DataOptions,
+        gpus=torch.cuda.device_count(),
         accelerator="gpu",
         strategy="dp",
-        max_epochs=options.train_epochs,
-        devices=options.n_gpus,
-        enable_checkpointing=options.enable_checkpointing,
-        # callbacks=[RichProgressBar()],
+        callbacks=[GivingCallback()],
+        max_epochs=1,
+        profiler="simple",
     )
-    model = MyModel(n_classes=datamodule.num_classes, hp=hparams)
-    trainer.fit(model, datamodule=datamodule)
-
-    validation_results = trainer.validate(model, datamodule=datamodule)
-    print(validation_results)
 
 
 if __name__ == "__main__":
