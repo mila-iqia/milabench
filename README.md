@@ -3,7 +3,7 @@
 
 [Documentation](https://breuleux.github.io/milabench)
 
-<!-- 
+<!--
 ## Install
 
 To install for development, clone the repo and use branch `v2`:
@@ -12,6 +12,10 @@ To install for development, clone the repo and use branch `v2`:
 git -b v2 clone git@github.com:mila-iqia/milabench.git
 cd milabench
 # <Activate virtual environment>
+
+# Make sure pip version is high enough to handle pyproject.toml
+pip install --upgrade pip
+
 # Install in editable mode
 pip install -e .
 ```

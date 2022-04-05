@@ -1,0 +1,55 @@
+defaults: &defaults
+  dirs:
+    code: ./_dev_{name}
+    venv: venv/{name}
+    data: data
+    runs: runs
+
+  venv:
+    type: virtualenv
+
+  plan:
+    method: njobs
+    n: 1
+
+  voir:
+    --stop: 10
+    --forward:
+      - "#stdout"
+      - "#stderr"
+      - "#end"
+      - loss
+      - compute_rate
+      - train_rate
+      - loading_rate
+      - descr
+      - progress
+      - total
+    --compute-rate: true
+    --train-rate: true
+    --loading-rate: true
+
+benchmarks:
+  PPO:
+    <<<: *defaults
+
+    definition: ./
+    args:
+      - --algo=ppo2
+      - --env=PongNoFrameskip-v4
+      - --env_type=atari
+      - --seed=0
+      - --num_timesteps=1e6
+      - --network=cnn
+      - --num-env=12
+      - --reward_scale=1
+
+  DEEPQ:
+    <<<: *defaults
+
+    definition: ./
+    args:
+      - --alg=deepq
+      - --env=CartPole-v0
+
+
