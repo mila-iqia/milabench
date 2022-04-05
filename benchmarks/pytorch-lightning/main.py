@@ -188,16 +188,35 @@ def run(
 
 
 def main():
+    # run(
+    #     model_type=Model,
+    #     data_options_type=DataOptions,
+    #     gpus=torch.cuda.device_count(),
+    #     accelerator="gpu",
+    #     strategy="dp",
+    #     callbacks=[GivingCallback()],
+    #     max_epochs=1,
+    #     profiler="simple",
+    # )
+
+    from model_parallel import ModelParallel
+
     run(
-        model_type=Model,
-        data_options_type=DataOptions,
+        model_type=ModelParallel,
         gpus=torch.cuda.device_count(),
         accelerator="gpu",
-        strategy="dp",
-        callbacks=[GivingCallback()],
+        strategy="fsdp",
+        devices=-1,
+        # callbacks=[GivingCallback()],
         max_epochs=1,
-        profiler="simple",
+        # profiler="simple",
     )
+    # model = MyModel()
+    # trainer = Trainer(accelerator="gpu", devices=4, strategy="fsdp", precision=16)
+    # trainer.fit(model)
+
+    # trainer.test()
+    # trainer.predict()
 
 
 if __name__ == "__main__":
