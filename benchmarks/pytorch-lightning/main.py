@@ -61,7 +61,6 @@ BACKBONES: dict[str, type[nn.Module]] = {
 class MyModel(LightningModule):
     @dataclass
     class HParams(Serializable):
-        n_classes: int = field(default=10)
         backbone: type[nn.Module] = choice(
             BACKBONES,
             default=models.resnet18,
@@ -83,9 +82,9 @@ class MyModel(LightningModule):
                 metric_class.__name__.lower(): metric_class(num_classes=n_classes)
                 for metric_class in [
                     Accuracy,
-                    Precision,
-                    Recall,
-                    F1Score,
+                    # Precision,
+                    # Recall,
+                    # F1Score,
                     # ConfusionMatrix,
                 ]
             }
@@ -138,7 +137,7 @@ class MyModel(LightningModule):
         logits = step_output["logits"]
         for name, metric in self.metrics.items():
             metric(logits, y)
-            self.log(f"{phase}/{name}", metric, on_epoch=True, prog_bar=True)
+            self.log(f"{phase}/{name}", metric)
         return loss.mean()
 
 
@@ -152,11 +151,11 @@ class Options(Serializable):
     data_dir: Path = DEFAULT_DATA_DIR
     """ The directory to use for load / download datasets. """
 
-    train_epochs: int = 10
+    train_epochs: int = 1
     """ Number of training epochs to perform. """
 
     batch_size: int = 256
-    """ Batch size (per GPU). """
+    """ Batch size (in total). Gets divided evenly among the devices. """
 
     n_gpus: int = torch.cuda.device_count()
     """ Number of GPUs to use. """
@@ -196,7 +195,7 @@ def main():
         max_epochs=options.train_epochs,
         devices=options.n_gpus,
         enable_checkpointing=options.enable_checkpointing,
-        callbacks=[RichProgressBar()],
+        # callbacks=[RichProgressBar()],
     )
     model = MyModel(n_classes=datamodule.num_classes, hp=hparams)
     trainer.fit(model, datamodule=datamodule)
