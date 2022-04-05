@@ -130,6 +130,7 @@ class BasePackage:
             # Install as editable if we see the pyproject file in
             # the parent directory of milabench
             import milabench
+
             mb_parent = XPath(milabench.__file__).parent.parent
             if (mb_parent / "pyproject.toml").exists():
                 self.pip_install("-e", mb_parent)
