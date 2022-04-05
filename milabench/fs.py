@@ -29,6 +29,9 @@ def _restat(file, orperm=0o000, andperm=0o777):
 
 
 class XPath(type(Path())):
+    def __len__(self):
+        return len(str(self))
+
     def open(self, mode="r", buffering=-1, encoding=None, errors=None, newline=None):
         if encoding is None and "b" not in mode:
             encoding = "utf-8"
