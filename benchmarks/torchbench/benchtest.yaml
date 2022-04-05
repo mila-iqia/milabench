@@ -1,7 +1,7 @@
 defaults: &defaults
   dirs:
     code: code/{name}
-    venv: null
+    venv: venv/{name}
     data: data
     runs: runs
 
@@ -39,8 +39,56 @@ benchmarks:
     definition: ./
     model: resnet18
 
+  hf_Albert:
+    <<<: *defaults
+
+    definition: ./
+    model: hf_Albert
+
+  hf_Bart:
+    <<<: *defaults
+
+    definition: ./
+    model: hf_Bart
+
   hf_Bert:
     <<<: *defaults
 
     definition: ./
     model: hf_Bert
+
+  hf_BigBird:
+    <<<: *defaults
+
+    definition: ./
+    model: hf_BigBird
+
+  hf_DistilBert:
+    <<<: *defaults
+
+    definition: ./
+    model: hf_DistilBert
+
+  hf_GPT2:
+    <<<: *defaults
+
+    definition: ./
+    model: hf_GPT2
+
+  hf_Longformer:
+    <<<: *defaults
+
+    definition: ./
+    model: hf_Longformer
+
+  hf_Reformer:
+    <<<: *defaults
+
+    definition: ./
+    model: hf_Reformer
+
+  hf_T5:
+    <<<: *defaults
+
+    definition: ./
+    model: hf_T5
