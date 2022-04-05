@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 
 import pathspec
 import requests
-from git import GitCommandNotFound, Repo
+from git import GitCommandError, GitCommandNotFound, Repo
 
 
 def manifest_ignorer(manifest):
@@ -137,7 +137,7 @@ class XPath(type(Path())):
             try:
                 repo.git.sparse_checkout("init")
                 repo.git.sparse_checkout("set", subtree)
-            except GitCommandNotFound:
+            except (GitCommandNotFound, GitCommandError):
                 print("git sparse-checkout not available; doing a full checkout")
         repo.git.checkout(commit)
 

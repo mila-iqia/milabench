@@ -30,8 +30,14 @@ def get_pack(defn):
 @tooled
 def _get_multipack(dev=False):
     # Configuration file
-    # [positional]
-    config: Option & str
+    # [positional: ?]
+    config: Option & str = None
+
+    if config is None:
+        config = os.environ.get("MILABENCH_CONFIG", None)
+
+    if config is None:
+        sys.exit("Error: CONFIG argument not provided and no $MILABENCH_CONFIG")
 
     # Base path for code, venvs, data and runs
     base: Option & str = None
