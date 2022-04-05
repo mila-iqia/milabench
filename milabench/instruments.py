@@ -47,7 +47,9 @@ def dash(ov):
 
     console = Console(color_system="standard", file=REAL_STDOUT)
 
-    @ (gv["?#stdout"].roll(10) | gv["?#stderr"].roll(10)).subscribe
+    out_err = gv["?#stdout"].roll(10) | gv["?#stderr"].roll(10)
+
+    @out_err.subscribe
     def _(txt):
         ov.give(stdout="".join(txt))
 
