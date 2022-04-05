@@ -146,10 +146,7 @@ class MultiPackage:
         with given() as gv, dash(gv):
             for pack in self.packs.values():
                 cfg = pack.config
-                plan = {
-                    "method": "njobs",
-                    "n": 1
-                }
+                plan = {"method": "njobs", "n": 1}
                 method = get_planning_method(plan.pop("method"))
                 mr = MultiReader()
                 for run in method(cfg, **plan):

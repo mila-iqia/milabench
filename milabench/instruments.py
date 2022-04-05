@@ -87,16 +87,26 @@ def dash(ov):
         yield ov.phases.finalize(-1000)
 
 
-@parametrized("--stop", type=int, default=0, help="Number of iterations to run for")
+@parametrized("--stop", type=int, default=0, help="Number of train rates to sample")
 def stop(ov):
+    called = False
+
+    def _stop(value):
+        # The stop signal on train_rate has the unfortunate effect of creating
+        # another train_rate, so this gets called twice.
+        nonlocal called
+        if not called:
+            called = True
+            ov.stop(value)
+
     yield ov.phases.load_script(priority=-100)
     stop = ov.options.stop
     if stop:
-        steps = ov.given.where("step")
+        steps = ov.given.where("train_rate")
         steps.map_indexed(
             lambda _, idx: {"progress": idx, "total": stop, "descr": "train"}
         ).give()
-        steps.skip(stop) >> ov.stop
+        steps.skip(stop) >> _stop
 
 
 @gated("--train-rate")
@@ -163,6 +173,8 @@ def loading_rate(ov):
         (
             ov.probe("typ.next(!$x:@enter, #value as batch, !!$y:@exit)")
             .wmap(_timing)
+            .average(scan=5)
+            .throttle(1)
             .map(lambda x: {"loading_rate": x, "units": "items/s"})
             .give()
         )
@@ -187,6 +199,8 @@ def compute_rate(ov):
 
     (
         ov.given.wmap("compute_start", _timing)
+        .average(scan=5)
+        .throttle(1)
         .map(lambda x: {"compute_rate": x, "units": "items/s"})
         .give()
     )
@@ -233,13 +247,21 @@ def verify(ov):
     first_loss = losses.first()
     first_loss.give("initial_loss")
     last_loss = losses.last()
-    (first_loss | last_loss).pairwise().starmap(lambda fl, ll: ll < fl).as_("verify.loss_decreases") >> ov.send
+    (first_loss | last_loss).pairwise().starmap(lambda fl, ll: ll < fl).as_(
+        "verify.loss_decreases"
+    ) >> ov.send
 
     # Verify that the loss is below threshold
     last_loss.map(lambda x: x < 1).as_("verify.loss_below_threshold") >> ov.send
 
     # Verify the presence of certain fields
     for field in ["train_rate", "loading_rate", "compute_rate"]:
-        ov.given.getitem(field, strict=False).is_empty().map(lambda x: not x).as_(f"verify.has_{field}") >> ov.send
+        (
+            ov.given.getitem(field, strict=False)
+            .is_empty()
+            .map(lambda x: not x)
+            .as_(f"verify.has_{field}")
+            >> ov.send
+        )
 
     yield ov.phases.finalize

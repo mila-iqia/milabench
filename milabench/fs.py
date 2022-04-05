@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 
 import pathspec
 import requests
-from git import GitCommandNotFound, Repo, GitCommandError
+from git import GitCommandError, GitCommandNotFound, Repo
 
 
 def manifest_ignorer(manifest):
