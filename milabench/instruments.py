@@ -167,7 +167,9 @@ def loading_rate(ov):
         else:
             return None
 
-    @ov.given.where("loader").ksubscribe
+    loader = ov.given.where("loader")
+
+    @loader.ksubscribe
     def _(loader):
         typ = type(iter(loader))
         (
