@@ -114,17 +114,19 @@ def run(
     hparams: Model.HParams = args_dict.pop("hparams")
     options: DataOptions = args_dict.pop("options")
 
+    print(f"HParams: \n{hparams.dumps_yaml()}")
+    print(f"Options: \n{options.dumps_yaml()}")
+
+    # Rest of `args_dict` is only for the Trainer.
     trainer_kwargs = trainer_defaults.copy()
     trainer_kwargs.update(**args_dict)
-    print(f"Trainer kwargs: \n {trainer_kwargs}")
+    print(f"Trainer kwargs: \n{trainer_kwargs}")
     trainer = trainer_type(*trainer_args, **trainer_kwargs)
 
-    # options: Options = args.options
-    # print(f"Options: \n{options.dumps_yaml()}")
-    print(f"HParams: \n{hparams.dumps_yaml()}")
-
     datamodule = options.datamodule(
-        str(options.data_dir), num_workers=options.n_workers, pin_memory=True,
+        str(options.data_dir),
+        num_workers=options.n_workers,
+        pin_memory=torch.cuda.is_available(),
     )
     assert hasattr(datamodule, "num_classes")
     n_classes = getattr(datamodule, "num_classes")
