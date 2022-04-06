@@ -15,6 +15,7 @@ class StableBenchmarkPack(Package):
         code = self.dirs.code
         code.clone_subtree("https://github.com/DLR-RM/rl-baselines3-zoo", BRANCH)
 
+        # this dependency requires swig, use conda and forget about it
         self.conda_install('-c', 'conda-forge', 'pybox2d')
 
         with open(code / "requirements.txt", "r") as requirements:
@@ -22,7 +23,7 @@ class StableBenchmarkPack(Package):
 
                 # Already installed, this requires swig
                 # but we already installed a binary built using conda
-                if requirement.startswith('pybox2d'):
+                if requirement.startswith('box2d-py'):
                     continue
 
                 self.pip_install(requirement)
