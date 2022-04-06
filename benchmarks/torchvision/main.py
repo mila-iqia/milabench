@@ -1,11 +1,14 @@
 import argparse
 import os
+import contextlib
 
 import torch
+import torch.cuda.amp
 import torch.nn as nn
 import torchvision.datasets as datasets
 import torchvision.models as tvmodels
 import torchvision.transforms as transforms
+
 
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
@@ -20,15 +23,31 @@ data_transforms = transforms.Compose(
 )
 
 
-def train_epoch(model, criterion, optimizer, loader, device):
+@contextlib.contextmanager
+def scaling(enable):
+    if enable:
+        with torch.cuda.amp.autocast():
+            yield
+    else:
+        yield
+
+
+def train_epoch(model, criterion, optimizer, loader, device, scaler=None):
     for inp, target in loader:
         inp = inp.to(device)
         target = target.to(device)
-        output = model(inp)
-        loss = criterion(output, target)
         optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        with scaling(scaler is not None):
+            output = model(inp)
+            loss = criterion(output, target)
+
+        if scaler:
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            loss.backward()
+            optimizer.step()
 
 
 def main():
@@ -70,6 +89,11 @@ def main():
     parser.add_argument("--data", type=str, help="data directory")
     parser.add_argument(
         "--synthetic-data", action="store_true", help="whether to use synthetic data"
+    )
+    parser.add_argument(
+        "--with-amp",
+        action="store_true",
+        help="whether to use mixed precision with amp",
     )
 
     args = parser.parse_args()
@@ -113,8 +137,13 @@ def main():
         shuffle=True,
     )
 
+    if args.with_amp:
+        scaler = torch.cuda.amp.GradScaler()
+    else:
+        scaler = None
+
     for epoch in range(args.epochs):
-        train_epoch(model, criterion, optimizer, train_loader, device)
+        train_epoch(model, criterion, optimizer, train_loader, device, scaler=scaler)
 
 
 if __name__ == "__main__":
