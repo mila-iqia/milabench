@@ -13,7 +13,7 @@ defaults: &defaults
     n: 1
 
   voir:
-    --stop: 10
+    --stop: 30
     --forward:
       - "#stdout"
       - "#stderr"
@@ -36,4 +36,31 @@ benchmarks:
     <<<: *defaults
     argv:
       --model: resnet18
+
+  resnet18-amp:
+    <<<: *defaults
+    argv:
+      --model: resnet18
+      --with-amp: true
+
+  resnet50:
+    <<<: *defaults
+    argv:
+      --model: resnet50
+
+  resnet50-amp:
+    <<<: *defaults
+    argv:
+      --model: resnet50
+      --with-amp: true
+
+  vgg19:
+    <<<: *defaults
+    argv:
+      --model: vgg19
+
+  vgg19-amp:
+    <<<: *defaults
+    argv:
+      --model: vgg19
       --with-amp: true
