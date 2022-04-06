@@ -8,12 +8,6 @@ def instrument_probes(ov):
 
     yield ov.phases.load_script
 
-    # train.learn
-    # learn = baselines.ppo2.ppo2.learn
-    # kwargs = baselines.ppo2.defaults.(atari|mujoco)
-    # kwargs.update(extra_args)
-    # learn(**kwargs)
-
     # loss
     ...
 
