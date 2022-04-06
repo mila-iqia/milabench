@@ -27,6 +27,7 @@ import pl_bolts.datamodules
 # "Relative" imports.
 from giving_callback import GivingCallback
 from model import Model
+from model_parallel import ModelParallel
 
 
 # TODO maybe use this so we don't have to download the datasets, or use milatools/milavision.
@@ -73,26 +74,8 @@ class DataOptions(Serializable):
     data_dir: Path = DEFAULT_DATA_DIR
     """ The directory to use for load / download datasets. """
 
-    # train_epochs: int = 1
-    # """ Number of training epochs to perform. """
-
-    # n_gpus: int = torch.cuda.device_count()
-    # """ Number of GPUs to use. """
-
-    # n_nodes: int = 1
-    # """ Number of nodes to use. """
-
     n_workers: int = 16
     """ number of workers to use for data loading. """
-
-    # accelerator: str = choice("cpu", "gpu", "tpu", "hpu", default="gpu")
-    # """ Accelerator to use. """
-
-    # enable_checkpointing: bool = False
-    # """ Wether to enable checkpointing or not. """
-
-    # strategy: str = choice("dp", "ddp", default="ddp")
-    # """ Which strategy to use."""
 
 
 P = ParamSpec("P")
@@ -154,7 +137,7 @@ def run(
     trainer_kwargs = trainer_defaults.copy()
     trainer_kwargs.update(**args_dict)
     print(f"Trainer kwargs: \n {trainer_kwargs}")
-    trainer = trainer_type(**trainer_kwargs)
+    trainer = trainer_type(*trainer_args, **trainer_kwargs)
 
     # options: Options = args.options
     # print(f"Options: \n{options.dumps_yaml()}")
@@ -188,9 +171,9 @@ def run(
 
 
 def main():
+    # Data-Parallel benchmark:
     # run(
     #     model_type=Model,
-    #     data_options_type=DataOptions,
     #     gpus=torch.cuda.device_count(),
     #     accelerator="gpu",
     #     strategy="dp",
@@ -198,25 +181,17 @@ def main():
     #     max_epochs=1,
     #     profiler="simple",
     # )
-
-    from model_parallel import ModelParallel
-
+    # TODO: Extract the profiler output as an object, not a string.
     run(
         model_type=ModelParallel,
         gpus=torch.cuda.device_count(),
         accelerator="gpu",
         strategy="fsdp",
         devices=-1,
-        # callbacks=[GivingCallback()],
+        callbacks=[GivingCallback()],
         max_epochs=1,
         # profiler="simple",
     )
-    # model = MyModel()
-    # trainer = Trainer(accelerator="gpu", devices=4, strategy="fsdp", precision=16)
-    # trainer.fit(model)
-
-    # trainer.test()
-    # trainer.predict()
 
 
 if __name__ == "__main__":
