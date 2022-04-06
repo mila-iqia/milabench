@@ -26,6 +26,9 @@ class StableBenchmarkPack(Package):
                 if requirement.startswith('box2d-py'):
                     continue
 
+                if '# tmp fix: until compatibility with panda-gym v2' in requirement:
+                    continue
+
                 self.pip_install(requirement)
 
     def prepare(self):
@@ -35,7 +38,7 @@ class StableBenchmarkPack(Package):
         # arguments = self.config['args']
         # args.extend(arguments)
         super().run
-        return self.launch("run.py", args=args, voirargs=voirargs, env=env)
+        return self.launch("train.py", args=args, voirargs=voirargs, env=env)
 
 
 __pack__ = StableBenchmarkPack
