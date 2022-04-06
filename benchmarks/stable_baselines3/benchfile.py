@@ -28,5 +28,4 @@ class StableBenchmarkPack(Package):
         return self.launch("run.py", args=args, voirargs=voirargs, env=env)
 
 
-
 __pack__ = StableBenchmarkPack
