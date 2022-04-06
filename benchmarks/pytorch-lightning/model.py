@@ -4,6 +4,7 @@ import inspect
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from turtle import back
 from typing import Mapping
 from typing import cast
 
@@ -26,29 +27,9 @@ from torchmetrics.classification import (
 )
 from torchvision import models
 import pl_bolts.datamodules
-
-
-# TODO maybe use this so we don't have to download the datasets, or use milatools/milavision.
-torchvision_dir: Path | None = Path("/network/datasets/torchvision")
-if not torchvision_dir.exists():
-    torchvision_dir = None
-
-DEFAULT_DATA_DIR: Path = Path(
-    os.environ.get("SLURM_TMPDIR", os.environ.get("SCRATCH", "data"))
-)
-
-VISION_DATAMODULES: dict[str, type[VisionDataModule]] = {
-    # "cifar10": CIFAR10DataModule,
-    name.replace("DataModule", ""): cls
-    for name, cls in vars(pl_bolts.datamodules).items()
-    if inspect.isclass(cls) and issubclass(cls, VisionDataModule)
-}
-
-BACKBONES: dict[str, type[nn.Module]] = {
-    name: cls
-    for name, cls in vars(models).items()
-    if inspect.isclass(cls) and issubclass(cls, nn.Module)
-}
+from giving_callback import GivingCallback
+from typing import NewType
+from utils import BACKBONES, C, H, W, get_backbone_network
 
 
 class Model(LightningModule):
@@ -62,16 +43,15 @@ class Model(LightningModule):
         batch_size: int = 512
         """ Batch size (in total). Gets divided evenly among the devices when using DP. """
 
-    def __init__(self, n_classes: int, hp: HParams | None = None) -> None:
+    def __init__(
+        self, image_dims: tuple[C, H, W], n_classes: int, hp: HParams | None = None
+    ) -> None:
         super().__init__()
         self.hp: Model.HParams = hp or self.HParams()
-        # TODO: This doesn't work will all model types:
-        # - Some of them need more arguments
-        # - Some of them don't have a `fc` attribute.
-        self.backbone = self.hp.backbone()
-        in_features: int = self.backbone.fc.in_features  # type: ignore
-        # Replace the output layer with a no-op, we'll create our own instead.
-        self.backbone.fc = nn.Identity()
+        in_features, backbone = get_backbone_network(
+            image_dims=image_dims, network_type=self.hp.backbone, pretrained=False,
+        )
+        self.backbone = backbone
         self.output = nn.Linear(in_features, n_classes)
         self.loss = nn.CrossEntropyLoss(reduction="none")
 
@@ -80,6 +60,7 @@ class Model(LightningModule):
                 metric_class.__name__.lower(): metric_class(num_classes=n_classes)
                 for metric_class in [
                     Accuracy,
+                    # NOTE: These seem to not be working that well (giving the same exact value?)
                     # Precision,
                     # Recall,
                     # F1Score,

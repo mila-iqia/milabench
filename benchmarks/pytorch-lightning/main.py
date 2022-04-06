@@ -5,77 +5,57 @@ clone_subtree in the benchfile.py, in which case this file can simply
 be deleted.
 """
 from __future__ import annotations
-import contextlib
-import inspect
-
-import inspect
-import io
-import os
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Callable
-from typing_extensions import ParamSpec
 import torch
-from pl_bolts.datamodules import CIFAR10DataModule
-from pl_bolts.datamodules.vision_datamodule import VisionDataModule
-from pytorch_lightning import Trainer
-from simple_parsing import ArgumentParser, choice
-from simple_parsing.helpers.serialization.serializable import Serializable
-from pytorch_lightning.callbacks.progress.rich_progress import RichProgressBar
-import pl_bolts.datamodules
 
 # "Relative" imports.
 from giving_callback import GivingCallback
 from model import Model
 from model_parallel import ModelParallel
+import contextlib
+import inspect
+
+import inspect
+import io
+import typing
+from typing import Callable
+from typing_extensions import ParamSpec
+import torch
+from pytorch_lightning import Trainer
+from simple_parsing import ArgumentParser
+from utils import DataOptions
+from model import Model, C, H, W
+from model_parallel import ModelParallel
 
 
-# TODO maybe use this so we don't have to download the datasets, or use milatools/milavision.
-torchvision_dir: Path | None = Path("/network/datasets/torchvision")
-if not torchvision_dir.exists():
-    torchvision_dir = None
-
-DEFAULT_DATA_DIR: Path = Path(
-    os.environ.get("SLURM_TMPDIR", os.environ.get("SCRATCH", "data"))
-)
-
-VISION_DATAMODULES: dict[str, type[VisionDataModule]] = {
-    # "cifar10": CIFAR10DataModule,
-    name.replace("DataModule", ""): cls
-    for name, cls in vars(pl_bolts.datamodules).items()
-    if inspect.isclass(cls) and issubclass(cls, VisionDataModule)
-}
-
-
-def recommended_n_workers() -> int:
-    """ try to compute a suggested max number of worker based on system's resource s"""
-    # NOTE: Not quite sure what this does, was taken from the code of DataLoader class.
-    if hasattr(os, "sched_getaffinity"):
-        try:
-            return len(os.sched_getaffinity(0))
-        except Exception:
-            pass
-
-    # os.cpu_count() could return Optional[int]
-    # get cpu count first and check None in order to satify mypy check
-    cpu_count = os.cpu_count()
-    if cpu_count is not None:
-        return cpu_count
-    return torch.multiprocessing.cpu_count()
-
-
-@dataclass
-class DataOptions(Serializable):
-    datamodule: type[VisionDataModule] = choice(
-        VISION_DATAMODULES, default=CIFAR10DataModule
+def data_parallel_benchmark():
+    """ Data-Parallel benchmark. """
+    run(
+        model_type=Model,
+        gpus=torch.cuda.device_count(),
+        accelerator="gpu",
+        strategy="dp",
+        callbacks=[GivingCallback()],
+        max_epochs=1,
+        limit_train_batches=100,
+        limit_val_batches=100,
+        profiler="simple",
     )
-    """ The datamodule to use. Can be any `VisionDataModule` from `pl_bolts.datamodules`. """
 
-    data_dir: Path = DEFAULT_DATA_DIR
-    """ The directory to use for load / download datasets. """
 
-    n_workers: int = 16
-    """ number of workers to use for data loading. """
+def model_parallel_benchmark():
+    """ Model-Parallel benchmark. """
+    run(
+        model_type=ModelParallel,
+        gpus=torch.cuda.device_count(),
+        accelerator="gpu",
+        strategy="fsdp",
+        devices=torch.cuda.device_count(),
+        callbacks=[GivingCallback()],
+        max_epochs=1,
+        limit_train_batches=100,
+        limit_val_batches=100,
+        profiler="simple",
+    )
 
 
 P = ParamSpec("P")
@@ -148,9 +128,12 @@ def run(
     )
     assert hasattr(datamodule, "num_classes")
     n_classes = getattr(datamodule, "num_classes")
+    image_dims = datamodule.dims
     assert isinstance(n_classes, int)
+    assert len(image_dims) == 3
+    image_dims = (C(image_dims[0]), H(image_dims[1]), W(image_dims[2]))
 
-    model = model_type(n_classes=n_classes, hp=hparams)
+    model = model_type(image_dims=image_dims, n_classes=n_classes, hp=hparams)
 
     # NOTE: Haven't used this new method much yet. Seems to be useful when doing profiling / auto-lr
     # auto batch-size stuff, but those don't work well anyway. Leaving it here for now.
@@ -158,40 +141,21 @@ def run(
 
     # Train the model on the provided datamodule.
     trainer.fit(model, datamodule=datamodule)
-    output = io.StringIO()
-    with contextlib.redirect_stdout(output):
-        trainer.profiler.describe()
-    output.seek(0)
+
+    # NOTE: Profiler output is a big string here. We could inspect and report it if needed.
     print("---Profiler output:")
-    print(output.read())
+    profiler_summary = trainer.profiler.summary()
+    print(profiler_summary)
     print("---End of profiler output")
+
     validation_results = trainer.validate(model, datamodule=datamodule)
     # TODO: Figure out how to get the profiler output as an object, instead of a string on stdout.
     print(validation_results)
 
 
 def main():
-    # Data-Parallel benchmark:
-    # run(
-    #     model_type=Model,
-    #     gpus=torch.cuda.device_count(),
-    #     accelerator="gpu",
-    #     strategy="dp",
-    #     callbacks=[GivingCallback()],
-    #     max_epochs=1,
-    #     profiler="simple",
-    # )
     # TODO: Extract the profiler output as an object, not a string.
-    run(
-        model_type=ModelParallel,
-        gpus=torch.cuda.device_count(),
-        accelerator="gpu",
-        strategy="fsdp",
-        devices=-1,
-        callbacks=[GivingCallback()],
-        max_epochs=1,
-        # profiler="simple",
-    )
+    model_parallel_benchmark()
 
 
 if __name__ == "__main__":

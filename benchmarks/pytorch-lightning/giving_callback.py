@@ -1,6 +1,6 @@
 """ IDEA: Create a 'giving' pytorch-lightning callback that can be used to instrument any model. """
 from __future__ import annotations
-
+import datetime
 from torch import Tensor
 from typing import Any, ContextManager
 from pytorch_lightning import Callback, Trainer, LightningModule
@@ -17,6 +17,8 @@ class GivingCallback(Callback):
     def __init__(self) -> None:
         super().__init__()
         self._ctx: ContextManager
+        self._start_time: datetime.datetime
+        self._end_time: datetime.datetime
 
     def on_train_start(self, trainer: Trainer, pl_module: LightningModule) -> None:
         device = pl_module.device
@@ -32,10 +34,15 @@ class GivingCallback(Callback):
                 f"There are more than one training dataloaders.. dont know which one to give!"
             )
         loader = loader_or_loaders
-
+        self._start_time = datetime.datetime.now()
         give(loader=loader)
         give(use_cuda=use_cuda)
         give(model=pl_module)
+
+    def on_train_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
+        self._end_time = datetime.datetime.now()
+        delta = self._end_time - self._start_time
+        give(length=delta)
 
     def on_train_batch_start(
         self,

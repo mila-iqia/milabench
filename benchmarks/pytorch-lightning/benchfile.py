@@ -3,7 +3,7 @@ from __future__ import annotations
 from milabench.pack import Package
 
 
-class TheBenchmark(Package):
+class PLBenchmark(Package):
     # Requirements file installed by install(). It can be empty or absent.
     requirements_file = "requirements.txt"
 
@@ -31,9 +31,10 @@ class TheBenchmark(Package):
     def run(self, args: list[str], voirargs: list[str], env: dict):
         # You can insert new arguments to args/voirargs or change the env,
         # although changing the env is a bit simpler if you modify make_env
+        # TODO: Need to figure out how to setup multiple benchmarks here.
         return super().run(args, voirargs, env)
         # Note: run() must return a running process, so make sure not to lose
         # the return value of super() here.
 
 
-__pack__ = TheBenchmark
+__pack__ = PLBenchmark
