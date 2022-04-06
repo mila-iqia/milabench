@@ -29,6 +29,7 @@ from model_parallel import ModelParallel
 
 def data_parallel_benchmark():
     """ Data-Parallel benchmark. """
+    # TODO: Maybe we should just pass everything from the command-line instead of this hybrid?
     run(
         model_type=Model,
         gpus=torch.cuda.device_count(),
@@ -63,19 +64,19 @@ P = ParamSpec("P")
 
 def run(
     model_type: type[Model] = Model,
-    data_options_type: type[DataOptions] = DataOptions,
     trainer_type: type[Callable[P, Trainer]] = Trainer,
-    *trainer_args: P.args,
-    **trainer_defaults: P.kwargs,
+    *trainer_default_args: P.args,
+    **trainer_default_kwargs: P.kwargs,
 ):
     """
-    Runs a PyTorch-Lightning benchmark, using the command-line arguments.
+    Runs a PyTorch-Lightning benchmark.
     
     The benchmark consists of training a model of type `model_type`, using a `Trainer`, on the 
-    `LightningDataModule` that is created from the options of type `data_options_type`.
-    
-    Default values for the keyword arguments of the `Trainer` class can be overridden by
-    datamodule to train a model of type `model_type`
+    `LightningDataModule` that is created from a `DataOptions` that is also parsed from the
+    command-line.
+
+    To create the `Trainer`, the values from `trainer_default_args` and `trainer_default_kwargs`
+    are used as the defaults. The values parsed from the command-line then overwrite these values.
 
     NOTE: trainer_type is just used so we can get nice type-checks for the trainer kwargs. We
     don't actually expect a different subclass of Trainer to be passed.
@@ -91,9 +92,9 @@ def run(
     trainer_parser.set_defaults(enable_checkpointing=False)
 
     trainer_signature = inspect.signature(Trainer)
-    if trainer_defaults:
+    if trainer_default_kwargs:
         # Overwrite the default values with those from the `trainer_defaults` dict.
-        sig = trainer_signature.bind_partial(**trainer_defaults)
+        sig = trainer_signature.bind_partial(**trainer_default_kwargs)
         print(f"Overwriting default values for the Trainer: {sig.arguments}")
         trainer_parser.set_defaults(**sig.arguments)
 
@@ -101,7 +102,7 @@ def run(
     parser.add_arguments(model_type.HParams, "hparams")
 
     # Add arguments for the dataset choice / setup:
-    parser.add_arguments(data_options_type, "options")
+    parser.add_arguments(DataOptions, "options")
 
     args = parser.parse_args()
     args_dict = vars(args)
@@ -118,10 +119,10 @@ def run(
     print(f"Options: \n{options.dumps_yaml()}")
 
     # Rest of `args_dict` is only for the Trainer.
-    trainer_kwargs = trainer_defaults.copy()
+    trainer_kwargs = trainer_default_kwargs.copy()
     trainer_kwargs.update(**args_dict)
     print(f"Trainer kwargs: \n{trainer_kwargs}")
-    trainer = trainer_type(*trainer_args, **trainer_kwargs)
+    trainer = trainer_type(*trainer_default_args, **trainer_kwargs)
 
     datamodule = options.datamodule(
         str(options.data_dir),
