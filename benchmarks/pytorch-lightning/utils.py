@@ -27,6 +27,8 @@ from torch import nn
 C = NewType("C", int)
 H = NewType("H", int)
 W = NewType("W", int)
+ModuleType = TypeVar("ModuleType", bound=nn.Module)
+
 
 # TODO maybe use this so we don't have to download the datasets, or use milatools/milavision.
 torchvision_dir: Path | None = Path("/network/datasets/torchvision")
@@ -48,7 +50,6 @@ BACKBONES: dict[str, type[nn.Module]] = {
     for name, cls in vars(models).items()
     if inspect.isclass(cls) and issubclass(cls, nn.Module)
 }
-ModuleType = TypeVar("ModuleType", bound=nn.Module)
 
 
 def get_backbone_network(
@@ -58,12 +59,12 @@ def get_backbone_network(
     pretrained: bool = False,
 ) -> tuple[int, ModuleType]:
     """Construct a backbone network using the given image dimensions and network type.
-    
+
     Replaces the last fully-connected layer with a `nn.Identity`.
+
+    TODO: Add support for more types of models.
     """
-    # TODO: This doesn't work will all model types:
-    # - Some of them need more arguments
-    # - Some of them don't have a `fc` attribute.
+
     backbone_signature = inspect.signature(network_type)
     if (
         "image_size" in backbone_signature.parameters

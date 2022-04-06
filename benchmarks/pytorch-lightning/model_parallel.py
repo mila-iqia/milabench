@@ -4,14 +4,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-import torch
 from fairscale.nn import auto_wrap, checkpoint_wrapper, wrap
 from model import BACKBONES, Model, C, H, W
 from simple_parsing.helpers import choice, field
 from torch import Tensor, nn
 from torch.optim.optimizer import Optimizer
 from torchvision import models
-import functools
 
 
 class ModelParallel(Model):

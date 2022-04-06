@@ -1,22 +1,14 @@
 from __future__ import annotations
 
-import inspect
-import os
 from dataclasses import dataclass
-from pathlib import Path
-from turtle import back
 from typing import Mapping
 from typing import cast
 
-import torch
 from torch import Tensor
-from pl_bolts.datamodules.vision_datamodule import VisionDataModule
 from pytorch_lightning import LightningModule, Trainer
 from simple_parsing import Serializable, choice, field
-from pytorch_lightning.callbacks.progress.rich_progress import RichProgressBar
 from torch import Tensor, nn
 from torch.optim import Adam
-from torch.nn import functional as F
 from torch.optim.optimizer import Optimizer
 from torchmetrics import Metric
 from torchmetrics.classification import (
@@ -26,9 +18,6 @@ from torchmetrics.classification import (
     Recall,
 )
 from torchvision import models
-import pl_bolts.datamodules
-from giving_callback import GivingCallback
-from typing import NewType
 from utils import BACKBONES, C, H, W, get_backbone_network
 
 
@@ -49,7 +38,7 @@ class Model(LightningModule):
         super().__init__()
         self.hp: Model.HParams = hp or self.HParams()
         in_features, backbone = get_backbone_network(
-            image_dims=image_dims, network_type=self.hp.backbone, pretrained=False,
+            network_type=self.hp.backbone, image_dims=image_dims, pretrained=False,
         )
         self.backbone = backbone
         self.output = nn.Linear(in_features, n_classes)
