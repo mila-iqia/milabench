@@ -16,7 +16,16 @@ class StableBenchmarkPack(Package):
         code.clone_subtree("https://github.com/DLR-RM/rl-baselines3-zoo", BRANCH)
 
         self.conda_install('-c', 'conda-forge', 'pybox2d')
-        self.pip_install("-r", code / "requirements.txt")
+
+        with open(code / "requirements.txt", "r") as requirements:
+            for requirement in requirements.readlines():
+
+                # Already installed, this requires swig
+                # but we already installed a binary built using conda
+                if requirement.startswith('pybox2d'):
+                    continue
+
+                self.pip_install(requirement)
 
     def prepare(self):
         super().prepare()  # super() call executes prepare_script
