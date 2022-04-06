@@ -175,6 +175,7 @@ def loading_rate(ov):
         (
             ov.probe("typ.next(!$x:@enter, #value as batch, !!$y:@exit)")
             .wmap(_timing)
+            .filter(lambda xs: xs is not None)
             .average(scan=5)
             .throttle(1)
             .map(lambda x: {"loading_rate": x, "units": "items/s"})
