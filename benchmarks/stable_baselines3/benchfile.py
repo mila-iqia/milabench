@@ -15,6 +15,7 @@ class StableBenchmarkPack(Package):
         code = self.dirs.code
         code.clone_subtree("https://github.com/DLR-RM/rl-baselines3-zoo", BRANCH)
 
+        self.conda_install('-c', 'conda-forge', 'pybox2d')
         self.pip_install("-r", code / "requirements.txt")
 
     def prepare(self):
