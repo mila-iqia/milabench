@@ -43,7 +43,7 @@ class BasePackage:
             signatures=[],
             func=NS(
                 python=f"{pyv.major}.{pyv.minor}.{pyv.micro}",
-                venv_backend="virtualenv",
+                venv_backend=self.config["venv"]["type"],
                 venv_params=[],
                 reuse_venv=reuse,
             ),
