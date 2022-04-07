@@ -61,8 +61,10 @@ def _get_multipack(dev=False):
         exclude = exclude.split(",")
 
     config_base = str(XPath(config).parent.absolute())
+    config_file = str(XPath(config).absolute())
     config = configuration(config)
     config["defaults"]["config_base"] = config_base
+    config["defaults"]["config_file"] = config_file
     if base is not None:
         config["defaults"]["dirs"]["base"] = base
     elif os.environ.get("MILABENCH_BASE", None):
