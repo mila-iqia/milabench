@@ -35,9 +35,6 @@ class StableBenchmarkPack(Package):
         super().prepare()  # super() call executes prepare_script
 
     def run(self, args, voirargs, env):
-        # arguments = self.config['args']
-        # args.extend(arguments)
-        super().run
         return self.launch("train.py", args=args, voirargs=voirargs, env=env)
 
 

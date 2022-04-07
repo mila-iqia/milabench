@@ -8,20 +8,19 @@ def instrument_probes(ov):
 
     yield ov.phases.load_script
 
+    #
+    (
+        ov.probe(
+            "/stable_baselines3.ppo.ppo/PPO/train(self) > #endloop__ as step"
+        )
+        .augment(batch_size=lambda self: self.batch_size)
+        .give()
+    )
+
     # loss
-    ...
-
-    # batch + step
-    ...
-
-    # use_cuda
-    ...
-
-    # model
-    ...
-
-    # loader
-    ...
-
-    # batch + compute_start + compute_end
-    ...
+    (
+        ov.probe(
+            "/stable_baselines3.ppo.ppo/PPO/train(self) > loss.item() as loss"
+        )
+        .give()
+    )

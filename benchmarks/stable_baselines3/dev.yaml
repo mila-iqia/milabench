@@ -34,22 +34,16 @@ benchmarks:
     <<<: *defaults
 
     definition: ./
-    args:
-      - --algo=ppo2
-      - --env=PongNoFrameskip-v4
-      - --env_type=atari
-      - --seed=0
-      - --num_timesteps=1e6
-      - --network=cnn
-      - --num-env=12
-      - --reward_scale=1
-
-  DEEPQ:
-    <<<: *defaults
-
-    definition: ./
-    args:
-      - --alg=deepq
-      - --env=CartPole-v0
-
+    argv:
+      --algo: ppo
+      --env: HalfCheetahBulletEnv-v0
+      -n: -1
+      --num-threads: -1
+      --seed: 0
+      --vec-env: subproc
+      --device: auto
+      -params: n_steps:512 
+      -params: n_epochs:20
+      -params: n_envs:16
+      -params: n_timesteps:10000
 
