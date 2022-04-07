@@ -1,5 +1,5 @@
-# Import this to instrument the ArgumentParser, remove if no such thing
-from milabench.opt import instrument_argparse
+# need to import it because it is not yet loaded once the main script is loaded
+from stable_baselines3.ppo.ppo import PPO
 
 
 def instrument_probes(ov):
@@ -20,7 +20,14 @@ def instrument_probes(ov):
     # loss
     (
         ov.probe(
-            "/stable_baselines3.ppo.ppo/PPO/train(self) > loss.item() as loss"
+            "/stable_baselines3.ppo.ppo/PPO/train > loss"
         )
-        .give()
+        .throttle(1)["loss"]
+        .map(float)
+        .give("loss")
     )
+
+    ov.probe(
+        "//train(rollout_data as batch, !#loop_rollout_data as compute_start, !!#endloop_rollout_data as compute_end)"
+    ).give()
+
