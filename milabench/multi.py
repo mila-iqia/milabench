@@ -5,6 +5,7 @@ import time
 from copy import deepcopy
 
 from giving import give, given
+from ovld import ovld
 from voir.forward import MultiReader
 
 from .merge import merge
@@ -86,7 +87,13 @@ def multiread(pipes):
         time.sleep(0.1)
 
 
-def _assemble_options(options):
+@ovld
+def _assemble_options(options: list):
+    return options
+
+
+@ovld
+def _assemble_options(options: dict):
     args = []
     for k, v in options.items():
         if v is None:
@@ -94,7 +101,7 @@ def _assemble_options(options):
         if v is True:
             args.append(k)
         elif v is False:
-            raise ValueError()
+            raise ValueError("Use null to cancel an option, not false")
         else:
             args.append(k)
             args.append(",".join(map(str, v)) if isinstance(v, list) else str(v))
