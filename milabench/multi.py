@@ -104,12 +104,14 @@ class MultiPackage:
                 method = get_planning_method(plan.pop("method"))
                 mr = MultiReader()
                 for run in method(cfg, **plan):
-                    give(**{"#pack": pack, "#run": run, "#start": time.time()})
+                    info = {"#pack": pack, "#run": run}
+                    give(**{"#start": time.time()}, **info)
+                    give(**{"#config": run}, **info)
                     voirargs = _assemble_options(run.get("voir", {}))
                     args = _assemble_options(run.get("argv", {}))
                     env = run.get("env", {})
                     process = pack.run(args=args, voirargs=voirargs, env=env)
-                    mr.add_process(process, info={"#pack": pack, "#run": run})
+                    mr.add_process(process, info=info)
 
                 try:
                     for _ in mr:
