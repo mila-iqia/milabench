@@ -1,39 +1,34 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Mapping
-from typing import cast
+from typing import Callable, Mapping, cast
 
-from torch import Tensor
+import torch
+from fairscale.nn import auto_wrap
+from fairscale.nn.wrap.auto_wrap import ConfigAutoWrap
 from pytorch_lightning import LightningModule, Trainer
-from simple_parsing import Serializable, choice, field
+from simple_parsing import field
+from simple_parsing.helpers.serialization.serializable import Serializable
 from torch import Tensor, nn
-from torch.optim import Adam
+from torch.optim import AdamW
 from torch.optim.optimizer import Optimizer
 from torchmetrics import Metric
-from torchmetrics.classification import (
-    Accuracy,
-    F1Score,
-    Precision,
-    Recall,
-)
+from torchmetrics.classification.accuracy import Accuracy
 from torchvision import models
-from utils import BACKBONES, C, H, W, get_backbone_network
+from utils import C, H, W, backbone_choice, get_backbone_network
 
 
 class Model(LightningModule):
     @dataclass
     class HParams(Serializable):
-        backbone: type[nn.Module] = choice(
-            BACKBONES, default=models.resnet18,
-        )
+        backbone: Callable[..., nn.Module] = backbone_choice(default=models.resnet18)
         lr: float = field(default=3e-4)
 
         batch_size: int = 512
         """ Batch size (in total). Gets divided evenly among the devices when using DP. """
 
     def __init__(
-        self, image_dims: tuple[C, H, W], n_classes: int, hp: HParams | None = None
+        self, image_dims: tuple[C, H, W], num_classes: int, hp: HParams | None = None
     ) -> None:
         super().__init__()
         self.hp: Model.HParams = hp or self.HParams()
@@ -41,29 +36,35 @@ class Model(LightningModule):
             network_type=self.hp.backbone, image_dims=image_dims, pretrained=False,
         )
         self.backbone = backbone
-        self.output = nn.Linear(in_features, n_classes)
+        self.output = nn.Linear(in_features, num_classes)
         self.loss = nn.CrossEntropyLoss(reduction="none")
 
-        metrics = nn.ModuleDict(
-            {
-                metric_class.__name__.lower(): metric_class(num_classes=n_classes)
-                for metric_class in [
-                    Accuracy,
-                    # NOTE: These seem to not be working that well (giving the same exact value?)
-                    # Precision,
-                    # Recall,
-                    # F1Score,
-                    # ConfusionMatrix,
-                ]
-            }
-        )
+        metrics = nn.ModuleDict({"accuracy": Accuracy(num_classes=num_classes)})
         self.metrics: Mapping[str, Metric] = cast(Mapping[str, Metric], metrics)
         self.save_hyperparameters({"hp": self.hp.to_dict()})
 
         self.trainer: Trainer
+        self._model_are_wrapped = False
+        print("Model Hyper-Parameters:", self.hparams)
+
+        self.example_input_array = torch.rand([self.hp.batch_size, *image_dims])
+
+    def configure_sharded_model(self) -> None:
+        # NOTE: From https://pytorch-lightning.readthedocs.io/en/latest/advanced/model_parallel.html#fully-sharded-training
+        # NOTE: This gets called during train / val / test, so we need to check that we don't wrap
+        # the model twice.
+        if not self._model_are_wrapped:
+            # NOTE: Could probably use any of the cool things from fairscale here, like
+            # mixture-of-experts sharding, etc!
+            if ConfigAutoWrap.in_autowrap_context:
+                print(f"Wrapping models for model-parallel training using fairscale")
+                print(f"Trainer state: {self.trainer.state}")
+            self.backbone = auto_wrap(self.backbone)
+            self.output = auto_wrap(self.output)
+            self._model_are_wrapped = True
 
     def configure_optimizers(self) -> Optimizer:
-        return Adam(self.parameters(), lr=self.hp.lr)
+        return AdamW(self.parameters(), lr=self.hp.lr)
 
     def forward(self, x: Tensor) -> Tensor:
         h_x = self.backbone(x)
@@ -117,6 +118,9 @@ class Model(LightningModule):
             metric(logits, y)
             self.log(f"{phase}/{name}", metric)
         return loss.mean()
+
+    # NOTE: Adding these properties in case we are using the auto_find_lr or auto_find_batch_size
+    # features of the Trainer, since it modifies these attributes.
 
     @property
     def batch_size(self) -> int:

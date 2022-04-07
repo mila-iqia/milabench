@@ -1,28 +1,20 @@
 """ Utility functions / classes / stuffs """
 from __future__ import annotations
 
-import contextlib
 import inspect
-
-import inspect
-import io
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, TypeVar, NewType
-from typing_extensions import ParamSpec
+from typing import Callable, NewType, TypeVar
+
+import pl_bolts.datamodules
 import torch
 from pl_bolts.datamodules import CIFAR10DataModule
 from pl_bolts.datamodules.vision_datamodule import VisionDataModule
-from pytorch_lightning import Trainer
-from simple_parsing import ArgumentParser, choice
+from simple_parsing import choice
 from simple_parsing.helpers.serialization.serializable import Serializable
-from pytorch_lightning.callbacks.progress.rich_progress import RichProgressBar
-import pl_bolts.datamodules
-import typing
-from torchvision import models
 from torch import nn
-
+from torchvision import models
 
 C = NewType("C", int)
 H = NewType("H", int)
@@ -45,11 +37,20 @@ VISION_DATAMODULES: dict[str, type[VisionDataModule]] = {
     if inspect.isclass(cls) and issubclass(cls, VisionDataModule)
 }
 
+
+# NOTE: This isn't
 BACKBONES: dict[str, type[nn.Module]] = {
-    name: cls
-    for name, cls in vars(models).items()
-    if inspect.isclass(cls) and issubclass(cls, nn.Module)
+    name: cls_or_fn
+    for name, cls_or_fn in vars(models).items()
+    if (callable(cls_or_fn) and "pretrained" in inspect.signature(cls_or_fn).parameters)
 }
+
+
+def backbone_choice(default: Callable[..., nn.Module]) -> Callable[..., nn.Module]:
+    """
+    A field that will automatically download the torchvision model if it's not already downloaded.
+    """
+    return choice(BACKBONES, default=default,)
 
 
 def get_backbone_network(
@@ -76,7 +77,7 @@ def get_backbone_network(
 
     # Replace the output layer with a no-op, we'll create our own instead.
     if hasattr(backbone, "fc"):
-        in_features: int = self.backbone.fc.in_features  # type: ignore
+        in_features: int = backbone.fc.in_features  # type: ignore
         backbone.fc = nn.Identity()
     elif isinstance(backbone, models.VisionTransformer):
         # heads_layers: dict[str, nn.Module] = OrderedDict()
@@ -131,4 +132,3 @@ class DataOptions(Serializable):
 
     n_workers: int = 16
     """ number of workers to use for data loading. """
-

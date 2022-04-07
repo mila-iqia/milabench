@@ -1,19 +1,37 @@
-""" IDEA: Create a 'giving' pytorch-lightning callback that can be used to instrument any model. """
+""" PyTorch-Lightning callback that uses giving.give. Can be used on basically any model. """
 from __future__ import annotations
+
 import datetime
-from torch import Tensor
-from typing import Any, ContextManager
-from pytorch_lightning import Callback, Trainer, LightningModule
-from giving import give
 import typing
+from collections import abc as collections_abc
+from typing import Any, ContextManager
+
 import torch
+from giving import give
+from pytorch_lightning import Callback, LightningModule, Trainer
 from pytorch_lightning.trainer.states import RunningStage
+from torch import Tensor
 
 if typing.TYPE_CHECKING:
     from .model import Model
 
 
+def get_x_from_batch(batch: Any) -> Tensor:
+    """ Get the x from a batch. """
+    if isinstance(batch, Tensor):
+        return batch
+    if isinstance(batch, (tuple, list)):
+        return batch[0]
+    if isinstance(batch, collections_abc.Mapping) and "x" in batch.keys():
+        return batch["x"]
+    raise NotImplementedError(
+        f"Don't know how to extract 'x' from batch of type: {type(batch)}"
+    )
+
+
 class GivingCallback(Callback):
+    """ PyTorch-Lightning callback that uses giving.give. """
+
     def __init__(self) -> None:
         super().__init__()
         self._ctx: ContextManager
@@ -25,7 +43,9 @@ class GivingCallback(Callback):
         if isinstance(device, str):
             device = torch.device(device)
         use_cuda = device.type == "cuda"
-
+        trainer.train_dataloader
+        # NOTE: request_dataloader is marked as deprecated in PL 1.6, will be removed in pl 1.8.
+        # Don't know what the replacement will be atm. Perhaps just `trainer.train_dataloader`.
         loader_or_loaders = trainer.request_dataloader(
             RunningStage.TRAINING, model=pl_module
         )
@@ -45,14 +65,10 @@ class GivingCallback(Callback):
         give(length=delta)
 
     def on_train_batch_start(
-        self,
-        trainer: Trainer,
-        pl_module: LightningModule,
-        batch: tuple[Tensor, Tensor],
-        batch_idx: int,
+        self, trainer: Trainer, pl_module: LightningModule, batch: Any, batch_idx: int,
     ) -> None:
         give(compute_start=True)
-        x, y = batch
+        x = get_x_from_batch(batch)
         self._ctx = give.wrap("compute_start", batch=x)
         self._ctx.__enter__()
 
@@ -61,11 +77,11 @@ class GivingCallback(Callback):
         trainer: Trainer,
         pl_module: LightningModule,
         outputs: Tensor | dict[str, Any],
-        batch: tuple[Tensor, Tensor],
+        batch: Any,
         batch_idx: int,
         unused: int = 0,
     ) -> None:
-        x, _ = batch
+        x = get_x_from_batch(batch)
         x_batch = x.detach() if x.requires_grad else x
         step = trainer.global_step
         loss = (

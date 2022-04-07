@@ -29,8 +29,33 @@ defaults: &defaults
     --train-rate: true
     --loading-rate: true
 
-benchmarks:
-  pytorch-lightning:
-    <<<: *defaults
+  argv:
+    --gpus: -1
+    --max_epochs: 1
+    --max_steps: 100
+    --limit_val_batches: 100
+    --devices: -1
 
+benchmarks:
+  data-parallel:
+    <<<: *defaults
     definition: ./
+    argv:
+      --backbone: "resnet152"
+      --accelerator: "gpu"
+      --strategy: "dp"
+      --profiler: "pytorch"
+      --precision: 32
+
+  model-parallel:
+    <<<: *defaults
+    definition: ./
+    argv:
+      --backbone: "vit_l_32"  # (larger model)
+      --accelerator: "gpu"
+      --strategy: "fsdp"  # Fully-Sharded Data-Parallel
+      # BUG: There appears to be some issues between FSDP and PyTorch profiler, script hangs.
+      # --profiler: "pytorch"
+      --profiler: "simple"
+      --precision: 32
+

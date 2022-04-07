@@ -1,6 +1,7 @@
 # Import this to instrument the ArgumentParser, remove if no such thing
-from milabench.opt import instrument_argparse
 from voir.overseer import Overseer
+
+from milabench.opt import instrument_argparse
 
 
 def instrument_probes(ov: Overseer):

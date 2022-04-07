@@ -5,65 +5,27 @@ clone_subtree in the benchfile.py, in which case this file can simply
 be deleted.
 """
 from __future__ import annotations
-import torch
 
-# "Relative" imports.
-from giving_callback import GivingCallback
-from model import Model
-from model_parallel import ModelParallel
 import contextlib
-import inspect
-
 import inspect
 import io
 import typing
 from typing import Callable
-from typing_extensions import ParamSpec
+
 import torch
-from pytorch_lightning import Trainer
+
+# "Relative" imports.
+from giving_callback import GivingCallback
+from model import C, H, Model, W
+from pytorch_lightning import Callback, LightningModule, Trainer
 from simple_parsing import ArgumentParser
+from typing_extensions import ParamSpec
 from utils import DataOptions
-from model import Model, C, H, W
-from model_parallel import ModelParallel
-
-
-def data_parallel_benchmark():
-    """ Data-Parallel benchmark. """
-    # TODO: Maybe we should just pass everything from the command-line instead of this hybrid?
-    run(
-        model_type=Model,
-        gpus=torch.cuda.device_count(),
-        accelerator="gpu",
-        strategy="dp",
-        callbacks=[GivingCallback()],
-        max_epochs=1,
-        limit_train_batches=100,
-        limit_val_batches=100,
-        profiler="simple",
-    )
-
-
-def model_parallel_benchmark():
-    """ Model-Parallel benchmark. """
-    run(
-        model_type=ModelParallel,
-        gpus=torch.cuda.device_count(),
-        accelerator="gpu",
-        strategy="fsdp",
-        devices=torch.cuda.device_count(),
-        callbacks=[GivingCallback()],
-        max_epochs=1,
-        limit_train_batches=100,
-        limit_val_batches=100,
-        profiler="simple",
-    )
-
 
 P = ParamSpec("P")
 
 
-def run(
-    model_type: type[Model] = Model,
+def main(
     trainer_type: type[Callable[P, Trainer]] = Trainer,
     *trainer_default_args: P.args,
     **trainer_default_kwargs: P.kwargs,
@@ -99,7 +61,7 @@ def run(
         trainer_parser.set_defaults(**sig.arguments)
 
     # Add the arguments for the Model:
-    parser.add_arguments(model_type.HParams, "hparams")
+    parser.add_arguments(Model.HParams, "hparams")
 
     # Add arguments for the dataset choice / setup:
     parser.add_arguments(DataOptions, "options")
@@ -121,7 +83,15 @@ def run(
     # Rest of `args_dict` is only for the Trainer.
     trainer_kwargs = trainer_default_kwargs.copy()
     trainer_kwargs.update(**args_dict)
-    print(f"Trainer kwargs: \n{trainer_kwargs}")
+    callbacks = trainer_kwargs.setdefault("callbacks", [])
+    assert isinstance(callbacks, list)
+    if not any(isinstance(c, GivingCallback) for c in callbacks):
+        callbacks.append(GivingCallback())
+
+    print(f"Trainer kwargs:")
+    import pprint
+
+    pprint.pprint(trainer_kwargs)
     trainer = trainer_type(*trainer_default_args, **trainer_kwargs)
 
     datamodule = options.datamodule(
@@ -136,7 +106,7 @@ def run(
     assert len(image_dims) == 3
     image_dims = (C(image_dims[0]), H(image_dims[1]), W(image_dims[2]))
 
-    model = model_type(image_dims=image_dims, n_classes=n_classes, hp=hparams)
+    model = Model(image_dims=image_dims, num_classes=n_classes, hp=hparams)
 
     # NOTE: Haven't used this new method much yet. Seems to be useful when doing profiling / auto-lr
     # auto batch-size stuff, but those don't work well anyway. Leaving it here for now.
@@ -147,18 +117,53 @@ def run(
 
     # NOTE: Profiler output is a big string here. We could inspect and report it if needed.
     print("---Profiler output:")
-    profiler_summary = trainer.profiler.summary()
+    profiler = trainer.profiler
+    profiler_summary = profiler.summary()
     print(profiler_summary)
     print("---End of profiler output")
 
-    validation_results = trainer.validate(model, datamodule=datamodule)
-    # TODO: Figure out how to get the profiler output as an object, instead of a string on stdout.
-    print(validation_results)
+    # TODO: Is is relevant to evaluate the model?
+    # BUG: Sometimes the validation loop doesn't end properly!
+    # NOTE: torchscript doesn't seem to be compatible with fully shareded data parallel.
+    # eval_model = model.to_torchscript()
+    # assert isinstance(eval_model, LightningModule)
+    # validation_kwargs = trainer_kwargs.copy()
+    # validation_kwargs.update(devices=1, strategy="dp", accelerator="gpu")
+    # validation_trainer = Trainer(**validation_kwargs)
+    # validation_results = validation_trainer.validate(
+    #     model, datamodule=datamodule, verbose=False
+    # )
+    # print(validation_results)
 
 
-def main():
-    # TODO: Extract the profiler output as an object, not a string.
-    model_parallel_benchmark()
+# def data_parallel_benchmark():
+#     """ Data-Parallel benchmark. """
+#     # TODO: Maybe we should just pass everything from the command-line instead of this hybrid?
+#     main(
+#         gpus=torch.cuda.device_count(),
+#         accelerator="gpu",
+#         strategy="dp",
+#         callbacks=[GivingCallback()],
+#         max_epochs=1,
+#         limit_train_batches=100,
+#         limit_val_batches=100,
+#         profiler="simple",
+#     )
+
+
+# def model_parallel_benchmark():
+#     """ Model-Parallel benchmark. """
+#     main(
+#         gpus=torch.cuda.device_count(),
+#         accelerator="gpu",
+#         strategy="fsdp",
+#         devices=torch.cuda.device_count(),
+#         callbacks=[GivingCallback()],
+#         max_epochs=1,
+#         limit_train_batches=100,
+#         limit_val_batches=100,
+#         profiler="simple",
+#     )
 
 
 if __name__ == "__main__":
