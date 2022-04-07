@@ -2,8 +2,11 @@ import os
 import runpy
 import sys
 from functools import partial
+import tempfile
+import subprocess
+import shutil
 
-from coleo import Option, config as configuration, default, run_cli, tooled
+from coleo import Option, config as configuration, default, run_cli, tooled, ConfigFile
 
 from .fs import XPath
 from .log import simple_dash, simple_report
@@ -157,3 +160,72 @@ class Main:
 
         mp = _get_multipack(dev=dev)
         mp.do_install(dash=simple_dash, force=force, sync=sync)
+
+    def container():
+        # The container type to create
+        type: Option & str = None
+
+        # Include the dataset in the image
+        include_data: Option & bool = False
+
+        # The tag for the generated container
+        tag: Option & str = "milabench"
+
+        mp = _get_multipack(dev=False)
+
+        if type not in ["docker", "singularity"]:
+            raise ValueError(f"Unsupported type {type}")
+
+        with tempfile.TemporaryDirectory() as base:
+            root = XPath(base)
+
+            # To build containers all your files and directories must be
+            # relative to config_base.
+            config = next(iter(mp.packs.values())).config
+            config_base = XPath(config["config_base"])
+            config_file = XPath(config["config_file"])
+
+            shutil.copytree(config_base, root, dirs_exist_ok=True)
+            config_file.copy(root / "bench.yaml")
+
+            if type == "docker":
+                with (root / "Dockerfile").open("w") as f:
+                    f.write(
+                        dockerfile_template(
+                            milabench_req="git+https://github.com/mila-iqia/milabench.git@v2",
+                            include_data=include_data,
+                        )
+                    )
+                subprocess.check_call(["docker", "build", ".", "-t", tag], cwd=root)
+            elif type == "singularity":
+                raise NotImplementedError(type)
+
+
+def dockerfile_template(milabench_req, include_data):
+    return f"""
+FROM python:3.9-slim
+
+RUN apt-get update && apt-get install --no-install-suggests --no-install-recommends -y \
+    git \
+    git-lfs \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir /bench && mkdir /base
+ENV MILABENCH_BASE /base
+# This is to signal to milabench to use that as fallback
+ENV VIRTUAL_ENV /base/venv
+ENV MILABENCH_DEVREQS /version.txt
+WORKDIR /base
+
+RUN echo '{ milabench_req }' > /version.txt
+
+COPY / /bench
+
+RUN pip install -r /version.txt && \
+    milabench install /bench/bench.yaml && \
+    rm -rf /root/.cache/pip
+
+{ 'RUN milabench prepare /bench/bench.yaml' if include_data else '' }
+
+CMD ["milabench", "run", "/bench/bench.yaml"]
+"""
