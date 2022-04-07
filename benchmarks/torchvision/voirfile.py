@@ -13,22 +13,23 @@ class ModelCallWrapper:
         cls = type(model)
         self.model = model
         self.original_call = cls.__call__
-        cls.__call__ = self.call
-        self.prof = FlopsProfiler(model)
+        self.prof = FlopsProfiler(self.model)
         self.measures = []
+        cls.__call__ = self.call
 
     def call(self, *args, **kwargs):
         # Inspired from deepspeed get_model_profile() source code:
-        # https://deepspeed.readthedocs.io/en/latest/_modules/deepspeed/profiling/flops_profiler/profiler.html#get_model_profile
+        # https://www.deepspeed.ai/tutorials/flops-profiler/#example-training-workflow
         self.prof.start_profile()
-
         ret = self.original_call(self.model, *args, **kwargs)
+        self.prof.stop_profile()
 
         flops = self.prof.get_total_flops()
         macs = self.prof.get_total_macs()
         params = self.prof.get_total_params()
         self.measures.append((flops, macs, params))
         self.prof.end_profile()
+
         return ret
 
     def __str__(self):
@@ -61,10 +62,7 @@ def instrument_display_min(ov):
 
 
 def instrument_print_profiles(ov):
+    wrapper_cell = ov.given["?wrapper"].accum()
     yield ov.phases.run_script
-    ov.given["?wrapper"].print("Wrapper: {}")
-
-
-def instrument_print_profiles_2(ov):
-    yield ov.phases.finalize
-    ov.given["?wrapper"].print("Wrapper: {}")
+    wrapper, = wrapper_cell
+    print("Wrapper", wrapper)
