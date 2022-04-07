@@ -1,6 +1,6 @@
 import argparse
-import os
 import contextlib
+import os
 
 import torch
 import torch.cuda.amp
@@ -8,7 +8,6 @@ import torch.nn as nn
 import torchvision.datasets as datasets
 import torchvision.models as tvmodels
 import torchvision.transforms as transforms
-
 
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
@@ -48,6 +47,22 @@ def train_epoch(model, criterion, optimizer, loader, device, scaler=None):
         else:
             loss.backward()
             optimizer.step()
+
+
+class SyntheticData:
+    def __init__(self, model, device, batch_size, n, fixed_batch):
+        self.n = n
+        self.inp = torch.randn((batch_size, 3, 224, 224)).to(device)
+        self.out = torch.rand_like(model(self.inp))
+        self.fixed_batch = fixed_batch
+
+    def __iter__(self):
+        inp, out = self.inp, self.out
+        for i in range(self.n):
+            if not self.fixed_batch:
+                inp = torch.rand_like(self.inp)
+                out = torch.rand_like(self.out)
+            yield (inp, out)
 
 
 def main():
@@ -91,12 +106,17 @@ def main():
         "--synthetic-data", action="store_true", help="whether to use synthetic data"
     )
     parser.add_argument(
+        "--fixed-batch", action="store_true", help="use a fixed batch for training"
+    )
+    parser.add_argument(
         "--with-amp",
         action="store_true",
         help="whether to use mixed precision with amp",
     )
 
     args = parser.parse_args()
+    if args.fixed_batch:
+        args.synthetic_data = True
 
     if args.synthetic_data:
         args.data = None
@@ -123,19 +143,19 @@ def main():
 
     if args.data:
         train = datasets.ImageFolder(os.path.join(args.data, "train"), data_transforms)
-    else:
-        train = datasets.FakeData(
-            size=1000,
-            image_size=(3, 512, 512),
-            num_classes=1000,
-            transform=data_transforms,
+        train_loader = torch.utils.data.DataLoader(
+            train,
+            batch_size=args.batch_size,
+            shuffle=True,
         )
-
-    train_loader = torch.utils.data.DataLoader(
-        train,
-        batch_size=args.batch_size,
-        shuffle=True,
-    )
+    else:
+        train_loader = SyntheticData(
+            model=model,
+            device=device,
+            batch_size=args.batch_size,
+            n=1000,
+            fixed_batch=args.fixed_batch,
+        )
 
     if args.with_amp:
         scaler = torch.cuda.amp.GradScaler()
