@@ -192,7 +192,7 @@ class Main:
                 with (root / "Dockerfile").open("w") as f:
                     f.write(
                         dockerfile_template(
-                            milabench_req="git+https://github.com/mila-iqia/milabench.git@v2",
+                            milabench_req="git+https://github.com/mila-iqia/milabench.git@container",
                             include_data=include_data,
                         )
                     )
@@ -208,6 +208,7 @@ FROM python:3.9-slim
 RUN apt-get update && apt-get install --no-install-suggests --no-install-recommends -y \
     git \
     git-lfs \
+    patch \
  && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir /bench && mkdir /base
