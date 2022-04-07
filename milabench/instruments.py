@@ -148,7 +148,7 @@ def train_rate(ov):
         n = sum(e1["batch_size"] for e1, e2 in elems)
         t /= 1_000_000_000
 
-        if t:
+        if n and t:
             ov.give(train_rate=n / t, units="items/s")
 
 
