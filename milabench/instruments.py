@@ -1,3 +1,5 @@
+import inspect
+import sys
 import time
 from threading import Thread
 
@@ -146,7 +148,7 @@ def train_rate(ov):
         n = sum(e1["batch_size"] for e1, e2 in elems)
         t /= 1_000_000_000
 
-        if t:
+        if n and t:
             ov.give(train_rate=n / t, units="items/s")
 
 
@@ -161,18 +163,30 @@ def loading_rate(ov):
         if "batch" in results:
             seconds = (t1 - t0) / 1000000000
             data = results["batch"]
-            if isinstance(data, list):
+            if isinstance(data, (list, tuple)):
                 data = data[0]
             return len(data) / seconds
         else:
             return None
 
-    @ov.given.where("loader").ksubscribe
+    loader = ov.given.where("loader")
+
+    @loader.ksubscribe
     def _(loader):
-        typ = type(iter(loader))
+        if inspect.isgeneratorfunction(getattr(loader, "__iter__", None)):
+            func = loader.__iter__
+            prb = ov.probe("func(!$x:@enter, #yield as batch, !!$y:@exit)")
+        else:
+            typ = type(iter(loader))
+            if hasattr(typ, "next"):
+                func = typ.next
+                prb = ov.probe("func(!$x:@enter, #value as batch, !!$y:@exit)")
+            else:
+                print(f"Error: cannot instrument loader of type {typ}", file=sys.stderr)
+                return
         (
-            ov.probe("typ.next(!$x:@enter, #value as batch, !!$y:@exit)")
-            .wmap(_timing)
+            prb.wmap(_timing)
+            .filter(lambda xs: xs is not None)
             .average(scan=5)
             .throttle(1)
             .map(lambda x: {"loading_rate": x, "units": "items/s"})

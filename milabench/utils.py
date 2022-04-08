@@ -164,5 +164,6 @@ class FileGiver:
 
 @contextmanager
 def give_std():
-    with (redirect_stdout(FileGiver("#stdout")), redirect_stderr(FileGiver("#stderr"))):
-        yield
+    with redirect_stdout(FileGiver("#stdout")):
+        with redirect_stderr(FileGiver("#stderr")):
+            yield

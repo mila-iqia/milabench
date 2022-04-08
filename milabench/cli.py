@@ -21,7 +21,7 @@ def get_pack(defn):
     if not pack.is_absolute():
         pack = XPath(defn["config_base"]) / pack
         defn["definition"] = str(pack)
-    pack_glb = runpy.run_path(pack / "benchfile.py")
+    pack_glb = runpy.run_path(str(pack / "benchfile.py"))
     pack_cls = pack_glb["__pack__"]
     pack_obj = pack_cls(defn)
     return pack_obj
