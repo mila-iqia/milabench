@@ -198,7 +198,14 @@ class Main:
                     )
                 subprocess.check_call(["docker", "build", ".", "-t", tag], cwd=root)
             elif type == "singularity":
-                raise NotImplementedError(type)
+                with (root / "milabench.def").open("w") as f:
+                    f.write(
+                        singularitydef_template(
+                            milabench_req="git+https://github.com/mila-iqia/milabench.git@container",
+                            include_data=include_data,
+                        )
+                    )
+                subprocess.check_call(["sudo", "singularity", "build", tag+".sif", "milabench.def"], cwd=root)
 
 
 def dockerfile_template(milabench_req, include_data):
@@ -229,4 +236,9 @@ RUN pip install -U pip && \
 { 'RUN milabench prepare /bench/bench.yaml' if include_data else '' }
 
 CMD ["milabench", "run", "/bench/bench.yaml"]
+"""
+
+def singularitydef_template(milabench_req, include_data):
+    return f"""
+    # TODO
 """
