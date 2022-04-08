@@ -174,7 +174,7 @@ class Main:
         mp = _get_multipack(dev=False)
 
         if type not in ["docker", "singularity"]:
-            raise ValueError(f"Unsupported type {type}")
+            sys.exit(f"Unsupported type {type}")
 
         with tempfile.TemporaryDirectory() as base:
             root = XPath(base)
