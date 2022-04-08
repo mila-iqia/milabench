@@ -30,7 +30,6 @@ VISION_DATAMODULES: dict[str, type[VisionDataModule]] = {
 }
 
 
-# NOTE: This isn't
 BACKBONES: dict[str, type[nn.Module]] = {
     name: cls_or_fn
     for name, cls_or_fn in vars(models).items()
