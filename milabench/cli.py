@@ -207,7 +207,6 @@ FROM python:3.9-slim
 
 RUN apt-get update && apt-get install --no-install-suggests --no-install-recommends -y \
     git \
-    git-lfs \
     patch \
  && rm -rf /var/lib/apt/lists/*
 
@@ -222,7 +221,8 @@ RUN echo '{ milabench_req }' > /version.txt
 
 COPY / /bench
 
-RUN pip install -r /version.txt && \
+RUN pip install -U pip && \
+    pip install -r /version.txt && \
     milabench install /bench/bench.yaml && \
     rm -rf /root/.cache/pip
 
