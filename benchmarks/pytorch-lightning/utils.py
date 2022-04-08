@@ -21,15 +21,7 @@ H = NewType("H", int)
 W = NewType("W", int)
 ModuleType = TypeVar("ModuleType", bound=nn.Module)
 
-
-# TODO maybe use this so we don't have to download the datasets, or use milatools/milavision.
-torchvision_dir: Path | None = Path("/network/datasets/torchvision")
-if not torchvision_dir.exists():
-    torchvision_dir = None
-
-DEFAULT_DATA_DIR: Path = Path(
-    os.environ.get("SLURM_TMPDIR", os.environ.get("SCRATCH", "data"))
-)
+DEFAULT_DATA_DIR: Path = Path(os.environ["MILABENCH_DIR_DATA"])
 
 VISION_DATAMODULES: dict[str, type[VisionDataModule]] = {
     name.replace("DataModule", ""): cls
