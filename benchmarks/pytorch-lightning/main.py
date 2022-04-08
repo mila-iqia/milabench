@@ -9,6 +9,7 @@ from __future__ import annotations
 import contextlib
 import inspect
 import io
+import pprint
 import typing
 from typing import Callable
 
@@ -89,8 +90,6 @@ def main(
         callbacks.append(GivingCallback())
 
     print(f"Trainer kwargs:")
-    import pprint
-
     pprint.pprint(trainer_kwargs)
     trainer = trainer_type(*trainer_default_args, **trainer_kwargs)
 
