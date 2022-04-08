@@ -36,6 +36,7 @@ defaults: &defaults
     --limit_val_batches: 100
     --devices: -1
     --enable_progress_bar: "False"
+    --accelerator: "auto"
 
 benchmarks:
   data-parallel:
@@ -43,7 +44,6 @@ benchmarks:
     definition: ./
     argv:
       --backbone: "resnet152"
-      --accelerator: "gpu"
       --strategy: "dp"
       --profiler: "pytorch"
       --precision: 32
@@ -53,7 +53,6 @@ benchmarks:
     definition: ./
     argv:
       --backbone: "vit_l_32"  # (larger model)
-      --accelerator: "gpu"
       --strategy: "fsdp"  # Fully-Sharded Data-Parallel
       # BUG: There appears to be some issues between FSDP and PyTorch profiler, script hangs.
       # --profiler: "pytorch"
