@@ -62,7 +62,7 @@ class GivingCallback(Callback):
     def on_train_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
         self._end_time = datetime.datetime.now()
         delta = self._end_time - self._start_time
-        give(length=delta)
+        give(walltime=delta)
 
     def on_train_batch_start(
         self, trainer: Trainer, pl_module: LightningModule, batch: Any, batch_idx: int,
