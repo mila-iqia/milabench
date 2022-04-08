@@ -102,6 +102,7 @@ def main():
         help="random seed (default: 1234)",
     )
     parser.add_argument("--data", type=str, help="data directory")
+    parser.add_argument("--data-size", type=int, default=1000, help="fake data size to use if --data not specified (default 1000)")
     parser.add_argument(
         "--synthetic-data", action="store_true", help="whether to use synthetic data"
     )
@@ -153,7 +154,7 @@ def main():
             model=model,
             device=device,
             batch_size=args.batch_size,
-            n=1000,
+            n=args.data_size,
             fixed_batch=args.fixed_batch,
         )
 
