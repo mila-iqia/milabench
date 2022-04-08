@@ -279,3 +279,82 @@ def verify(ov):
         )
 
     yield ov.phases.finalize
+
+
+def _profile_with_deepspeed(**kwargs):
+    """Use deepspeed profiler."""
+    # Reference:
+    # https://www.deepspeed.ai/tutorials/flops-profiler/#example-training-workflow
+    from deepspeed.profiling.flops_profiler import FlopsProfiler
+
+    model = kwargs["model"]
+    prof = FlopsProfiler(model)
+
+    prof.start_profile()
+    yield
+    prof.stop_profile()
+
+    flops = prof.get_total_flops()
+    macs = prof.get_total_macs()
+    params = prof.get_total_params()
+    prof.end_profile()
+    print(flops, macs, params)
+
+    return flops, macs, params
+
+
+def _profile_with_torch_profiler():
+    """Use torch.profiler."""
+    import torch.profiler as profiler
+    import torch
+
+    with profiler.profile(
+        activities=[
+            profiler.ProfilerActivity.CPU,
+            profiler.ProfilerActivity.CUDA,
+        ],
+        # schedule=profiler.schedule(wait=0, warmup=0, active=1),
+        record_shapes=True,
+        profile_memory=True,
+        with_stack=True,
+        with_flops=True,
+        with_modules=True,
+    ) as prof:
+        yield
+        torch.cuda.synchronize()
+    evts = prof.key_averages()
+    # evts is a torch event list:
+    # https://github.com/pytorch/pytorch/blob/9905b1f29a5d23d30cfb570679845766983260c4/torch/autograd/profiler_util.py#L14
+    # Each event is an instance of torch.autograd.profiler_util.FunctionEventAvg:
+    # https://github.com/pytorch/pytorch/blob/9905b1f29a5d23d30cfb570679845766983260c4/torch/autograd/profiler_util.py#L521
+    print(sum(evt.flops for evt in evts), len(evts), type(evts), type(evts[0]))
+    return evts
+
+
+@parametrized(
+    "--profile",
+    type=str,
+    default="",
+    help='Run profiler (default None, available: "torch", "deepspeed")',
+)
+def profile(ov):
+    profile_name = ov.options.profile
+    if profile_name is None:
+        return
+    elif profile_name == "torch":
+        profile_method = _profile_with_torch_profiler
+    elif profile_name == "deepspeed":
+        profile_method = _profile_with_deepspeed
+    else:
+        raise NotImplementedError(f"Unknown profiler: {profile_name}")
+
+    yield ov.phases.load_script
+    ov.given.wmap("compute_start", profile_method).give("profiler_stats")
+
+    profile_results = ov.given["?profiler_stats"].accum()
+    yield ov.phases.run_script
+    print(
+        "Profiler results",
+        len(profile_results),
+        type(profile_results[0]) if profile_results else "",
+    )

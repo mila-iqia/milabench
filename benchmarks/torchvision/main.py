@@ -102,7 +102,12 @@ def main():
         help="random seed (default: 1234)",
     )
     parser.add_argument("--data", type=str, help="data directory")
-    parser.add_argument("--data-size", type=int, default=1000, help="fake data size to use if --data not specified (default 1000)")
+    parser.add_argument(
+        "--data-size",
+        type=int,
+        default=1000,
+        help="fake data size to use if --data not specified (default 1000)",
+    )
     parser.add_argument(
         "--synthetic-data", action="store_true", help="whether to use synthetic data"
     )
