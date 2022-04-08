@@ -2,7 +2,7 @@
 
 import os
 import json
-from utils import DataOptions
+from utils import VISION_DATAMODULES, DataOptions
 from simple_parsing import ArgumentParser
 import shlex
 
@@ -11,14 +11,15 @@ def main():
     config = json.loads(os.environ["MILABENCH_CONFIG"])
     data_directory = os.environ["MILABENCH_DIR_DATA"]
     argv_dict = config["argv"]
-    argv_str = " ".join(f"--{k} {v}" for k, v in argv_dict.items())
 
-    parser = ArgumentParser()
-    parser.add_arguments(DataOptions, "options")
-    args, _ = parser.parse_known_args(shlex.split(argv_str))
-    options: DataOptions = args.options
+    datamodule_str = argv_dict.get("--datamodule")
+    if datamodule_str is None:
+        options = DataOptions()
+        datamodule_cls = options.datamodule
+    else:
+        datamodule_cls = VISION_DATAMODULES[datamodule_str]
 
-    datamodule = options.datamodule(data_dir=data_directory)
+    datamodule = datamodule_cls(data_dir=data_directory)
     datamodule.prepare_data()
 
 
