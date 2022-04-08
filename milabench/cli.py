@@ -239,6 +239,7 @@ CMD ["milabench", "run", "/bench/bench.yaml"]
 """
 
 def singularitydef_template(milabench_req, include_data):
+    sys.exit(f"Singularity containers not yet fully supported, work in progress.")
     return f"""
     # TODO
 """
