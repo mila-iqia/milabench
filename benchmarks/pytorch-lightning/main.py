@@ -33,8 +33,8 @@ def main(
 ):
     """
     Runs a PyTorch-Lightning benchmark.
-    
-    The benchmark consists of training a model of type `model_type`, using a `Trainer`, on the 
+
+    The benchmark consists of training a model of type `model_type`, using a `Trainer`, on the
     `LightningDataModule` that is created from a `DataOptions` that is also parsed from the
     command-line.
 
@@ -43,6 +43,38 @@ def main(
 
     NOTE: trainer_type is just used so we can get nice type-checks for the trainer kwargs. We
     don't actually expect a different subclass of Trainer to be passed.
+
+    Examples:
+
+    Data-Parallel benchmark:
+    ```python
+    main(
+        gpus=torch.cuda.device_count(),
+        accelerator="auto",
+        strategy="dp",
+        callbacks=[GivingCallback()],
+        max_epochs=1,
+        limit_train_batches=100,
+        limit_val_batches=100,
+        profiler="simple",
+    )
+    ```
+
+
+    Model-Parallel benchmark:
+    ```python
+    main(
+        gpus=torch.cuda.device_count(),
+        accelerator="auto",
+        strategy="fsdp",
+        devices=torch.cuda.device_count(),
+        callbacks=[GivingCallback()],
+        max_epochs=1,
+        limit_train_batches=100,
+        limit_val_batches=100,
+        profiler="simple",
+    )
+    ```
     """
     # Create a parser so we can extract all the args of the Trainer class, and add it to our own,
     # (better) ArgumentParser.
@@ -91,6 +123,7 @@ def main(
 
     print(f"Trainer kwargs:")
     pprint.pprint(trainer_kwargs)
+
     trainer = trainer_type(*trainer_default_args, **trainer_kwargs)
 
     datamodule = options.datamodule(
@@ -121,48 +154,9 @@ def main(
     print(profiler_summary)
     print("---End of profiler output")
 
-    # TODO: Is is relevant to evaluate the model?
-    # BUG: Sometimes the validation loop doesn't end properly!
-    # NOTE: torchscript doesn't seem to be compatible with fully shareded data parallel.
-    # eval_model = model.to_torchscript()
-    # assert isinstance(eval_model, LightningModule)
-    # validation_kwargs = trainer_kwargs.copy()
-    # validation_kwargs.update(devices=1, strategy="dp", accelerator="gpu")
-    # validation_trainer = Trainer(**validation_kwargs)
-    # validation_results = validation_trainer.validate(
-    #     model, datamodule=datamodule, verbose=False
-    # )
+    # NOTE: Uncomment this to evaluate the model.
+    # validation_results = trainer.validate(model, datamodule=datamodule, verbose=False)
     # print(validation_results)
-
-
-# def data_parallel_benchmark():
-#     """ Data-Parallel benchmark. """
-#     # TODO: Maybe we should just pass everything from the command-line instead of this hybrid?
-#     main(
-#         gpus=torch.cuda.device_count(),
-#         accelerator="gpu",
-#         strategy="dp",
-#         callbacks=[GivingCallback()],
-#         max_epochs=1,
-#         limit_train_batches=100,
-#         limit_val_batches=100,
-#         profiler="simple",
-#     )
-
-
-# def model_parallel_benchmark():
-#     """ Model-Parallel benchmark. """
-#     main(
-#         gpus=torch.cuda.device_count(),
-#         accelerator="gpu",
-#         strategy="fsdp",
-#         devices=torch.cuda.device_count(),
-#         callbacks=[GivingCallback()],
-#         max_epochs=1,
-#         limit_train_batches=100,
-#         limit_val_batches=100,
-#         profiler="simple",
-#     )
 
 
 if __name__ == "__main__":
