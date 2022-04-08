@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 
-import os
 import json
+import os
+
 from utils import VISION_DATAMODULES, DataOptions
-from simple_parsing import ArgumentParser
-import shlex
 
 
 def main():

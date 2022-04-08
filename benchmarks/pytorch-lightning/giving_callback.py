@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import datetime
-import typing
 from collections import abc as collections_abc
 from typing import Any, ContextManager
 
@@ -11,9 +10,6 @@ from giving import give
 from pytorch_lightning import Callback, LightningModule, Trainer
 from pytorch_lightning.trainer.states import RunningStage
 from torch import Tensor
-
-if typing.TYPE_CHECKING:
-    from .model import Model
 
 
 def get_x_from_batch(batch: Any) -> Tensor:

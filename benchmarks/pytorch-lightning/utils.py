@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Callable, NewType, TypeVar
 
 import pl_bolts.datamodules
-import torch
 from pl_bolts.datamodules import CIFAR10DataModule
 from pl_bolts.datamodules.vision_datamodule import VisionDataModule
 from simple_parsing import choice
