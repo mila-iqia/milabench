@@ -1,0 +1,72 @@
+defaults: &defaults
+  dirs:
+    code: ./_dev_torchvision
+    venv: venv/torchvision
+    data: data
+    runs: runs
+
+  venv:
+    type: virtualenv
+
+  plan:
+    method: njobs
+    n: 1
+
+  voir:
+    --stop: 30
+    --forward:
+      - "#stdout"
+      - "#stderr"
+      - "#end"
+      - loss
+      - compute_rate
+      - train_rate
+      - loading_rate
+      - descr
+      - progress
+      - total
+    --compute-rate: true
+    --train-rate: true
+    --loading-rate: true
+
+  definition: ./
+
+benchmarks:
+  resnet18:
+    <<<: *defaults
+    argv:
+      --model: resnet18
+
+  resnet18-amp:
+    <<<: *defaults
+    argv:
+      --model: resnet18
+      --with-amp: true
+
+  resnet50:
+    <<<: *defaults
+    argv:
+      --model: resnet50
+
+  resnet50-amp:
+    <<<: *defaults
+    argv:
+      --model: resnet50
+      --with-amp: true
+
+  vgg19:
+    <<<: *defaults
+    argv:
+      --model: vgg19
+
+  vgg19-amp:
+    <<<: *defaults
+    argv:
+      --model: vgg19
+      --with-amp: true
+
+  resnet18-fixed:
+    <<<: *defaults
+    argv:
+      --model: resnet18
+      --fixed-batch: True
