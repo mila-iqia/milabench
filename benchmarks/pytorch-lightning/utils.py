@@ -95,23 +95,6 @@ def get_backbone_network(
     return in_features, backbone
 
 
-def recommended_n_workers() -> int:
-    """ try to compute a suggested max number of worker based on system's resource s"""
-    # NOTE: Not quite sure what this does, was taken from the code of DataLoader class.
-    if hasattr(os, "sched_getaffinity"):
-        try:
-            return len(os.sched_getaffinity(0))
-        except Exception:
-            pass
-
-    # os.cpu_count() could return Optional[int]
-    # get cpu count first and check None in order to satify mypy check
-    cpu_count = os.cpu_count()
-    if cpu_count is not None:
-        return cpu_count
-    return torch.multiprocessing.cpu_count()
-
-
 @dataclass
 class DataOptions(Serializable):
     datamodule: type[VisionDataModule] = choice(

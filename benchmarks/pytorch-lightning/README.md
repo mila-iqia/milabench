@@ -1,7 +1,7 @@
 # PyTorch-Lightning Benchmarks
 
 This folder contains a customizable PyTorch-Lightning benchmark.
-This benchmarks comes with two configurations:
+The two default configurations are:
 - data-parallel: Training in a data-parallel fashion by using the "dp" strategy of PyTorch-Lightning;
 - model-parallel: Fully-sharded Model-Parallel training using the "fsdp" strategy and fairscale.
 
