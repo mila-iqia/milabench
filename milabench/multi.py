@@ -129,6 +129,7 @@ class MultiPackage:
                         proc.kill()
                     if not isinstance(exc, KeyboardInterrupt):
                         raise
+                    break
 
     def do_dev(self, dash):
         # TODO: share the common code between do_run and do_dev
