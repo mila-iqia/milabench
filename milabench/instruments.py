@@ -231,20 +231,30 @@ class GPUMonitor(Thread):
         import GPUtil
 
         while not self.stopped:
-            self.ov.give(gpudata=GPUtil.getGPUs())
+            data = {
+                gpu.id: {
+                    "memory": [gpu.memoryUsed, gpu.memoryTotal],
+                    "load": gpu.load,
+                    "temperature": gpu.temperature,
+                }
+                for gpu in GPUtil.getGPUs()
+            }
+            self.ov.give(gpudata=data)
             time.sleep(self.delay)
 
     def stop(self):
         self.stopped = True
 
 
-@gated("--gpu", "Profile GPU usage.")
+@parametrized("--poll-gpu", type=int, default=5, help="GPU poll interval")
 def profile_gpu(ov):
     yield ov.phases.load_script
-    monitor = GPUMonitor(ov, 100)
+    monitor = GPUMonitor(ov, ov.options.poll_gpu)
     monitor.start()
-    yield ov.phases.run_script
-    monitor.stop()
+    try:
+        yield ov.phases.run_script
+    finally:
+        monitor.stop()
 
 
 @gated("--verify", "Verify the benchmark")
