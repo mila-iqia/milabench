@@ -1,17 +1,9 @@
-import glob
-import json
 import math
-import operator
-import os
 import sys
-from collections import defaultdict
-from functools import reduce
-from itertools import chain
 
 import numpy as np
-import pandas as pd
 from hrepr import HTML, hrepr
-from pandas import DataFrame, Series
+from pandas import DataFrame
 
 nan = math.nan
 
