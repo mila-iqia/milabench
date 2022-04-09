@@ -1,3 +1,4 @@
+import json
 import os
 import runpy
 import sys
@@ -12,6 +13,8 @@ from .fs import XPath
 from .log import simple_dash, simple_report
 from .merge import self_merge
 from .multi import MultiPackage
+from .report import make_report
+from .summary import make_summary
 
 
 def main():
@@ -113,6 +116,24 @@ def _get_multipack(dev=False):
     return MultiPackage(objects)
 
 
+def _read_reports(*runs):
+    all_data = []
+    for folder in runs:
+        for parent, _, filenames in os.walk(folder):
+            for file in filenames:
+                if not file.endswith(".json"):
+                    continue
+                pth = XPath(parent) / file
+                with pth.open() as f:
+                    lines = f.readlines()
+                    try:
+                        data = [json.loads(line) for line in lines]
+                    except Exception as exc:
+                        print(f"Could not parse {pth}")
+                    all_data.append(data)
+    return all_data
+
+
 class Main:
     def run():
         # Name of the run
@@ -168,6 +189,50 @@ class Main:
 
         mp = _get_multipack(dev=dev)
         mp.do_install(dash=simple_dash, force=force, sync=sync)
+
+    def summary():
+        # Directory(ies) containing the run data
+        # [positional: +]
+        runs: Option = []
+
+        # Output file
+        # [alias: -o]
+        out: Option = None
+
+        all_data = _read_reports(*runs)
+        summary = make_summary(all_data)
+
+        if out is not None:
+            with open(out, "w") as file:
+                json.dump(summary, file, indent=4)
+        else:
+            print(json.dumps(summary, indent=4))
+
+    def report():
+        # Runs directory
+        runs: Option = None
+
+        # Weights configuration file
+        weights: Option & configuration = None
+
+        # Comparison summary
+        compare: Option & configuration = None
+
+        # Generate HTML
+        html: Option = None
+
+        if runs is not None:
+            summary = make_summary(_read_reports(runs))
+
+        make_report(
+            summary,
+            compare=compare,
+            weights=weights,
+            html=html,
+            compare_gpus=True,
+            price=None,
+            title=None,
+        )
 
     def container():
         # The container type to create
