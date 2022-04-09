@@ -124,15 +124,23 @@ class Main:
         # Sync changes to the benchmark directory
         sync: Option & bool = False
 
+        # Number of times to repeat the benchmark
+        repeat: Option & int = 1
+
         mp = _get_multipack(dev=dev)
 
         if dev or sync:
             mp.do_install(dash=simple_dash, sync=True)
 
         if dev:
+            assert repeat == 1
             mp.do_dev(dash=simple_dash)
         else:
-            mp.do_run(dash=simple_dash, report=partial(simple_report, runname=run))
+            mp.do_run(
+                repeat=repeat,
+                dash=simple_dash,
+                report=partial(simple_report, runname=run),
+            )
 
     def prepare():
         # Dev mode (does install --sync, uses current venv)
