@@ -111,6 +111,116 @@ def stop(ov):
         steps.skip(stop) >> _stop
 
 
+def _parse_interval(x):
+    if x.endswith("s"):
+        return (True, float(x[:-1]))
+    else:
+        return (False, float(x))
+
+
+def metric(ov):
+    # Add rguments
+    yield ov.phases.init
+
+    ov.argparser.add_argument(
+        "--metric",
+        type=str,
+        help="Metric type",
+        choices=("step", "wrap"),
+        required=False,
+    )
+    ov.argparser.add_argument(
+        "--metric-interval", type=str, help="Metric reporting interval", default="1"
+    )
+    ov.argparser.add_argument(
+        "--metric-skip", type=str, help="Iterations or time to skip", default="10"
+    )
+
+    # Parse arguments
+    yield ov.phases.parse_args
+
+    metric = ov.options.metric
+    if metric is None:
+        return
+
+    interval_is_time, interval = _parse_interval(ov.options.metric_interval)
+    skip_is_time, skip = _parse_interval(ov.options.metric_skip)
+
+    # Set sync method based on use_cuda
+    sync = None
+
+    def setsync(use_cuda):
+        if use_cuda:
+            nonlocal sync
+            import torch
+
+            sync = torch.cuda.synchronize
+
+    ov.given["?use_cuda"].first_or_default(False) >> setsync
+
+    # Build stream of time/batch_size
+    if metric == "step":
+        times = (
+            ov.given.where("step", "batch")
+            .kmap(batch_size=lambda batch: len(batch))
+            .augment(time=lambda: time.time_ns())
+            .keep("time", "batch_size")
+            .pairwise()
+            .starmap(
+                lambda x, y: {
+                    "time": (y["time"] - x["time"]) / 1_000_000_000,
+                    "batch_size": y["batch_size"],
+                }
+            )
+        )
+
+    elif metric == "wrap":
+
+        def _timewrap():
+            t0 = time.time_ns()
+            results = yield
+            t1 = time.time_ns()
+            if "batch" in results:
+                seconds = (t1 - t0) / 1000000000
+                data = results["batch"]
+                if isinstance(data, list):
+                    data = data[0]
+                return {"time": seconds, "batch_size": len(data)}
+            else:
+                return None
+
+        times = ov.given.wmap("compute_start", _timewrap).filter(lambda x: x)
+
+    # Skip the first few entries
+    if skip:
+        if skip_is_time:
+            times = times.skip_until_with_time(skip)
+        else:
+            times = times.skip(skip)
+
+    # Group by interval
+    if interval_is_time:
+        times = times.buffer_with_time(interval)
+    else:
+        times = times.buffer_with_count(interval)
+
+    # Compute the final metric
+    @times.subscribe
+    def _(elems):
+        t = 0
+        if sync is not None:
+            t0 = time.time_ns()
+            sync()
+            t1 = time.time_ns()
+            t += t1 - t0
+
+        t += sum(e["time"] for e in elems)
+        n = sum(e["batch_size"] for e in elems)
+
+        if n and t:
+            ov.give(train_rate=n / t, units="items/s")
+
+
 @gated("--train-rate")
 def train_rate(ov):
     yield ov.phases.load_script

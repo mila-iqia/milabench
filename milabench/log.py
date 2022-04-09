@@ -47,14 +47,14 @@ def simple_dash(gv):
             pr()
 
         if ks == {"#stdout"}:
-            txt = data["#stdout"]
+            txt = str(data["#stdout"])
             if newline:
                 line(">", txt, end="")
             else:
                 pr(txt, end="")
             newline = txt.endswith("\n")
         elif ks == {"#stderr"}:
-            txt = data["#stderr"]
+            txt = str(data["#stderr"])
             if newline:
                 line(">!", txt, end="")
             else:
