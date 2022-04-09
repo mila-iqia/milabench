@@ -191,34 +191,42 @@ def metric(ov):
 
         times = ov.given.wmap("compute_start", _timewrap).filter(lambda x: x)
 
-    # Skip the first few entries
-    if skip:
-        if skip_is_time:
-            times = times.skip_until_with_time(skip)
+    def setup_pipeline(times):
+        # Skip the first few entries
+        if skip:
+            if skip_is_time:
+                times = times.skip_until_with_time(skip)
+            else:
+                times = times.skip(skip)
+
+        # Group by interval
+        if interval_is_time:
+            times = times.buffer_with_time(interval)
         else:
-            times = times.skip(skip)
+            times = times.buffer_with_count(interval)
 
-    # Group by interval
-    if interval_is_time:
-        times = times.buffer_with_time(interval)
+        # Compute the final metric
+        @times.subscribe
+        def _(elems):
+            t = 0
+            if sync is not None:
+                t0 = time.time_ns()
+                sync()
+                t1 = time.time_ns()
+                t += t1 - t0
+
+            t += sum(e["time"] for e in elems)
+            n = sum(e["batch_size"] for e in elems)
+
+            if n and t:
+                ov.give(train_rate=n / t, units="items/s")
+
+    if skip_is_time:
+        # We need to start counting from the first timed iteration
+        # and not from the start of the program
+        times.first().subscribe(lambda _: setup_pipeline(times))
     else:
-        times = times.buffer_with_count(interval)
-
-    # Compute the final metric
-    @times.subscribe
-    def _(elems):
-        t = 0
-        if sync is not None:
-            t0 = time.time_ns()
-            sync()
-            t1 = time.time_ns()
-            t += t1 - t0
-
-        t += sum(e["time"] for e in elems)
-        n = sum(e["batch_size"] for e in elems)
-
-        if n and t:
-            ov.give(train_rate=n / t, units="items/s")
+        setup_pipeline(times)
 
 
 @gated("--train-rate")
