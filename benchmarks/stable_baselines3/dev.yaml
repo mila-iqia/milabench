@@ -1,0 +1,60 @@
+defaults: &defaults
+  dirs:
+    code: ./_dev_{name}
+    venv: venv/{name}
+    data: data
+    runs: runs
+
+  venv:
+    type: conda
+
+  plan:
+    method: njobs
+    n: 1
+
+  voir:
+    --stop: 10
+    --forward:
+      - "#stdout"
+      - "#stderr"
+      - "#end"
+      - loss
+      - compute_rate
+      - train_rate
+      - loading_rate
+      - descr
+      - progress
+      - total
+    --compute-rate: true
+    --train-rate: true
+    --loading-rate: true
+
+benchmarks:
+  PPO:
+    <<<: *defaults
+
+    definition: ./
+    argv:
+      - --algo
+      - ppo
+      - --env
+      - HalfCheetahBulletEnv-v0
+      - -n
+      - '-1'
+      - --num-threads
+      - '-1'
+      - --seed
+      - '0'
+      - --vec-env
+      - subproc
+      - --device
+      - auto
+      - -params
+      - n_steps:512 
+      - -params
+      - n_epochs:20
+      - -params
+      - n_envs:16
+      - -params
+      - n_timesteps:50000
+
