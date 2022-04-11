@@ -1,0 +1,83 @@
+defaults: &defaults
+  dirs:
+    code: code/{name}
+    venv: venv/{name}
+    data: data
+    runs: runs
+
+  venv:
+    type: virtualenv
+
+  voir:
+    --forward:
+      - "#stdout"
+      - "#stderr"
+      - "#end"
+      - loss
+      - compute_rate
+      - train_rate
+      - loading_rate
+      - gpudata
+    # --loading-rate: true
+    --poll-gpu: 5
+
+
+torchvision: &torchvision
+  <<<: *defaults
+
+  dirs:
+    code: code/torchvision
+    venv: venv/torchvision
+
+  plan:
+    method: per_gpu
+
+  voir:
+    --stop: 30
+    --metric: step
+    --metric-interval: 1s
+    --metric-skip: 5s
+
+  argv:
+    --lr: 0.01
+
+  definition: ../benchmarks/torchvision
+
+
+benchmarks:
+  resnet50:
+    <<<: *torchvision
+    argv:
+      --model: resnet50
+
+  squeezenet1_1:
+    <<<: *torchvision
+    argv:
+      --model: squeezenet1_1
+
+  efficientnet_b0:
+    <<<: *torchvision
+    argv:
+      --model: efficientnet_b0
+
+  efficientnet_b4:
+    <<<: *torchvision
+    argv:
+      --model: efficientnet_b4
+
+  efficientnet_b7:
+    <<<: *torchvision
+    argv:
+      --model: efficientnet_b7
+      --batch-size: 32
+
+  convnext_large:
+    <<<: *torchvision
+    argv:
+      --model: convnext_large
+
+  regnet_y_128gf:
+    <<<: *torchvision
+    argv:
+      --model: regnet_y_128gf
+      --batch-size: 16
