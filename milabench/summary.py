@@ -1,4 +1,5 @@
 from collections import defaultdict
+from math import isnan, nan
 
 import numpy as np
 
@@ -15,6 +16,7 @@ def _aggregate(run_data):
     omnibus["gpudata"] = [
         {str(device): entry[str(device)]} if device is not None else entry
         for entry in omnibus.get("gpudata", [])
+        if str(device) in entry
     ]
 
     if device is not None:
@@ -27,7 +29,8 @@ def _aggregate(run_data):
     omnibus["walltime"] = [omnibus["#end"][-1] - omnibus["#start"][0]]
     omnibus["success"] = [
         omnibus.get("#return_code", [-1])[-1] == 0
-        and omnibus.get("loss_gain", [-1])[-1] < 0
+        and not any(isnan(loss) for loss in omnibus.get("loss", []))
+        # and omnibus.get("loss_gain", [-1])[-1] < 0
         and bool(omnibus.get("train_rate", []))
     ]
 
@@ -51,6 +54,16 @@ def _merge(aggs):
 
 
 def _metrics(xs):
+    if not xs:
+        return {
+            "min": nan,
+            "q1": nan,
+            "median": nan,
+            "q3": nan,
+            "max": nan,
+            "mean": nan,
+            "std": nan,
+        }
     percentiles = [0, 25, 50, 75, 100]
     percentile_names = ["min", "q1", "median", "q3", "max"]
     metrics = dict(zip(percentile_names, np.percentile(xs, percentiles)))
