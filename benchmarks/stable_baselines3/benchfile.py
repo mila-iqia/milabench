@@ -31,9 +31,6 @@ class StableBenchmarkPack(Package):
 
                 self.pip_install(requirement)
 
-    def prepare(self):
-        super().prepare()  # super() call executes prepare_script
-
     def run(self, args, voirargs, env):
         return self.launch("train.py", args=args, voirargs=voirargs, env=env)
 
