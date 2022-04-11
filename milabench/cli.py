@@ -2,8 +2,11 @@ import os
 import runpy
 import sys
 from functools import partial
+import tempfile
+import subprocess
+import shutil
 
-from coleo import Option, config as configuration, default, run_cli, tooled
+from coleo import Option, config as configuration, default, run_cli, tooled, ConfigFile
 
 from .fs import XPath
 from .log import simple_dash, simple_report
@@ -61,8 +64,10 @@ def _get_multipack(dev=False):
         exclude = exclude.split(",")
 
     config_base = str(XPath(config).parent.absolute())
+    config_file = str(XPath(config).absolute())
     config = configuration(config)
     config["defaults"]["config_base"] = config_base
+    config["defaults"]["config_file"] = config_file
     if base is not None:
         config["defaults"]["dirs"]["base"] = base
     elif os.environ.get("MILABENCH_BASE", None):
@@ -155,3 +160,90 @@ class Main:
 
         mp = _get_multipack(dev=dev)
         mp.do_install(dash=simple_dash, force=force, sync=sync)
+
+    def container():
+        # The container type to create
+        type: Option & str = None
+
+        # Include the dataset in the image
+        include_data: Option & bool = False
+
+        # Optional path to copy build dir to, instead of building the image.
+        # This directory must not exist and will be created.
+        output_dir: Option & str = None
+
+        # Optional python version to use for the image, ignored for
+        # conda-based benchmarks. Can be specified as any of
+        # ('3', '3.9', '3.9.2')
+        python_version: Option & str = "3.9"
+
+        # The tag for the generated container
+        tag: Option & str = "milabench"
+
+        mp = _get_multipack(dev=False)
+
+        if type not in ["docker", "singularity"]:
+            sys.exit(f"Unsupported type {type}")
+
+        with tempfile.TemporaryDirectory() as base:
+            root = XPath(base)
+
+            # To build containers all your files and directories must be
+            # relative to config_base.
+            config = next(iter(mp.packs.values())).config
+            config_base = XPath(config["config_base"])
+            config_file = XPath(config["config_file"])
+
+            # We check all configs since they may not have all the same setting
+            use_conda = any(pack.config['venv']['type'] == 'conda' for pack in mp.packs.values())
+
+            shutil.copytree(config_base, root, dirs_exist_ok=True)
+            config_file.copy(root / "bench.yaml")
+
+            if type == "docker":
+                with (root / "Dockerfile").open("w") as f:
+                    f.write(
+                        dockerfile_template(
+                            milabench_req="git+https://github.com/mila-iqia/milabench.git@container",
+                            include_data=include_data,
+                            use_conda=use_conda,
+                            python_version=python_version,
+                        )
+                    )
+                if output_dir:
+                    root.copy(output_dir)
+                else:
+                    subprocess.check_call(["docker", "build", ".", "-t", tag], cwd=root)
+            elif type == "singularity":
+                raise NotImplementedError(type)
+
+
+def dockerfile_template(milabench_req, include_data, use_conda, python_version):
+    return f"""
+FROM { 'continuumio/miniconda3' if use_conda else f'python:{python_version}-slim' }
+
+RUN apt-get update && apt-get install --no-install-suggests --no-install-recommends -y \
+    git \
+    patch \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir /bench && mkdir /base
+ENV MILABENCH_BASE /base
+# This is to signal to milabench to use that as fallback
+ENV VIRTUAL_ENV /base/venv
+ENV MILABENCH_DEVREQS /version.txt
+WORKDIR /base
+
+RUN echo '{ milabench_req }' > /version.txt
+
+COPY / /bench
+
+RUN pip install -U pip && \
+    pip install -r /version.txt && \
+    milabench install /bench/bench.yaml && \
+    rm -rf /root/.cache/pip
+
+{ 'RUN milabench prepare /bench/bench.yaml' if include_data else '' }
+
+CMD ["milabench", "run", "/bench/bench.yaml"]
+"""

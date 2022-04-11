@@ -79,12 +79,12 @@ class XPath(type(Path())):
                 destpath = dest / rel_file
                 if not destpath.parent.exists():
                     os.makedirs(destpath.parent, exist_ok=True)
-                if destpath.exists():
+                if destpath.exists() and readonly:
                     _restat(destpath, orperm=0o200)
                 if move:
                     shutil.move(filepath, destpath)
                 else:
-                    shutil.copy(filepath, destpath)
+                    shutil.copy2(filepath, destpath)
                 if readonly:
                     _restat(destpath, andperm=0o555)
 
@@ -145,7 +145,7 @@ class XPath(type(Path())):
             path = XPath(tmp) / subtree
         else:
             path = XPath(tmp)
-        path.merge_into(dest, move=True)
+        shutil.copytree(path, dest, dirs_exist_ok=True)
         shutil.rmtree(tmp)
         return dest
 
