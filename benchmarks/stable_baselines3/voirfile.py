@@ -25,8 +25,12 @@ def instrument_probes(ov):
         .give("loss")
     )
 
-    # Compute Start & End + Batch
+    # Compute step
     ov.probe(
-        "/stable_baselines3.ppo.ppo/PPO/train(rollout_data as batch, !#loop_rollout_data as compute_start, !!#endloop_rollout_data as compute_end, #endloop_rollout_data as step)"
+        "/stable_baselines3.ppo.ppo/PPO/train(rollout_data as batch) > #endloop_rollout_data as step"
     ).give()
 
+    # Compute Start & End + Batch
+    ov.probe(
+        "/stable_baselines3.ppo.ppo/PPO/train(rollout_data as batch, !#loop_rollout_data as compute_start, !!#endloop_rollout_data as compute_end)"
+    ).give()
