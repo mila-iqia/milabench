@@ -168,8 +168,14 @@ class Main:
         # Include the dataset in the image
         include_data: Option & bool = False
 
-        # Optional path to copy build dir to, instead of building the image
+        # Optional path to copy build dir to, instead of building the image.
+        # This directory must not exist and will be created.
         output_dir: Option & str = None
+
+        # Optional python version to use for the image, ignored for
+        # conda-based benchmarks. Can be specified as any of
+        # ('3', '3.9', '3.9.2')
+        python_version: Option & str = "3.9"
 
         # The tag for the generated container
         tag: Option & str = "milabench"
@@ -188,6 +194,9 @@ class Main:
             config_base = XPath(config["config_base"])
             config_file = XPath(config["config_file"])
 
+            # We check all configs since they may not have all the same setting
+            use_conda = any(pack.config['venv']['type'] == 'conda' for pack in mp.packs.values())
+
             shutil.copytree(config_base, root, dirs_exist_ok=True)
             config_file.copy(root / "bench.yaml")
 
@@ -197,6 +206,8 @@ class Main:
                         dockerfile_template(
                             milabench_req="git+https://github.com/mila-iqia/milabench.git@container",
                             include_data=include_data,
+                            use_conda=use_conda,
+                            python_version=python_version,
                         )
                     )
                 if output_dir:
@@ -207,9 +218,9 @@ class Main:
                 raise NotImplementedError(type)
 
 
-def dockerfile_template(milabench_req, include_data):
+def dockerfile_template(milabench_req, include_data, use_conda, python_version):
     return f"""
-FROM python:3.9-slim
+FROM { 'continuumio/miniconda3' if use_conda else f'python:{python_version}-slim' }
 
 RUN apt-get update && apt-get install --no-install-suggests --no-install-recommends -y \
     git \
