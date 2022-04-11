@@ -168,6 +168,9 @@ class Main:
         # Include the dataset in the image
         include_data: Option & bool = False
 
+        # Optional path to copy build dir to, instead of building the image
+        output_dir: Option & str = None
+
         # The tag for the generated container
         tag: Option & str = "milabench"
 
@@ -196,7 +199,10 @@ class Main:
                             include_data=include_data,
                         )
                     )
-                subprocess.check_call(["docker", "build", ".", "-t", tag], cwd=root)
+                if output_dir:
+                    root.copy(output_dir)
+                else:
+                    subprocess.check_call(["docker", "build", ".", "-t", tag], cwd=root)
             elif type == "singularity":
                 raise NotImplementedError(type)
 
