@@ -35,20 +35,11 @@ def instrument_probes(ov):
 
     # TD3
     # Loss
-    ov.probe("/stable_baselines3.td3.td3/TD3/train > actor_loss as loss").give()
-    # ov.probe("/stable_baselines3.td3.td3/TD3/train > critic_loss").give()
+    (ov.probe("/stable_baselines3.td3.td3/TD3/train > actor_loss").throttle(1)["actor_loss"]
+    .map(float)
+    .give("loss"))
 
-    # Batch + step
-    ov.probe("/stable_baselines3.td3.td3/TD3/train > ")
-
-    # Use_cuda
-    ov.give(use_cuda=True)
-
-    # Model
-    ov.probe("/stable_baselines3.td3.td3/TD3/train > batch_size").give()
-
-    # Loader
-    # ...
-
-    # Batch + compute_start + compute_end
-    # ...
+    # Compute Start & End + Batch
+    ov.probe(
+        "/stable_baselines3.td3.td3/TD3/train(_ as batch, !#loop__ as compute_start, !!#endloop__ as compute_end, #endloop__ as step)"
+    ).give()
