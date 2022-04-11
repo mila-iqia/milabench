@@ -44,6 +44,35 @@ torchvision: &torchvision
   definition: ../benchmarks/torchvision
 
 
+lightning: &lightning
+  <<<: *defaults
+
+  dirs:
+    code: code/lightning
+    venv: venv/lightning
+
+  plan:
+    method: njobs
+    n: 1
+
+  voir:
+    --metric: wrap
+    --metric-interval: 1
+    --metric-skip: 1
+
+  definition: ../benchmarks/pytorch-lightning
+
+  argv:
+    --gpus: -1
+    --max_epochs: 1
+    --max_steps: 100
+    --limit_val_batches: 100
+    --devices: -1
+    --enable_progress_bar: "False"
+    --accelerator: "auto"
+    --enable_checkpointing: "False"
+
+
 benchmarks:
   resnet50:
     <<<: *torchvision
@@ -81,3 +110,56 @@ benchmarks:
     argv:
       --model: regnet_y_128gf
       --batch-size: 16
+
+  ppo:
+    <<<: *defaults
+
+    definition: ../benchmarks/stable_baselines3
+    venv:
+      type: conda
+
+    plan:
+      method: njobs
+      n: 1
+
+    voir:
+      --stop: 20
+      --metric: step
+      --metric-interval: 100
+      --metric-skip: 100
+
+    argv:
+      - --algo
+      - ppo
+      - --env
+      - HalfCheetahBulletEnv-v0
+      - -n
+      - '-1'
+      - --num-threads
+      - '-1'
+      - --seed
+      - '0'
+      - --vec-env
+      - subproc
+      - --device
+      - auto
+      - -params
+      - n_envs:16
+      - n_steps:512
+      - n_epochs:20
+      - n_timesteps:50000
+
+  resnet152:
+    <<<: *lightning
+    argv:
+      --backbone: "resnet152"
+      --strategy: "dp"
+      --precision: 32
+      --batch_size: 2048
+
+  vit_l_32:
+    <<<: *lightning
+    argv:
+      --backbone: "vit_l_32"  # (larger model)
+      --strategy: "fsdp"  # Fully-Sharded Data-Parallel
+      --precision: 32
