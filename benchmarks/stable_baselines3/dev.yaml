@@ -50,11 +50,39 @@ benchmarks:
       - --device
       - auto
       - -params
-      - n_steps:512 
-      - -params
+      - n_steps:512
       - n_epochs:20
-      - -params
       - n_envs:16
-      - -params
       - n_timesteps:50000
+  TD3:
+    <<<: *defaults
 
+    definition: ./
+
+    argv:
+      - --algo
+      - td3
+      - --env
+      - HalfCheetahBulletEnv-v0 # Default: CartPole-v1
+      - --n-eval-envs
+      - '1'
+      - --n-timesteps
+      - '50000' # Default: '-1'
+      - --num-threads
+      - '-1'
+      - --log-interval
+      - '-1'
+      - --eval-episodes
+      - '5'
+      - --save-freq
+      - '-1'
+      - --seed # Default: -1
+      - '0'
+      - --vec-env # Default: dummy
+      - subproc
+      - --device
+      - auto
+      - --n-trials
+      - '10' # Default: 500
+      - --n-jobs
+      - '1'

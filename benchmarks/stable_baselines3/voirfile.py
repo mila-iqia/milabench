@@ -10,6 +10,8 @@ def instrument_probes(ov):
 
     yield ov.phases.load_script
 
+    # PPO
+
     # Get device
     ov.probe(
         "/stable_baselines3.ppo.ppo/PPO/train > self"
@@ -30,3 +32,23 @@ def instrument_probes(ov):
         "/stable_baselines3.ppo.ppo/PPO/train(rollout_data as batch, !#loop_rollout_data as compute_start, !!#endloop_rollout_data as compute_end, #endloop_rollout_data as step)"
     ).give()
 
+
+    # TD3
+    # Loss
+    ov.probe("/stable_baselines3.td3.td3/TD3/train > actor_loss as loss").give()
+    # ov.probe("/stable_baselines3.td3.td3/TD3/train > critic_loss").give()
+
+    # Batch + step
+    ov.probe("/stable_baselines3.td3.td3/TD3/train > ")
+
+    # Use_cuda
+    ov.give(use_cuda=True)
+
+    # Model
+    ov.probe("/stable_baselines3.td3.td3/TD3/train > batch_size").give()
+
+    # Loader
+    # ...
+
+    # Batch + compute_start + compute_end
+    # ...
