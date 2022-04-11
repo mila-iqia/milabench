@@ -25,7 +25,7 @@ def _make_row(summary, compare, weights):
     row["std%"] = summary[mkey]["std"] / summary[mkey][metric] if summary else nan
     # row["iqr%"] = (summary[mkey]["q3"] - summary[mkey]["q1"]) / summary[mkey]["median"] if summary else nan
     row["peak_memory"] = (
-        max(data["memory"]["max"] for data in summary["gpu_load"].values())
+        max((data["memory"]["max"] for data in summary["gpu_load"].values()) if summary["gpu_load"] else [-1])
         if summary
         else nan
     )

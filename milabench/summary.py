@@ -16,7 +16,7 @@ def _aggregate(run_data):
     omnibus["gpudata"] = [
         {str(device): entry[str(device)]} if device is not None else entry
         for entry in omnibus.get("gpudata", [])
-        if str(device) in entry
+        if device is None or str(device) in entry
     ]
 
     if device is not None:
