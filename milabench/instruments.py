@@ -1,4 +1,5 @@
 import inspect
+import os
 import sys
 import time
 from threading import Thread
@@ -181,7 +182,7 @@ def metric(ov):
             results = yield
             t1 = time.time_ns()
             if "batch" in results:
-                seconds = (t1 - t0) / 1000000000
+                seconds = (t1 - t0) / 1_000_000_000
                 data = results["batch"]
                 if isinstance(data, list):
                     data = data[0]
@@ -213,7 +214,7 @@ def metric(ov):
                 t0 = time.time_ns()
                 sync()
                 t1 = time.time_ns()
-                t += t1 - t0
+                t += (t1 - t0) / 1_000_000_000
 
             t += sum(e["time"] for e in elems)
             n = sum(e["batch_size"] for e in elems)
@@ -344,6 +345,11 @@ class GPUMonitor(Thread):
         self.ov = ov
         self.stopped = False
         self.delay = delay
+        visible = os.environ.get("CUDA_VISIBLE_DEVICES", None)
+        if visible:
+            self.ours = list(map(int, visible.split(",")))
+        else:
+            self.ours = range(1000)
 
     def run(self):
         import GPUtil
@@ -356,6 +362,7 @@ class GPUMonitor(Thread):
                     "temperature": gpu.temperature,
                 }
                 for gpu in GPUtil.getGPUs()
+                if gpu.id in self.ours
             }
             self.ov.give(gpudata=data)
             time.sleep(self.delay)
@@ -364,9 +371,11 @@ class GPUMonitor(Thread):
         self.stopped = True
 
 
-@parametrized("--poll-gpu", type=int, default=5, help="GPU poll interval")
+@parametrized("--poll-gpu", type=int, default=None, help="GPU poll interval")
 def profile_gpu(ov):
     yield ov.phases.load_script
+    if not ov.options.poll_gpu:
+        return
     monitor = GPUMonitor(ov, ov.options.poll_gpu)
     monitor.start()
     try:
