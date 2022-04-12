@@ -178,7 +178,8 @@ class Main:
 
         with tempfile.TemporaryDirectory() as base:
             root = XPath(base)
-
+            # root = XPath("/home/brunocarrez/singularity_test_dir") # temp
+            
             # To build containers all your files and directories must be
             # relative to config_base.
             config = next(iter(mp.packs.values())).config
@@ -239,7 +240,31 @@ CMD ["milabench", "run", "/bench/bench.yaml"]
 """
 
 def singularitydef_template(milabench_req, include_data):
-    sys.exit(f"Singularity containers not yet fully supported, work in progress.")
-    return f"""
-    # TODO
+    return f"""\
+BootStrap: docker
+From: python:3.9-slim
+
+%environment
+    export MILABENCH_BASE=/base
+    export VIRTUAL_ENV=/base/venv
+    export MILABENCH_DEVREQS=/version.txt
+    export WORKDIR=/base
+
+%post
+    apt-get update && apt-get install --no-install-suggests --no-install-recommends -y \
+    git \
+    patch \
+ && rm -rf /var/lib/apt/lists/*
+    mkdir /bench && mkdir /base
+    echo '{ milabench_req }' > /version.txt
+    pip install -U pip && \
+    pip install -r /version.txt && \
+    milabench install /bench/bench.yaml && \
+    rm -rf /root/.cache/pip
+
+%startscript
+    milabench prepare /bench/bench.yaml
+
+%runscript
+    milabench run /bench/bench.yaml
 """
