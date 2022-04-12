@@ -18,12 +18,18 @@ defaults: &defaults
       - train_rate
       - loading_rate
       - gpudata
+      - gpu_time
+      - cpu_dispatch_time
+      - cpu_walltime
+      - tflops
     # --loading-rate: true
     --poll-gpu: 5
 
 
 torchvision: &torchvision
   <<<: *defaults
+
+  group: torchvision
 
   dirs:
     code: code/torchvision
@@ -44,8 +50,35 @@ torchvision: &torchvision
   definition: ../benchmarks/torchvision
 
 
+torchbench: &torchbench
+  <<<: *defaults
+
+  group: torchbench
+
+  dirs:
+    code: code/{name}
+    venv: venv/torchbench
+
+  plan:
+    method: per_gpu
+
+  definition: ../benchmarks/torchbench
+
+  voir:
+    --metric: step
+    --metric-interval: 1
+    --metric-skip: 9
+
+  argv:
+    -d: cuda
+    -m: eager
+    -t: train
+
+
 lightning: &lightning
   <<<: *defaults
+
+  group: lightning
 
   dirs:
     code: code/lightning
@@ -110,6 +143,56 @@ benchmarks:
     argv:
       --model: regnet_y_128gf
       --batch-size: 16
+
+  bert:
+    <<<: *torchbench
+
+    model: BERT_pytorch
+
+  hf_reformer:
+    <<<: *torchbench
+
+    model: hf_Reformer
+
+  hf_t5:
+    <<<: *torchbench
+
+    model: hf_T5
+
+  dlrm:
+    <<<: *torchbench
+
+    model: dlrm
+
+  soft_actor_critic:
+    <<<: *torchbench
+
+    model: soft_actor_critic
+
+  speech_transformer:
+    <<<: *torchbench
+
+    model: speech_transformer
+
+  super_slomo:
+    <<<: *torchbench
+
+    model: Super_SloMo
+
+  stargan:
+    <<<: *torchbench
+
+    model: pytorch_stargan
+
+  # cyclegan:
+  #   <<<: *torchbench
+
+  #   model: pytorch_CycleGAN_and_pix2pix
+
+  paint:
+    <<<: *torchbench
+
+    model: LearningToPaint
 
   ppo:
     <<<: *defaults
