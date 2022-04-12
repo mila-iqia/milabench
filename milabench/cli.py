@@ -260,7 +260,7 @@ class Main:
 
         with tempfile.TemporaryDirectory() as base:
             root = XPath(base)
-            # root = XPath("/home/brunocarrez/singularity_test_dir") # temp
+            # root = XPath("/home/brunocarrez/singularity_test_dir/") # temp
             
             # To build containers all your files and directories must be
             # relative to config_base.
@@ -294,6 +294,8 @@ class Main:
                         singularitydef_template(
                             milabench_req="git+https://github.com/mila-iqia/milabench.git@container",
                             include_data=include_data,
+                            use_conda=use_conda,
+                            python_version=python_version,
                         )
                     )
                 subprocess.check_call(["sudo", "singularity", "build", tag+".sif", "milabench.def"], cwd=root)
@@ -302,10 +304,6 @@ class Main:
 def dockerfile_template(milabench_req, include_data, use_conda, python_version):
     return f"""
 FROM { 'continuumio/miniconda3' if use_conda else f'python:{python_version}-slim' }
-<<<<<<< HEAD
->>>>>>> origin/container
-=======
->>>>>>> origin/v2
 
 RUN apt-get update && apt-get install --no-install-suggests --no-install-recommends -y \
     git \
@@ -333,10 +331,10 @@ RUN pip install -U pip && \
 CMD ["milabench", "run", "/bench/bench.yaml"]
 """
 
-def singularitydef_template(milabench_req, include_data):
+def singularitydef_template(milabench_req, include_data, use_conda, python_version):
     return f"""\
 BootStrap: docker
-From: python:3.9-slim
+From: { 'continuumio/miniconda3' if use_conda else f'python:{python_version}-slim' }
 
 %environment
     export MILABENCH_BASE=/base
@@ -345,11 +343,10 @@ From: python:3.9-slim
     export WORKDIR=/base
 
 %post
-    apt-get update && apt-get install --no-install-suggests --no-install-recommends -y \
-    git \
-    patch \
- && rm -rf /var/lib/apt/lists/*
-    mkdir /bench && mkdir /base
+    apt-get update && apt-get install --no-install-suggests --no-install-recommends -y git patch
+    rm -rf /var/lib/apt/lists/*
+    mkdir /bench
+    mkdir /base
     echo '{ milabench_req }' > /version.txt
     pip install -U pip && \
     pip install -r /version.txt && \
@@ -357,7 +354,7 @@ From: python:3.9-slim
     rm -rf /root/.cache/pip
 
 %startscript
-    milabench prepare /bench/bench.yaml
+{ '    milabench prepare /bench/bench.yaml' if include_data else '' }
 
 %runscript
     milabench run /bench/bench.yaml
