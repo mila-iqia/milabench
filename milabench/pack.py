@@ -43,7 +43,7 @@ class BasePackage:
             signatures=[],
             func=NS(
                 python=f"{pyv.major}.{pyv.minor}.{pyv.micro}",
-                venv_backend="virtualenv",
+                venv_backend=self.config["venv"]["type"],
                 venv_params=[],
                 reuse_venv=reuse,
             ),
@@ -124,6 +124,8 @@ class BasePackage:
         to a requirements file to use instead of the standard command.
         """
         devreqs = os.environ.get("MILABENCH_DEVREQS", None)
+        # Make sure pip is recent enough
+        self.pip_install("pip", "-U")
         if devreqs:
             self.pip_install("-r", devreqs)
         else:
