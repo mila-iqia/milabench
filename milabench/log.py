@@ -102,8 +102,10 @@ def blabla(n=4):
 def simple_report(gv, rundir, runname=None):
     def _to_line(data):
         data = dict(data)
-        data.pop("#run")
-        data.pop("#pack")
+        data.pop("#run", None)
+        data.pop("#pack", None)
+        if set(data.keys()) == {"descr", "progress", "total"}:
+            return ""
         return json.dumps(data) + "\n"
 
     now = str(datetime.today()).replace(" ", "_")

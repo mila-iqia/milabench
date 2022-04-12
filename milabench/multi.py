@@ -1,10 +1,9 @@
-import json
-import os
 import subprocess
 import time
 from copy import deepcopy
 
 from giving import give, given
+from ovld import ovld
 from voir.forward import MultiReader
 
 from .merge import merge
@@ -54,39 +53,13 @@ def njobs(cfg, n):
         yield clone_with(cfg, gcfg)
 
 
-def multiread(pipes):
-    for (_, __, p) in pipes.values():
-        os.set_blocking(p.stdout.fileno(), False)
-
-    while pipes:
-        for tag, (pack, run, proc) in list(pipes.items()):
-
-            def _give(data):
-                data["#pack"] = pack
-                data["#run"] = run
-                give(**data)
-
-            while True:
-                line = proc.stdout.readline()
-                if not line:
-                    ret = proc.poll()
-                    if ret is not None:
-                        # We do not read a line and the process is over
-                        del pipes[tag]
-                        _give({"#end": time.time(), "#return_code": ret})
-                    break
-                line = line.decode("utf8")
-                try:
-                    data = json.loads(line)
-                    if not isinstance(data, dict):
-                        data = {"#stdout": data}
-                except json.JSONDecodeError:
-                    data = {"#stdout": line}
-                _give(data)
-        time.sleep(0.1)
+@ovld
+def _assemble_options(options: list):
+    return options
 
 
-def _assemble_options(options):
+@ovld
+def _assemble_options(options: dict):
     args = []
     for k, v in options.items():
         if v is None:
@@ -94,7 +67,7 @@ def _assemble_options(options):
         if v is True:
             args.append(k)
         elif v is False:
-            raise ValueError()
+            raise ValueError("Use null to cancel an option, not false")
         else:
             args.append(k)
             args.append(",".join(map(str, v)) if isinstance(v, list) else str(v))
@@ -131,15 +104,32 @@ class MultiPackage:
                 method = get_planning_method(plan.pop("method"))
                 mr = MultiReader()
                 for run in method(cfg, **plan):
-                    give(**{"#pack": pack, "#run": run, "#start": time.time()})
+                    info = {"#pack": pack, "#run": run}
+                    give(**{"#start": time.time()}, **info)
+                    give(**{"#config": run}, **info)
                     voirargs = _assemble_options(run.get("voir", {}))
                     args = _assemble_options(run.get("argv", {}))
                     env = run.get("env", {})
                     process = pack.run(args=args, voirargs=voirargs, env=env)
-                    mr.add_process(process, info={"#pack": pack, "#run": run})
+                    mr.add_process(process, info=info)
 
-                for _ in mr:
-                    time.sleep(0.1)
+                try:
+                    for _ in mr:
+                        time.sleep(0.1)
+
+                except BaseException as exc:
+                    for (proc, info) in mr.processes:
+                        errstring = f"{type(exc).__name__}: {exc}"
+                        endinfo = {
+                            "#end": time.time(),
+                            "#completed": False,
+                            "#error": errstring,
+                        }
+                        give(**endinfo, **info)
+                        proc.kill()
+                    if not isinstance(exc, KeyboardInterrupt):
+                        raise
+                    break
 
     def do_dev(self, dash):
         # TODO: share the common code between do_run and do_dev
