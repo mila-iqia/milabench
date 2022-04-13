@@ -11,12 +11,11 @@ import pprint
 from typing import Callable
 
 import torch
+from giving_callback import GivingCallback
+from model import C, H, Model, W
 from pytorch_lightning import Trainer
 from simple_parsing import ArgumentParser
 from typing_extensions import ParamSpec
-
-from giving_callback import GivingCallback
-from model import C, H, Model, W
 from utils import DataOptions
 
 P = ParamSpec("P")

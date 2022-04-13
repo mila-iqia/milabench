@@ -1,6 +1,7 @@
 import contextlib
 import os
 import subprocess
+
 from milabench.pack import Package
 
 BRANCH = "ff7114655294aa3ba57127a260dbd1ef5190f610"

@@ -13,7 +13,7 @@ from torch import Tensor
 
 
 def get_x_from_batch(batch: Any) -> Tensor:
-    """ Get the x from a batch. """
+    """Get the x from a batch."""
     if isinstance(batch, Tensor):
         return batch
     if isinstance(batch, (tuple, list)):
@@ -26,7 +26,7 @@ def get_x_from_batch(batch: Any) -> Tensor:
 
 
 class GivingCallback(Callback):
-    """ PyTorch-Lightning callback that uses giving.give. """
+    """PyTorch-Lightning callback that uses giving.give."""
 
     def __init__(self) -> None:
         super().__init__()
@@ -61,7 +61,11 @@ class GivingCallback(Callback):
         give(walltime=delta)
 
     def on_train_batch_start(
-        self, trainer: Trainer, pl_module: LightningModule, batch: Any, batch_idx: int,
+        self,
+        trainer: Trainer,
+        pl_module: LightningModule,
+        batch: Any,
+        batch_idx: int,
     ) -> None:
         give(compute_start=True)
         x = get_x_from_batch(batch)
