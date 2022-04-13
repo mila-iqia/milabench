@@ -161,13 +161,10 @@ def metric(ov):
 
     # Build stream of time/batch_size
     if metric == "step":
-        steps_w_batch = (
-            ov.given.where("step", "batch", "!batch_size")
-            .kmap(batch_size=lambda batch: len(batch))
+        steps_w_batch = ov.given.where("step", "batch", "!batch_size").kmap(
+            batch_size=lambda batch: len(batch)
         )
-        steps_w_batch_size = (
-            ov.given.where("step", "batch_size").keep("batch_size")
-        )
+        steps_w_batch_size = ov.given.where("step", "batch_size").keep("batch_size")
         times = (
             (steps_w_batch | steps_w_batch_size)
             .augment(time=lambda: time.time_ns())
@@ -363,6 +360,7 @@ class GPUMonitor(Thread):
         import GPUtil
 
         while not self.stopped:
+            time.sleep(self.delay)
             data = {
                 gpu.id: {
                     "memory": [gpu.memoryUsed, gpu.memoryTotal],
@@ -373,7 +371,6 @@ class GPUMonitor(Thread):
                 if gpu.id in self.ours
             }
             self.ov.give(gpudata=data)
-            time.sleep(self.delay)
 
     def stop(self):
         self.stopped = True
