@@ -233,6 +233,8 @@ def make_report(
                     lines.append(x["#stdout"])
                 if "#stderr" in x:
                     lines.append(H.span["err"](x["#stderr"]))
+            if not lines:
+                lines = [H.i("no output")]
             out._html(
                 H.div(
                     H.input["toggle"](type="checkbox", id=f"box{boxid}"),
@@ -309,7 +311,9 @@ td, th {
 
 _error_style = H.style(
     """
-input.toggle[type='checkbox'] { display: none; }
+input.toggle[type='checkbox'] {
+    display: none;
+}
 
 label.toggle {
   display: block;
@@ -329,7 +333,8 @@ label.toggle:hover {
 }
 
 input.toggle:checked + label.toggle + .collapsible {
-  max-height: 100000px;
+  max-height: 500px;
+  overflow: scroll;
 }
 
 .err {
