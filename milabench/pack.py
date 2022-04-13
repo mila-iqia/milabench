@@ -61,6 +61,9 @@ class BasePackage:
         )
         self._nox_session = Session(self._nox_runner)
         self._nox_runner._create_venv()
+        self.code_mark_file = self.dirs.code / ".mark"
+        ig = self.config.get("install_group", self.config["name"])
+        self.install_mark_file = self.dirs.code / f".mark_{ig}"
 
     def make_env(self):
         """Return a dict of environment variables to use for prepare/run."""
@@ -79,8 +82,7 @@ class BasePackage:
                 is already installed.
             sync: Whether to only sync changed files in the manifest.
         """
-        sentinel = self.dirs.code / "installed"
-        if not force and not sync and sentinel.exists():
+        if not force and not sync and self.install_mark_file.exists():
             name = self.config["name"]
             print(f"Benchmark {name} is already installed")
             return
@@ -89,12 +91,14 @@ class BasePackage:
             print(f"Cannot install if the code destination is the same as the source")
             return
 
-        self.install_code(sync=sync)
+        if force or sync or not self.code_mark_file.exists():
+            self.install_code(sync=sync)
         if sync:
             return
         self.install_milabench()
         self.install()
-        sentinel.touch()
+        self.install_mark_file.touch()
+        self.code_mark_file.touch()
 
     def install_code(self, sync=False):
         """Copy the contents of the manifest into ``self.dirs.code``.
