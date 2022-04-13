@@ -24,7 +24,7 @@ def _make_row(summary, compare, weights):
     )
     if compare:
         row["perf_base"] = compare[mkey][metric]
-        row["perf_ratio"] = row["perf"] / row["perf_base"]
+        row["perf_ratio"] = row["perf_adj"] / row["perf_base"]
     row["std%"] = summary[mkey]["std"] / summary[mkey][metric] if summary else nan
     row["sem%"] = summary[mkey]["sem"] / summary[mkey][metric] if summary else nan
     # row["iqr%"] = (summary[mkey]["q3"] - summary[mkey]["q1"]) / summary[mkey]["median"] if summary else nan
