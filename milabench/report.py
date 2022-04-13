@@ -19,7 +19,10 @@ def _make_row(summary, compare, weights):
     row["n"] = summary["n"] if summary else nan
     row["fail"] = summary["failures"] if summary else nan
     row["perf"] = summary[mkey][metric] if summary else nan
-    if compare is not None:
+    row["perf_adj"] = (
+        summary[mkey][metric] * (1 - row["fail"] / row["n"]) if summary else nan
+    )
+    if compare:
         row["perf_base"] = compare[mkey][metric]
         row["perf_ratio"] = row["perf"] / row["perf_base"]
     row["std%"] = summary[mkey]["std"] / summary[mkey][metric] if summary else nan

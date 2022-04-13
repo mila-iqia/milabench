@@ -236,8 +236,14 @@ class Main:
         # Comparison summary
         compare: Option & configuration = None
 
-        # Generate HTML
+        # Compare the GPUs
+        compare_gpus: Option & bool = False
+
+        # HTML report file
         html: Option = None
+
+        # Price per unit
+        price: Option & int = None
 
         reports = None
         if runs:
@@ -249,8 +255,8 @@ class Main:
             compare=compare,
             weights=weights,
             html=html,
-            compare_gpus=True,
-            price=None,
+            compare_gpus=compare_gpus,
+            price=price,
             title=None,
             sources=runs,
             errdata=reports and _error_report(reports),
