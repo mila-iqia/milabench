@@ -89,9 +89,10 @@ def _get_multipack(dev=False):
     objects = {}
 
     for name, defn in config["benchmarks"].items():
-        if select and name not in select:
+        group = defn.get("group", name)
+        if select and name not in select and group not in select:
             continue
-        if exclude and name in exclude:
+        if exclude and name in exclude or group in exclude:
             continue
 
         defn.setdefault("name", name)
@@ -153,7 +154,7 @@ def _error_report(reports):
 class Main:
     def run():
         # Name of the run
-        run: Option = None
+        run_name: Option = None
 
         # Dev mode (adds --sync, current venv, only one run, no logging)
         dev: Option & bool = False
@@ -176,7 +177,7 @@ class Main:
             mp.do_run(
                 repeat=repeat,
                 dash=simple_dash,
-                report=partial(simple_report, runname=run),
+                report=partial(simple_report, runname=run_name),
             )
 
     def prepare():
@@ -289,7 +290,9 @@ class Main:
             config_file = XPath(config["config_file"])
 
             # We check all configs since they may not have all the same setting
-            use_conda = any(pack.config['venv']['type'] == 'conda' for pack in mp.packs.values())
+            use_conda = any(
+                pack.config["venv"]["type"] == "conda" for pack in mp.packs.values()
+            )
 
             shutil.copytree(config_base, root, dirs_exist_ok=True)
             config_file.copy(root / "bench.yaml")
