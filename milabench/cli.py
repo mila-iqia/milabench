@@ -1,20 +1,27 @@
 import json
 import os
 import runpy
-import sys
-from functools import partial
-import tempfile
-import subprocess
 import shutil
+import subprocess
+import sys
+import tempfile
+from functools import partial
 
-from coleo import Option, config as configuration, default, run_cli, tooled, ConfigFile
+from coleo import (
+    ConfigFile,
+    Option,
+    config as configuration,
+    default,
+    run_cli,
+    tooled,
+)
 
 from .fs import XPath
 from .log import simple_dash, simple_report
 from .merge import self_merge
 from .multi import MultiPackage
 from .report import make_report
-from .summary import make_summary
+from .summary import aggregate, make_summary
 
 
 def main():
@@ -117,7 +124,7 @@ def _get_multipack(dev=False):
 
 
 def _read_reports(*runs):
-    all_data = []
+    all_data = {}
     for folder in runs:
         for parent, _, filenames in os.walk(folder):
             for file in filenames:
@@ -130,8 +137,17 @@ def _read_reports(*runs):
                         data = [json.loads(line) for line in lines]
                     except Exception as exc:
                         print(f"Could not parse {pth}")
-                    all_data.append(data)
+                    all_data[str(pth)] = data
     return all_data
+
+
+def _error_report(reports):
+    out = {}
+    for r, data in reports.items():
+        (success,) = aggregate(data)["success"]
+        if not success:
+            out[r] = [line for line in data if "#stdout" in line or "#stderr" in line]
+    return out
 
 
 class Main:
@@ -200,7 +216,7 @@ class Main:
         out: Option = None
 
         all_data = _read_reports(*runs)
-        summary = make_summary(all_data)
+        summary = make_summary(all_data.values())
 
         if out is not None:
             with open(out, "w") as file:
@@ -210,7 +226,8 @@ class Main:
 
     def report():
         # Runs directory
-        runs: Option = None
+        # [action: append]
+        runs: Option = []
 
         # Weights configuration file
         weights: Option & configuration = None
@@ -221,8 +238,10 @@ class Main:
         # Generate HTML
         html: Option = None
 
-        if runs is not None:
-            summary = make_summary(_read_reports(runs))
+        reports = None
+        if runs:
+            reports = _read_reports(*runs)
+            summary = make_summary(reports.values())
 
         make_report(
             summary,
@@ -232,6 +251,8 @@ class Main:
             compare_gpus=True,
             price=None,
             title=None,
+            sources=runs,
+            errdata=reports and _error_report(reports),
         )
 
     def container():
