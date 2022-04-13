@@ -23,13 +23,14 @@ defaults: &defaults
       - cpu_walltime
       - tflops
     # --loading-rate: true
-    --poll-gpu: 5
+    --poll-gpu: 10
 
 
 torchvision: &torchvision
   <<<: *defaults
 
   group: torchvision
+  install_group: torchvision
 
   dirs:
     code: code/torchvision
@@ -56,7 +57,7 @@ torchbench: &torchbench
   group: torchbench
 
   dirs:
-    code: code/{name}
+    code: code/torchbench
     venv: venv/torchbench
 
   plan:
@@ -79,6 +80,7 @@ lightning: &lightning
   <<<: *defaults
 
   group: lightning
+  install_group: lightning
 
   dirs:
     code: code/lightning
@@ -187,9 +189,13 @@ benchmarks:
   # cyclegan:
   #   <<<: *torchbench
 
+  #   plan:
+  #     method: njobs
+  #     n: 1
+
   #   model: pytorch_CycleGAN_and_pix2pix
 
-  paint:
+  learning_to_paint:
     <<<: *torchbench
 
     model: LearningToPaint

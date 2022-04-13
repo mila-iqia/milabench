@@ -1,4 +1,5 @@
 import torch
+
 # need to import it because it is not yet loaded once the main script is loaded
 from stable_baselines3.ppo.ppo import PPO
 
