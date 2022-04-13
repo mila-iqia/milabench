@@ -225,7 +225,9 @@ class BasePackage:
             # forwarding stderr to stdout here
             stderr=subprocess.STDOUT,
             cwd=self.dirs.code,
+            preexec_fn=os.setsid,
         )
+        process.did_setsid = True
         return process
 
 

@@ -1,3 +1,5 @@
+import os
+import signal
 import subprocess
 import time
 from copy import deepcopy
@@ -97,8 +99,11 @@ class MultiPackage:
                             time.sleep(0.1)
 
     def do_run(self, dash, report, repeat=1):
+        done = False
         with given() as gv, dash(gv), report(gv, self.rundir):
             for i in range(repeat):
+                if done:
+                    break
                 for pack in self.packs.values():
                     cfg = pack.config
                     plan = deepcopy(cfg["plan"])
@@ -129,9 +134,13 @@ class MultiPackage:
                                 "#error": errstring,
                             }
                             give(**endinfo, **info)
-                            proc.kill()
+                            if getattr(proc, "did_setsid", False):
+                                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                            else:
+                                proc.kill()
                         if not isinstance(exc, KeyboardInterrupt):
                             raise
+                        done = True
                         break
 
     def do_dev(self, dash):
