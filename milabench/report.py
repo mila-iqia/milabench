@@ -19,13 +19,21 @@ def _make_row(summary, compare, weights):
     row["n"] = summary["n"] if summary else nan
     row["fail"] = summary["failures"] if summary else nan
     row["perf"] = summary[mkey][metric] if summary else nan
-    if compare is not None:
+    row["perf_adj"] = (
+        summary[mkey][metric] * (1 - row["fail"] / row["n"]) if summary else nan
+    )
+    if compare:
         row["perf_base"] = compare[mkey][metric]
-        row["perf_ratio"] = row["perf"] / row["perf_base"]
+        row["perf_ratio"] = row["perf_adj"] / row["perf_base"]
     row["std%"] = summary[mkey]["std"] / summary[mkey][metric] if summary else nan
+    row["sem%"] = summary[mkey]["sem"] / summary[mkey][metric] if summary else nan
     # row["iqr%"] = (summary[mkey]["q3"] - summary[mkey]["q1"]) / summary[mkey]["median"] if summary else nan
     row["peak_memory"] = (
-        max((data["memory"]["max"] for data in summary["gpu_load"].values()) if summary["gpu_load"] else [-1])
+        max(
+            (data["memory"]["max"] for data in summary["gpu_load"].values())
+            if summary["gpu_load"]
+            else [-1]
+        )
         if summary
         else nan
     )
@@ -78,6 +86,7 @@ class Outputter:
         self.stdout = stdout
         self.html_file = html and open(html, "w")
         self._html(_table_style)
+        self._html(_error_style)
 
     def _html(self, contents):
         if self.html_file:
@@ -122,7 +131,7 @@ class Outputter:
         self._text("=" * len(title))
 
     def finalize(self):
-        self.html("</body>")
+        self.html(H.raw("</body>"))
 
 
 def _report_pergpu(entries, measure="50"):
@@ -150,6 +159,8 @@ def make_report(
     compare_gpus=False,
     price=None,
     title=None,
+    sources=None,
+    errdata=None,
 ):
     all_keys = list(
         sorted(
@@ -174,6 +185,11 @@ def make_report(
 
     out = Outputter(stdout=sys.stdout, html=html)
 
+    if sources:
+        if isinstance(sources, str):
+            sources = [sources]
+        for source in sources:
+            out.print(f"Source: {source}")
     out.title(title or "Benchmark results")
     out.print(df)
 
@@ -208,6 +224,30 @@ def make_report(
             out.section(f"GPU comparison ({measure})")
             out.print(df)
 
+    if errdata:
+        out.section(f"Errors")
+        out._text(f"{len(errdata)} errors, details in HTML report.")
+        boxid = 0
+        for filename, err in sorted(list(errdata.items())):
+            boxid += 1
+            lines = []
+            for x in err:
+                if "#stdout" in x:
+                    lines.append(x["#stdout"])
+                if "#stderr" in x:
+                    lines.append(H.span["err"](x["#stderr"]))
+            if not lines:
+                lines = [H.i("no output")]
+            out._html(
+                H.div(
+                    H.input["toggle"](type="checkbox", id=f"box{boxid}"),
+                    H.label["toggle"](filename, **{"for": f"box{boxid}"}),
+                    H.div["collapsible"](lines),
+                )
+            )
+
+    out.finalize()
+
 
 _formatters = {
     "n": "{:.0f}".format,
@@ -221,6 +261,7 @@ _formatters = {
     "perf_base_adj": "{:10.2f}".format,
     "perf_ratio_adj": "{:10.2f}".format,
     "std%": "{:6.1%}".format,
+    "sem%": "{:6.1%}".format,
     "iqr%": "{:6.1%}".format,
     "weight": "{:4.2f}".format,
     "peak_memory": "{:.0f}".format,
@@ -266,6 +307,41 @@ td, th {
 .score, .rpp {
     color: blue;
     font-weight: bold;
+}
+"""
+)
+
+
+_error_style = H.style(
+    """
+input.toggle[type='checkbox'] {
+    display: none;
+}
+
+label.toggle {
+  display: block;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+label.toggle:hover {
+  background: #ddd;
+}
+
+.collapsible {
+  max-height: 0px;
+  overflow: hidden;
+  transition: max-height .10s ease-in-out;
+  white-space: pre;
+}
+
+input.toggle:checked + label.toggle + .collapsible {
+  max-height: 500px;
+  overflow: scroll;
+}
+
+.err {
+    color: red;
 }
 """
 )

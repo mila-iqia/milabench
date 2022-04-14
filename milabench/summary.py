@@ -4,7 +4,7 @@ from math import isnan, nan
 import numpy as np
 
 
-def _aggregate(run_data):
+def aggregate(run_data):
     omnibus = defaultdict(list)
     for entry in run_data:
         for k, v in entry.items():
@@ -63,12 +63,14 @@ def _metrics(xs):
             "max": nan,
             "mean": nan,
             "std": nan,
+            "sem": nan,
         }
     percentiles = [0, 25, 50, 75, 100]
     percentile_names = ["min", "q1", "median", "q3", "max"]
     metrics = dict(zip(percentile_names, np.percentile(xs, percentiles)))
     metrics["mean"] = np.mean(xs)
     metrics["std"] = np.std(xs)
+    metrics["sem"] = np.std(xs) / len(xs) ** 0.5
     return metrics
 
 
@@ -107,7 +109,7 @@ def _summarize(agg):
 
 
 def make_summary(runs):
-    aggs = [_aggregate(run) for run in runs]
+    aggs = [aggregate(run) for run in runs]
     classified = _classify(aggs)
     merged = {name: _merge(runs) for name, runs in classified.items()}
     summarized = {name: _summarize(agg) for name, agg in merged.items()}

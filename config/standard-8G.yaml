@@ -18,12 +18,19 @@ defaults: &defaults
       - train_rate
       - loading_rate
       - gpudata
+      - gpu_time
+      - cpu_dispatch_time
+      - cpu_walltime
+      - tflops
     # --loading-rate: true
-    --poll-gpu: 5
+    --poll-gpu: 10
 
 
 torchvision: &torchvision
   <<<: *defaults
+
+  group: torchvision
+  install_group: torchvision
 
   dirs:
     code: code/torchvision
@@ -39,13 +46,42 @@ torchvision: &torchvision
     --metric-skip: 5s
 
   argv:
+    --with-amp: true
     --lr: 0.01
 
   definition: ../benchmarks/torchvision
 
 
+torchbench: &torchbench
+  <<<: *defaults
+
+  group: torchbench
+
+  dirs:
+    code: code/torchbench
+    venv: venv/torchbench
+
+  plan:
+    method: per_gpu
+
+  definition: ../benchmarks/torchbench
+
+  voir:
+    --metric: step
+    --metric-interval: 1
+    --metric-skip: 9
+
+  argv:
+    -d: cuda
+    -m: eager
+    -t: train
+
+
 lightning: &lightning
   <<<: *defaults
+
+  group: lightning
+  install_group: lightning
 
   dirs:
     code: code/lightning
@@ -78,6 +114,7 @@ benchmarks:
     <<<: *torchvision
     argv:
       --model: resnet50
+      --batch-size: 32
 
   squeezenet1_1:
     <<<: *torchvision
@@ -88,28 +125,76 @@ benchmarks:
     <<<: *torchvision
     argv:
       --model: efficientnet_b0
+      --batch-size: 32
 
   efficientnet_b4:
     <<<: *torchvision
     argv:
       --model: efficientnet_b4
+      --batch-size: 16
 
   efficientnet_b7:
     <<<: *torchvision
     argv:
       --model: efficientnet_b7
-      --batch-size: 32
+      --batch-size: 8
 
   convnext_large:
     <<<: *torchvision
     argv:
       --model: convnext_large
-
-  regnet_y_128gf:
-    <<<: *torchvision
-    argv:
-      --model: regnet_y_128gf
       --batch-size: 16
+
+  # regnet_y_128gf:
+  #   <<<: *torchvision
+  #   argv:
+  #     --model: regnet_y_128gf
+  #     --batch-size: 4
+
+  bert:
+    <<<: *torchbench
+
+    model: BERT_pytorch
+
+  hf_reformer:
+    <<<: *torchbench
+
+    model: hf_Reformer
+
+  # hf_t5:
+  #   <<<: *torchbench
+
+  #   model: hf_T5
+
+  dlrm:
+    <<<: *torchbench
+
+    model: dlrm
+
+  soft_actor_critic:
+    <<<: *torchbench
+
+    model: soft_actor_critic
+
+  speech_transformer:
+    <<<: *torchbench
+
+    model: speech_transformer
+
+  super_slomo:
+    <<<: *torchbench
+
+    model: Super_SloMo
+
+  # stargan:
+  #   <<<: *torchbench
+
+  #   model: pytorch_stargan
+
+  learning_to_paint:
+    <<<: *torchbench
+
+    model: LearningToPaint
 
   ppo:
     <<<: *defaults

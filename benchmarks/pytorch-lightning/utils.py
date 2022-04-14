@@ -40,7 +40,10 @@ def backbone_choice(default: Callable[..., nn.Module]) -> Callable[..., nn.Modul
     """
     A field that will automatically download the torchvision model if it's not already downloaded.
     """
-    return choice(BACKBONES, default=default,)
+    return choice(
+        BACKBONES,
+        default=default,
+    )
 
 
 def get_backbone_network(

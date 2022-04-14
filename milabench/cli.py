@@ -1,20 +1,21 @@
 import json
 import os
 import runpy
-import sys
-from functools import partial
-import tempfile
-import subprocess
 import shutil
+import subprocess
+import sys
+import tempfile
+from functools import partial
 
-from coleo import Option, config as configuration, default, run_cli, tooled, ConfigFile
+import yaml
+from coleo import Option, config as configuration, default, run_cli, tooled
 
 from .fs import XPath
 from .log import simple_dash, simple_report
 from .merge import self_merge
 from .multi import MultiPackage
 from .report import make_report
-from .summary import make_summary
+from .summary import aggregate, make_summary
 
 
 def main():
@@ -22,11 +23,35 @@ def main():
     run_cli(Main)
 
 
+def parse_config(config_file, base=None):
+    config_file = XPath(config_file).absolute()
+    config_base = config_file.parent
+    with open(config_file) as cf:
+        config = yaml.safe_load(cf)
+    config.setdefault("defaults", {})
+    config["defaults"]["config_base"] = str(config_base)
+    config["defaults"]["config_file"] = str(config_file)
+
+    if base is not None:
+        config["defaults"]["dirs"]["base"] = base
+
+    config = self_merge(config)
+
+    for name, defn in config["benchmarks"].items():
+        defn.setdefault("name", name)
+        defn.setdefault("group", name)
+        defn["tag"] = [defn["name"]]
+
+        pack = XPath(defn["definition"]).expanduser()
+        if not pack.is_absolute():
+            pack = (XPath(defn["config_base"]) / pack).resolve()
+            defn["definition"] = str(pack)
+
+    return config
+
+
 def get_pack(defn):
-    pack = XPath(defn["definition"]).expanduser()
-    if not pack.is_absolute():
-        pack = XPath(defn["config_base"]) / pack
-        defn["definition"] = str(pack)
+    pack = XPath(defn["definition"])
     pack_glb = runpy.run_path(str(pack / "benchfile.py"))
     pack_cls = pack_glb["__pack__"]
     pack_obj = pack_cls(defn)
@@ -66,25 +91,21 @@ def _get_multipack(dev=False):
     if exclude:
         exclude = exclude.split(",")
 
-    config_base = str(XPath(config).parent.absolute())
-    config_file = str(XPath(config).absolute())
-    config = configuration(config)
-    config["defaults"]["config_base"] = config_base
-    config["defaults"]["config_file"] = config_file
-    if base is not None:
-        config["defaults"]["dirs"]["base"] = base
-    elif os.environ.get("MILABENCH_BASE", None):
-        config["defaults"]["dirs"]["base"] = os.environ["MILABENCH_BASE"]
-    elif not config["defaults"]["dirs"].get("base", None):
+    if base is None:
+        base = os.environ.get("MILABENCH_BASE", None)
+
+    config = parse_config(config, base)
+
+    if not config["defaults"]["dirs"].get("base", None):
         sys.exit("Error: Neither --base nor $MILABENCH_BASE are set.")
-    config = self_merge(config)
 
     objects = {}
 
     for name, defn in config["benchmarks"].items():
-        if select and name not in select:
+        group = defn.get("group", name)
+        if select and name not in select and group not in select:
             continue
-        if exclude and name in exclude:
+        if exclude and name in exclude or group in exclude:
             continue
 
         defn.setdefault("name", name)
@@ -117,7 +138,7 @@ def _get_multipack(dev=False):
 
 
 def _read_reports(*runs):
-    all_data = []
+    all_data = {}
     for folder in runs:
         for parent, _, filenames in os.walk(folder):
             for file in filenames:
@@ -130,14 +151,23 @@ def _read_reports(*runs):
                         data = [json.loads(line) for line in lines]
                     except Exception as exc:
                         print(f"Could not parse {pth}")
-                    all_data.append(data)
+                    all_data[str(pth)] = data
     return all_data
+
+
+def _error_report(reports):
+    out = {}
+    for r, data in reports.items():
+        (success,) = aggregate(data)["success"]
+        if not success:
+            out[r] = [line for line in data if "#stdout" in line or "#stderr" in line]
+    return out
 
 
 class Main:
     def run():
         # Name of the run
-        run: Option = None
+        run_name: Option = None
 
         # Dev mode (adds --sync, current venv, only one run, no logging)
         dev: Option & bool = False
@@ -160,7 +190,7 @@ class Main:
             mp.do_run(
                 repeat=repeat,
                 dash=simple_dash,
-                report=partial(simple_report, runname=run),
+                report=partial(simple_report, runname=run_name),
             )
 
     def prepare():
@@ -200,7 +230,7 @@ class Main:
         out: Option = None
 
         all_data = _read_reports(*runs)
-        summary = make_summary(all_data)
+        summary = make_summary(all_data.values())
 
         if out is not None:
             with open(out, "w") as file:
@@ -210,7 +240,8 @@ class Main:
 
     def report():
         # Runs directory
-        runs: Option = None
+        # [action: append]
+        runs: Option = []
 
         # Weights configuration file
         weights: Option & configuration = None
@@ -218,23 +249,42 @@ class Main:
         # Comparison summary
         compare: Option & configuration = None
 
-        # Generate HTML
+        # Compare the GPUs
+        compare_gpus: Option & bool = False
+
+        # HTML report file
         html: Option = None
 
-        if runs is not None:
-            summary = make_summary(_read_reports(runs))
+        # Price per unit
+        price: Option & int = None
+
+        reports = None
+        if runs:
+            reports = _read_reports(*runs)
+            summary = make_summary(reports.values())
 
         make_report(
             summary,
             compare=compare,
             weights=weights,
             html=html,
-            compare_gpus=True,
-            price=None,
+            compare_gpus=compare_gpus,
+            price=price,
             title=None,
+            sources=runs,
+            errdata=reports and _error_report(reports),
         )
 
     def container():
+        # Configuration file
+        # [positional]
+        config_file: Option & str = None
+
+        config = parse_config(config_file)
+        config_file = XPath(config["defaults"]["config_file"])
+        config_base = XPath(config["defaults"]["config_base"])
+        benchmarks = config["benchmarks"]
+
         # The container type to create
         type: Option & str = None
 
@@ -243,6 +293,7 @@ class Main:
 
         # Optional path to copy build dir to, instead of building the image.
         # This directory must not exist and will be created.
+        # [alias: -o]
         output_dir: Option & str = None
 
         # Optional python version to use for the image, ignored for
@@ -250,38 +301,55 @@ class Main:
         # ('3', '3.9', '3.9.2')
         python_version: Option & str = "3.9"
 
+        # Milabench source to clone from
+        milabench: Option & str = "v2"
+
         # The tag for the generated container
         tag: Option & str = "milabench"
-
-        mp = _get_multipack(dev=False)
 
         if type not in ["docker", "singularity"]:
             sys.exit(f"Unsupported type {type}")
 
         with tempfile.TemporaryDirectory() as base:
             root = XPath(base)
-            # root = XPath("/home/brunocarrez/singularity_test_dir/") # temp
-            
-            # To build containers all your files and directories must be
-            # relative to config_base.
-            config = next(iter(mp.packs.values())).config
-            config_base = XPath(config["config_base"])
-            config_file = XPath(config["config_file"])
+
+            common_base = config_base
+
+            # Figure out common base between the benchmark config and all
+            # the benchmarks.
+            for defn in benchmarks.values():
+                pack = XPath(defn["definition"]).expanduser()
+                while not pack.is_relative_to(common_base):
+                    common_base = common_base.parent
+
+            def _transfer(pth):
+                dest = root / pth.relative_to(common_base)
+                shutil.copytree(pth, dest, dirs_exist_ok=True)
+
+            for defn in benchmarks.values():
+                _transfer(XPath(defn["definition"]))
+
+            _transfer(config_base)
 
             # We check all configs since they may not have all the same setting
-            use_conda = any(pack.config['venv']['type'] == 'conda' for pack in mp.packs.values())
+            use_conda = any(
+                defn["venv"]["type"] == "conda" for defn in benchmarks.values()
+            )
 
-            shutil.copytree(config_base, root, dirs_exist_ok=True)
-            config_file.copy(root / "bench.yaml")
+            if "//" not in milabench:
+                milabench = (
+                    f"git+https://github.com/mila-iqia/milabench.git@{milabench}"
+                )
 
             if type == "docker":
                 with (root / "Dockerfile").open("w") as f:
                     f.write(
                         dockerfile_template(
-                            milabench_req="git+https://github.com/mila-iqia/milabench.git@container",
+                            milabench_req=milabench,
                             include_data=include_data,
                             use_conda=use_conda,
                             python_version=python_version,
+                            config_file=config_file.relative_to(common_base),
                         )
                     )
                 if output_dir:
@@ -301,20 +369,26 @@ class Main:
                 subprocess.check_call(["sudo", "singularity", "build", tag+".sif", "milabench.def"], cwd=root)
 
 
-def dockerfile_template(milabench_req, include_data, use_conda, python_version):
+def dockerfile_template(
+    milabench_req, include_data, use_conda, python_version, config_file
+):
+    conda_clean = "conda clean -a && \\" if use_conda else "\\"
     return f"""
 FROM { 'continuumio/miniconda3' if use_conda else f'python:{python_version}-slim' }
 
 RUN apt-get update && apt-get install --no-install-suggests --no-install-recommends -y \
     git \
+    wget \
     patch \
- && rm -rf /var/lib/apt/lists/*
+ && apt-get clean
 
 RUN mkdir /bench && mkdir /base
 ENV MILABENCH_BASE /base
 # This is to signal to milabench to use that as fallback
-ENV VIRTUAL_ENV /base/venv
+ENV VIRTUAL_ENV /base/venv/_
 ENV MILABENCH_DEVREQS /version.txt
+ENV MILABENCH_CONFIG /bench/{ config_file }
+ENV HEADLESS 1
 WORKDIR /base
 
 RUN echo '{ milabench_req }' > /version.txt
@@ -323,12 +397,13 @@ COPY / /bench
 
 RUN pip install -U pip && \
     pip install -r /version.txt && \
-    milabench install /bench/bench.yaml && \
-    rm -rf /root/.cache/pip
+    milabench install && \
+    { conda_clean }
+    pip cache purge
 
-{ 'RUN milabench prepare /bench/bench.yaml' if include_data else '' }
+{ 'RUN milabench prepare' if include_data else '' }
 
-CMD ["milabench", "run", "/bench/bench.yaml"]
+CMD ["milabench", "run"]
 """
 
 def singularitydef_template(milabench_req, include_data, use_conda, python_version):
@@ -359,4 +434,3 @@ From: { 'continuumio/miniconda3' if use_conda else f'python:{python_version}-sli
 %runscript
     milabench run /bench/bench.yaml
 """
-
