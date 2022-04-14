@@ -360,6 +360,7 @@ FROM { 'continuumio/miniconda3' if use_conda else f'python:{python_version}-slim
 
 RUN apt-get update && apt-get install --no-install-suggests --no-install-recommends -y \
     git \
+    wget \
     patch \
  && rm -rf /var/lib/apt/lists/*
 
@@ -369,6 +370,7 @@ ENV MILABENCH_BASE /base
 ENV VIRTUAL_ENV /base/venv
 ENV MILABENCH_DEVREQS /version.txt
 ENV MILABENCH_CONFIG /bench/{ config_file }
+ENV HEADLESS 1
 WORKDIR /base
 
 RUN echo '{ milabench_req }' > /version.txt
