@@ -114,6 +114,7 @@ benchmarks:
     <<<: *torchvision
     argv:
       --model: resnet50
+      --batch-size: 32
 
   squeezenet1_1:
     <<<: *torchvision
@@ -124,29 +125,31 @@ benchmarks:
     <<<: *torchvision
     argv:
       --model: efficientnet_b0
+      --batch-size: 32
 
   efficientnet_b4:
     <<<: *torchvision
     argv:
       --model: efficientnet_b4
+      --batch-size: 16
 
   efficientnet_b7:
     <<<: *torchvision
     argv:
       --model: efficientnet_b7
-      --batch-size: 32
+      --batch-size: 8
 
   convnext_large:
     <<<: *torchvision
     argv:
       --model: convnext_large
-
-  regnet_y_128gf:
-    <<<: *torchvision
-    argv:
-      --model: regnet_y_128gf
       --batch-size: 16
-      --with-amp: null
+
+  # regnet_y_128gf:
+  #   <<<: *torchvision
+  #   argv:
+  #     --model: regnet_y_128gf
+  #     --batch-size: 4
 
   bert:
     <<<: *torchbench
@@ -158,10 +161,10 @@ benchmarks:
 
     model: hf_Reformer
 
-  hf_t5:
-    <<<: *torchbench
+  # hf_t5:
+  #   <<<: *torchbench
 
-    model: hf_T5
+  #   model: hf_T5
 
   dlrm:
     <<<: *torchbench
@@ -183,19 +186,10 @@ benchmarks:
 
     model: Super_SloMo
 
-  stargan:
-    <<<: *torchbench
-
-    model: pytorch_stargan
-
-  # cyclegan:
+  # stargan:
   #   <<<: *torchbench
 
-  #   plan:
-  #     method: njobs
-  #     n: 1
-
-  #   model: pytorch_CycleGAN_and_pix2pix
+  #   model: pytorch_stargan
 
   learning_to_paint:
     <<<: *torchbench
