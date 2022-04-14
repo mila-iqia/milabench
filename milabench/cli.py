@@ -301,6 +301,9 @@ class Main:
         # ('3', '3.9', '3.9.2')
         python_version: Option & str = "3.9"
 
+        # Milabench source to clone from
+        milabench: Option & str = "v2"
+
         # The tag for the generated container
         tag: Option & str = "milabench"
 
@@ -333,11 +336,16 @@ class Main:
                 defn["venv"]["type"] == "conda" for defn in benchmarks.values()
             )
 
+            if "//" not in milabench:
+                milabench = (
+                    f"git+https://github.com/mila-iqia/milabench.git@{milabench}"
+                )
+
             if type == "docker":
                 with (root / "Dockerfile").open("w") as f:
                     f.write(
                         dockerfile_template(
-                            milabench_req="git+https://github.com/mila-iqia/milabench.git@v2",
+                            milabench_req=milabench,
                             include_data=include_data,
                             use_conda=use_conda,
                             python_version=python_version,
@@ -355,6 +363,7 @@ class Main:
 def dockerfile_template(
     milabench_req, include_data, use_conda, python_version, config_file
 ):
+    conda_clean = "conda clean -a && \\" if use_conda else "\\"
     return f"""
 FROM { 'continuumio/miniconda3' if use_conda else f'python:{python_version}-slim' }
 
@@ -362,12 +371,12 @@ RUN apt-get update && apt-get install --no-install-suggests --no-install-recomme
     git \
     wget \
     patch \
- && rm -rf /var/lib/apt/lists/*
+ && apt-get clean
 
 RUN mkdir /bench && mkdir /base
 ENV MILABENCH_BASE /base
 # This is to signal to milabench to use that as fallback
-ENV VIRTUAL_ENV /base/venv
+ENV VIRTUAL_ENV /base/venv/_
 ENV MILABENCH_DEVREQS /version.txt
 ENV MILABENCH_CONFIG /bench/{ config_file }
 ENV HEADLESS 1
@@ -380,7 +389,8 @@ COPY / /bench
 RUN pip install -U pip && \
     pip install -r /version.txt && \
     milabench install && \
-    rm -rf /root/.cache/pip
+    { conda_clean }
+    pip cache purge
 
 { 'RUN milabench prepare' if include_data else '' }
 
