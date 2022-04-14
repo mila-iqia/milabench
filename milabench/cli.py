@@ -293,8 +293,12 @@ class Main:
 
         # Optional path to copy build dir to, instead of building the image.
         # This directory must not exist and will be created.
-        # [alias: -o]
         output_dir: Option & str = None
+
+        # File in which to generate the SIF image (Singularity).
+        # Defaults to milabench.sif.
+        # [alias: -o]
+        output_file: Option & str = None
 
         # Optional python version to use for the image, ignored for
         # conda-based benchmarks. Can be specified as any of
@@ -305,7 +309,7 @@ class Main:
         milabench: Option & str = "v2"
 
         # The tag for the generated container
-        tag: Option & str = "milabench"
+        tag: Option & str = None
 
         if type not in ["docker", "singularity"]:
             sys.exit(f"Unsupported type {type}")
@@ -342,6 +346,9 @@ class Main:
                 )
 
             if type == "docker":
+                if output_file is not None:
+                    sys.exit("Error: --output-file only valid with Singularity")
+                tag = tag or "milabench"
                 with (root / "Dockerfile").open("w") as f:
                     f.write(
                         dockerfile_template(
@@ -356,23 +363,38 @@ class Main:
                     root.copy(output_dir)
                 else:
                     subprocess.check_call(["docker", "build", ".", "-t", tag], cwd=root)
+
             elif type == "singularity":
+                if tag is not None:
+                    sys.exit("Error: --tag only valid with Docker")
+                output_file = output_file or "milabench.sif"
+
                 with (root / "milabench.def").open("w") as f:
                     f.write(
                         singularitydef_template(
-                            milabench_req="git+https://github.com/mila-iqia/milabench.git@container",
+                            milabench_req=milabench,
                             include_data=include_data,
                             use_conda=use_conda,
                             python_version=python_version,
+                            config_file=config_file.relative_to(common_base),
                         )
                     )
-                subprocess.check_call(["sudo", "singularity", "build", tag+".sif", "milabench.def"], cwd=root)
+                if output_dir:
+                    root.copy(output_dir)
+                else:
+                    user = os.environ["USER"]
+                    filename = str(XPath(output_file).absolute())
+                    subprocess.check_call(
+                        ["sudo", "singularity", "build", filename, "milabench.def"],
+                        cwd=root,
+                    )
+                    subprocess.check_call(["sudo", "chown", f"{user}:{user}", filename])
 
 
 def dockerfile_template(
     milabench_req, include_data, use_conda, python_version, config_file
 ):
-    conda_clean = "conda clean -a && \\" if use_conda else "\\"
+    conda_clean = "conda clean -a" if use_conda else "echo"
     return f"""
 FROM { 'continuumio/miniconda3' if use_conda else f'python:{python_version}-slim' }
 
@@ -398,7 +420,7 @@ COPY / /bench
 RUN pip install -U pip && \
     pip install -r /version.txt && \
     milabench install && \
-    { conda_clean }
+    { conda_clean } && \
     pip cache purge
 
 { 'RUN milabench prepare' if include_data else '' }
@@ -406,31 +428,46 @@ RUN pip install -U pip && \
 CMD ["milabench", "run"]
 """
 
-def singularitydef_template(milabench_req, include_data, use_conda, python_version):
+
+def singularitydef_template(
+    milabench_req, include_data, use_conda, python_version, config_file
+):
+    conda_clean = "conda clean -a" if use_conda else "echo"
     return f"""\
 BootStrap: docker
 From: { 'continuumio/miniconda3' if use_conda else f'python:{python_version}-slim' }
 
+%files
+    . /bench
+
 %environment
     export MILABENCH_BASE=/base
-    export VIRTUAL_ENV=/base/venv
     export MILABENCH_DEVREQS=/version.txt
-    export WORKDIR=/base
+    export MILABENCH_CONFIG=/bench/{ config_file }
+    export HEADLESS=1
 
 %post
-    apt-get update && apt-get install --no-install-suggests --no-install-recommends -y git patch
-    rm -rf /var/lib/apt/lists/*
-    mkdir /bench
+    export MILABENCH_BASE=/base
+    export MILABENCH_DEVREQS=/version.txt
+    export MILABENCH_CONFIG=/bench/{ config_file }
+    export HEADLESS=1
+
+    apt-get update && apt-get install --no-install-suggests --no-install-recommends -y git wget patch
+    apt-get clean
+
     mkdir /base
+    cd /bench
+
     echo '{ milabench_req }' > /version.txt
     pip install -U pip && \
     pip install -r /version.txt && \
-    milabench install /bench/bench.yaml && \
-    rm -rf /root/.cache/pip
+    milabench install && \
+    { conda_clean } && \
+    pip cache purge
+{ '    milabench prepare' if include_data else '' }
 
-%startscript
-{ '    milabench prepare /bench/bench.yaml' if include_data else '' }
+    chmod -R o+rwx /base /bench
 
 %runscript
-    milabench run /bench/bench.yaml
+    milabench run
 """
