@@ -1,4 +1,5 @@
 import inspect
+import os
 import sys
 import time
 from threading import Thread
@@ -109,6 +110,129 @@ def stop(ov):
             lambda _, idx: {"progress": idx, "total": stop, "descr": "train"}
         ).give()
         steps.skip(stop) >> _stop
+
+
+def _parse_interval(x):
+    if x.endswith("s"):
+        return (True, float(x[:-1]))
+    else:
+        return (False, float(x))
+
+
+def metric(ov):
+    # Add rguments
+    yield ov.phases.init
+
+    ov.argparser.add_argument(
+        "--metric",
+        type=str,
+        help="Metric type",
+        choices=("step", "wrap"),
+        required=False,
+    )
+    ov.argparser.add_argument(
+        "--metric-interval", type=str, help="Metric reporting interval", default="1"
+    )
+    ov.argparser.add_argument(
+        "--metric-skip", type=str, help="Iterations or time to skip", default="10"
+    )
+
+    # Parse arguments
+    yield ov.phases.parse_args
+
+    metric = ov.options.metric
+    if metric is None:
+        return
+
+    interval_is_time, interval = _parse_interval(ov.options.metric_interval)
+    skip_is_time, skip = _parse_interval(ov.options.metric_skip)
+
+    # Set sync method based on use_cuda
+    sync = None
+
+    def setsync(use_cuda):
+        if use_cuda:
+            nonlocal sync
+            import torch
+
+            sync = torch.cuda.synchronize
+
+    ov.given["?use_cuda"].first_or_default(False) >> setsync
+
+    # Build stream of time/batch_size
+    if metric == "step":
+        steps_w_batch = ov.given.where("step", "batch", "!batch_size").kmap(
+            batch_size=lambda batch: len(batch)
+        )
+        steps_w_batch_size = ov.given.where("step", "batch_size").keep("batch_size")
+        times = (
+            (steps_w_batch | steps_w_batch_size)
+            .augment(time=lambda: time.time_ns())
+            .pairwise()
+            .starmap(
+                lambda x, y: {
+                    "time": (y["time"] - x["time"]) / 1_000_000_000,
+                    "batch_size": y["batch_size"],
+                }
+            )
+        )
+
+    elif metric == "wrap":
+
+        def _timewrap():
+            t0 = time.time_ns()
+            results = yield
+            t1 = time.time_ns()
+            if "batch_size" in results:
+                seconds = (t1 - t0) / 1_000_000_000
+                return {"time": seconds, "batch_size": results["batch_size"]}
+            elif "batch" in results:
+                seconds = (t1 - t0) / 1_000_000_000
+                data = results["batch"]
+                if isinstance(data, list):
+                    data = data[0]
+                return {"time": seconds, "batch_size": len(data)}
+            else:
+                return None
+
+        times = ov.given.wmap("compute_start", _timewrap).filter(lambda x: x)
+
+    def setup_pipeline(times):
+        # Skip the first few entries
+        if skip:
+            if skip_is_time:
+                times = times.skip_until_with_time(skip)
+            else:
+                times = times.skip(skip)
+
+        # Group by interval
+        if interval_is_time:
+            times = times.buffer_with_time(interval)
+        else:
+            times = times.buffer_with_count(interval)
+
+        # Compute the final metric
+        @times.subscribe
+        def _(elems):
+            t = 0
+            if sync is not None:
+                t0 = time.time_ns()
+                sync()
+                t1 = time.time_ns()
+                t += (t1 - t0) / 1_000_000_000
+
+            t += sum(e["time"] for e in elems)
+            n = sum(e["batch_size"] for e in elems)
+
+            if n and t:
+                ov.give(train_rate=n / t, units="items/s")
+
+    if skip_is_time:
+        # We need to start counting from the first timed iteration
+        # and not from the start of the program
+        times.first().subscribe(lambda _: setup_pipeline(times))
+    else:
+        setup_pipeline(times)
 
 
 @gated("--train-rate")
@@ -226,25 +350,43 @@ class GPUMonitor(Thread):
         self.ov = ov
         self.stopped = False
         self.delay = delay
+        visible = os.environ.get("CUDA_VISIBLE_DEVICES", None)
+        if visible:
+            self.ours = list(map(int, visible.split(",")))
+        else:
+            self.ours = range(1000)
 
     def run(self):
         import GPUtil
 
         while not self.stopped:
-            self.ov.give(gpudata=GPUtil.getGPUs())
             time.sleep(self.delay)
+            data = {
+                gpu.id: {
+                    "memory": [gpu.memoryUsed, gpu.memoryTotal],
+                    "load": gpu.load,
+                    "temperature": gpu.temperature,
+                }
+                for gpu in GPUtil.getGPUs()
+                if gpu.id in self.ours
+            }
+            self.ov.give(gpudata=data)
 
     def stop(self):
         self.stopped = True
 
 
-@gated("--gpu", "Profile GPU usage.")
+@parametrized("--poll-gpu", type=int, default=None, help="GPU poll interval")
 def profile_gpu(ov):
     yield ov.phases.load_script
-    monitor = GPUMonitor(ov, 100)
+    if not ov.options.poll_gpu:
+        return
+    monitor = GPUMonitor(ov, ov.options.poll_gpu)
     monitor.start()
-    yield ov.phases.run_script
-    monitor.stop()
+    try:
+        yield ov.phases.run_script
+    finally:
+        monitor.stop()
 
 
 @gated("--verify", "Verify the benchmark")

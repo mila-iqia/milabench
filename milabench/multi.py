@@ -1,3 +1,5 @@
+import os
+import signal
 import subprocess
 import time
 from copy import deepcopy
@@ -96,40 +98,50 @@ class MultiPackage:
                         for _ in mr:
                             time.sleep(0.1)
 
-    def do_run(self, dash, report):
+    def do_run(self, dash, report, repeat=1):
+        done = False
         with given() as gv, dash(gv), report(gv, self.rundir):
-            for pack in self.packs.values():
-                cfg = pack.config
-                plan = deepcopy(cfg["plan"])
-                method = get_planning_method(plan.pop("method"))
-                mr = MultiReader()
-                for run in method(cfg, **plan):
-                    info = {"#pack": pack, "#run": run}
-                    give(**{"#start": time.time()}, **info)
-                    give(**{"#config": run}, **info)
-                    voirargs = _assemble_options(run.get("voir", {}))
-                    args = _assemble_options(run.get("argv", {}))
-                    env = run.get("env", {})
-                    process = pack.run(args=args, voirargs=voirargs, env=env)
-                    mr.add_process(process, info=info)
-
-                try:
-                    for _ in mr:
-                        time.sleep(0.1)
-
-                except BaseException as exc:
-                    for (proc, info) in mr.processes:
-                        errstring = f"{type(exc).__name__}: {exc}"
-                        endinfo = {
-                            "#end": time.time(),
-                            "#completed": False,
-                            "#error": errstring,
-                        }
-                        give(**endinfo, **info)
-                        proc.kill()
-                    if not isinstance(exc, KeyboardInterrupt):
-                        raise
+            for i in range(repeat):
+                if done:
                     break
+                for pack in self.packs.values():
+                    cfg = pack.config
+                    plan = deepcopy(cfg["plan"])
+                    method = get_planning_method(plan.pop("method"))
+                    mr = MultiReader()
+                    for run in method(cfg, **plan):
+                        if repeat > 1:
+                            run["tag"].append(f"R{i}")
+                        info = {"#pack": pack, "#run": run}
+                        give(**{"#start": time.time()}, **info)
+                        give(**{"#config": run}, **info)
+                        voirargs = _assemble_options(run.get("voir", {}))
+                        args = _assemble_options(run.get("argv", {}))
+                        env = run.get("env", {})
+                        process = pack.run(args=args, voirargs=voirargs, env=env)
+                        mr.add_process(process, info=info)
+
+                    try:
+                        for _ in mr:
+                            time.sleep(0.1)
+
+                    except BaseException as exc:
+                        for (proc, info) in mr.processes:
+                            errstring = f"{type(exc).__name__}: {exc}"
+                            endinfo = {
+                                "#end": time.time(),
+                                "#completed": False,
+                                "#error": errstring,
+                            }
+                            give(**endinfo, **info)
+                            if getattr(proc, "did_setsid", False):
+                                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                            else:
+                                proc.kill()
+                        if not isinstance(exc, KeyboardInterrupt):
+                            raise
+                        done = True
+                        break
 
     def do_dev(self, dash):
         # TODO: share the common code between do_run and do_dev

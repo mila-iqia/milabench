@@ -15,7 +15,6 @@ from torch.optim.optimizer import Optimizer
 from torchmetrics import Metric
 from torchmetrics.classification.accuracy import Accuracy
 from torchvision import models
-
 from utils import C, H, W, backbone_choice, get_backbone_network
 
 
@@ -34,7 +33,9 @@ class Model(LightningModule):
         super().__init__()
         self.hp: Model.HParams = hp or self.HParams()
         in_features, backbone = get_backbone_network(
-            network_type=self.hp.backbone, image_dims=image_dims, pretrained=False,
+            network_type=self.hp.backbone,
+            image_dims=image_dims,
+            pretrained=False,
         )
         self.backbone = backbone
         self.output = nn.Linear(in_features, num_classes)

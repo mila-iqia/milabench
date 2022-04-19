@@ -32,6 +32,7 @@ def scaling(enable):
 
 
 def train_epoch(model, criterion, optimizer, loader, device, scaler=None):
+    model.train()
     for inp, target in loader:
         inp = inp.to(device)
         target = target.to(device)
@@ -147,6 +148,7 @@ def main():
             train,
             batch_size=args.batch_size,
             shuffle=True,
+            num_workers=1,
         )
     else:
         train_loader = SyntheticData(
