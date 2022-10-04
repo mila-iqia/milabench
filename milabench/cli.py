@@ -94,6 +94,8 @@ def _get_multipack(dev=False):
     if base is None:
         base = os.environ.get("MILABENCH_BASE", None)
 
+    base = base and os.path.abspath(base)
+
     config = parse_config(config, base)
 
     if not config["defaults"]["dirs"].get("base", None):
