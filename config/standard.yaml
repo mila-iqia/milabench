@@ -70,6 +70,14 @@ torchbench: &torchbench
 
   definition: ../benchmarks/torchbench
 
+  pip:
+    args:
+      - --extra-index-url https://download.pytorch.org/whl/cu111
+    constraints:
+      - torch==1.10.2+cu111
+      - torchvision==0.11.3+cu111
+      - torchtext==0.11.*
+
   voir:
     --metric: step
     --metric-interval: 1
@@ -111,6 +119,31 @@ lightning: &lightning
     --enable_progress_bar: "False"
     --accelerator: "auto"
     --enable_checkpointing: "False"
+
+
+sb3: &sb3
+    <<<: *defaults
+
+    group: sb3
+    install_group: sb3
+
+    dirs:
+      code: code/sb3
+      venv: venv/sb3
+
+    definition: ../benchmarks/stable_baselines3
+
+    venv:
+      type: conda
+
+    plan:
+      method: per_gpu
+
+    voir:
+      --stop: 20
+      --metric: wrap
+      --metric-interval: 100
+      --metric-skip: 100
 
 
 benchmarks:
@@ -207,21 +240,11 @@ benchmarks:
     model: LearningToPaint
 
   ppo:
-    <<<: *defaults
-
-    definition: ../benchmarks/stable_baselines3
-    venv:
-      type: conda
+    <<<: *sb3
 
     plan:
       method: njobs
       n: 1
-
-    voir:
-      --stop: 20
-      --metric: step
-      --metric-interval: 100
-      --metric-skip: 100
 
     argv:
       - --algo
@@ -243,6 +266,24 @@ benchmarks:
       - n_steps:512
       - n_epochs:20
       - n_timesteps:50000
+
+  td3:
+    <<<: *sb3
+
+    argv:
+      --algo: td3
+      --env: HalfCheetahBulletEnv-v0 # Default: CartPole-v1
+      --n-eval-envs: '1'
+      --n-timesteps: '50000' # Default: '-1'
+      --num-threads: '-1'
+      --log-interval: '-1'
+      --eval-episodes: '5'
+      --save-freq: '-1'
+      --seed: '0' # Default: -1
+      --vec-env: subproc # Default: dummy
+      --device: auto
+      --n-trials: '10' # Default: 500
+      --n-jobs: '1'
 
   resnet152:
     <<<: *lightning
