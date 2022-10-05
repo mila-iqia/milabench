@@ -118,6 +118,13 @@ class BasePackage:
         self.pack_path.merge_into(
             self.dirs.code, self.pack_path / "manifest", readonly=True
         )
+        self.config.setdefault("pip", {})
+        constraints = self.config["pip"].get("constraints", None)
+        if constraints:
+            self.constraints = self.dirs.code / "pip-constraints.txt"
+            self.constraints.write_text("\n".join(constraints))
+        else:
+            self.constraints = None
 
     def install_milabench(self):
         """Install milabench in the virtual environment.
@@ -151,6 +158,10 @@ class BasePackage:
         of requirements.
         """
         args = [str(x) for x in args]
+        if self.constraints:
+            args += ["-c", str(self.constraints)]
+        for line in self.config["pip"].get("args", []):
+            args += line.split(" ")
         return self._nox_session.install(*args, **kwargs, silent=False)
 
     def conda_install(self, *args, **kwargs):

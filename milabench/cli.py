@@ -386,8 +386,11 @@ class Main:
                 else:
                     user = os.environ["USER"]
                     filename = str(XPath(output_file).absolute())
+                    singularity = subprocess.check_output(
+                        ["which", "singularity"]
+                    ).strip()
                     subprocess.check_call(
-                        ["sudo", "singularity", "build", filename, "milabench.def"],
+                        ["sudo", singularity, "build", filename, "milabench.def"],
                         cwd=root,
                     )
                     subprocess.check_call(["sudo", "chown", f"{user}:{user}", filename])
