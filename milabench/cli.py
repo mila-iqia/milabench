@@ -222,6 +222,13 @@ class Main:
         mp = _get_multipack(dev=dev)
         mp.do_install(dash=simple_dash, force=force, sync=sync)
 
+    def override():
+        # Dev mode (adds --sync, use current venv)
+        dev: Option & bool = False
+
+        mp = _get_multipack(dev=dev)
+        mp.do_override(dash=simple_dash)
+
     def summary():
         # Directory(ies) containing the run data
         # [positional: +]

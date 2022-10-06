@@ -81,6 +81,12 @@ class MultiPackage:
         self.packs = packs
         (self.rundir,) = {p.dirs.runs for p in packs.values()}
 
+    def do_override(self, dash):
+        with given() as gv, dash(gv), give_std():
+            for pack in self.packs.values():
+                with give.inherit(**{"#pack": pack}):
+                    pack.override()
+
     def do_install(self, dash, force=False, sync=False):
         with given() as gv, dash(gv), give_std():
             for pack in self.packs.values():

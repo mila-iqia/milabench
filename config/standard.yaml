@@ -36,6 +36,14 @@ torchvision: &torchvision
     code: code/torchvision
     venv: venv/torchvision
 
+  pip:
+    args:
+      - --extra-index-url https://download.pytorch.org/whl/rocm5.1.1
+    constraints:
+      - torch==1.12.1+rocm5.1.1
+      - torchvision==0.13.1+rocm5.1.1
+      - torchtext>=0.11.*
+
   plan:
     method: per_gpu
 
@@ -61,18 +69,18 @@ torchbench: &torchbench
     code: code/torchbench
     venv: venv/torchbench
 
+  pip:
+    args:
+      - --extra-index-url https://download.pytorch.org/whl/rocm5.1.1
+    constraints:
+      - torch==1.12.1+rocm5.1.1
+      - torchvision==0.13.1+rocm5.1.1
+      - torchtext>=0.11.*
+
   plan:
     method: per_gpu
 
   definition: ../benchmarks/torchbench
-
-  pip:
-    args:
-      - --extra-index-url https://download.pytorch.org/whl/cu111
-    constraints:
-      - torch==1.10.2+cu111
-      - torchvision==0.11.3+cu111
-      - torchtext==0.11.*
 
   voir:
     --metric: step
@@ -94,6 +102,14 @@ lightning: &lightning
   dirs:
     code: code/lightning
     venv: venv/lightning
+
+  pip:
+    args:
+      - --extra-index-url https://download.pytorch.org/whl/rocm5.1.1
+    constraints:
+      - torch==1.12.1+rocm5.1.1
+      - torchvision==0.13.1+rocm5.1.1
+      - torchtext>=0.11.*
 
   plan:
     method: njobs
@@ -126,6 +142,14 @@ sb3: &sb3
     dirs:
       code: code/sb3
       venv: venv/sb3
+
+    pip:
+      args:
+        - --extra-index-url https://download.pytorch.org/whl/rocm5.1.1
+      constraints:
+        - torch==1.12.1+rocm5.1.1
+        - torchvision==0.13.1+rocm5.1.1
+        - torchtext>=0.11.*
 
     definition: ../benchmarks/stable_baselines3
 
