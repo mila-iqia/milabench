@@ -158,7 +158,7 @@ class BasePackage:
         of requirements.
         """
         args = [str(x) for x in args]
-        if self.constraints:
+        if hasattr(self, "constraints") and self.constraints:
             args += ["-c", str(self.constraints)]
         for line in self.config["pip"].get("args", []):
             args += line.split(" ")
