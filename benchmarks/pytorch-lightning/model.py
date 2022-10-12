@@ -21,7 +21,7 @@ from utils import C, H, W, backbone_choice, get_backbone_network
 class Model(LightningModule):
     @dataclass
     class HParams(Serializable):
-        backbone: Callable[..., nn.Module] = backbone_choice(default=models.resnet18)
+        backbone: str = backbone_choice(default='resnet18')
         lr: float = field(default=3e-4)
 
         batch_size: int = 512

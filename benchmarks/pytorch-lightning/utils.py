@@ -13,7 +13,7 @@ from pl_bolts.datamodules.vision_datamodule import VisionDataModule
 from simple_parsing import choice
 from simple_parsing.helpers.serialization.serializable import Serializable
 from torch import nn
-from torchvision import models
+from torchvision import models as torchvision_models
 
 C = NewType("C", int)
 H = NewType("H", int)
@@ -28,26 +28,40 @@ VISION_DATAMODULES: dict[str, type[VisionDataModule]] = {
     if inspect.isclass(cls) and issubclass(cls, VisionDataModule)
 }
 
+def find_suitable_backbones():
+    backbones = {}
 
-BACKBONES: dict[str, type[nn.Module]] = {
-    name: cls_or_fn
-    for name, cls_or_fn in vars(models).items()
-    if (callable(cls_or_fn) and "pretrained" in inspect.signature(cls_or_fn).parameters)
-}
+    for name, cls_or_fn in vars(torchvision_models).items():
+        
+        try:
+            print(callable(cls_or_fn), "pretrained" in inspect.signature(cls_or_fn).parameters)
+            
+            if callable(cls_or_fn):
+                backbones[name.lower()] = cls_or_fn
+            
+        except TypeError:
+            pass
+    
+    assert len(backbones) > 0
+    return backbones
 
 
-def backbone_choice(default: Callable[..., nn.Module]) -> Callable[..., nn.Module]:
+BACKBONES: dict[str, type[nn.Module]] = find_suitable_backbones()
+
+
+
+def backbone_choice(default: str) -> str:
     """
     A field that will automatically download the torchvision model if it's not already downloaded.
     """
     return choice(
-        BACKBONES,
+        BACKBONES.keys(),
         default=default,
     )
 
 
 def get_backbone_network(
-    network_type: Callable[..., ModuleType],
+    network_type: str,
     *,
     image_dims: tuple[C, H, W],
     pretrained: bool = False,
@@ -59,10 +73,12 @@ def get_backbone_network(
     TODO: Add support for more types of models.
     """
 
+    network_type = BACKBONES.get(network_type.lower())
     backbone_signature = inspect.signature(network_type)
+    
     if (
         "image_size" in backbone_signature.parameters
-        or backbone_signature.return_annotation is models.VisionTransformer
+        or backbone_signature.return_annotation is torchvision_models.VisionTransformer
     ):
         backbone = network_type(image_size=image_dims[-1], pretrained=pretrained)
     else:
@@ -72,7 +88,7 @@ def get_backbone_network(
     if hasattr(backbone, "fc"):
         in_features: int = backbone.fc.in_features  # type: ignore
         backbone.fc = nn.Identity()
-    elif isinstance(backbone, models.VisionTransformer):
+    elif isinstance(backbone, torchvision_models.VisionTransformer):
         # heads_layers: dict[str, nn.Module] = OrderedDict()
         # if representation_size is None:
         #     heads_layers["head"] = nn.Linear(hidden_dim, num_classes)
