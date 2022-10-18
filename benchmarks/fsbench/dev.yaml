@@ -1,7 +1,7 @@
 defaults: &defaults
   dirs:
-    code: ./_dev_{name}
-    venv: venv/{name}
+    code: ./_dev_fsbench
+    venv: venv/fsbench
     data: data
     runs: runs
 
@@ -29,8 +29,15 @@ defaults: &defaults
     --train-rate: true
     --loading-rate: true
 
-benchmarks:
-  fsbench:
-    <<<: *defaults
+  definition: ./
 
-    definition: ./
+benchmarks:
+  raw-fs:
+    <<<: *defaults
+    argv:
+      --load-type: fs
+
+  decode-fs:
+    <<<: *defaults
+    argv:
+      --load-type: decode
