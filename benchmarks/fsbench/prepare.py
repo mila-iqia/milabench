@@ -4,7 +4,8 @@ import os
 from milabench.datasets.fake_images import generate_sets
 
 
-scale = 1000
+# adjust the size of the generated dataset (1 = ~2Gb)
+scale = 100
 if __name__ == "__main__":
     # If you need the whole configuration:
     # config = json.loads(os.environ["MILABENCH_CONFIG"])
