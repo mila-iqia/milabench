@@ -58,7 +58,7 @@ def main():
         help="number of epochs between validations",
     )
     parser.add_argument(
-        "--iters", type=int, default=5, help="number of train/valid cycles to run"
+        "--iters", type=int, default=1, help="number of train/valid cycles to run"
     )
     parser.add_argument(
         "--loading-processes",
@@ -103,15 +103,17 @@ def main():
         load_type=args.load_type,
     )
 
+    give(loader=train_loader)
+    give(loader=valid_loader)
+    give(loader=test_loader)
     for iter in range(args.iters):
         for epoch in range(args.epochs_valid):
             for inp, target in train_loader:
-                give(batch=inp, step=True)
+                pass
         for inp, target in valid_loader:
-            give(batch=inp, step=True)
+            pass
     for inp, target in test_loader:
-        give(batch=inp, step=True)
-
+        pass
 
 if __name__ == "__main__":
     # Note: The line `if __name__ == "__main__"` is necessary for milabench
