@@ -17,6 +17,8 @@ CONDA_PATH=$SLURM_TMPDIR/conda
 
 /home/mila/d/delaunap/Miniconda3-latest-Linux-x86_64.sh -b -p $CONDA_PATH
 
+export PATH="$CONDA_PATH/bin:$PATH"
+
 __conda_setup="$(\"$CONDA_PATH/bin/conda\" 'shell.bash' 'hook' 2> /dev/null)"
 eval "$__conda_setup"
 
