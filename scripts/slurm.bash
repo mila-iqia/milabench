@@ -17,15 +17,23 @@ CONDA_PATH=$SLURM_TMPDIR/conda
 
 /home/mila/d/delaunap/Miniconda3-latest-Linux-x86_64.sh -b -p $CONDA_PATH
 
-export PATH="$CONDA_PATH/bin:$PATH"
-
+conda init bash
 __conda_setup="$(\"$CONDA_PATH/bin/conda\" 'shell.bash' 'hook' 2> /dev/null)"
-eval "$__conda_setup"
+if [ $? -eq 0 ]; then
+    eval "$__conda_setup"
+else
+    if [ -f "$CONDA_PATH/etc/profile.d/conda.sh" ]; then
+        . "$CONDA_PATH/etc/profile.d/conda.sh"
+    else
+        export PATH="$CONDA_PATH/conda/bin:$PATH"
+    fi
+fi
+unset __conda_setup
 
 conda create -n milabench -y
 conda activate milabench
-pip install -e /home/mila/d/delaunap/milabench
 
+pip install -e /home/mila/d/delaunap/milabench
 
 #
 # Run milabench
@@ -43,3 +51,5 @@ milabench summary $MILABENCH_BASE/data/
 milabench summary $MILABENCH_BASE/data/ -o summary.json
 
 cp -r $SLURM_TMPDIR/runs /network/scratch/d/delaunap/runs
+
+conda init bash --reverse
