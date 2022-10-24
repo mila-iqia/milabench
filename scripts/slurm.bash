@@ -33,8 +33,8 @@ unset __conda_setup
 conda create -n milabench -y
 conda activate milabench
 
-pip install pip -U
-pip install -e /home/mila/d/delaunap/milabench
+python -m pip install pip -U
+python -m pip install -e /home/mila/d/delaunap/milabench
 
 #
 # Run milabench
