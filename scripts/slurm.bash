@@ -9,6 +9,25 @@
 #SBATCH --time=1:00:00
 #SBATCH --mem=100Gb
 
+
+#
+# Setup Python
+#
+CONDA_PATH=$SLURM_TMPDIR/conda
+
+/home/mila/d/delaunap/Miniconda3-latest-Linux-x86_64.sh -b -p $CONDA_PATH
+
+__conda_setup="$(\"$CONDA_PATH/bin/conda\" 'shell.bash' 'hook' 2> /dev/null)"
+eval "$__conda_setup"
+
+conda create -n milabench -y
+conda activate milabench
+pip install -e /home/mila/d/delaunap/milabench
+
+
+#
+# Run milabench
+#
 MILABENCH_BASE=$SLURM_TMPDIR/runs
 
 milabench install config/standard.yaml --base $MILABENCH_BASE
