@@ -32,16 +32,14 @@ def find_suitable_backbones():
     backbones = {}
 
     for name, cls_or_fn in vars(torchvision_models).items():
-        
+
         try:
-            print(callable(cls_or_fn), "pretrained" in inspect.signature(cls_or_fn).parameters)
-            
             if callable(cls_or_fn):
                 backbones[name.lower()] = cls_or_fn
-            
+
         except TypeError:
             pass
-    
+
     assert len(backbones) > 0
     return backbones
 
@@ -75,7 +73,7 @@ def get_backbone_network(
 
     network_type = BACKBONES.get(network_type.lower())
     backbone_signature = inspect.signature(network_type)
-    
+
     if (
         "image_size" in backbone_signature.parameters
         or backbone_signature.return_annotation is torchvision_models.VisionTransformer

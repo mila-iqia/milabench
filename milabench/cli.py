@@ -151,9 +151,10 @@ def _read_reports(*runs):
                     lines = f.readlines()
                     try:
                         data = [json.loads(line) for line in lines]
+                        all_data[str(pth)] = data
                     except Exception as exc:
                         print(f"Could not parse {pth}")
-                    all_data[str(pth)] = data
+
     return all_data
 
 
