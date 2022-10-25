@@ -17,10 +17,10 @@ defaults: &defaults
       - "#stdout"
       - "#stderr"
       - "#end"
-      - loading_rate
+      - train_rate
       - progress
       - total
-    --loading-rate: true
+    --train-rate: true
 
   definition: ./
 
@@ -29,6 +29,16 @@ benchmarks:
     <<<: *defaults
     argv:
       --load-type: fs
+
+  squash-fs:
+    <<<: *defaults
+    argv:
+      --load-type: squash
+
+  deeplake-fs:
+    <<<: *defaults
+    argv:
+      --load-type: deeplake
 
   decode-fs:
     <<<: *defaults

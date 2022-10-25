@@ -36,6 +36,9 @@ def make_loader(path, sub, shuffle, batch_size, loading_processes, load_type):
         from pysquash import SquashCursor
 
         load = SqhDataset(SquashCursor(path + ".sqh").cd(sub.encode("utf-8")))
+    elif load_type == "deeplake":
+        import deeplake
+        return deeplake.load(path + ".lake")[sub].pytorch(batch_size=batch_size, shuffle=shuffle, num_workers=loading_processes, tensors=["images", "labels"], return_index=False, tobytes=True)
     elif load_type == "decode":
         load = ImageFolder(path, transform=ToTensor())
     else:
@@ -69,7 +72,7 @@ def main():
     parser.add_argument(
         "--load-type",
         required=True,
-        choices=("fs", "squash", "decode"),
+        choices=("fs", "squash", "deeplake", "decode"),
         help="type of loading to test, 'fs' is raw filesystem with no decode, 'squash' is loading trough squashfile, and 'decode' if from the filesystem, but including image decode",
     )
 
@@ -103,17 +106,14 @@ def main():
         load_type=args.load_type,
     )
 
-    give(loader=train_loader)
-    give(loader=valid_loader)
-    give(loader=test_loader)
-    for iter in range(args.iters):
+    for _ in range(args.iters):
         for epoch in range(args.epochs_valid):
             for inp, target in train_loader:
-                pass
+                give(batch=inp, step=True)
         for inp, target in valid_loader:
-            pass
+            give(batch=inp, step=True)
     for inp, target in test_loader:
-        pass
+        give(batch=inp, step=True)
 
 if __name__ == "__main__":
     # Note: The line `if __name__ == "__main__"` is necessary for milabench
