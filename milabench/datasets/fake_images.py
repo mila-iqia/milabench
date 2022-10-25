@@ -8,28 +8,28 @@ from ..fs import XPath
 
 
 def write(args):
-    image_size, count, offset, outdir = args
+    image_size, offset, count, outdir = args
     dataset = FakeData(
         size=count, image_size=image_size, num_classes=1000, random_offset=offset
     )
 
-    for i, (image, y) in tqdm(enumerate(dataset), total=count):
-        class_val = int(y)
-        image_name = f"{offset + i}.jpeg"
+    image, y = next(iter(dataset))
+    class_val = int(y)
+    image_name = f"{offset}.jpeg"
 
-        path = os.path.join(outdir, str(class_val))
-        os.makedirs(path, exist_ok=True)
+    path = os.path.join(outdir, str(class_val))
+    os.makedirs(path, exist_ok=True)
 
-        image_path = os.path.join(path, image_name)
-        image.save(image_path)
+    image_path = os.path.join(path, image_name)
+    image.save(image_path)
 
 
 def generate(image_size, n, outdir):
     p_count = min(multiprocessing.cpu_count(), 8)
     count = n // p_count
-    offset_list = [(image_size, count, i, outdir) for i in range(0, n, count)]
     pool = multiprocessing.Pool(p_count)
-    pool.map(write, offset_list)
+    for _ in tqdm(pool.imap_unordered(write, ((image_size, i, n, outdir) for i in range(n))), total=n):
+        pass
 
 
 def generate_sets(root, sets, shape):
