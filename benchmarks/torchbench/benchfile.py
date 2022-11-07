@@ -53,9 +53,9 @@ class TorchBenchmarkPack(Package):
             # We don't want to use the model's install.py, but we still want to
             # run the global install.py, so we pass resnet18 which has an empty
             # install.py.
-            self.python("install.py", "--models", "resnet18")
+            self.python("install.py", "resnet18")
         else:
-            self.python("install.py", "--models", self.config["model"])
+            self.python("install.py", self.config["model"])
 
     def run(self, args, voirargs, env):
         args.insert(0, self.config["model"])
