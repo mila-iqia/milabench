@@ -45,6 +45,11 @@ class TorchBenchmarkPack(Package):
             os.makedirs(code / ".git/refs", exist_ok=True)
         self.pip_install("-r", code / "requirements-bench.txt")
         model_name = self.config["model"]
+        
+        torch = ["torch", "torchvision", "torchaudio"]
+        for p in torch:
+            self.pip_install(p)
+            
         if headless and (code / f"requirements-{model_name}-headless.txt").exists():
             self.pip_install("-r", code / f"requirements-{model_name}-headless.txt")
         elif (code / f"requirements-{model_name}.txt").exists():
