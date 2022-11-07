@@ -4,7 +4,7 @@ import subprocess
 
 from milabench.pack import Package
 
-BRANCH = "ff7114655294aa3ba57127a260dbd1ef5190f610"
+BRANCH = "2fcedc4b508d35f8a817d2028ca153d84a4470b7"
 
 
 @contextlib.contextmanager
