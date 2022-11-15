@@ -4,7 +4,7 @@ import subprocess
 
 from milabench.pack import Package
 
-BRANCH = "ff7114655294aa3ba57127a260dbd1ef5190f610"
+BRANCH = "2fcedc4b508d35f8a817d2028ca153d84a4470b7"
 
 
 @contextlib.contextmanager
@@ -45,6 +45,11 @@ class TorchBenchmarkPack(Package):
             os.makedirs(code / ".git/refs", exist_ok=True)
         self.pip_install("-r", code / "requirements-bench.txt")
         model_name = self.config["model"]
+        
+        torch = ["torch", "torchvision", "torchaudio"]
+        for p in torch:
+            self.pip_install(p)
+            
         if headless and (code / f"requirements-{model_name}-headless.txt").exists():
             self.pip_install("-r", code / f"requirements-{model_name}-headless.txt")
         elif (code / f"requirements-{model_name}.txt").exists():
@@ -53,9 +58,9 @@ class TorchBenchmarkPack(Package):
             # We don't want to use the model's install.py, but we still want to
             # run the global install.py, so we pass resnet18 which has an empty
             # install.py.
-            self.python("install.py", "--models", "resnet18")
+            self.python("install.py", "resnet18")
         else:
-            self.python("install.py", "--models", self.config["model"])
+            self.python("install.py", self.config["model"])
 
     def run(self, args, voirargs, env):
         args.insert(0, self.config["model"])
