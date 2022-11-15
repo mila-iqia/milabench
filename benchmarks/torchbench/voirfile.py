@@ -31,9 +31,11 @@ def instrument_probe(ov):
         .give()
     )
 
-    @ov.probe(
+    _p = ov.probe(
         "/torchbenchmark.util.framework.timm.model_factory/TimmModel/__init__(self) > #exit"
-    ).ksubscribe
+    )
+
+    @_p.ksubscribe
     def reg_timm_loss(self):
         (
             ov.probe("self.cfg.loss.__call__() as loss")
@@ -165,9 +167,9 @@ def instrument_probe(ov):
                     .give()
                 )
 
-                @ov.probe(
-                    f"/torchbenchmark.models.{model}/Model/train > loss"
-                ).ksubscribe
+                _p = ov.probe(f"/torchbenchmark.models.{model}/Model/train > loss")
+
+                @_p.ksubscribe
                 def reg(loss):
                     (
                         ov.probe("loss.__call__() as loss")
@@ -292,7 +294,9 @@ def instrument_probe(ov):
     yield ov.phases.load_script
 
     # loss of TorchVisionModel
-    @ov.probe("//run_one_step > func").kmap(model=lambda func: func.__self__).ksubscribe
+    _p = ov.probe("//run_one_step > func").kmap(model=lambda func: func.__self__)
+
+    @_p.ksubscribe
     def reg_vision_loss(model):
         if hasattr(model, "loss_fn"):
             (
