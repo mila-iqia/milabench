@@ -103,9 +103,9 @@ def main(
     options: DataOptions = args_dict.pop("options")
 
     print("HParams:")
-    _print_indented_yaml(dataclasses.asdict(hparams))
+    _print_indented_yaml(asdict(hparams))
     print("Options:")
-    _print_indented_yaml(dataclasses.asdict(options))
+    _print_indented_yaml(asdict(options))
 
     # Rest of `args_dict` is only for the Trainer.
     trainer_kwargs = trainer_default_kwargs.copy()
