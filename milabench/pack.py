@@ -37,6 +37,12 @@ class BasePackage:
 
         self.dirs = NS(**{name: XPath(d) for name, d in config["dirs"].items()})
 
+        constraints = self.config.get("pip", {}).get("constraints", None)
+        if constraints:
+            self.constraints = self.dirs.code / "pip-constraints.txt"
+        else:
+            self.constraints = None
+
         reuse = True
         self._nox_runner = SessionRunner(
             name=self.dirs.venv.name,
@@ -119,12 +125,8 @@ class BasePackage:
             self.dirs.code, self.pack_path / "manifest", readonly=True
         )
         self.config.setdefault("pip", {})
-        constraints = self.config["pip"].get("constraints", None)
-        if constraints:
-            self.constraints = self.dirs.code / "pip-constraints.txt"
-            self.constraints.write_text("\n".join(constraints))
-        else:
-            self.constraints = None
+        if self.constraints:
+            self.constraints.write_text("\n".join(self.config["pip"]["constraints"]))
 
     def install_milabench(self):
         """Install milabench in the virtual environment.
@@ -160,7 +162,7 @@ class BasePackage:
         args = [str(x) for x in args]
         if self.constraints:
             args += ["-c", str(self.constraints)]
-        for line in self.config["pip"].get("args", []):
+        for line in self.config.get("pip", {}).get("args", []):
             args += line.split(" ")
         return self._nox_session.install(*args, **kwargs, silent=False)
 
