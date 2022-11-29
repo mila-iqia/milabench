@@ -1,6 +1,8 @@
 
 # Milabench
 
+**IMPORTANT WARNING:** The benchmark suite in its present state is broken and we are working to correct it.
+
 [Documentation](https://breuleux.github.io/milabench)
 
 <!--
