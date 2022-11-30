@@ -29,10 +29,8 @@ VISION_DATAMODULES: dict[str, type[VisionDataModule]] = {
 }
 
 
-BACKBONES: dict[str, type[nn.Module]] = {
-    name: cls_or_fn
-    for name, cls_or_fn in vars(models).items()
-    if (callable(cls_or_fn) and "pretrained" in inspect.signature(cls_or_fn).parameters)
+BACKBONES: list[str] = {
+    models.list_models(module=models)
 }
 
 
