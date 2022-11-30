@@ -39,12 +39,7 @@ class GivingCallback(Callback):
         if isinstance(device, str):
             device = torch.device(device)
         use_cuda = device.type == "cuda"
-        trainer.train_dataloader
-        # NOTE: request_dataloader is marked as deprecated in PL 1.6, will be removed in pl 1.8.
-        # Don't know what the replacement will be atm. Perhaps just `trainer.train_dataloader`.
-        loader_or_loaders = trainer.request_dataloader(
-            RunningStage.TRAINING, model=pl_module
-        )
+        loader_or_loaders = trainer.train_dataloader.loaders
         if isinstance(loader_or_loaders, list):
             raise NotImplementedError(
                 f"There are more than one training dataloaders.. dont know which one to give!"
