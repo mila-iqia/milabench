@@ -28,12 +28,7 @@ VISION_DATAMODULES: dict[str, type[VisionDataModule]] = {
     if inspect.isclass(cls) and issubclass(cls, VisionDataModule)
 }
 
-
-BACKBONES: dict[str, type[nn.Module]] = {
-    name: cls_or_fn
-    for name, cls_or_fn in vars(models).items()
-    if (callable(cls_or_fn) and "pretrained" in inspect.signature(cls_or_fn).parameters)
-}
+BACKBONES: list[str] = models.list_models(module=models)
 
 
 def backbone_choice(default: Callable[..., nn.Module]) -> Callable[..., nn.Module]:
@@ -47,7 +42,7 @@ def backbone_choice(default: Callable[..., nn.Module]) -> Callable[..., nn.Modul
 
 
 def get_backbone_network(
-    network_type: Callable[..., ModuleType],
+    network_type: str,
     *,
     image_dims: tuple[C, H, W],
     pretrained: bool = False,
@@ -59,28 +54,17 @@ def get_backbone_network(
     TODO: Add support for more types of models.
     """
 
-    backbone_signature = inspect.signature(network_type)
-    if (
-        "image_size" in backbone_signature.parameters
-        or backbone_signature.return_annotation is models.VisionTransformer
-    ):
-        backbone = network_type(image_size=image_dims[-1], pretrained=pretrained)
-    else:
-        backbone = network_type(pretrained=pretrained)
+    try:
+        backbone = models.get_model(network_type, image_size=image_dims[-1], weights="DEFAULT" if pretrained else None)
+    except TypeError:
+        # For non-vision models
+        backbone = models.get_model(network_type, weights="DEFAULT" if pretrained else None)
 
     # Replace the output layer with a no-op, we'll create our own instead.
     if hasattr(backbone, "fc"):
         in_features: int = backbone.fc.in_features  # type: ignore
         backbone.fc = nn.Identity()
     elif isinstance(backbone, models.VisionTransformer):
-        # heads_layers: dict[str, nn.Module] = OrderedDict()
-        # if representation_size is None:
-        #     heads_layers["head"] = nn.Linear(hidden_dim, num_classes)
-        # else:
-        #     heads_layers["pre_logits"] = nn.Linear(hidden_dim, representation_size)
-        #     heads_layers["act"] = nn.Tanh()
-        #     heads_layers["head"] = nn.Linear(representation_size, num_classes)
-
         head_layers = backbone.heads
         fc = head_layers.get_submodule("head")
         fc_index = list(head_layers).index(fc)
