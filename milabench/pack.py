@@ -34,7 +34,7 @@ class BasePackage:
     def __init__(self, config):
         self.config = config
         self.pack_path = XPath(config["definition"])
-
+        self.constraints = None
         self.dirs = NS(**{name: XPath(d) for name, d in config["dirs"].items()})
 
         reuse = True
