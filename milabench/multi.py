@@ -66,8 +66,10 @@ def _assemble_options(options: dict):
     for k, v in options.items():
         if v is None:
             continue
-        if v is True:
+        elif v is True:
             args.append(k)
+        elif k == "--":
+            args.extend(v)
         elif v is False:
             raise ValueError("Use null to cancel an option, not false")
         else:

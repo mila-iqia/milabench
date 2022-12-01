@@ -49,6 +49,10 @@ class TorchBenchmarkPack(Package):
             os.makedirs(code / "stargan/models", exist_ok=True)
             os.makedirs(code / "stargan/samples", exist_ok=True)
             os.makedirs(code / "stargan/results", exist_ok=True)
+            (code / "torchbenchmark/models/Super_SloMo/slomo_model.py").sub(
+                "ind = indices",
+                "ind = indices.detach().cpu().numpy()"
+            )
 
         self.pip_install("-r", code / "requirements-bench.txt")
         model_name = self.config["model"]
