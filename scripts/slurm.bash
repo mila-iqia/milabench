@@ -9,16 +9,27 @@
 #SBATCH --time=1:00:00
 #SBATCH --mem=100Gb
 
+#
+# Configuration
+#
+MILABENCH_CONFIG=$SLURM_TMPDIR/milabench/config/standard.yaml
+MILABENCH_BASE=$SLURM_TMPDIR/runs
+MILABENCH_OUTPUT=$SCRATCH/runs
+
+MILABENCH_REPO=git@github.com:mila-iqia/milabench.git
+MILABENCH_BRANCH="master"
 
 #
 # Setup Python
 #
 CONDA_PATH=$SLURM_TMPDIR/conda
+cd $SLURM_TMPDIR
 
-/home/mila/d/delaunap/Miniconda3-latest-Linux-x86_64.sh -b -p $CONDA_PATH
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+chmod +x Miniconda3-latest-Linux-x86_64.sh
+./Miniconda3-latest-Linux-x86_64.sh -b -p $CONDA_PATH
 
 ls $CONDA_PATH/conda/bin
-
 export PATH="$CONDA_PATH/bin:$PATH"
 conda init bash
 
@@ -36,25 +47,27 @@ unset __conda_setup
 
 conda create -n milabench -y
 conda activate milabench
-
 python -m pip install pip -U
-python -m pip install -e /home/mila/d/delaunap/milabench
+
+# Install Mila bench
+cd $SLURM_TMPDIR
+git clone --depth 1 $MILABENCH_REPO --branch $MILABENCH_BRANCH
+python -m pip install -e milabench
 
 #
 # Run milabench
 #
-MILABENCH_BASE=$SLURM_TMPDIR/runs
 
-milabench install config/standard.yaml --base $MILABENCH_BASE
+milabench install $MILABENCH_CONFIG --base $MILABENCH_BASE
 
-milabench prepare config/standard.yaml --base $MILABENCH_BASE
+milabench prepare $MILABENCH_CONFIG --base $MILABENCH_BASE
 
-milabench run config/standard.yaml --base $MILABENCH_BASE
+milabench run $MILABENCH_CONFIG --base $MILABENCH_BASE
 
 milabench summary $MILABENCH_BASE/data/
 
 milabench summary $MILABENCH_BASE/data/ -o summary.json
 
-cp -r $SLURM_TMPDIR/runs /network/scratch/d/delaunap/runs
+cp -r $SLURM_TMPDIR/runs $MILABENCH_OUTPUT
 
 conda init bash --reverse

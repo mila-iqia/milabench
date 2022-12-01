@@ -2,15 +2,16 @@
 
 
 
-
+tail-output:
+	tail -f ${SCRATCH}/milabench.err ${SCRATCH}/milabench.out
 
 schedule:
-	rm -rf /network/scratch/d/delaunap/milabench.out
-	rm -rf /network/scratch/d/delaunap/milabench.err
+	rm -rf ${SCRATCH}/milabench.out
+	rm -rf ${SCRATCH}/milabench.err
 
-	touch /network/scratch/d/delaunap/milabench.out
-	touch /network/scratch/d/delaunap/milabench.err
+	touch ${SCRATCH}/milabench.out
+	touch ${SCRATCH}/milabench.err
 
 	sbatch slurm.bash
 
-	tail -f /network/scratch/d/delaunap/milabench.err
+	tail -f ${SCRATCH}/milabench.err ${SCRATCH}/milabench.out
