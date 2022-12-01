@@ -18,7 +18,7 @@ OUTPUT_DIR=$SCRATCH
 MILABENCH_CONFIG=$WORKING_DIR/milabench/config/standard.yaml
 MILABENCH_BASE=$WORKING_DIR/runs
 MILABENCH_OUTPUT=$OUTPUT_DIR/runs
-MILABENCH_ARGS="--select resnet50"
+MILABENCH_ARGS=""
 
 MILABENCH_REPO=git@github.com:mila-iqia/milabench.git
 MILABENCH_BRANCH="master"
