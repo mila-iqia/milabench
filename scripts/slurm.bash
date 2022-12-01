@@ -18,10 +18,10 @@ OUTPUT_DIR=$SCRATCH
 MILABENCH_CONFIG=$WORKING_DIR/milabench/config/standard.yaml
 MILABENCH_BASE=$WORKING_DIR/runs
 MILABENCH_OUTPUT=$OUTPUT_DIR/runs
-MILABENCH_ARGS=""
+MILABENCH_ARGS="--select resnet50"
 
-MILABENCH_REPO=git@github.com:Delaunay/milabench.git
-MILABENCH_BRANCH="patch-1"
+MILABENCH_REPO=git@github.com:mila-iqia/milabench.git
+MILABENCH_BRANCH="master"
 
 
 #
@@ -67,12 +67,11 @@ milabench install $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
 milabench prepare $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
 milabench run $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
 
-milabench summary $WORKING_DIR/runs/data/
-milabench summary $WORKING_DIR/runs/data/ -o $MILABENCH_OUTPUT/summary.json
-
+milabench summary $WORKING_DIR/runs/runs/
+milabench summary $WORKING_DIR/runs/runs/ -o $MILABENCH_OUTPUT/summary.json
 
 # Save data
-cp -r $WORKING_DIR/runs $MILABENCH_OUTPUT
+cp -r $WORKING_DIR/runs/runs $MILABENCH_OUTPUT
 
 # Cleanup
 conda init bash --reverse

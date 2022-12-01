@@ -3,6 +3,6 @@ schedule:
 	rm -rf ${SCRATCH}/milabench.out
 	touch ${SCRATCH}/milabench.out
 
-	sbatch slurm.bash --output=${SCRATCH}/milabench.out  --error=${SCRATCH}/milabench.out
+	sbatch -o ${SCRATCH}/milabench.out -e ${SCRATCH}/milabench.out slurm.bash
 
 	tail -f ${SCRATCH}/milabench.out
