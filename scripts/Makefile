@@ -1,17 +1,8 @@
 
-
-
-
-tail-output:
-	tail -f ${SCRATCH}/milabench.err ${SCRATCH}/milabench.out
-
 schedule:
 	rm -rf ${SCRATCH}/milabench.out
-	rm -rf ${SCRATCH}/milabench.err
-
 	touch ${SCRATCH}/milabench.out
-	touch ${SCRATCH}/milabench.err
 
-	sbatch slurm.bash
+	sbatch slurm.bash --output=${SCRATCH}/milabench.out  --error=${SCRATCH}/milabench.out
 
-	tail -f ${SCRATCH}/milabench.err ${SCRATCH}/milabench.out
+	tail -f ${SCRATCH}/milabench.out

@@ -1,8 +1,6 @@
 #!/bin/bash
 
 #SBATCH --job-name=milabench
-#SBATCH --output=/network/scratch/d/delaunap/milabench.out
-#SBATCH --error=/network/scratch/d/delaunap/milabench.err
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
 #SBATCH --gres=gpu:1
@@ -12,18 +10,25 @@
 #
 # Configuration
 #
-MILABENCH_CONFIG=$SLURM_TMPDIR/milabench/config/standard.yaml
-MILABENCH_BASE=$SLURM_TMPDIR/runs
-MILABENCH_OUTPUT=$SCRATCH/runs
+# Tweak those for your system
+WORKING_DIR=$SLURM_TMPDIR
+OUTPUT_DIR=$SCRATCH
+#
 
-MILABENCH_REPO=git@github.com:mila-iqia/milabench.git
-MILABENCH_BRANCH="master"
+MILABENCH_CONFIG=$WORKING_DIR/milabench/config/standard.yaml
+MILABENCH_BASE=$WORKING_DIR/runs
+MILABENCH_OUTPUT=$OUTPUT_DIR/runs
+MILABENCH_ARGS=""
+
+MILABENCH_REPO=git@github.com:Delaunay/milabench.git
+MILABENCH_BRANCH="patch-1"
+
 
 #
 # Setup Python
 #
-CONDA_PATH=$SLURM_TMPDIR/conda
-cd $SLURM_TMPDIR
+CONDA_PATH=$WORKING_DIR/conda
+cd $WORKING_DIR
 
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 chmod +x Miniconda3-latest-Linux-x86_64.sh
@@ -50,7 +55,7 @@ conda activate milabench
 python -m pip install pip -U
 
 # Install Mila bench
-cd $SLURM_TMPDIR
+cd $WORKING_DIR
 git clone --depth 1 $MILABENCH_REPO --branch $MILABENCH_BRANCH
 python -m pip install -e milabench
 
@@ -58,16 +63,16 @@ python -m pip install -e milabench
 # Run milabench
 #
 
-milabench install $MILABENCH_CONFIG --base $MILABENCH_BASE
+milabench install $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
+milabench prepare $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
+milabench run $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
 
-milabench prepare $MILABENCH_CONFIG --base $MILABENCH_BASE
+milabench summary $WORKING_DIR/runs/data/
+milabench summary $WORKING_DIR/runs/data/ -o $MILABENCH_OUTPUT/summary.json
 
-milabench run $MILABENCH_CONFIG --base $MILABENCH_BASE
 
-milabench summary $MILABENCH_BASE/data/
+# Save data
+cp -r $WORKING_DIR/runs $MILABENCH_OUTPUT
 
-milabench summary $MILABENCH_BASE/data/ -o summary.json
-
-cp -r $SLURM_TMPDIR/runs $MILABENCH_OUTPUT
-
+# Cleanup
 conda init bash --reverse
