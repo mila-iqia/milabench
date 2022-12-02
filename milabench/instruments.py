@@ -366,7 +366,7 @@ class GPUMonitor(Thread):
             time.sleep(self.delay)
             data = {
                 gpu["device"]: {
-                    "memory": gpu["memory"],
+                    "memory": [gpu["memory"]["used"], gpu["memory"]["total"]],
                     "load": gpu["utilization"]["compute"],
                     "temperature": gpu["temperature"],
                 }
