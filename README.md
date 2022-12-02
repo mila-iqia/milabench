@@ -1,9 +1,15 @@
 
 # Milabench
 
-**IMPORTANT WARNING:** The benchmark suite in its present state is broken and we are working to correct it.
-
 [Documentation](https://breuleux.github.io/milabench)
+
+The benchmark suite has been validated on the following configurations:
+
+| Python version | GPU | Configuration file |
+| - | - | - |
+| 3.9.15 (conda) | 4x NVIDIA A100 80GB | config/standard.yaml |
+
+We are working on validating it on more configurations and will update the above table as we do.
 
 <!--
 ## Install
