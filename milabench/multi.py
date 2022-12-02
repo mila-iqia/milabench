@@ -29,18 +29,20 @@ def clone_with(cfg, new_cfg):
 
 @planning_method
 def per_gpu(cfg):
-    import GPUtil as gu
+    from .gpu import get_gpu_info
 
-    gpus = gu.getGPUs()
+    gpus = get_gpu_info().values()
+    ngpus = len(gpus)
+    if not gpus:
+        gpus = [{"device": 0, "selection_variable": "CPU_VISIBLE_DEVICE"}]
 
-    ids = [gpu.id for gpu in gpus] or [0]
-
-    for gid in ids:
+    for gpu in gpus:
+        gid = gpu["device"]
         gcfg = {
             "tag": [f"D{gid}"],
             "device": gid,
-            "devices": [gid] if ids else [],
-            "env": {"CUDA_VISIBLE_DEVICES": str(gid)},
+            "devices": [gid] if ngpus else [],
+            "env": {gpu["selection_variable"]: str(gid)},
         }
         yield clone_with(cfg, gcfg)
 
