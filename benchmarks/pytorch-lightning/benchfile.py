@@ -1,9 +1,19 @@
 from milabench.pack import Package
 
+from milabench import gpu
+
+# This is called to ensure the arch variable is set
+gpu.get_gpu_info()
+
 
 class PLBenchmark(Package):
     # Requirements file installed by install(). It can be empty or absent.
-    requirements_file = "frozen_reqs.txt"
+    if gpu.arch == "cuda":
+        requirements_file = "frozen_reqs.cuda.txt"
+    elif gpu.arch == "rocm":
+        requirements_file = "frozen_reqs.amd.txt"
+    else:
+        raise ValueError(f"Unsupported arch: {arch}")
 
     # The preparation script called by prepare(). It must be executable,
     # but it can be any type of script. It can be empty or absent.
