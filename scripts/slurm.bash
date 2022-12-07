@@ -11,8 +11,8 @@
 # Configuration
 #
 # Tweak those for your system
-WORKING_DIR=$SLURM_TMPDIR
-OUTPUT_DIR=$SCRATCH
+WORKING_DIR=${SLURM_TMPDIR:-/tmp}
+OUTPUT_DIR=${SCRATCH:-output}
 #
 
 MILABENCH_CONFIG=$WORKING_DIR/milabench/config/standard.yaml
