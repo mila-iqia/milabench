@@ -13,7 +13,7 @@ class PLBenchmark(Package):
     elif gpu.arch == "rocm":
         requirements_file = "frozen_reqs.amd.txt"
     else:
-        raise ValueError(f"Unsupported arch: {arch}")
+        raise ValueError(f"Unsupported arch: {gpu.arch}")
 
     # The preparation script called by prepare(). It must be executable,
     # but it can be any type of script. It can be empty or absent.
