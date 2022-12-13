@@ -7,9 +7,29 @@ The benchmark suite has been validated on the following configurations:
 
 | Python version | GPU | Configuration file |
 | - | - | - |
-| 3.9.15 (conda) | 4x NVIDIA A100 80GB | config/standard.yaml |
+| 3.9.15 (conda) | 4x NVIDIA A100 80GB | config/standard-cuda.yaml |
 
 We are working on validating it on more configurations and will update the above table as we do.
+
+## AMD/ROCm
+
+**Partly validated:**
+
+| Python version | GPU | Configuration file |
+| - | - | - |
+| 3.9.15 (conda) | 2x AMD MI100 | config/standard-rocm.yaml |
+
+The tests can be run on AMD GPUs using the configuration file `config/standard-rocm.yaml`.
+
+There is currently a bug with ROCm 5.2 that may affect the following tests (possibly others if it depends on local configuration) and cause them to segfault:
+
+* efficientnet_b0
+* efficientnet_b4
+* efficientnet_b7
+* regnet_y_128gf
+
+This issue was reportedly fixed in ROCm 5.3, but as the official pytorch repositories do not yet offer wheels for this configuration, we have not been able to verify. We expect the issue to resolve itself in the next few months.
+
 
 <!--
 ## Install
