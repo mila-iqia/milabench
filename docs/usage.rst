@@ -1,6 +1,6 @@
 
-Install
--------
+Install and use
+---------------
 
 To install, clone the repo:
 
@@ -18,11 +18,12 @@ This will install two commands, ``milabench`` and ``voir``.
 
 
 Before running the benchmarks
------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. Set the ``$MILABENCH_BASE`` environment variable to the base directory in which all the code, virtual environments and data should be put.
 
 2. Set the ``$MILABENCH_CONFIG`` environment variable to the configuration file that corresponds to your platform:
+
   * ``config/standard-cuda.yaml`` for NVIDIA/CUDA platforms.
   * ``config/standard-rocm.yaml`` for AMD/ROCm platforms.
 
@@ -32,7 +33,7 @@ Before running the benchmarks
 
 
 Run milabench
--------------
+~~~~~~~~~~~~~
 
 The following command will run the whole benchmark and will put the results in a new directory in ``$MILABENCH_BASE/runs`` (the path will be printed to stdout).
 
@@ -78,7 +79,7 @@ Here are a few useful options for ``milabench run``:
 
 
 Reports
--------
+~~~~~~~
 
 The following command will print out a report of the tests that ran, the metrics and if there were any failures. It will also produce an HTML report that contains more detailed information about errors if there are any.
 

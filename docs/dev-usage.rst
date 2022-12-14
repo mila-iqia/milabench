@@ -1,6 +1,6 @@
 
-Using milabench
----------------
+Using milabench (DEVELOPERS)
+----------------------------
 
 To use ``milabench``, you need:
 
