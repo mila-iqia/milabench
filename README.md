@@ -1,7 +1,7 @@
 
 # Milabench
 
-[Documentation](https://breuleux.github.io/milabench)
+[Documentation](https://mila-iqia.github.io/milabench)
 
 The benchmark suite has been validated on the following configurations:
 
