@@ -18,7 +18,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Benchmark configuration" href="config.html" />
+    <link rel="next" title="Using milabench" href="dev-usage.html" />
     <link rel="prev" title="Welcome to milabench’s documentation!" href="index.html" /> 
 </head>
 
@@ -40,14 +40,10 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Install</a></li>
-<li class="toctree-l1"><a class="reference internal" href="#using-milabench">Using milabench</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#important-options">Important options</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#milabench-install">milabench install</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#milabench-prepare">milabench prepare</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#milabench-run">milabench run</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#milabench-report">milabench report</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="#before-running-the-benchmarks">Before running the benchmarks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#run-milabench">Run milabench</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#reports">Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dev-usage.html">Using milabench</a></li>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Benchmark configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="instrument.html">Instrumenting code</a></li>
 <li class="toctree-l1"><a class="reference internal" href="new_benchmarks.html">Creating a new benchmark</a></li>
@@ -80,10 +76,10 @@
              
   <section id="install">
 <h1>Install<a class="headerlink" href="#install" title="Permalink to this headline"></a></h1>
-<p>To install for development, clone the repo and use branch <code class="docutils literal notranslate"><span class="pre">v2</span></code>:</p>
+<p>To install, clone the repo:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># You may need to upgrade pip</span>
 pip install pip -U
-git clone -b v2 git@github.com:mila-iqia/milabench.git
+git clone git@github.com:mila-iqia/milabench.git
 <span class="nb">cd</span> milabench
 <span class="c1"># &lt;Activate virtual environment&gt;</span>
 <span class="c1"># Install in editable mode</span>
@@ -91,83 +87,75 @@ pip install -e .
 </pre></div>
 </div>
 <p>This will install two commands, <code class="docutils literal notranslate"><span class="pre">milabench</span></code> and <code class="docutils literal notranslate"><span class="pre">voir</span></code>.</p>
-<p>There is an important second step, which is to set the environment variable <code class="docutils literal notranslate"><span class="pre">$MILABENCH_DEVREQS</span></code> to <code class="docutils literal notranslate"><span class="pre">devreq.txt</span></code>. This will make <code class="docutils literal notranslate"><span class="pre">milabench</span></code> install your working version of <code class="docutils literal notranslate"><span class="pre">milabench</span></code> into the benchmark venvs. Otherwise it won’t work at all because it will try to get it from pip. As that file is written, it will only work if you call <code class="docutils literal notranslate"><span class="pre">milabench</span></code> from the <code class="docutils literal notranslate"><span class="pre">milabench</span></code> root directory, but you can edit them to point to the absolute locations if you want.</p>
 </section>
-<section id="using-milabench">
-<h1>Using milabench<a class="headerlink" href="#using-milabench" title="Permalink to this headline"></a></h1>
-<p>To use <code class="docutils literal notranslate"><span class="pre">milabench</span></code>, you need:</p>
-<ul class="simple">
-<li><p>A YAML configuration file to define the benchmarks to install, prepare or run.</p></li>
-<li><p>The base directory for code, virtual environments, data and outputs, set either with the <code class="docutils literal notranslate"><span class="pre">$MILABENCH_BASE</span></code> environment variable or the <code class="docutils literal notranslate"><span class="pre">--base</span></code> option. The base directory will be automatically constructed by milabench and will be organized as follows:</p></li>
+<section id="before-running-the-benchmarks">
+<h1>Before running the benchmarks<a class="headerlink" href="#before-running-the-benchmarks" title="Permalink to this headline"></a></h1>
+<ol class="arabic simple">
+<li><p>Set the <code class="docutils literal notranslate"><span class="pre">$MILABENCH_BASE</span></code> environment variable to the base directory in which all the code, virtual environments and data should be put.</p></li>
+<li><p>Set the <code class="docutils literal notranslate"><span class="pre">$MILABENCH_CONFIG</span></code> environment variable to the configuration file that corresponds to your platform:</p></li>
+</ol>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">config/standard-cuda.yaml</span></code> for NVIDIA/CUDA platforms.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">config/standard-rocm.yaml</span></code> for AMD/ROCm platforms.</p></li>
 </ul>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$MILABENCH_BASE/
-|- venv/                            # Virtual environments and dependencies
-|  |- bench1/                       # venv for benchmark bench1
-|  |- ...                           # etc
-|- code/                            # Benchmark code
-|  |- bench1/                       # Code for benchmark bench1
-|  |- ...                           # etc
-|- data/                            # Datasets
-|  |- dataset1/                     # A dataset
-|  |- ...                           # etc
-|- runs/                            # Outputs of benchmark runs
-   |- calimero.2022-03-30_15:00:00/ # Auto-generated run name
-   |  |- bench1.0.json              # Output for the first run of bench1
-   |  |- bench1.1.json              # Output for the second run of bench1
-   |  |- ...                        # etc
-   |- blah/                         # Can set name with --run
+</div></blockquote>
+<ol class="arabic simple" start="3">
+<li><p><code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">install</span></code>: Install the individual benchmarks in virtual environments.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">prepare</span></code>: Download the datasets</p></li>
+</ol>
+</section>
+<section id="run-milabench">
+<h1>Run milabench<a class="headerlink" href="#run-milabench" title="Permalink to this headline"></a></h1>
+<p>The following command will run the whole benchmark and will put the results in a new directory in <code class="docutils literal notranslate"><span class="pre">$MILABENCH_BASE/runs</span></code> (the path will be printed to stdout).</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench run
 </pre></div>
 </div>
-<p>It is possible to change the structure in the YAML to e.g. force benchmarks to all use the same virtual environment.</p>
-<section id="important-options">
-<h2>Important options<a class="headerlink" href="#important-options" title="Permalink to this headline"></a></h2>
+<p>The standard tests currently include:</p>
 <ul class="simple">
-<li><p>Use the <code class="docutils literal notranslate"><span class="pre">--select</span></code> option with a comma-separated list of benchmarks in order to only install/prepare/run these benchmarks (or use <code class="docutils literal notranslate"><span class="pre">--exclude</span></code> to run all benchmarks except a specific set).</p></li>
-<li><p>You may use <code class="docutils literal notranslate"><span class="pre">--use-current-env</span></code> to force the use the currently active virtual environment (useful for development).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">resnet50</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">squeezenet1_1</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">efficientnet_b0</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">efficientnet_b4</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">efficientnet_b7</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">convnext_large</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">regnet_y_128gf</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bert</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hf_reformer</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hf_t5</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dlrm</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">soft_actor_critic</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">speech_transformer</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">super_slomo</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stargan</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">learning_to_paint</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ppo</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">td3</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">resnet152</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">vit_l_32</span></code></p></li>
 </ul>
-</section>
-<section id="milabench-install">
-<h2>milabench install<a class="headerlink" href="#milabench-install" title="Permalink to this headline"></a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench install benchmarks.yaml --select mybench
-</pre></div>
-</div>
-<ul class="simple">
-<li><p>Copies the code for the benchmark (specified in the <code class="docutils literal notranslate"><span class="pre">definition</span></code> field of the benchmark’s YAML, relative to the YAML file itself) into <code class="docutils literal notranslate"><span class="pre">$MILABENCH_BASE/code/mybench</span></code>. Only files listed by the <code class="docutils literal notranslate"><span class="pre">manifest</span></code> file are copied.</p></li>
-<li><p>Creates/reuses a virtual environment in <code class="docutils literal notranslate"><span class="pre">$MILABENCH_BASE/venv/mybench</span></code> and installs all pip dependencies in it.</p></li>
-<li><p>Optionally extracts a shallow git clone of an external repository containing model code into <code class="docutils literal notranslate"><span class="pre">$MILABENCH_BASE/code/mybench</span></code>.</p></li>
-</ul>
-</section>
-<section id="milabench-prepare">
-<h2>milabench prepare<a class="headerlink" href="#milabench-prepare" title="Permalink to this headline"></a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench prepare benchmarks.yaml --select mybench
-</pre></div>
-</div>
-<ul class="simple">
-<li><p>Prepares data for the benchmark into <code class="docutils literal notranslate"><span class="pre">$MILABENCH_BASE/data/dataset_name</span></code>. Multiple benchmarks can share the same data. Some benchmarks need no preparation, so the prepare step does nothing.</p></li>
-</ul>
-</section>
-<section id="milabench-run">
-<h2>milabench run<a class="headerlink" href="#milabench-run" title="Permalink to this headline"></a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench run benchmarks.yaml --select mybench
-</pre></div>
-</div>
-<ul class="simple">
-<li><p>Creates a certain number of tasks from the benchmark using the <code class="docutils literal notranslate"><span class="pre">plan</span></code> defined in the YAML. For instance, one plan might be to run it in parallel on each GPU on the machine.</p></li>
-<li><p>For each task, runs the benchmark installed in <code class="docutils literal notranslate"><span class="pre">$MILABENCH_BASE/code/mybench</span></code> in the appropriate virtual environment.</p></li>
-<li><p>The benchmark is run from that directory using a command like <code class="docutils literal notranslate"><span class="pre">voir</span> <span class="pre">[VOIR_OPTIONS]</span> <span class="pre">main.py</span> <span class="pre">[SCRIPT_OPTIONS]</span></code>
-* Both option groups are defined in the YAML.
-* The VOIR_OPTIONS determine which instruments to use and what data to forward to milabench.
-* The SCRIPT_OPTIONS are benchmark dependent.</p></li>
-<li><p>Standard output/error and other data (training rates, etc.) are forwarded to the main dispatcher process and saved into <code class="docutils literal notranslate"><span class="pre">$MILABENCH_BASE/runs/run_name/mybench.run_number.json</span></code> (the name of the directory is printed out for easy reference).</p></li>
-</ul>
-</section>
-<section id="milabench-report">
-<h2>milabench report<a class="headerlink" href="#milabench-report" title="Permalink to this headline"></a></h2>
-<p>TODO.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench report benchmarks.yaml --run &lt;run_name&gt;
+<p>Here are a few useful options for <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">run</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Only run the bert benchmark</span>
+milabench run --select bert
+
+<span class="c1"># Run all benchmarks EXCEPT bert and stargan</span>
+milabench run --exclude bert,stargan
+
+<span class="c1"># Run the benchmark suite three times in a row</span>
+milabench run --repeat <span class="m">3</span>
 </pre></div>
 </div>
 </section>
+<section id="reports">
+<h1>Reports<a class="headerlink" href="#reports" title="Permalink to this headline"></a></h1>
+<p>The following command will print out a report of the tests that ran, the metrics and if there were any failures. It will also produce an HTML report that contains more detailed information about errors if there are any.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench report --runs <span class="nv">$MILABENCH_BASE</span>/runs/some_specific_run --html report.html
+</pre></div>
+</div>
+<p>To get an overall score, you must specify a weights file that specifies how much each test weighs. Use <code class="docutils literal notranslate"><span class="pre">weights/standard.json</span></code> in the repo for this purpose:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench report --runs <span class="nv">$MILABENCH_BASE</span>/runs/some_specific_run --weights weights/standard.json --html report.html
+</pre></div>
+</div>
 </section>
 
 
@@ -175,7 +163,7 @@ pip install -e .
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="index.html" class="btn btn-neutral float-left" title="Welcome to milabench’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="config.html" class="btn btn-neutral float-right" title="Benchmark configuration" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="dev-usage.html" class="btn btn-neutral float-right" title="Using milabench" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
