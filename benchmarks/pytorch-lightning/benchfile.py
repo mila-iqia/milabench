@@ -1,6 +1,5 @@
-from milabench.pack import Package
-
 from milabench import gpu
+from milabench.pack import Package
 
 # This is called to ensure the arch variable is set
 gpu.get_gpu_info()

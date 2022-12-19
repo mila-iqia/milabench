@@ -350,9 +350,8 @@ class GPUMonitor(Thread):
         self.ov = ov
         self.stopped = False
         self.delay = delay
-        visible = (
-            os.environ.get("CUDA_VISIBLE_DEVICES", None)
-            or os.environ.get("ROCR_VISIBLE_DEVICES", None)
+        visible = os.environ.get("CUDA_VISIBLE_DEVICES", None) or os.environ.get(
+            "ROCR_VISIBLE_DEVICES", None
         )
         if visible:
             self.ours = list(map(int, visible.split(",")))

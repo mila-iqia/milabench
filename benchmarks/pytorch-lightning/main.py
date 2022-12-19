@@ -7,11 +7,11 @@ be deleted.
 from __future__ import annotations
 
 import pprint
-import yaml
 from dataclasses import asdict
 from typing import Callable
 
 import torch
+import yaml
 from giving_callback import GivingCallback
 from model import C, H, Model, W
 from pytorch_lightning import Trainer
