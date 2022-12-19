@@ -31,6 +31,8 @@ Before running the benchmarks
 
 4. ``milabench prepare``: Download the datasets
 
+If the machine has both NVIDIA/CUDA and AMD/ROCm GPUs, you may have to set the ``MILABENCH_GPU_ARCH`` environment variable as well, to either ``cuda`` or ``rocm``.
+
 
 Run milabench
 ~~~~~~~~~~~~~
