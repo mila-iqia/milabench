@@ -11,15 +11,42 @@
 #   
 #   To build this image:
 #
-#        sudo docker build -t milabench .
+#           sudo docker build --build-arg ARCH=cuda CONFIG=standard-8G.yaml -t milabench .
+#
+#       Builds the milabench container for cuda and prepare the benchmark using the `standard-8G.yaml`
+#       configuration.
+#
+#   Folders:
+#
+#       /milabench/milabench    <= milabench code
+#       /milabench/envs         <= benchmark enviroments
+#       /milabench/results      <= benchmark results
+#
+#
+#   Useful Commands:
+#
+#       milabench run $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
+#       milabench summary $WORKING_DIR/runs/runs/
+#       milabench summary $WORKING_DIR/runs/runs/ -o $MILABENCH_OUTPUT/summary.json
 #
 #
 FROM ubuntu
 
+# Arguments
+# ---------
+
+ARG ARCH=cuda
+ENV MILABENCH_GPU_ARCH=$ARCH
+
+ARG CONFIG=standard-8G.yaml
+ENV MILABENCH_CONFIG_NAME=$CONFIG
+
+
 # Paths
 # -----
-ENV MILABENCH_CONFIG=/milabench/milabench/config/standard-8G.yaml
-ENV MILABENCH_BASE=/milabench/runs
+
+ENV MILABENCH_CONFIG=/milabench/milabench/config/$MILABENCH_CONFIG_NAME
+ENV MILABENCH_BASE=/milabench/envs
 ENV MILABENCH_OUTPUT=/milabench/results/
 ENV MILABENCH_ARGS=""
 ENV CONDA_PATH=/opt/anaconda
@@ -40,7 +67,7 @@ RUN apt update && apt install -y wget git
 # Install Python
 # --------------
 
-# Install anaconda because milabench will need it later anyway#
+# Install anaconda because milabench will need it later anyway
 RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
     /bin/bash ~/miniconda.sh -b -p $CONDA_PATH
 
@@ -53,29 +80,14 @@ ENV PATH=$CONDA_PATH/bin:$PATH
 
 RUN python -m pip install -e /milabench/milabench/
 
+# Prepare bench
+# -------------
 
+# pip times out often when downloading pytorch
+ENV PIP_DEFAULT_TIMEOUT=120
 
+RUN milabench install $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
+RUN milabench prepare $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
 
-# Prepare bench environment ahead of time
-#
-#   we should download everything we need to run the benchmark right now
-#
-
-# RUN milabench install $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
-# RUN milabench prepare $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
 
 # CMD milabench
-
-# 
-# To use this container
-#
-# Replace <results> with a folder in your local machine
-#
-#   docker run -it -v "<results>:/milabench/results" milabench run
-#   docker run -it -v "<results>:/milabench/results" milabench summary
-#   docker run -it -v "<results>:/milabenchresults" milabench publish
-#
-
-# RUN milabench run $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
-# RUN milabench summary $WORKING_DIR/runs/runs/
-# RUN milabench summary $WORKING_DIR/runs/runs/ -o $MILABENCH_OUTPUT/summary.json

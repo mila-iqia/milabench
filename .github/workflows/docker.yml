@@ -18,8 +18,16 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build-and-push-image:
+  build-image:
     runs-on: ubuntu-latest
+
+    # define build arguments
+    strategy:
+      matrix:
+        include:
+          - arch: rocm
+            config: standard-rocm.yaml
+    
     permissions:
       contents: read
       packages: write
@@ -28,25 +36,28 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v3
       
-      - name: Log in to Docker Hub
+      - name: Log in to the registry
         uses: docker/login-action@v2
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Extract metadata (tags, labels) for Docker
+      - name: Extract metadata (tags, labels) for the image
         id: meta
         uses: docker/metadata-action@v4
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=nightly
+            type=raw,value=nightly-${{ matrix.arch }}
 
-      - name: Build and push Docker image
+      - name: Build and push the image
         uses: docker/build-push-action@v3
         with:
           context: .
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            ARCH=${{ matrix.arch }}
+            CONFIG=${{ matrix.config }}
