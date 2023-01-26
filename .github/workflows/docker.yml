@@ -1,8 +1,17 @@
 name: Publish Docker image
 
 on:
+  workflow_dispatch:
+  push:
+  schedule:
+      - cron: '44 4 * * *'
+  pull_request:
+    branches:
+      - master
+      - develop
   release:
-    types: [published]
+    types:
+      [published]
 
 env:
   REGISTRY: ghcr.io
@@ -31,12 +40,13 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-      
+          tags: |
+            type=raw,value=nightly
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
         with:
           context: .
           push: true
-          tags: |
-            type=schedule,pattern=nightly
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
