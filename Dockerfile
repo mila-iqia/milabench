@@ -64,10 +64,11 @@ COPY . /milabench/milabench/
 
 #  wget: used to download anaconda
 #   git: used by milabench
-# rustc: used by BERT models
+# rustc: used by BERT models inside https://pypi.org/project/tokenizers/
 # 
-RUN apt update && apt install -y wget git
-RUN curl https://sh.rustup.rs -sSf | sh
+RUN apt update && apt install -y wget git build-essential curl
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Install Python
 # --------------
@@ -83,6 +84,7 @@ ENV PATH=$CONDA_PATH/bin:$PATH
 # Install Milabench
 # -----------------
 
+RUN python -m pip install pip -U
 RUN python -m pip install -e /milabench/milabench/
 
 # Prepare bench
@@ -93,6 +95,11 @@ ENV PIP_DEFAULT_TIMEOUT=120
 
 RUN milabench install $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
 RUN milabench prepare $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
+
+
+# Cleanup
+# Remove PIP cache
+# Remove APT unused packages
 
 
 # CMD milabench
