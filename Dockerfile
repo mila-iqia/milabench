@@ -62,7 +62,12 @@ COPY . /milabench/milabench/
 # Install Dependencies
 # --------------------
 
-RUN apt update && apt install -y wget git rustc
+#  wget: used to download anaconda
+#   git: used by milabench
+# rustc: used by BERT models
+# 
+RUN apt update && apt install -y wget git
+RUN curl https://sh.rustup.rs -sSf | sh
 
 # Install Python
 # --------------
