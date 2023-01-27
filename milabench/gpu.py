@@ -5,7 +5,7 @@ import subprocess
 import sys
 
 from pynvml import nvmlInit
-from pynvml.nvml import NVMLError_LibraryNotFound
+from pynvml.nvml import NVMLError_LibraryNotFound, NVMLError_DriverNotLoaded
 from pynvml.smi import nvidia_smi
 
 nvml_available = False
@@ -13,6 +13,8 @@ try:
     nvmlInit()
     nvml_available = True
 except NVMLError_LibraryNotFound:
+    pass
+except NVMLError_DriverNotLoaded:
     pass
 
 
