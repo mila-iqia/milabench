@@ -1,0 +1,64 @@
+name: tests
+
+on:
+  # Runs every sunday
+  schedule:
+      - cron: '0 0 * * SUN'
+
+  # Runs for pull requests
+  pull_request:
+    branches:
+      - master
+
+  # Runs on publish
+  release:
+    types:
+      [published]
+
+  # Allow manual triggers
+  workflow_dispatch:
+
+
+jobs:
+  tests:
+    environment: mila-deploy
+    runs-on: [self-hosted, gpu]
+
+    env:
+      MILABENCH_CONFIG: "config/standard-cuda.yaml"
+      MILABENCH_BASE: "output"
+      MILABENCH_ARGS: ""
+    
+    steps:
+      - uses: actions/checkout@v3
+    
+      - uses: conda-incubator/setup-miniconda@v2
+        auto-activate-base: true
+        python-version: 3.9
+
+      - name: Install Rust
+        run: |
+          if [[ ! -d "~/.cargo/bin" ]]; then
+            curl https://sh.rustup.rs -sSf | sh -s -- -y
+          fi
+          export PATH="~/.cargo/bin:${PATH}"
+
+      - name: Install Milabench
+        run: |
+          pip install -e .
+
+      - name: Install Milabench Env
+        run: |
+          milabench install $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
+
+      - name: Prepare Milabench Env
+        run: |
+          milabench install $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
+
+      - name: Run Milabench
+        run: |
+          milabench run $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
+
+      - name: Summary
+        run: |
+          milabench summary $MILABENCH_BASE/runs/
