@@ -1,3 +1,5 @@
+from collections import defaultdict
+from dataclasses import dataclass, field
 import itertools
 import json
 import os
@@ -141,3 +143,38 @@ def simple_report(gv, rundir, runname=None):
     yield
 
     print(f"[DONE] Reports directory: {rundir}")
+
+
+@dataclass
+class PackError:
+    stderr: list[str] = field(default_factory=list)
+    code: int = 0
+    message: str = None
+
+
+@contextmanager
+def error_capture(gv):
+    errors = defaultdict(PackError)
+
+    @gv.subscribe
+    def _(data):
+        data = dict(data)
+        run = data.pop("#run", None)
+        pack = data.pop("#pack", None)
+
+        tg = ".".join(run["tag"]) if run else pack.config["name"]
+
+        ks = set(data.keys())
+        error = errors[tg]
+
+        if ks == {"#stderr"}:
+            txt = str(data["#stderr"])
+            error.stderr.append(txt)
+
+        elif ks == {"#error"}:
+            error.message = data
+
+        elif ks == {"#end", "#return_code"}:
+            error.code = data["#return_code"]
+
+    yield errors
