@@ -9,18 +9,13 @@ class StableBenchmarkPack(Package):
 
     def install(self):
         """Install requirements one by one, as baselines setup is non-standard"""
+        # box2d-py requires swig
+        self.conda_install("-c", "conda-forge", "swig")
+
         super().install()
 
         code = self.dirs.code
         code.clone_subtree("https://github.com/DLR-RM/rl-baselines3-zoo", BRANCH)
-
-        reqfile = code / "requirements.txt"
-        reqfile.sub("box2d-py", "# box2d-py")
-
-        # this dependency requires swig, use conda and forget about it
-        self.conda_install("-c", "conda-forge", "pybox2d")
-
-        self.pip_install("-r", reqfile)
 
     def run(self, args, voirargs, env):
         return self.launch("train.py", args=args, voirargs=voirargs, env=env)
