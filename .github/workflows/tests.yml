@@ -62,6 +62,10 @@ jobs:
         run: |
           milabench prepare $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
 
+      - name: Run Milabench Unit tests
+        run: |
+          pytest tests/
+
       - name: Run Milabench
         run: |
           milabench run $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS

@@ -1,0 +1,67 @@
+#
+# This configuration always fails with out of memory
+#
+defaults: &defaults
+  dirs:
+    code: code/{name}
+    venv: venv/{name}
+    data: data
+    runs: runs
+
+  venv:
+    type: virtualenv
+
+  voir:
+    --forward:
+      - "#stdout"
+      - "#stderr"
+      - "#end"
+      - loss
+      - compute_rate
+      - train_rate
+      - loading_rate
+      - gpudata
+      - gpu_time
+      - cpu_dispatch_time
+      - cpu_walltime
+      - tflops
+    # --loading-rate: true
+    --poll-gpu: 10
+
+
+torchbench: &torchbench
+  <<<: *defaults
+
+  group: torchbench
+
+  dirs:
+    code: code/torchbench
+    venv: venv/torchbench
+
+  plan:
+    method: per_gpu
+
+  definition: ../benchmarks/torchbench
+
+  pip:
+    constraints:
+      - gym < 0.26.0
+
+  voir:
+    --metric: step
+    --metric-interval: 1
+    --metric-skip: 9
+
+  argv:
+    -d: cuda
+    -m: eager
+    -t: train
+
+
+benchmarks:
+  hf_t5:
+    <<<: *torchbench
+
+    model: hf_T5
+    argv:
+      --bs: 32
