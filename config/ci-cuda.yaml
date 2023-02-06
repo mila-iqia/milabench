@@ -158,6 +158,7 @@ benchmarks:
     <<<: *torchvision
     argv:
       --model: efficientnet_b4
+      --batch-size: 16
 
   efficientnet_b7:
     <<<: *torchvision
@@ -169,12 +170,13 @@ benchmarks:
     <<<: *torchvision
     argv:
       --model: convnext_large
+      --batch-size: 16
 
   regnet_y_128gf:
     <<<: *torchvision
     argv:
       --model: regnet_y_128gf
-      --batch-size: 16
+      --batch-size: 4
       --with-amp: null
 
   bert:
@@ -191,6 +193,8 @@ benchmarks:
     <<<: *torchbench
 
     model: hf_T5
+    argv:
+      --bs: 1
 
   dlrm:
     <<<: *torchbench
