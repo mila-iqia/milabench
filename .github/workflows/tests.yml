@@ -42,31 +42,30 @@ jobs:
           miniconda-version: "latest"
           activate-environment: test
 
-      - name: Install Rust
+      - name: dependencies
         run: |
           if [[ ! -d "~/.cargo/bin" ]]; then
             wget --no-check-certificate --secure-protocol=TLSv1_2 -qO- https://sh.rustup.rs | sh -s -- -y 
           fi
           export PATH="~/.cargo/bin:${PATH}"
-
-      - name: Install Milabench
-        run: |
           python -m pip install -U pip
-          python -m pip install -e .
+          python -m pip install -U poetry
+          poetry lock --no-update
+          poetry install
 
-      - name: Install Milabench Env
+      - name: install benchmarks
         run: |
           milabench install $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
 
-      - name: Prepare Milabench Env
+      - name: prepare benchmarks
         run: |
           milabench prepare $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
 
-      - name: Run Milabench Unit tests
+      - name: tests
         run: |
           pytest tests/
 
-      - name: Run Milabench
+      - name: run benchmarks
         run: |
           milabench run $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
 

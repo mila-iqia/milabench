@@ -16,9 +16,9 @@ assert configfiles.exists()
 def milabench_cmd(*args):
     """Run milabench command line with specific arguments"""
     sys.path.insert(0, os.path.abspath(os.curdir))
-    run_cli(Main, argv=args)
+    run_cli(Main, argv=[str(arg) for arg in args])
 
 
 def config(name):
     """Returns a testing configuration"""
-    return configfiles / name + ".yaml"
+    return str(configfiles / (name + ".yaml"))
