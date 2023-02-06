@@ -9,7 +9,7 @@ from giving import give, given
 from ovld import ovld
 from voir.forward import MultiReader
 
-from .log import error_capture
+from .validation import ErrorValidation
 from .merge import merge
 from .utils import give_std
 
@@ -109,7 +109,7 @@ class MultiPackage:
         done = False
         with given() as gv:
             # Validations
-            with error_capture(gv) as errors:
+            with ErrorValidation(gv) as errors:
 
                 # Dashboards
                 with dash(gv), report(gv, self.rundir):
@@ -123,7 +123,10 @@ class MultiPackage:
                             if not success:
                                 break
 
-            self.summary(errors)
+            errors.report(short=True)
+
+        if errors.failed:
+            sys.exit(-1)
 
     def run_pack(self, i, pack, repeat):
         cfg = pack.config
@@ -191,57 +194,3 @@ class MultiPackage:
 
                 for _ in mr:
                     time.sleep(0.1)
-
-    def summary(self, errors, short=True):
-        """Print an error report and exit with an error code if any error were found"""
-
-        report = [
-            "",
-            "Error Report",
-            "------------",
-            "",
-        ]
-        indent = "    "
-
-        failures = 0
-        success = 0
-
-        for name, error in errors.items():
-
-            traceback = False
-            output = []
-
-            for line in error.stderr:
-                line = line.strip()
-
-                if "Traceback" in line:
-                    traceback = True
-
-                if traceback and line != "":
-                    output.append(line + "\n")
-
-            if error.code != 0:
-                # Tracback
-                failures += 1
-                traceback = output[-1] if output else "No traceback found"
-                if not short:
-                    traceback = +"".join(output).replace("\n", "\n    ")
-
-                report.append(name)
-                report.append("^" * len(name))
-                report.append(indent + traceback)
-            else:
-                success += 1
-
-        if failures > 0:
-            report.extend(
-                [
-                    "Summary",
-                    "-------",
-                    f"{indent}Success: {success}",
-                    f"{indent}Failures: {failures}",
-                ]
-            )
-
-            print("\n".join(report))
-            sys.exit(-1)
