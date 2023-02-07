@@ -54,7 +54,6 @@ class TorchBenchmarkPack(Package):
                 "ind = indices.detach().cpu().numpy()"
             )
 
-        self.pip_install("-r", code / "requirements-bench.txt")
         model_name = self.config["model"]
 
         if headless and (code / f"requirements-{model_name}-headless.txt").exists():
