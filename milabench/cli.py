@@ -180,6 +180,9 @@ class Main:
         # Number of times to repeat the benchmark
         repeat: Option & int = 1
 
+        # On error show full stacktrace
+        fulltrace: Option & bool = False
+
         mp = _get_multipack(dev=dev)
 
         if dev or sync:
@@ -193,6 +196,7 @@ class Main:
                 repeat=repeat,
                 dash=simple_dash,
                 report=partial(simple_report, runname=run_name),
+                short=not fulltrace,
             )
 
     def prepare():
