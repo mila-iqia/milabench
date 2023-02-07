@@ -21,33 +21,38 @@ on:
 
 jobs:
   tests:
-    environment: mila-deploy
     runs-on: [self-hosted, gpu]
-
+    defaults:
+      run:
+        shell: bash -el {0}
+        
     env:
       MILABENCH_CONFIG: "config/standard-cuda.yaml"
       MILABENCH_BASE: "output"
       MILABENCH_ARGS: ""
+      MILABENCH_GPU_ARCH: "cuda"
     
     steps:
       - uses: actions/checkout@v3
     
       - uses: conda-incubator/setup-miniconda@v2
         with:
-          auto-activate-base: true
+          auto-activate-base: false
           python-version: 3.9
           miniconda-version: "latest"
+          activate-environment: test
 
       - name: Install Rust
         run: |
           if [[ ! -d "~/.cargo/bin" ]]; then
-            curl https://sh.rustup.rs -sSf | sh -s -- -y
+            wget --no-check-certificate --secure-protocol=TLSv1_2 -qO- https://sh.rustup.rs | sh -s -- -y 
           fi
           export PATH="~/.cargo/bin:${PATH}"
 
       - name: Install Milabench
         run: |
-          pip install -e .
+          python -m pip install -U pip
+          python -m pip install -e .
 
       - name: Install Milabench Env
         run: |
@@ -55,7 +60,7 @@ jobs:
 
       - name: Prepare Milabench Env
         run: |
-          milabench install $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
+          milabench prepare $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
 
       - name: Run Milabench
         run: |
