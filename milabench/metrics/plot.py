@@ -27,16 +27,50 @@ WHERE
 
 print(data)
 
-chart = (
-    alt.Chart(data).mark_bar().encode(
-        x='run:N',
-        y='value:Q',
-        color='run:N',
-        column='bench:N'
-    ).transform_filter(
-        (datum.metric == "train_rate")
-    )
-)
 
-print('Saving')
-chart.save('chart.html')
+def compare_all_runs(metric="train_rate"):
+    compare = (
+        alt.Chart(data)
+        .transform_filter((datum.metric == metric))
+        .mark_bar()
+        .encode(
+            x="run:N",
+            y=alt.Y("value", type="quantitative", aggregate="average"),
+            color="run:N",
+            column="bench:N",
+        )
+    )
+
+    return compare
+
+
+def show_run(runname, metric="train_rate"):
+    base = (
+        alt.Chart(data)
+        .transform_filter((datum.metric == metric) and (datum.run == runname))
+        .mark_bar()
+        .encode(
+            x="run:N",
+            y=alt.Y("value", type="quantitative", aggregate="average"),
+        )
+    )
+    err = base.mark_rule().encode(y="ci0(value)", y2="ci1(value)")
+
+    return base + err
+
+
+import numpy as np
+
+values = pd.pivot_table(
+    data,
+    values="value",
+    index=["run", "bench"],
+    columns="metric",
+    aggfunc=np.mean,
+)
+print(values)
+print(values.describe())
+
+print("Saving")
+comp = compare_all_runs()
+comp.save("compare.html")

@@ -196,8 +196,8 @@ class Main:
             mp.do_run(
                 repeat=repeat,
                 dash=simple_dash,
-                report=partial(Database, runname=run_name),  
-                     # partial(simple_report, runname=run_name),
+                report=partial(Database, runname=run_name),
+                # partial(simple_report, runname=run_name),
                 short=not fulltrace,
             )
 
