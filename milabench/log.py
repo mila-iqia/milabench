@@ -39,6 +39,10 @@ def simple_dash(gv):
         run = data.pop("#run", None)
         pack = data.pop("#pack", None)
         ks = set(data.keys())
+
+        if pack is None:
+            return
+
         tg = ".".join(run["tag"]) if run else pack.config["name"]
         if tg not in headers:
             headers[tg] = colors[len(headers) % len(colors)](T.bold(tg))
@@ -138,6 +142,6 @@ def simple_report(gv, rundir, runname=None):
             with open(rundir / f"{tag}.json", "a", encoding="utf8") as f:
                 f.writelines(entries)
 
-    yield
+    yield rundir
 
     print(f"[DONE] Reports directory: {rundir}")

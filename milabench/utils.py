@@ -167,3 +167,38 @@ def give_std():
     with redirect_stdout(FileGiver("#stdout")):
         with redirect_stderr(FileGiver("#stderr")):
             yield
+
+
+def metadata():
+    """Returns host meta data"""
+    import platform
+    import getpass
+
+    # Get GPU name for easier query
+    from .gpu import get_gpu_info
+
+    gpu_names = []
+    for _, info in get_gpu_info().items():
+        name = info["product"]
+        gpu_names.append(name)
+        if gpu_names and gpu_names[0] != name:
+            print("GPU are different")
+
+    # Get Platform names
+    uname = platform.uname()
+
+    if not gpu_names:
+        gpu_names.append(uname.processor)
+
+    return dict(
+        gpu=gpu_names[0],
+        login=getpass.getuser(),
+        system=uname.system,
+        node=uname.node,
+        release=uname.release,
+        version=uname.version,
+        machine=uname.machine,
+        processor=uname.processor,
+        nthreads=os.cpu_count(),
+        usable_threads=len(os.sched_getaffinity(0)),
+    )

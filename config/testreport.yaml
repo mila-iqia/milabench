@@ -12,7 +12,7 @@ defaults: &defaults
     method: per_gpu
 
   voir:
-    --stop: 30
+    --stop: 10
     --forward:
       - "#stdout"
       - "#stderr"
@@ -43,19 +43,9 @@ benchmarks:
   r18-32:
     <<<: *resnet18
     argv:
-      --batch-size: 32
+      --batch-size: 16
 
   r18-64:
     <<<: *resnet18
     argv:
-      --batch-size: 64
-
-  r18-128:
-    <<<: *resnet18
-    argv:
-      --batch-size: 128
-
-  r18-256:
-    <<<: *resnet18
-    argv:
-      --batch-size: 256
+      --batch-size: 32

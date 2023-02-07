@@ -12,10 +12,12 @@ from coleo import Option, config as configuration, default, run_cli, tooled
 
 from .fs import XPath
 from .log import simple_dash, simple_report
+from .saver import RawStreamSaver
 from .merge import self_merge
 from .multi import MultiPackage
 from .report import make_report
 from .summary import aggregate, make_summary
+from .metrics import Database
 
 
 def main():
@@ -180,6 +182,9 @@ class Main:
         # Number of times to repeat the benchmark
         repeat: Option & int = 1
 
+        # On error show full stacktrace
+        fulltrace: Option & bool = False
+
         mp = _get_multipack(dev=dev)
 
         if dev or sync:
@@ -192,7 +197,8 @@ class Main:
             mp.do_run(
                 repeat=repeat,
                 dash=simple_dash,
-                report=partial(simple_report, runname=run_name),
+                report=Database,  # partial(RawStreamSaver, runname=run_name),
+                short=not fulltrace,
             )
 
     def prepare():
