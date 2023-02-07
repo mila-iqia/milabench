@@ -12,7 +12,6 @@ from coleo import Option, config as configuration, default, run_cli, tooled
 
 from .fs import XPath
 from .log import simple_dash, simple_report
-from .saver import RawStreamSaver
 from .merge import self_merge
 from .multi import MultiPackage
 from .report import make_report
@@ -197,7 +196,8 @@ class Main:
             mp.do_run(
                 repeat=repeat,
                 dash=simple_dash,
-                report=Database,  # partial(RawStreamSaver, runname=run_name),
+                report=partial(Database, runname=run_name),  
+                     # partial(simple_report, runname=run_name),
                 short=not fulltrace,
             )
 
