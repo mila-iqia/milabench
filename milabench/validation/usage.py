@@ -1,9 +1,9 @@
 from collections import defaultdict
 
-from .validation import ValidationLayer
+from .validation import ValidationLayer, Summary
 
 
-class GPUUtilization(ValidationLayer):
+class _Layer(ValidationLayer):
     """Checks that GPU utilisation is > 0.01 and that memory used is above 50%.
     
     Notes
@@ -35,34 +35,21 @@ class GPUUtilization(ValidationLayer):
             self.count += 1
                 
     
-    def report(self):
-        indent = '    '
-        report = [
-            'Accelerator Utilization',
-            '-----------------------'
-        ]
+    def report(self, **kwargs):
+        summary = Summary()
+        with summary.section('Accelerator Utilization'):
+ 
+            for device in self.load_avg.keys():
+                load = self.load_avg.get(device, 0) / self.count
+                mem = self.mem_avg.get(device, 0) / self.count
+  
+                with summary.section(f'Device {device}'):
+                
+                    if load < self.load_threshold:
+                        summary.add(f'* load is below threshold {load} < {self.load_threshold}')
+                    
+                    if mem < self.mem_threshold:
+                        summary.add(f'* used memory is below threshold {mem} < {self.mem_threshold}')
         
-        for device in self.load_avg.keys():
-            load = self.load_avg.get(device, 0) / self.count
-            mem = self.mem_avg.get(device, 0) / self.count
-            errors = []
-            
-            if load < self.load_threshold:
-                errors.append(f'{indent * 2}* load is below threshold {load} < {self.load_threshold}')
-            
-            if mem < self.mem_threshold:
-                errors.append(f'{indent * 2}* used memory is below threshold {mem} < {self.mem_threshold}')
-                
-            if errors:
-                report.append(f'{indent}Device {device}')
-                report.extend(errors)
-                
-                
-        if report:
-            report = [
-                'Accelerator Utilization',
-                '-----------------------'
-            ] + report
-            print('\n'.join(report))
-            
-        return not report
+        summary.show()
+        return summary.is_empty()

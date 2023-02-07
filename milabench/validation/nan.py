@@ -1,15 +1,15 @@
 from collections import defaultdict
 import math
 
-from .validation import ValidationLayer
+from .validation import ValidationLayer, Summary
 
 
-class NaNCheck(ValidationLayer):
+class _Layer(ValidationLayer):
     """Makes sures the loss we receive is not Nan.
     
     Notes
     -----
-    Show a wanring if the loss is not decreasing.
+    Show a warning if the loss is not decreasing.
 
     """
 
@@ -19,7 +19,7 @@ class NaNCheck(ValidationLayer):
         self.previous_loss = defaultdict(float)
         self.increasing_loss= 0
     
-    def on_event(self, pack, run, tag, keys, **data):
+    def on_event(self, pack, run, tag, keys, data):
         loss = data.get('loss')
         if loss is not None:
             prev = self.previous_loss[tag]
@@ -30,21 +30,15 @@ class NaNCheck(ValidationLayer):
             if loss > prev:
                 self.increasing_loss += 1
         
-    def report(self):
-        indent = '    '
-        report = []
-    
-        if self.increasing_loss:
-            report.append(f'{indent}* Loss increased {self.increasing_loss} times')
-            
-        if self.nan_count > 0:
-            report.append(f'{indent}* Loss was NaN {self.nan_count} times')
-            
-        if report:
-            report = [
-                'NaN Check',
-                '---------'
-            ] + report
-            print('\n'.join(report))
-        
+    def report(self, **kwargs):
+        summary = Summary()
+
+        with summary.section('Nan Check'):
+            if self.increasing_loss:
+                summary.add(f'* Loss increased {self.increasing_loss} times')
+                
+            if self.nan_count > 0:
+                summary.add(f'* Loss was NaN {self.nan_count} times')
+                
+        summary.show()
         return self.nan_count == 0

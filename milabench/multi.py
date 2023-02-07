@@ -1,5 +1,3 @@
-from collections import defaultdict
-from dataclasses import dataclass, field
 import os
 import signal
 import subprocess
@@ -11,9 +9,8 @@ from giving import give, given
 from ovld import ovld
 from voir.forward import MultiReader
 
-from .validation import ErrorValidation
 from .merge import merge
-from .utils import give_std
+from .utils import give_std, validation
 
 planning_methods = {}
 
@@ -110,8 +107,8 @@ class MultiPackage:
         """Runs all the pack/benchmark"""
         done = False
         with given() as gv:
-            # Validations
-            with ErrorValidation(gv) as errors:
+            # Error checking
+            with validation(gv, 'error') as validations:
 
                 # Dashboards
                 with dash(gv), report(gv, self.rundir):
@@ -120,14 +117,15 @@ class MultiPackage:
                             break
 
                         for pack in self.packs.values():
-                            success, done = self.run_pack(i, pack, repeat)
+                            # Pack validation
+                            with validation(gv, 'nan', 'planning', 'usage'):
+                                success, done = self.run_pack(i, pack, repeat)
 
-                            if not success:
-                                break
+                                if not success:
+                                    break
+            # ---
 
-            errors.report(short=short)
-
-        if errors.failed:
+        if validations['error'].failed:
             sys.exit(-1)
 
     def run_pack(self, i, pack, repeat):

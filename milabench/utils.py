@@ -4,11 +4,16 @@ import json
 import os
 import runpy
 import sys
-from contextlib import contextmanager, redirect_stderr, redirect_stdout
+from contextlib import contextmanager, redirect_stderr, redirect_stdout, ExitStack
 from functools import partial
+import importlib
+import pkgutil
 
 from giving import give
 from ptera import probing
+
+import milabench.validation
+
 
 REAL_STDOUT = sys.stdout
 
@@ -167,3 +172,45 @@ def give_std():
     with redirect_stdout(FileGiver("#stdout")):
         with redirect_stderr(FileGiver("#stderr")):
             yield
+
+
+def discover_validation_layers(module):
+    """Discover validation layer inside the milabench.validation module"""
+    path = module.__path__
+    name = module.__name__
+
+    layers = {}
+
+    for _, layerpath, _ in pkgutil.iter_modules(path, name + "."):
+        layername = layerpath.split('.')[-1]
+        layermodule = importlib.import_module(layerpath)
+        
+        if hasattr(layermodule, '_Layer'):
+            layers[layername] = layermodule._Layer
+    
+    return layers
+
+
+VALIDATION_LAYERS = discover_validation_layers(milabench.validation)
+
+
+@contextmanager
+def validation(gv, *layer_names, short=True):
+    """Combine validation layers into a single context manager"""
+    results = dict()
+
+    with ExitStack() as stack:
+
+        for layer_name in layer_names:
+            layer = VALIDATION_LAYERS.get(layer_name)
+
+            if layer is not None:
+                results[layer_name] = stack.enter_context(layer(gv))
+            else:
+                names = list(VALIDATION_LAYERS.keys())
+                raise RuntimeError(f"Layer `{layer_name}` does not exist: {names}")
+
+        yield results
+        
+        for _, layer in results.items():
+            layer.report(short=True)

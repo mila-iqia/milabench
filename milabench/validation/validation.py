@@ -1,10 +1,10 @@
 from contextlib import contextmanager
-
+from dataclasses import dataclass, field
 
 class ValidationLayer:
-    """Validation layer interface, capture event, and makes a report"""
+    """Validation layer interface, captures events, makes report"""
     def __init__(self, gv) -> None:
-        gv.subscribe(self._on_event)
+        self.proxy = gv.subscribe(self._on_event)
 
     def _on_event(self, data):
         data = dict(data)
@@ -12,27 +12,36 @@ class ValidationLayer:
         pack = data.pop("#pack", None)
         tg = ".".join(run["tag"]) if run else pack.config["name"]
         ks = set(data.keys())
-        self.on_event(pack, run, tg, ks, **data)    
+        self.on_event(pack, run, tg, ks, data)    
     
-    def on_event(self, pack, run, tag, keys, **data):
+    def on_event(self, pack, run, tag, keys, data):
         raise NotImplementedError()
     
-    def report(self):
+    def report(self, **kwargs):
         raise NotImplementedError()
     
     def __enter__(self):
         return self
     
     def __exit__(self, *args):
-        pass
+        self.proxy.dispose()
 
 
 class Summary:
     """Simple utility to generate report with subsections"""
+     
+    @dataclass
+    class _Section:
+        name: str
+        body: list = field(default_factory=list)
+        is_empty: bool = True
+        
     def __init__(self) -> None:
-        self.body = []
-        self.stack = []
+        self.root = Summary._Section('')
+        self.stack = [self.root]
+        
         self.indent = '  '
+        self.has_content = False
         self.sections = [
             '=',
             '-',
@@ -41,11 +50,12 @@ class Summary:
             '`'
         ]
         
-    def _line_char(self):
-        depth = len(self.stack)
-        char = self.sections[min(depth, len(self.sections))]
-        return char
-        
+    def _line_char(self, depth):
+        return self.sections[min(depth, len(self.sections))]
+    
+    def is_empty(self):
+        return not self.has_content
+    
     @contextmanager
     def section(self, title):
         self.newsection(title)
@@ -53,38 +63,43 @@ class Summary:
         self.endsection()
         
     def newsection(self, title):
-        self.stack[-1].append(title)
-        self.underline()
-        self.stack.push([])
+        s = Summary._Section(title)
+        self.stack[-1].body.append(s)
+        self.stack.append(s)
         
     def endsection(self):
-        self.body.append(self.stack.pop())
+        self.stack.pop()
         
     def newline(self):
-        self.stack[-1].append('')
+        self.stack[-1].body.append('')
         
-    def underline(self, char=None):
+    def underline(self, size, char=None, depth=None):
         if char is None:
-            char = self._line_char()
-        
-        last_line = self.stack[-1][-1]
-        self.stack.append(char * len(last_line))
+            char = self._line_char(depth)
+        return char * size
         
     def add(self, txt):
-        self.stack[-1].append(txt)
+        self.has_content = True
+        self.stack[-1].body.append(txt)
+        self.stack[-1].is_empty = False
         
-    def show(self):
-        output = []
-        self._show(self.body, 0, output)
+    def show(self, printfun=print):
         
-        print('\n'.join(output))
+        if self.has_content:
+            output = []
+            self._show(self.root.body, 0, output)
+            output.append('')
+            printfun('\n'.join(output))
         
     def _show(self, body, depth, output):
+        def newline(text):
+            output.append(self.indent * depth + text)
     
         for line in body:
-            if isinstance(line, list):
-                self._show(line, depth + 1)
+            if isinstance(line, Summary._Section) and not line.is_empty:
+                newline(line.name)
+                newline(self.underline(len(line.name), depth=depth))
+                self._show(line.body, depth + 1, output)
+                continue
         
-            output.append(self.indent * depth + line)
-        
-    
+            newline(line)
