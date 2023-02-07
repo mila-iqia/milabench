@@ -104,7 +104,7 @@ class MultiPackage:
                         for _ in mr:
                             time.sleep(0.1)
 
-    def do_run(self, dash, report, *validation, repeat=1):
+    def do_run(self, dash, report, repeat=1, short=True):
         """Runs all the pack/benchmark"""
         done = False
         with given() as gv:
@@ -123,7 +123,7 @@ class MultiPackage:
                             if not success:
                                 break
 
-            errors.report(short=True)
+            errors.report(short=short)
 
         if errors.failed:
             sys.exit(-1)

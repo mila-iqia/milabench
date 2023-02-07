@@ -68,6 +68,10 @@ class ErrorValidation:
             for line in error.stderr:
                 line = line.strip()
 
+                if "During handling of the above exception" in line:
+                    # The exceptions that happened afterwards are not relevant
+                    break
+
                 if "Traceback" in line:
                     traceback = True
 
@@ -77,9 +81,11 @@ class ErrorValidation:
             if error.code != 0:
                 # Tracback
                 failures += 1
-                traceback = output[-1] if output else "No traceback found"
-                if not short:
-                    traceback = +"".join(output).replace("\n", "\n    ")
+
+                if short:
+                    traceback = output[-1] if output else "No traceback found"
+                else:
+                    traceback = "".join(output).replace("\n", "\n    ")
 
                 report.append(name)
                 report.append("^" * len(name))

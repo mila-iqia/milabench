@@ -3,7 +3,7 @@ import pytest
 from milabench.testing import milabench_cmd, config
 
 
-expected_out = """
+expected_out_short = """
 Error Report
 ------------
 
@@ -17,11 +17,31 @@ Summary
     Failures: 1
 """.strip()
 
+expected_out_long = """
+Error Report
+------------
 
-def test_error_reporting(capsys):
+hf_t5.D0
+^^^^^^^^
+    Traceback (most recent call last):
+    File "/home/newton/miniconda3/lib/python3.9/argparse.py", line 2476, in _get_value
+        result = type_func(arg_string)
+    ValueError: invalid literal for int() with base 10: 'xyz'
+    
+Summary
+-------
+    Success: 0
+    Failures: 1
+""".strip()
+
+error_cases = [([], expected_out_short), (["--fulltrace"], expected_out_long)]
+
+
+@pytest.mark.parametrize("args,expected_out", error_cases)
+def test_error_reporting_short(capsys, args, expected_out):
 
     with pytest.raises(SystemExit) as err:
-        milabench_cmd("run", config("argerror"))
+        milabench_cmd("run", config("argerror"), *args)
 
     assert err.type is SystemExit
     assert err.value.code == -1
