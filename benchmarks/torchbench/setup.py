@@ -6,7 +6,10 @@ _MODEL=os.environ.get('_MB_MODEL', None)
 _MODEL_PATH=os.path.join(os.path.dirname(__file__), "torchbenchmark", "models", str(_MODEL))
 
 
-if os.path.exists(os.path.join(_MODEL_PATH, "requirements.txt")):
+if _MODEL == "pytorch_unet":
+    with open(os.path.join(_MODEL_PATH, "pytorch_unet/requirements.txt")) as f:
+        require_packages = [line[:-1] if line[-1] == "\n" else line for line in f]
+elif os.path.exists(os.path.join(_MODEL_PATH, "requirements.txt")):
     with open(os.path.join(_MODEL_PATH, "requirements.txt")) as f:
         require_packages = [line[:-1] if line[-1] == "\n" else line for line in f]
 else:

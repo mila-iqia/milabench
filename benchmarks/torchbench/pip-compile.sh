@@ -73,7 +73,7 @@ models=(
 for m in "${models[@]}"
 do
 	setup_file=$([[ -f "torchbenchmark/models/$m/setup.py" ]] && echo "torchbenchmark/models/$m/setup.py" || echo "setup.py")
-	_MB_MODEL="$m" ~/CODE/milabench_reqs/venv.sh python3 -m piptools compile -v \
+	_MB_MODEL="$m" python3 -m piptools compile -v \
 		--resolver=backtracking \
 		--output-file requirements-"$m".txt \
 		requirements-bench.in \
@@ -83,7 +83,7 @@ do
 
 	if [[ -x "requirements-$m-headless.in" ]]
 	then
-		_MB_MODEL="$m" ~/CODE/milabench_reqs/venv.sh python3 -m piptools compile -v \
+		_MB_MODEL="$m" python3 -m piptools compile -v \
 			--resolver=backtracking \
 			--output-file requirements-"$m"-headless.txt \
 			requirements-bench.in \

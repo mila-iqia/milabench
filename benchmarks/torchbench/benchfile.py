@@ -56,16 +56,18 @@ class TorchBenchmarkPack(Package):
 
         model_name = self.config["model"]
 
+        reqs = None
         if headless and (code / f"requirements-{model_name}-headless.txt").exists():
-            self.pip_install("-r", code / f"requirements-{model_name}-headless.txt")
+            reqs = f"requirements-{model_name}-headless"
         elif (code / f"requirements-{model_name}.txt").exists():
-            self.pip_install("-r", code / f"requirements-{model_name}.txt")
-        if (code / f"noinstallpy-{model_name}.txt").exists():
-            # We don't want to use the model's install.py, but we still want to
-            # run the global install.py, so we pass resnet18 which has an empty
-            # install.py.
-            self.python("install.py", "--models", "resnet18")
-        else:
+            reqs = f"requirements-{model_name}"
+
+        if reqs:
+            self.pip_install("-r", code / f"{reqs}.txt")
+            if (code / f"{reqs}-extra.txt").exists():
+                self.pip_install("-r", code / f"{reqs}-extra.txt")
+
+        if (code / f"installpy-{model_name}.txt").exists():
             self.python("install.py", "--models", self.config["model"])
 
     def run(self, args, voirargs, env):
