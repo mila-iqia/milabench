@@ -1,14 +1,15 @@
+from functools import partial
+
 import altair as alt
 from altair import datum
 
+import numpy as np
 import pandas as pd
 import sqlite3
 
-con = sqlite3.connect("sqlite.db")
 
-data = pd.read_sql_query(
-    """
-SELECT 
+raw_data = """
+SELECT
     execs.name as run,
     json_extract(execs.meta, '$.login') as login, 
     packs.name as bench,
@@ -21,56 +22,79 @@ FROM
 WHERE 
     metrics.exec_id = execs._id AND
     metrics.pack_id = packs._id
-""",
-    con,
-)
-
-print(data)
+"""
 
 
-def compare_all_runs(metric="train_rate"):
-    compare = (
-        alt.Chart(data)
-        .transform_filter((datum.metric == metric))
-        .mark_bar()
-        .encode(
-            x="run:N",
-            y=alt.Y("value", type="quantitative", aggregate="average"),
-            color="run:N",
-            column="bench:N",
+class Report:
+    def __init__(self, sqlite) -> None:
+        con = sqlite3.connect(sqlite)
+        self.data = pd.read_sql_query(
+            raw_data,
+            con,
         )
-    )
-
-    return compare
-
-
-def show_run(runname, metric="train_rate"):
-    base = (
-        alt.Chart(data)
-        .transform_filter((datum.metric == metric) and (datum.run == runname))
-        .mark_bar()
-        .encode(
-            x="run:N",
-            y=alt.Y("value", type="quantitative", aggregate="average"),
+        
+    def normalized_metric(self, metric, baseline):
+        normalized = self.data.copy()
+        
+        extracted = self.data[self.data['metric'] == metric]
+        baseline = extracted[extracted['run'] == baseline].groupby(['bench']).median()
+        
+        for bench in baseline.index:
+            selection = (normalized['metric'] == metric) & (normalized['bench'] == bench)
+            
+            normalized.loc[selection, 'value'] = \
+                normalized.loc[selection, 'value'] / baseline.loc[bench]['value']
+            
+        return normalized
+    
+    def plot_runs(self, metric, baseline):
+        data = self.normalized_metric(metric, baseline)
+        
+        mn = data[data['metric'] == metric].min().value
+        mx = data[data['metric'] == metric].max().value
+        
+        bars = (alt.Chart()
+            .transform_filter((datum.metric == metric))
+            .mark_boxplot()
+            .encode(
+                x='run:N',
+                y=alt.Y('value:Q', title="Speed Up", scale=alt.Scale(domain=[mn, mx])),
+                color='run:N',
+            )
         )
-    )
-    err = base.mark_rule().encode(y="ci0(value)", y2="ci1(value)")
+        return alt.layer(bars, data=data).facet(
+            column='bench:N'
+        )
+        
+    def compute_stats(self, metric='train_rate'):
+        stats = dict(
+            median=np.median, 
+            q25=partial(np.quantile, q=0.25), 
+            q75=partial(np.quantile, q=0.75),
+            sd=np.std,
+        )
+        
+        data = self.data[self.data['metric'] == metric]
+        result = None
+        
+        for name, stat in stats.items():
+            values = pd.pivot_table(
+                data,
+                values="value",
+                index=["bench", "run"],
+                columns="metric",
+                aggfunc=stat,
+            ).rename(columns={metric: name})
+            
+            if result is None:
+                result = values
+            else:
+                result = result.join(values)
+        
+        print(pd.concat({metric: result}))
+    
 
-    return base + err
-
-
-import numpy as np
-
-values = pd.pivot_table(
-    data,
-    values="value",
-    index=["run", "bench"],
-    columns="metric",
-    aggfunc=np.mean,
-)
-print(values)
-print(values.describe())
-
-print("Saving")
-comp = compare_all_runs()
-comp.save("compare.html")
+rep = Report("sqlite.db")
+plot = rep.plot_runs('train_rate', 'zijudibi')
+plot.save('com.html')
+rep.compute_stats()
