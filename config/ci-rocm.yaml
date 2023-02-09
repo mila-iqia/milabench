@@ -39,6 +39,11 @@ torchvision: &torchvision
   plan:
     method: per_gpu
 
+  pip:
+    args:
+      - --extra-index-url
+      - https://download.pytorch.org/whl/rocm5.2/
+
   voir:
     --stop: 30
     --metric: step
@@ -67,6 +72,9 @@ torchbench: &torchbench
   definition: ../benchmarks/torchbench
 
   pip:
+    args:
+      - --extra-index-url
+      - https://download.pytorch.org/whl/rocm5.2/
     constraints:
       - gym < 0.26.0
 
