@@ -18,9 +18,10 @@ def tmp_path(path):
 
 
 class TorchBenchmarkPack(Package):
+    requirements_file = "requirements-bench.txt"
+
     def install(self):
         code = self.dirs.code
-        headless = os.environ.get("HEADLESS", False)
         env_path = os.environ["PATH"]
         self._nox_session.env["PATH"] += f":{code / 'bin'}"
         env_path += f":{code / 'bin'}"
@@ -54,21 +55,24 @@ class TorchBenchmarkPack(Package):
                 "ind = indices.detach().cpu().numpy()"
             )
 
+        super().install()
+
         model_name = self.config["model"]
 
-        reqs = None
-        if headless and (code / f"requirements-{model_name}-headless.txt").exists():
-            reqs = f"requirements-{model_name}-headless"
-        elif (code / f"requirements-{model_name}.txt").exists():
-            reqs = f"requirements-{model_name}"
+        with open(code / f"pre-post-{model_name}.out", "w") as _out, open(code / f"pre-post-{model_name}.err", "w") as _err:
+            self.execute("python3", "-m", "pip", "freeze", stdout=_out, stderr=_err)
 
-        if reqs:
-            self.pip_install("-r", code / f"{reqs}.txt")
-            if (code / f"{reqs}-extra.txt").exists():
-                self.pip_install("-r", code / f"{reqs}-extra.txt")
+        if (code / "reqs" / model_name / "requirements-post.txt").exists():
+            self.pip_install("-r", code / "reqs" / model_name / "requirements-post.txt")
+
+        with open(code / f"pre-install-{model_name}.out", "w") as _out, open(code / f"pre-install-{model_name}.err", "w") as _err:
+            self.execute("python3", "-m", "pip", "freeze", stdout=_out, stderr=_err)
 
         if (code / f"installpy-{model_name}.txt").exists():
             self.python("install.py", "--models", self.config["model"])
+
+        with open(code / f"post-install-{model_name}.out", "w") as _out, open(code / f"post-install-{model_name}.err", "w") as _err:
+            self.execute("python3", "-m", "pip", "freeze", stdout=_out, stderr=_err)
 
     def run(self, args, voirargs, env):
         args.insert(0, self.config["model"])
