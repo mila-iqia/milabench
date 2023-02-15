@@ -52,8 +52,8 @@ jobs:
         uses: docker/login-action@v2
         with:
           registry: ${{ env.REGISTRY }}
-          username: Delaunay
-          password: ${{ secrets.MILABENCH_Delaunay_PKG }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Extract metadata (tags, labels) for the image
         id: meta
