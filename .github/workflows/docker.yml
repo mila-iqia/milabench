@@ -47,12 +47,11 @@ jobs:
       
       - name: Docker Check
         run: |
-          id github
-          groups
-          whoami
-          docker image list
-          echo "${{ github.ref_name}}"
-          echo "$GITHUB_REF_NAME"
+          REGEX="(.*)v(.*)\.(.*)\.(.*)"
+          export IMAGE_TAG="nightly"
+          if [[ "${{ github.ref_name }}" =~ $REGEX ]]; then
+            export IMAGE_TAG="${GITHUB_REF_NAME##*/}"
+          fi
     
       - name: Log in to the registry
         uses: docker/login-action@v2
@@ -67,7 +66,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=${{ matrix.arch }}-nightly
+            type=raw,value=${{ matrix.arch }}-${{ env.IMAGE_TAG }}
 
       - name: Build and push the image
         uses: docker/build-push-action@v3
