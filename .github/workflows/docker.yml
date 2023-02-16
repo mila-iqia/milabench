@@ -11,10 +11,6 @@ on:
     tags:
       - v*.*.*
 
-  pull_request:
-    branches:
-      - master
-
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
@@ -45,7 +41,7 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v3
       
-      - name: Docker Check
+      - name: Get Image Tag Name
         run: |
           REGEX="(.*)v(.*)\.(.*)\.(.*)"
           IMAGE_TAG="nightly"
