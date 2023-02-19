@@ -65,6 +65,12 @@ jobs:
         run: |
           pytest tests/
 
+      - name: use pytorch nightly
+        run: |
+          milabench pip uninstall torch torchvision torchaudio torchtext -y
+          milabench pip install --pre torch torchvision torchaudio torchtext --index-url https://download.pytorch.org/whl/nightly/cu118
+          milabench pip install -U pytorch-lightning
+
       - name: run benchmarks
         run: |
           milabench run $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
