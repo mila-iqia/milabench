@@ -1,7 +1,7 @@
 Docker
 ======
 
-`Docker Images<https://github.com/mila-iqia/milabench/kgs/container/milabench>`_ are created for each release, 
+`Docker Images <https://github.com/mila-iqia/milabench/kgs/container/milabench>`_ are created for each release, 
 they come with all the benchmark installed and the necessary dataset.
 
 
