@@ -46,6 +46,11 @@ jobs:
         run: |
           bash script/dependencies.bash
 
+      - name: install milabench
+        run: |
+          poetry lock --no-update
+          poetry install
+
       - name: install benchmarks
         run: |
           milabench install $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
