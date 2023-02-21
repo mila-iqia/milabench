@@ -26,3 +26,12 @@ Usage
    # Show Performance Report
    sudo docker run -it --rm --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=all -v $(pwd)/results:/milabench/results ghcr.io/mila-iqia/milabench:cuda-nightly milabench report
    
+
+Publish
+-------
+
+Images can be build locally for prototyping and testing.
+
+.. code-block::
+
+   sudo docker build -t milabench:cuda-nightly --build-arg "ARCH=cuda CONFIG=standard-cuda.yaml" .
