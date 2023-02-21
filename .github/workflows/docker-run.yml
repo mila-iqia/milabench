@@ -12,14 +12,12 @@ env:
 
 jobs:
   build-image:
-    runs-on: [self-hosted, gpu]
-
     strategy:
       matrix:
-        include:
-          - arch: cuda
-            config: standard-cuda.yaml
+        - arch: [cuda, rocm]
     
+    runs-on: [self-hosted, "${{ matrix.arch }}"]
+
     permissions:
       contents: read
 

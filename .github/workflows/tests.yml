@@ -20,12 +20,13 @@ on:
 
 
 jobs:
- strategy:
-    matrix:
-      arch: [cuda, rocm]
-      
   tests:
-    runs-on: [self-hosted, ${{ matrix.arch }}]
+    strategy:
+      matrix:
+        arch: [cuda, rocm]
+
+    runs-on: [self-hosted, "${{ matrix.arch }}"]
+
     defaults:
       run:
         shell: bash -el {0}

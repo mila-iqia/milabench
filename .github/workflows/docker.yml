@@ -20,17 +20,20 @@ permissions:
   packages: write
 
 
+# define build arguments
+
 jobs:
   build-image:
-    runs-on: [self-hosted, gpu]
-
-    # define build arguments
     strategy:
       matrix:
         include:
           - arch: cuda
             config: standard-cuda.yaml
-    
+          - arch: rocm
+            config: standard-rocm.yaml
+
+    runs-on: [self-hosted, "${{ matrix.arch }}"]
+
     permissions:
       contents: read
       packages: write
