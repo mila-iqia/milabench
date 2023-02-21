@@ -75,26 +75,23 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Install anaconda because milabench will need it later anyway
 RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
-    /bin/bash ~/miniconda.sh -b -p $CONDA_PATH
+    /bin/bash ~/miniconda.sh -b -p $CONDA_PATH && \
+    rm ~/miniconda.s
 
-RUN rm ~/miniconda.sh
 ENV PATH=$CONDA_PATH/bin:$PATH
 
 
 # Install Milabench
 # -----------------
 
-RUN python -m pip install pip -U
-RUN python -m pip install -e /milabench/milabench/
-
-# Prepare bench
-# -------------
-
 # pip times out often when downloading pytorch
 ENV PIP_DEFAULT_TIMEOUT=800
 
-RUN milabench install $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
-RUN milabench prepare $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
+RUN python -m pip install pip -U                                                && \
+    python -m pip install -e /milabench/milabench/                              && \
+    milabench install $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS  && \
+    milabench prepare $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS  && \
+    /bin/bash /milabench/milabench/scripts/nightly.bash
 
 # Cleanup
 # Remove PIP cache
