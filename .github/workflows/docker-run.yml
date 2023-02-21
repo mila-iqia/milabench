@@ -15,7 +15,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-
+  IMAGE_PATH: ghcr.io/mila-iqia/milabench:cuda-nightly
 
 jobs:
   docker-run:
@@ -30,13 +30,6 @@ jobs:
       contents: read
 
     steps:
-      - name: login
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: pull
         run: |
           docker pull ghcr.io/mila-iqia/milabench:${{ matrix.arch }}-nightly
@@ -45,7 +38,7 @@ jobs:
         run: |
           OUTPUT="$(pwd)/results"
           mkdir -p $OUTPUT
-          docker run -it --rm --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=all -v $OUTPUT:/milabench/results milabench milabench --help
+          docker run -it --rm --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=all -v $(pwd)/results:/milabench/results $IMAGE_PATH milabench --help
       
       - name: Check out the repo
         uses: actions/checkout@v3
