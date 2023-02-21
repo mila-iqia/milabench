@@ -38,7 +38,7 @@ jobs:
         run: |
           OUTPUT="$(pwd)/results"
           mkdir -p $OUTPUT
-          docker run -it --rm --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=all -v $OUTPUT:/milabench/results $IMAGE_PATH milabench --help
+          docker run --rm --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=all -v $OUTPUT:/milabench/results $IMAGE_PATH milabench --help
       
       - name: Check out the repo
         uses: actions/checkout@v3
