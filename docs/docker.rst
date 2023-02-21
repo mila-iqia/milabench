@@ -34,4 +34,4 @@ Images can be build locally for prototyping and testing.
 
 .. code-block::
 
-   sudo docker build -t milabench:cuda-nightly --build-arg "ARCH=cuda CONFIG=standard-cuda.yaml" .
+   sudo docker build -t milabench:cuda-nightly --build-arg ARCH=cuda --build-arg CONFIG=ci-cuda.yaml .
