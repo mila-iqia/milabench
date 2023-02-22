@@ -93,8 +93,9 @@ RUN python -m pip install -e /milabench/milabench/
 # pip times out often when downloading pytorch
 ENV PIP_DEFAULT_TIMEOUT=800
 
-RUN milabench install $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
-RUN milabench prepare $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
+RUN milabench install $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
+    milabench prepare $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
+    /bin/bash /milabench/milabench/script/nightly_overrides.bash
 
 # Cleanup
 # Remove PIP cache
