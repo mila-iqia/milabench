@@ -7,8 +7,6 @@ on:
   
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-
 
 jobs:
   build-image:
@@ -22,6 +20,9 @@ jobs:
     
     permissions:
       contents: read
+      
+    env:
+      IMAGE_NAME: "ghcr.io/mila-iqia/milabench:${{ matrix.arch }}-nightly"
 
     steps:
       - name: login
@@ -33,13 +34,13 @@ jobs:
       
       - name: pull
         run: |
-          docker pull ghcr.io/mila-iqia/milabench:${{ matrix.arch }}-nightly
+          docker pull $IMAGE_NAME
   
       - name: run
         run: |
           OUTPUT="$(pwd)/results"
           mkdir -p $OUTPUT
-          docker run --rm --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=all -v $OUTPUT:/milabench/results milabench milabench --help
+          docker run --rm --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=all -v $OUTPUT:/milabench/results $IMAGE_NAME milabench --help
       
       - name: Check out the repo
         uses: actions/checkout@v3
