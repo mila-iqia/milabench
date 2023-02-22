@@ -62,11 +62,13 @@ COPY . /milabench/milabench/
 # Install Dependencies
 # --------------------
 
-#  wget: used to download anaconda
-#   git: used by milabench
-# rustc: used by BERT models inside https://pypi.org/project/tokenizers/
-# 
-RUN apt update && apt install -y wget git build-essential curl
+#     curl | wget: used to download anaconda
+#             git: used by milabench
+#           rustc: used by BERT models inside https://pypi.org/project/tokenizers/
+# build-essential: for rust
+#          libgl1: learn to paint bench
+#    libglib2.0-0: learn to paint bench
+RUN apt update && apt install -y wget git build-essential curl libgl1 libglib2.0-0
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
