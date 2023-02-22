@@ -30,7 +30,7 @@
 #       milabench summary $WORKING_DIR/results/runs/ -o $MILABENCH_OUTPUT/summary.json
 #
 #
-FROM ubuntu
+FROM nvidia/cuda:11.8.0-base-ubuntu22.04
 
 # Arguments
 # ---------
