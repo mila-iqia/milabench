@@ -45,13 +45,12 @@ ENV MILABENCH_CONFIG_NAME=$CONFIG
 # Paths
 # -----
 
-ENV WORKDIR=/milabench
-ENV MILABENCH_CONFIG=$WORKDIR/milabench/config/$MILABENCH_CONFIG_NAME
-ENV MILABENCH_BASE=$WORKDIR/envs
-ENV MILABENCH_OUTPUT=$WORKDIR/results/
+ENV MILABENCH_CONFIG=/milabench/milabench/config/$MILABENCH_CONFIG_NAME
+ENV MILABENCH_BASE=/milabench/envs
+ENV MILABENCH_OUTPUT=/milabench/results/
 ENV MILABENCH_ARGS=""
 ENV CONDA_PATH=/opt/anaconda
-
+ENV WORKDIR="/milabench"
 
 # Copy milabench
 # --------------
