@@ -45,10 +45,9 @@ ENV MILABENCH_CONFIG_NAME=$CONFIG
 # Paths
 # -----
 
-ENV WORKDIR=/milabench
-ENV MILABENCH_CONFIG=$WORKDIR/milabench/config/$MILABENCH_CONFIG_NAME
-ENV MILABENCH_BASE=$WORKDIR/envs
-ENV MILABENCH_OUTPUT=$WORKDIR/results/
+ENV MILABENCH_CONFIG=/milabench/milabench/config/$MILABENCH_CONFIG_NAME
+ENV MILABENCH_BASE=/milabench/envs
+ENV MILABENCH_OUTPUT=/milabench/results/
 ENV MILABENCH_ARGS=""
 ENV CONDA_PATH=/opt/anaconda
 
@@ -56,19 +55,49 @@ ENV CONDA_PATH=/opt/anaconda
 # Copy milabench
 # --------------
 
-WORKDIR $WORKDIR
-COPY . $WORKDIR/milabench/
+WORKDIR /milabench
+COPY . /milabench/milabench/
 
+
+# Install Dependencies
+# --------------------
+
+#  wget: used to download anaconda
+#   git: used by milabench
+# rustc: used by BERT models inside https://pypi.org/project/tokenizers/
+# 
+RUN apt update && apt install -y wget git build-essential curl
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Install Python
+# --------------
+
+# Install anaconda because milabench will need it later anyway
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
+    /bin/bash ~/miniconda.sh -b -p $CONDA_PATH
+
+RUN rm ~/miniconda.sh
+ENV PATH=$CONDA_PATH/bin:$PATH
+
+
+# Install Milabench
+# -----------------
+
+RUN python -m pip install pip -U
+RUN python -m pip install -e /milabench/milabench/
+
+# Prepare bench
+# -------------
+
+# pip times out often when downloading pytorch
 ENV PIP_DEFAULT_TIMEOUT=800
 
-RUN apt update                                                      && \
-    apt install -y wget git build-essential curl                    && \
-    wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh &&\
-    /bin/bash ~/miniconda.sh -b -p $CONDA_PATH                      && \
-    rm ~/miniconda.sh                                               && \
-    find $CONDA_PATH/ -follow -type f -name '*.a' -delete           && \
-    find $CONDA_PATH/ -follow -type f -name '*.js.map' -delete      && \
-    $CONDA_PATH/bin/conda clean -afy
+RUN milabench install $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
+    milabench prepare $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
+    /bin/bash /milabench/milabench/script/nightly_overrides.bash
 
-ENV PATH="$CONDA_PATH/bin:$PATH"
-RUN /bin/bash $WORKDIR/milabench/script/setup.bash
+# Cleanup
+# Remove PIP cache
+# Remove APT unused packages
+# CMD milabench
