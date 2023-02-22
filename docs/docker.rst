@@ -21,7 +21,11 @@ Usage
    sudo docker pull ghcr.io/mila-iqia/milabench:cuda-nightly
 
    # Run milabench
-   sudo docker run -it --rm --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=all -v $(pwd)/results:/milabench/results ghcr.io/mila-iqia/milabench:cuda-nightly milabench run
+   sudo docker run -it --rm --shm-size=256M              \
+         --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=all  \
+         -v $(pwd)/results:/milabench/results            \
+         ghcr.io/mila-iqia/milabench:cuda-nightly        \
+         milabench run
 
    # Show Performance Report
    sudo docker run -it --rm --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=all -v $(pwd)/results:/milabench/results ghcr.io/mila-iqia/milabench:cuda-nightly milabench report
