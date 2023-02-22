@@ -4,10 +4,10 @@
 
 ARCH=${ARCH:-rocm}
 TAG=${TAG:-nightly} 
-GHUSER=${USER:-} 
+USER=${USER:-} 
 TOKEN =${TOKEN:-} 
 
-build_docker () {
+build_docker {
     # Build docker
     sudo docker build                            \
         -t milabench:${ARCH}-${TAG}              \
@@ -16,9 +16,9 @@ build_docker () {
         .
 }
 
-push_docker () {
+push_docker {
     # Push the image to github
-    echo $TOKEN | docker login ghcr.io -u $GHUSER --password-stdin 
-    docker image tag milabench:${ARCH}-${TAG} ghcr.io/$GHUSER/milabench:${ARCH}-${TAG}
-    docker push ghcr.io/$GHUSER/milabench:${ARCH}-${TAG}
+    echo $TOKEN | docker login ghcr.io -u $USER --password-stdin 
+    docker image tag milabench:${ARCH}-${TAG} ghcr.io/$USER/milabench:${ARCH}-${TAG}
+    docker push ghcr.io/$USER/milabench:${ARCH}-${TAG}
 }

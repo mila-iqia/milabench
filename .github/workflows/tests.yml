@@ -44,10 +44,12 @@ jobs:
 
       - name: dependencies
         run: |
-          bash script/dependencies.bash
-
-      - name: install milabench
-        run: |
+          if [[ ! -d "~/.cargo/bin" ]]; then
+            wget --no-check-certificate --secure-protocol=TLSv1_2 -qO- https://sh.rustup.rs | sh -s -- -y 
+          fi
+          export PATH="~/.cargo/bin:${PATH}"
+          python -m pip install -U pip
+          python -m pip install -U poetry
           poetry lock --no-update
           poetry install
 
@@ -65,7 +67,11 @@ jobs:
 
       - name: use pytorch nightly
         run: |
-          bash script/nightly.bash
+          milabench pip uninstall torch torchvision torchaudio torchtext -y
+          milabench pip install --pre torch torchvision torchaudio torchtext --index-url https://download.pytorch.org/whl/nightly/cu118
+          milabench pip install -U pytorch-lightning
+          milabench pip uninstall lightning-bolts -y
+          milabench pip install git+https://github.com/Delaunay/lightning-bolts.git@patch-1
 
       - name: run benchmarks
         run: |
