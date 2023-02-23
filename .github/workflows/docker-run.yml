@@ -19,7 +19,7 @@ env:
 
 jobs:
   docker-run:
-    runs-on: [self-hosted, gpu]
+    runs-on: [self-hosted, cuda]
 
     strategy:
       matrix:
@@ -38,7 +38,7 @@ jobs:
         run: |
           OUTPUT="$(pwd)/results"
           mkdir -p $OUTPUT
-          docker run --rm --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=all -v $OUTPUT:/milabench/results $IMAGE_PATH milabench --help
+          docker run --rm --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=all -v $OUTPUT:/milabench/envs/runs $IMAGE_PATH milabench --help
       
       - name: Check out the repo
         uses: actions/checkout@v3
@@ -49,4 +49,4 @@ jobs:
           python -m pip install -U poetry
           poetry lock --no-update
           poetry install
-          milabench summary $OUTPUT/runs
+          milabench summary $OUTPUT
