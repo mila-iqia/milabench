@@ -99,6 +99,12 @@ RUN milabench install $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &
     milabench prepare $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
     /bin/bash /milabench/milabench/script/nightly_overrides.bash
 
+
+# CUDA-11.8 Fix
+ENV LD_LIBRARY_PATH="/usr/local/cuda/targets/x86_64-linux/lib/:$LD_LIBRARY_PATH"
+RUN ln /usr/local/cuda/targets/x86_64-linux/lib/libnvrtc.so.11.8.89 /usr/local/cuda/targets/x86_64-linux/lib/libnvrtc.so
+    
+
 # Cleanup
 # Remove PIP cache
 # Remove APT unused packages
