@@ -28,17 +28,23 @@ jobs:
     
     permissions:
       contents: read
+      
+    env:
+      IMAGE_NAME: "ghcr.io/mila-iqia/milabench:${{ matrix.arch }}-nightly"
 
     steps:
       - name: pull
         run: |
-          docker pull ghcr.io/mila-iqia/milabench:${{ matrix.arch }}-nightly
+          docker pull $IMAGE_NAME
   
       - name: run
         run: |
           OUTPUT="$(pwd)/results"
           mkdir -p $OUTPUT
-          docker run --rm --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=all -v $OUTPUT:/milabench/envs/runs $IMAGE_PATH milabench --help
+          docker run --rm --shm-size=256M                   \
+            --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=all  \
+            -v $OUTPUT:/milabench/envs/runs                 \
+            $IMAGE_NAME milabench run
       
       - name: Check out the repo
         uses: actions/checkout@v3

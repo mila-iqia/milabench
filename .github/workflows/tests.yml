@@ -65,6 +65,10 @@ jobs:
         run: |
           pytest tests/
 
+      - name: use pytorch nightly
+        run: |
+          bash script/nightly_overrides.bash
+
       - name: run benchmarks
         run: |
           milabench run $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS

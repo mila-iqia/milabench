@@ -64,26 +64,32 @@ def _get_multipack(dev=False):
     # [positional: ?]
     config: Option & str = None
 
-    if config is None:
-        config = os.environ.get("MILABENCH_CONFIG", None)
-
-    if config is None:
-        sys.exit("Error: CONFIG argument not provided and no $MILABENCH_CONFIG")
-
     # Base path for code, venvs, data and runs
     base: Option & str = None
 
     # Whether to use the current environment
     use_current_env: Option & bool = False
 
-    if dev:
-        use_current_env = True
-
     # Packs to select
     select: Option & str = default("")
 
     # Packs to exclude
     exclude: Option & str = default("")
+
+    return get_multipack(config, base, use_current_env, select, exclude, dev)
+
+
+def get_multipack(
+    config, base=None, use_current_env=False, select="", exclude="", dev=False
+):
+    if config is None:
+        config = os.environ.get("MILABENCH_CONFIG", None)
+
+    if config is None:
+        sys.exit("Error: CONFIG argument not provided and no $MILABENCH_CONFIG")
+
+    if dev:
+        use_current_env = True
 
     if select:
         select = select.split(",")
@@ -280,6 +286,34 @@ class Main:
             sources=runs,
             errdata=reports and _error_report(reports),
         )
+
+    def pip():
+        """Run pip on every pack"""
+        # Configuration file
+        config: Option & str = None
+
+        # Base path for code, venvs, data and runs
+        base: Option & str = None
+
+        # Whether to use the current environment
+        use_current_env: Option & bool = False
+
+        # Packs to select
+        select: Option & str = default("")
+
+        # Packs to exclude
+        exclude: Option & str = default("")
+
+        dev: Option & bool = False
+
+        # pip arguments
+        # [remainder]
+        args: Option = []
+
+        mp = get_multipack(config, base, use_current_env, select, exclude, dev=dev)
+
+        for pack in mp.packs.values():
+            pack.execute("pip", *args)
 
     def container():
         # Configuration file
