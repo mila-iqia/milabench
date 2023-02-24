@@ -1,0 +1,57 @@
+# Run Milabench using nightly docker images
+name: docker-run
+
+on:
+  # Only works on manual runs
+  workflow_dispatch:
+  
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-image:
+    runs-on: [self-hosted, gpu]
+
+    strategy:
+      matrix:
+        include:
+          - arch: cuda
+            config: standard-cuda.yaml
+    
+    permissions:
+      contents: read
+      
+    env:
+      IMAGE_NAME: "ghcr.io/mila-iqia/milabench:${{ matrix.arch }}-nightly"
+
+    steps:
+      - name: login
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: pull
+        run: |
+          docker pull $IMAGE_NAME
+  
+      - name: run
+        run: |
+          OUTPUT="$(pwd)/results"
+          mkdir -p $OUTPUT
+          docker run --rm --shm-size=256M                   \
+            --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=all  \
+            -v $OUTPUT:/milabench/envs/runs                 \
+            $IMAGE_NAME milabench run
+      
+      - name: Check out the repo
+        uses: actions/checkout@v3
+
+      - name: summary
+        run: |
+          python -m pip install -U pip
+          python -m pip install -U poetry
+          poetry lock --no-update
+          poetry install
+          milabench summary $OUTPUT/
