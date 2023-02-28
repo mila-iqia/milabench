@@ -231,6 +231,18 @@ class Main:
 
         mp = _get_multipack(dev=dev)
         mp.do_install(dash=simple_dash, force=force, sync=sync)
+    
+    def pin():
+        # Extra args to pass to pip-compile
+        # [nargs: --]
+        pip_compile: Option = tuple()
+
+        # Force pin of version for all benches
+        all_benches: Option & bool = False
+
+        mp = _get_multipack(dev=True)
+
+        mp.do_pin(*pip_compile, dash=simple_dash, single_reqs=not all_benches)
 
     def summary():
         # Directory(ies) containing the run data

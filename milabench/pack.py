@@ -8,6 +8,7 @@ class defines good default behavior.
 import json
 import os
 import subprocess
+import re
 from argparse import Namespace as NS
 from sys import version_info as pyv
 
@@ -305,6 +306,25 @@ class Package(BasePackage):
             reqs = self.dirs.code / self.requirements_file
             if reqs.exists():
                 self.pip_install("-r", reqs)
+
+    def pin(self, *pip_compile_args, requirements_file=None, cwd=None):
+        """Pin versions to requirements file.
+        """
+        if requirements_file is None:
+            requirements_file = self.requirements_file
+        if cwd is None:
+            cwd = self.pack_path
+        if requirements_file is not None:
+            if self.pack_path != cwd and (self.pack_path / requirements_file).exists():
+                (self.pack_path / requirements_file).copy(cwd)
+            if (cwd / re.sub(".txt$", ".in", requirements_file)).exists():
+                pip_compile_args = (*pip_compile_args, re.sub(".txt$", ".in", requirements_file))
+            self.pip_install("pip-tools")
+            self.execute("python3", "-m", "piptools", "compile", "--resolver",
+                "backtracking", "--output-file", requirements_file,
+                *pip_compile_args, cwd=cwd)
+            if self.pack_path != cwd:
+                (cwd / requirements_file).copy(self.pack_path)
 
     def prepare(self):
         """Prepare the benchmark.

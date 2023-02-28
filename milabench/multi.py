@@ -93,6 +93,15 @@ class MultiPackage:
                 with give.inherit(**{"#pack": pack}):
                     pack.checked_install(force=force, sync=sync)
 
+    def do_pin(self, *pip_compile_args, dash, single_reqs=True):
+        with given() as gv, dash(gv), give_std():
+            for pack in self.packs.values():
+                with give.inherit(**{"#pack": pack}):
+                    pack.pin(*pip_compile_args)
+                # All benches are using the same requirements file
+                if single_reqs:
+                    break
+
     def do_prepare(self, dash):
         with given() as gv, dash(gv), give_std():
             for pack in self.packs.values():

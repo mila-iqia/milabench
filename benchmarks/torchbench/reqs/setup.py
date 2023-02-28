@@ -4,8 +4,10 @@
 from setuptools import find_packages, setup
 import os
 
+_TORCHBENCHMARK_PATH = os.environ.get("_MILABENCH_TBPATH",
+    os.path.join(os.path.dirname(__file__), "..", "..", "torchbenchmark"))
 _MODEL=os.path.basename(os.path.dirname(__file__))
-_MODEL_PATH=os.path.join(os.path.dirname(__file__), "..", "..", "torchbenchmark", "models", str(_MODEL))
+_MODEL_PATH=os.path.join(_TORCHBENCHMARK_PATH, "models", str(_MODEL))
 
 
 if _MODEL == "pytorch_unet":
