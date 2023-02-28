@@ -1,8 +1,8 @@
 Docker
 ======
 
-`Docker Images <https://github.com/mila-iqia/milabench/kgs/container/milabench>`_ are created for each release, 
-they come with all the benchmark installed and the necessary datasets.
+`Docker Images <https://github.com/mila-iqia/milabench/pkgs/container/milabench>`_ are created for each release, 
+they come with all the benchmarks installed and the necessary datasets.
 No additional downloads are necessary.
 
 CUDA
@@ -47,7 +47,7 @@ The last command will generate a json summary of each benchmarks.
 
 
 Publish
--------
+^^^^^^^
 
 Images can be build locally for prototyping and testing.
 
