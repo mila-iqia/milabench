@@ -21,12 +21,13 @@ class MNISTPack(Package):
         main.sub("../data", self.dirs.data)
         super().install()
 
-    def pin(self, *pip_compile_args):
+    def pin(self, *pip_compile_args, constraint=None):
         with TemporaryDirectory(dir=self.pack_path) as pin_dir:
             pin_dir = XPath(pin_dir)
             self._clone_mnist(pin_dir)
 
-            super().pin(*(*pip_compile_args, "requirements.txt"), cwd=pin_dir)
+            super().pin(*pip_compile_args, input_files=("requirements.txt",),
+                        constraint=constraint, cwd=pin_dir)
 
 
 __pack__ = MNISTPack

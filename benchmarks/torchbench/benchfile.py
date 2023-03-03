@@ -12,11 +12,11 @@ BRANCH = "ff7114655294aa3ba57127a260dbd1ef5190f610"
 @contextlib.contextmanager
 def tmp_path(path):
     curr_path = os.environ["PATH"]
-    os.environ["PATH"] = path
-
-    yield
-
-    os.environ["PATH"] = curr_path
+    try:
+        os.environ["PATH"] = path
+        yield
+    finally:
+        os.environ["PATH"] = curr_path
 
 
 class TorchBenchmarkPack(Package):
@@ -93,23 +93,24 @@ class TorchBenchmarkPack(Package):
         with open(code / f"post-install-{model_name}.out", "w") as _out, open(code / f"post-install-{model_name}.err", "w") as _err:
             self.execute("python3", "-m", "pip", "freeze", stdout=_out, stderr=_err)
 
-    def pin(self, *pip_compile_args):
+    def pin(self, *pip_compile_args, constraint=None):
         with TemporaryDirectory(dir=self.pack_path) as pin_dir:
             pin_dir = XPath(pin_dir)
-            reqs_dir = pin_dir / "reqs"
+            req_file = XPath(self.requirements_file)
             self._clone_tb(pin_dir)
 
             (self.pack_path / "reqs").copy(pin_dir / "reqs")
             (self.pack_path / "benchtest.yaml").copy(pin_dir)
-            (self.pack_path / self.requirements_file).copy(pin_dir)
+            super().pin(*pip_compile_args, requirements_file=req_file,
+                        input_files=(req_file.with_suffix('.in'),), constraint=constraint,
+                        cwd=pin_dir)
 
-            self.pip_install("pip-tools")
-            self.execute(reqs_dir / "pip-compile.sh", "--reqs", reqs_dir.stem,
-                "--tb-root", ".", "--", "--resolver", "backtracking",
-                "--output-file", self.requirements_file, *pip_compile_args,
-                cwd=pin_dir)
-
-            (pin_dir / self.requirements_file).copy(self.pack_path)
+    def exec_pip_compile(self, requirements_file:XPath, input_files:list,
+                         *pip_compile_args, cwd:XPath):
+        self.execute(cwd / "reqs/pip-compile.sh", "--reqs", "reqs",
+            "--tb-root", ".", "--", "--resolver", "backtracking",
+            "--output-file", requirements_file, *pip_compile_args, *input_files,
+            cwd=cwd)
 
     def run(self, args, voirargs, env):
         args.insert(0, self.config["model"])

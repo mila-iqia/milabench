@@ -39,7 +39,6 @@ done
 _MILABENCH_TBPATH=$(realpath "${_TB_ROOT}/torchbenchmark") \
 python3 -m piptools compile \
 	"$@" \
-	"${_REQS}"/requirements-bench.in \
 	"${_TB_ROOT}"/requirements.txt \
 $(grep -o "model:.*" benchtest.yaml | cut -d" " -f2- | while read m
 do

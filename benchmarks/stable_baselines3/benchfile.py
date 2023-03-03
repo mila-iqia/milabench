@@ -17,9 +17,10 @@ class StableBenchmarkPack(Package):
 
         code.clone_subtree("https://github.com/DLR-RM/rl-baselines3-zoo", BRANCH)
 
-    def pin(self, *pip_compile_args):
-        super().pin(*pip_compile_args, requirements_file="requirements-pre.txt")
-        super().pin(*pip_compile_args)
+    def pin(self, *pip_compile_args, constraint=None):
+        super().pin(*pip_compile_args, requirements_file="requirements-pre.txt",
+                    constraint=constraint)
+        super().pin(*pip_compile_args, constraint=constraint)
 
     def run(self, args, voirargs, env):
         return self.launch("train.py", args=args, voirargs=voirargs, env=env)
