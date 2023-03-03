@@ -21,7 +21,7 @@ To run docker images you will need to install the softwares below.
 Usage
 ^^^^^
 
-The command below will download the lastest cuda container and run milabench right away,
+The commands below will download the lastest cuda container and run milabench right away,
 storing the results inside the `results` folder on the host machine.
 
 The last command will generate a json summary of each benchmarks.
