@@ -1,4 +1,6 @@
 # Fake setup.py to be used with piptools compile
+# This file is used in reqs/pip-compile.sh and offload some of the logic for fix
+# the install of some requirements
 from setuptools import find_packages, setup
 import os
 
