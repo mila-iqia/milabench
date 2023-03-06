@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>milabench.pack &mdash; milabench  documentation</title>
@@ -11,10 +11,10 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -26,11 +26,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html" class="icon icon-home"> milabench
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            milabench
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -38,16 +42,38 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="usage.html">Install</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usage.html#before-running-the-benchmarks">Before running the benchmarks</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usage.html#run-milabench">Run milabench</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usage.html#reports">Reports</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dev-usage.html">Using milabench</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Install and use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docker.html">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dev-usage.html">Using milabench (DEVELOPERS)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Benchmark configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="instrument.html">Instrumenting code</a></li>
 <li class="toctree-l1"><a class="reference internal" href="new_benchmarks.html">Creating a new benchmark</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="reference.html">Reference</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">milabench.pack</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">milabench.pack</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#milabench.pack.BasePackage"><code class="docutils literal notranslate"><span class="pre">BasePackage</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#milabench.pack.BasePackage.config"><code class="docutils literal notranslate"><span class="pre">BasePackage.config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#milabench.pack.BasePackage.pack_path"><code class="docutils literal notranslate"><span class="pre">BasePackage.pack_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#milabench.pack.BasePackage.dirs"><code class="docutils literal notranslate"><span class="pre">BasePackage.dirs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#milabench.pack.BasePackage.checked_install"><code class="docutils literal notranslate"><span class="pre">BasePackage.checked_install()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#milabench.pack.BasePackage.conda_install"><code class="docutils literal notranslate"><span class="pre">BasePackage.conda_install()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#milabench.pack.BasePackage.execute"><code class="docutils literal notranslate"><span class="pre">BasePackage.execute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#milabench.pack.BasePackage.install_code"><code class="docutils literal notranslate"><span class="pre">BasePackage.install_code()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#milabench.pack.BasePackage.install_milabench"><code class="docutils literal notranslate"><span class="pre">BasePackage.install_milabench()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#milabench.pack.BasePackage.launch"><code class="docutils literal notranslate"><span class="pre">BasePackage.launch()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#milabench.pack.BasePackage.make_env"><code class="docutils literal notranslate"><span class="pre">BasePackage.make_env()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#milabench.pack.BasePackage.pip_install"><code class="docutils literal notranslate"><span class="pre">BasePackage.pip_install()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#milabench.pack.BasePackage.python"><code class="docutils literal notranslate"><span class="pre">BasePackage.python()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#milabench.pack.Package"><code class="docutils literal notranslate"><span class="pre">Package</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#milabench.pack.Package.install"><code class="docutils literal notranslate"><span class="pre">Package.install()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#milabench.pack.Package.make_env"><code class="docutils literal notranslate"><span class="pre">Package.make_env()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#milabench.pack.Package.prepare"><code class="docutils literal notranslate"><span class="pre">Package.prepare()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#milabench.pack.Package.run"><code class="docutils literal notranslate"><span class="pre">Package.run()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -65,9 +91,9 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="reference.html">Reference</a> &raquo;</li>
-      <li>milabench.pack</li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="reference.html">Reference</a></li>
+      <li class="breadcrumb-item active">milabench.pack</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/ref-pack.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -78,7 +104,7 @@
            <div itemprop="articleBody">
              
   <section id="module-milabench.pack">
-<span id="milabench-pack"></span><h1>milabench.pack<a class="headerlink" href="#module-milabench.pack" title="Permalink to this headline"></a></h1>
+<span id="milabench-pack"></span><h1>milabench.pack<a class="headerlink" href="#module-milabench.pack" title="Permalink to this heading"></a></h1>
 <p>This module defines the Package class from which new benchmarks inherit.</p>
 <p>A <code class="docutils literal notranslate"><span class="pre">Package</span></code> must define three methods corresponding to milabench’s three main
 commands: <code class="docutils literal notranslate"><span class="pre">install</span></code>, <code class="docutils literal notranslate"><span class="pre">prepare</span></code> and <code class="docutils literal notranslate"><span class="pre">run</span></code>. The <a class="reference internal" href="#milabench.pack.Package" title="milabench.pack.Package"><code class="xref py py-class docutils literal notranslate"><span class="pre">Package</span></code></a>
@@ -123,7 +149,7 @@ config for the benchmark.</p>
 <li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">install()</span></code></p></li>
 </ul>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>force</strong> – Whether to force installation if the benchmark
 is already installed.</p></li>
@@ -146,7 +172,7 @@ is already installed.</p></li>
 <p>Unless specified otherwise, the command is run with
 <code class="docutils literal notranslate"><span class="pre">self.dirs.code</span></code> as the cwd.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>args</strong> – The arguments to the command</p></li>
 <li><p><strong>cwd</strong> – The cwd to use (defaults to <code class="docutils literal notranslate"><span class="pre">self.dirs.code</span></code>)</p></li>
@@ -162,7 +188,7 @@ is already installed.</p></li>
 <p>If the directory already exists, it is cleared out beforehand,
 unless <code class="docutils literal notranslate"><span class="pre">sync</span> <span class="pre">==</span> <span class="pre">True</span></code>.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>sync</strong> – Whether we are performing a simple sync, in which case
 existing code is not cleared.</p>
 </dd>
@@ -192,14 +218,14 @@ to a requirements file to use instead of the standard command.</p>
 <p>stderr is piped to stdout in the process</p>
 </div>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>args</strong> – A list of arguments to the program.</p></li>
 <li><p><strong>voirargs</strong> – A list of arguments to <code class="docutils literal notranslate"><span class="pre">voir</span></code>.</p></li>
 <li><p><strong>env</strong> – Environment variables to set for the process.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A subprocess.Popen instance representing the running process.</p>
 </dd>
 </dl>
@@ -306,14 +332,14 @@ invocation, so the script can use e.g. <code class="docutils literal notranslate
 access the data directory for the benchmark.</p>
 <p>The default value of <code class="docutils literal notranslate"><span class="pre">self.main_script</span></code> is <code class="docutils literal notranslate"><span class="pre">&quot;main.py&quot;</span></code>.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>args</strong> – A list of arguments to the program.</p></li>
 <li><p><strong>voirargs</strong> – A list of arguments to <code class="docutils literal notranslate"><span class="pre">voir</span></code>.</p></li>
 <li><p><strong>env</strong> – Environment variables to set for the process.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A subprocess.Popen instance representing the running benchmark.</p>
 </dd>
 </dl>

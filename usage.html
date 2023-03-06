@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Install and use &mdash; milabench  documentation</title>
@@ -11,14 +11,14 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Using milabench (DEVELOPERS)" href="dev-usage.html" />
+    <link rel="next" title="Docker" href="docker.html" />
     <link rel="prev" title="Welcome to milabench’s documentation!" href="index.html" /> 
 </head>
 
@@ -27,11 +27,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html" class="icon icon-home"> milabench
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            milabench
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -45,6 +49,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#reports">Reports</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="docker.html">Docker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dev-usage.html">Using milabench (DEVELOPERS)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Benchmark configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="instrument.html">Instrumenting code</a></li>
@@ -65,8 +70,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Install and use</li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Install and use</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/usage.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -77,20 +82,20 @@
            <div itemprop="articleBody">
              
   <section id="install-and-use">
-<h1>Install and use<a class="headerlink" href="#install-and-use" title="Permalink to this headline"></a></h1>
+<h1>Install and use<a class="headerlink" href="#install-and-use" title="Permalink to this heading"></a></h1>
 <p>To install, clone the repo:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># You may need to upgrade pip</span>
-pip install pip -U
-git clone git@github.com:mila-iqia/milabench.git
-<span class="nb">cd</span> milabench
+pip<span class="w"> </span>install<span class="w"> </span>pip<span class="w"> </span>-U
+git<span class="w"> </span>clone<span class="w"> </span>git@github.com:mila-iqia/milabench.git
+<span class="nb">cd</span><span class="w"> </span>milabench
 <span class="c1"># &lt;Activate virtual environment&gt;</span>
 <span class="c1"># Install in editable mode</span>
-pip install -e .
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
 </pre></div>
 </div>
 <p>This will install two commands, <code class="docutils literal notranslate"><span class="pre">milabench</span></code> and <code class="docutils literal notranslate"><span class="pre">voir</span></code>.</p>
 <section id="before-running-the-benchmarks">
-<h2>Before running the benchmarks<a class="headerlink" href="#before-running-the-benchmarks" title="Permalink to this headline"></a></h2>
+<h2>Before running the benchmarks<a class="headerlink" href="#before-running-the-benchmarks" title="Permalink to this heading"></a></h2>
 <ol class="arabic simple">
 <li><p>Set the <code class="docutils literal notranslate"><span class="pre">$MILABENCH_BASE</span></code> environment variable to the base directory in which all the code, virtual environments and data should be put.</p></li>
 <li><p>Set the <code class="docutils literal notranslate"><span class="pre">$MILABENCH_CONFIG</span></code> environment variable to the configuration file that corresponds to your platform:</p></li>
@@ -108,9 +113,9 @@ pip install -e .
 <p>If the machine has both NVIDIA/CUDA and AMD/ROCm GPUs, you may have to set the <code class="docutils literal notranslate"><span class="pre">MILABENCH_GPU_ARCH</span></code> environment variable as well, to either <code class="docutils literal notranslate"><span class="pre">cuda</span></code> or <code class="docutils literal notranslate"><span class="pre">rocm</span></code>.</p>
 </section>
 <section id="run-milabench">
-<h2>Run milabench<a class="headerlink" href="#run-milabench" title="Permalink to this headline"></a></h2>
+<h2>Run milabench<a class="headerlink" href="#run-milabench" title="Permalink to this heading"></a></h2>
 <p>The following command will run the whole benchmark and will put the results in a new directory in <code class="docutils literal notranslate"><span class="pre">$MILABENCH_BASE/runs</span></code> (the path will be printed to stdout).</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench run
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench<span class="w"> </span>run
 </pre></div>
 </div>
 <p>The standard tests currently include:</p>
@@ -138,24 +143,24 @@ pip install -e .
 </ul>
 <p>Here are a few useful options for <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">run</span></code>:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Only run the bert benchmark</span>
-milabench run --select bert
+milabench<span class="w"> </span>run<span class="w"> </span>--select<span class="w"> </span>bert
 
 <span class="c1"># Run all benchmarks EXCEPT bert and stargan</span>
-milabench run --exclude bert,stargan
+milabench<span class="w"> </span>run<span class="w"> </span>--exclude<span class="w"> </span>bert,stargan
 
 <span class="c1"># Run the benchmark suite three times in a row</span>
-milabench run --repeat <span class="m">3</span>
+milabench<span class="w"> </span>run<span class="w"> </span>--repeat<span class="w"> </span><span class="m">3</span>
 </pre></div>
 </div>
 </section>
 <section id="reports">
-<h2>Reports<a class="headerlink" href="#reports" title="Permalink to this headline"></a></h2>
+<h2>Reports<a class="headerlink" href="#reports" title="Permalink to this heading"></a></h2>
 <p>The following command will print out a report of the tests that ran, the metrics and if there were any failures. It will also produce an HTML report that contains more detailed information about errors if there are any.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench report --runs <span class="nv">$MILABENCH_BASE</span>/runs/some_specific_run --html report.html
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench<span class="w"> </span>report<span class="w"> </span>--runs<span class="w"> </span><span class="nv">$MILABENCH_BASE</span>/runs/some_specific_run<span class="w"> </span>--html<span class="w"> </span>report.html
 </pre></div>
 </div>
 <p>To get an overall score, you must specify a weights file that specifies how much each test weighs. Use <code class="docutils literal notranslate"><span class="pre">weights/standard.json</span></code> in the repo for this purpose:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench report --runs <span class="nv">$MILABENCH_BASE</span>/runs/some_specific_run --weights weights/standard.json --html report.html
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench<span class="w"> </span>report<span class="w"> </span>--runs<span class="w"> </span><span class="nv">$MILABENCH_BASE</span>/runs/some_specific_run<span class="w"> </span>--weights<span class="w"> </span>weights/standard.json<span class="w"> </span>--html<span class="w"> </span>report.html
 </pre></div>
 </div>
 </section>
@@ -166,7 +171,7 @@ milabench run --repeat <span class="m">3</span>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="index.html" class="btn btn-neutral float-left" title="Welcome to milabench’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="dev-usage.html" class="btn btn-neutral float-right" title="Using milabench (DEVELOPERS)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="docker.html" class="btn btn-neutral float-right" title="Docker" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Instrumenting code &mdash; milabench  documentation</title>
@@ -11,10 +11,10 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -27,11 +27,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html" class="icon icon-home"> milabench
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            milabench
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -39,11 +43,9 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="usage.html">Install</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usage.html#before-running-the-benchmarks">Before running the benchmarks</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usage.html#run-milabench">Run milabench</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usage.html#reports">Reports</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dev-usage.html">Using milabench</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Install and use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docker.html">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dev-usage.html">Using milabench (DEVELOPERS)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Benchmark configuration</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Instrumenting code</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#probe-example">Probe example</a></li>
@@ -73,8 +75,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Instrumenting code</li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Instrumenting code</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/instrument.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -85,7 +87,7 @@
            <div itemprop="articleBody">
              
   <section id="instrumenting-code">
-<h1>Instrumenting code<a class="headerlink" href="#instrumenting-code" title="Permalink to this headline"></a></h1>
+<h1>Instrumenting code<a class="headerlink" href="#instrumenting-code" title="Permalink to this heading"></a></h1>
 <p>Prior to creating a new benchmark, let us see how to instrument existing code in order to extract the desired metrics.</p>
 <p>Suppose you have this simple script in <code class="docutils literal notranslate"><span class="pre">main.py</span></code>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
@@ -124,7 +126,7 @@
 </pre></div>
 </div>
 <section id="probe-example">
-<h2>Probe example<a class="headerlink" href="#probe-example" title="Permalink to this headline"></a></h2>
+<h2>Probe example<a class="headerlink" href="#probe-example" title="Permalink to this heading"></a></h2>
 <p>To instrument this code, simply create a file named <code class="docutils literal notranslate"><span class="pre">voirfile.py</span></code> in the current directory. In that file, you can write <em>instruments</em> which will be activated by running <code class="docutils literal notranslate"><span class="pre">voir</span> <span class="pre">&lt;VOIR_OPTIONS&gt;</span> <span class="pre">main.py</span> <span class="pre">&lt;SCRIPT_OPTIONS&gt;</span></code>. For example, this instrument will print out the losses as they are calculated:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">instrument_probes</span><span class="p">(</span><span class="n">ov</span><span class="p">):</span>
     <span class="k">yield</span> <span class="n">ov</span><span class="o">.</span><span class="n">phases</span><span class="o">.</span><span class="n">load_script</span>
@@ -155,7 +157,7 @@
 </ul>
 </section>
 <section id="giving-and-using-data-and-metrics">
-<h2>Giving and using data and metrics<a class="headerlink" href="#giving-and-using-data-and-metrics" title="Permalink to this headline"></a></h2>
+<h2>Giving and using data and metrics<a class="headerlink" href="#giving-and-using-data-and-metrics" title="Permalink to this heading"></a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">ov.given</span></code> is an instance of <a class="reference external" href="https://giving.readthedocs.io/en/latest/ref-gvn.html#giving.gvn.Given">Given</a> and is where various instruments contribute data and read data from other instruments.</p>
 <p><strong>Contributing data</strong></p>
 <ul class="simple">
@@ -181,14 +183,14 @@
 <p>You can run the instruments with <code class="docutils literal notranslate"><span class="pre">voir</span> <span class="pre">main.py</span></code>. In addition to that, <code class="docutils literal notranslate"><span class="pre">voir</span> <span class="pre">--dash</span> <span class="pre">main.py</span></code> will display everything that is given, so you will see the values of <code class="docutils literal notranslate"><span class="pre">loss</span></code> (as well as anything you give) change in real time.</p>
 </section>
 <section id="probing-for-milabench">
-<span id="probingmb"></span><h2>Probing for milabench<a class="headerlink" href="#probing-for-milabench" title="Permalink to this headline"></a></h2>
+<span id="probingmb"></span><h2>Probing for milabench<a class="headerlink" href="#probing-for-milabench" title="Permalink to this heading"></a></h2>
 <p>Milabench adds a few instruments to <code class="docutils literal notranslate"><span class="pre">voir</span></code> that can be enabled using flags, such as <code class="docutils literal notranslate"><span class="pre">--train-rate</span></code>. To turn them all on and see whether you are instrumenting what needs to be instrumented for a benchmark, run:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">voir</span> <span class="o">--</span><span class="n">verify</span> <span class="n">main</span><span class="o">.</span><span class="n">py</span>
 </pre></div>
 </div>
 <p>You typically don’t need to do much except write a few probes. The various instruments provided by <code class="docutils literal notranslate"><span class="pre">milabench</span></code> will look for data with specific names and types.</p>
 <section id="essential-probes">
-<h3>Essential probes<a class="headerlink" href="#essential-probes" title="Permalink to this headline"></a></h3>
+<h3>Essential probes<a class="headerlink" href="#essential-probes" title="Permalink to this heading"></a></h3>
 <p>The <strong>essential</strong> probes to provide are those that allow the computation of the training rate.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">loss</span></code>: The current training loss. This is used as a sanity check, to verify that the algorithm is doing something.</p></li>
@@ -202,7 +204,7 @@
 </ul>
 </section>
 <section id="additional-readings">
-<h3>Additional readings<a class="headerlink" href="#additional-readings" title="Permalink to this headline"></a></h3>
+<h3>Additional readings<a class="headerlink" href="#additional-readings" title="Permalink to this heading"></a></h3>
 <p>These readings can be very useful, but they are not strictly speaking necessary and may not always be available or easy to extract.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">options</span></code>: The parsed command line options. If the script is using the standard argparse module, you can import the already-made instrumenter in the voirfile: <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">milabench.opt</span> <span class="pre">import</span> <span class="pre">instrument_argparse</span></code>. Since the name starts with <code class="docutils literal notranslate"><span class="pre">instrument_</span></code>, it is sufficient to import it to activate it.</p></li>
@@ -212,7 +214,7 @@
 </ul>
 </section>
 <section id="example">
-<h3>Example<a class="headerlink" href="#example" title="Permalink to this headline"></a></h3>
+<h3>Example<a class="headerlink" href="#example" title="Permalink to this heading"></a></h3>
 <p>This is how you would provide this information for the example <code class="docutils literal notranslate"><span class="pre">main.py</span></code> above:</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
