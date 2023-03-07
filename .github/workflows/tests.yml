@@ -49,8 +49,10 @@ jobs:
 
       - name: Pytorch Sanity
         run: |
-          groups
-          ls /opt/rocm-5.4.3/bin
+          if [[ "${{ matrix.arch }}" == "cuda" ]]; then
+            groups
+            /opt/rocm-5.4.3/bin/rocminfo
+          fi
           
       - name: dependencies
         run: |
