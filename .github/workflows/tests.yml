@@ -32,10 +32,10 @@ jobs:
         shell: bash -el {0}
         
     env:
-      MILABENCH_CONFIG: "config/ci-{{ matrix.arch }}.yaml"
+      MILABENCH_CONFIG: "config/ci-${{ matrix.arch }}.yaml"
       MILABENCH_BASE: "output"
       MILABENCH_ARGS: ""
-      MILABENCH_GPU_ARCH: "{{ matrix.arch }}"
+      MILABENCH_GPU_ARCH: "${{ matrix.arch }}"
     
     steps:
       - uses: actions/checkout@v3
