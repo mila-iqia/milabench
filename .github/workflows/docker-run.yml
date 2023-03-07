@@ -7,8 +7,6 @@ on:
   
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-
 
 jobs:
   build-image:
@@ -20,6 +18,9 @@ jobs:
 
     permissions:
       contents: read
+      
+    env:
+      IMAGE_NAME: "ghcr.io/mila-iqia/milabench:${{ matrix.arch }}-nightly"
 
     steps:
       - name: login
@@ -31,13 +32,16 @@ jobs:
       
       - name: pull
         run: |
-          docker pull ghcr.io/mila-iqia/milabench:${{ matrix.arch }}-nightly
+          docker pull $IMAGE_NAME
   
       - name: run
         run: |
-          OUTPUT="$(pwd)/results"
+          OUTPUT="$(pwd)/../results"
           mkdir -p $OUTPUT
-          docker run -it --rm --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=all -v $OUTPUT:/milabench/results milabench milabench --help
+          docker run --rm --shm-size=256M                   \
+            --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=all  \
+            -v $OUTPUT:/milabench/envs/runs                 \
+            $IMAGE_NAME milabench run
       
       - name: Check out the repo
         uses: actions/checkout@v3
@@ -48,4 +52,4 @@ jobs:
           python -m pip install -U poetry
           poetry lock --no-update
           poetry install
-          milabench summary $OUTPUT/runs
+          milabench summary $OUTPUT/

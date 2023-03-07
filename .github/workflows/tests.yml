@@ -75,7 +75,6 @@ jobs:
           if [[ "${{ matrix.arch }}" == "cuda" ]]; then
             bash script/nightly_overrides.bash
           fi
-  
       - name: run benchmarks
         run: |
           milabench run $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
