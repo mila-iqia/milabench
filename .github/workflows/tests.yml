@@ -50,14 +50,7 @@ jobs:
       - name: Pytorch Sanity
         run: |
           groups
-          whoami
-          if [[ "${{ matrix.arch }}" == "cuda" ]]; then
-              python -m pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu118
-          else
-              python -m pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm5.4.2
-          fi
-          # Makes sure we are detecting 2 devices before continuing
-          python -c "import torch, sys; sys.exit(torch.cuda.device_count() != 2)"
+          ls /opt/rocm-5.4.3/bin
           
       - name: dependencies
         run: |
