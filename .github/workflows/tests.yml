@@ -68,6 +68,7 @@ jobs:
 
       - name: tests
         run: |
+          export PATH="/opt/rocm-5.4.3/bin:$PATH"
           pytest tests/
 
       - name: use pytorch nightly
@@ -77,6 +78,7 @@ jobs:
           fi
       - name: run benchmarks
         run: |
+          export PATH="/opt/rocm-5.4.3/bin:$PATH"
           milabench run $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
 
       - name: Summary
