@@ -8,9 +8,9 @@ gpu.get_gpu_info()
 class PLBenchmark(Package):
     # Requirements file installed by install(). It can be empty or absent.
     if gpu.arch == "cuda":
-        requirements_file = "frozen_reqs.cuda.txt"
+        requirements_file = "requirements.cuda.txt"
     elif gpu.arch == "rocm":
-        requirements_file = "frozen_reqs.amd.txt"
+        requirements_file = "requirements.amd.txt"
     else:
         raise ValueError(f"Unsupported arch: {gpu.arch}")
 
