@@ -38,24 +38,24 @@ class _Layer(ValidationLayer):
     def report(self, summary, **kwargs):
         failed = False
 
-        for bench, warnings in self.warnings:
+        for bench, warnings in self.warnings.items():
 
             with summary.section(bench):
                 count = warnings["count"]
 
                 for device in self.devices:
-                    load = warnings["{device}-load_avg"] / count
+                    load = warnings[f"{device}-load_avg"] / count
                     mem = warnings[f"{device}-mem_avg"] / count
 
                     if load < self.load_threshold:
                         summary.add(
-                            f"* {device} load is below threshold {load} < {self.load_threshold}"
+                            f"* Device {device} loads is below threshold {load} < {self.load_threshold}"
                         )
                         failed = True
 
                     if mem < self.mem_threshold:
                         summary.add(
-                            f"* {device} used memory is below threshold {mem} < {self.mem_threshold}"
+                            f"* Device {device} used memory is below threshold {mem} < {self.mem_threshold}"
                         )
                         failed = True
 

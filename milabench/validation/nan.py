@@ -34,7 +34,7 @@ class _Layer(ValidationLayer):
                     self.warnings[tag]["increasing_loss"] += 1
 
     def report(self, summary, **kwargs):
-        for bench, warnings in self.warnings:
+        for bench, warnings in self.warnings.items():
             with summary.section(bench):
                 summary.add(f'Loss was Nan {warnings["nan_count"]} times')
                 summary.add(f'Loss increased {warnings["increasing_loss"]} times')
