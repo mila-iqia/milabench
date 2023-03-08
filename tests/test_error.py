@@ -27,5 +27,9 @@ def test_error_reporting_short(capsys, args, matcher):
     assert err.value.code == -1
 
     captured = capsys.readouterr()
+    print("==")
+    print(captured.out)
+    print("==")
+
     assert matcher(captured.out), "The traceback need to be printed"
     assert captured.err == ""

@@ -13,6 +13,7 @@ from giving import give
 from ptera import probing
 
 import milabench.validation
+from milabench.validation.validation import Summary
 
 
 REAL_STDOUT = sys.stdout
@@ -182,12 +183,12 @@ def discover_validation_layers(module):
     layers = {}
 
     for _, layerpath, _ in pkgutil.iter_modules(path, name + "."):
-        layername = layerpath.split('.')[-1]
+        layername = layerpath.split(".")[-1]
         layermodule = importlib.import_module(layerpath)
-        
-        if hasattr(layermodule, '_Layer'):
+
+        if hasattr(layermodule, "_Layer"):
             layers[layername] = layermodule._Layer
-    
+
     return layers
 
 
@@ -211,6 +212,10 @@ def validation(gv, *layer_names, short=True):
                 raise RuntimeError(f"Layer `{layer_name}` does not exist: {names}")
 
         yield results
-        
+
+        summary = Summary()
+
         for _, layer in results.items():
-            layer.report(short=True)
+            layer.report(summary, short=short)
+
+        summary.show()

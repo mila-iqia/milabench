@@ -5,14 +5,20 @@ from milabench.validation.validation import Summary
 expected_output = """
 Errors
 ======
-  Bench
-  -----
+  matmult
+  -------
+    1. Errors stuff happened
+    2. Errors stuff happened
+    3. Errors stuff happened
+  matsub
+  ------
     1. Errors stuff happened
     2. Errors stuff happened
     3. Errors stuff happened
 """.strip()
 
 def test_summary():
+    benchs = ["matmult", "matsub"]
     points = [
         '1. Errors stuff happened',
         '2. Errors stuff happened',
@@ -21,16 +27,18 @@ def test_summary():
     report = Summary()
     
     with report.section("Errors"):
-        with report.section('Bench'):
-            for p in points:
-                report.add(p)
-            
+        for bench in benchs:
+            with report.section(bench):
+                for p in points:
+                    report.add(p)
+                
     output = ""
     
     def get_output(data):
         nonlocal output
         output = data
-    
+        
+    report.show()
     report.show(get_output)
     assert output.strip() == expected_output    
     

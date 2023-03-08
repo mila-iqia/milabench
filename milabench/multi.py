@@ -108,7 +108,9 @@ class MultiPackage:
         done = False
         with given() as gv:
             # Error checking
-            with validation(gv, 'error') as validations:
+            with validation(
+                gv, "error", "nan", "planning", "usage", short=short
+            ) as validations:
 
                 # Dashboards
                 with dash(gv), report(gv, self.rundir):
@@ -117,15 +119,13 @@ class MultiPackage:
                             break
 
                         for pack in self.packs.values():
-                            # Pack validation
-                            with validation(gv, 'nan', 'planning', 'usage'):
-                                success, done = self.run_pack(i, pack, repeat)
+                            success, done = self.run_pack(i, pack, repeat)
 
-                                if not success:
-                                    break
+                            if not success:
+                                break
             # ---
 
-        if validations['error'].failed:
+        if validations["error"].failed:
             sys.exit(-1)
 
     def run_pack(self, i, pack, repeat):
@@ -196,56 +196,3 @@ class MultiPackage:
 
                 for _ in mr:
                     time.sleep(0.1)
-
-    def summary(self, errors, short=True):
-        """Print an error report and exit with an error code if any error were found"""
-
-        report = [
-            "",
-            "Error Report",
-            "------------",
-            "",
-        ]
-        indent = "    "
-
-        failures = 0
-        success = 0
-
-        for name, error in errors.items():
-            report.append(name)
-            report.append("^" * len(name))
-
-            traceback = False
-            output = []
-
-            for line in error.stderr:
-                line = line.strip()
-
-                if "Traceback" in line:
-                    traceback = True
-
-                if traceback and line != "":
-                    output.append(line + "\n")
-
-            # Tracback
-            traceback = output[-1] if output else "No traceback found"
-            if not short:
-                traceback = +"".join(output).replace("\n", "\n    ")
-
-            report.append(indent + traceback)
-
-            failures += int(error.code != 0)
-            success += int(error.code == 0)
-
-        if failures > 0:
-            report.extend(
-                [
-                    "Summary",
-                    "-------",
-                    f"{indent}Success: {success}",
-                    f"{indent}Failures: {failures}",
-                ]
-            )
-
-            print("\n".join(report))
-            sys.exit(-1)

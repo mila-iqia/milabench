@@ -41,14 +41,15 @@ class _Layer(ValidationLayer):
             error.code = data["#return_code"]
             self.failed = self.failed or error.code != 0
 
-    def report(self, short=True, **kwargs):
+    def report(self, summary, short=True, **kwargs):
         """Print an error report and exit with an error code if any error were found"""
 
         def _extract_traceback(lines):
             output = []
-            
+            traceback = False
+
             for line in lines:
-                line = line.strip()
+                line = line.rstrip()
 
                 if "During handling of the above exception" in line:
                     # The exceptions that happened afterwards are not relevant
@@ -58,33 +59,31 @@ class _Layer(ValidationLayer):
                     traceback = True
 
                 if traceback and line != "":
-                    output.append(line + "\n")
-                    
+                    output.append(line)
+
             return output
 
-        summary = Summary()
-        with summary.section('Error Report'):
-            failures = 0
-            success = 0
+        failures = 0
+        success = 0
 
-            for name, error in self.errors.items():
-                if error.code == 0:
-                    success += 1
-                    continue
-                
-                with summary.section(name):
-                    self.failed = True
-                    failures += 1
-                    tracebacks = _extract_traceback(error.stderr)
+        for name, error in self.errors.items():
+            if error.code == 0:
+                success += 1
+                continue
 
-                    if tracebacks:
-                        if short:
-                            summary.add(tracebacks[-1])
-                        else:
-                            for line in tracebacks:
-                                summary.add(line)
+            with summary.section(name):
+                self.failed = True
+                failures += 1
+                tracebacks = _extract_traceback(error.stderr)
+
+                if len(tracebacks) != 0:
+                    if short:
+                        summary.add("* " + tracebacks[-1])
                     else:
-                        summary.add("No traceback info about the error")
+                        summary.add("* " + tracebacks[0])
+                        for line in tracebacks[1:]:
+                            summary.add("  " + line)
+                else:
+                    summary.add("No traceback info about the error")
 
-        summary.show()
-        return summary.is_empty()
+        return self.failed
