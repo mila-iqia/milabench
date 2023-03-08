@@ -30,7 +30,7 @@
 #       milabench summary $WORKING_DIR/runs/runs/ -o $MILABENCH_OUTPUT/summary.json
 #
 #
-FROM ubuntu
+FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04
 
 # Arguments
 # ---------
@@ -62,11 +62,13 @@ COPY . /milabench/milabench/
 # Install Dependencies
 # --------------------
 
-#  wget: used to download anaconda
-#   git: used by milabench
-# rustc: used by BERT models inside https://pypi.org/project/tokenizers/
-# 
-RUN apt update && apt install -y wget git build-essential curl
+#     curl | wget: used to download anaconda
+#             git: used by milabench
+#           rustc: used by BERT models inside https://pypi.org/project/tokenizers/
+# build-essential: for rust
+#          libgl1: learn to paint bench
+#    libglib2.0-0: learn to paint bench
+RUN apt update && apt install -y wget git build-essential curl libgl1 libglib2.0-0
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
@@ -93,8 +95,15 @@ RUN python -m pip install -e /milabench/milabench/
 # pip times out often when downloading pytorch
 ENV PIP_DEFAULT_TIMEOUT=800
 
-RUN milabench install $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
-RUN milabench prepare $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
+RUN milabench install $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
+    milabench prepare $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
+    /bin/bash /milabench/milabench/script/nightly_overrides.bash
+
+
+# CUDA-11.8 Fix
+ENV LD_LIBRARY_PATH="/usr/local/cuda/targets/x86_64-linux/lib/:$LD_LIBRARY_PATH"
+RUN ln /usr/local/cuda/targets/x86_64-linux/lib/libnvrtc.so.11.8.89 /usr/local/cuda/targets/x86_64-linux/lib/libnvrtc.so
+    
 
 # Cleanup
 # Remove PIP cache
