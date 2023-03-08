@@ -32,10 +32,10 @@ jobs:
         shell: bash -el {0}
         
     env:
-      MILABENCH_CONFIG: "config/ci-{{ matrix.arch }}.yaml"
+      MILABENCH_CONFIG: "config/ci-${{ matrix.arch }}.yaml"
       MILABENCH_BASE: "output"
       MILABENCH_ARGS: ""
-      MILABENCH_GPU_ARCH: "{{ matrix.arch }}"
+      MILABENCH_GPU_ARCH: "${{ matrix.arch }}"
     
     steps:
       - uses: actions/checkout@v3
@@ -47,6 +47,13 @@ jobs:
           miniconda-version: "latest"
           activate-environment: test
 
+      - name: Pytorch Sanity
+        run: |
+          if [[ "${{ matrix.arch }}" == "rocm" ]]; then
+            groups
+            /opt/rocm-5.4.3/bin/rocminfo
+          fi
+          
       - name: dependencies
         run: |
           if [[ ! -d "~/.cargo/bin" ]]; then
@@ -68,14 +75,20 @@ jobs:
 
       - name: tests
         run: |
+          export PATH="/opt/rocm-5.4.3/bin:$PATH"
           pytest tests/
 
       - name: use pytorch nightly
         run: |
-          bash script/nightly_overrides.bash
+          if [[ "${{ matrix.arch }}" == "cuda" ]]; then
+            bash script/nightly_overrides.bash
+          else
+            bash script/nightly_overrides_rocm.bash
+          fi
 
       - name: run benchmarks
         run: |
+          export PATH="/opt/rocm-5.4.3/bin:$PATH"
           milabench run $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
 
       - name: Summary
