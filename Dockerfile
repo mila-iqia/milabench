@@ -76,7 +76,7 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 # --------------
 
 # Install anaconda because milabench will need it later anyway
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py39_23.1.0-1-Windows-x86_64.exe -O ~/miniconda.sh && \
     /bin/bash ~/miniconda.sh -b -p $CONDA_PATH
 
 RUN rm ~/miniconda.sh
