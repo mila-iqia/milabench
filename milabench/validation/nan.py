@@ -1,7 +1,7 @@
 from collections import defaultdict
 import math
 
-from .validation import ValidationLayer, Summary
+from .validation import ValidationLayer
 
 
 class _Layer(ValidationLayer):

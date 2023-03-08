@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from .validation import ValidationLayer, Summary
+from .validation import ValidationLayer
 
 
 class _Layer(ValidationLayer):

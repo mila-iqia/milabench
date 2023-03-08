@@ -1,7 +1,7 @@
 from collections import defaultdict
 from dataclasses import dataclass, field
 
-from .validation import ValidationLayer, Summary
+from .validation import ValidationLayer
 
 
 @dataclass
