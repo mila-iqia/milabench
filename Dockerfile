@@ -11,7 +11,7 @@
 #   
 #   To build this image:
 #
-#           sudo docker build --build-arg ARCH=cuda CONFIG=standard-8G.yaml -t milabench .
+#           sudo docker build --build-arg ARCH=cuda --build-arg CONFIG=standard-8G.yaml -t milabench .
 #
 #       Builds the milabench container for cuda and prepare the benchmark using the `standard-8G.yaml`
 #       configuration.
@@ -26,8 +26,8 @@
 #   Useful Commands:
 #
 #       milabench run $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
-#       milabench summary $WORKING_DIR/runs/runs/
-#       milabench summary $WORKING_DIR/runs/runs/ -o $MILABENCH_OUTPUT/summary.json
+#       milabench summary $WORKING_DIR/results/runs/
+#       milabench summary $WORKING_DIR/results/runs/ -o $MILABENCH_OUTPUT/summary.json
 #
 #
 FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04

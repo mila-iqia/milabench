@@ -125,6 +125,9 @@ sb3: &sb3
 
     definition: ../benchmarks/stable_baselines3
 
+    tags:
+      - rl
+
     venv:
       type: conda
 
@@ -141,37 +144,58 @@ sb3: &sb3
 benchmarks:
   resnet50:
     <<<: *torchvision
+    tags:
+      - convnet
+
     argv:
       --model: resnet50
 
   squeezenet1_1:
     <<<: *torchvision
+    tags:
+      - convnet
+
     argv:
       --model: squeezenet1_1
 
   efficientnet_b0:
     <<<: *torchvision
+    tags:
+      - convnet
+
     argv:
       --model: efficientnet_b0
 
   efficientnet_b4:
     <<<: *torchvision
+    tags:
+      - convnet
+    
     argv:
       --model: efficientnet_b4
 
   efficientnet_b7:
     <<<: *torchvision
+    tags:
+      - convnet
+    
     argv:
       --model: efficientnet_b7
       --batch-size: 32
 
   convnext_large:
     <<<: *torchvision
+    tags:
+      - convnet
+
     argv:
       --model: convnext_large
 
   regnet_y_128gf:
     <<<: *torchvision
+    tags:
+      - convnet
+
     argv:
       --model: regnet_y_128gf
       --batch-size: 16
@@ -179,32 +203,47 @@ benchmarks:
 
   bert:
     <<<: *torchbench
+    tags:
+      - transformer
 
     model: BERT_pytorch
 
   hf_reformer:
     <<<: *torchbench
+    tags:
+      - huggingface
+      - transformer
 
     model: hf_Reformer
 
   hf_t5:
     <<<: *torchbench
-
+    tags:
+      - huggingface
+      - transformer
+    
     model: hf_T5
 
   dlrm:
     <<<: *torchbench
 
+    tags:
+      - recommendation
+    
     model: dlrm
 
   soft_actor_critic:
     <<<: *torchbench
+    tags:
+      - rl
 
     model: soft_actor_critic
 
   speech_transformer:
     <<<: *torchbench
-
+    tags:
+      - transformer
+    
     model: speech_transformer
 
   super_slomo:
@@ -233,6 +272,8 @@ benchmarks:
 
   ppo:
     <<<: *sb3
+    tags:
+      - rl
 
     plan:
       method: njobs
@@ -250,6 +291,8 @@ benchmarks:
 
   td3:
     <<<: *sb3
+    tags:
+      - rl
 
     argv:
       --algo: td3
@@ -268,6 +311,9 @@ benchmarks:
 
   resnet152:
     <<<: *lightning
+    tags:
+      - convnet
+
     argv:
       --backbone: "resnet152"
       --strategy: "dp"
@@ -276,6 +322,9 @@ benchmarks:
 
   vit_l_32:
     <<<: *lightning
+    tags:
+      - convnet
+
     argv:
       --backbone: "vit_l_32"  # (larger model)
       --strategy: "fsdp"  # Fully-Sharded Data-Parallel
