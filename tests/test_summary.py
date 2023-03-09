@@ -7,8 +7,7 @@ from milabench.testing import milabench_cmd, resultfolder, has_result_folder
 skip_tests = not has_result_folder()
 
 
-_output = \
-"""
+_output = """
                                        |   rufidoko |   sokilupa
                                        | 2023-02-23 | 2023-03-09
 bench                |          metric |   16:16:31 |   16:02:53
@@ -35,10 +34,11 @@ td3                  |      train_rate |   20150.23 |   26453.40
 vit_l_32             |      train_rate |        nan |     550.16
 """
 
+
 @pytest.mark.skipif(skip_tests, reason="result data missing")
 def test_compare(capsys):
     milabench_cmd("compare", resultfolder())
-    
+
     captured = capsys.readouterr()
     assert captured.out in _output
     assert captured.err == ""
@@ -47,25 +47,21 @@ def test_compare(capsys):
 @pytest.mark.skipif(skip_tests, reason="result data missing")
 def test_summary(capsys):
     milabench_cmd("summary", resultfolder() + "/sokilupa.2023-03-09_16:02:53.984696")
-    
+
     captured = capsys.readouterr()
     data = json.loads(captured.out)
-    
-    assert data['squeezenet1_1']['name'] == 'squeezenet1_1'
-    assert data['squeezenet1_1']['train_rate']['median'] == 216.66385215244662
+
+    assert data["squeezenet1_1"]["name"] == "squeezenet1_1"
+    assert data["squeezenet1_1"]["train_rate"]["median"] == 216.66385215244662
 
 
 @pytest.mark.skipif(skip_tests, reason="result data missing")
 def test_report_folder_does_average():
-    milabench_cmd(
-        "report", 
-        "--runs", resultfolder()
-    )
+    milabench_cmd("report", "--runs", resultfolder())
 
 
 @pytest.mark.skipif(skip_tests, reason="result data missing")
 def test_report_one_run():
     milabench_cmd(
-        "report", 
-        "--runs", resultfolder() + "/sokilupa.2023-03-09_16:02:53.984696"
+        "report", "--runs", resultfolder() + "/sokilupa.2023-03-09_16:02:53.984696"
     )

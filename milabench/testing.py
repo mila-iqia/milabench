@@ -25,9 +25,11 @@ def config(name):
     """Returns a testing configuration"""
     return str(configfiles / (name + ".yaml"))
 
+
 def resultfolder():
     """Returns the result folder example"""
     return str(result)
+
 
 def has_result_folder():
     return result.exists()

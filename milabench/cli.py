@@ -282,7 +282,6 @@ class Main:
         dlrm                 |      train_rate |  338294.94 |  294967.41
         efficientnet_b0      |      train_rate |     223.56 |     223.48
 
-
         """
         # [positional: ?]
         folder: Option = None
@@ -308,6 +307,27 @@ class Main:
         compare(runs, last, metric, stat)
 
     def report():
+        """Generate a report aggregating all runs together into a final report
+
+        Examples
+        --------
+
+        >>> milabench report --runs results/
+        Source: /home/newton/work/milabench/milabench/../tests/results
+        =================
+        Benchmark results
+        =================
+                           n fail       perf   perf_adj   std%   sem%% peak_memory
+        bert               2    0     201.06     201.06  21.3%   8.7%          -1
+        convnext_large     2    0     198.62     198.62  19.7%   2.5%       29878
+        td3                2    0   23294.73   23294.73  13.6%   2.1%        2928
+        vit_l_32           2    1     548.09     274.04   7.8%   0.8%        9771
+        <BLANKLINE>
+        Errors
+        ------
+        1 errors, details in HTML report.
+
+        """
         # Runs directory
         # [action: append]
         runs: Option = []
