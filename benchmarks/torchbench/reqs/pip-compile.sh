@@ -4,14 +4,9 @@ set -o errexit -o pipefail
 # Script to partially-automate the compilation of pip requirements of models
 # Expected to be executed in the bench code directory after `milabench install`
 
-if [[ ! $(python3 -m pip freeze | grep "pip-tools") ]]
-then
-		python3 -m pip install pip -U
-		python3 -m pip install pip-tools
-fi
-
 _REQS=reqs
 _TB_ROOT=.
+_CONFIG=benchtest.yaml
 while [[ $# -gt 0 ]]
 do
 	_arg="$1"; shift
@@ -22,6 +17,9 @@ do
 		--tb-root) _TB_ROOT="$1"; shift
 		echo "tb-root = [${_TB_ROOT}]"
 		;;
+		--config) _CONFIG="$1"; shift
+		echo "config = [${_CONFIG}]"
+		;;
 		--) break ;;
 		-h | --help | *)
 		if [[ "${_arg}" != "-h" ]] && [[ "${_arg}" != "--help" ]]
@@ -29,28 +27,45 @@ do
 			>&2 echo "Unknown option [${_arg}]"
 		fi
 		>&2 echo "Options for $(basename ${BASH_SOURCE[0]}) are:"
-		>&2 echo "--reqs reqs dir"
-		>&2 echo "--tb-root torchbench project root dir"
+		>&2 echo "--reqs DIR reqs dir"
+		>&2 echo "--tb-root DIR torchbench project root dir"
+		>&2 echo "--config FILE config.yaml"
 		exit 1
 		;;
 	esac
 done
 
-_MILABENCH_TBPATH=$(realpath "${_TB_ROOT}/torchbenchmark") \
+grep -o "model:.*" "${_CONFIG}" | cut -d" " -f2- | while read m
+do
+	# If the bench has a setup.py, use it instead of faking the install.py's
+	# requirements
+	if [[ ! -f "${_TB_ROOT}/torchbenchmark/models/$m/"setup.py ]]
+	then
+		_MILABENCH_TBPATH=$(realpath "${_TB_ROOT}/torchbenchmark") python3 \
+			"${_REQS}/$m/"get_install_py_requirements.py \
+			>"${_REQS}/$m/"requirements-install_py.in
+		[[ -s "${_REQS}/$m/"requirements-install_py.in ]] || rm "${_REQS}/$m/"requirements-install_py.in
+	fi
+done
+
 python3 -m piptools compile \
 	"$@" \
 	"${_TB_ROOT}"/requirements.txt \
-$(grep -o "model:.*" benchtest.yaml | cut -d" " -f2- | while read m
+$(grep -o "model:.*" "${_CONFIG}" | cut -d" " -f2- | while read m
 do
 	# If the bench already has it's own setup.py, use it. Else, use the fake one
-	setup_file=$([[ -f "${_TB_ROOT}/torchbenchmark/models/$m/setup.py" ]] &&
-		echo "${_TB_ROOT}/torchbenchmark/models/$m/setup.py" ||
-		echo "${_REQS}/$m/setup.py")
+	if [[ -f "${_TB_ROOT}/torchbenchmark/models/$m/setup.py" ]]
+	then
+		setup_or_install_req_file="${_TB_ROOT}/torchbenchmark/models/$m/"setup.py
+	elif [[ -f "${_REQS}/$m/"requirements-install_py.in ]]
+	then
+		setup_or_install_req_file="${_REQS}/$m/"requirements-install_py.in
+	fi
 	# If the bench has a requirements.in and/or requirements-headless.in, use
 	# them
 	echo -n "$([[ -f "${_REQS}/$m/requirements.in" ]] &&
 			echo "${_REQS}/$m/requirements.in" || echo "")" \
 		"$([[ -f "${_REQS}/$m/requirements-headless.in" ]] &&
 			echo "${_REQS}/$m/requirements-headless.in" || echo "")" \
-		"$setup_file" ""
+		"$setup_or_install_req_file" ""
 done)

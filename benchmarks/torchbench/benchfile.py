@@ -2,6 +2,7 @@ import contextlib
 import os
 import subprocess
 from tempfile import TemporaryDirectory
+import warnings
 
 from milabench.fs import XPath
 from milabench.pack import Package
@@ -65,11 +66,15 @@ class TorchBenchmarkPack(Package):
 
         model_name = self.config["model"]
 
+        freeze_files = {stage: code / f"{stage}-{model_name}"
+                        for stage in ("pre-post", "pre-install", "post-install")}
+
         # Log the requirements installed from the first install phase
         # super().install(). requirements-bench.txt being derived from
         # reqs/requirements-bench.in, most of the requirements should be
         # installed
-        with open(code / f"pre-post-{model_name}.out", "w") as _out, open(code / f"pre-post-{model_name}.err", "w") as _err:
+        with open(f"{freeze_files['pre-post']}.out", "w") as _out, \
+             open(f"{freeze_files['pre-post']}.err", "w") as _err:
             self.execute("python3", "-m", "pip", "freeze", stdout=_out, stderr=_err)
 
         # Some benches requires some packages to already be installed as they
@@ -82,7 +87,8 @@ class TorchBenchmarkPack(Package):
 
         # Log the requirements installed from the second install phase and make
         # sure to move any requirements that can to the model's requirements.in
-        with open(code / f"pre-install-{model_name}.out", "w") as _out, open(code / f"pre-install-{model_name}.err", "w") as _err:
+        with open(f"{freeze_files['pre-install']}.out", "w") as _out, \
+             open(f"{freeze_files['pre-install']}.err", "w") as _err:
             self.execute("python3", "-m", "pip", "freeze", stdout=_out, stderr=_err)
 
         if (code / f"installpy-{model_name}.txt").exists():
@@ -90,10 +96,11 @@ class TorchBenchmarkPack(Package):
 
         # Log the requirements installed from the third install phase and make
         # sure to move any requirements that can to the model's requirements.in
-        with open(code / f"post-install-{model_name}.out", "w") as _out, open(code / f"post-install-{model_name}.err", "w") as _err:
+        with open(f"{freeze_files['post-install']}.out", "w") as _out, \
+             open(f"{freeze_files['post-install']}.err", "w") as _err:
             self.execute("python3", "-m", "pip", "freeze", stdout=_out, stderr=_err)
 
-    def pin(self, *pip_compile_args, constraint=None):
+    def pin(self, *pip_compile_args, constraints:list=tuple()):
         with TemporaryDirectory(dir=self.pack_path) as pin_dir:
             pin_dir = XPath(pin_dir)
             req_file = XPath(self.requirements_file)
@@ -102,8 +109,9 @@ class TorchBenchmarkPack(Package):
             (self.pack_path / "reqs").copy(pin_dir / "reqs")
             (self.pack_path / "benchtest.yaml").copy(pin_dir)
             super().pin(*pip_compile_args, requirements_file=req_file,
-                        input_files=(req_file.with_suffix('.in'),), constraint=constraint,
+                        input_files=(req_file.with_suffix('.in'),), constraints=constraints,
                         cwd=pin_dir)
+            (pin_dir / "reqs").merge_into(self.pack_path / "reqs")
 
     def exec_pip_compile(self, requirements_file:XPath, input_files:list,
                          *pip_compile_args, cwd:XPath):

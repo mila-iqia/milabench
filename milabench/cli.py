@@ -237,17 +237,14 @@ class Main:
         # [nargs: --]
         pip_compile: Option = tuple()
 
-        # Constraints file
+        # Constraints files
         # [options: -c]
-        constraint: Option = None
-
-        # Force pin of version for all benches
-        all_benches: Option & bool = False
+        # [nargs: *]
+        constraints: Option = tuple()
 
         mp = _get_multipack(dev=True)
 
-        mp.do_pin(*pip_compile, dash=simple_dash, constraint=constraint,
-                  single_reqs=not all_benches)
+        mp.do_pin(*pip_compile, dash=simple_dash, constraints=constraints)
 
     def summary():
         # Directory(ies) containing the run data

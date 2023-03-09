@@ -93,14 +93,15 @@ class MultiPackage:
                 with give.inherit(**{"#pack": pack}):
                     pack.checked_install(force=force, sync=sync)
 
-    def do_pin(self, *pip_compile_args, dash, constraint=None, single_reqs=True):
+    def do_pin(self, *pip_compile_args, dash, constraints:list=tuple()):
+        installed_groups = set()
         with given() as gv, dash(gv), give_std():
             for pack in self.packs.values():
+                if pack.config['group'] in installed_groups:
+                    continue
                 with give.inherit(**{"#pack": pack}):
-                    pack.pin(*pip_compile_args, constraint=constraint)
-                # All benches are using the same requirements file
-                if single_reqs:
-                    break
+                    pack.pin(*pip_compile_args, constraints=constraints)
+                    installed_groups.add(pack.config['group'])
 
     def do_prepare(self, dash):
         with given() as gv, dash(gv), give_std():
