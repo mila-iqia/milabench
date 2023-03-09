@@ -36,6 +36,14 @@ jobs:
       packages: write
 
     steps:
+      - name: Show all images
+        run: |
+          docker image ls
+
+      - name: Prune
+        run: |
+          docker image prune --filter "until=8w"
+
       - name: Check out the repo
         uses: actions/checkout@v3
       
