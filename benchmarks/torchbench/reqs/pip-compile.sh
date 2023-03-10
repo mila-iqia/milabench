@@ -7,6 +7,7 @@ set -o errexit -o pipefail
 _REQS=reqs
 _TB_ROOT=.
 _CONFIG=benchtest.yaml
+declare -a _MODELS=()
 while [[ $# -gt 0 ]]
 do
 	_arg="$1"; shift
@@ -20,6 +21,8 @@ do
 		--config) _CONFIG="$1"; shift
 		echo "config = [${_CONFIG}]"
 		;;
+		-m|--model) _MODELS+=("$1"); shift
+		;;
 		--) break ;;
 		-h | --help | *)
 		if [[ "${_arg}" != "-h" ]] && [[ "${_arg}" != "--help" ]]
@@ -30,12 +33,21 @@ do
 		>&2 echo "--reqs DIR reqs dir"
 		>&2 echo "--tb-root DIR torchbench project root dir"
 		>&2 echo "--config FILE config.yaml"
+		>&2 echo "-m | --model MODEL model name to compute requirements for. This option can be used multiple times. This option taks precedence over --config"
 		exit 1
 		;;
 	esac
 done
 
-grep -o "model:.*" "${_CONFIG}" | cut -d" " -f2- | while read m
+if (( ${#_MODELS[@]} == 0 ))
+then
+	while read m
+	do
+		_MODELS+=("$m")
+	done < <(grep -o "model:.*" "${_CONFIG}" | cut -d" " -f2-)
+fi
+
+for m in "${_MODELS[@]}"
 do
 	# If the bench has a setup.py, use it instead of faking the install.py's
 	# requirements
@@ -51,7 +63,7 @@ done
 python3 -m piptools compile \
 	"$@" \
 	"${_TB_ROOT}"/requirements.txt \
-$(grep -o "model:.*" "${_CONFIG}" | cut -d" " -f2- | while read m
+$(for m in "${_MODELS[@]}"
 do
 	# If the bench already has it's own setup.py, use it. Else, use the fake one
 	if [[ -f "${_TB_ROOT}/torchbenchmark/models/$m/setup.py" ]]

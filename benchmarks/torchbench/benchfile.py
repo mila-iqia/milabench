@@ -2,10 +2,10 @@ import contextlib
 import os
 import subprocess
 from tempfile import TemporaryDirectory
-import warnings
 
 from milabench.fs import XPath
 from milabench.pack import Package
+from milabench.config import parse_config
 
 BRANCH = "ff7114655294aa3ba57127a260dbd1ef5190f610"
 
@@ -107,7 +107,6 @@ class TorchBenchmarkPack(Package):
             self._clone_tb(pin_dir)
 
             (self.pack_path / "reqs").copy(pin_dir / "reqs")
-            (self.pack_path / "benchtest.yaml").copy(pin_dir)
             super().pin(*pip_compile_args, requirements_file=req_file,
                         input_files=(req_file.with_suffix('.in'),), constraints=constraints,
                         cwd=pin_dir)
@@ -115,10 +114,20 @@ class TorchBenchmarkPack(Package):
 
     def exec_pip_compile(self, requirements_file:XPath, input_files:list,
                          *pip_compile_args, cwd:XPath):
-        self.execute(cwd / "reqs/pip-compile.sh", "--reqs", "reqs",
-            "--tb-root", ".", "--", "--resolver", "backtracking",
-            "--output-file", requirements_file, *pip_compile_args, *input_files,
-            cwd=cwd)
+        config = parse_config(self.config["config_file"])
+        models = set()
+        for name, defn in config["benchmarks"].items():
+            group = defn.get("group", name)
+            if group == self.config["group"]:
+                models.add(defn["model"])
+        models_args = []
+        for m in models:
+            models_args.extend(("-m", m))
+        self.execute(cwd / "reqs/pip-compile.sh", "--reqs", "reqs", "--tb-root", ".",
+                     "--config", (self.pack_path / "benchtest.yaml").absolute(),
+                     *models_args, "--", "--resolver", "backtracking",
+                     "--output-file", requirements_file, *pip_compile_args,
+                     *input_files, cwd=cwd)
 
     def run(self, args, voirargs, env):
         args.insert(0, self.config["model"])
