@@ -21,7 +21,12 @@ on:
 
 jobs:
   tests:
-    runs-on: [self-hosted, gpu]
+    # Cancel previous jobs if a new version was pushed
+    concurrency:
+      group: ${{ github.ref }}
+      cancel-in-progress: true
+
+    runs-on: [self-hosted, cuda]
     defaults:
       run:
         shell: bash -el {0}
