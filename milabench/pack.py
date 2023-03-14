@@ -5,6 +5,7 @@ commands: ``install``, ``prepare`` and ``run``. The :class:`~milabench.pack.Pack
 class defines good default behavior.
 """
 
+import contextlib
 import json
 import os
 import subprocess
@@ -244,6 +245,24 @@ class BasePackage:
         return process
 
 
+@contextlib.contextmanager
+def inject_in_requirements(input_files:list, constraints:list, dir:XPath, inject_mb:bool=False):
+    injected_in = dir / next(i for i in input_files if XPath(i).suffix in {".in", ".txt"})
+    _content = injected_in.read_text()
+    try:
+        if inject_mb:
+            from importlib.metadata import version
+            injected_in.append_lines(f"milabench=={version('milabench')}")
+
+        # pip-tools doesn't support the pip-args -c flag so adding the files in
+        # the first input file
+        for c in reversed(constraints):
+            injected_in.prepend_lines(f"-c {c} ### __MILABENCH_TMP_LINE")
+        yield
+    finally:
+        injected_in.write_text(_content)
+
+
 class Package(BasePackage):
     """Package class with default behaviors for install/prepare/run.
 
@@ -305,6 +324,56 @@ class Package(BasePackage):
             reqs = self.dirs.code / self.requirements_file
             if reqs.exists():
                 self.pip_install("-r", reqs)
+
+    def pin(self, *pip_compile_args, requirements_file=None,
+            input_files:list=tuple(), constraints:list=tuple(),
+            with_mb:bool=True, cwd=None):
+        """Pin versions to requirements file.
+
+        Arguments:
+            *pip_compile_args: `python3 -m piptools compile` extra arguments
+            requirements_file: The output requirements file
+            input_files: A list of inputs to piptools compile
+            constraint: The constraint file
+            with_mb: Compute the requirements with milabench as a dependency
+            cwd: The working directory
+        """
+        if requirements_file is None:
+            requirements_file = self.requirements_file
+        if requirements_file is None:
+            return
+
+        requirements_file = XPath(requirements_file)
+        if cwd is None:
+            cwd = self.pack_path
+        constraints = tuple(XPath(c).absolute() for c in constraints)
+
+        if cwd != self.pack_path:
+            for fn in (*input_files, requirements_file,
+                       requirements_file.with_suffix(".in")):
+                if fn and (self.pack_path / fn).exists():
+                    (self.pack_path / fn).copy(cwd / fn)
+
+        if (cwd / requirements_file).with_suffix(".in").exists():
+            input_files = (*input_files, requirements_file.with_suffix(".in"))
+
+        import milabench
+        milabench_pyproject = XPath(milabench.__file__).parent.parent / "pyproject.toml"
+        if with_mb and milabench_pyproject.exists():
+            input_files = (*input_files, milabench_pyproject)
+
+        with inject_in_requirements(input_files, constraints, dir=cwd,
+                                    inject_mb=with_mb and not milabench_pyproject.exists()):
+            self.exec_pip_compile(requirements_file, input_files, *pip_compile_args, cwd=cwd)
+
+        if cwd != self.pack_path:
+            (cwd / requirements_file).copy(self.pack_path / requirements_file)
+
+    def exec_pip_compile(self, requirements_file:XPath, input_files:list,
+                         *pip_compile_args, cwd:XPath):
+        self.execute("python3", "-m", "piptools", "compile", "--resolver",
+            "backtracking", "--output-file", requirements_file,
+            *pip_compile_args, *input_files, cwd=cwd)
 
     def prepare(self):
         """Prepare the benchmark.

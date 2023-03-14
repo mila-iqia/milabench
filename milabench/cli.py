@@ -7,48 +7,33 @@ import sys
 import tempfile
 from functools import partial
 
-import yaml
 from coleo import Option, config as configuration, default, run_cli, tooled
 
 from .fs import XPath
 from .log import simple_dash, simple_report
-from .merge import self_merge
 from .multi import MultiPackage
 from .report import make_report
 from .summary import aggregate, make_summary
+from .config import parse_config
 from .compare import fetch_runs, compare
 
 
 def main():
     sys.path.insert(0, os.path.abspath(os.curdir))
-    run_cli(Main)
-
-
-def parse_config(config_file, base=None):
-    config_file = XPath(config_file).absolute()
-    config_base = config_file.parent
-    with open(config_file) as cf:
-        config = yaml.safe_load(cf)
-    config.setdefault("defaults", {})
-    config["defaults"]["config_base"] = str(config_base)
-    config["defaults"]["config_file"] = str(config_file)
-
-    if base is not None:
-        config["defaults"]["dirs"]["base"] = base
-
-    config = self_merge(config)
-
-    for name, defn in config["benchmarks"].items():
-        defn.setdefault("name", name)
-        defn.setdefault("group", name)
-        defn["tag"] = [defn["name"]]
-
-        pack = XPath(defn["definition"]).expanduser()
-        if not pack.is_absolute():
-            pack = (XPath(defn["config_base"]) / pack).resolve()
-            defn["definition"] = str(pack)
-
-    return config
+    try:
+        run_cli(Main)
+    except SystemExit as sysex:
+        if sysex.code == 0 and "pin" in sys.argv and ("-h" in sys.argv or "--help" in sys.argv):
+            out = (subprocess.check_output(["python3", "-m", "piptools", "compile", "--help"])
+                .decode("utf-8")
+                .split("\n"))
+            for i in range(len(out)):
+                if out[i].startswith("Usage:"):
+                    bin = os.path.basename(sys.argv[0])
+                    out[i] = out[i].replace("Usage: python -m piptools compile",
+                                            f"usage: {bin} pin [...] --pip-compile")
+            print("\n".join(out))
+        raise
 
 
 def get_pack(defn):
@@ -232,6 +217,23 @@ class Main:
 
         mp = _get_multipack(dev=dev)
         mp.do_install(dash=simple_dash, force=force, sync=sync)
+    
+    def pin():
+        # Extra args to pass to pip-compile
+        # [nargs: --]
+        pip_compile: Option = tuple()
+
+        # Constraints files
+        # [options: -c]
+        # [nargs: *]
+        constraints: Option = tuple()
+
+        if "-h" in pip_compile or "--help" in pip_compile:
+            exit(0)
+
+        mp = _get_multipack(dev=True)
+
+        mp.do_pin(*pip_compile, dash=simple_dash, constraints=constraints)
 
     def summary():
         # Directory(ies) containing the run data
