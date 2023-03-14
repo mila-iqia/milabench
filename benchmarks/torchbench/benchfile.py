@@ -61,6 +61,10 @@ class TorchBenchmarkPack(Package):
                 "ind = indices",
                 "ind = indices.detach().cpu().numpy()"
             )
+            (code / "run.py").sub(
+                r"run_one_step\(test, model_flops=model_flops\)",
+                "run_one_step(test, model_flops=model_flops, num_iter=1_000_000)",
+            )
 
         super().install()
 
