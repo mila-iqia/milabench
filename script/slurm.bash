@@ -1,5 +1,6 @@
 #!/bin/bash
 
+#SBATCH --reservation=milabench
 #SBATCH --job-name=milabench
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
@@ -7,15 +8,18 @@
 #SBATCH --time=1:00:00
 #SBATCH --mem=100Gb
 
+set -ev
+
 #
 # Configuration
 #
 # Tweak those for your system
-WORKING_DIR=${SLURM_TMPDIR:-/tmp}
-OUTPUT_DIR=${SCRATCH:-output}
+WORKING_DIR=${SLURM_TMPDIR:-/tmp/milabench/$$}
+OUTPUT_DIR=${SCRATCH:-output/$$}
 #
+export MILABENCH_GPU_ARCH=cuda
 
-MILABENCH_CONFIG=$WORKING_DIR/milabench/config/standard.yaml
+MILABENCH_CONFIG=$WORKING_DIR/milabench/config/standard-cuda.yaml
 MILABENCH_BASE=$WORKING_DIR/runs
 MILABENCH_OUTPUT=$OUTPUT_DIR/runs
 MILABENCH_ARGS=""
@@ -23,6 +27,7 @@ MILABENCH_ARGS=""
 MILABENCH_REPO=git@github.com:mila-iqia/milabench.git
 MILABENCH_BRANCH="master"
 
+mkdir -p $WORKING_DIR
 
 #
 # Setup Python
@@ -30,29 +35,31 @@ MILABENCH_BRANCH="master"
 CONDA_PATH=$WORKING_DIR/conda
 cd $WORKING_DIR
 
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-chmod +x Miniconda3-latest-Linux-x86_64.sh
-./Miniconda3-latest-Linux-x86_64.sh -b -p $CONDA_PATH
-
-ls $CONDA_PATH/conda/bin
-export PATH="$CONDA_PATH/bin:$PATH"
-conda init bash
-
-__conda_setup="$(\"$CONDA_PATH/bin/conda\" 'shell.bash' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-else
-    if [ -f "$CONDA_PATH/etc/profile.d/conda.sh" ]; then
-        . "$CONDA_PATH/etc/profile.d/conda.sh"
-    else
-        export PATH="$CONDA_PATH/conda/bin:$PATH"
-    fi
+#
+#   Rust
+#
+if [ ! -d ~/.cargo/bin ]
+then
+    curl https://sh.rustup.rs -sSf | sh -s -- -y
 fi
-unset __conda_setup
+export PATH="~/.cargo/bin:${PATH}"
+# <<<<
+
+#
+# Anaconda
+# 
+wget https://repo.anaconda.com/miniconda/Miniconda3-py39_23.1.0-1-Linux-x86_64.sh
+chmod +x Miniconda3-py39_23.1.0-1-Linux-x86_64.sh
+./Miniconda3-py39_23.1.0-1-Linux-x86_64.sh -b -p $CONDA_PATH
+
+ls $CONDA_PATH/bin
+export PATH="$CONDA_PATH/bin:$PATH"
+. "$CONDA_PATH/etc/profile.d/conda.sh"
 
 conda create -n milabench -y
 conda activate milabench
 python -m pip install pip -U
+# <<<<
 
 # Install Mila bench
 cd $WORKING_DIR
@@ -72,6 +79,3 @@ milabench summary $WORKING_DIR/runs/runs/ -o $MILABENCH_OUTPUT/summary.json
 
 # Save data
 cp -r $WORKING_DIR/runs/runs $MILABENCH_OUTPUT
-
-# Cleanup
-conda init bash --reverse
