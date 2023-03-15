@@ -1,0 +1,83 @@
+name: tests
+
+on:
+  # Runs every sunday
+  schedule:
+      - cron: '0 0 * * SUN'
+
+  # Runs for pull requests
+  pull_request:
+    branches:
+      - master
+
+  # Runs on publish
+  release:
+    types:
+      [published]
+
+  # Allow manual triggers
+  workflow_dispatch:
+
+
+jobs:
+  tests:
+    # Cancel previous jobs if a new version was pushed
+    concurrency:
+      group: ${{ github.ref }}
+      cancel-in-progress: true
+
+    runs-on: [self-hosted, cuda]
+    defaults:
+      run:
+        shell: bash -el {0}
+        
+    env:
+      MILABENCH_CONFIG: "config/ci-cuda.yaml"
+      MILABENCH_BASE: "output"
+      MILABENCH_ARGS: ""
+      MILABENCH_GPU_ARCH: "cuda"
+    
+    steps:
+      - uses: actions/checkout@v3
+    
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-activate-base: false
+          python-version: 3.9
+          miniconda-version: "latest"
+          activate-environment: test
+
+      - name: dependencies
+        run: |
+          if [[ ! -d "~/.cargo/bin" ]]; then
+            wget --no-check-certificate --secure-protocol=TLSv1_2 -qO- https://sh.rustup.rs | sh -s -- -y 
+          fi
+          export PATH="~/.cargo/bin:${PATH}"
+          python -m pip install -U pip
+          python -m pip install -U poetry
+          poetry lock --no-update
+          poetry install
+
+      - name: install benchmarks
+        run: |
+          milabench install $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
+
+      - name: prepare benchmarks
+        run: |
+          milabench prepare $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
+
+      - name: tests
+        run: |
+          pytest tests/
+
+      - name: use pytorch nightly
+        run: |
+          bash script/nightly_overrides.bash
+
+      - name: run benchmarks
+        run: |
+          milabench run $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
+
+      - name: Summary
+        run: |
+          milabench summary $MILABENCH_BASE/runs/

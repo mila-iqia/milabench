@@ -1,6 +1,7 @@
 import os
 import signal
 import subprocess
+import sys
 import time
 from copy import deepcopy
 
@@ -8,6 +9,7 @@ from giving import give, given
 from ovld import ovld
 from voir.forward import MultiReader
 
+from .validation import ErrorValidation
 from .merge import merge
 from .utils import give_std
 
@@ -29,18 +31,20 @@ def clone_with(cfg, new_cfg):
 
 @planning_method
 def per_gpu(cfg):
-    import GPUtil as gu
+    from .gpu import get_gpu_info
 
-    gpus = gu.getGPUs()
+    gpus = get_gpu_info().values()
+    ngpus = len(gpus)
+    if not gpus:
+        gpus = [{"device": 0, "selection_variable": "CPU_VISIBLE_DEVICE"}]
 
-    ids = [gpu.id for gpu in gpus] or [0]
-
-    for gid in ids:
+    for gpu in gpus:
+        gid = gpu["device"]
         gcfg = {
             "tag": [f"D{gid}"],
             "device": gid,
-            "devices": [gid] if ids else [],
-            "env": {"CUDA_VISIBLE_DEVICES": str(gid)},
+            "devices": [gid] if ngpus else [],
+            "env": {gpu["selection_variable"]: str(gid)},
         }
         yield clone_with(cfg, gcfg)
 
@@ -66,8 +70,10 @@ def _assemble_options(options: dict):
     for k, v in options.items():
         if v is None:
             continue
-        if v is True:
+        elif v is True:
             args.append(k)
+        elif k == "--":
+            args.extend(v)
         elif v is False:
             raise ValueError("Use null to cancel an option, not false")
         else:
@@ -87,6 +93,16 @@ class MultiPackage:
                 with give.inherit(**{"#pack": pack}):
                     pack.checked_install(force=force, sync=sync)
 
+    def do_pin(self, *pip_compile_args, dash, constraints:list=tuple()):
+        installed_groups = set()
+        with given() as gv, dash(gv), give_std():
+            for pack in self.packs.values():
+                if pack.config['group'] in installed_groups:
+                    continue
+                with give.inherit(**{"#pack": pack}):
+                    pack.pin(*pip_compile_args, constraints=constraints)
+                    installed_groups.add(pack.config['group'])
+
     def do_prepare(self, dash):
         with given() as gv, dash(gv), give_std():
             for pack in self.packs.values():
@@ -98,50 +114,76 @@ class MultiPackage:
                         for _ in mr:
                             time.sleep(0.1)
 
-    def do_run(self, dash, report, repeat=1):
+    def do_run(self, dash, report, repeat=1, short=True):
+        """Runs all the pack/benchmark"""
         done = False
-        with given() as gv, dash(gv), report(gv, self.rundir):
-            for i in range(repeat):
-                if done:
-                    break
-                for pack in self.packs.values():
-                    cfg = pack.config
-                    plan = deepcopy(cfg["plan"])
-                    method = get_planning_method(plan.pop("method"))
-                    mr = MultiReader()
-                    for run in method(cfg, **plan):
-                        if repeat > 1:
-                            run["tag"].append(f"R{i}")
-                        info = {"#pack": pack, "#run": run}
-                        give(**{"#start": time.time()}, **info)
-                        give(**{"#config": run}, **info)
-                        voirargs = _assemble_options(run.get("voir", {}))
-                        args = _assemble_options(run.get("argv", {}))
-                        env = run.get("env", {})
-                        process = pack.run(args=args, voirargs=voirargs, env=env)
-                        mr.add_process(process, info=info)
+        with given() as gv:
+            # Validations
+            with ErrorValidation(gv) as errors:
 
-                    try:
-                        for _ in mr:
-                            time.sleep(0.1)
+                # Dashboards
+                with dash(gv), report(gv, self.rundir):
+                    for i in range(repeat):
+                        if done:
+                            break
 
-                    except BaseException as exc:
-                        for (proc, info) in mr.processes:
-                            errstring = f"{type(exc).__name__}: {exc}"
-                            endinfo = {
-                                "#end": time.time(),
-                                "#completed": False,
-                                "#error": errstring,
-                            }
-                            give(**endinfo, **info)
-                            if getattr(proc, "did_setsid", False):
-                                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-                            else:
-                                proc.kill()
-                        if not isinstance(exc, KeyboardInterrupt):
-                            raise
-                        done = True
-                        break
+                        for pack in self.packs.values():
+                            success, done = self.run_pack(i, pack, repeat)
+
+                            if not success:
+                                break
+
+            errors.report(short=short)
+
+        if errors.failed:
+            sys.exit(-1)
+
+    def run_pack(self, i, pack, repeat):
+        cfg = pack.config
+        plan = deepcopy(cfg["plan"])
+        method = get_planning_method(plan.pop("method"))
+
+        mr = MultiReader()
+
+        for run in method(cfg, **plan):
+            if repeat > 1:
+                run["tag"].append(f"R{i}")
+
+            info = {"#pack": pack, "#run": run}
+            give(**{"#start": time.time()}, **info)
+            give(**{"#config": run}, **info)
+
+            voirargs = _assemble_options(run.get("voir", {}))
+            args = _assemble_options(run.get("argv", {}))
+            env = run.get("env", {})
+
+            process = pack.run(args=args, voirargs=voirargs, env=env)
+            mr.add_process(process, info=info)
+
+        try:
+            for _ in mr:
+                time.sleep(0.1)
+
+            return True, False
+
+        except BaseException as exc:
+            for (proc, info) in mr.processes:
+                errstring = f"{type(exc).__name__}: {exc}"
+                endinfo = {
+                    "#end": time.time(),
+                    "#completed": False,
+                    "#error": errstring,
+                }
+                give(**endinfo, **info)
+                if getattr(proc, "did_setsid", False):
+                    os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                else:
+                    proc.kill()
+
+            if not isinstance(exc, KeyboardInterrupt):
+                raise
+
+            return False, True
 
     def do_dev(self, dash):
         # TODO: share the common code between do_run and do_dev

@@ -1,34 +1,27 @@
 from milabench.pack import Package
 
-BRANCH = "2509bca3d6cc8a84d3330b0699dd9dc34b06524a"
+BRANCH = "168c34e8f5c19a34c1b372004e3a840bd400a9f6"
 
 
 class StableBenchmarkPack(Package):
-    # Requirements file installed by install(). It can be empty or absent.
-    requirements_file = "requirements.txt"
+    requirements_file = "requirements-bench.txt"
 
     def install(self):
         """Install requirements one by one, as baselines setup is non-standard"""
+        code = self.dirs.code
+
+        # Install swig first as it is required to compile box2d-py
+        self.pip_install("-r", code / "requirements-pre.txt")
+
         super().install()
 
-        code = self.dirs.code
         code.clone_subtree("https://github.com/DLR-RM/rl-baselines3-zoo", BRANCH)
 
-        # this dependency requires swig, use conda and forget about it
-        self.conda_install("-c", "conda-forge", "pybox2d")
-
-        with open(code / "requirements.txt", "r") as requirements:
-            for requirement in requirements.readlines():
-
-                # Already installed, this requires swig
-                # but we already installed a binary built using conda
-                if requirement.startswith("box2d-py"):
-                    continue
-
-                if "# tmp fix: until compatibility with panda-gym v2" in requirement:
-                    continue
-
-                self.pip_install(requirement)
+    def pin(self, *pip_compile_args, constraints:list=tuple()):
+        super().pin(*pip_compile_args, requirements_file="requirements-pre.txt",
+                    constraints=constraints, with_mb=False)
+        super().pin(*pip_compile_args, input_files=("requirements-pre.txt",),
+                    constraints=constraints)
 
     def run(self, args, voirargs, env):
         return self.launch("train.py", args=args, voirargs=voirargs, env=env)

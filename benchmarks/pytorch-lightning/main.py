@@ -6,11 +6,12 @@ be deleted.
 """
 from __future__ import annotations
 
-import inspect
 import pprint
+from dataclasses import asdict
 from typing import Callable
 
 import torch
+import yaml
 from giving_callback import GivingCallback
 from model import C, H, Model, W
 from pytorch_lightning import Trainer
@@ -71,25 +72,21 @@ def main(
     )
     ```
     """
-    # Create a parser so we can extract all the args of the Trainer class, and add it to our own,
-    # (better) ArgumentParser.
-    trainer_parser = ArgumentParser(add_help=False)
-    trainer_parser = Trainer.add_argparse_args(trainer_parser)
-
-    # Copy the arguments from the Trainer parser, and then add our own.
-    parser = ArgumentParser(parents=[trainer_parser], add_help=True)
-
-    trainer_parser.set_defaults(enable_checkpointing=False)
-
-    trainer_signature = inspect.signature(Trainer)
-    if trainer_default_kwargs:
-        # Overwrite the default values with those from the `trainer_defaults` dict.
-        sig = trainer_signature.bind_partial(**trainer_default_kwargs)
-        print(f"Overwriting default values for the Trainer: {sig.arguments}")
-        trainer_parser.set_defaults(**sig.arguments)
+    # Create an argument parser.
+    parser = ArgumentParser(description=__doc__)
 
     # Add the arguments for the Model:
     parser.add_arguments(Model.HParams, "hparams")
+
+    # Add arguments for the Trainer of PL:
+    Trainer.add_argparse_args(parent_parser=parser, use_argument_group=True)
+    if trainer_default_kwargs:
+        # NOTE: Uncomment this to turn off checkpointing by default.
+        trainer_default_kwargs.setdefault("enable_checkpointing", False)
+
+        # Add the given kwargs as defaults for the parser.
+        parser.set_defaults(**trainer_default_kwargs)
+        print(f"Overwriting default values for the Trainer: {trainer_default_kwargs}")
 
     # Add arguments for the dataset choice / setup:
     parser.add_arguments(DataOptions, "options")
@@ -105,8 +102,10 @@ def main(
     hparams: Model.HParams = args_dict.pop("hparams")
     options: DataOptions = args_dict.pop("options")
 
-    print(f"HParams: \n{hparams.dumps_yaml()}")
-    print(f"Options: \n{options.dumps_yaml()}")
+    print("HParams:")
+    _print_indented_yaml(asdict(hparams))
+    print("Options:")
+    _print_indented_yaml(asdict(options))
 
     # Rest of `args_dict` is only for the Trainer.
     trainer_kwargs = trainer_default_kwargs.copy()
@@ -152,6 +151,16 @@ def main(
     # NOTE: Uncomment this to evaluate the model.
     # validation_results = trainer.validate(model, datamodule=datamodule, verbose=False)
     # print(validation_results)
+
+
+def _print_indented_yaml(stuff):
+    import textwrap
+    from io import StringIO
+
+    with StringIO() as f:
+        yaml.dump(stuff, f)
+        f.seek(0)
+        print(textwrap.indent(f.read(), prefix="  "))
 
 
 if __name__ == "__main__":

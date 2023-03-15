@@ -350,25 +350,27 @@ class GPUMonitor(Thread):
         self.ov = ov
         self.stopped = False
         self.delay = delay
-        visible = os.environ.get("CUDA_VISIBLE_DEVICES", None)
+        visible = os.environ.get("CUDA_VISIBLE_DEVICES", None) or os.environ.get(
+            "ROCR_VISIBLE_DEVICES", None
+        )
         if visible:
             self.ours = list(map(int, visible.split(",")))
         else:
             self.ours = range(1000)
 
     def run(self):
-        import GPUtil
+        from .gpu import get_gpu_info
 
         while not self.stopped:
             time.sleep(self.delay)
             data = {
-                gpu.id: {
-                    "memory": [gpu.memoryUsed, gpu.memoryTotal],
-                    "load": gpu.load,
-                    "temperature": gpu.temperature,
+                gpu["device"]: {
+                    "memory": [gpu["memory"]["used"], gpu["memory"]["total"]],
+                    "load": gpu["utilization"]["compute"],
+                    "temperature": gpu["temperature"],
                 }
-                for gpu in GPUtil.getGPUs()
-                if gpu.id in self.ours
+                for gpu in get_gpu_info().values()
+                if gpu["device"] in self.ours
             }
             self.ov.give(gpudata=data)
 
