@@ -49,8 +49,6 @@ class Model(LightningModule):
         self._model_are_wrapped = False
         print("Model Hyper-Parameters:", self.hparams)
 
-        self.example_input_array = torch.rand([self.hp.batch_size, *image_dims])
-
     def configure_sharded_model(self) -> None:
         # NOTE: From https://pytorch-lightning.readthedocs.io/en/latest/advanced/model_parallel.html#fully-sharded-training
         # NOTE: This gets called during train / val / test, so we need to check that we don't wrap

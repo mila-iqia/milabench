@@ -7,7 +7,6 @@ class defines good default behavior.
 
 import json
 import os
-import tempfile
 from argparse import Namespace as NS
 from hashlib import md5
 from sys import version_info as pyv
@@ -15,12 +14,12 @@ from typing import Sequence
 
 from nox.sessions import Session, SessionRunner
 
-from milabench.utils import assemble_options, make_constraints_file
-
 from .alt_async import run, send
+from .evalctx import ArgumentResolver
 from .fs import XPath
 from .merge import merge
 from .structs import BenchLogEntry
+from .utils import assemble_options, make_constraints_file
 
 
 class PackageCore:
@@ -95,7 +94,9 @@ class BasePackage:
 
     @property
     def argv(self):
-        return assemble_options(self.config.get("argv", []))
+        resolver = ArgumentResolver(self.config)
+        argv = resolver.resolve_arguments(self.config.get("argv", []))
+        return assemble_options(argv)
 
     @property
     def tag(self):

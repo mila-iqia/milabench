@@ -44,9 +44,6 @@ hf: &hf
   plan:
     method: per_gpu
 
-  tags:
-    - rl
-
   definition: ../benchmarks/huggingface
 
 
@@ -72,71 +69,174 @@ lightning: &lightning
     --accelerator: "auto"
     --enable_checkpointing: "False"
 
+##############
+# Benchmarks #
+##############
 
 benchmarks:
-  resnet50:
+  resnet50-fp16:
     <<<: *torchvision
     tags:
-      - convnet
+      - vision
+      - classification
+      - cnn
+      - fp16
+      - e2e
 
     argv:
       --model: resnet50
+      --batch-size: $(bs(gpu, mem, default=512))
+      --with-amp: True
+
+    mem:
+      slope: 82
+      intercept: 2728
+      multiple: 16
+
+  resnet50-fp32:
+    <<<: *torchvision
+    tags:
+      - vision
+      - classification
+      - cnn
+      - fp32
+      - e2e
+
+    argv:
+      --model: resnet50
+      --batch-size: $(bs(gpu, mem, default=256))
+      --with-amp: null
+
+    mem:
+      slope: 90
+      intercept: 2985
+      multiple: 16
 
   squeezenet1_1:
     <<<: *torchvision
     tags:
-      - convnet
+      - vision
+      - classification
+      - cnn
+      - fp16
+      - e2e
 
     argv:
       --model: squeezenet1_1
+      --batch-size: $(bs(gpu, mem, default=256))
+
+    mem:
+      slope: 19
+      intercept: 3166
+      multiple: 16
 
   efficientnet_b0:
     <<<: *torchvision
     tags:
-      - convnet
+      - vision
+      - classification
+      - cnn
+      - fp16
+      - e2e
 
     argv:
       --model: efficientnet_b0
+      --batch-size: $(bs(gpu, mem, default=256))
+
+    mem:
+      slope: 47
+      intercept: 2570
+      multiple: 16
 
   efficientnet_b4:
     <<<: *torchvision
     tags:
-      - convnet
-    
+      - vision
+      - classification
+      - cnn
+      - fp16
+      - e2e 
+   
     argv:
       --model: efficientnet_b4
+      --batch-size: $(bs(gpu, mem, default=256))
+
+    mem:
+      slope: 115
+      intercept: 2765
+      multiple: 16
 
   efficientnet_b7:
     <<<: *torchvision
     tags:
-      - convnet
-    
+      - vision
+      - classification
+      - cnn
+      - fp16
+      - e2e
+
     argv:
       --model: efficientnet_b7
+      --batch-size: $(bs(gpu, mem, default=64))
+
+    mem:
+      slope: 264
+      intercept: 3236
+      multiple: 16
 
   convnext_large:
     <<<: *torchvision
     tags:
-      - convnet
+      - vision
+      - classification
+      - cnn
+      - fp16
+      - e2e
 
     argv:
       --model: convnext_large
+      --batch-size: $(bs(gpu, mem, default=256))
+
+    mem:
+      slope: 190
+      intercept: 4090
+      multiple: 16
 
   regnet_y_128gf:
     <<<: *torchvision
     tags:
-      - convnet
+      - vision
+      - classification
+      - cnn
+      - fp32
+      - lstm
+      - e2e
 
     argv:
       --model: regnet_y_128gf
+      --batch-size: $(bs(gpu, mem, default=32))
+      --with-amp: null
+
+    mem:
+      slope: 826
+      intercept: 5290
+      multiple: 16
 
   bert:
     <<<: *hf
     tags:
-      - huggingface
+      - nlp
+      - language-modeling
       - transformer
+      - no-io
+      - huggingface
     argv:
       --model: "Bert"
+      --batch-size: $(bs(gpu, mem, default=16))
+    mem:
+      slope: 1000
+      intercept: 3774
+      multiple: 8
 
   t5:
     <<<: *hf

@@ -16,7 +16,9 @@ defaults: &defaults
   venv:
     type: virtualenv
 
-
+#
+# Environments
+#
 torchvision: &torchvision
   <<<: *defaults
 
@@ -70,7 +72,6 @@ lightning: &lightning
   definition: ../benchmarks/pytorch-lightning
 
   argv:
-    --gpus: -1
     --max_epochs: 1
     --max_steps: 100
     --limit_val_batches: 100
@@ -81,52 +82,136 @@ lightning: &lightning
 
 
 benchmarks:
-  resnet50:
+  resnet50-fp16:
     <<<: *torchvision
+
+    mem:
+      slope: 82
+      intercept: 2728
+      multiple: 16
+
     tags:
-      - convnet
+      - vision
+      - classification
+      - cnn
+      - fp16
+      - e2e
 
     argv:
       --model: resnet50
+      --batch-size: $(bs(gpu, mem, default=512))
+      --with-amp: True
+
+  resnet50-fp32:
+    <<<: *torchvision
+
+    mem:
+      slope: 90
+      intercept: 2985
+      multiple: 16
+
+    tags:
+      - vision
+      - classification
+      - cnn
+      - fp32
+      - e2e
+
+    argv:
+      --model: resnet50
+      --batch-size: $(bs(gpu, mem, default=256))
+      --with-amp: null
 
   squeezenet1_1:
     <<<: *torchvision
-    tags:
-      - convnet
+    
+    mem:
+      slope: 19
+      intercept: 3166
+      multiple: 16
 
+    tags:
+      - vision
+      - classification
+      - cnn
+      - fp16
+      - e2e
+    
+    # Memory capped at 22810.75
     argv:
       --model: squeezenet1_1
+      --batch-size: $(bs(gpu, mem, default=256))
 
   efficientnet_b0:
     <<<: *torchvision
+      
+    mem:
+      slope: 47
+      intercept: 2570
+      multiple: 16
+      
     tags:
-      - convnet
+      - vision
+      - classification
+      - cnn
+      - fp16
+      - e2e
 
     argv:
       --model: efficientnet_b0
+      --batch-size: $(bs(gpu, mem, default=256))
 
   efficientnet_b4:
     <<<: *torchvision
-    tags:
-      - convnet
     
+    mem:
+      slope: 115
+      intercept: 2765
+      multiple: 16
+
+    tags:
+      - vision
+      - classification
+      - cnn
+      - fp16
+      - e2e
+
     argv:
       --model: efficientnet_b4
       --batch-size: 32
 
   efficientnet_b7:
     <<<: *torchvision
-    tags:
-      - convnet
     
+    mem:
+      slope: 264
+      intercept: 3236
+      multiple: 16
+      
+    tags:
+      - vision
+      - classification
+      - cnn
+      - fp16
+      - e2e
+
     argv:
       --model: efficientnet_b7
-      --batch-size: 32
+      --batch-size: $(bs(gpu, mem, default=64))
 
   convnext_large:
     <<<: *torchvision
+    mem:
+      slope: 190
+      intercept: 4090
+      multiple: 16
+    
     tags:
-      - convnet
+      - vision
+      - classification
+      - cnn
+      - fp16
+      - e2e
 
     argv:
       --model: convnext_large
@@ -134,8 +219,19 @@ benchmarks:
 
   regnet_y_128gf:
     <<<: *torchvision
+
+    mem:
+      slope: 826
+      intercept: 5290
+      multiple: 16
+    
     tags:
-      - convnet
+      - vision
+      - classification
+      - cnn
+      - fp32
+      - lstm
+      - e2e
 
     argv:
       --model: regnet_y_128gf
@@ -153,7 +249,8 @@ benchmarks:
   t5:
     <<<: *hf
     tags:
-      - huggingface
+      - nlp
+      - language-modeling
       - transformer
     argv:
       --model: "T5"
@@ -162,7 +259,8 @@ benchmarks:
   reformer:
     <<<: *hf
     tags:
-      - huggingface
+      - nlp
+      - language_modeling
       - transformer
     argv:
       --model: "Reformer"
@@ -209,6 +307,8 @@ benchmarks:
     argv:
       --algo: td3
       --env: HalfCheetahBulletEnv-v0 # Default: CartPole-v1
+      -n: '-1'
+      --num-threads: '-1'
       --n-eval-envs: '1'
       --n-timesteps: '50000' # Default: '-1'
       --num-threads: '-1'

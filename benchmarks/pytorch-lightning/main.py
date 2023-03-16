@@ -128,6 +128,7 @@ def main(
         str(options.data_dir),
         num_workers=options.n_workers,
         pin_memory=torch.cuda.is_available(),
+        batch_size=hparams.batch_size,
     )
     assert hasattr(datamodule, "num_classes")
     n_classes = getattr(datamodule, "num_classes")
