@@ -69,7 +69,7 @@ def getmetric(bench, key):
     assert keys[0] in bench.keys(), f"{keys[0]} Choose from {list(bench.keys())}"
     
     for key in keys:
-        if key in parent or (key := maybeint() and key in parent):
+        if key in parent or (key := maybeint(key) and key in parent):
             parent = parent.get(key, dict())
             
     return parent

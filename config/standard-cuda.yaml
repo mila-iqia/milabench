@@ -139,39 +139,96 @@ sb3: &sb3
 benchmarks:
   resnet50:
     <<<: *torchvision
+
+    # Automatically select batch size
+    memory:
+      slope: 82
+      intercept: 2728
+      multiple: 8
+
+    tag:
+      - vision
+      - fp16
+
     argv:
       --model: resnet50
-      --batch-size: 256
+      --batch-size: 936
+      --with-amp: True
+      --fixed-batch: True
 
   squeezenet1_1:
     <<<: *torchvision
+    
+    # Automatically select batch size
+    memory:
+      slope: 19
+      intercept: 3166
+      multiple: 8
+
+    tag:
+      - vision
+      - fp32
+    
+    # Memory cannot go beyond 22810.75 
     argv:
       --model: squeezenet1_1
-      --batch-size: 256
+      --batch-size: 4016
 
   efficientnet_b0:
     <<<: *torchvision
+      
+    # Automatically select batch size
+    memory:
+      slope: 47
+      intercept: 2570
+      multiple: 8
+      
+    # Memory cannot go beyond 49816.75
     argv:
       --model: efficientnet_b0
-      --batch-size: 256
+      --batch-size: 1632
 
   efficientnet_b4:
     <<<: *torchvision
+    
+    # Automatically select batch size
+    memory:
+      slope: 115
+      intercept: 2765
+      multiple: 8
+      
     argv:
       --model: efficientnet_b4
-      --batch-size: 256
+      # use 79280.75
+      --batch-size: 664
 
   efficientnet_b7:
     <<<: *torchvision
+    
+    # Automatically select batch size
+    memory:
+      slope: 264
+      intercept: 3236
+      multiple: 8
+      
     argv:
+      # use 80798.75 
       --model: efficientnet_b7
-      --batch-size: 64
+      --batch-size: 288
 
   convnext_large:
     <<<: *torchvision
+
+    # Automatically select batch size
+    memory:
+      slope: 190
+      intercept: 4090
+      multiple: 8
+    
     argv:
+      # use 79114.75
       --model: convnext_large
-      --batch-size: 256
+      --batch-size: 392
 
   regnet_y_128gf:
     <<<: *torchvision
@@ -208,27 +265,19 @@ benchmarks:
       -d: cuda
       -m: eager
       -t: train
-      --bs: 32
+      --bs: 16
 
   dlrm:
     <<<: *torchbench
 
     model: dlrm
-    argv:
-      -d: cuda
-      -m: eager
-      -t: train
-      --bs: 8192
+    # argv:
+    #   Batch size here has no impact
+    #   --bs: 4096
   
   soft_actor_critic:
     <<<: *torchbench
-
     model: soft_actor_critic
-    argv:
-      -d: cuda
-      -m: eager
-      -t: train
-      --bs: 1024
 
   speech_transformer:
     <<<: *torchbench
@@ -238,7 +287,8 @@ benchmarks:
       -d: cuda
       -m: eager
       -t: train
-      --bs: 128
+      #   Batch size here has no impact
+      # --bs: 1
 
   super_slomo:
     <<<: *torchbench
@@ -252,13 +302,7 @@ benchmarks:
 
   stargan:
     <<<: *torchbench
-
     model: pytorch_stargan
-    argv:
-      -d: cuda
-      -m: eager
-      -t: train
-      --bs: 32
 
   # cyclegan:
   #   <<<: *torchbench
@@ -315,7 +359,8 @@ benchmarks:
       --backbone: "resnet152"
       --strategy: "dp"
       --precision: 32
-      --batch_size: 8192
+      # Batch size does not work
+      # --batch_size: 1
 
   vit_l_32:
     <<<: *lightning
@@ -323,4 +368,5 @@ benchmarks:
       --backbone: "vit_l_32"  # (larger model)
       --strategy: "fsdp"  # Fully-Sharded Data-Parallel
       --precision: 32
-      --batch_size: 2048
+      # Batch size does not work
+      # --batch_size: 1
