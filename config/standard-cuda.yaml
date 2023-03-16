@@ -240,12 +240,20 @@ benchmarks:
   bert:
     <<<: *torchbench
 
+    # Automatically select batch size
+    memory:
+      slope: 162
+      intercept: 4207
+      multiple: 8
+    
     model: BERT_pytorch
     argv:
       -d: cuda
       -m: eager
       -t: train
-      --bs: 32
+
+      # use 81042.75
+      --bs: 464
 
   hf_reformer:
     <<<: *torchbench
