@@ -141,79 +141,124 @@ benchmarks:
     <<<: *torchvision
     argv:
       --model: resnet50
+      --batch-size: 256
 
   squeezenet1_1:
     <<<: *torchvision
     argv:
       --model: squeezenet1_1
+      --batch-size: 256
 
   efficientnet_b0:
     <<<: *torchvision
     argv:
       --model: efficientnet_b0
+      --batch-size: 256
 
   efficientnet_b4:
     <<<: *torchvision
     argv:
       --model: efficientnet_b4
+      --batch-size: 256
 
   efficientnet_b7:
     <<<: *torchvision
     argv:
       --model: efficientnet_b7
-      --batch-size: 32
+      --batch-size: 64
 
   convnext_large:
     <<<: *torchvision
     argv:
       --model: convnext_large
+      --batch-size: 256
 
   regnet_y_128gf:
     <<<: *torchvision
     argv:
       --model: regnet_y_128gf
-      --batch-size: 16
+      --batch-size: 32
       --with-amp: null
 
   bert:
     <<<: *torchbench
 
     model: BERT_pytorch
+    argv:
+      -d: cuda
+      -m: eager
+      -t: train
+      --bs: 32
 
   hf_reformer:
     <<<: *torchbench
 
     model: hf_Reformer
+    argv:
+      -d: cuda
+      -m: eager
+      -t: train
+      --bs: 32
 
   hf_t5:
     <<<: *torchbench
 
     model: hf_T5
+    argv:
+      -d: cuda
+      -m: eager
+      -t: train
+      --bs: 32
 
   dlrm:
     <<<: *torchbench
 
     model: dlrm
-
+    argv:
+      -d: cuda
+      -m: eager
+      -t: train
+      --bs: 8192
+  
   soft_actor_critic:
     <<<: *torchbench
 
     model: soft_actor_critic
+    argv:
+      -d: cuda
+      -m: eager
+      -t: train
+      --bs: 1024
 
   speech_transformer:
     <<<: *torchbench
 
     model: speech_transformer
+    argv:
+      -d: cuda
+      -m: eager
+      -t: train
+      --bs: 128
 
   super_slomo:
     <<<: *torchbench
 
     model: Super_SloMo
+    argv:
+      -d: cuda
+      -m: eager
+      -t: train
+      --bs: 24
 
   stargan:
     <<<: *torchbench
 
     model: pytorch_stargan
+    argv:
+      -d: cuda
+      -m: eager
+      -t: train
+      --bs: 32
 
   # cyclegan:
   #   <<<: *torchbench
@@ -270,7 +315,7 @@ benchmarks:
       --backbone: "resnet152"
       --strategy: "dp"
       --precision: 32
-      --batch_size: 2048
+      --batch_size: 8192
 
   vit_l_32:
     <<<: *lightning
@@ -278,3 +323,4 @@ benchmarks:
       --backbone: "vit_l_32"  # (larger model)
       --strategy: "fsdp"  # Fully-Sharded Data-Parallel
       --precision: 32
+      --batch_size: 2048

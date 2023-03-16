@@ -303,8 +303,11 @@ class Main:
         runs = fetch_runs(folder)
 
         for run in runs:
-            all_data = _read_reports(run.path)
-            run.summary = make_summary(all_data.values())
+            try:
+                all_data = _read_reports(run.path)
+                run.summary = make_summary(all_data.values())
+            except IndexError:
+                print(f'Ignoring pending run {run.name}')
 
         compare(runs, last, metric, stat)
 
