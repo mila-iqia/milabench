@@ -23,15 +23,25 @@ def main():
     try:
         run_cli(Main)
     except SystemExit as sysex:
-        if sysex.code == 0 and "pin" in sys.argv and ("-h" in sys.argv or "--help" in sys.argv):
-            out = (subprocess.check_output(["python3", "-m", "piptools", "compile", "--help"])
+        if (
+            sysex.code == 0
+            and "pin" in sys.argv
+            and ("-h" in sys.argv or "--help" in sys.argv)
+        ):
+            out = (
+                subprocess.check_output(
+                    ["python3", "-m", "piptools", "compile", "--help"]
+                )
                 .decode("utf-8")
-                .split("\n"))
+                .split("\n")
+            )
             for i in range(len(out)):
                 if out[i].startswith("Usage:"):
                     bin = os.path.basename(sys.argv[0])
-                    out[i] = out[i].replace("Usage: python -m piptools compile",
-                                            f"usage: {bin} pin [...] --pip-compile")
+                    out[i] = out[i].replace(
+                        "Usage: python -m piptools compile",
+                        f"usage: {bin} pin [...] --pip-compile",
+                    )
             print("\n".join(out))
         raise
 
@@ -217,7 +227,7 @@ class Main:
 
         mp = _get_multipack(dev=dev)
         mp.do_install(dash=simple_dash, force=force, sync=sync)
-    
+
     def pin():
         # Extra args to pass to pip-compile
         # [nargs: --]
@@ -307,7 +317,7 @@ class Main:
                 all_data = _read_reports(run.path)
                 run.summary = make_summary(all_data.values())
             except IndexError:
-                print(f'Ignoring pending run {run.name}')
+                print(f"Ignoring pending run {run.name}")
 
         compare(runs, last, metric, stat)
 

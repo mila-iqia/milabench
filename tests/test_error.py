@@ -19,7 +19,6 @@ error_cases = [([], short_matcher), (["--fulltrace"], long_matcher)]
 
 @pytest.mark.parametrize("args,matcher", error_cases)
 def test_error_reporting_short(capsys, args, matcher):
-
     with pytest.raises(SystemExit) as err:
         milabench_cmd("run", config("argerror"), *args)
 

@@ -1,12 +1,13 @@
 from collections import defaultdict
 from dataclasses import dataclass, field
+from typing import List
 
 
 @dataclass
 class PackError:
     """Error messages received from a running pack"""
 
-    stderr: list[str] = field(default_factory=list)
+    stderr: List[str] = field(default_factory=list)
     code: int = 0
     message: str = None
 
@@ -61,7 +62,6 @@ class ErrorValidation:
         success = 0
 
         for name, error in self.errors.items():
-
             traceback = False
             output = []
 

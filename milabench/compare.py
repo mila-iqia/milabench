@@ -15,13 +15,13 @@ def fetch_runs(folder):
     runs = []
     for run in os.listdir(folder):
         split = run.split(".", maxsplit=1)
-        
+
         if len(split) == 2:
             name, date = split
         else:
             name = run
             date = datetime.fromtimestamp(os.stat(os.path.join(folder, run)).st_mtime)
-        
+
         out = _Output(
             os.path.join(folder, run),
             name,
@@ -44,7 +44,7 @@ def _print_headers(runs, sep):
     for run in runs:
         if not run.summary:
             continue
-    
+
         header.append(f"{run.name:>10}")
         dates.append(f"{str(run.date.date()):>10}")
         times.append(f"{str(run.date.time().strftime('%H:%M:%S')):>10}")
@@ -57,21 +57,21 @@ def _print_headers(runs, sep):
 
 
 def getmetric(bench, key):
-    keys = key.split('.')
+    keys = key.split(".")
     parent = bench
-    
+
     def maybeint(k):
         try:
             return int(k)
         except Exception:
             return k
-    
+
     assert keys[0] in bench.keys(), f"{keys[0]} Choose from {list(bench.keys())}"
-    
+
     for key in keys:
         if key in parent or (key := maybeint(key) and key in parent):
             parent = parent.get(key, dict())
-            
+
     return parent
 
 
@@ -99,9 +99,11 @@ def compare(runs, last, metric, stat):
         for run in runs:
             if not run.summary:
                 continue
-            
-            value = getmetric(run.summary.get(bench, {}), metric).get(stat, float("NaN"))
-            
+
+            value = getmetric(run.summary.get(bench, {}), metric).get(
+                stat, float("NaN")
+            )
+
             line.append(f"{value:10.2f}")
 
         print(sep.join(line))

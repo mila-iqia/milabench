@@ -246,12 +246,17 @@ class BasePackage:
 
 
 @contextlib.contextmanager
-def inject_in_requirements(input_files:list, constraints:list, dir:XPath, inject_mb:bool=False):
-    injected_in = dir / next(i for i in input_files if XPath(i).suffix in {".in", ".txt"})
+def inject_in_requirements(
+    input_files: list, constraints: list, dir: XPath, inject_mb: bool = False
+):
+    injected_in = dir / next(
+        i for i in input_files if XPath(i).suffix in {".in", ".txt"}
+    )
     _content = injected_in.read_text()
     try:
         if inject_mb:
             from importlib.metadata import version
+
             injected_in.append_lines(f"milabench=={version('milabench')}")
 
         # pip-tools doesn't support the pip-args -c flag so adding the files in
@@ -325,9 +330,15 @@ class Package(BasePackage):
             if reqs.exists():
                 self.pip_install("-r", reqs)
 
-    def pin(self, *pip_compile_args, requirements_file=None,
-            input_files:list=tuple(), constraints:list=tuple(),
-            with_mb:bool=True, cwd=None):
+    def pin(
+        self,
+        *pip_compile_args,
+        requirements_file=None,
+        input_files: list = tuple(),
+        constraints: list = tuple(),
+        with_mb: bool = True,
+        cwd=None,
+    ):
         """Pin versions to requirements file.
 
         Arguments:
@@ -349,8 +360,11 @@ class Package(BasePackage):
         constraints = tuple(XPath(c).absolute() for c in constraints)
 
         if cwd != self.pack_path:
-            for fn in (*input_files, requirements_file,
-                       requirements_file.with_suffix(".in")):
+            for fn in (
+                *input_files,
+                requirements_file,
+                requirements_file.with_suffix(".in"),
+            ):
                 if fn and (self.pack_path / fn).exists():
                     (self.pack_path / fn).copy(cwd / fn)
 
@@ -358,22 +372,40 @@ class Package(BasePackage):
             input_files = (*input_files, requirements_file.with_suffix(".in"))
 
         import milabench
+
         milabench_pyproject = XPath(milabench.__file__).parent.parent / "pyproject.toml"
         if with_mb and milabench_pyproject.exists():
             input_files = (*input_files, milabench_pyproject)
 
-        with inject_in_requirements(input_files, constraints, dir=cwd,
-                                    inject_mb=with_mb and not milabench_pyproject.exists()):
-            self.exec_pip_compile(requirements_file, input_files, *pip_compile_args, cwd=cwd)
+        with inject_in_requirements(
+            input_files,
+            constraints,
+            dir=cwd,
+            inject_mb=with_mb and not milabench_pyproject.exists(),
+        ):
+            self.exec_pip_compile(
+                requirements_file, input_files, *pip_compile_args, cwd=cwd
+            )
 
         if cwd != self.pack_path:
             (cwd / requirements_file).copy(self.pack_path / requirements_file)
 
-    def exec_pip_compile(self, requirements_file:XPath, input_files:list,
-                         *pip_compile_args, cwd:XPath):
-        self.execute("python3", "-m", "piptools", "compile", "--resolver",
-            "backtracking", "--output-file", requirements_file,
-            *pip_compile_args, *input_files, cwd=cwd)
+    def exec_pip_compile(
+        self, requirements_file: XPath, input_files: list, *pip_compile_args, cwd: XPath
+    ):
+        self.execute(
+            "python3",
+            "-m",
+            "piptools",
+            "compile",
+            "--resolver",
+            "backtracking",
+            "--output-file",
+            requirements_file,
+            *pip_compile_args,
+            *input_files,
+            cwd=cwd,
+        )
 
     def prepare(self):
         """Prepare the benchmark.

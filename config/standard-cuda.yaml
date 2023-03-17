@@ -137,11 +137,10 @@ sb3: &sb3
 
 
 benchmarks:
-  resnet50:
+  resnet50-fp16:
     <<<: *torchvision
 
-    # Automatically select batch size
-    memory:
+    mem:
       slope: 82
       intercept: 2728
       multiple: 8
@@ -152,15 +151,32 @@ benchmarks:
 
     argv:
       --model: resnet50
-      --batch-size: 936
+      --batch-size: $(bs(gpu, mem))
       --with-amp: True
+      --fixed-batch: True
+
+  resnet50-fp32:
+    <<<: *torchvision
+
+    mem:
+      slope: 90
+      intercept: 2985
+      multiple: 8
+
+    tag:
+      - vision
+      - fp32
+
+    argv:
+      --model: resnet50
+      --batch-size: $(bs(gpu, mem))
+      --with-amp: null
       --fixed-batch: True
 
   squeezenet1_1:
     <<<: *torchvision
     
-    # Automatically select batch size
-    memory:
+    mem:
       slope: 19
       intercept: 3166
       multiple: 8
@@ -169,79 +185,75 @@ benchmarks:
       - vision
       - fp32
     
-    # Memory cannot go beyond 22810.75 
     argv:
       --model: squeezenet1_1
-      --batch-size: 4016
+      --batch-size: $(bs(gpu, mem))
 
   efficientnet_b0:
     <<<: *torchvision
       
-    # Automatically select batch size
-    memory:
+    mem:
       slope: 47
       intercept: 2570
       multiple: 8
       
-    # Memory cannot go beyond 49816.75
     argv:
       --model: efficientnet_b0
-      --batch-size: 1632
+      --batch-size: $(bs(gpu, mem))
 
   efficientnet_b4:
     <<<: *torchvision
     
-    # Automatically select batch size
-    memory:
+    mem:
       slope: 115
       intercept: 2765
       multiple: 8
       
     argv:
       --model: efficientnet_b4
-      # use 79280.75
-      --batch-size: 664
+      --batch-size: $(bs(gpu, mem))
 
   efficientnet_b7:
     <<<: *torchvision
     
-    # Automatically select batch size
-    memory:
+    mem:
       slope: 264
       intercept: 3236
       multiple: 8
       
     argv:
-      # use 80798.75 
       --model: efficientnet_b7
-      --batch-size: 288
+      --batch-size: $(bs(gpu, mem))
 
   convnext_large:
     <<<: *torchvision
 
-    # Automatically select batch size
-    memory:
+    mem:
       slope: 190
       intercept: 4090
       multiple: 8
     
     argv:
-      # use 79114.75
       --model: convnext_large
-      --batch-size: 392
+      --batch-size: $(bs(gpu, mem))
 
   regnet_y_128gf:
     <<<: *torchvision
+
+    mem:
+      slope: 826
+      intercept: 5290
+      multiple: 8
+    
     argv:
       --model: regnet_y_128gf
-      --batch-size: 32
+      --batch-size: $(bs(gpu, mem))
       --with-amp: null
 
   bert:
     <<<: *torchbench
 
-    # Automatically select batch size
-    memory:
+    mem:
       slope: 162
       intercept: 4207
       multiple: 8
@@ -251,29 +263,37 @@ benchmarks:
       -d: cuda
       -m: eager
       -t: train
-
-      # use 81042.75
-      --bs: 464
+      --bs: $(bs(gpu, mem))
 
   hf_reformer:
     <<<: *torchbench
 
+    mem:
+      slope: 385
+      intercept: 1464
+      multiple: 8
+  
     model: hf_Reformer
     argv:
       -d: cuda
       -m: eager
       -t: train
-      --bs: 32
+      --bs: $(bs(gpu, mem))
 
   hf_t5:
     <<<: *torchbench
 
+    mem:
+      slope: 2683
+      intercept: 1916
+      multiple: 8
+    
     model: hf_T5
     argv:
       -d: cuda
       -m: eager
       -t: train
-      --bs: 16
+      --bs: $(bs(gpu, mem))
 
   dlrm:
     <<<: *torchbench
@@ -301,12 +321,18 @@ benchmarks:
   super_slomo:
     <<<: *torchbench
 
+    mem:
+      slope: 251
+      intercept: 7738
+      multiple: 8
+
+    # memory usage is capped to 11762.75
     model: Super_SloMo
     argv:
       -d: cuda
       -m: eager
       -t: train
-      --bs: 24
+      --bs: $(bs(gpu, mem))
 
   stargan:
     <<<: *torchbench

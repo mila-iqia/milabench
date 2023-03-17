@@ -12,6 +12,7 @@ from voir.forward import MultiReader
 from .validation import ErrorValidation
 from .merge import merge
 from .utils import give_std
+from .evalctx import ArgumentResolver
 
 planning_methods = {}
 
@@ -93,15 +94,15 @@ class MultiPackage:
                 with give.inherit(**{"#pack": pack}):
                     pack.checked_install(force=force, sync=sync)
 
-    def do_pin(self, *pip_compile_args, dash, constraints:list=tuple()):
+    def do_pin(self, *pip_compile_args, dash, constraints: list = tuple()):
         installed_groups = set()
         with given() as gv, dash(gv), give_std():
             for pack in self.packs.values():
-                if pack.config['group'] in installed_groups:
+                if pack.config["group"] in installed_groups:
                     continue
                 with give.inherit(**{"#pack": pack}):
                     pack.pin(*pip_compile_args, constraints=constraints)
-                    installed_groups.add(pack.config['group'])
+                    installed_groups.add(pack.config["group"])
 
     def do_prepare(self, dash):
         with given() as gv, dash(gv), give_std():
@@ -120,7 +121,6 @@ class MultiPackage:
         with given() as gv:
             # Validations
             with ErrorValidation(gv) as errors:
-
                 # Dashboards
                 with dash(gv), report(gv, self.rundir):
                     for i in range(repeat):
@@ -138,6 +138,10 @@ class MultiPackage:
         if errors.failed:
             sys.exit(-1)
 
+    def resolve_arguments(self, run, args):
+        resolver = ArgumentResolver(run)
+        return resolver.resolve_arguments(args)
+
     def run_pack(self, i, pack, repeat):
         cfg = pack.config
         plan = deepcopy(cfg["plan"])
@@ -149,12 +153,16 @@ class MultiPackage:
             if repeat > 1:
                 run["tag"].append(f"R{i}")
 
+            # Resolve the arguments early
+            args = run.get("argv", {})
+            self.resolve_arguments(run, args)
+
             info = {"#pack": pack, "#run": run}
             give(**{"#start": time.time()}, **info)
             give(**{"#config": run}, **info)
 
             voirargs = _assemble_options(run.get("voir", {}))
-            args = _assemble_options(run.get("argv", {}))
+            args = _assemble_options(args)
             env = run.get("env", {})
 
             process = pack.run(args=args, voirargs=voirargs, env=env)
@@ -167,7 +175,7 @@ class MultiPackage:
             return True, False
 
         except BaseException as exc:
-            for (proc, info) in mr.processes:
+            for proc, info in mr.processes:
                 errstring = f"{type(exc).__name__}: {exc}"
                 endinfo = {
                     "#end": time.time(),
