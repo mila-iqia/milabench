@@ -39,8 +39,21 @@ def fetch_gpu_config(monkeypatch):
     monkeypatch.setattr(evalctx, "fetch_gpu_configuration", mock)
 
 
+def test_eval_context_env_disabled(fake_run):
+    args = {"a": "$(bs(gpu, mem, default=4))"}
+
+    os.environ["MILABENCH_FIXED_BATCH"] = "True"
+
+    resolver = ArgumentResolver(fake_run)
+    resolver.resolve_arguments(args)
+
+    assert int(args["a"]) == 4
+    
+    os.environ["MILABENCH_FIXED_BATCH"] = "False"
+
+
 def test_eval_context(fetch_gpu_config, fake_run):
-    args = {"a": "$(bs(gpu, mem))"}
+    args = {"a": "$(bs(gpu, mem, default=4))"}
     resolver = ArgumentResolver(fake_run)
     resolver.resolve_arguments(args)
 
@@ -49,7 +62,7 @@ def test_eval_context(fetch_gpu_config, fake_run):
 
 
 def test_eval_context_multi_gpu(fetch_gpu_config, fake_run):
-    args = {"a": "$(bs(gpu, mem, multi_gpu=True))"}
+    args = {"a": "$(bs(gpu, mem, default=4, multi_gpu=True))"}
     resolver = ArgumentResolver(fake_run)
     resolver.resolve_arguments(args)
 
@@ -58,7 +71,7 @@ def test_eval_context_multi_gpu(fetch_gpu_config, fake_run):
 
 
 def test_eval_context_2(fetch_gpu_config, fake_run_2):
-    args = {"a": "$(bs(gpu, mem))"}
+    args = {"a": "$(bs(gpu, mem, default=4))"}
     resolver = ArgumentResolver(fake_run_2)
     resolver.resolve_arguments(args)
 
@@ -67,7 +80,7 @@ def test_eval_context_2(fetch_gpu_config, fake_run_2):
 
 
 def test_eval_context_env_override(fake_run):
-    args = {"a": "$(bs(gpu, mem))"}
+    args = {"a": "$(bs(gpu, mem, default=4))"}
 
     os.environ["MILABENCH_GPU_MEM_LIMIT"] = "6000"
 
@@ -77,9 +90,8 @@ def test_eval_context_env_override(fake_run):
     assert int(args["a"]) % 8 == 0, "Batch size is a multiple of 8"
     assert int(args["a"]) == 2992
 
-
 def test_eval_context_missing(fetch_gpu_config):
-    args = {"a": "$(bs(gpu, mem))"}
+    args = {"a": "$(bs(gpu, mem, default=4))"}
 
     with pytest.raises(AttributeError) as err:
         resolver = ArgumentResolver(dict(name="fake-run"))

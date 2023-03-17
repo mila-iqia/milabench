@@ -151,7 +151,7 @@ benchmarks:
 
     argv:
       --model: resnet50
-      --batch-size: $(bs(gpu, mem))
+      --batch-size: $(bs(gpu, mem, default=512))
       --with-amp: True
       --fixed-batch: True
 
@@ -169,7 +169,7 @@ benchmarks:
 
     argv:
       --model: resnet50
-      --batch-size: $(bs(gpu, mem))
+      --batch-size: $(bs(gpu, mem, default=256))
       --with-amp: null
       --fixed-batch: True
 
@@ -185,9 +185,10 @@ benchmarks:
       - vision
       - fp32
     
+    # Memory capped at 22810.75
     argv:
       --model: squeezenet1_1
-      --batch-size: $(bs(gpu, mem))
+      --batch-size: $(bs(gpu, mem, default=256))
 
   efficientnet_b0:
     <<<: *torchvision
@@ -197,9 +198,10 @@ benchmarks:
       intercept: 2570
       multiple: 8
       
+    # Memory Capped at 49816.75
     argv:
       --model: efficientnet_b0
-      --batch-size: $(bs(gpu, mem))
+      --batch-size: $(bs(gpu, mem, default=256))
 
   efficientnet_b4:
     <<<: *torchvision
@@ -211,7 +213,7 @@ benchmarks:
       
     argv:
       --model: efficientnet_b4
-      --batch-size: $(bs(gpu, mem))
+      --batch-size: $(bs(gpu, mem, default=256))
 
   efficientnet_b7:
     <<<: *torchvision
@@ -223,7 +225,7 @@ benchmarks:
       
     argv:
       --model: efficientnet_b7
-      --batch-size: $(bs(gpu, mem))
+      --batch-size: $(bs(gpu, mem, default=64))
 
   convnext_large:
     <<<: *torchvision
@@ -235,7 +237,7 @@ benchmarks:
     
     argv:
       --model: convnext_large
-      --batch-size: $(bs(gpu, mem))
+      --batch-size: $(bs(gpu, mem, default=256))
 
   regnet_y_128gf:
     <<<: *torchvision
@@ -247,15 +249,15 @@ benchmarks:
     
     argv:
       --model: regnet_y_128gf
-      --batch-size: $(bs(gpu, mem))
+      --batch-size: $(bs(gpu, mem, default=32))
       --with-amp: null
 
   bert:
     <<<: *torchbench
 
     mem:
-      slope: 162
-      intercept: 4207
+      slope: 178
+      intercept: 3774
       multiple: 8
     
     model: BERT_pytorch
@@ -263,7 +265,7 @@ benchmarks:
       -d: cuda
       -m: eager
       -t: train
-      --bs: $(bs(gpu, mem))
+      --bs: $(bs(gpu, mem, default=16))
 
   hf_reformer:
     <<<: *torchbench
@@ -278,7 +280,7 @@ benchmarks:
       -d: cuda
       -m: eager
       -t: train
-      --bs: $(bs(gpu, mem))
+      --bs: $(bs(gpu, mem, default=16))
 
   hf_t5:
     <<<: *torchbench
@@ -293,7 +295,7 @@ benchmarks:
       -d: cuda
       -m: eager
       -t: train
-      --bs: $(bs(gpu, mem))
+      --bs: $(bs(gpu, mem, default=16))
 
   dlrm:
     <<<: *torchbench
@@ -332,7 +334,7 @@ benchmarks:
       -d: cuda
       -m: eager
       -t: train
-      --bs: $(bs(gpu, mem))
+      --bs: $(bs(gpu, mem, default=12))
 
   stargan:
     <<<: *torchbench

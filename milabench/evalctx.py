@@ -11,7 +11,7 @@ EXPR_PATTERN = re.compile(r"\$\((?P<expr>.*)\)")
 MMK = "mem"
 
 
-def bs(gpu, mem, multi_gpu=False):
+def bs(gpu, mem, default=None, multi_gpu=False):
     """Assume memory consumption follow a linear relationship with batch size.
     The resulting batch size is always a multiple of 8 (by default).
 
@@ -26,7 +26,18 @@ def bs(gpu, mem, multi_gpu=False):
     multi_gpu: bool
         if true the batch size is multiplied by the number of GPUs
 
+    Notes
+    -----
+    Use ``MILABENCH_FIXED_BATCH`` to disable auto finding the batch size.
+    
     """
+    fixed_batch = os.getenv("MILABENCH_FIXED_BATCH", "False") in ("True", "1")
+    
+    assert default is not None, "Auto batch size is experimental, populate default as fallback"
+    
+    if fixed_batch:
+        return default
+    
     batch_size = (
         int((gpu.mem - mem.intercept) / mem.slope / mem.multiple) * mem.multiple
     )
@@ -101,6 +112,9 @@ class ArgumentResolver:
             self._init_context()
             expression = mt.groupdict()["expr"]
             arg = eval(expression, self.globals, self.locals)
+            
+            with open("batch.txt", 'a') as file:
+                file.write(f"{self.run['name']}: {arg}\n")
 
         return str(arg)
 
