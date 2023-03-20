@@ -40,10 +40,10 @@ torchvision: &torchvision
     method: per_gpu
 
   voir:
-    --stop: 30
+    --stop: 120
     --metric: step
     --metric-interval: 1s
-    --metric-skip: 5s
+    --metric-skip: 10s
 
   argv:
     --with-amp: true
@@ -71,9 +71,10 @@ torchbench: &torchbench
       - gym < 0.26.0
 
   voir:
+    --stop: 120
     --metric: step
-    --metric-interval: 1
-    --metric-skip: 9
+    --metric-interval: 1s
+    --metric-skip: 10s
 
   argv:
     -d: cuda
@@ -127,10 +128,7 @@ sb3: &sb3
 
     tags:
       - rl
-
-    venv:
-      type: conda
-
+    
     plan:
       method: per_gpu
 
