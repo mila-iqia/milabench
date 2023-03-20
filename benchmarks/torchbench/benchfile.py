@@ -23,24 +23,26 @@ def tmp_path(path):
 class TorchBenchmarkPack(Package):
     requirements_file = "requirements-bench.txt"
 
-    def _clone_tb(self, to):
-        to = XPath(to)
-        env_path = os.environ["PATH"]
-        env_path += f":{to / 'bin'}"
-        with tmp_path(env_path):
-            # Download and extract git-lfs if it is missing
-            try:
-                subprocess.check_call(
-                    ["which", "git-lfs"],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                )
-            except subprocess.CalledProcessError:
-                subprocess.check_call(
-                    [self.pack_path / "download_extract_git-lfs.sh"],
-                    cwd=to,
-                )
-            to.clone_subtree("https://github.com/pytorch/benchmark", BRANCH)
+    def make_env(self):
+        """Return a dict of environment variables to use for prepare/run.
+
+        By default, ``make_env()`` will return:
+
+        .. code-block:: python
+
+            {
+                "MILABENCH_DIR_CODE": self.dirs.code,
+                "MILABENCH_DIR_DATA": self.dirs.data,
+                "MILABENCH_DIR_VENV": self.dirs.venv,
+                "MILABENCH_DIR_RUNS": self.dirs.runs,
+                "MILABENCH_CONFIG": json.dumps(self.config),
+                "TORCH_HOME": self.dirs.data / "torch"
+            }
+        """
+        return {
+            **super().make_env(),
+            "TORCH_HOME": self.dirs.data / "torch"
+        }
 
     def install(self):
         code = self.dirs.code
@@ -135,8 +137,27 @@ class TorchBenchmarkPack(Package):
 
     def run(self, args, voirargs, env):
         args.insert(0, self.config["model"])
-        super().run
+        env = {**self.make_env(), **(env if env else {})}
         return self.launch("run.py", args=args, voirargs=voirargs, env=env)
+
+    def _clone_tb(self, to):
+        to = XPath(to)
+        env_path = os.environ["PATH"]
+        env_path += f":{to / 'bin'}"
+        with tmp_path(env_path):
+            # Download and extract git-lfs if it is missing
+            try:
+                subprocess.check_call(
+                    ["which", "git-lfs"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+            except subprocess.CalledProcessError:
+                subprocess.check_call(
+                    [self.pack_path / "download_extract_git-lfs.sh"],
+                    cwd=to,
+                )
+            to.clone_subtree("https://github.com/pytorch/benchmark", BRANCH)
 
 
 __pack__ = TorchBenchmarkPack
