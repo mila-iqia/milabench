@@ -1,6 +1,7 @@
 import re
 import os
 import sys
+from math import log2
 from argparse import Namespace
 
 from .gpu import get_gpu_info
@@ -9,6 +10,18 @@ EXPR_PATTERN = re.compile(r"\$\((?P<expr>.*)\)")
 
 # Memory model config key
 MMK = "mem"
+
+
+def deduce_good_batch_size(estimate: float, method: str, multiplier: int = 8):
+    """Find the closest batch size that match the target batch size"""
+
+    if method == 'multiple':
+        return int(estimate / multiplier) * multiplier
+
+    elif method == 'power2':
+        return 2 ** int(log2(estimate))
+    
+    return int(estimate)
 
 
 def bs(gpu, mem, default=None, multi_gpu=False):
@@ -20,8 +33,9 @@ def bs(gpu, mem, default=None, multi_gpu=False):
     gpu: Namespace(mem, count)
         GPU configuration, memory capacity and number of detected GPUs
 
-    mem: Namespace(intercept, slope, multiple)
+    mem: Namespace(intercept, slope, multiple, method)
         Memory model parameters derived from a linear regression
+        method is used to 
 
     multi_gpu: bool
         if true the batch size is multiplied by the number of GPUs
@@ -38,9 +52,9 @@ def bs(gpu, mem, default=None, multi_gpu=False):
     if fixed_batch:
         return default
     
-    batch_size = (
-        int((gpu.mem - mem.intercept) / mem.slope / mem.multiple) * mem.multiple
-    )
+    estimate = (gpu.mem - mem.intercept) / mem.slope
+    
+    batch_size = deduce_good_batch_size(estimate, 'multiple', mem.multiple)
 
     if multi_gpu:
         batch_size *= gpu.count
@@ -113,8 +127,9 @@ class ArgumentResolver:
             expression = mt.groupdict()["expr"]
             arg = eval(expression, self.globals, self.locals)
             
-            with open("batch.txt", 'a') as file:
-                file.write(f"{self.run['name']}: {arg}\n")
+            # dump resolved batch sizes
+            # with open("batch.txt", 'a') as file:
+            #    file.write(f"{self.run['name']}: {arg}\n")
 
         return str(arg)
 

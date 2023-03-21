@@ -25,7 +25,9 @@ defaults: &defaults
     # --loading-rate: true
     --poll-gpu: 10
 
-
+#
+# Environments
+#
 torchvision: &torchvision
   <<<: *defaults
 
@@ -125,7 +127,7 @@ sb3: &sb3
       venv: venv/sb3
 
     definition: ../benchmarks/stable_baselines3
-
+    
     plan:
       method: per_gpu
 
@@ -136,6 +138,9 @@ sb3: &sb3
       --metric-skip: 100
 
 
+#
+# Benchmarks
+#
 benchmarks:
   resnet50-fp16:
     <<<: *torchvision
@@ -145,9 +150,11 @@ benchmarks:
       intercept: 2728
       multiple: 8
 
-    tag:
+    tags:
+      - convnet
       - vision
       - fp16
+      - no-io
 
     argv:
       --model: resnet50
@@ -163,7 +170,7 @@ benchmarks:
       intercept: 2985
       multiple: 8
 
-    tag:
+    tags:
       - vision
       - fp32
 
@@ -181,9 +188,11 @@ benchmarks:
       intercept: 3166
       multiple: 8
 
-    tag:
+    tags:
+      - convnet
       - vision
       - fp32
+      - no-io
     
     # Memory capped at 22810.75
     argv:
@@ -198,7 +207,10 @@ benchmarks:
       intercept: 2570
       multiple: 8
       
-    # Memory Capped at 49816.75
+    tags:
+      - convnet
+      - no-io
+
     argv:
       --model: efficientnet_b0
       --batch-size: $(bs(gpu, mem, default=256))
@@ -210,7 +222,11 @@ benchmarks:
       slope: 115
       intercept: 2765
       multiple: 8
-      
+
+    tags:
+      - convnet
+      - no-io
+
     argv:
       --model: efficientnet_b4
       --batch-size: $(bs(gpu, mem, default=256))
@@ -223,18 +239,25 @@ benchmarks:
       intercept: 3236
       multiple: 8
       
+    tags:
+      - convnet
+      - no-io
+
     argv:
       --model: efficientnet_b7
       --batch-size: $(bs(gpu, mem, default=64))
 
   convnext_large:
     <<<: *torchvision
-
     mem:
       slope: 190
       intercept: 4090
       multiple: 8
     
+    tags:
+      - convnet
+      - no-io
+
     argv:
       --model: convnext_large
       --batch-size: $(bs(gpu, mem, default=256))
@@ -247,6 +270,10 @@ benchmarks:
       intercept: 5290
       multiple: 8
     
+    tags:
+      - convnet
+      - no-io
+
     argv:
       --model: regnet_y_128gf
       --batch-size: $(bs(gpu, mem, default=32))
@@ -254,6 +281,9 @@ benchmarks:
 
   bert:
     <<<: *torchbench
+    tags:
+      - transformer
+      - no-io
 
     mem:
       slope: 178
@@ -269,6 +299,10 @@ benchmarks:
 
   hf_reformer:
     <<<: *torchbench
+    tags:
+      - huggingface
+      - transformer
+      -
 
     mem:
       slope: 385
@@ -289,6 +323,10 @@ benchmarks:
       slope: 2683
       intercept: 1916
       multiple: 8
+    tags:
+      - huggingface
+      - transformer
+      - no-io
     
     model: hf_T5
     argv:
@@ -300,6 +338,9 @@ benchmarks:
   dlrm:
     <<<: *torchbench
 
+    tags:
+      - recommendation
+    
     model: dlrm
     # argv:
     #   Batch size here has no impact
@@ -307,11 +348,16 @@ benchmarks:
   
   soft_actor_critic:
     <<<: *torchbench
+    tags:
+      - rl
+
     model: soft_actor_critic
 
   speech_transformer:
     <<<: *torchbench
-
+    tags:
+      - transformer
+    
     model: speech_transformer
     argv:
       -d: cuda
@@ -356,6 +402,8 @@ benchmarks:
 
   ppo:
     <<<: *sb3
+    tags:
+      - rl
 
     plan:
       method: njobs
@@ -373,6 +421,8 @@ benchmarks:
 
   td3:
     <<<: *sb3
+    tags:
+      - rl
 
     argv:
       --algo: td3
@@ -391,6 +441,9 @@ benchmarks:
 
   resnet152:
     <<<: *lightning
+    tags:
+      - convnet
+
     argv:
       --backbone: "resnet152"
       --strategy: "dp"
@@ -400,6 +453,9 @@ benchmarks:
 
   vit_l_32:
     <<<: *lightning
+    tags:
+      - convnet
+
     argv:
       --backbone: "vit_l_32"  # (larger model)
       --strategy: "fsdp"  # Fully-Sharded Data-Parallel
