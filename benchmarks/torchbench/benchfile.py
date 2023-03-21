@@ -1,8 +1,11 @@
 import contextlib
 import os
 import subprocess
+from tempfile import TemporaryDirectory
 
+from milabench.fs import XPath
 from milabench.pack import Package
+from milabench.config import parse_config
 
 BRANCH = "ff7114655294aa3ba57127a260dbd1ef5190f610"
 
@@ -10,36 +13,40 @@ BRANCH = "ff7114655294aa3ba57127a260dbd1ef5190f610"
 @contextlib.contextmanager
 def tmp_path(path):
     curr_path = os.environ["PATH"]
-    os.environ["PATH"] = path
-
-    yield
-
-    os.environ["PATH"] = curr_path
+    try:
+        os.environ["PATH"] = path
+        yield
+    finally:
+        os.environ["PATH"] = curr_path
 
 
 class TorchBenchmarkPack(Package):
     requirements_file = "requirements-bench.txt"
 
+    def _clone_tb(self, to):
+        to = XPath(to)
+        env_path = os.environ["PATH"]
+        env_path += f":{to / 'bin'}"
+        with tmp_path(env_path):
+            # Download and extract git-lfs if it is missing
+            try:
+                subprocess.check_call(
+                    ["which", "git-lfs"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+            except subprocess.CalledProcessError:
+                subprocess.check_call(
+                    [self.pack_path / "download_extract_git-lfs.sh"],
+                    cwd=to,
+                )
+            to.clone_subtree("https://github.com/pytorch/benchmark", BRANCH)
+
     def install(self):
         code = self.dirs.code
-        env_path = os.environ["PATH"]
         self._nox_session.env["PATH"] += f":{code / 'bin'}"
-        env_path += f":{code / 'bin'}"
         if not self.code_mark_file.exists():
-            # Download and extract git-lfs if it is missing
-            with tmp_path(env_path):
-                try:
-                    subprocess.check_call(
-                        ["which", "git-lfs"],
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL,
-                    )
-                except subprocess.CalledProcessError as e:
-                    subprocess.check_call(
-                        [code / "download_extract_git-lfs.sh"],
-                        cwd=code,
-                    )
-                code.clone_subtree("https://github.com/pytorch/benchmark", BRANCH)
+            self._clone_tb(code)
             # Add missing .git dirs even if they are empty to keep the git project
             # integrity. In particular, this is required to have a functional git-lfs
             os.makedirs(code / ".git/branches", exist_ok=True)
@@ -54,16 +61,24 @@ class TorchBenchmarkPack(Package):
                 "ind = indices",
                 "ind = indices.detach().cpu().numpy()"
             )
+            (code / "run.py").sub(
+                r"run_one_step\(test, model_flops=model_flops\)",
+                "run_one_step(test, model_flops=model_flops, num_iter=1_000_000)",
+            )
 
         super().install()
 
         model_name = self.config["model"]
 
+        freeze_files = {stage: code / f"{stage}-{model_name}"
+                        for stage in ("pre-post", "pre-install", "post-install")}
+
         # Log the requirements installed from the first install phase
         # super().install(). requirements-bench.txt being derived from
         # reqs/requirements-bench.in, most of the requirements should be
         # installed
-        with open(code / f"pre-post-{model_name}.out", "w") as _out, open(code / f"pre-post-{model_name}.err", "w") as _err:
+        with open(f"{freeze_files['pre-post']}.out", "w") as _out, \
+             open(f"{freeze_files['pre-post']}.err", "w") as _err:
             self.execute("python3", "-m", "pip", "freeze", stdout=_out, stderr=_err)
 
         # Some benches requires some packages to already be installed as they
@@ -76,7 +91,8 @@ class TorchBenchmarkPack(Package):
 
         # Log the requirements installed from the second install phase and make
         # sure to move any requirements that can to the model's requirements.in
-        with open(code / f"pre-install-{model_name}.out", "w") as _out, open(code / f"pre-install-{model_name}.err", "w") as _err:
+        with open(f"{freeze_files['pre-install']}.out", "w") as _out, \
+             open(f"{freeze_files['pre-install']}.err", "w") as _err:
             self.execute("python3", "-m", "pip", "freeze", stdout=_out, stderr=_err)
 
         if (code / f"installpy-{model_name}.txt").exists():
@@ -84,8 +100,38 @@ class TorchBenchmarkPack(Package):
 
         # Log the requirements installed from the third install phase and make
         # sure to move any requirements that can to the model's requirements.in
-        with open(code / f"post-install-{model_name}.out", "w") as _out, open(code / f"post-install-{model_name}.err", "w") as _err:
+        with open(f"{freeze_files['post-install']}.out", "w") as _out, \
+             open(f"{freeze_files['post-install']}.err", "w") as _err:
             self.execute("python3", "-m", "pip", "freeze", stdout=_out, stderr=_err)
+
+    def pin(self, *pip_compile_args, constraints:list=tuple()):
+        with TemporaryDirectory(dir=self.pack_path) as pin_dir:
+            pin_dir = XPath(pin_dir)
+            req_file = XPath(self.requirements_file)
+            self._clone_tb(pin_dir)
+
+            (self.pack_path / "reqs").copy(pin_dir / "reqs")
+            super().pin(*pip_compile_args, requirements_file=req_file,
+                        input_files=(req_file.with_suffix('.in'),), constraints=constraints,
+                        cwd=pin_dir)
+            (pin_dir / "reqs").merge_into(self.pack_path / "reqs")
+
+    def exec_pip_compile(self, requirements_file:XPath, input_files:list,
+                         *pip_compile_args, cwd:XPath):
+        config = parse_config(self.config["config_file"])
+        models = set()
+        for name, defn in config["benchmarks"].items():
+            group = defn.get("group", name)
+            if group == self.config["group"]:
+                models.add(defn["model"])
+        models_args = []
+        for m in models:
+            models_args.extend(("-m", m))
+        self.execute(cwd / "reqs/pip-compile.sh", "--reqs", "reqs", "--tb-root", ".",
+                     "--config", (self.pack_path / "benchtest.yaml").absolute(),
+                     *models_args, "--", "--resolver", "backtracking",
+                     "--output-file", requirements_file, *pip_compile_args,
+                     *input_files, cwd=cwd)
 
     def run(self, args, voirargs, env):
         args.insert(0, self.config["model"])

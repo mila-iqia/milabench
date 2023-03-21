@@ -7,47 +7,33 @@ import sys
 import tempfile
 from functools import partial
 
-import yaml
 from coleo import Option, config as configuration, default, run_cli, tooled
 
 from .fs import XPath
 from .log import simple_dash, simple_report
-from .merge import self_merge
 from .multi import MultiPackage
 from .report import make_report
 from .summary import aggregate, make_summary
+from .config import parse_config
+from .compare import fetch_runs, compare
 
 
 def main():
     sys.path.insert(0, os.path.abspath(os.curdir))
-    run_cli(Main)
-
-
-def parse_config(config_file, base=None):
-    config_file = XPath(config_file).absolute()
-    config_base = config_file.parent
-    with open(config_file) as cf:
-        config = yaml.safe_load(cf)
-    config.setdefault("defaults", {})
-    config["defaults"]["config_base"] = str(config_base)
-    config["defaults"]["config_file"] = str(config_file)
-
-    if base is not None:
-        config["defaults"]["dirs"]["base"] = base
-
-    config = self_merge(config)
-
-    for name, defn in config["benchmarks"].items():
-        defn.setdefault("name", name)
-        defn.setdefault("group", name)
-        defn["tag"] = [defn["name"]]
-
-        pack = XPath(defn["definition"]).expanduser()
-        if not pack.is_absolute():
-            pack = (XPath(defn["config_base"]) / pack).resolve()
-            defn["definition"] = str(pack)
-
-    return config
+    try:
+        run_cli(Main)
+    except SystemExit as sysex:
+        if sysex.code == 0 and "pin" in sys.argv and ("-h" in sys.argv or "--help" in sys.argv):
+            out = (subprocess.check_output(["python3", "-m", "piptools", "compile", "--help"])
+                .decode("utf-8")
+                .split("\n"))
+            for i in range(len(out)):
+                if out[i].startswith("Usage:"):
+                    bin = os.path.basename(sys.argv[0])
+                    out[i] = out[i].replace("Usage: python -m piptools compile",
+                                            f"usage: {bin} pin [...] --pip-compile")
+            print("\n".join(out))
+        raise
 
 
 def get_pack(defn):
@@ -231,6 +217,23 @@ class Main:
 
         mp = _get_multipack(dev=dev)
         mp.do_install(dash=simple_dash, force=force, sync=sync)
+    
+    def pin():
+        # Extra args to pass to pip-compile
+        # [nargs: --]
+        pip_compile: Option = tuple()
+
+        # Constraints files
+        # [options: -c]
+        # [nargs: *]
+        constraints: Option = tuple()
+
+        if "-h" in pip_compile or "--help" in pip_compile:
+            exit(0)
+
+        mp = _get_multipack(dev=True)
+
+        mp.do_pin(*pip_compile, dash=simple_dash, constraints=constraints)
 
     def summary():
         # Directory(ies) containing the run data
@@ -250,7 +253,83 @@ class Main:
         else:
             print(json.dumps(summary, indent=4))
 
+    def compare():
+        """Compare all runs with each other
+
+        Parameters
+        ----------
+
+        folder: str
+            Folder where milabench results are stored
+
+        last: int
+            Number of runs to compare i.e 3 means the 3 latest runs only
+
+        metric: str
+            Metric to compare
+
+        stat: str
+            statistic name to compare
+
+        Examples
+        --------
+
+        >>> milabench compare results/ --last 3 --metric train_rate --stat median
+                                               |   rufidoko |   sokilupa
+                                               | 2023-02-23 | 2023-03-09
+        bench                |          metric |   16:16:31 |   16:02:53
+        ----------------------------------------------------------------
+        bert                 |      train_rate |     243.05 |     158.50
+        convnext_large       |      train_rate |     210.11 |     216.23
+        dlrm                 |      train_rate |  338294.94 |  294967.41
+        efficientnet_b0      |      train_rate |     223.56 |     223.48
+
+        """
+        # [positional: ?]
+        folder: Option = None
+
+        last: Option & int = None
+
+        metric: Option & str = "train_rate"
+
+        stat: Option & str = "median"
+
+        if folder is None:
+            base = os.environ.get("MILABENCH_BASE", None)
+
+            if base is not None:
+                folder = os.path.join(base, "runs")
+
+        runs = fetch_runs(folder)
+
+        for run in runs:
+            all_data = _read_reports(run.path)
+            run.summary = make_summary(all_data.values())
+
+        compare(runs, last, metric, stat)
+
     def report():
+        """Generate a report aggregating all runs together into a final report
+
+        Examples
+        --------
+
+        >>> milabench report --runs results/
+        Source: /home/newton/work/milabench/milabench/../tests/results
+        =================
+        Benchmark results
+        =================
+                           n fail       perf   perf_adj   std%   sem%% peak_memory
+        bert               2    0     201.06     201.06  21.3%   8.7%          -1
+        convnext_large     2    0     198.62     198.62  19.7%   2.5%       29878
+        td3                2    0   23294.73   23294.73  13.6%   2.1%        2928
+        vit_l_32           2    1     548.09     274.04   7.8%   0.8%        9771
+        <BLANKLINE>
+        Errors
+        ------
+        1 errors, details in HTML report.
+
+        """
         # Runs directory
         # [action: append]
         runs: Option = []
