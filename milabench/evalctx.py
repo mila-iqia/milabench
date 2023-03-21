@@ -45,7 +45,7 @@ def bs(gpu, mem, default=None, multi_gpu=False):
     if multi_gpu:
         batch_size *= gpu.count
 
-    return batch_size
+    return max(batch_size, 1)
 
 
 def fetch_gpu_configuration(memory_override=None):
