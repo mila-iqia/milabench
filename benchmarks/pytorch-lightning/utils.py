@@ -22,11 +22,27 @@ ModuleType = TypeVar("ModuleType", bound=nn.Module)
 
 DEFAULT_DATA_DIR: Path = Path(os.environ["MILABENCH_DIR_DATA"])
 
-VISION_DATAMODULES: dict[str, type[VisionDataModule]] = {
-    name.replace("DataModule", ""): cls
-    for name, cls in vars(pl_bolts.datamodules).items()
-    if inspect.isclass(cls) and issubclass(cls, VisionDataModule)
-}
+
+def fake_imagenet(**kwargs):
+    data_dir = kwargs.get("data_dir", DEFAULT_DATA_DIR / "FakeImageNet")
+    fakeimagenet = pl_bolts.ImagenetDataModule(
+        data_dir,
+        **kwargs
+    )
+    return fakeimagenet
+
+
+def fetch_datamodules():
+    modules = {
+        'FakeImageNet': fake_imagenet
+    }
+    for name, cls in vars(pl_bolts.datamodules).items():
+        if inspect.isclass(cls) and issubclass(cls, VisionDataModule):
+            modules[name.replace("DataModule", "")] = cls
+
+    return modules
+
+VISION_DATAMODULES: dict[str, type[VisionDataModule]] = fetch_datamodules()
 
 BACKBONES: list[str] = models.list_models(module=models)
 
