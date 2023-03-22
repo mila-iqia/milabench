@@ -10,11 +10,15 @@ from typing import Callable, NewType, TypeVar
 import pl_bolts.datamodules
 from pl_bolts.datamodules import CIFAR10DataModule
 from pl_bolts.datamodules.vision_datamodule import VisionDataModule
+from pytorch_lightning import LightningDataModule
 from simple_parsing import choice
 from simple_parsing.helpers.serialization.serializable import Serializable
+
 from torch import nn
 from torchvision import models
-
+import torchvision.datasets as datasets
+import torchvision.transforms as transforms
+    
 C = NewType("C", int)
 H = NewType("H", int)
 W = NewType("W", int)
@@ -23,13 +27,42 @@ ModuleType = TypeVar("ModuleType", bound=nn.Module)
 DEFAULT_DATA_DIR: Path = Path(os.environ["MILABENCH_DIR_DATA"])
 
 
-def fake_imagenet(**kwargs):
-    data_dir = kwargs.get("data_dir", DEFAULT_DATA_DIR / "FakeImageNet")
-    fakeimagenet = pl_bolts.ImagenetDataModule(
-        data_dir,
+def fake_imagenet(data_dir, pin_memory=True, **kwargs):
+    folder = os.path.join(data_dir, "FakeImageNet")
+        
+    normalize = transforms.Normalize(
+        mean=[0.485, 0.456, 0.406], 
+        std=[0.229, 0.224, 0.225],
+    )
+
+    train_transforms = transforms.Compose(
+        [
+            transforms.RandomResizedCrop(224),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            normalize,
+        ]
+    )
+    
+    val_transforms = transforms.Compose(
+        [
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            normalize,
+        ]
+    )
+
+    module = LightningDataModule.from_datasets(
+        train_dataset=datasets.ImageFolder(os.path.join(folder, "train"), train_transforms),
+        val_dataset=datasets.ImageFolder(os.path.join(folder, "val"), val_transforms),
+        test_dataset=datasets.ImageFolder(os.path.join(folder, "test"), val_transforms),
         **kwargs
     )
-    return fakeimagenet
+    setattr(module, 'num_classes', 1000)
+    setattr(module, 'dims', (3, 224, 224))
+    
+    return module
 
 
 def fetch_datamodules():
