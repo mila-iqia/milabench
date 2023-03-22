@@ -106,7 +106,6 @@ lightning: &lightning
   definition: ../benchmarks/pytorch-lightning
 
   argv:
-    --gpus: -1
     --max_epochs: 1
     --max_steps: 100
     --limit_val_batches: 100
@@ -148,19 +147,19 @@ benchmarks:
     mem:
       slope: 82
       intercept: 2728
-      multiple: 8
+      multiple: 32
 
     tags:
-      - convnet
       - vision
+      - classification
+      - cnn
       - fp16
-      - no-io
+      - e2e
 
     argv:
       --model: resnet50
       --batch-size: $(bs(gpu, mem, default=512))
       --with-amp: True
-      --fixed-batch: True
 
   resnet50-fp32:
     <<<: *torchvision
@@ -168,17 +167,19 @@ benchmarks:
     mem:
       slope: 90
       intercept: 2985
-      multiple: 8
+      multiple: 32
 
     tags:
       - vision
+      - classification
+      - cnn
       - fp32
+      - e2e
 
     argv:
       --model: resnet50
       --batch-size: $(bs(gpu, mem, default=256))
       --with-amp: null
-      --fixed-batch: True
 
   squeezenet1_1:
     <<<: *torchvision
@@ -186,13 +187,14 @@ benchmarks:
     mem:
       slope: 19
       intercept: 3166
-      multiple: 8
+      multiple: 32
 
     tags:
-      - convnet
       - vision
-      - fp32
-      - no-io
+      - classification
+      - cnn
+      - fp16
+      - e2e
     
     # Memory capped at 22810.75
     argv:
@@ -205,11 +207,14 @@ benchmarks:
     mem:
       slope: 47
       intercept: 2570
-      multiple: 8
+      multiple: 32
       
     tags:
-      - convnet
-      - no-io
+      - vision
+      - classification
+      - cnn
+      - fp16
+      - e2e
 
     argv:
       --model: efficientnet_b0
@@ -221,11 +226,14 @@ benchmarks:
     mem:
       slope: 115
       intercept: 2765
-      multiple: 8
+      multiple: 32
 
     tags:
-      - convnet
-      - no-io
+      - vision
+      - classification
+      - cnn
+      - fp16
+      - e2e
 
     argv:
       --model: efficientnet_b4
@@ -237,11 +245,14 @@ benchmarks:
     mem:
       slope: 264
       intercept: 3236
-      multiple: 8
+      multiple: 32
       
     tags:
-      - convnet
-      - no-io
+      - vision
+      - classification
+      - cnn
+      - fp16
+      - e2e
 
     argv:
       --model: efficientnet_b7
@@ -252,11 +263,14 @@ benchmarks:
     mem:
       slope: 190
       intercept: 4090
-      multiple: 8
+      multiple: 32
     
     tags:
-      - convnet
-      - no-io
+      - vision
+      - classification
+      - cnn
+      - fp16
+      - e2e
 
     argv:
       --model: convnext_large
@@ -268,11 +282,15 @@ benchmarks:
     mem:
       slope: 826
       intercept: 5290
-      multiple: 8
+      multiple: 32
     
     tags:
-      - convnet
-      - no-io
+      - vision
+      - classification
+      - cnn
+      - fp32
+      - lstm
+      - e2e
 
     argv:
       --model: regnet_y_128gf
@@ -282,6 +300,8 @@ benchmarks:
   bert:
     <<<: *torchbench
     tags:
+      - nlp
+      - language-modeling
       - transformer
       - no-io
 
@@ -300,9 +320,11 @@ benchmarks:
   hf_reformer:
     <<<: *torchbench
     tags:
-      - huggingface
+      - nlp
+      - language-modeling
       - transformer
-      -
+      - huggingface
+      - no-io
 
     mem:
       slope: 385
@@ -319,14 +341,17 @@ benchmarks:
   hf_t5:
     <<<: *torchbench
 
+    tags:
+      - nlp
+      - language_modeling
+      - transformer
+      - huggingface
+      - no-io
+
     mem:
       slope: 2683
       intercept: 1916
       multiple: 8
-    tags:
-      - huggingface
-      - transformer
-      - no-io
     
     model: hf_T5
     argv:
@@ -340,6 +365,7 @@ benchmarks:
 
     tags:
       - recommendation
+      - mlp
     
     model: dlrm
     # argv:
@@ -350,12 +376,15 @@ benchmarks:
     <<<: *torchbench
     tags:
       - rl
+      - mlp
 
     model: soft_actor_critic
 
   speech_transformer:
     <<<: *torchbench
     tags:
+      - speech
+      - recognition
       - transformer
     
     model: speech_transformer
@@ -369,10 +398,15 @@ benchmarks:
   super_slomo:
     <<<: *torchbench
 
+    tags:
+      - vision
+      - video_interpolation
+      - unetcnn
+
     mem:
       slope: 251
       intercept: 7738
-      multiple: 8
+      multiple: 32
 
     # memory usage is capped to 11762.75
     model: Super_SloMo
@@ -384,6 +418,11 @@ benchmarks:
 
   stargan:
     <<<: *torchbench
+    tags:
+      - vision
+      - gan
+      - resnet
+
     model: pytorch_stargan
 
   # cyclegan:
@@ -397,7 +436,10 @@ benchmarks:
 
   learning_to_paint:
     <<<: *torchbench
-
+    tags:
+      - rl
+      - resnet
+    
     model: LearningToPaint
 
   ppo:
@@ -427,6 +469,8 @@ benchmarks:
     argv:
       --algo: td3
       --env: HalfCheetahBulletEnv-v0 # Default: CartPole-v1
+        -n: '-1'
+      --num-threads: '-1'
       --n-eval-envs: '1'
       --n-timesteps: '50000' # Default: '-1'
       --num-threads: '-1'
@@ -442,23 +486,33 @@ benchmarks:
   resnet152:
     <<<: *lightning
     tags:
-      - convnet
+      - vision
+      - classification
+      - cnn
 
+    mem:
+      slope: 4.23
+      intercept: 3323
+      multiple: 32
+    
     argv:
+      --devices: -1
       --backbone: "resnet152"
       --strategy: "dp"
       --precision: 32
-      # Batch size does not work
-      # --batch_size: 1
+      --max_epochs: 100
+      --max_steps: 1000
+      --batch_size: $(bs(gpu, mem, default=12, multi_gpu=True))
 
   vit_l_32:
     <<<: *lightning
     tags:
-      - convnet
+      - vision
+      - classification
+      - transformer
 
     argv:
       --backbone: "vit_l_32"  # (larger model)
       --strategy: "fsdp"  # Fully-Sharded Data-Parallel
       --precision: 32
-      # Batch size does not work
-      # --batch_size: 1
+      # This benchmark is hanging with 8 GPUs
