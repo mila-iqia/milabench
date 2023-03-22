@@ -15,7 +15,7 @@ def generate_data():
     
     if not os.path.exists(dest):
         print(f"Generating fake data into {dest}...")
-        generate_sets(dest, {"train": 1000, "val": 10, "test": 10}, (3, 512, 512))
+        generate_sets(dest, {"train": 10000, "val": 100, "test": 100}, (3, 512, 512))
         print("Done!")
 
 
