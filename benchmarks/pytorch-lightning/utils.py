@@ -132,7 +132,7 @@ def get_backbone_network(
 @dataclass
 class DataOptions(Serializable):
     datamodule: type[VisionDataModule] = choice(
-        VISION_DATAMODULES, default=CIFAR10DataModule
+        VISION_DATAMODULES, default=fake_imagenet
     )
     """ The datamodule to use. Can be any `VisionDataModule` from `pl_bolts.datamodules`. """
 
