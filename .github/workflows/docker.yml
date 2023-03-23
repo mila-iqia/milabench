@@ -39,6 +39,16 @@ jobs:
       packages: write
 
     steps:
+      - name: Show all images
+        run: |
+          docker image ls
+
+      - name: Prune
+        run: |
+          # Prune all images older than 8 weeks
+          # The images are still on github registry
+          docker image prune -f --filter "until=1344h"
+
       - name: Check out the repo
         uses: actions/checkout@v3
       
