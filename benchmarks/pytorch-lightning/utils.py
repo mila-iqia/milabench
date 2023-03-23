@@ -27,7 +27,7 @@ ModuleType = TypeVar("ModuleType", bound=nn.Module)
 DEFAULT_DATA_DIR: Path = Path(os.environ["MILABENCH_DIR_DATA"])
 
 
-def fake_imagenet(data_dir, pin_memory=True, **kwargs):
+def fake_imagenet(data_dir, **kwargs):
     folder = os.path.join(data_dir, "FakeImageNet")
         
     normalize = transforms.Normalize(
@@ -53,7 +53,7 @@ def fake_imagenet(data_dir, pin_memory=True, **kwargs):
         ]
     )
 
-    module = LightningDataModule.from_datasets(
+    module = VisionDataModule.from_datasets(
         train_dataset=datasets.ImageFolder(os.path.join(folder, "train"), train_transforms),
         val_dataset=datasets.ImageFolder(os.path.join(folder, "val"), val_transforms),
         test_dataset=datasets.ImageFolder(os.path.join(folder, "test"), val_transforms),
