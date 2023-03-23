@@ -348,7 +348,9 @@ class Package(BasePackage):
             if constraints:
                 tf = tempfile.NamedTemporaryFile()
                 with open(tf.name, "w") as tfile:
-                    tfile.write("\n".join([f"-c {c}" for c in constraints]))
+                    tfile.write(
+                        "\n".join([f"-c {XPath(c).absolute()}" for c in constraints])
+                    )
                 constraint_files = (tf.name,)
             else:
                 constraint_files = ()

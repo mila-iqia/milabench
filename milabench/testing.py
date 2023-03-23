@@ -3,10 +3,8 @@ import sys
 
 from coleo import run_cli
 
-
-from milabench.fs import XPath
 from milabench.cli import Main
-
+from milabench.fs import XPath
 
 path = XPath(os.path.dirname(__file__))
 configfiles = path / ".." / "tests" / "config"

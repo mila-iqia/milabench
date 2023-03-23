@@ -23,9 +23,9 @@ def clone_with(cfg, new_cfg):
 
 @planning_method
 def per_gpu(cfg):
-    from .gpu import get_gpu_info
+    from voir.instruments.gpu import get_gpu_info
 
-    gpus = get_gpu_info().values()
+    gpus = get_gpu_info()["gpus"].values()
     ngpus = len(gpus)
     if not gpus:
         gpus = [{"device": 0, "selection_variable": "CPU_VISIBLE_DEVICE"}]

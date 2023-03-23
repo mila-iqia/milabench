@@ -1,7 +1,28 @@
+import sys
+import traceback
 from collections import defaultdict
+from functools import wraps
 from math import isnan, nan
 
 import numpy as np
+
+
+def error_guard(default_return):
+    def deco(fn):
+        @wraps(fn)
+        def wrapped(*args, **kwargs):
+            try:
+                return fn(*args, **kwargs)
+            except Exception:
+                print("=" * 80, file=sys.stderr)
+                print("A non-fatal error happened", file=sys.stderr)
+                print("=" * 80, file=sys.stderr)
+                traceback.print_exc()
+                return default_return() if callable(default_return) else default_return
+
+        return wrapped
+
+    return deco
 
 
 def aggregate(run_data):
@@ -85,18 +106,23 @@ def _merge(aggs):
     return results
 
 
+nans = {
+    "min": nan,
+    "q1": nan,
+    "median": nan,
+    "q3": nan,
+    "max": nan,
+    "mean": nan,
+    "std": nan,
+    "sem": nan,
+}
+
+
+@error_guard(nans)
 def _metrics(xs):
+    xs = [x for x in xs if x is not None]
     if not xs:
-        return {
-            "min": nan,
-            "q1": nan,
-            "median": nan,
-            "q3": nan,
-            "max": nan,
-            "mean": nan,
-            "std": nan,
-            "sem": nan,
-        }
+        return nans
     percentiles = [0, 25, 50, 75, 100]
     percentile_names = ["min", "q1", "median", "q3", "max"]
     metrics = dict(zip(percentile_names, np.percentile(xs, percentiles)))
@@ -106,6 +132,7 @@ def _metrics(xs):
     return metrics
 
 
+@error_guard(None)
 def _summarize(group):
     agg = group["data"]
     gpudata = defaultdict(lambda: defaultdict(list))
