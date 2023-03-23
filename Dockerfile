@@ -96,8 +96,7 @@ RUN python -m pip install -e /milabench/milabench/
 ENV PIP_DEFAULT_TIMEOUT=800
 
 RUN milabench install $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
-    milabench prepare $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
-    /bin/bash /milabench/milabench/script/nightly_overrides.bash
+    milabench prepare $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
 
 
 # CUDA-11.8 Fix
