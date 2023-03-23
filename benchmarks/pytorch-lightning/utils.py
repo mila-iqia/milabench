@@ -59,6 +59,13 @@ def fake_imagenet(data_dir, **kwargs):
         test_dataset=datasets.ImageFolder(os.path.join(folder, "test"), val_transforms),
         **kwargs
     )
+    
+    def _(*args, **kwargs):
+        pass
+    
+    setattr(module, 'prepare_data', _)
+    setattr(module, 'setup', _)
+    
     setattr(module, 'num_classes', 1000)
     setattr(module, 'dims', (3, 224, 224))
     
