@@ -66,6 +66,94 @@ class SyntheticData:
             yield (inp, out)
 
 
+
+def pytorch_dataloader(args):
+    train = datasets.ImageFolder(os.path.join(args.data, "train"), data_transforms)
+    train_loader = torch.utils.data.DataLoader(
+        train,
+        batch_size=args.batch_size,
+        shuffle=True,
+        num_workers=args.workers,
+        pin_memory=True,
+    )
+    return train_loader
+
+
+def dali_dataloader(args):
+    # pip install --extra-index-url https://developer.download.nvidia.com/compute/redist --upgrade nvidia-dali-cuda110
+    # workers
+    from nvidia.dali.pipeline import pipeline_def
+    import nvidia.dali.types as types
+    import nvidia.dali.fn as fn
+    from nvidia.dali.plugin.pytorch import DALIGenericIterator
+    import os
+
+    @pipeline_def(num_threads=args.workers, device_id=0)
+    def get_dali_pipeline():
+        images, labels = fn.readers.file(
+            file_root=os.path.join(args.data, "train"), 
+            random_shuffle=True, 
+            name="Reader",
+        )
+        
+        # decode data on the GPU
+        images = fn.decoders.image_random_crop(
+            images, 
+            device="mixed", 
+            output_type=types.RGB,
+        )
+        
+        # the rest of processing happens on the GPU as well
+        images = fn.resize(images, resize_x=256, resize_y=256)
+        
+        images = fn.crop_mirror_normalize(
+            images,
+            crop_h=224,
+            crop_w=224,
+            mean=[0.485 * 255, 0.456 * 255, 0.406 * 255],
+            std=[0.229 * 255, 0.224 * 255, 0.225 * 255],
+            mirror=fn.random.coin_flip(),
+        )
+        return images, labels
+
+
+    train_data = DALIGenericIterator(
+        [get_dali_pipeline(batch_size=args.batch_size)],
+        ['data', 'label'],
+        reader_name='Reader'
+    )  
+    
+    class Iter:
+        def __init__(self, loader) -> None:
+            self.loader = loader
+            
+        def __next__(self):
+            data = next(self.loader)
+                        
+            # x: (16, x, 224, 224)
+            # y: (16, 1)
+            x, y = data[0]['data'], data[0]['label']
+            y = torch.squeeze(y, dim=1).type(torch.LongTensor)
+
+            return x, y
+            
+    class Adapter:
+        def __init__(self, loader) -> None:
+            self.loader = loader
+            
+        def __iter__(self):
+            return Iter(self.loader)
+
+    return Adapter(train_data)
+
+
+def dataloader(args):
+    try: 
+        print("Using DALI")
+        return dali_dataloader(args)
+    except ImportError:
+        return pytorch_dataloader(args)
+
 def main():
     parser = argparse.ArgumentParser(description="Torchvision models")
     parser.add_argument(
@@ -114,18 +202,26 @@ def main():
         action="store_true",
         help="whether to use mixed precision with amp",
     )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=4,
+        help="Number of workers",
+    )
 
     args = parser.parse_args()
+    
     if args.fixed_batch:
-        args.synthetic_data = True
+        # avoid unexpected side effects unless explicit
+        assert args.synthetic_data, "Fixed batch needs synthetic data"
 
     if args.synthetic_data:
         args.data = None
     else:
         if not args.data:
             data_directory = os.environ.get("MILABENCH_DIR_DATA", None)
-            if data_directory:
-                args.data = os.path.join(data_directory, "FakeImageNet")
+            assert data_directory is not None, "No data folder specified"
+            args.data = os.path.join(data_directory, "FakeImageNet")
 
     use_cuda = not args.no_cuda and torch.cuda.is_available()
 
@@ -143,13 +239,7 @@ def main():
     optimizer = torch.optim.SGD(model.parameters(), args.lr)
 
     if args.data:
-        train = datasets.ImageFolder(os.path.join(args.data, "train"), data_transforms)
-        train_loader = torch.utils.data.DataLoader(
-            train,
-            batch_size=args.batch_size,
-            shuffle=True,
-            num_workers=1,
-        )
+        train_loader = dataloader(args)
     else:
         train_loader = SyntheticData(
             model=model,
