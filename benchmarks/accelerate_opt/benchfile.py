@@ -1,6 +1,7 @@
 from milabench import gpu
 from milabench.pack import Package
 
+import subprocess
 import json, os
 
 # This is called to ensure the arch variable is set
@@ -34,18 +35,24 @@ class TheBenchmark(Package):
         )
 
     def run(self, args, voirargs, env):
-        return self.execute(
-            "accelerate",
-            "launch",
-            #"--machine_rank=0",
-            f"--config_file={self.dirs.code / self.config['accelerate_config']}",
-            f"--num_cpu_threads_per_process={self.config['cpus_per_gpu']}",
-            f"--main_process_ip={self.config['manager_addr']}",
-            f"--main_process_port={self.config['manager_port']}",
-            #f"--num_processes={self.config['num_processes']}",
-            os.path.join(self.dirs.code / "main.py"),
-            env=self.make_env(),
+        proc = subprocess.Popen(
+            ["accelerate",
+             "launch",
+             #"--machine_rank=0",
+             f"--config_file={self.dirs.code / self.config['accelerate_config']}",
+             f"--num_cpu_threads_per_process={self.config['cpus_per_gpu']}",
+             f"--main_process_ip={self.config['manager_addr']}",
+             f"--main_process_port={self.config['manager_port']}",
+             #f"--num_processes={self.config['num_processes']}",
+             str(self.dirs.code / "main.py")],
+            env={"PYTHONUNBUFFERED": "1", **self._nox_session.env, **self.make_env()},
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            cwd=self.dirs.code,
+            preexec_fn=os.setsid,
         )
+        proc.did_setsid = True
+        return proc
 
 
 __pack__ = TheBenchmark

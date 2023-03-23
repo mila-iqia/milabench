@@ -58,27 +58,6 @@ from transformers.utils import get_full_repo_name
 logger = get_logger(__name__)
 
 
-# New Code #
-def evaluate(per_gpu_batch_size, model, eval_dataloader, accelerator, eval_dataset):
-    model.eval()
-    losses = []
-    for step, batch in enumerate(eval_dataloader):
-        with torch.no_grad():
-            outputs = model(**batch)
-
-        loss = outputs.loss
-        losses.append(accelerator.gather_for_metrics(loss.repeat(per_gpu_batch_size)))
-
-    losses = torch.cat(losses)
-    try:
-        eval_loss = torch.mean(losses)
-        perplexity = math.exp(eval_loss)
-    except OverflowError:
-        eval_loss = float("inf")
-        perplexity = float("inf")
-    return perplexity, eval_loss
-
-
 def main():
     config = json.loads(os.environ["MILABENCH_CONFIG"])
     per_gpu_batch_size = config["per_gpu_batch_size"]
@@ -130,15 +109,6 @@ def main():
 
     accelerator.wait_for_everyone()
 
-    # Get the datasets: you can either provide your own CSV/JSON/TXT training and evaluation files (see below)
-    # or just provide the name of one of the public datasets available on the hub at https://huggingface.co/datasets/
-    # (the dataset will be downloaded automatically from the datasets Hub).
-    #
-    # For CSV/JSON files, this script will use the column called 'text' or the first column if no column called
-    # 'text' is found. You can easily tweak this behavior (see below).
-    #
-    # In distributed training, the load_dataset function guarantee that only one local process can concurrently
-    # Downloading and loading a dataset from the hub.
     validation_split_percentage = config["validation_split_percentage"]
     dataset_name = config["dataset_name"]
     dataset_config_name = config["dataset_config_name"]
@@ -155,10 +125,6 @@ def main():
             split=f"train[{validation_split_percentage}%:]",
         )
 
-    # Load pretrained model and tokenizer
-    #
-    # In distributed training, the .from_pretrained methods guarantee that
-    # only one local process can concurrently download model & vocab.
     model_name = config["model_name"]
     model_config = AutoConfig.from_pretrained(model_name)
     tokenizer = AutoTokenizer.from_pretrained(
@@ -169,8 +135,6 @@ def main():
 
     model.resize_token_embeddings(len(tokenizer))
 
-    # Preprocessing the datasets.
-    # First we tokenize all the texts.
     column_names = raw_datasets["train"].column_names
     text_column_name = "text" if "text" in column_names else column_names[0]
 
@@ -195,13 +159,10 @@ def main():
         )
     block_size = 1024
 
-    # Main data processing function that will concatenate all texts from our dataset and generate chunks of block_size.
     def group_texts(examples):
         # Concatenate all texts.
         concatenated_examples = {k: list(chain(*examples[k])) for k in examples.keys()}
         total_length = len(concatenated_examples[list(examples.keys())[0]])
-        # We drop the small remainder, we could add padding if the model supported it instead of this drop, you can
-        # customize this part to your needs.
         if total_length >= block_size:
             total_length = (total_length // block_size) * block_size
         # Split by chunks of max_len.
@@ -211,13 +172,6 @@ def main():
         }
         result["labels"] = result["input_ids"].copy()
         return result
-
-    # Note that with `batched=True`, this map processes 1,000 texts together, so group_texts throws away a remainder
-    # for each of those groups of 1,000 texts. You can adjust that batch_size here but a higher value might be slower
-    # to preprocess.
-    #
-    # To speed up this part, we use multiprocessing. See the documentation of the map method for more information:
-    # https://huggingface.co/docs/datasets/package_reference/main_classes.html#datasets.Dataset.map
 
     with accelerator.local_main_process_first():
         lm_datasets = tokenized_datasets.map(
@@ -235,10 +189,6 @@ def main():
 
     train_dataset = lm_datasets["train"]
     eval_dataset = lm_datasets["validation"]
-
-    # Log a few random samples from the training set:
-    # for index in random.sample(range(len(train_dataset)), 3):
-    #     logger.info(f"Sample {index} of the training set: {train_dataset[index]}.")
 
     # DataLoaders creation:
     train_dataloader = DataLoader(
@@ -282,13 +232,8 @@ def main():
     )
     optimizer = optimizer_cls(optimizer_grouped_parameters, lr=5e-5)
 
-    # On TPU, the tie weights in our model have been disconnected, so we need to restore the ties.
-    if accelerator.distributed_type == DistributedType.TPU:
-        model.tie_weights()
-
     # Scheduler and math around the number of training steps.
 
-    # New Code
     # Get gradient accumulation steps from deepspeed config if available
     if accelerator.state.deepspeed_plugin is not None:
         gradient_accumulation_steps = (
@@ -353,10 +298,7 @@ def main():
     )
     logger.info(f"  Gradient Accumulation steps = {gradient_accumulation_steps}")
     logger.info(f"  Total optimization steps = {max_train_steps}")
-    # Only show the progress bar once on each machine.
-    progress_bar = tqdm(
-        range(max_train_steps), disable=not accelerator.is_local_main_process
-    )
+
     completed_steps = 0
     starting_epoch = 0
     best_metric = None
@@ -390,7 +332,6 @@ def main():
                 optimizer.step()
                 lr_scheduler.step()
                 optimizer.zero_grad()
-                progress_bar.update(1)
                 completed_steps += 1
                 # NOTE: Added (@lebrice) for throughput metrics
                 n_updates_since_start_of_run += 1
@@ -444,28 +385,6 @@ def main():
 
             if completed_steps >= max_train_steps:
                 break
-
-        perplexity, eval_loss = evaluate(
-            per_gpu_batch_size, model, eval_dataloader, accelerator, eval_dataset
-        )
-        logger.info(f"epoch {epoch}: perplexity: {perplexity} eval_loss: {eval_loss}")
-
-        if accelerator.is_main_process:
-            # accelerator.log(
-            print(
-                {
-                    "perplexity": perplexity,
-                    "eval_loss": eval_loss,
-                    "train_epoch_loss": total_loss.item() / len(train_dataloader),
-                    "epoch": epoch,
-                    "step": completed_steps,
-                }
-            )
-
-        # Tracks the best metric
-        if best_metric is None or best_metric > perplexity:
-            best_metric = perplexity
-            accelerator.print(f"New best metric: {best_metric} at epoch {epoch}")
 
 
 if __name__ == "__main__":
