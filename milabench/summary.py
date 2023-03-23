@@ -1,28 +1,9 @@
-import sys
-import traceback
 from collections import defaultdict
-from functools import wraps
 from math import isnan, nan
 
 import numpy as np
 
-
-def error_guard(default_return):
-    def deco(fn):
-        @wraps(fn)
-        def wrapped(*args, **kwargs):
-            try:
-                return fn(*args, **kwargs)
-            except Exception:
-                print("=" * 80, file=sys.stderr)
-                print("A non-fatal error happened", file=sys.stderr)
-                print("=" * 80, file=sys.stderr)
-                traceback.print_exc()
-                return default_return() if callable(default_return) else default_return
-
-        return wrapped
-
-    return deco
+from .utils import error_guard
 
 
 def aggregate(run_data):
