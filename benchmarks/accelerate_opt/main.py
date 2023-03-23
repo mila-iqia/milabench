@@ -303,27 +303,13 @@ def main():
     starting_epoch = 0
     best_metric = None
 
-    # NOTE (@lebrice): Added these for the throughput metrics below.
-    start_time: Optional[float] = None
-    last_log_time: Optional[float] = None
-    n_updates_since_start_of_run: int = 0
-    n_updates_since_last_log: int = 0
-    throughput_samples_per_sec: float = 0.0  # instantaneous throughput
-    throughput_samples_per_sec_since_start: float = (
-        0.0  # Average throughput since start of run
-    )
-
-    total_loss = 0.0
-
     for epoch in range(starting_epoch, num_train_epochs):
         model.train()
-        total_loss = 0
         for step, batch in enumerate(train_dataloader):
             outputs = model(**batch)
             loss = outputs.loss
-            # We keep track of the loss at each epoch
-            total_loss += loss.detach().float()
             loss = loss / gradient_accumulation_steps
+            print(json.dumps({"event": "data", "data": {"task": "train", "loss": loss.detach().item()}, "pipe": "data"}))
             accelerator.backward(loss)
 
             if (step + 1) % gradient_accumulation_steps == 0 or step == len(
@@ -333,55 +319,29 @@ def main():
                 lr_scheduler.step()
                 optimizer.zero_grad()
                 completed_steps += 1
-                # NOTE: Added (@lebrice) for throughput metrics
-                n_updates_since_start_of_run += 1
-                n_updates_since_last_log += 1
 
             if (
-                accelerator.is_local_main_process
-                and completed_steps % 10 == 0
+                accelerator.is_main_process
+                and completed_steps % 3 == 0
             ):
-                if start_time is None:
-                    # The first time we get here (first logging call), we've never logged before,
-                    # so we can't calculate the throughput. Only save the start time for the next
-                    # call.
-                    start_time = time.time()
+                if completed_steps == 0:
+                    last_step = completed_steps
+                    last_log_time = time.time()
                 else:
-                    seconds_since_start = time.time() - start_time
-                    seconds_since_last_log = time.time() - (last_log_time or start_time)
+                    seconds_since_last_log = time.time() - last_log_time
 
-                    # TODO: Not 100% sure, but seems like we're only logging values on the first node,
-                    # so we assume that one update here = one update on all nodes = total_batch_size
-                    # samples.
-                    n_samples_since_start = (
-                        n_updates_since_start_of_run * total_batch_size
-                    )
                     n_samples_since_last_log = (
-                        n_updates_since_last_log * total_batch_size
+                        (completed_steps - last_step) * total_batch_size
                     )
 
                     throughput_samples_per_sec = (
                         n_samples_since_last_log / seconds_since_last_log
                     )
-                    throughput_samples_per_sec_since_start = (
-                        n_samples_since_start / seconds_since_start
-                    )
 
-                    # TODO: If we want to use tensorboard, use `accelerator.log` instead.
-                    # accelerator.log(
-                    print(
-                        {
-                            "train_loss": loss.detach().item(),
-                            "samples_per_sec": throughput_samples_per_sec,
-                            "avg_samples_per_sec": throughput_samples_per_sec_since_start,
-                            "epoch": epoch,
-                            "step": completed_steps,
-                            "n_samples": completed_steps * total_batch_size,
-                        }
-                    )
+                    print(json.dumps({"event": "data", "data": {"task": "train", "rate": throughput_samples_per_sec, "units": "items/s"}, "pipe": "data"}))
 
-                last_log_time = time.time()
-                n_updates_since_last_log = 0
+                    last_step = completed_steps
+                    last_log_time = time.time()
 
             if completed_steps >= max_train_steps:
                 break
