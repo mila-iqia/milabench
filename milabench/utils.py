@@ -1,7 +1,9 @@
 import ast
 import importlib
+import itertools
 import json
 import os
+import random
 import runpy
 import sys
 from contextlib import contextmanager, redirect_stderr, redirect_stdout
@@ -160,6 +162,15 @@ class FileGiver:
 
     def flush(self):
         pass
+
+
+vowels = list("aeiou")
+consonants = list("bdfgjklmnprstvz")
+syllables = ["".join(letters) for letters in itertools.product(consonants, vowels)]
+
+
+def blabla(n=4):
+    return "".join([random.choice(syllables) for _ in range(n)])
 
 
 @contextmanager

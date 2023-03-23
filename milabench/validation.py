@@ -14,39 +14,31 @@ class PackError:
 class ErrorValidation:
     """Capture all error event and save them to generate a summary"""
 
-    def __init__(self, gv) -> None:
+    def __init__(self, short=True) -> None:
+        self.short = short
         self.errors = defaultdict(PackError)
         self.failed = False
-        gv.subscribe(self.on_event)
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *args):
-        pass
-
-    def on_event(self, data):
-        data = dict(data)
-        run = data.pop("#run", None)
-        pack = data.pop("#pack", None)
+    def __call__(self, data):
+        pack = data.pack
+        run = pack.config
 
         tg = ".".join(run["tag"]) if run else pack.config["name"]
-
-        ks = set(data.keys())
         error = self.errors[tg]
 
-        if ks == {"#stderr"}:
-            txt = str(data["#stderr"])
-            error.stderr.append(txt)
+        if data.event == "line" and data.pipe == "stderr":
+            error.stderr.append(data.data)
 
-        elif ks == {"#error"}:
-            error.message = data
+        elif data.event == "error":
+            info = data.data
+            error.message = f'{info["type"]}: {info["message"]}'
 
-        elif ks == {"#end", "#return_code"}:
-            error.code = data["#return_code"]
+        elif data.event == "end":
+            info = data.data
+            error.code = info["return_code"]
             self.failed = self.failed or error.code != 0
 
-    def report(self, short=True):
+    def end(self):
         """Print an error report and exit with an error code if any error were found"""
 
         report = [
@@ -61,12 +53,11 @@ class ErrorValidation:
         success = 0
 
         for name, error in self.errors.items():
-
             traceback = False
             output = []
 
             for line in error.stderr:
-                line = line.strip()
+                line = line.rstrip()
 
                 if "During handling of the above exception" in line:
                     # The exceptions that happened afterwards are not relevant
@@ -79,10 +70,10 @@ class ErrorValidation:
                     output.append(line + "\n")
 
             if error.code != 0:
-                # Tracback
+                # Traceback
                 failures += 1
 
-                if short:
+                if self.short:
                     traceback = output[-1] if output else "No traceback found"
                 else:
                     traceback = "".join(output).replace("\n", "\n    ")
@@ -104,3 +95,5 @@ class ErrorValidation:
             )
 
             print("\n".join(report))
+
+        return -1 if self.failed else 0

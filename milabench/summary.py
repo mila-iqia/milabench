@@ -6,11 +6,35 @@ import numpy as np
 
 def aggregate(run_data):
     omnibus = defaultdict(list)
+    config = None
+    start = None
+    end = None
     for entry in run_data:
-        for k, v in entry.items():
-            omnibus[k].append(v)
+        event = entry["event"]
 
-    (config,) = omnibus["#config"]
+        if event == "config":
+            config = entry["data"]
+
+        elif event == "data":
+            data = dict(entry["data"])
+            task = data.pop("task", None)
+            for k, v in data.items():
+                if task is not None and k == "rate":
+                    k = f"{task}_{k}"
+                omnibus[k].append(v)
+
+        elif event == "line":
+            omnibus[entry["pipe"]].append(entry["data"])
+
+        elif event == "start":
+            assert start is None
+            start = entry["data"]
+
+        elif event == "end":
+            assert end is None
+            end = entry["data"]
+
+    assert config and start and end
 
     device = config.get("device", None)
     omnibus["gpudata"] = [
@@ -26,30 +50,38 @@ def aggregate(run_data):
         fl, ll = omnibus["loss"][0], omnibus["loss"][-1]
         omnibus["loss_gain"] = [ll - fl]
 
-    omnibus["walltime"] = [omnibus["#end"][-1] - omnibus["#start"][0]]
-    omnibus["success"] = [
-        omnibus.get("#return_code", [-1])[-1] == 0
-        and not any(isnan(loss) for loss in omnibus.get("loss", []))
-        # and omnibus.get("loss_gain", [-1])[-1] < 0
-        and bool(omnibus.get("train_rate", []))
-    ]
+    omnibus["walltime"] = [end["time"] - start["time"]]
 
-    return omnibus
+    success = (
+        end["return_code"] == 0
+        and not any(isnan(loss) for loss in omnibus.get("loss", []))
+        and bool(omnibus.get("train_rate", []))
+    )
+    omnibus["success"] = [success]
+
+    return {
+        "config": config,
+        "start": start,
+        "end": end,
+        "data": omnibus,
+    }
 
 
 def _classify(all_aggregates):
     classified = defaultdict(list)
     for agg in all_aggregates:
-        (config,) = agg["#config"]
+        config = agg["config"]
         classified[config["name"]].append(agg)
     return classified
 
 
 def _merge(aggs):
-    results = defaultdict(list)
+    results = {"data": defaultdict(list)}
     for agg in aggs:
-        for k, v in agg.items():
-            results[k].extend(v)
+        data = agg.pop("data")
+        results.update(agg)
+        for k, v in data.items():
+            results["data"][k].extend(v)
     return results
 
 
@@ -74,7 +106,8 @@ def _metrics(xs):
     return metrics
 
 
-def _summarize(agg):
+def _summarize(group):
+    agg = group["data"]
     gpudata = defaultdict(lambda: defaultdict(list))
     for entry in agg["gpudata"]:
         for device, data in entry.items():
@@ -87,7 +120,7 @@ def _summarize(agg):
     for device, tr in agg["per_gpu"]:
         per_gpu[device].append(tr)
 
-    config = agg["#config"][0]
+    config = group["config"]
     return {
         "name": config["name"],
         "n": len(agg["success"]),

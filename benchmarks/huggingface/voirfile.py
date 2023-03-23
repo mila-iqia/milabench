@@ -34,37 +34,7 @@ def instrument_main(ov, options: Config):
             sync=torch.cuda.synchronize if torch.cuda.is_available() else None,
         ),
         early_stop(n=options.stop, key="rate", task="train"),
-        gpu_monitor(poll_interval=3),
+        gpu_monitor(poll_interval=2),
     )
 
     yield ov.phases.load_script
-
-    # PPO
-
-    # Loss
-    (
-        ov.probe("/stable_baselines3.ppo.ppo/PPO/train > loss")
-        .throttle(1)["loss"]
-        .map(float)
-        .give("loss")
-    )
-
-    # Compute Start & End + Batch
-    ov.probe(
-        "/stable_baselines3.ppo.ppo/PPO/train(rollout_data as batch, !#loop_rollout_data as step, !!#endloop_rollout_data as step_end)"
-    ).augment(task=lambda: "train").give()
-
-    # TD3
-
-    # Loss
-    (
-        ov.probe("/stable_baselines3.td3.td3/TD3/train > actor_loss")
-        .throttle(1)["actor_loss"]
-        .map(float)
-        .give("loss")
-    )
-
-    # Compute Start & End + Batch
-    ov.probe(
-        "/stable_baselines3.td3.td3/TD3/train(_ as batch, !#loop__ as step, !!#endloop__ as step_end)"
-    ).augment(task=lambda: "train").give()

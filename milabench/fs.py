@@ -154,7 +154,9 @@ class XPath(type(Path())):
 
     def rm(self):
         """Remove this file or directory tree."""
-        if self.is_dir():
+        if not self.exists():
+            return
+        elif self.is_dir():
             shutil.rmtree(self)
         else:
             self.unlink()

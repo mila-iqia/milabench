@@ -5,42 +5,34 @@ commands: ``install``, ``prepare`` and ``run``. The :class:`~milabench.pack.Pack
 class defines good default behavior.
 """
 
-import contextlib
 import json
 import os
-import subprocess
+import sys
+import tempfile
 from argparse import Namespace as NS
+from hashlib import md5
 from sys import version_info as pyv
+from typing import Sequence
 
 from nox.sessions import Session, SessionRunner
 
+from .alt_async import run, send
 from .fs import XPath
+from .merge import merge
+from .structs import BenchLogEntry
 
 
-class BasePackage:
-    """Base package, with no behavior defined for install/prepare/run.
-
-    Attributes:
-        config: The configuration dictionary as defined in the benchmark
-            config for the benchmark.
-        pack_path: The path to the package file (same as ``config["definition"]``)
-        dirs: A Namespace object with important paths:
-
-            * ``code``: The code directory for this benchmark
-            * ``venv``: The virtual environment for this benchmark
-            * ``data``: The data directory (shared)
-            * ``runs``: The runs directory (shared)
-    """
-
+class PackageCore:
     def __init__(self, config):
-        self.config = config
         self.pack_path = XPath(config["definition"])
-
         self.dirs = NS(**{name: XPath(d) for name, d in config["dirs"].items()})
+        self.dirs.code = self.pack_path
 
-        constraints = self.config.get("pip", {}).get("constraints", None)
+        constraints = config.get("pip", {}).get("constraints", None)
+        os.makedirs(self.dirs.extra, exist_ok=True)
+
         if constraints:
-            self.constraints = self.dirs.code / "pip-constraints.txt"
+            self.constraints = self.dirs.extra / "pip-constraints.txt"
         else:
             self.constraints = None
 
@@ -50,7 +42,7 @@ class BasePackage:
             signatures=[],
             func=NS(
                 python=f"{pyv.major}.{pyv.minor}.{pyv.micro}",
-                venv_backend=self.config["venv"]["type"],
+                venv_backend=config["venv"]["type"],
                 venv_params=[],
                 reuse_venv=reuse,
             ),
@@ -68,92 +60,85 @@ class BasePackage:
         )
         self._nox_session = Session(self._nox_runner)
         self._nox_runner._create_venv()
-        self.code_mark_file = self.dirs.code / ".mark"
-        ig = self.config.get("install_group", self.config["name"])
-        self.install_mark_file = self.dirs.code / f".mark_{ig}"
+        grp = config.get("group", config["name"])
+        ig = config.get("install_group", grp)
+        self.install_mark_file = self.dirs.extra / f"mark_{ig}"
+
+
+class BasePackage:
+    """Base package, with no behavior defined for install/prepare/run.
+
+    Attributes:
+        config: The configuration dictionary as defined in the benchmark
+            config for the benchmark.
+        pack_path: The path to the package file (same as ``config["definition"]``)
+        dirs: A Namespace object with important paths:
+
+            * ``code``: The code directory for this benchmark
+            * ``venv``: The virtual environment for this benchmark
+            * ``data``: The data directory (shared)
+            * ``runs``: The runs directory (shared)
+    """
+
+    def __init__(self, config, core=None):
+        if not core:
+            core = PackageCore(config)
+
+        self.__dict__.update(core.__dict__)
+        self.core = core
+        self.config = config
+
+    def copy(self, config):
+        return type(self)(config=merge(self.config, config))
+
+    @property
+    def tag(self):
+        return ".".join(self.config["tag"]) if self.config else self.config["name"]
+
+    @property
+    def logdir(self):
+        return self.dirs.runs / self.config["run_name"]
+
+    def logfile(self, extension):
+        return self.logdir / (".".join(self.config["tag"]) + f".{extension}")
 
     def make_env(self):
         """Return a dict of environment variables to use for prepare/run."""
         return {}
 
-    def checked_install(self, force=False, sync=False):
+    async def message(self, *message_parts):
+        message = " ".join(map(str, message_parts))
+        await send(
+            BenchLogEntry(
+                event="message",
+                data={"message": message},
+                pack=self,
+            )
+        )
+
+    async def send(self, **kwargs):
+        await send(
+            BenchLogEntry(
+                **kwargs,
+                pack=self,
+            )
+        )
+
+    async def checked_install(self):
         """Entry method to install the benchmark.
 
         * Check if the benchmark is installed.
-        * :meth:`~milabench.pack.BasePackage.install_code`
-        * :meth:`~milabench.pack.BasePackage.install_milabench`
         * :meth:`~milabench.pack.BasePackage.install`
-
-        Arguments:
-            force: Whether to force installation if the benchmark
-                is already installed.
-            sync: Whether to only sync changed files in the manifest.
         """
-        if not force and not sync and self.install_mark_file.exists():
+        if self.install_mark_file.exists():
             name = self.config["name"]
-            print(f"Benchmark {name} is already installed")
+            await self.message(f"Benchmark {name} is already installed")
             return
 
-        if self.dirs.code == self.pack_path:
-            print(f"Cannot install if the code destination is the same as the source")
-            return
-
-        if force or sync or not self.code_mark_file.exists():
-            self.install_code(sync=sync)
-        if sync:
-            return
-        self.install_milabench()
-        self.install()
+        await self.install()
         self.install_mark_file.touch()
-        self.code_mark_file.touch()
 
-    def install_code(self, sync=False):
-        """Copy the contents of the manifest into ``self.dirs.code``.
-
-        If the directory already exists, it is cleared out beforehand,
-        unless ``sync == True``.
-
-        Arguments:
-            sync: Whether we are performing a simple sync, in which case
-                existing code is not cleared.
-        """
-        if sync:
-            print(f"Syncing changes into {self.dirs.code}")
-        elif self.dirs.code.exists():
-            print(f"Clearing existing data in {self.dirs.code}")
-            self.dirs.code.rm()
-        self.pack_path.merge_into(
-            self.dirs.code, self.pack_path / "manifest", readonly=True
-        )
-        self.config.setdefault("pip", {})
-        if self.constraints:
-            self.constraints.write_text("\n".join(self.config["pip"]["constraints"]))
-
-    def install_milabench(self):
-        """Install milabench in the virtual environment.
-
-        Essentially runs ``pip install milabench``.
-
-        The ``$MILABENCH_DEVREQS`` environment variable can be set to point
-        to a requirements file to use instead of the standard command.
-        """
-        devreqs = os.environ.get("MILABENCH_DEVREQS", None)
-        # Make sure pip is recent enough
-        self.pip_install("pip", "-U")
-        if devreqs:
-            self.pip_install("-r", devreqs)
-        else:
-            # Install as editable if we see the pyproject file in
-            # the parent directory of milabench
-            import milabench
-
-            mb_parent = XPath(milabench.__file__).parent.parent
-            if (mb_parent / "pyproject.toml").exists():
-                self.pip_install("-e", mb_parent)
-            else:
-                self.pip_install("milabench")
-
-    def pip_install(self, *args, **kwargs):
+    async def pip_install(self, *args):
         """Install a package in the virtual environment.
 
         The arguments are given to ``pip install`` verbatim, so you can
@@ -162,17 +147,27 @@ class BasePackage:
         """
         args = [str(x) for x in args]
         if self.constraints:
+            self.constraints.write_text("\n".join(self.config["pip"]["constraints"]))
             args += ["-c", str(self.constraints)]
         for line in self.config.get("pip", {}).get("args", []):
             args += line.split(" ")
-        return self._nox_session.install(*args, **kwargs, silent=False)
+        await run(
+            ["pip", "install", *args],
+            info={"pack": self},
+            env={
+                **self.core._nox_session.env,
+                **self.make_env(),
+                **self.config.get("env", {}),
+            },
+            constructor=BenchLogEntry,
+        )
 
     def conda_install(self, *args, **kwargs):
         """Install a package using conda."""
         args = [str(x) for x in args]
         return self._nox_session.conda_install(*args, **kwargs, silent=False)
 
-    def execute(self, *args, cwd=None, **kwargs):
+    async def execute(self, *args, cwd=None, env={}, external=False, **kwargs):
         """Run a command in the virtual environment.
 
         Unless specified otherwise, the command is run with
@@ -183,16 +178,18 @@ class BasePackage:
             cwd: The cwd to use (defaults to ``self.dirs.code``)
         """
         args = [str(x) for x in args]
-        curdir = os.getcwd()
         if cwd is None:
             cwd = self.dirs.code
-        try:
-            os.chdir(cwd)
-            return self._nox_session.run(*args, **kwargs, external=True, silent=False)
-        finally:
-            os.chdir(curdir)
+        return await run(
+            args,
+            **kwargs,
+            info={"pack": self},
+            env=self.full_env(env) if not external else {**os.environ, **env},
+            constructor=BenchLogEntry,
+            cwd=cwd,
+        )
 
-    def python(self, *args, **kwargs):
+    async def python(self, *args, **kwargs):
         """Run a Python script.
 
         Equivalent to:
@@ -201,9 +198,9 @@ class BasePackage:
 
             self.execute("python", *args, **kwargs)
         """
-        self.execute("python", *args, **kwargs)
+        return await self.execute("python", *args, **kwargs)
 
-    def launch(self, script, args=(), voirargs=(), env={}):
+    async def voir(self, script, args=(), cwd=None):
         """Launch a script using ``voir``.
 
         This runs:
@@ -229,38 +226,21 @@ class BasePackage:
         if not XPath(script).is_absolute():
             script = str(self.dirs.code / script)
 
+        if voirconf := self.config.get("voir", None):
+            hsh = md5(str(voirconf).encode("utf8"))
+            voirconf_file = self.dirs.extra / f"voirconf-{hsh.hexdigest()}.json"
+            with open(voirconf_file, "w") as f:
+                json.dump(fp=f, obj=voirconf, indent=4)
+            voirargs = ("--config", voirconf_file)
+        else:
+            voirargs = ()
+
         command = ["voir", *voirargs, script, *args]
-        process = subprocess.Popen(
-            command,
-            env={"PYTHONUNBUFFERED": "1", **self._nox_session.env, **env},
-            stdout=subprocess.PIPE,
-            # NOTE: the forward instrumenter will tag stderr lines
-            # on stdout, so we don't really lose information by
-            # forwarding stderr to stdout here
-            stderr=subprocess.STDOUT,
-            cwd=self.dirs.code,
-            preexec_fn=os.setsid,
+        return await self.execute(
+            *command,
+            setsid=True,
+            cwd=cwd,
         )
-        process.did_setsid = True
-        return process
-
-
-@contextlib.contextmanager
-def inject_in_requirements(input_files:list, constraints:list, dir:XPath, inject_mb:bool=False):
-    injected_in = dir / next(i for i in input_files if XPath(i).suffix in {".in", ".txt"})
-    _content = injected_in.read_text()
-    try:
-        if inject_mb:
-            from importlib.metadata import version
-            injected_in.append_lines(f"milabench=={version('milabench')}")
-
-        # pip-tools doesn't support the pip-args -c flag so adding the files in
-        # the first input file
-        for c in reversed(constraints):
-            injected_in.prepend_lines(f"-c {c} ### __MILABENCH_TMP_LINE")
-        yield
-    finally:
-        injected_in.write_text(_content)
 
 
 class Package(BasePackage):
@@ -275,7 +255,22 @@ class Package(BasePackage):
 
     main_script = "main.py"
     prepare_script = "prepare.py"
-    requirements_file = "requirements.txt"
+    base_requirements = "requirements.in"
+
+    def requirements_map(self, variant=None):
+        if variant is None:
+            variant = self.config.get("install_variant", None)
+        base_reqs = (
+            [self.base_requirements]
+            if isinstance(self.base_requirements, str)
+            else self.base_requirements
+        )
+        base_reqs = [self.dirs.code / req for req in base_reqs]
+        suffix = f".{variant}.txt" if variant else ".txt"
+        return {req: req.with_suffix(suffix) for req in base_reqs}
+
+    def requirements_files(self, variant=None):
+        return list(self.requirements_map(variant).values())
 
     def make_env(self):
         """Return a dict of environment variables to use for prepare/run.
@@ -299,7 +294,15 @@ class Package(BasePackage):
         env["MILABENCH_CONFIG"] = json.dumps(self.config)
         return env
 
-    def install(self):
+    def full_env(self, env={}):
+        return {
+            **self.core._nox_session.env,
+            **self.make_env(),
+            **self.config.get("env", {}),
+            **env,
+        }
+
+    async def install(self):
         """Install the benchmark.
 
         By default, this installs the requirements file pointed to by the
@@ -320,14 +323,19 @@ class Package(BasePackage):
             the manifest's contents to ``self.dirs.code``, installing
             milabench in the venv, and then calling this method.
         """
-        if self.requirements_file is not None:
-            reqs = self.dirs.code / self.requirements_file
+        for reqs in self.requirements_files(self.config.get("install_variant", None)):
             if reqs.exists():
-                self.pip_install("-r", reqs)
+                await self.pip_install("-r", reqs)
+            else:
+                raise FileNotFoundError(f"Requirements file not found: {reqs}")
 
-    def pin(self, *pip_compile_args, requirements_file=None,
-            input_files:list=tuple(), constraints:list=tuple(),
-            with_mb:bool=True, cwd=None):
+    async def pin(
+        self,
+        clear_previous: bool = True,
+        pip_compile_args: Sequence = tuple(),
+        input_files: Sequence = tuple(),
+        constraints: Sequence = tuple(),
+    ):
         """Pin versions to requirements file.
 
         Arguments:
@@ -335,47 +343,50 @@ class Package(BasePackage):
             requirements_file: The output requirements file
             input_files: A list of inputs to piptools compile
             constraint: The constraint file
-            with_mb: Compute the requirements with milabench as a dependency
-            cwd: The working directory
         """
-        if requirements_file is None:
-            requirements_file = self.requirements_file
-        if requirements_file is None:
-            return
+        for base_reqs, reqs in self.requirements_map().items():
+            if constraints:
+                tf = tempfile.NamedTemporaryFile()
+                with open(tf.name, "w") as tfile:
+                    tfile.write("\n".join([f"-c {c}" for c in constraints]))
+                constraint_files = (tf.name,)
+            else:
+                constraint_files = ()
 
-        requirements_file = XPath(requirements_file)
-        if cwd is None:
-            cwd = self.pack_path
-        constraints = tuple(XPath(c).absolute() for c in constraints)
+            if not base_reqs.exists():
+                raise FileNotFoundError(
+                    f"Cannot find base requirements file: {base_reqs}"
+                )
 
-        if cwd != self.pack_path:
-            for fn in (*input_files, requirements_file,
-                       requirements_file.with_suffix(".in")):
-                if fn and (self.pack_path / fn).exists():
-                    (self.pack_path / fn).copy(cwd / fn)
+            if clear_previous and reqs.exists():
+                await self.message(f"Clearing out existing {reqs}")
+                reqs.rm()
 
-        if (cwd / requirements_file).with_suffix(".in").exists():
-            input_files = (*input_files, requirements_file.with_suffix(".in"))
+            current_input_files = constraint_files + (base_reqs, *input_files)
 
-        import milabench
-        milabench_pyproject = XPath(milabench.__file__).parent.parent / "pyproject.toml"
-        if with_mb and milabench_pyproject.exists():
-            input_files = (*input_files, milabench_pyproject)
+            await self.exec_pip_compile(reqs, current_input_files, *pip_compile_args)
 
-        with inject_in_requirements(input_files, constraints, dir=cwd,
-                                    inject_mb=with_mb and not milabench_pyproject.exists()):
-            self.exec_pip_compile(requirements_file, input_files, *pip_compile_args, cwd=cwd)
+            # Use previous requirements as a constraint
+            constraints = (reqs, *constraints)
 
-        if cwd != self.pack_path:
-            (cwd / requirements_file).copy(self.pack_path / requirements_file)
+    async def exec_pip_compile(
+        self, requirements_file: XPath, input_files: XPath, argv=[]
+    ):
+        return await self.execute(
+            "python3",
+            "-m",
+            "piptools",
+            "compile",
+            "--resolver",
+            "backtracking",
+            "--output-file",
+            requirements_file,
+            *argv,
+            *input_files,
+            external=True,
+        )
 
-    def exec_pip_compile(self, requirements_file:XPath, input_files:list,
-                         *pip_compile_args, cwd:XPath):
-        self.execute("python3", "-m", "piptools", "compile", "--resolver",
-            "backtracking", "--output-file", requirements_file,
-            *pip_compile_args, *input_files, cwd=cwd)
-
-    def prepare(self):
+    async def prepare(self):
         """Prepare the benchmark.
 
         By default, this executes ``self.dirs.code / self.prepare_script``,
@@ -390,9 +401,9 @@ class Package(BasePackage):
         if self.prepare_script is not None:
             prep = self.dirs.code / self.prepare_script
             if prep.exists():
-                self.execute(prep, json.dumps(self.config), env=self.make_env())
+                await self.execute(prep, env=self.make_env())
 
-    def run(self, args, voirargs, env):
+    async def run(self, args):
         """Start the benchmark and return the running process.
 
         By default, this runs:
@@ -411,9 +422,6 @@ class Package(BasePackage):
             args: A list of arguments to the program.
             voirargs: A list of arguments to ``voir``.
             env: Environment variables to set for the process.
-
-        Returns:
-            A subprocess.Popen instance representing the running benchmark.
         """
         main = self.dirs.code / self.main_script
         if not main.exists():
@@ -421,5 +429,4 @@ class Package(BasePackage):
                 f"Cannot run main script because it does not exist: {main}"
             )
 
-        env.update(self.make_env())
-        return self.launch(self.main_script, args=args, voirargs=voirargs, env=env)
+        return await self.voir(self.main_script, args=args, cwd=main.parent)
