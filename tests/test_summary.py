@@ -1,8 +1,8 @@
 import json
+
 import pytest
 
-from milabench.testing import milabench_cmd, resultfolder, has_result_folder
-
+from milabench.testing import has_result_folder, milabench_cmd, resultfolder
 
 skip_tests = not has_result_folder()
 

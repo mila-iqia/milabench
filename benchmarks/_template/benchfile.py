@@ -26,10 +26,8 @@ class TheBenchmark(Package):
     async def prepare(self):
         await super().prepare()  # super() call executes prepare_script
 
-    async def run(self, args, voirargs, env):
-        # You can insert new arguments to args/voirargs or change the env,
-        # although changing the env is a bit simpler if you modify make_env
-        return await super().run(args, voirargs, env)
+    async def run(self, args):
+        return await super().run(args)
 
 
 __pack__ = TheBenchmark

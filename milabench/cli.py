@@ -26,10 +26,13 @@ from .report import make_report
 from .summary import aggregate, make_summary
 
 
-def main():
+def main(argv=None):
     sys.path.insert(0, os.path.abspath(os.curdir))
+    if argv is None:
+        argv = sys.argv[1:]
+    argv = [str(x) for x in argv]
     try:
-        sys.exit(run_cli(Main))
+        sys.exit(run_cli(Main, argv=argv))
     except KeyboardInterrupt:
         pass
 
