@@ -254,9 +254,13 @@ class Main:
         # On error show full stacktrace
         fulltrace: Option & bool = False
 
+        # Do not show a report at the end
+        # [negate]
+        report: Option & bool = True
+
         mp = _get_multipack(run_name=run_name)
 
-        return run_with_loggers(
+        success = run_with_loggers(
             mp.do_run(repeat=repeat),
             loggers=[
                 TerminalFormatter(),
@@ -267,6 +271,33 @@ class Main:
             ],
             mp=mp,
         )
+
+        if report:
+            runs = {pack.logdir for pack in mp.packs.values()}
+            weights = None
+            compare = None
+            compare_gpus = True
+            html = None
+            price = None
+
+            reports = None
+            if runs:
+                reports = _read_reports(*runs)
+                summary = make_summary(reports.values())
+
+            make_report(
+                summary,
+                compare=compare,
+                weights=weights,
+                html=html,
+                compare_gpus=compare_gpus,
+                price=price,
+                title=None,
+                sources=runs,
+                errdata=reports and _error_report(reports),
+            )
+
+        return success
 
     def prepare():
         mp = _get_multipack(run_name="prepare.{time}")
