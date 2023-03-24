@@ -1,0 +1,225 @@
+defaults: &defaults
+  dirs:
+    code: code/{group}
+    venv: venv/{group}
+    data: data
+    runs: runs
+    extra: extra/{group}
+
+  install_variant: "{arch}"
+
+  voir:
+    options:
+      stop: 60
+      interval: "1s"
+
+  venv:
+    type: virtualenv
+
+
+torchvision: &torchvision
+  <<<: *defaults
+
+  group: torchvision
+
+  plan:
+    method: per_gpu
+
+  argv:
+    --with-amp: true
+    --lr: 0.01
+
+  definition: ../benchmarks/torchvision
+
+
+sb3: &sb3
+    <<<: *defaults
+
+    group: sb3
+
+    plan:
+      method: njobs
+      n: 1
+
+    definition: ../benchmarks/stable_baselines3
+
+
+hf: &hf
+  <<<: *defaults
+
+  group: hf
+
+  plan:
+    method: per_gpu
+
+  tags:
+    - rl
+
+  definition: ../benchmarks/huggingface
+
+
+lightning: &lightning
+  <<<: *defaults
+
+  group: lightning
+
+  plan:
+    method: njobs
+    n: 1
+
+  definition: ../benchmarks/pytorch-lightning
+
+  argv:
+    --gpus: -1
+    --max_epochs: 1
+    --max_steps: 100
+    --limit_val_batches: 100
+    --devices: -1
+    --enable_progress_bar: "False"
+    --accelerator: "auto"
+    --enable_checkpointing: "False"
+
+
+benchmarks:
+  resnet18:
+    <<<: *torchvision
+    argv:
+      --model: resnet18
+
+  resnet50:
+    <<<: *torchvision
+    tags:
+      - convnet
+
+    argv:
+      --model: resnet50
+
+  squeezenet1_1:
+    <<<: *torchvision
+    tags:
+      - convnet
+
+    argv:
+      --model: squeezenet1_1
+
+  efficientnet_b0:
+    <<<: *torchvision
+    tags:
+      - convnet
+
+    argv:
+      --model: efficientnet_b0
+
+  efficientnet_b4:
+    <<<: *torchvision
+    tags:
+      - convnet
+    
+    argv:
+      --model: efficientnet_b4
+      --batch-size: 32
+
+  efficientnet_b7:
+    <<<: *torchvision
+    tags:
+      - convnet
+    
+    argv:
+      --model: efficientnet_b7
+      --batch-size: 32
+
+  convnext_large:
+    <<<: *torchvision
+    tags:
+      - convnet
+
+    argv:
+      --model: convnext_large
+      --batch-size: 16
+
+  regnet_y_128gf:
+    <<<: *torchvision
+    tags:
+      - convnet
+
+    argv:
+      --model: regnet_y_128gf
+      --batch-size: 4
+
+  bert:
+    <<<: *hf
+    tags:
+      - huggingface
+      - transformer
+    argv:
+      --model: "Bert"
+
+  t5:
+    <<<: *hf
+    tags:
+      - huggingface
+      - transformer
+    argv:
+      --model: "T5"
+
+  reformer:
+    <<<: *hf
+    tags:
+      - huggingface
+      - transformer
+    argv:
+      --model: "Reformer"
+
+  resnet152:
+    <<<: *lightning
+    tags:
+      - convnet
+    argv:
+      --backbone: "resnet152"
+      --strategy: "dp"
+      --precision: 32
+      --batch_size: 2048
+
+  vit_l_32:
+    <<<: *lightning
+    tags:
+      - convnet
+    argv:
+      --backbone: "vit_l_32"  # (larger model)
+      --strategy: "fsdp"  # Fully-Sharded Data-Parallel
+      --precision: 32
+
+  ppo:
+    <<<: *sb3
+    tags:
+      - rl
+
+    argv:
+      --algo: ppo
+      --env: HalfCheetahBulletEnv-v0
+      -n: '-1'
+      --num-threads: '-1'
+      --seed: '0'
+      --vec-env: subproc
+      --device: auto
+      --: [-params, n_envs:16, n_steps:512, n_epochs:20, n_timesteps:50000]
+
+  td3:
+    <<<: *sb3
+    tags:
+      - rl
+
+    argv:
+      --algo: td3
+      --env: HalfCheetahBulletEnv-v0 # Default: CartPole-v1
+      --n-eval-envs: '1'
+      --n-timesteps: '50000' # Default: '-1'
+      --num-threads: '-1'
+      --log-interval: '-1'
+      --eval-episodes: '5'
+      --save-freq: '-1'
+      --seed: '0' # Default: -1
+      --vec-env: subproc # Default: dummy
+      --device: auto
+      --n-trials: '10' # Default: 500
+      --n-jobs: '1'

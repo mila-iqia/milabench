@@ -1,143 +1,179 @@
-import itertools
 import json
 import os
-import random
-import sys
-from contextlib import contextmanager
+import pprint
+import shlex
 from datetime import datetime
 
-from giving import ObservableProxy
-
-from milabench.utils import REAL_STDOUT
+from blessed import Terminal
 
 from .fs import XPath
 
+T = Terminal()
+color_wheel = [T.cyan, T.magenta, T.yellow, T.red, T.green, T.blue]
 
-@contextmanager
-def simple_dash(gv):
-    import rich
-    from blessed import Terminal
 
-    T = Terminal()
+class TagConsole:
+    def __init__(self, tag, i):
+        self.header = color_wheel[i % len(color_wheel)](T.bold(tag))
 
-    colors = [T.cyan, T.magenta, T.yellow, T.red, T.green, T.blue]
-    headers = {}
-    newline = True
-    rc = None
+    def _ensure_line(self, x):
+        if not x.endswith("\n"):
+            x += "\n"
+        return x
 
-    @gv.subscribe
-    def _(data):
-        nonlocal newline, rc
+    def sprint(self, *parts):
+        parts = [self.header, *parts]
+        return self._ensure_line(" ".join(map(str, parts)))
 
-        def pr(*args, **kwargs):
-            print(*args, **kwargs, file=REAL_STDOUT)
+    def spretty(self, *parts):
+        *parts, obj = parts
+        parts = [
+            self.header,
+            *parts,
+            obj if isinstance(obj, str) else pprint.pformat(obj),
+        ]
+        return self._ensure_line(" ".join(map(str, parts)))
 
-        def line(*contents, end="\n"):
-            pr(headers[tg], *contents, end=end)
+    def print(self, *parts):
+        print(self.sprint(*parts), end="")
 
-        data = dict(data)
-        run = data.pop("#run", None)
-        pack = data.pop("#pack", None)
-        ks = set(data.keys())
-        tg = ".".join(run["tag"]) if run else pack.config["name"]
-        if tg not in headers:
-            headers[tg] = colors[len(headers) % len(colors)](T.bold(tg))
+    def pretty(self, *parts):
+        print(self.spretty(*parts), end="")
 
-        if ks != {"#stdout"} and not newline:
-            pr()
+    def close(self):
+        pass
 
-        if ks == {"#stdout"}:
-            txt = str(data["#stdout"])
-            if newline:
-                line(">", txt, end="")
+
+class TerminalFormatter:
+    def __init__(self):
+        self.consoles = {}
+        self.error_happened = set()
+
+    def console(self, tag):
+        if tag not in self.consoles:
+            self.consoles[tag] = TagConsole(tag, len(self.consoles))
+        return self.consoles[tag]
+
+    def __call__(self, entry):
+        event = entry.event
+        data = entry.data
+        pipe = entry.pipe
+        tag = entry.tag
+        console = self.console(tag)
+
+        if event == "line":
+            data = (data or "").rstrip()
+            if pipe == "stderr":
+                console.print(T.bold_yellow("[stderr]"), T.yellow(data))
             else:
-                pr(txt, end="")
-            newline = txt.endswith("\n")
-        elif ks == {"#stderr"}:
-            txt = str(data["#stderr"])
-            if newline:
-                line(">!", txt, end="")
-            else:
-                pr(txt, end="")
-            newline = txt.endswith("\n")
-        elif ks == {"#start"}:
-            line(
-                T.bold_green("Start:"),
-                T.green(str(datetime.fromtimestamp(data["#start"]))),
+                console.print(T.bold("[stdout]"), data)
+
+        elif event == "data":
+            data = dict(data)
+            if "progress" in data:
+                return
+            console.pretty(T.bold_magenta("[data]"), data)
+
+        elif event == "start":
+            console.print(
+                T.bold_green("[start]"),
+                T.bold_green(shlex.join(data.get("command", []))),
+                T.gray(f'[at {datetime.fromtimestamp(data["time"])}]'),
             )
-        elif ks == {"#error"}:
-            rc = "ERROR"
-            line("", end="")
-            rich.print(data, file=REAL_STDOUT)
-        elif ks == {"#end", "#return_code"}:
-            if rc is None:
-                rc = data["#return_code"]
-            if rc == 0:
-                line(
-                    T.bold_green("End:"),
-                    T.green(str(datetime.fromtimestamp(data["#end"]))),
+
+        elif event == "error":
+            self.error_happened.add(tag)
+            if data["message"]:
+                console.print(
+                    T.bold_red(data["type"] + ":"),
+                    T.red(data["message"]),
                 )
             else:
-                line(
-                    T.bold_red(f"End ({rc}):"),
-                    T.red(str(datetime.fromtimestamp(data["#end"]))),
+                console.print(T.bold_red(data["type"]))
+
+        elif event == "end":
+            rc = data.get(
+                "return_code",
+            )
+            wrong = (tag in self.error_happened) or data["return_code"] != 0
+            if wrong:
+                rc = data["return_code"] or "ERROR"
+                console.print(
+                    T.bold_red(f"[{event} ({rc})]"),
+                    T.bold_red(shlex.join(data.get("command", []))),
+                    T.gray(f'[at {datetime.fromtimestamp(data["time"])}]'),
                 )
+            else:
+                console.print(
+                    T.bold_green(f"[{event}]"),
+                    T.bold_green(shlex.join(data.get("command", []))),
+                    T.gray(f'[at {datetime.fromtimestamp(data["time"])}]'),
+                )
+
+        elif event == "phase":
+            pass
+
+        elif event == "config":
+
+            def _show(k, entry):
+                if isinstance(entry, dict):
+                    for k2, v in entry.items():
+                        _show(f"{k}.{k2}", v)
+                else:
+                    console.pretty(T.bold(f"[{k}]"), entry)
+
+            _show("config", data)
+
+        elif event == "message":
+            console.pretty(T.bold(f"[{event}]"), data["message"])
+
         else:
-            line("", end="")
-            rich.print(data, file=REAL_STDOUT)
-
-    yield
+            console.pretty(T.bold(f"[{event}]"), data)
 
 
-vowels = list("aeiou")
-consonants = list("bdfgjklmnprstvz")
-syllables = ["".join(letters) for letters in itertools.product(consonants, vowels)]
+class BaseReporter:
+    def __init__(self, pipe):
+        self.pipe = pipe
+        self.files = {}
+
+    def file(self, entry):
+        if entry.tag not in self.files:
+            file = entry.pack.logfile(self.pipe)
+            os.makedirs(XPath(file).parent, exist_ok=True)
+            self.files[entry.tag] = open(file, "w").__enter__()
+        return self.files[entry.tag]
+
+    def log(self, entry):
+        pass
+
+    def cleanup(self, entry):
+        if entry.event == "end":
+            if entry.tag in self.files:
+                self.files[entry.tag].__exit__(None, None, None)
+                del self.files[entry.tag]
+
+    def __call__(self, entry):
+        self.log(entry)
+        self.cleanup(entry)
 
 
-def blabla(n=4):
-    return "".join([random.choice(syllables) for _ in range(n)])
+class TextReporter(BaseReporter):
+    def log(self, entry):
+        if entry.event == "line" and entry.pipe == self.pipe:
+            self.file(entry).write(entry.data)
+
+    def close(self):
+        assert not self.files
+        for open_file in self.files.values():
+            open_file.__exit__(None, None, None)
 
 
-@contextmanager
-def simple_report(gv, rundir, runname=None):
-    def _to_line(data):
-        data = dict(data)
-        data.pop("#run", None)
-        data.pop("#pack", None)
-        if set(data.keys()) == {"descr", "progress", "total"}:
-            return ""
-        return json.dumps(data) + "\n"
+class DataReporter(BaseReporter):
+    def __init__(self):
+        super().__init__(pipe="data")
 
-    now = str(datetime.today()).replace(" ", "_")
-
-    if runname is None:
-        bla = blabla()
-        runname = f"{bla}.{now}"
-
-    rundir = XPath(rundir) / runname
-    if XPath(rundir).exists():
-        print(f"Rundir {rundir} already exists", file=sys.stderr)
-        sys.exit(1)
-    os.makedirs(rundir, exist_ok=True)
-
-    print(f"[BEGIN] Reports directory: {rundir}")
-
-    grouped = gv.group_by(lambda data: tuple(data["#run"]["tag"]))
-
-    @grouped.subscribe
-    def _(stream):
-        stream = ObservableProxy(stream)
-
-        batches = stream.buffer_with_time(1.0).filter(lambda entries: len(entries) > 0)
-
-        @batches.subscribe
-        def __(entries):
-            d0 = entries[0]
-            tag = ".".join(d0["#run"]["tag"])
-            entries = [_to_line(data) for data in entries]
-            with open(rundir / f"{tag}.json", "a", encoding="utf8") as f:
-                f.writelines(entries)
-
-    yield
-
-    print(f"[DONE] Reports directory: {rundir}")
+    def log(self, entry):
+        d = entry.dict()
+        d.pop("pack")
+        j = json.dumps(d)
+        self.file(entry).write(f"{j}\n")

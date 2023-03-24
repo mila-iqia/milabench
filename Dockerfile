@@ -7,7 +7,7 @@
 #   
 #       docker run -it --rm -v /opt/results/:/milabench/results milabench milabench --help
 #                   ^^         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ ^^^^^^^^^ ^^^^^^^^^ ^^^^^^
-#                                       Volune Binding           Image     Command   Arguments
+#                                       Volume Binding           Image     Command   Arguments
 #   
 #   To build this image:
 #
@@ -25,7 +25,7 @@
 #
 #   Useful Commands:
 #
-#       milabench run $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
+#       milabench run --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
 #       milabench summary $WORKING_DIR/results/runs/
 #       milabench summary $WORKING_DIR/results/runs/ -o $MILABENCH_OUTPUT/summary.json
 #
@@ -95,15 +95,14 @@ RUN python -m pip install -e /milabench/milabench/
 # pip times out often when downloading pytorch
 ENV PIP_DEFAULT_TIMEOUT=800
 
-RUN milabench install $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
-    milabench prepare $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
-    /bin/bash /milabench/milabench/script/nightly_overrides.bash
+RUN milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
+    milabench prepare --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
 
 
 # CUDA-11.8 Fix
 ENV LD_LIBRARY_PATH="/usr/local/cuda/targets/x86_64-linux/lib/:$LD_LIBRARY_PATH"
 RUN ln /usr/local/cuda/targets/x86_64-linux/lib/libnvrtc.so.11.8.89 /usr/local/cuda/targets/x86_64-linux/lib/libnvrtc.so
-    
+
 
 # Cleanup
 # Remove PIP cache

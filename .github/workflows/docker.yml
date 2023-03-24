@@ -28,9 +28,7 @@ jobs:
       matrix:
         include:
           - arch: cuda
-            config: standard-cuda.yaml
           - arch: rocm
-            config: standard-rocm.yaml
 
     runs-on: [self-hosted, "${{ matrix.arch }}"]
 
@@ -85,4 +83,4 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             ARCH=${{ matrix.arch }}
-            CONFIG=${{ matrix.config }}
+            CONFIG=standard.yaml

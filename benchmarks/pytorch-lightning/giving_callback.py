@@ -38,7 +38,6 @@ class GivingCallback(Callback):
         device = pl_module.device
         if isinstance(device, str):
             device = torch.device(device)
-        use_cuda = device.type == "cuda"
         loader_or_loaders = trainer.train_dataloader.loaders
         if isinstance(loader_or_loaders, list):
             raise NotImplementedError(
@@ -47,7 +46,6 @@ class GivingCallback(Callback):
         loader = loader_or_loaders
         self._start_time = datetime.datetime.now()
         give(loader=loader)
-        give(use_cuda=use_cuda)
         give(model=pl_module)
 
     def on_train_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
@@ -62,9 +60,8 @@ class GivingCallback(Callback):
         batch: Any,
         batch_idx: int,
     ) -> None:
-        give(compute_start=True)
         x = get_x_from_batch(batch)
-        self._ctx = give.wrap("compute_start", batch=x)
+        self._ctx = give.wrap("step", batch=x, task="train")
         self._ctx.__enter__()
 
     def on_train_batch_end(
@@ -76,15 +73,11 @@ class GivingCallback(Callback):
         batch_idx: int,
         unused: int = 0,
     ) -> None:
-        x = get_x_from_batch(batch)
-        x_batch = x.detach() if x.requires_grad else x
-        step = trainer.global_step
         loss = (
             (outputs["loss"] if isinstance(outputs, dict) else outputs)
             .detach()
             .mean()
             .item()
         )
-        give(step=step, batch=x_batch)
         give(loss=loss)
         self._ctx.__exit__(None, None, None)
