@@ -316,23 +316,24 @@ def main():
                 train_dataloader
             ) - 1:
                 optimizer.step()
-                lr_scheduler.step()
+                if not accelerator.optimizer_step_was_skipped:
+                    lr_scheduler.step()
                 optimizer.zero_grad()
-                completed_steps += 1
+                # This will make timings inconsistent if there are
+                # skipped steps after the start.
+                if not accelerator.optimizer_step_was_skipped:
+                    completed_steps += 1
 
             if (
                 accelerator.is_main_process
                 and completed_steps % 3 == 0
             ):
                 if completed_steps == 0:
-                    last_step = completed_steps
                     last_log_time = time.time()
                 else:
                     seconds_since_last_log = time.time() - last_log_time
 
-                    n_samples_since_last_log = (
-                        (completed_steps - last_step) * total_batch_size
-                    )
+                    n_samples_since_last_log = 3 * total_batch_size
 
                     throughput_samples_per_sec = (
                         n_samples_since_last_log / seconds_since_last_log
@@ -340,7 +341,6 @@ def main():
 
                     print(json.dumps({"event": "data", "data": {"task": "train", "rate": throughput_samples_per_sec, "units": "items/s"}, "pipe": "data"}))
 
-                    last_step = completed_steps
                     last_log_time = time.time()
 
             if completed_steps >= max_train_steps:
