@@ -87,7 +87,7 @@ def main():
             world_size=int(os.environ["WORLD_SIZE"]),
         )
         accelerator = Accelerator(
-            kwargs_handlers=kwargs_handlers,
+            kwargs_handlers=[init_process_group_kwargs]
         )
     else:
         accelerator = Accelerator()
@@ -310,7 +310,8 @@ def main():
             outputs = model(**batch)
             loss = outputs.loss
             loss = loss / gradient_accumulation_steps
-            print(json.dumps({"event": "data", "data": {"task": "train", "loss": loss.detach().item()}, "pipe": "data"}))
+            if accelerator.is_main_process:
+                print(json.dumps({"event": "data", "data": {"task": "train", "loss": loss.detach().item()}, "pipe": "data"}))
             accelerator.backward(loss)
 
             if (step + 1) % gradient_accumulation_steps == 0 or step == len(

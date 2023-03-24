@@ -21,16 +21,18 @@ benchmarks:
     manager_port: 10000
 
     num_processes: 8
+    cpus_per_gpu: 8
 
     model_name: "facebook/opt-2.7b"
+    #model_name: "facebook/opt-1.3b"
     #model_name: "facebook/opt-125m"
-    per_gpu_batch_size: 8
+
+    gradient_accumulation_steps: 1
+    per_gpu_batch_size: 1
     max_train_steps: 1000
 
     dataset_name: "wikitext"
     dataset_config_name: "wikitext-103-v1"
     validation_split_percentage: 5
-
-    cpus_per_gpu: 8
 
     definition: ./
