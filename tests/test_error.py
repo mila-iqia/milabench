@@ -1,7 +1,6 @@
 import pytest
 
 from milabench.cli import main
-from milabench.testing import config
 
 
 def short_matcher(output):
@@ -18,7 +17,7 @@ error_cases = [([], short_matcher), (["--fulltrace"], long_matcher)]
 
 
 @pytest.mark.parametrize("args,matcher", error_cases)
-def test_error_reporting_short(capsys, args, matcher):
+def test_error_reporting_short(capsys, args, matcher, config):
     with pytest.raises(SystemExit) as err:
         main(["run", "--config", config("argerror"), *args])
 
