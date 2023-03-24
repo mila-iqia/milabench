@@ -58,6 +58,10 @@ jobs:
           poetry lock --no-update
           poetry install
 
+      - name: tests
+        run: |
+          pytest tests/
+
       - name: install benchmarks
         run: |
           milabench install $MILABENCH_ARGS
@@ -65,10 +69,6 @@ jobs:
       - name: prepare benchmarks
         run: |
           milabench prepare $MILABENCH_ARGS
-
-      - name: tests
-        run: |
-          pytest tests/
 
       - name: run benchmarks
         run: |
