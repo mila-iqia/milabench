@@ -74,22 +74,23 @@ def main():
         rank: Optional[int] = None
         world_size: Optional[int] = None
 
-    MASTER_ADDR = os.environ["MASTER_ADDR"]
-    MASTER_PORT = os.environ["MASTER_PORT"]
+    if os.environ.get('MILABENCH_PREPARE_ONLY', None) is None:
+        # This branch is when we run for real
+        MASTER_ADDR = os.environ["MASTER_ADDR"]
+        MASTER_PORT = os.environ["MASTER_PORT"]
 
-    init_process_group_kwargs = CustomInitProcessGroupKwargs(
-        init_method=f"tcp://{MASTER_ADDR}:{MASTER_PORT}",
-        # Reduced the timeout here, so the job fails quicker if there's a communication problem between nodes.
-        timeout=timedelta(seconds=60),
-        rank=int(os.environ["RANK"]),
-        world_size=int(os.environ["WORLD_SIZE"]),
-    )
-
-    accelerator = Accelerator(
-        log_with=None,
-        kwargs_handlers=[init_process_group_kwargs],
-    )
-    # Make one log on every process with the configuration for debugging.
+        init_process_group_kwargs = CustomInitProcessGroupKwargs(
+            init_method=f"tcp://{MASTER_ADDR}:{MASTER_PORT}",
+            # Reduced the timeout here, so the job fails quicker if there's a communication problem between nodes.
+            timeout=timedelta(seconds=60),
+            rank=int(os.environ["RANK"]),
+            world_size=int(os.environ["WORLD_SIZE"]),
+        )
+        accelerator = Accelerator(
+            kwargs_handlers=kwargs_handlers,
+        )
+    else:
+        accelerator = Accelerator()
 
     logging.basicConfig(
         level=logging.INFO,
@@ -130,10 +131,6 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(
         model_name, use_fast=True,
     )
-
-    model = AutoModelForCausalLM.from_config(model_config)
-
-    model.resize_token_embeddings(len(tokenizer))
 
     column_names = raw_datasets["train"].column_names
     text_column_name = "text" if "text" in column_names else column_names[0]
@@ -186,6 +183,10 @@ def main():
 
     if os.environ.get('MILABENCH_PREPARE_ONLY', None) is not None:
         return
+
+    model = AutoModelForCausalLM.from_config(model_config)
+
+    model.resize_token_embeddings(len(tokenizer))
 
     train_dataset = lm_datasets["train"]
     eval_dataset = lm_datasets["validation"]

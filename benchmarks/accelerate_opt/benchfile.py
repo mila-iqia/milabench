@@ -29,7 +29,10 @@ class TheBenchmark(Package):
         self.execute(
             "accelerate",
             "launch",
-            f"--config_file={self.dirs.code / self.config['accelerate_config']}",
+            "--mixed_precision=fp16",
+            "--num_machines=1",
+            "--dynamo_backend=no",
+            "--num_processes=8",
             os.path.join(self.dirs.code / "main.py"),
             env=env,
         )
@@ -38,12 +41,13 @@ class TheBenchmark(Package):
         proc = subprocess.Popen(
             ["accelerate",
              "launch",
-             #"--machine_rank=0",
-             f"--config_file={self.dirs.code / self.config['accelerate_config']}",
+             "--multi_gpu",
+             "--mixed_precision=fp16",
+             "--dynamo_backend=no",
              f"--num_cpu_threads_per_process={self.config['cpus_per_gpu']}",
              f"--main_process_ip={self.config['manager_addr']}",
              f"--main_process_port={self.config['manager_port']}",
-             #f"--num_processes={self.config['num_processes']}",
+             f"--num_processes={self.config['num_processes']}",
              str(self.dirs.code / "main.py")],
             env={"PYTHONUNBUFFERED": "1", **self._nox_session.env, **self.make_env()},
             stdout=subprocess.PIPE,
