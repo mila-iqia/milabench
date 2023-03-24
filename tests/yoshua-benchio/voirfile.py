@@ -12,7 +12,7 @@ class Config:
     dash: bool = False
 
     # How often to log the rates
-    interval: str = "1s"
+    interval: str = "1"
 
     # Number of rates to log before stopping
     stop: int = 20
