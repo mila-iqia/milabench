@@ -25,13 +25,13 @@ jobs:
       matrix:
         arch: [cuda, rocm]
 
+    runs-on: [self-hosted, "${{ matrix.arch }}"]
+    
     # Cancel previous jobs if a new version was pushed
     concurrency:
-      group: ${{ github.ref }}
+      group: "${{ github.ref }}-${{ matrix.arch }}"
       cancel-in-progress: true
-
-    runs-on: [self-hosted, "${{ matrix.arch }}"]
-
+      
     defaults:
       run:
         shell: bash -el {0}
