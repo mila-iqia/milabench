@@ -43,7 +43,7 @@ class PackageCore:
             signatures=[],
             func=NS(
                 python=f"{pyv.major}.{pyv.minor}.{pyv.micro}",
-                venv_backend=config["venv"]["type"],
+                venv_backend=config.get("venv", {"type": "virtualenv"})["type"],
                 venv_params=[],
                 reuse_venv=reuse,
             ),

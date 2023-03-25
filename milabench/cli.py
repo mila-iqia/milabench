@@ -148,14 +148,26 @@ def get_multipack(
         defn.setdefault("name", name)
         defn["tag"] = [defn["name"]]
 
-        if use_current_env or defn["dirs"].get("venv", None) is None:
+        dirs = defn.setdefault("dirs", {})
+
+        if use_current_env:
             venv = os.environ.get("CONDA_PREFIX", None)
             if venv is None:
                 venv = os.environ.get("VIRTUAL_ENV", None)
             if venv is None:
                 print("Could not find virtual environment", file=sys.stderr)
                 sys.exit(1)
-            defn["dirs"]["venv"] = venv
+            dirs["venv"] = venv
+
+        defn["group"] = defn.get("group", "{name}").format(**defn)
+        defn["install_group"] = defn.get("install_group", "{group}").format(**defn)
+        defn["install_variant"] = defn.get("install_variant", "").format(**defn)
+
+        dirs.setdefault("venv", "venv/{install_group}")
+        dirs.setdefault("data", "data")
+        dirs.setdefault("runs", "runs")
+        dirs.setdefault("extra", "extra/{group}")
+        dirs.setdefault("cache", "cache")
 
         def _format_path(pth):
             formatted = pth.format(**defn)
@@ -164,11 +176,10 @@ def get_multipack(
                 xpth = xpth.absolute()
             return xpth
 
-        dirs = {k: _format_path(v) for k, v in defn["dirs"].items()}
+        dirs = {k: _format_path(v) for k, v in dirs.items()}
         dirs = {
             k: str(v if v.is_absolute() else dirs["base"] / v) for k, v in dirs.items()
         }
-        defn["install_variant"] = defn.get("install_variant", "").format(**defn)
         defn["dirs"] = dirs
 
         for k in keys:
