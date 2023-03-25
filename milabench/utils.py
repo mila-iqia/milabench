@@ -46,7 +46,11 @@ def error_guard(default_return):
                 print("A non-fatal error happened", file=sys.stderr)
                 print("=" * 80, file=sys.stderr)
                 traceback.print_exc()
-                return default_return() if callable(default_return) else default_return
+                return (
+                    default_return(*args, **kwargs)
+                    if callable(default_return)
+                    else default_return
+                )
 
         return wrapped
 
