@@ -76,7 +76,7 @@ class Runner:
             self.step(inputs, labels)
 
 
-def main():
+def parser():
     parser = argparse.ArgumentParser(description="Transformers models")
     parser.add_argument(
         "--batch-size",
@@ -135,8 +135,11 @@ def main():
     #     action="store_true",
     #     help="do not display the loss on stdout",
     # )
+    return parser
 
-    args = parser.parse_args()
+
+def main():
+    args = parser().parse_args()
     runner = Runner(args)
     runner.train()
 

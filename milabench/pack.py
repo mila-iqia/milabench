@@ -7,7 +7,6 @@ class defines good default behavior.
 
 import json
 import os
-import sys
 import tempfile
 from argparse import Namespace as NS
 from hashlib import md5
@@ -15,6 +14,8 @@ from sys import version_info as pyv
 from typing import Sequence
 
 from nox.sessions import Session, SessionRunner
+
+from milabench.utils import assemble_options
 
 from .alt_async import run, send
 from .fs import XPath
@@ -87,9 +88,14 @@ class BasePackage:
         self.__dict__.update(core.__dict__)
         self.core = core
         self.config = config
+        self.phase = None
 
     def copy(self, config):
         return type(self)(config=merge(self.config, config))
+
+    @property
+    def argv(self):
+        return assemble_options(self.config.get("argv", []))
 
     @property
     def tag(self):
@@ -292,6 +298,16 @@ class Package(BasePackage):
             for name, path in self.config["dirs"].items()
         }
         env["MILABENCH_CONFIG"] = json.dumps(self.config)
+        if self.phase == "prepare" or self.phase == "run":
+            # XDG_CACHE_HOME controls basically all caches (pip, torch, huggingface,
+            # etc.). HOWEVER, we do not want pip's cache to be in self.dirs.cache,
+            # but we do want torch, huggingface, etc. to download configurations
+            # and models in there so that we can bundle it in a Docker image.
+            # Therefore, we set this variable for prepare and run, but not for
+            # install or pin. (We could also specifically clear out cache/pip when
+            # building an image, but it is overall nicer for development to use
+            # the default cache).
+            env["XDG_CACHE_HOME"] = str(self.dirs.cache)
         return env
 
     def full_env(self, env={}):
@@ -323,6 +339,7 @@ class Package(BasePackage):
             the manifest's contents to ``self.dirs.code``, installing
             milabench in the venv, and then calling this method.
         """
+        self.phase = "install"
         for reqs in self.requirements_files(self.config.get("install_variant", None)):
             if reqs.exists():
                 await self.pip_install("-r", reqs)
@@ -344,6 +361,7 @@ class Package(BasePackage):
             input_files: A list of inputs to piptools compile
             constraint: The constraint file
         """
+        self.phase = "pin"
         for base_reqs, reqs in self.requirements_map().items():
             if constraints:
                 tf = tempfile.NamedTemporaryFile()
@@ -400,12 +418,13 @@ class Package(BasePackage):
 
         The default value of ``self.prepare_script`` is ``"prepare.py"``.
         """
+        self.phase = "prepare"
         if self.prepare_script is not None:
             prep = self.dirs.code / self.prepare_script
             if prep.exists():
-                await self.execute(prep, env=self.make_env())
+                await self.execute(prep, *self.argv, env=self.make_env())
 
-    async def run(self, args):
+    async def run(self):
         """Start the benchmark and return the running process.
 
         By default, this runs:
@@ -425,10 +444,11 @@ class Package(BasePackage):
             voirargs: A list of arguments to ``voir``.
             env: Environment variables to set for the process.
         """
+        self.phase = "run"
         main = self.dirs.code / self.main_script
         if not main.exists():
             raise FileNotFoundError(
                 f"Cannot run main script because it does not exist: {main}"
             )
 
-        return await self.voir(self.main_script, args=args, cwd=main.parent)
+        return await self.voir(self.main_script, args=self.argv, cwd=main.parent)

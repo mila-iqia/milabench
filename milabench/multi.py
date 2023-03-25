@@ -1,8 +1,6 @@
 import asyncio
 from copy import deepcopy
 
-from ovld import ovld
-
 from .merge import merge
 
 planning_methods = {}
@@ -51,29 +49,6 @@ def njobs(cfg, n):
         yield clone_with(cfg, gcfg)
 
 
-@ovld
-def _assemble_options(options: list):
-    return options
-
-
-@ovld
-def _assemble_options(options: dict):
-    args = []
-    for k, v in options.items():
-        if v is None:
-            continue
-        elif v is True:
-            args.append(k)
-        elif k == "--":
-            args.extend(v)
-        elif v is False:
-            raise ValueError("Use null to cancel an option, not false")
-        else:
-            args.append(k)
-            args.append(",".join(map(str, v)) if isinstance(v, list) else str(v))
-    return args
-
-
 class MultiPackage:
     def __init__(self, packs):
         self.packs = packs
@@ -99,8 +74,7 @@ class MultiPackage:
                         run["tag"].append(f"R{index}")
                     run_pack = pack.copy(run)
                     await run_pack.send(event="config", data=run)
-                    args = _assemble_options(run.get("argv", {}))
-                    coroutines.append(run_pack.run(args=args))
+                    coroutines.append(run_pack.run())
 
                 await asyncio.gather(*coroutines)
 

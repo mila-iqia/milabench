@@ -4,6 +4,8 @@ import sys
 import traceback
 from functools import wraps
 
+from ovld import ovld
+
 
 class Named:
     """A named object.
@@ -55,3 +57,26 @@ def error_guard(default_return):
         return wrapped
 
     return deco
+
+
+@ovld
+def assemble_options(options: list):
+    return options
+
+
+@ovld
+def assemble_options(options: dict):
+    args = []
+    for k, v in options.items():
+        if v is None:
+            continue
+        elif v is True:
+            args.append(k)
+        elif k == "--":
+            args.extend(v)
+        elif v is False:
+            raise ValueError("Use null to cancel an option, not false")
+        else:
+            args.append(k)
+            args.append(",".join(map(str, v)) if isinstance(v, list) else str(v))
+    return args
