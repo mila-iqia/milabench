@@ -122,6 +122,15 @@ class BasePackage:
             )
         )
 
+    async def message_error(self, exc):
+        await send(
+            BenchLogEntry(
+                event="error",
+                data={"type": type(exc).__name__, "message": str(exc)},
+                pack=self,
+            )
+        )
+
     async def send(self, **kwargs):
         await send(
             BenchLogEntry(

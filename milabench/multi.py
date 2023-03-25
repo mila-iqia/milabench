@@ -55,28 +55,37 @@ class MultiPackage:
 
     async def do_install(self):
         for pack in self.packs.values():
-            await pack.checked_install()
+            try:
+                await pack.checked_install()
+            except Exception as exc:
+                await pack.message_error(exc)
 
     async def do_prepare(self):
         for pack in self.packs.values():
-            await pack.prepare()
+            try:
+                await pack.prepare()
+            except Exception as exc:
+                await pack.message_error(exc)
 
     async def do_run(self, repeat=1):
         for index in range(repeat):
             for pack in self.packs.values():
-                cfg = pack.config
-                plan = deepcopy(cfg["plan"])
-                method = get_planning_method(plan.pop("method"))
-                coroutines = []
+                try:
+                    cfg = pack.config
+                    plan = deepcopy(cfg["plan"])
+                    method = get_planning_method(plan.pop("method"))
+                    coroutines = []
 
-                for run in method(cfg, **plan):
-                    if repeat > 1:
-                        run["tag"].append(f"R{index}")
-                    run_pack = pack.copy(run)
-                    await run_pack.send(event="config", data=run)
-                    coroutines.append(run_pack.run())
+                    for run in method(cfg, **plan):
+                        if repeat > 1:
+                            run["tag"].append(f"R{index}")
+                        run_pack = pack.copy(run)
+                        await run_pack.send(event="config", data=run)
+                        coroutines.append(run_pack.run())
 
-                await asyncio.gather(*coroutines)
+                    await asyncio.gather(*coroutines)
+                except Exception as exc:
+                    await pack.message_error(exc)
 
     async def do_pin(self, pip_compile_args, constraints: list = tuple()):
         installed_groups = set()
