@@ -77,6 +77,17 @@ def _get_multipack(run_name=None, overrides=[]):
     )
 
 
+def selection_keys(defn):
+    sel = {
+        "*",
+        defn["name"],
+        defn["group"],
+        defn["install_group"],
+        *defn.get("tags", []),
+    }
+    return sel
+
+
 def get_multipack(
     config,
     base=None,
@@ -86,12 +97,6 @@ def get_multipack(
     run_name=None,
     overrides=[],
 ):
-    def selection_keys(defn):
-        sel = {"*", defn["name"], *defn.get("tags", [])}
-        if group := defn.get("group", None):
-            sel.add(group)
-        return sel
-
     override_dict = defaultdict(list)
     for override in overrides:
         sel, value = override.split("=", 1)
@@ -135,17 +140,20 @@ def get_multipack(
     run_name = run_name.format(time=now)
 
     for name, defn in config["benchmarks"].items():
-        keys = selection_keys(defn)
-
+        defn.setdefault("name", name)
         defn["run_name"] = run_name
         defn.setdefault("arch", arch)
+        defn["group"] = defn.get("group", "{name}").format(**defn)
+        defn["install_group"] = defn.get("install_group", "{group}").format(**defn)
+        defn["install_variant"] = defn.get("install_variant", "").format(**defn)
+
+        keys = selection_keys(defn)
 
         if select and not (keys & select):
             continue
         if exclude and (keys & exclude):
             continue
 
-        defn.setdefault("name", name)
         defn["tag"] = [defn["name"]]
 
         dirs = defn.setdefault("dirs", {})
@@ -158,10 +166,6 @@ def get_multipack(
                 print("Could not find virtual environment", file=sys.stderr)
                 sys.exit(1)
             dirs["venv"] = venv
-
-        defn["group"] = defn.get("group", "{name}").format(**defn)
-        defn["install_group"] = defn.get("install_group", "{group}").format(**defn)
-        defn["install_variant"] = defn.get("install_variant", "").format(**defn)
 
         dirs.setdefault("venv", "venv/{install_group}")
         dirs.setdefault("data", "data")
@@ -411,7 +415,11 @@ class Main:
 
         mp = _get_multipack(run_name="dev")
 
-        pack = mp.packs[select]
+        for pack in mp.packs.values():
+            if select in selection_keys(pack.config):
+                break
+        else:
+            sys.exit(f"Cannot find a benchmark with selector {select}")
 
         subprocess.run(
             [os.environ["SHELL"]],
