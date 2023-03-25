@@ -6,6 +6,7 @@ import numpy as np
 from .utils import error_guard
 
 
+@error_guard(None)
 def aggregate(run_data):
     omnibus = defaultdict(list)
     config = None
@@ -35,6 +36,10 @@ def aggregate(run_data):
         elif event == "end":
             assert end is None
             end = entry["data"]
+
+    if not config:
+        # This is not a run
+        return None
 
     assert config and start and end
 
@@ -150,7 +155,7 @@ def _summarize(group):
 
 
 def make_summary(runs):
-    aggs = [aggregate(run) for run in runs]
+    aggs = [agg for run in runs if (agg := aggregate(run))]
     classified = _classify(aggs)
     merged = {name: _merge(runs) for name, runs in classified.items()}
     summarized = {name: _summarize(agg) for name, agg in merged.items()}
