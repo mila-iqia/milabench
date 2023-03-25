@@ -1,5 +1,9 @@
 import asyncio
+import tempfile
+from collections import defaultdict
 from copy import deepcopy
+
+from milabench.utils import make_constraints_file
 
 from .merge import merge
 
@@ -88,12 +92,49 @@ class MultiPackage:
                     await pack.message_error(exc)
 
     async def do_pin(self, pip_compile_args, constraints: list = tuple()):
-        installed_groups = set()
+        groups = defaultdict(dict)
         for pack in self.packs.values():
-            if pack.config["group"] in installed_groups:
-                continue
-            await pack.pin(
-                pip_compile_args=pip_compile_args,
-                constraints=constraints,
-            )
-            installed_groups.add(pack.config["group"])
+            igrp = pack.config["install_group"]
+            base_reqs = pack.requirements_map().keys()
+            groups[igrp].update({req: pack for req in base_reqs})
+
+        groups = {
+            name: (set(group.keys()), set(group.values()))
+            for name, group in groups.items()
+        }
+
+        for ig, (reqs, packs) in groups.items():
+            if len(packs) < len(reqs):
+                raise Exception(
+                    f"Install group '{ig}' contains benchmarks that have more than"
+                    " one requirements file. Please isolate such benchmarks in their"
+                    " own install_group."
+                )
+
+        for ig, (reqs, packs) in groups.items():
+            packs = list(packs)
+            if len(packs) == 1:
+                (pack,) = packs
+                await pack.pin(
+                    pip_compile_args=pip_compile_args,
+                    constraints=constraints,
+                )
+            else:
+                pack0 = packs[0]
+
+                constraint_files = make_constraints_file(constraints)
+                with tempfile.NamedTemporaryFile() as tf:
+                    # Create master requirements
+                    await pack0.exec_pip_compile(
+                        requirements_file=tf.name,
+                        input_files=(*constraint_files, *reqs),
+                        argv=pip_compile_args,
+                    )
+
+                    # Use master requirements to constrain the rest
+                    new_constraints = [tf.name, *constraints]
+                    for pack in packs:
+                        await pack.pin(
+                            pip_compile_args=pip_compile_args,
+                            constraints=new_constraints,
+                        )

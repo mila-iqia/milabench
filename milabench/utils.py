@@ -1,10 +1,13 @@
 import itertools
 import random
 import sys
+import tempfile
 import traceback
 from functools import wraps
 
 from ovld import ovld
+
+from milabench.fs import XPath
 
 
 class Named:
@@ -80,3 +83,13 @@ def assemble_options(options: dict):
             args.append(k)
             args.append(",".join(map(str, v)) if isinstance(v, list) else str(v))
     return args
+
+
+def make_constraints_file(constraints):
+    if constraints:
+        tf = tempfile.NamedTemporaryFile(delete=False)
+        with open(tf.name, "w") as tfile:
+            tfile.write("\n".join([f"-c {XPath(c).absolute()}" for c in constraints]))
+        return (tf.name,)
+    else:
+        return ()

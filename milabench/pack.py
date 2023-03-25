@@ -15,7 +15,7 @@ from typing import Sequence
 
 from nox.sessions import Session, SessionRunner
 
-from milabench.utils import assemble_options
+from milabench.utils import assemble_options, make_constraints_file
 
 from .alt_async import run, send
 from .fs import XPath
@@ -372,16 +372,6 @@ class Package(BasePackage):
         """
         self.phase = "pin"
         for base_reqs, reqs in self.requirements_map().items():
-            if constraints:
-                tf = tempfile.NamedTemporaryFile()
-                with open(tf.name, "w") as tfile:
-                    tfile.write(
-                        "\n".join([f"-c {XPath(c).absolute()}" for c in constraints])
-                    )
-                constraint_files = (tf.name,)
-            else:
-                constraint_files = ()
-
             if not base_reqs.exists():
                 raise FileNotFoundError(
                     f"Cannot find base requirements file: {base_reqs}"
@@ -391,9 +381,12 @@ class Package(BasePackage):
                 await self.message(f"Clearing out existing {reqs}")
                 reqs.rm()
 
+            constraint_files = make_constraints_file(constraints)
             current_input_files = constraint_files + (base_reqs, *input_files)
 
-            await self.exec_pip_compile(reqs, current_input_files, *pip_compile_args)
+            await self.exec_pip_compile(
+                reqs, current_input_files, argv=pip_compile_args
+            )
 
             # Use previous requirements as a constraint
             constraints = (reqs, *constraints)
