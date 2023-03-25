@@ -427,3 +427,17 @@ dlrm:
     --test-mini-batch-size: 16384
     --test-num-workers: 0
     --use-gpu: true
+
+brax:
+  inherits: _defaults
+  tags:
+    - rl
+    - jax
+
+  group: torch
+
+  plan:
+    method: njobs
+    n: 1
+
+  definition: ../benchmarks/brax
