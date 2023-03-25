@@ -20,7 +20,13 @@ from milabench.validation import ErrorValidation
 from .compare import compare, fetch_runs
 from .config import parse_config
 from .fs import XPath
-from .log import DataReporter, TerminalFormatter, TextReporter
+from .log import (
+    DataReporter,
+    LongDashFormatter,
+    ShortDashFormatter,
+    TerminalFormatter,
+    TextReporter,
+)
 from .multi import MultiPackage
 from .report import make_report
 from .summary import aggregate, make_summary
@@ -220,7 +226,10 @@ def _read_reports(*runs):
 def _error_report(reports):
     out = {}
     for r, data in reports.items():
-        (success,) = aggregate(data)["data"]["success"]
+        agg = aggregate(data)
+        if not agg:
+            continue
+        (success,) = agg["data"]["success"]
         if not success:
             out[r] = [line for line in data if "#stdout" in line or "#stderr" in line]
     return out
@@ -228,7 +237,11 @@ def _error_report(reports):
 
 def run_with_loggers(coro, loggers, mp=None):
     retcode = 0
+    loggers = [logger for logger in loggers if logger is not None]
     try:
+        for logger in loggers:
+            if hasattr(logger, "start"):
+                logger.start()
         for entry in proceed(coro):
             for logger in loggers:
                 try:
@@ -273,12 +286,22 @@ class Main:
         # [negate]
         report: Option & bool = True
 
+        # Which type of dashboard to show (short, long, or no)
+        dash: Option & str = os.environ.get("MILABENCH_DASH", "long")
+
+        dash_class = {
+            "short": ShortDashFormatter,
+            "long": LongDashFormatter,
+            "no": None,
+        }[dash]
+
         mp = _get_multipack(run_name=run_name)
 
         success = run_with_loggers(
             mp.do_run(repeat=repeat),
             loggers=[
                 TerminalFormatter(),
+                dash_class and dash_class(),
                 TextReporter("stdout"),
                 TextReporter("stderr"),
                 DataReporter(),
