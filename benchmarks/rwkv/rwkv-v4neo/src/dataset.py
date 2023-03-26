@@ -70,12 +70,14 @@ class MyDataset(Dataset):
         else:
             if args.data_type == "dummy":
                 rank_zero_info("Building dummy data...")
-                self.data = ""
+                data = []
                 for i in range(100000):
                     aa = (i) % 10000
                     bb = (i * i) % 10000
                     cc = aa + bb
-                    self.data += f".{aa}+{bb}={cc}."
+                    data.append(f".{aa}+{bb}={cc}.")
+                self.data = "".join(data)
+
             else:
                 self.data = open(args.data_file, "r", encoding=args.data_type).read()
             rank_zero_info("Building token list...")

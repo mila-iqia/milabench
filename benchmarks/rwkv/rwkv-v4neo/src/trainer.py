@@ -3,15 +3,17 @@ import torch
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 from pytorch_lightning.utilities import rank_zero_info, rank_zero_only
+from giving import give
 
 def my_save(dd, ff):
-    if '14b-run1' not in ff:
-        torch.save(dd, ff)
-    else:
-        fn = ff.split('/')[-1]
-        fff = '/dev/shm/' + fn
-        torch.save(dd, fff)
-        subprocess.Popen(f" aws s3 mv {fff} s3://rwkv-14b-4k/{fn} --quiet", shell=True)
+    pass
+    # if '14b-run1' not in ff:
+    #     torch.save(dd, ff)
+    # else:
+    #     fn = ff.split('/')[-1]
+    #     fff = '/dev/shm/' + fn
+    #     torch.save(dd, fff)
+    #     subprocess.Popen(f" aws s3 mv {fff} s3://rwkv-14b-4k/{fn} --quiet", shell=True)
 
 class train_callback(pl.Callback):
     def __init__(self, args):
@@ -98,6 +100,8 @@ class train_callback(pl.Callback):
             trainer.my_epoch_loss = trainer.my_loss_sum / trainer.my_loss_count
             self.log("lr", trainer.my_lr, prog_bar=True, on_step=True)
             self.log("loss", trainer.my_epoch_loss, prog_bar=True, on_step=True)
+            give(task="train", loss=trainer.my_epoch_loss)
+            give(task="train", batch=batch)
             # self.log("s", real_step, prog_bar=True, on_step=True)
 
             if len(args.wandb) > 0:
@@ -127,22 +131,22 @@ class train_callback(pl.Callback):
     def on_train_epoch_end(self, trainer, pl_module):
         args = self.args
         if trainer.is_global_zero:  # logging & save state_dict
-            if (args.epoch_save > 0 and trainer.current_epoch % args.epoch_save == 0) or trainer.current_epoch == args.epoch_count - 1:
-                if args.data_type == 'wds_img':
-                    raw_dict = pl_module.state_dict()
-                    to_save_dict = {}
-                    for k in raw_dict:
-                        if k.startswith('encoder.') or k.startswith('decoder.'):
-                            to_save_dict[k] = raw_dict[k]
-                else:
-                    to_save_dict = pl_module.state_dict()
-                try:
-                    my_save(
-                        to_save_dict,
-                        f"{args.proj_dir}/rwkv-{args.epoch_begin + trainer.current_epoch}.pth",
-                    )
-                except Exception as e:
-                    print('Error\n\n', e, '\n\n')
+            # if (args.epoch_save > 0 and trainer.current_epoch % args.epoch_save == 0) or trainer.current_epoch == args.epoch_count - 1:
+            #     if args.data_type == 'wds_img':
+            #         raw_dict = pl_module.state_dict()
+            #         to_save_dict = {}
+            #         for k in raw_dict:
+            #             if k.startswith('encoder.') or k.startswith('decoder.'):
+            #                 to_save_dict[k] = raw_dict[k]
+            #     else:
+            #         to_save_dict = pl_module.state_dict()
+            #     try:
+            #         my_save(
+            #             to_save_dict,
+            #             f"{args.proj_dir}/rwkv-{args.epoch_begin + trainer.current_epoch}.pth",
+            #         )
+            #     except Exception as e:
+            #         print('Error\n\n', e, '\n\n')
             trainer.my_log.write(f"{args.epoch_begin + trainer.current_epoch} {trainer.my_epoch_loss:.6f} {math.exp(trainer.my_epoch_loss):.4f} {trainer.my_lr:.8f} {datetime.datetime.now()} {trainer.current_epoch}\n")
             trainer.my_log.flush()
 
@@ -182,9 +186,11 @@ def generate_init_weight(model, init_weight_name):
                     mmm = mm[k].squeeze().float().cpu().numpy()
                     print(mmm[:10], '...', mmm[-10:])
 
-    print(f"Save to {init_weight_name}...")
-    torch.save(mm, init_weight_name)
+    # print(f"Save to {init_weight_name}...")
+    # torch.save(mm, init_weight_name)
 
     if model.args.my_pile_stage == 1:
         print("Done. Now go for stage 2.")
         exit(0)
+
+    return mm

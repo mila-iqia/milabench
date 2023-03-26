@@ -3,6 +3,8 @@
 ########################################################################################################
 
 if __name__ == "__main__":
+    import deepspeed
+    import os
     from argparse import ArgumentParser
     from pytorch_lightning import Trainer
     from pytorch_lightning.utilities import rank_zero_info, rank_zero_only
@@ -51,7 +53,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--load_model", default="", type=str)  # full path, with .pth
     parser.add_argument("--wandb", default="", type=str)  # wandb project name. if "" then don't use wandb
-    parser.add_argument("--proj_dir", default="out", type=str)
+    parser.add_argument("--proj_dir", default=os.environ.get("MILABENCH_BASE", ".") + "/proj/rwkv/", type=str)
     parser.add_argument("--random_seed", default="-1", type=int)
 
     parser.add_argument("--data_file", default="", type=str)
@@ -288,25 +290,28 @@ if __name__ == "__main__":
         from src.model import RWKV
         model = RWKV(args)
 
-    if len(args.load_model) == 0 or args.my_pile_stage == 1:  # shall we build the initial weights?
-        init_weight_name = f"{args.proj_dir}/rwkv-init.pth"
-        generate_init_weight(model, init_weight_name)  # save initial weights
-        args.load_model = init_weight_name
+    # if len(args.load_model) == 0 or args.my_pile_stage == 1:  # shall we build the initial weights?
+    #     init_weight_name = f"{args.proj_dir}/rwkv-init.pth"
+    #     load_dict = generate_init_weight(model, init_weight_name)  # save initial weights
+    #     args.load_model = init_weight_name
 
-    rank_zero_info(f"########## Loading {args.load_model}... ##########")
-    try:
-        load_dict = torch.load(args.load_model, map_location="cpu")
-    except:
-        rank_zero_info(f"Bad checkpoint {args.load_model}")
-        if args.my_pile_stage >= 2:  # try again using another checkpoint
-            max_p = args.my_pile_prev_p
-            if max_p == -1:
-                args.load_model = f"{args.proj_dir}/rwkv-init.pth"
-            else:
-                args.load_model = f"{args.proj_dir}/rwkv-{max_p}.pth"
-            args.epoch_begin = max_p + 1
-            rank_zero_info(f"Trying {args.load_model}")
-            load_dict = torch.load(args.load_model, map_location="cpu")
+    # rank_zero_info(f"########## Loading {args.load_model}... ##########")
+    # try:
+    #     load_dict = torch.load(args.load_model, map_location="cpu")
+    # except:
+    #     rank_zero_info(f"Bad checkpoint {args.load_model}")
+    #     if args.my_pile_stage >= 2:  # try again using another checkpoint
+    #         max_p = args.my_pile_prev_p
+    #         if max_p == -1:
+    #             args.load_model = f"{args.proj_dir}/rwkv-init.pth"
+    #         else:
+    #             args.load_model = f"{args.proj_dir}/rwkv-{max_p}.pth"
+    #         args.epoch_begin = max_p + 1
+    #         rank_zero_info(f"Trying {args.load_model}")
+    #         load_dict = torch.load(args.load_model, map_location="cpu")
+
+    init_weight_name = f"{args.proj_dir}/rwkv-init.pth"
+    load_dict = generate_init_weight(model, init_weight_name)  # create initial weights
 
     if args.load_partial == 1:
         load_keys = load_dict.keys()
