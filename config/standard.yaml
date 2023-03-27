@@ -168,3 +168,18 @@ benchmarks:
     validation_split_percentage: 5
 
     definition: ../benchmarks/accelerate_opt
+
+  timm:
+    <<<: *defaults
+
+    group: timm
+    install_group: timm
+
+    plan:
+      method: per_gpu
+
+    argv:
+      --model: resnet50
+      --amp: true
+
+    definition: ../benchmarks/timm
