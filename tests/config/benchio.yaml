@@ -1,0 +1,21 @@
+defaults: &defaults
+  dirs:
+    code: code/{name}
+    venv: venv/{name}
+    data: data
+    runs: runs
+    extra: extra/{name}
+
+  venv:
+    type: virtualenv
+
+
+benchmarks:
+  benchio:
+    <<<: *defaults
+
+    plan:
+      method: njobs
+      n: 2
+
+    definition: ../yoshua-benchio

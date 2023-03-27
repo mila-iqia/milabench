@@ -14,12 +14,14 @@ class _Output:
 def fetch_runs(folder):
     runs = []
     for run in os.listdir(folder):
-        name, date = run.split(".", maxsplit=1)
-        out = _Output(
-            os.path.join(folder, run),
-            name,
-            datetime.strptime(date, "%Y-%m-%d_%H:%M:%S.%f"),
-        )
+        pth = os.path.join(folder, run)
+        if "." in run:
+            name, date = run.split(".", maxsplit=1)
+            date = datetime.strptime(date, "%Y-%m-%d_%H:%M:%S.%f")
+        else:
+            name = run
+            date = datetime.fromtimestamp(os.path.getmtime(pth))
+        out = _Output(pth, name, date)
         runs.append(out)
 
     runs.sort(key=lambda out: out.date)

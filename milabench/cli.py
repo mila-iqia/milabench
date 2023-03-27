@@ -5,35 +5,42 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from functools import partial
+import traceback
+from ast import literal_eval
+from collections import defaultdict
+from datetime import datetime
 
 from coleo import Option, config as configuration, default, run_cli, tooled
+from voir.instruments.gpu import get_gpu_info
 
+from milabench.alt_async import proceed
+from milabench.utils import blabla
+from milabench.validation import ErrorValidation
+
+from .compare import compare, fetch_runs
+from .config import parse_config
 from .fs import XPath
-from .log import simple_dash, simple_report
+from .log import (
+    DataReporter,
+    LongDashFormatter,
+    ShortDashFormatter,
+    TerminalFormatter,
+    TextReporter,
+)
 from .multi import MultiPackage
 from .report import make_report
 from .summary import aggregate, make_summary
-from .config import parse_config
-from .compare import fetch_runs, compare
 
 
-def main():
+def main(argv=None):
     sys.path.insert(0, os.path.abspath(os.curdir))
+    if argv is None:
+        argv = sys.argv[1:]
+    argv = [str(x) for x in argv]
     try:
-        run_cli(Main)
-    except SystemExit as sysex:
-        if sysex.code == 0 and "pin" in sys.argv and ("-h" in sys.argv or "--help" in sys.argv):
-            out = (subprocess.check_output(["python3", "-m", "piptools", "compile", "--help"])
-                .decode("utf-8")
-                .split("\n"))
-            for i in range(len(out)):
-                if out[i].startswith("Usage:"):
-                    bin = os.path.basename(sys.argv[0])
-                    out[i] = out[i].replace("Usage: python -m piptools compile",
-                                            f"usage: {bin} pin [...] --pip-compile")
-            print("\n".join(out))
-        raise
+        sys.exit(run_cli(Main, argv=argv))
+    except KeyboardInterrupt:
+        pass
 
 
 def get_pack(defn):
@@ -45,9 +52,8 @@ def get_pack(defn):
 
 
 @tooled
-def _get_multipack(dev=False):
+def _get_multipack(run_name=None, overrides=[]):
     # Configuration file
-    # [positional: ?]
     config: Option & str = None
 
     # Base path for code, venvs, data and runs
@@ -62,26 +68,65 @@ def _get_multipack(dev=False):
     # Packs to exclude
     exclude: Option & str = default("")
 
-    return get_multipack(config, base, use_current_env, select, exclude, dev)
+    # Override configuration values
+    # [action: append]
+    override: Option = []
+
+    return get_multipack(
+        config,
+        base,
+        use_current_env,
+        select,
+        exclude,
+        run_name=run_name,
+        overrides=[*overrides, *override],
+    )
+
+
+def selection_keys(defn):
+    sel = {
+        "*",
+        defn["name"],
+        defn["group"],
+        defn["install_group"],
+        *defn.get("tags", []),
+    }
+    return sel
 
 
 def get_multipack(
-    config, base=None, use_current_env=False, select="", exclude="", dev=False
+    config,
+    base=None,
+    use_current_env=False,
+    select="",
+    exclude="",
+    run_name=None,
+    overrides=[],
 ):
+    override_dict = defaultdict(list)
+    for override in overrides:
+        sel, value = override.split("=", 1)
+        try:
+            value = literal_eval(value)
+        except ValueError:
+            pass
+        sel, *fields = sel.split(".")
+        override_dict[sel].append((fields, value))
+
+    arch_guess = os.environ.get("MILABENCH_GPU_ARCH", None)
+    arch = get_gpu_info(arch_guess)["arch"]
+
     if config is None:
         config = os.environ.get("MILABENCH_CONFIG", None)
 
     if config is None:
         sys.exit("Error: CONFIG argument not provided and no $MILABENCH_CONFIG")
 
-    if dev:
-        use_current_env = True
-
     if select:
-        select = select.split(",")
+        select = set(select.split(","))
 
     if exclude:
-        exclude = exclude.split(",")
+        exclude = set(exclude.split(","))
 
     if base is None:
         base = os.environ.get("MILABENCH_BASE", None)
@@ -95,24 +140,44 @@ def get_multipack(
 
     objects = {}
 
+    if run_name is None:
+        run_name = blabla() + ".{time}"
+    now = str(datetime.today()).replace(" ", "_")
+    run_name = run_name.format(time=now)
+
     for name, defn in config["benchmarks"].items():
-        group = defn.get("group", name)
-        if select and name not in select and group not in select:
+        defn.setdefault("name", name)
+        defn["run_name"] = run_name
+        defn.setdefault("arch", arch)
+        defn["group"] = defn.get("group", "{name}").format(**defn)
+        defn["install_group"] = defn.get("install_group", "{group}").format(**defn)
+        defn["install_variant"] = defn.get("install_variant", "").format(**defn)
+
+        keys = selection_keys(defn)
+
+        if select and not (keys & select):
             continue
-        if exclude and name in exclude or group in exclude:
+        if exclude and (keys & exclude):
             continue
 
-        defn.setdefault("name", name)
         defn["tag"] = [defn["name"]]
 
-        if use_current_env or defn["dirs"].get("venv", None) is None:
+        dirs = defn.setdefault("dirs", {})
+
+        if use_current_env:
             venv = os.environ.get("CONDA_PREFIX", None)
             if venv is None:
                 venv = os.environ.get("VIRTUAL_ENV", None)
             if venv is None:
                 print("Could not find virtual environment", file=sys.stderr)
                 sys.exit(1)
-            defn["dirs"]["venv"] = venv
+            dirs["venv"] = venv
+
+        dirs.setdefault("venv", "venv/{install_group}")
+        dirs.setdefault("data", "data")
+        dirs.setdefault("runs", "runs")
+        dirs.setdefault("extra", "extra/{group}")
+        dirs.setdefault("cache", "cache")
 
         def _format_path(pth):
             formatted = pth.format(**defn)
@@ -121,11 +186,19 @@ def get_multipack(
                 xpth = xpth.absolute()
             return xpth
 
-        dirs = {k: _format_path(v) for k, v in defn["dirs"].items()}
+        dirs = {k: _format_path(v) for k, v in dirs.items()}
         dirs = {
             k: str(v if v.is_absolute() else dirs["base"] / v) for k, v in dirs.items()
         }
         defn["dirs"] = dirs
+
+        for k in keys:
+            for override, value in override_dict[k]:
+                curr = defn
+                for field in override[:-1]:
+                    curr = curr[field]
+                curr[override[-1]] = value
+
         objects[name] = get_pack(defn)
 
     return MultiPackage(objects)
@@ -136,7 +209,7 @@ def _read_reports(*runs):
     for folder in runs:
         for parent, _, filenames in os.walk(folder):
             for file in filenames:
-                if not file.endswith(".json"):
+                if not file.endswith(".data"):
                     continue
                 pth = XPath(parent) / file
                 with pth.open() as f:
@@ -145,17 +218,57 @@ def _read_reports(*runs):
                         data = [json.loads(line) for line in lines]
                     except Exception as exc:
                         print(f"Could not parse {pth}")
-                    all_data[str(pth)] = data
+                    else:
+                        all_data[str(pth)] = data
     return all_data
 
 
 def _error_report(reports):
     out = {}
     for r, data in reports.items():
-        (success,) = aggregate(data)["success"]
+        agg = aggregate(data)
+        if not agg:
+            continue
+        (success,) = agg["data"]["success"]
         if not success:
             out[r] = [line for line in data if "#stdout" in line or "#stderr" in line]
     return out
+
+
+def run_with_loggers(coro, loggers, mp=None):
+    retcode = 0
+    loggers = [logger for logger in loggers if logger is not None]
+    try:
+        for logger in loggers:
+            if hasattr(logger, "start"):
+                logger.start()
+        for entry in proceed(coro):
+            for logger in loggers:
+                try:
+                    logger(entry)
+                except Exception:
+                    logger_name = getattr(logger, "__name__", logger)
+                    print(f"Error happened in logger {logger_name}", file=sys.stderr)
+                    print("=" * 80)
+                    traceback.print_exc()
+                    print("=" * 80)
+    except Exception:
+        traceback.print_exc()
+        retcode = -1
+    finally:
+        for logger in loggers:
+            if hasattr(logger, "end"):
+                if (rc := logger.end()) is not None:
+                    retcode = retcode or rc
+        if mp:
+            logdirs = {pack.logdir for pack in mp.packs.values() if pack.logdir}
+            for logdir in logdirs:
+                print(f"[DONE] Reports directory: {logdir}")
+        return retcode
+
+
+def run_sync(coro, terminal=True):
+    return run_with_loggers(coro, [TerminalFormatter()] if terminal else [])
 
 
 class Main:
@@ -163,61 +276,117 @@ class Main:
         # Name of the run
         run_name: Option = None
 
-        # Dev mode (adds --sync, current venv, only one run, no logging)
-        dev: Option & bool = False
-
-        # Sync changes to the benchmark directory
-        sync: Option & bool = False
-
         # Number of times to repeat the benchmark
         repeat: Option & int = 1
 
         # On error show full stacktrace
         fulltrace: Option & bool = False
 
-        mp = _get_multipack(dev=dev)
+        # Do not show a report at the end
+        # [negate]
+        report: Option & bool = True
 
-        if dev or sync:
-            mp.do_install(dash=simple_dash, sync=True)
+        # Which type of dashboard to show (short, long, or no)
+        dash: Option & str = os.environ.get("MILABENCH_DASH", "long")
 
-        if dev:
-            assert repeat == 1
-            mp.do_dev(dash=simple_dash)
-        else:
-            mp.do_run(
-                repeat=repeat,
-                dash=simple_dash,
-                report=partial(simple_report, runname=run_name),
-                short=not fulltrace,
+        dash_class = {
+            "short": ShortDashFormatter,
+            "long": LongDashFormatter,
+            "no": None,
+        }[dash]
+
+        mp = _get_multipack(run_name=run_name)
+
+        success = run_with_loggers(
+            mp.do_run(repeat=repeat),
+            loggers=[
+                TerminalFormatter(),
+                dash_class and dash_class(),
+                TextReporter("stdout"),
+                TextReporter("stderr"),
+                DataReporter(),
+                ErrorValidation(short=not fulltrace),
+            ],
+            mp=mp,
+        )
+
+        if report:
+            runs = {pack.logdir for pack in mp.packs.values()}
+            weights = None
+            compare = None
+            compare_gpus = True
+            html = None
+            price = None
+
+            reports = None
+            if runs:
+                reports = _read_reports(*runs)
+                summary = make_summary(reports.values())
+
+            make_report(
+                summary,
+                compare=compare,
+                weights=weights,
+                html=html,
+                compare_gpus=compare_gpus,
+                price=price,
+                title=None,
+                sources=runs,
+                errdata=reports and _error_report(reports),
             )
 
+        return success
+
     def prepare():
-        # Dev mode (does install --sync, uses current venv)
-        dev: Option & bool = False
+        mp = _get_multipack(run_name="prepare.{time}")
 
-        # Sync changes to the benchmark directory
-        sync: Option & bool = False
+        # On error show full stacktrace
+        fulltrace: Option & bool = False
 
-        mp = _get_multipack(dev=dev)
-
-        if dev or sync:
-            mp.do_install(dash=simple_dash, sync=True)
-
-        mp.do_prepare(dash=simple_dash)
+        return run_with_loggers(
+            mp.do_prepare(),
+            loggers=[
+                TerminalFormatter(),
+                TextReporter("stdout"),
+                TextReporter("stderr"),
+                DataReporter(),
+                ErrorValidation(short=not fulltrace),
+            ],
+            mp=mp,
+        )
 
     def install():
         # Force install
         force: Option & bool = False
 
-        # Sync changes to the benchmark directory
-        sync: Option & bool = False
+        # On error show full stacktrace
+        fulltrace: Option & bool = False
 
-        # Dev mode (adds --sync, use current venv)
-        dev: Option & bool = False
+        # Install variant
+        variant: Option & str = None
 
-        mp = _get_multipack(dev=dev)
-        mp.do_install(dash=simple_dash, force=force, sync=sync)
-    
+        overrides = [f"*.install_variant='{variant}'"] if variant else []
+
+        if force:
+            mp = _get_multipack(run_name="install.{time}", overrides=overrides)
+            for pack in mp.packs.values():
+                pack.install_mark_file.rm()
+                pack.dirs.venv.rm()
+
+        mp = _get_multipack(run_name="install.{time}", overrides=overrides)
+
+        return run_with_loggers(
+            mp.do_install(),
+            loggers=[
+                TerminalFormatter(),
+                TextReporter("stdout"),
+                TextReporter("stderr"),
+                DataReporter(),
+                ErrorValidation(short=not fulltrace),
+            ],
+            mp=mp,
+        )
+
     def pin():
         # Extra args to pass to pip-compile
         # [nargs: --]
@@ -228,12 +397,58 @@ class Main:
         # [nargs: *]
         constraints: Option = tuple()
 
+        # Install variant
+        variant: Option & str = None
+
+        overrides = [f"*.install_variant='{variant}'"] if variant else []
+
         if "-h" in pip_compile or "--help" in pip_compile:
+            out = (
+                subprocess.check_output(
+                    ["python3", "-m", "piptools", "compile", "--help"]
+                )
+                .decode("utf-8")
+                .split("\n")
+            )
+            for i in range(len(out)):
+                if out[i].startswith("Usage:"):
+                    bin = os.path.basename(sys.argv[0])
+                    out[i] = out[i].replace(
+                        "Usage: python -m piptools compile",
+                        f"usage: {bin} pin [...] --pip-compile",
+                    )
+            print("\n".join(out))
             exit(0)
 
-        mp = _get_multipack(dev=True)
+        mp = _get_multipack(run_name="pin", overrides=overrides)
 
-        mp.do_pin(*pip_compile, dash=simple_dash, constraints=constraints)
+        return run_with_loggers(
+            mp.do_pin(pip_compile_args=pip_compile, constraints=constraints),
+            loggers=[
+                TerminalFormatter(),
+                TextReporter("stdout"),
+                TextReporter("stderr"),
+            ],
+            mp=mp,
+        )
+
+    def dev():
+        # The name of the benchmark to develop
+        select: Option & str
+
+        mp = _get_multipack(run_name="dev")
+
+        for pack in mp.packs.values():
+            if select in selection_keys(pack.config):
+                break
+        else:
+            sys.exit(f"Cannot find a benchmark with selector {select}")
+
+        subprocess.run(
+            [os.environ["SHELL"]],
+            env=pack.full_env(),
+            cwd=pack.dirs.code,
+        )
 
     def summary():
         # Directory(ies) containing the run data
@@ -255,25 +470,18 @@ class Main:
 
     def compare():
         """Compare all runs with each other
-
         Parameters
         ----------
-
         folder: str
             Folder where milabench results are stored
-
         last: int
             Number of runs to compare i.e 3 means the 3 latest runs only
-
         metric: str
             Metric to compare
-
         stat: str
             statistic name to compare
-
         Examples
         --------
-
         >>> milabench compare results/ --last 3 --metric train_rate --stat median
                                                |   rufidoko |   sokilupa
                                                | 2023-02-23 | 2023-03-09
@@ -283,7 +491,6 @@ class Main:
         convnext_large       |      train_rate |     210.11 |     216.23
         dlrm                 |      train_rate |  338294.94 |  294967.41
         efficientnet_b0      |      train_rate |     223.56 |     223.48
-
         """
         # [positional: ?]
         folder: Option = None
@@ -310,10 +517,8 @@ class Main:
 
     def report():
         """Generate a report aggregating all runs together into a final report
-
         Examples
         --------
-
         >>> milabench report --runs results/
         Source: /home/newton/work/milabench/milabench/../tests/results
         =================
@@ -328,7 +533,6 @@ class Main:
         Errors
         ------
         1 errors, details in HTML report.
-
         """
         # Runs directory
         # [action: append]
@@ -383,16 +587,14 @@ class Main:
         # Packs to exclude
         exclude: Option & str = default("")
 
-        dev: Option & bool = False
-
         # pip arguments
         # [remainder]
         args: Option = []
 
-        mp = get_multipack(config, base, use_current_env, select, exclude, dev=dev)
+        mp = get_multipack(config, base, use_current_env, select, exclude)
 
         for pack in mp.packs.values():
-            pack.execute("pip", *args)
+            run_sync(pack.pip_install(*args))
 
     def container():
         # Configuration file
@@ -530,7 +732,6 @@ RUN mkdir /bench && mkdir /base
 ENV MILABENCH_BASE /base
 # This is to signal to milabench to use that as fallback
 ENV VIRTUAL_ENV /base/venv/_
-ENV MILABENCH_DEVREQS /version.txt
 ENV MILABENCH_CONFIG /bench/{ config_file }
 ENV HEADLESS 1
 WORKDIR /base
@@ -564,13 +765,11 @@ From: { 'continuumio/miniconda3' if use_conda else f'python:{python_version}-sli
 
 %environment
     export MILABENCH_BASE=/base
-    export MILABENCH_DEVREQS=/version.txt
     export MILABENCH_CONFIG=/bench/{ config_file }
     export HEADLESS=1
 
 %post
     export MILABENCH_BASE=/base
-    export MILABENCH_DEVREQS=/version.txt
     export MILABENCH_CONFIG=/bench/{ config_file }
     export HEADLESS=1
 

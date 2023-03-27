@@ -32,9 +32,10 @@ jobs:
         shell: bash -el {0}
         
     env:
-      MILABENCH_CONFIG: "config/ci-cuda.yaml"
+      MILABENCH_CONFIG: "config/ci.yaml"
       MILABENCH_BASE: "output"
       MILABENCH_ARGS: ""
+      MILABENCH_DASH: "no"
       MILABENCH_GPU_ARCH: "cuda"
     
     steps:
@@ -58,25 +59,21 @@ jobs:
           poetry lock --no-update
           poetry install
 
-      - name: install benchmarks
-        run: |
-          milabench install $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
-
-      - name: prepare benchmarks
-        run: |
-          milabench prepare $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
-
       - name: tests
         run: |
           pytest tests/
 
-      - name: use pytorch nightly
+      - name: install benchmarks
         run: |
-          bash script/nightly_overrides.bash
+          milabench install $MILABENCH_ARGS
+
+      - name: prepare benchmarks
+        run: |
+          milabench prepare $MILABENCH_ARGS
 
       - name: run benchmarks
         run: |
-          milabench run $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
+          milabench run $MILABENCH_ARGS
 
       - name: Summary
         run: |
