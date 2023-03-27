@@ -27,6 +27,7 @@ import json
 import logging
 import math
 import os
+import sys
 import time
 from dataclasses import dataclass
 from datetime import timedelta
@@ -54,11 +55,14 @@ from transformers import (
     get_scheduler,
 )
 from transformers.utils import get_full_repo_name
+from voir.smuggle import SmuggleWriter
+from voir.instruments.gpu import Monitor, get_gpu_info
 
 logger = get_logger(__name__)
 
 
 def main():
+    is_prepare_phase = os.environ.get('MILABENCH_PREPARE_ONLY', None) == "1"
     config = json.loads(os.environ["MILABENCH_CONFIG"])
     per_gpu_batch_size = config["per_gpu_batch_size"]
     max_train_steps = config["max_train_steps"]
@@ -74,7 +78,7 @@ def main():
         rank: Optional[int] = None
         world_size: Optional[int] = None
 
-    if os.environ.get('MILABENCH_PREPARE_ONLY', None) is None:
+    if not is_prepare_phase:
         # This branch is when we run for real
         MASTER_ADDR = os.environ["MASTER_ADDR"]
         MASTER_PORT = os.environ["MASTER_PORT"]
@@ -91,6 +95,36 @@ def main():
         )
     else:
         accelerator = Accelerator()
+
+    if not is_prepare_phase and accelerator.is_main_process:
+        # Set up logging for milabench (only in the run phase, for the main process)
+
+        data_file = SmuggleWriter(sys.stdout)
+        def mblog(data):
+            if data_file is not None:
+                print(json.dumps(data), file=data_file)
+
+        def monitor_fn():
+            data = {
+                gpu["device"]: {
+                    "memory": [gpu["memory"]["used"], gpu["memory"]["total"]],
+                    "load": gpu["utilization"]["compute"],
+                    "temperature": gpu["temperature"],
+                }
+                for gpu in get_gpu_info()["gpus"].values()
+            }
+            mblog({"task": "main", "gpudata": data})
+
+        monitor_fn()
+        # NOTE: First argument to Monitor is not used and will be removed in the
+        # next version of voir, make sure to remove it when that happens!
+        monitor = Monitor(None, 3, monitor_fn)
+        monitor.start()
+
+    else:
+        def mblog(data):
+            pass
+        monitor = None
 
     logging.basicConfig(
         level=logging.INFO,
@@ -181,7 +215,7 @@ def main():
             desc=f"Grouping texts in chunks of {block_size}",
         )
 
-    if os.environ.get('MILABENCH_PREPARE_ONLY', None) is not None:
+    if is_prepare_phase:
         return
 
     model = AutoModelForCausalLM.from_config(model_config)
@@ -311,7 +345,7 @@ def main():
             loss = outputs.loss
             loss = loss / gradient_accumulation_steps
             if accelerator.is_main_process:
-                print(json.dumps({"event": "data", "data": {"task": "train", "loss": loss.detach().item()}, "pipe": "data"}))
+                mblog({"task": "train", "loss": loss.detach().item()})
             accelerator.backward(loss)
 
             if (step + 1) % gradient_accumulation_steps == 0 or step == len(
@@ -341,7 +375,7 @@ def main():
                         n_samples_since_last_log / seconds_since_last_log
                     )
 
-                    print(json.dumps({"event": "data", "data": {"task": "train", "rate": throughput_samples_per_sec, "units": "items/s"}, "pipe": "data"}))
+                    mblog({"task": "train", "rate": throughput_samples_per_sec, "units": "items/s"})
 
                     last_log_time = time.time()
 
