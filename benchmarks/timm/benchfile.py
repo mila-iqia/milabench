@@ -12,7 +12,7 @@ class TimmBenchmarkPack(Package):
         extra_args = [
             "--data-dir", self.dirs.data,
             "--dataset", "FakeImageNet",
-            "--output", self.dirs.extra / "output",
+            "--output", self.dirs.extra / self.logdir.name / self.tag,
             "--checkpoint-hist", 1,
         ]
         return [*super().argv, *extra_args]
