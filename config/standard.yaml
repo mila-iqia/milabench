@@ -1,26 +1,17 @@
 defaults: &defaults
-  dirs:
-    code: code/{group}
-    venv: venv/{group}
-    data: data
-    runs: runs
-    extra: extra/{group}
-
   install_variant: "{arch}"
 
   voir:
     options:
-      stop: 60
+      stop: 5
       interval: "1s"
-
-  venv:
-    type: virtualenv
 
 
 torchvision: &torchvision
   <<<: *defaults
 
   group: torchvision
+  install_group: torch
 
   plan:
     method: per_gpu
@@ -48,6 +39,7 @@ hf: &hf
   <<<: *defaults
 
   group: hf
+  install_group: torch
 
   plan:
     method: per_gpu
@@ -62,6 +54,7 @@ lightning: &lightning
   <<<: *defaults
 
   group: lightning
+  install_group: torch
 
   plan:
     method: njobs
@@ -81,11 +74,6 @@ lightning: &lightning
 
 
 benchmarks:
-  resnet18:
-    <<<: *torchvision
-    argv:
-      --model: resnet18
-
   resnet50:
     <<<: *torchvision
     tags:

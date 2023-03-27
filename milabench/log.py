@@ -2,9 +2,17 @@ import json
 import os
 import pprint
 import shlex
+import time
+from collections import defaultdict
 from datetime import datetime
 
 from blessed import Terminal
+from rich.console import Console
+from rich.live import Live
+from rich.panel import Panel
+from rich.progress import BarColumn, Progress, TextColumn, TimeRemainingColumn
+from rich.table import Table
+from rich.text import Text
 
 from .fs import XPath
 
@@ -177,3 +185,172 @@ class DataReporter(BaseReporter):
         d.pop("pack")
         j = json.dumps(d)
         self.file(entry).write(f"{j}\n")
+
+
+class DashFormatter:
+    def __init__(self):
+        self.panel = Panel("")
+        self.console = Console()
+        self.live = Live(self.panel, refresh_per_second=4, console=self.console)
+        self.rows = defaultdict(dict)
+        self.endtimes = {}
+
+    def prune(self):
+        now = time.time()
+        for tag, endtime in list(self.endtimes.items()):
+            if now - endtime > 60:
+                del self.endtimes[tag]
+                del self.rows[tag]
+
+    def refresh(self):
+        self.prune()
+        self.live.update(self.make_table())
+
+    def start(self):
+        self.live.__enter__()
+
+    def end(self):
+        self.live.__exit__(None, None, None)
+
+    def __call__(self, entry):
+        event = entry.event
+        data = entry.data
+        tag = entry.tag
+        row = self.rows[tag]
+
+        method = getattr(self, f"on_{event}", None)
+        if method:
+            method(entry, data, row)
+
+    def on_end(self, entry, data, row):
+        self.endtimes[entry.tag] = time.time()
+
+
+class ShortDashFormatter(DashFormatter):
+    def make_table(self):
+        table = Table(padding=(0, 3, 0, 0))
+        table.add_column("bench", style="bold white")
+        table.add_column("status")
+        table.add_column("progress", style="bold white")
+        table.add_column("rate", style="bold green")
+        table.add_column("loss", style="bold cyan")
+        table.add_column("gpu_load", style="bold magenta")
+        table.add_column("gpu_mem", style="bold magenta")
+        table.add_column("gpu_temp", style="bold magenta")
+
+        for bench, values in self.rows.items():
+            table.add_row(
+                bench,
+                values.get("status", "?"),
+                values.get("progress", "??%"),
+                values.get("rate", "?"),
+                values.get("loss", "?"),
+                values.get("gpu_load", "?"),
+                values.get("gpu_mem", "?"),
+                values.get("gpu_temp", "?"),
+            )
+
+        return table
+
+    def on_data(self, entry, data, row):
+        data = dict(data)
+        task = data.get("task", None)
+        if prog := data.get("progress", None):
+            if task == "early_stop":
+                current, total = prog
+                if total > 0:
+                    perc = int(100 * (current / total))
+                    if perc >= 100:
+                        perc = "DONE"
+                    else:
+                        perc = f"{perc}%"
+                    row["progress"] = perc
+        elif gpudata := data.get("gpudata", None):
+            for gpuid, data in gpudata.items():
+                load = int(data.get("load", 0) * 100)
+                currm, totalm = data.get("memory", [0, 0])
+                temp = int(data.get("temperature", 0))
+                row[
+                    f"gpu:{gpuid}"
+                ] = f"{load}% load | {currm:.0f}/{totalm:.0f} MB | {temp}C"
+                row["gpu_load"] = f"{load}%"
+                row["gpu_mem"] = f"{currm:.0f}/{totalm:.0f} MB"
+                row["gpu_temp"] = f"{temp}C"
+                break
+        elif (rate := data.get("rate", None)) is not None:
+            if task == "train":
+                row["rate"] = f"{rate:.2f}"
+        elif (loss := data.get("loss", None)) is not None:
+            if task == "train":
+                row["loss"] = f"{loss:.2f}"
+        self.refresh()
+
+    def on_start(self, entry, data, row):
+        row["status"] = Text("RUNNING", style="bold yellow")
+        self.refresh()
+
+    def on_error(self, entry, data, row):
+        row["status"] = Text("ERROR", style="bold red")
+        self.refresh()
+
+    def on_end(self, entry, data, row):
+        super().on_end(entry, data, row)
+        rc = data["return_code"]
+        if rc == 0:
+            row["status"] = Text("COMPLETED", style="bold green")
+        else:
+            row["status"] = Text(f"FAIL:{rc}", style="bold red")
+        self.refresh()
+
+
+class LongDashFormatter(DashFormatter):
+    def make_table(self):
+        table = Table.grid(padding=(0, 3, 0, 0))
+        table.add_column("bench", style="bold yellow")
+        table.add_column("key", style="bold green")
+        table.add_column("value")
+
+        for bench, values in self.rows.items():
+            values = dict(values)
+            progress = values.pop("progress", None)
+            if progress is not None:
+                table.add_row(bench, "", progress)
+                bench = ""
+            for key, value in values.items():
+                table.add_row(bench, key, value)
+                bench = ""  # Avoid displaying the bench for the other rows
+
+        return Panel(table)
+
+    def on_data(self, entry, data, row):
+        data = dict(data)
+        if prog := data.get("progress", None):
+            task = data.get("task", None)
+            if task == "early_stop":
+                current, total = prog
+                if "progress" not in row:
+                    progress_bar = Progress(
+                        BarColumn(),
+                        TimeRemainingColumn(),
+                        TextColumn("({task.completed}/{task.total})"),
+                    )
+                    progress_bar._task = progress_bar.add_task("progress")
+                    row["progress"] = progress_bar
+                else:
+                    progress_bar = row["progress"]
+                    progress_bar.update(
+                        progress_bar._task, completed=current, total=total
+                    )
+        elif gpudata := data.get("gpudata", None):
+            for gpuid, data in gpudata.items():
+                load = int(data.get("load", 0) * 100)
+                currm, totalm = data.get("memory", [0, 0])
+                temp = int(data.get("temperature", 0))
+                row[
+                    f"gpu:{gpuid}"
+                ] = f"{load}% load | {currm:.0f}/{totalm:.0f} MB | {temp}C"
+        else:
+            task = data.pop("task", "")
+            units = data.pop("units", "")
+            row.update({f"{task} {k}".strip(): f"{v} {units}" for k, v in data.items()})
+        self.refresh()

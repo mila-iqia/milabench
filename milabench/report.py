@@ -5,11 +5,14 @@ import numpy as np
 from hrepr import HTML, hrepr
 from pandas import DataFrame
 
+from milabench.utils import error_guard
+
 nan = math.nan
 
 H = HTML()
 
 
+@error_guard({})
 def _make_row(summary, compare, weights):
     mkey = "train_rate"
     metric = "mean"

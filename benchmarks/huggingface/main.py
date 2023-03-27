@@ -2,6 +2,7 @@ import argparse
 from contextlib import nullcontext
 
 import torch
+import transformers
 import voir
 from giving import give
 from models import models
@@ -40,7 +41,11 @@ class Runner:
     def __init__(self, args):
         use_cuda = not args.no_cuda and torch.cuda.is_available()
         if use_cuda:
+            if args.allow_tf32:
+                torch.backends.cuda.matmul.allow_tf32 = True
+                torch.backends.cudnn.allow_tf32 = True
             torch.cuda.manual_seed(args.seed)
+            transformers.set_seed(args.seed)
         self.device = torch.device("cuda" if use_cuda else "cpu")
         info = models[args.model]()
         self.model = info.model.to(self.device)
@@ -71,7 +76,7 @@ class Runner:
             self.step(inputs, labels)
 
 
-def main():
+def parser():
     parser = argparse.ArgumentParser(description="Transformers models")
     parser.add_argument(
         "--batch-size",
@@ -119,13 +124,22 @@ def main():
         action="store_true",
         help="whether to use mixed precision with amp",
     )
+    parser.add_argument(
+        "--no-tf32",
+        dest="allow_tf32",
+        action="store_false",
+        help="do not allow tf32",
+    )
     # parser.add_argument(
     #     "--no-stdout",
     #     action="store_true",
     #     help="do not display the loss on stdout",
     # )
+    return parser
 
-    args = parser.parse_args()
+
+def main():
+    args = parser().parse_args()
     runner = Runner(args)
     runner.train()
 

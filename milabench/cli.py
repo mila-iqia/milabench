@@ -20,7 +20,13 @@ from milabench.validation import ErrorValidation
 from .compare import compare, fetch_runs
 from .config import parse_config
 from .fs import XPath
-from .log import DataReporter, TerminalFormatter, TextReporter
+from .log import (
+    DataReporter,
+    LongDashFormatter,
+    ShortDashFormatter,
+    TerminalFormatter,
+    TextReporter,
+)
 from .multi import MultiPackage
 from .report import make_report
 from .summary import aggregate, make_summary
@@ -77,6 +83,17 @@ def _get_multipack(run_name=None, overrides=[]):
     )
 
 
+def selection_keys(defn):
+    sel = {
+        "*",
+        defn["name"],
+        defn["group"],
+        defn["install_group"],
+        *defn.get("tags", []),
+    }
+    return sel
+
+
 def get_multipack(
     config,
     base=None,
@@ -86,12 +103,6 @@ def get_multipack(
     run_name=None,
     overrides=[],
 ):
-    def selection_keys(defn):
-        sel = {"*", defn["name"], *defn.get("tags", [])}
-        if group := defn.get("group", None):
-            sel.add(group)
-        return sel
-
     override_dict = defaultdict(list)
     for override in overrides:
         sel, value = override.split("=", 1)
@@ -135,27 +146,38 @@ def get_multipack(
     run_name = run_name.format(time=now)
 
     for name, defn in config["benchmarks"].items():
-        keys = selection_keys(defn)
-
+        defn.setdefault("name", name)
         defn["run_name"] = run_name
         defn.setdefault("arch", arch)
+        defn["group"] = defn.get("group", "{name}").format(**defn)
+        defn["install_group"] = defn.get("install_group", "{group}").format(**defn)
+        defn["install_variant"] = defn.get("install_variant", "").format(**defn)
+
+        keys = selection_keys(defn)
 
         if select and not (keys & select):
             continue
         if exclude and (keys & exclude):
             continue
 
-        defn.setdefault("name", name)
         defn["tag"] = [defn["name"]]
 
-        if use_current_env or defn["dirs"].get("venv", None) is None:
+        dirs = defn.setdefault("dirs", {})
+
+        if use_current_env:
             venv = os.environ.get("CONDA_PREFIX", None)
             if venv is None:
                 venv = os.environ.get("VIRTUAL_ENV", None)
             if venv is None:
                 print("Could not find virtual environment", file=sys.stderr)
                 sys.exit(1)
-            defn["dirs"]["venv"] = venv
+            dirs["venv"] = venv
+
+        dirs.setdefault("venv", "venv/{install_group}")
+        dirs.setdefault("data", "data")
+        dirs.setdefault("runs", "runs")
+        dirs.setdefault("extra", "extra/{group}")
+        dirs.setdefault("cache", "cache")
 
         def _format_path(pth):
             formatted = pth.format(**defn)
@@ -164,11 +186,10 @@ def get_multipack(
                 xpth = xpth.absolute()
             return xpth
 
-        dirs = {k: _format_path(v) for k, v in defn["dirs"].items()}
+        dirs = {k: _format_path(v) for k, v in dirs.items()}
         dirs = {
             k: str(v if v.is_absolute() else dirs["base"] / v) for k, v in dirs.items()
         }
-        defn["install_variant"] = defn.get("install_variant", "").format(**defn)
         defn["dirs"] = dirs
 
         for k in keys:
@@ -205,7 +226,10 @@ def _read_reports(*runs):
 def _error_report(reports):
     out = {}
     for r, data in reports.items():
-        (success,) = aggregate(data)["data"]["success"]
+        agg = aggregate(data)
+        if not agg:
+            continue
+        (success,) = agg["data"]["success"]
         if not success:
             out[r] = [line for line in data if "#stdout" in line or "#stderr" in line]
     return out
@@ -213,7 +237,11 @@ def _error_report(reports):
 
 def run_with_loggers(coro, loggers, mp=None):
     retcode = 0
+    loggers = [logger for logger in loggers if logger is not None]
     try:
+        for logger in loggers:
+            if hasattr(logger, "start"):
+                logger.start()
         for entry in proceed(coro):
             for logger in loggers:
                 try:
@@ -254,12 +282,26 @@ class Main:
         # On error show full stacktrace
         fulltrace: Option & bool = False
 
+        # Do not show a report at the end
+        # [negate]
+        report: Option & bool = True
+
+        # Which type of dashboard to show (short, long, or no)
+        dash: Option & str = os.environ.get("MILABENCH_DASH", "long")
+
+        dash_class = {
+            "short": ShortDashFormatter,
+            "long": LongDashFormatter,
+            "no": None,
+        }[dash]
+
         mp = _get_multipack(run_name=run_name)
 
-        return run_with_loggers(
+        success = run_with_loggers(
             mp.do_run(repeat=repeat),
             loggers=[
                 TerminalFormatter(),
+                dash_class and dash_class(),
                 TextReporter("stdout"),
                 TextReporter("stderr"),
                 DataReporter(),
@@ -267,6 +309,33 @@ class Main:
             ],
             mp=mp,
         )
+
+        if report:
+            runs = {pack.logdir for pack in mp.packs.values()}
+            weights = None
+            compare = None
+            compare_gpus = True
+            html = None
+            price = None
+
+            reports = None
+            if runs:
+                reports = _read_reports(*runs)
+                summary = make_summary(reports.values())
+
+            make_report(
+                summary,
+                compare=compare,
+                weights=weights,
+                html=html,
+                compare_gpus=compare_gpus,
+                price=price,
+                title=None,
+                sources=runs,
+                errdata=reports and _error_report(reports),
+            )
+
+        return success
 
     def prepare():
         mp = _get_multipack(run_name="prepare.{time}")
@@ -369,7 +438,11 @@ class Main:
 
         mp = _get_multipack(run_name="dev")
 
-        pack = mp.packs[select]
+        for pack in mp.packs.values():
+            if select in selection_keys(pack.config):
+                break
+        else:
+            sys.exit(f"Cannot find a benchmark with selector {select}")
 
         subprocess.run(
             [os.environ["SHELL"]],

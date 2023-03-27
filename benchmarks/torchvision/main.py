@@ -125,6 +125,12 @@ def main():
         action="store_true",
         help="do not display the loss on stdout",
     )
+    parser.add_argument(
+        "--no-tf32",
+        dest="allow_tf32",
+        action="store_false",
+        help="do not allow tf32",
+    )
 
     args = parser.parse_args()
     if args.fixed_batch:
@@ -142,6 +148,9 @@ def main():
 
     torch.manual_seed(args.seed)
     if use_cuda:
+        if args.allow_tf32:
+            torch.backends.cuda.matmul.allow_tf32 = True
+            torch.backends.cudnn.allow_tf32 = True
         torch.cuda.manual_seed(args.seed)
 
     device = torch.device("cuda" if use_cuda else "cpu")

@@ -41,6 +41,7 @@ jobs:
       MILABENCH_BASE: "output"
       MILABENCH_ARGS: ""
       MILABENCH_GPU_ARCH: "${{ matrix.arch }}"
+      MILABENCH_DASH: "no"
     
     steps:
       - uses: actions/checkout@v3
@@ -90,7 +91,3 @@ jobs:
       - name: Summary
         run: |
           milabench summary $MILABENCH_BASE/runs/
-
-      - name: Report
-        run: |
-          milabench report --runs $MILABENCH_BASE/runs/

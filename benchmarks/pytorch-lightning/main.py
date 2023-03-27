@@ -72,6 +72,10 @@ def main(
     )
     ```
     """
+    # Activate tf32
+    torch.backends.cuda.matmul.allow_tf32 = True
+    torch.backends.cudnn.allow_tf32 = True
+
     # Create an argument parser.
     parser = ArgumentParser(description=__doc__)
 

@@ -10,7 +10,7 @@ defaults: &defaults
 
   voir:
     options:
-      stop: 60
+      stop: 10
       interval: "1s"
 
   venv:
@@ -81,11 +81,6 @@ lightning: &lightning
 
 
 benchmarks:
-  resnet18:
-    <<<: *torchvision
-    argv:
-      --model: resnet18
-
   resnet50:
     <<<: *torchvision
     tags:
@@ -153,6 +148,7 @@ benchmarks:
       - transformer
     argv:
       --model: "Bert"
+      --batch-size: 8
 
   t5:
     <<<: *hf
@@ -161,6 +157,7 @@ benchmarks:
       - transformer
     argv:
       --model: "T5"
+      --batch-size: 2
 
   reformer:
     <<<: *hf
