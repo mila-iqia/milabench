@@ -58,12 +58,10 @@
 <li class="toctree-l4"><a class="reference internal" href="#milabench.pack.BasePackage.checked_install"><code class="docutils literal notranslate"><span class="pre">BasePackage.checked_install()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#milabench.pack.BasePackage.conda_install"><code class="docutils literal notranslate"><span class="pre">BasePackage.conda_install()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#milabench.pack.BasePackage.execute"><code class="docutils literal notranslate"><span class="pre">BasePackage.execute()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#milabench.pack.BasePackage.install_code"><code class="docutils literal notranslate"><span class="pre">BasePackage.install_code()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#milabench.pack.BasePackage.install_milabench"><code class="docutils literal notranslate"><span class="pre">BasePackage.install_milabench()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#milabench.pack.BasePackage.launch"><code class="docutils literal notranslate"><span class="pre">BasePackage.launch()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#milabench.pack.BasePackage.make_env"><code class="docutils literal notranslate"><span class="pre">BasePackage.make_env()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#milabench.pack.BasePackage.pip_install"><code class="docutils literal notranslate"><span class="pre">BasePackage.pip_install()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#milabench.pack.BasePackage.python"><code class="docutils literal notranslate"><span class="pre">BasePackage.python()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#milabench.pack.BasePackage.voir"><code class="docutils literal notranslate"><span class="pre">BasePackage.voir()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#milabench.pack.Package"><code class="docutils literal notranslate"><span class="pre">Package</span></code></a><ul>
@@ -113,7 +111,7 @@ commands: <code class="docutils literal notranslate"><span class="pre">install</
 class defines good default behavior.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="milabench.pack.BasePackage">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">milabench.pack.</span></span><span class="sig-name descname"><span class="pre">BasePackage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.BasePackage" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">milabench.pack.</span></span><span class="sig-name descname"><span class="pre">BasePackage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">core</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.BasePackage" title="Permalink to this definition"></a></dt>
 <dd><p>Base package, with no behavior defined for install/prepare/run.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="milabench.pack.BasePackage.config">
@@ -142,23 +140,12 @@ config for the benchmark.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="milabench.pack.BasePackage.checked_install">
-<span class="sig-name descname"><span class="pre">checked_install</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sync</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.BasePackage.checked_install" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">checked_install</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.BasePackage.checked_install" title="Permalink to this definition"></a></dt>
 <dd><p>Entry method to install the benchmark.</p>
 <ul class="simple">
 <li><p>Check if the benchmark is installed.</p></li>
-<li><p><a class="reference internal" href="#milabench.pack.BasePackage.install_code" title="milabench.pack.BasePackage.install_code"><code class="xref py py-meth docutils literal notranslate"><span class="pre">install_code()</span></code></a></p></li>
-<li><p><a class="reference internal" href="#milabench.pack.BasePackage.install_milabench" title="milabench.pack.BasePackage.install_milabench"><code class="xref py py-meth docutils literal notranslate"><span class="pre">install_milabench()</span></code></a></p></li>
 <li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">install()</span></code></p></li>
 </ul>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>force</strong> – Whether to force installation if the benchmark
-is already installed.</p></li>
-<li><p><strong>sync</strong> – Whether to only sync changed files in the manifest.</p></li>
-</ul>
-</dd>
-</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -169,7 +156,7 @@ is already installed.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="milabench.pack.BasePackage.execute">
-<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cwd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.BasePackage.execute" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cwd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">external</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.BasePackage.execute" title="Permalink to this definition"></a></dt>
 <dd><p>Run a command in the virtual environment.</p>
 <p>Unless specified otherwise, the command is run with
 <code class="docutils literal notranslate"><span class="pre">self.dirs.code</span></code> as the cwd.</p>
@@ -184,31 +171,33 @@ is already installed.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="milabench.pack.BasePackage.install_code">
-<span class="sig-name descname"><span class="pre">install_code</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sync</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.BasePackage.install_code" title="Permalink to this definition"></a></dt>
-<dd><p>Copy the contents of the manifest into <code class="docutils literal notranslate"><span class="pre">self.dirs.code</span></code>.</p>
-<p>If the directory already exists, it is cleared out beforehand,
-unless <code class="docutils literal notranslate"><span class="pre">sync</span> <span class="pre">==</span> <span class="pre">True</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>sync</strong> – Whether we are performing a simple sync, in which case
-existing code is not cleared.</p>
-</dd>
-</dl>
+<dt class="sig sig-object py" id="milabench.pack.BasePackage.make_env">
+<span class="sig-name descname"><span class="pre">make_env</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.BasePackage.make_env" title="Permalink to this definition"></a></dt>
+<dd><p>Return a dict of environment variables to use for prepare/run.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="milabench.pack.BasePackage.install_milabench">
-<span class="sig-name descname"><span class="pre">install_milabench</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.BasePackage.install_milabench" title="Permalink to this definition"></a></dt>
-<dd><p>Install milabench in the virtual environment.</p>
-<p>Essentially runs <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">milabench</span></code>.</p>
-<p>The <code class="docutils literal notranslate"><span class="pre">$MILABENCH_DEVREQS</span></code> environment variable can be set to point
-to a requirements file to use instead of the standard command.</p>
+<dt class="sig sig-object py" id="milabench.pack.BasePackage.pip_install">
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pip_install</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.BasePackage.pip_install" title="Permalink to this definition"></a></dt>
+<dd><p>Install a package in the virtual environment.</p>
+<p>The arguments are given to <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span></code> verbatim, so you can
+e.g. do <code class="docutils literal notranslate"><span class="pre">self.pip_install(&quot;-r&quot;,</span> <span class="pre">filename)</span></code> to install a list
+of requirements.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="milabench.pack.BasePackage.launch">
-<span class="sig-name descname"><span class="pre">launch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">script</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">voirargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.BasePackage.launch" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="milabench.pack.BasePackage.python">
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">python</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.BasePackage.python" title="Permalink to this definition"></a></dt>
+<dd><p>Run a Python script.</p>
+<p>Equivalent to:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;python&quot;</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="milabench.pack.BasePackage.voir">
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">voir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">script</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cwd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.BasePackage.voir" title="Permalink to this definition"></a></dt>
 <dd><p>Launch a script using <code class="docutils literal notranslate"><span class="pre">voir</span></code>.</p>
 <p>This runs:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">voir</span> <span class="p">{</span><span class="o">*</span><span class="n">voirargs</span><span class="p">}</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dirs</span><span class="o">.</span><span class="n">code</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">main_script</span><span class="p">}</span> <span class="p">{</span><span class="o">*</span><span class="n">args</span><span class="p">}</span>
@@ -233,36 +222,11 @@ to a requirements file to use instead of the standard command.</p>
 </dl>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="milabench.pack.BasePackage.make_env">
-<span class="sig-name descname"><span class="pre">make_env</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.BasePackage.make_env" title="Permalink to this definition"></a></dt>
-<dd><p>Return a dict of environment variables to use for prepare/run.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="milabench.pack.BasePackage.pip_install">
-<span class="sig-name descname"><span class="pre">pip_install</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.BasePackage.pip_install" title="Permalink to this definition"></a></dt>
-<dd><p>Install a package in the virtual environment.</p>
-<p>The arguments are given to <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span></code> verbatim, so you can
-e.g. do <code class="docutils literal notranslate"><span class="pre">self.pip_install(&quot;-r&quot;,</span> <span class="pre">filename)</span></code> to install a list
-of requirements.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="milabench.pack.BasePackage.python">
-<span class="sig-name descname"><span class="pre">python</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.BasePackage.python" title="Permalink to this definition"></a></dt>
-<dd><p>Run a Python script.</p>
-<p>Equivalent to:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;python&quot;</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-</pre></div>
-</div>
-</dd></dl>
-
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="milabench.pack.Package">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">milabench.pack.</span></span><span class="sig-name descname"><span class="pre">Package</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.Package" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">milabench.pack.</span></span><span class="sig-name descname"><span class="pre">Package</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">core</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.Package" title="Permalink to this definition"></a></dt>
 <dd><p>Package class with default behaviors for install/prepare/run.</p>
 <p>See:</p>
 <ul class="simple">
@@ -272,7 +236,7 @@ of requirements.</p>
 </ul>
 <dl class="py method">
 <dt class="sig sig-object py" id="milabench.pack.Package.install">
-<span class="sig-name descname"><span class="pre">install</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.Package.install" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">install</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.Package.install" title="Permalink to this definition"></a></dt>
 <dd><p>Install the benchmark.</p>
 <p>By default, this installs the requirements file pointed to by the
 instance or class attribute <code class="docutils literal notranslate"><span class="pre">self.requirements_file</span></code>, which is set
@@ -311,7 +275,7 @@ milabench in the venv, and then calling this method.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="milabench.pack.Package.pin">
-<span class="sig-name descname"><span class="pre">pin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">pip_compile_args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">requirements_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_files</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_mb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cwd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.Package.pin" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clear_previous</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pip_compile_args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_files</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.Package.pin" title="Permalink to this definition"></a></dt>
 <dd><p>Pin versions to requirements file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -320,8 +284,6 @@ milabench in the venv, and then calling this method.</p>
 <li><p><strong>requirements_file</strong> – The output requirements file</p></li>
 <li><p><strong>input_files</strong> – A list of inputs to piptools compile</p></li>
 <li><p><strong>constraint</strong> – The constraint file</p></li>
-<li><p><strong>with_mb</strong> – Compute the requirements with milabench as a dependency</p></li>
-<li><p><strong>cwd</strong> – The working directory</p></li>
 </ul>
 </dd>
 </dl>
@@ -329,7 +291,7 @@ milabench in the venv, and then calling this method.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="milabench.pack.Package.prepare">
-<span class="sig-name descname"><span class="pre">prepare</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.Package.prepare" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">prepare</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.Package.prepare" title="Permalink to this definition"></a></dt>
 <dd><p>Prepare the benchmark.</p>
 <p>By default, this executes <code class="docutils literal notranslate"><span class="pre">self.dirs.code</span> <span class="pre">/</span> <span class="pre">self.prepare_script</span></code>,
 which should be an executable (python, bash, etc.)</p>
@@ -341,7 +303,7 @@ access the data directory for the benchmark.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="milabench.pack.Package.run">
-<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">voirargs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.Package.run" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.Package.run" title="Permalink to this definition"></a></dt>
 <dd><p>Start the benchmark and return the running process.</p>
 <p>By default, this runs:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">voir</span> <span class="p">{</span><span class="o">*</span><span class="n">voirargs</span><span class="p">}</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dirs</span><span class="o">.</span><span class="n">code</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">main_script</span><span class="p">}</span> <span class="p">{</span><span class="o">*</span><span class="n">args</span><span class="p">}</span>
@@ -358,9 +320,6 @@ access the data directory for the benchmark.</p>
 <li><p><strong>voirargs</strong> – A list of arguments to <code class="docutils literal notranslate"><span class="pre">voir</span></code>.</p></li>
 <li><p><strong>env</strong> – Environment variables to set for the process.</p></li>
 </ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A subprocess.Popen instance representing the running benchmark.</p>
 </dd>
 </dl>
 </dd></dl>

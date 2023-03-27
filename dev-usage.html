@@ -51,7 +51,9 @@
 <li class="toctree-l2"><a class="reference internal" href="#milabench-install">milabench install</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#milabench-prepare">milabench prepare</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#milabench-run">milabench run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#milabench-pin">milabench pin</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#milabench-report">milabench report</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#milabench-compare">milabench compare</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Benchmark configuration</a></li>
@@ -103,8 +105,10 @@
 |  |- ...                           # etc
 |- runs/                            # Outputs of benchmark runs
    |- calimero.2022-03-30_15:00:00/ # Auto-generated run name
-   |  |- bench1.0.json              # Output for the first run of bench1
-   |  |- bench1.1.json              # Output for the second run of bench1
+   |  |- bench1.0.stdout            # Output for the first run of bench1
+   |  |- bench1.0.stderr            # Stderr for the first run of bench1
+   |  |- bench1.0.data              # Structured data for the first run of bench1
+   |  |- bench1.1.stdout            # Output for the second run of bench1
    |  |- ...                        # etc
    |- blah/                         # Can set name with --run
 </pre></div>
@@ -119,7 +123,7 @@
 </section>
 <section id="milabench-install">
 <h2>milabench install<a class="headerlink" href="#milabench-install" title="Permalink to this heading"></a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench<span class="w"> </span>install<span class="w"> </span>config/standard-cuda.yaml<span class="w"> </span>--select<span class="w"> </span>mybench
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench<span class="w"> </span>install<span class="w"> </span>config/standard.yaml<span class="w"> </span>--select<span class="w"> </span>mybench
 </pre></div>
 </div>
 <ul class="simple">
@@ -130,7 +134,7 @@
 </section>
 <section id="milabench-prepare">
 <h2>milabench prepare<a class="headerlink" href="#milabench-prepare" title="Permalink to this heading"></a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench<span class="w"> </span>prepare<span class="w"> </span>config/standard-cuda.yaml<span class="w"> </span>--select<span class="w"> </span>mybench
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench<span class="w"> </span>prepare<span class="w"> </span>config/standard.yaml<span class="w"> </span>--select<span class="w"> </span>mybench
 </pre></div>
 </div>
 <ul class="simple">
@@ -139,7 +143,7 @@
 </section>
 <section id="milabench-run">
 <h2>milabench run<a class="headerlink" href="#milabench-run" title="Permalink to this heading"></a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench<span class="w"> </span>run<span class="w"> </span>config/standard-cuda.yaml<span class="w"> </span>--select<span class="w"> </span>mybench
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench<span class="w"> </span>run<span class="w"> </span>config/standard.yaml<span class="w"> </span>--select<span class="w"> </span>mybench
 </pre></div>
 </div>
 <ul class="simple">
@@ -149,15 +153,27 @@
 * Both option groups are defined in the YAML.
 * The VOIR_OPTIONS determine which instruments to use and what data to forward to milabench.
 * The SCRIPT_OPTIONS are benchmark dependent.</p></li>
-<li><p>Standard output/error and other data (training rates, etc.) are forwarded to the main dispatcher process and saved into <code class="docutils literal notranslate"><span class="pre">$MILABENCH_BASE/runs/run_name/mybench.run_number.json</span></code> (the name of the directory is printed out for easy reference).</p></li>
+<li><p>Standard output/error and other data (training rates, etc.) are forwarded to the main dispatcher process and saved into <code class="docutils literal notranslate"><span class="pre">$MILABENCH_BASE/runs/run_name/mybench.run_number.stdout</span></code> (<code class="docutils literal notranslate"><span class="pre">.stderr</span></code> / <code class="docutils literal notranslate"><span class="pre">.data</span></code>) (the name of the directory is printed out for easy reference).</p></li>
 </ul>
+</section>
+<section id="milabench-pin">
+<h2>milabench pin<a class="headerlink" href="#milabench-pin" title="Permalink to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench<span class="w"> </span>pin<span class="w"> </span>config/standard.yaml<span class="w"> </span>--select<span class="w"> </span>mybench<span class="w"> </span>--variant<span class="w"> </span>cuda<span class="w"> </span>--constraint<span class="w"> </span>constraints/cu118.txt
+</pre></div>
+</div>
+<p>The basic idea behind <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">pin</span></code> is to pin software versions for stability and reproducibility. Using the command above, the base requirements in <code class="docutils literal notranslate"><span class="pre">benchmarks/mybench/requirements.in</span></code> will be saved in <code class="docutils literal notranslate"><span class="pre">requirements.cuda.txt</span></code>. If variant is not specified, the value of <code class="docutils literal notranslate"><span class="pre">install_variant</span></code> in the config file will be used (in <code class="docutils literal notranslate"><span class="pre">standard.yaml</span></code>, which is <code class="docutils literal notranslate"><span class="pre">install_value:</span> <span class="pre">&quot;{{arch}}&quot;</span></code>; that resolves to either “rocm” or “cuda” depending on the machine’s architecture).</p>
+<p>The constraints file specifies appropriate constraints for the architecture, CUDA version, or other constraints that are specific to the environment.</p>
 </section>
 <section id="milabench-report">
 <h2>milabench report<a class="headerlink" href="#milabench-report" title="Permalink to this heading"></a></h2>
 <p>TODO.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench<span class="w"> </span>report<span class="w"> </span>config/standard-cuda.yaml<span class="w"> </span>--runs<span class="w"> </span>&lt;path_to_runs&gt;
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench<span class="w"> </span>report<span class="w"> </span>config/standard.yaml<span class="w"> </span>--runs<span class="w"> </span>&lt;path_to_runs&gt;
 </pre></div>
 </div>
+</section>
+<section id="milabench-compare">
+<h2>milabench compare<a class="headerlink" href="#milabench-compare" title="Permalink to this heading"></a></h2>
+<p>TODO.</p>
 </section>
 </section>
 
