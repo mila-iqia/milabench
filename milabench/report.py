@@ -139,22 +139,21 @@ class Outputter:
 
 def _report_pergpu(entries, measure="50"):
     ngpus = max(len(v["per_gpu"]) for v in entries.values())
-
-    df = None
-    try:
-        df = DataFrame(
-            {
-                k: {i: v["per_gpu"][i][measure] for i in range(ngpus)}
-                for k, v in entries.items()
-                if set(v["per_gpu"].keys()) == set(range(ngpus))
-            }
-        ).transpose()
-
-        maxes = df.loc[:, list(range(ngpus))].max(axis=1).transpose()
-        df = (df.transpose() / maxes).transpose()
-    except:
-        print(df, ngpus)
+    
+    # {"bench": {"0": <value>, "1": <value>} ... }
+    data = {}
+    for k, v in entries.items():
+        values = dict()
+        data[k] = values
         
+        for i in range(ngpus):
+            gpu = v["per_gpu"].get(i, dict())
+            values[i] = gpu.get(measure, float('nan'))
+
+    df = DataFrame(data).transpose()
+    maxes = df.loc[:, list(range(ngpus))].max(axis=1).transpose()
+    df = (df.transpose() / maxes).transpose()
+    
     return df
 
 
