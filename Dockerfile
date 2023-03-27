@@ -86,8 +86,10 @@ ENV PATH=$CONDA_PATH/bin:$PATH
 # Install Milabench
 # -----------------
 
-RUN python -m pip install pip -U
-RUN python -m pip install -e /milabench/milabench/
+RUN python -m pip install -U pip            &&\
+    python -m pip install -U setuptools     &&\
+    python -m pip install -U poetry         &&\
+    python -m pip install -e /milabench/milabench/
 
 # Prepare bench
 # -------------
