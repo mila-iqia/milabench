@@ -88,6 +88,7 @@ class BasePackage:
         self.core = core
         self.config = config
         self.phase = None
+        self.processes = []
 
     def copy(self, config):
         return type(self)(config=merge(self.config, config))
@@ -201,6 +202,7 @@ class BasePackage:
             env=self.full_env(env) if not external else {**os.environ, **env},
             constructor=BenchLogEntry,
             cwd=cwd,
+            process_accumulator=self.processes,
         )
 
     async def python(self, *args, **kwargs):

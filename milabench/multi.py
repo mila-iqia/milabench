@@ -74,6 +74,16 @@ class MultiPackage:
                 await pack.message_error(exc)
 
     async def do_run(self, repeat=1):
+        async def force_terminate(pack, delay):
+            await asyncio.sleep(delay)
+            for proc in pack.processes:
+                ret = proc.poll()
+                if ret is None:
+                    await pack.message(
+                        f"Terminating process because it ran for longer than {delay} seconds."
+                    )
+                    proc.kill()
+
         for index in range(repeat):
             for pack in self.packs.values():
                 try:
@@ -89,7 +99,14 @@ class MultiPackage:
                         await run_pack.send(event="config", data=run)
                         coroutines.append(run_pack.run())
 
+                        asyncio.create_task(
+                            force_terminate(
+                                run_pack, run_pack.config.get("max_duration", 600)
+                            )
+                        )
+
                     await asyncio.gather(*coroutines)
+
                 except Exception as exc:
                     await pack.message_error(exc)
 
