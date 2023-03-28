@@ -7,7 +7,6 @@ class defines good default behavior.
 
 import json
 import os
-import tempfile
 from argparse import Namespace as NS
 from hashlib import md5
 from sys import version_info as pyv
@@ -15,7 +14,7 @@ from typing import Sequence
 
 from nox.sessions import Session, SessionRunner
 
-from milabench.utils import assemble_options, make_constraints_file
+from milabench.utils import assemble_options, make_constraints_file, relativize
 
 from .alt_async import run, send
 from .fs import XPath
@@ -387,7 +386,9 @@ class Package(BasePackage):
                 await self.message(f"Clearing out existing {reqs}")
                 reqs.rm()
 
-            constraint_files = make_constraints_file(constraints)
+            grp = self.config["group"]
+            constraint_path = f".pin-constraints-{grp}.txt"
+            constraint_files = make_constraints_file(constraint_path, constraints)
             current_input_files = constraint_files + (base_reqs, *input_files)
 
             await self.exec_pip_compile(
@@ -400,6 +401,7 @@ class Package(BasePackage):
     async def exec_pip_compile(
         self, requirements_file: XPath, input_files: XPath, argv=[]
     ):
+        input_files = [relativize(inp) for inp in input_files]
         return await self.execute(
             "python3",
             "-m",
@@ -408,9 +410,10 @@ class Package(BasePackage):
             "--resolver",
             "backtracking",
             "--output-file",
-            requirements_file,
+            relativize(requirements_file),
             *argv,
             *input_files,
+            cwd=XPath(".").absolute(),
             external=True,
         )
 
