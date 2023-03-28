@@ -40,6 +40,24 @@ hf: &hf
   definition: ../benchmarks/huggingface
 
 
+timm: &timm
+  <<<: *defaults
+
+  group: timm
+  install_group: torch
+
+  plan:
+    method: per_gpu
+
+  tags:
+    - vision
+
+  argv:
+    --amp: true
+
+  definition: ../benchmarks/timm
+
+
 lightning: &lightning
   <<<: *defaults
 
@@ -169,17 +187,13 @@ benchmarks:
 
     definition: ../benchmarks/accelerate_opt
 
-  timm:
-    <<<: *defaults
-
-    group: timm
-    install_group: timm
+  vgg19_bn:
+    <<<: *timm
 
     plan:
       method: per_gpu
 
     argv:
-      --model: resnet152
-      --amp: true
+      --model: vgg19_bn
 
     definition: ../benchmarks/timm

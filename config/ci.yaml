@@ -41,6 +41,24 @@ hf: &hf
   definition: ../benchmarks/huggingface
 
 
+timm: &timm
+  <<<: *defaults
+
+  group: timm
+  install_group: torch
+
+  plan:
+    method: per_gpu
+
+  tags:
+    - vision
+
+  argv:
+    --amp: true
+
+  definition: ../benchmarks/timm
+
+
 lightning: &lightning
   <<<: *defaults
 
@@ -174,3 +192,15 @@ benchmarks:
     validation_split_percentage: 5
 
     definition: ../benchmarks/accelerate_opt
+
+  vgg19_bn:
+    <<<: *timm
+
+    plan:
+      method: per_gpu
+
+    argv:
+      --model: vgg19_bn
+      --batch-size: 8
+
+    definition: ../benchmarks/timm
