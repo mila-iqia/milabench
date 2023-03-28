@@ -61,6 +61,7 @@ class MultiPackage:
 
     async def do_install(self):
         for pack in self.packs.values():
+            pack.phase = "install"
             try:
                 await pack.checked_install()
             except Exception as exc:
@@ -68,6 +69,7 @@ class MultiPackage:
 
     async def do_prepare(self):
         for pack in self.packs.values():
+            pack.phase = "prepare"
             try:
                 await pack.prepare()
             except Exception as exc:
@@ -97,6 +99,7 @@ class MultiPackage:
                             run["tag"].append(f"R{index}")
                         run_pack = pack.copy(run)
                         await run_pack.send(event="config", data=run)
+                        run_pack.phase = "run"
                         coroutines.append(run_pack.run())
 
                         asyncio.create_task(
@@ -113,6 +116,7 @@ class MultiPackage:
     async def do_pin(self, pip_compile_args, constraints: list = tuple()):
         groups = defaultdict(dict)
         for pack in self.packs.values():
+            pack.phase = "pin"
             igrp = pack.config["install_group"]
             base_reqs = pack.requirements_map().keys()
             groups[igrp].update({req: pack for req in base_reqs})
