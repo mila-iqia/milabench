@@ -71,7 +71,9 @@ def test_configuration_consistency_standard():
         "--bs", 
         "- no-rocm", 
         "stop: 10",
-        "stop: 5"
+        "stop: 60",
+        "skip: 5",
+        "skip: 1",
     ]
 
     for configurations in configurations_pair:
