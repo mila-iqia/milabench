@@ -281,6 +281,8 @@ class Package(BasePackage):
             else self.base_requirements
         )
         base_reqs = [self.dirs.code / req for req in base_reqs]
+        if variant == "unpinned":
+            return {req: req for req in base_reqs}
         suffix = f".{variant}.txt" if variant else ".txt"
         return {req: req.with_suffix(suffix) for req in base_reqs}
 
@@ -370,6 +372,8 @@ class Package(BasePackage):
             input_files: A list of inputs to piptools compile
             constraint: The constraint file
         """
+        if self.config.get("install_variant", None) == "unpinned":
+            raise Exception("Cannot pin the 'unpinned' variant.")
         self.phase = "pin"
         for base_reqs, reqs in self.requirements_map().items():
             if not base_reqs.exists():
