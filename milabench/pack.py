@@ -243,7 +243,9 @@ class BasePackage:
 
         if voirconf := self.config.get("voir", None):
             hsh = md5(str(voirconf).encode("utf8"))
-            voirconf_file = self.dirs.extra / f"voirconf-{hsh.hexdigest()}.json"
+            voirconf_file = (
+                self.dirs.extra / f"voirconf-{self.tag}-{hsh.hexdigest()}.json"
+            )
             with open(voirconf_file, "w") as f:
                 json.dump(fp=f, obj=voirconf, indent=4)
             voirargs = ("--config", voirconf_file)
