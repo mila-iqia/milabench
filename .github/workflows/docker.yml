@@ -20,17 +20,18 @@ permissions:
   packages: write
 
 
+# define build arguments
+
 jobs:
   build-image:
-    runs-on: [self-hosted, cuda]
-
-    # define build arguments
     strategy:
       matrix:
         include:
           - arch: cuda
-            config: standard-cuda.yaml
-    
+          - arch: rocm
+
+    runs-on: [self-hosted, "${{ matrix.arch }}"]
+
     permissions:
       contents: read
       packages: write
@@ -82,4 +83,4 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             ARCH=${{ matrix.arch }}
-            CONFIG=${{ matrix.config }}
+            CONFIG=standard.yaml

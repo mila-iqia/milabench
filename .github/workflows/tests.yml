@@ -21,21 +21,31 @@ on:
 
 jobs:
   tests:
+    strategy:
+      matrix:
+        include:
+          - arch: cuda
+            exclude : "no-cuda"
+          - arch: rocm
+            exclude : "no-rocm"
+
+    runs-on: [self-hosted, "${{ matrix.arch }}"]
+    
     # Cancel previous jobs if a new version was pushed
     concurrency:
-      group: ${{ github.ref }}
+      group: "${{ github.ref }}-${{ matrix.arch }}"
       cancel-in-progress: true
-
-    runs-on: [self-hosted, cuda]
+      
     defaults:
       run:
         shell: bash -el {0}
         
     env:
-      MILABENCH_CONFIG: "config/ci-cuda.yaml"
+      MILABENCH_CONFIG: "config/ci.yaml"
       MILABENCH_BASE: "output"
       MILABENCH_ARGS: ""
-      MILABENCH_GPU_ARCH: "cuda"
+      MILABENCH_GPU_ARCH: "${{ matrix.arch }}"
+      MILABENCH_DASH: "no"
     
     steps:
       - uses: actions/checkout@v3
@@ -47,6 +57,13 @@ jobs:
           miniconda-version: "latest"
           activate-environment: test
 
+      - name: Pytorch Sanity
+        run: |
+          if [[ "${{ matrix.arch }}" == "rocm" ]]; then
+            groups
+            /opt/rocm-5.4.3/bin/rocminfo
+          fi
+          
       - name: dependencies
         run: |
           if [[ ! -d "~/.cargo/bin" ]]; then
@@ -58,25 +75,23 @@ jobs:
           poetry lock --no-update
           poetry install
 
+      - name: tests
+        run: |
+          export PATH="/opt/rocm-5.4.3/bin:$PATH"
+          pytest tests/
+
       - name: install benchmarks
         run: |
-          milabench install $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
+          milabench install --exclude "${{ matrix.exclude }}"
 
       - name: prepare benchmarks
         run: |
-          milabench prepare $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
-
-      - name: tests
-        run: |
-          pytest tests/
-
-      - name: use pytorch nightly
-        run: |
-          bash script/nightly_overrides.bash
+          milabench prepare --exclude "${{ matrix.exclude }}"
 
       - name: run benchmarks
         run: |
-          milabench run $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
+          export PATH="/opt/rocm-5.4.3/bin:$PATH"
+          milabench run --exclude "${{ matrix.exclude }}"
 
       - name: Summary
         run: |

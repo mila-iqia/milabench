@@ -11,14 +11,13 @@ env:
   IMAGE_PATH: ghcr.io/mila-iqia/milabench:cuda-nightly
 
 jobs:
-  docker-run:
-    runs-on: [self-hosted, cuda]
-
+  build-image:
     strategy:
       matrix:
-        include:
-          - arch: cuda
+        - arch: [cuda, rocm]
     
+    runs-on: [self-hosted, "${{ matrix.arch }}"]
+
     permissions:
       contents: read
       

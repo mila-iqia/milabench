@@ -60,7 +60,15 @@ def merge(d1: dict, d2):
 
 @ovld  # noqa: F811
 def merge(l1: list, l2: list):
-    return l1 + l2
+    return l2
+
+
+@ovld  # noqa: F811
+def merge(l1: list, d: dict):
+    if "append" in d:
+        return l1 + d["append"]
+    else:
+        raise TypeError("Cannot merge list and dict unless dict has 'append' key")
 
 
 @ovld  # noqa: F811

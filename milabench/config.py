@@ -12,6 +12,7 @@ def parse_config(config_file, base=None):
     config.setdefault("defaults", {})
     config["defaults"]["config_base"] = str(config_base)
     config["defaults"]["config_file"] = str(config_file)
+    config["defaults"].setdefault("dirs", {})
 
     if base is not None:
         config["defaults"]["dirs"]["base"] = base

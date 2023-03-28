@@ -1,10 +1,10 @@
 from milabench.pack import Package
 
 
-class TheBenchmark(Package):
-    requirements_file = "requirements.txt"
+class TorchvisionBenchmark(Package):
+    base_requirements = "requirements.in"
     prepare_script = "prepare.py"
     main_script = "main.py"
 
 
-__pack__ = TheBenchmark
+__pack__ = TorchvisionBenchmark

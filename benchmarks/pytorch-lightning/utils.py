@@ -111,10 +111,16 @@ def get_backbone_network(
     """
 
     try:
-        backbone = models.get_model(network_type, image_size=image_dims[-1], weights="DEFAULT" if pretrained else None)
+        backbone = models.get_model(
+            network_type,
+            image_size=image_dims[-1],
+            weights="DEFAULT" if pretrained else None,
+        )
     except TypeError:
         # For non-vision models
-        backbone = models.get_model(network_type, weights="DEFAULT" if pretrained else None)
+        backbone = models.get_model(
+            network_type, weights="DEFAULT" if pretrained else None
+        )
 
     # Replace the output layer with a no-op, we'll create our own instead.
     if hasattr(backbone, "fc"):
