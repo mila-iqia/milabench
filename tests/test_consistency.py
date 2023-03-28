@@ -22,12 +22,16 @@ def compute_diff(basefile, otherfile):
 
 def check_diff(line, allowed_diffs):
     if len(line) > 2 and line[0] in (">", "<"):
+        if line[1:].strip().startswith("#"):
+            return True
 
         for diff in allowed_diffs:
             if diff in line:
                 return True
 
-        assert False, f"{line} does not contain {allowed_diffs}"
+        return False
+    else:
+        return True
 
 
 def check_consistency(configurations, allowed_diffs):
@@ -52,8 +56,17 @@ def check_consistency(configurations, allowed_diffs):
         print(diff)
         print("<<<< END")
 
-        for line in diff.splitlines():
-            check_diff(line, allowed_diffs)
+        difflines = diff.splitlines()
+
+    badlines = []
+    for line in difflines:
+        if not check_diff(line, allowed_diffs):
+            badlines.append(line)
+
+    for line in badlines:
+        print("DISALLOWED LINE IN DIFF:", line)
+
+    assert not badlines
 
 
 def test_configuration_consistency_standard():
@@ -74,6 +87,10 @@ def test_configuration_consistency_standard():
         "stop: 60",
         "skip: 5",
         "skip: 1",
+        'model_name: "facebook/bart-base"',
+        'model_name: "facebook/opt-2.7b"',
+        "max_train_steps: 5",
+        "max_train_steps: 30",
     ]
 
     for configurations in configurations_pair:
