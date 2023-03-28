@@ -1,8 +1,10 @@
 import asyncio
+import os
 import tempfile
 from collections import defaultdict
 from copy import deepcopy
 
+from milabench.fs import XPath
 from milabench.utils import make_constraints_file
 
 from .merge import merge
@@ -105,11 +107,12 @@ class MultiPackage:
 
         for ig, (reqs, packs) in groups.items():
             if len(packs) < len(reqs):
-                raise Exception(
-                    f"Install group '{ig}' contains benchmarks that have more than"
-                    " one requirements file. Please isolate such benchmarks in their"
-                    " own install_group."
-                )
+                if len(set(p.config["group"] for p in packs)) > 1:
+                    raise Exception(
+                        f"Install group '{ig}' contains benchmarks that have more than"
+                        " one requirements file. Please isolate such benchmarks in their"
+                        " own install_group."
+                    )
 
         for ig, (reqs, packs) in groups.items():
             packs = list(packs)
@@ -122,19 +125,24 @@ class MultiPackage:
             else:
                 pack0 = packs[0]
 
-                constraint_files = make_constraints_file(constraints)
-                with tempfile.NamedTemporaryFile() as tf:
-                    # Create master requirements
-                    await pack0.exec_pip_compile(
-                        requirements_file=tf.name,
-                        input_files=(*constraint_files, *reqs),
-                        argv=pip_compile_args,
-                    )
+                constraint_path = XPath(".pin-constraints-TMP.txt")
+                constraint_files = make_constraints_file(constraint_path, constraints)
 
-                    # Use master requirements to constrain the rest
-                    new_constraints = [tf.name, *constraints]
-                    for pack in packs:
-                        await pack.pin(
-                            pip_compile_args=pip_compile_args,
-                            constraints=new_constraints,
-                        )
+                ig_constraint_path = XPath(f".pin-constraints-{ig}.txt")
+                if ig_constraint_path.exists():
+                    ig_constraint_path.rm()
+
+                # Create master requirements
+                await pack0.exec_pip_compile(
+                    requirements_file=ig_constraint_path.absolute(),
+                    input_files=(*constraint_files, *reqs),
+                    argv=pip_compile_args,
+                )
+
+                # Use master requirements to constrain the rest
+                new_constraints = [ig_constraint_path, *constraints]
+                for pack in packs:
+                    await pack.pin(
+                        pip_compile_args=pip_compile_args,
+                        constraints=new_constraints,
+                    )

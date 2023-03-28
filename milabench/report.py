@@ -139,21 +139,21 @@ class Outputter:
 
 def _report_pergpu(entries, measure="50"):
     ngpus = max(len(v["per_gpu"]) for v in entries.values())
-    
+
     # {"bench": {"0": <value>, "1": <value>} ... }
     data = {}
     for k, v in entries.items():
         values = dict()
         data[k] = values
-        
+
         for i in range(ngpus):
             gpu = v["per_gpu"].get(i, dict())
-            values[i] = gpu.get(measure, float('nan'))
+            values[i] = gpu.get(measure, float("nan"))
 
     df = DataFrame(data).transpose()
     maxes = df.loc[:, list(range(ngpus))].max(axis=1).transpose()
     df = (df.transpose() / maxes).transpose()
-    
+
     return df
 
 
