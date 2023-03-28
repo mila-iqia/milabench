@@ -165,6 +165,8 @@ def run(argv, setsid=None, info={}, process_accumulator=None, **kwargs):
     if process_accumulator is not None:
         process_accumulator.extend(mx.processes)
     if setsid:
+        if process_accumulator is not None:
+            process_accumulator.extend(mx.processes)
         for proc in mx.processes:
             proc.did_setsid = True
     loop = asyncio.get_running_loop()
