@@ -1,4 +1,5 @@
 import itertools
+import os
 import random
 import sys
 import tempfile
@@ -85,11 +86,19 @@ def assemble_options(options: dict):
     return args
 
 
-def make_constraints_file(constraints):
+def relativize(pth):
+    pth = XPath(pth)
+    if pth.is_absolute():
+        return pth.relative_to(XPath(".").absolute())
+    else:
+        return pth
+
+
+def make_constraints_file(pth, constraints):
     if constraints:
-        tf = tempfile.NamedTemporaryFile(delete=False)
-        with open(tf.name, "w") as tfile:
-            tfile.write("\n".join([f"-c {XPath(c).absolute()}" for c in constraints]))
-        return (tf.name,)
+        os.makedirs(XPath(pth).parent, exist_ok=True)
+        with open(pth, "w") as tfile:
+            tfile.write("\n".join([f"-c {relativize(c)}" for c in constraints]))
+        return (pth,)
     else:
         return ()
