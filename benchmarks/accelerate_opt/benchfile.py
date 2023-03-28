@@ -39,6 +39,7 @@ class AccelerateBenchmark(Package):
             f"--main_process_port={self.config['manager_port']}",
             f"--num_processes={self.config['num_processes']}",
             str(self.dirs.code / "main.py"),
+            setsid=True,
             use_stdout=True,
         )
 
