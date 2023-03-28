@@ -129,6 +129,8 @@ class MultiPackage:
                 constraint_files = make_constraints_file(constraint_path, constraints)
 
                 ig_constraint_path = XPath(f".pin-constraints-{ig}.txt")
+                if ig_constraint_path.exists():
+                    ig_constraint_path.rm()
 
                 # Create master requirements
                 await pack0.exec_pip_compile(
