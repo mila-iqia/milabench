@@ -1,8 +1,13 @@
+import json
 import os
 import argparse
 from solver import Solver
 from data_loader import get_loader
+from synth import SyntheticData
+import torch
 from torch.backends import cudnn
+from torch.utils.data import DataLoader
+
 
 
 def str2bool(v):
@@ -13,18 +18,15 @@ def main(config):
     cudnn.benchmark = True
 
     # Create directories if not exist.
-    if not os.path.exists(config.log_dir):
-        os.makedirs(config.log_dir)
-    if not os.path.exists(config.model_save_dir):
-        os.makedirs(config.model_save_dir)
-    if not os.path.exists(config.sample_dir):
-        os.makedirs(config.sample_dir)
-    if not os.path.exists(config.result_dir):
-        os.makedirs(config.result_dir)
+    os.makedirs(config.log_dir, exist_ok=True)
+    os.makedirs(config.model_save_dir, exist_ok=True)
+    os.makedirs(config.sample_dir, exist_ok=True)
+    os.makedirs(config.result_dir, exist_ok=True)
 
     # Data loader.
     celeba_loader = None
     rafd_loader = None
+    synth_loader = None
 
     if config.dataset in ['CelebA', 'Both']:
         celeba_loader = get_loader(config.celeba_image_dir, config.attr_path, config.selected_attrs,
@@ -34,18 +36,31 @@ def main(config):
         rafd_loader = get_loader(config.rafd_image_dir, None, None,
                                  config.rafd_crop_size, config.image_size, config.batch_size,
                                  'RaFD', config.mode, config.num_workers)
-    
+    if config.dataset == "synth":
+        def igen():
+            return torch.rand((3, config.image_size, config.image_size)) * 2 - 1
+
+        def ogen():
+            return torch.randint(0, 2, (config.c_dim,)).to(torch.float)
+
+        synth_dataset = SyntheticData(
+            generators=[igen, ogen],
+            n=config.batch_size,
+            repeat=10000,
+        )
+        synth_loader = DataLoader(synth_dataset, batch_size=config.batch_size, num_workers=config.num_workers)
+
 
     # Solver for training and testing StarGAN.
-    solver = Solver(celeba_loader, rafd_loader, config)
+    solver = Solver(celeba_loader, rafd_loader, synth_loader, config)
 
     if config.mode == 'train':
-        if config.dataset in ['CelebA', 'RaFD']:
+        if config.dataset in ['CelebA', 'RaFD', 'synth']:
             solver.train()
         elif config.dataset in ['Both']:
             solver.train_multi()
     elif config.mode == 'test':
-        if config.dataset in ['CelebA', 'RaFD']:
+        if config.dataset in ['CelebA', 'RaFD', 'synth']:
             solver.test()
         elif config.dataset in ['Both']:
             solver.test_multi()
@@ -69,7 +84,7 @@ if __name__ == '__main__':
     parser.add_argument('--lambda_gp', type=float, default=10, help='weight for gradient penalty')
     
     # Training configuration.
-    parser.add_argument('--dataset', type=str, default='CelebA', choices=['CelebA', 'RaFD', 'Both'])
+    parser.add_argument('--dataset', type=str, default='synth', choices=['CelebA', 'RaFD', 'Both', 'synth'])
     parser.add_argument('--batch_size', type=int, default=16, help='mini-batch size')
     parser.add_argument('--num_iters', type=int, default=200000, help='number of total iterations for training D')
     parser.add_argument('--num_iters_decay', type=int, default=100000, help='number of iterations for decaying lr')
@@ -88,16 +103,19 @@ if __name__ == '__main__':
     # Miscellaneous.
     parser.add_argument('--num_workers', type=int, default=1)
     parser.add_argument('--mode', type=str, default='train', choices=['train', 'test'])
-    parser.add_argument('--use_tensorboard', type=str2bool, default=True)
+    parser.add_argument('--use_tensorboard', type=str2bool, default=False)
+
+    mbconfig = json.loads(os.environ["MILABENCH_CONFIG"])
+    datadir = mbconfig["dirs"]["extra"]
 
     # Directories.
     parser.add_argument('--celeba_image_dir', type=str, default='data/celeba/images')
     parser.add_argument('--attr_path', type=str, default='data/celeba/list_attr_celeba.txt')
     parser.add_argument('--rafd_image_dir', type=str, default='data/RaFD/train')
-    parser.add_argument('--log_dir', type=str, default='stargan/logs')
-    parser.add_argument('--model_save_dir', type=str, default='stargan/models')
-    parser.add_argument('--sample_dir', type=str, default='stargan/samples')
-    parser.add_argument('--result_dir', type=str, default='stargan/results')
+    parser.add_argument('--log_dir', type=str, default=os.path.join(datadir, 'logs'))
+    parser.add_argument('--model_save_dir', type=str, default=os.path.join(datadir, 'models'))
+    parser.add_argument('--sample_dir', type=str, default=os.path.join(datadir, 'samples'))
+    parser.add_argument('--result_dir', type=str, default=os.path.join(datadir, 'results'))
 
     # Step size.
     parser.add_argument('--log_step', type=int, default=10)

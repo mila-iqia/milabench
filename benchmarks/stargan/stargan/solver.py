@@ -8,17 +8,20 @@ import numpy as np
 import os
 import time
 import datetime
+from giving import give
+import voir
 
 
 class Solver(object):
     """Solver for training and testing StarGAN."""
 
-    def __init__(self, celeba_loader, rafd_loader, config):
+    def __init__(self, celeba_loader, rafd_loader, synth_loader, config):
         """Initialize configurations."""
 
         # Data loader.
         self.celeba_loader = celeba_loader
         self.rafd_loader = rafd_loader
+        self.synth_loader = synth_loader
 
         # Model configurations.
         self.c_dim = config.c_dim
@@ -71,7 +74,7 @@ class Solver(object):
 
     def build_model(self):
         """Create a generator and a discriminator."""
-        if self.dataset in ['CelebA', 'RaFD']:
+        if self.dataset in ['CelebA', 'RaFD', 'synth']:
             self.G = Generator(self.g_conv_dim, self.c_dim, self.g_repeat_num)
             self.D = Discriminator(self.image_size, self.d_conv_dim, self.c_dim, self.d_repeat_num) 
         elif self.dataset in ['Both']:
@@ -166,7 +169,7 @@ class Solver(object):
                             c_trg[:, j] = 0
                 else:
                     c_trg[:, i] = (c_trg[:, i] == 0)  # Reverse attribute value.
-            elif dataset == 'RaFD':
+            elif dataset == 'RaFD' or dataset == "synth":
                 c_trg = self.label2onehot(torch.ones(c_org.size(0))*i, c_dim)
 
             c_trg_list.append(c_trg.to(self.device))
@@ -174,7 +177,7 @@ class Solver(object):
 
     def classification_loss(self, logit, target, dataset='CelebA'):
         """Compute binary or softmax cross entropy loss."""
-        if dataset == 'CelebA':
+        if dataset == 'CelebA' or dataset == "synth":
             return F.binary_cross_entropy_with_logits(logit, target, size_average=False) / logit.size(0)
         elif dataset == 'RaFD':
             return F.cross_entropy(logit, target)
@@ -186,9 +189,11 @@ class Solver(object):
             data_loader = self.celeba_loader
         elif self.dataset == 'RaFD':
             data_loader = self.rafd_loader
+        elif self.dataset == 'synth':
+            data_loader = self.synth_loader
 
         # Fetch fixed inputs for debugging.
-        data_iter = iter(data_loader)
+        data_iter = voir.iterate("train", data_loader, report_batch=True)
         x_fixed, c_org = next(data_iter)
         x_fixed = x_fixed.to(self.device)
         c_fixed_list = self.create_labels(c_org, self.c_dim, self.dataset, self.selected_attrs)
@@ -215,15 +220,15 @@ class Solver(object):
             # Fetch real images and labels.
             try:
                 x_real, label_org = next(data_iter)
-            except:
-                data_iter = iter(data_loader)
+            except StopIteration:
+                data_iter = voir.iterate("train", data_loader, report_batch=True)
                 x_real, label_org = next(data_iter)
 
             # Generate target domain labels randomly.
             rand_idx = torch.randperm(label_org.size(0))
             label_trg = label_org[rand_idx]
 
-            if self.dataset == 'CelebA':
+            if self.dataset == 'CelebA' or self.dataset == 'synth':
                 c_org = label_org.clone()
                 c_trg = label_trg.clone()
             elif self.dataset == 'RaFD':
@@ -258,6 +263,7 @@ class Solver(object):
 
             # Backward and optimize.
             d_loss = d_loss_real + d_loss_fake + self.lambda_cls * d_loss_cls + self.lambda_gp * d_loss_gp
+            give(task="train", loss=d_loss.item())
             self.reset_grad()
             d_loss.backward()
             self.d_optimizer.step()
