@@ -67,6 +67,7 @@ def test_configuration_consistency_standard():
 
     authorized_diffs = [
         "--batch-size", 
+        "--batch_size",
         "argv", 
         "--bs", 
         "- no-rocm", 
