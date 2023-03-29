@@ -9,7 +9,7 @@ from torch import optim
 from torch.utils.data import DataLoader
 
 from .models import models
-from .synth import SyntheticData
+from .synth import SyntheticData, generators
 
 
 class Runner:
@@ -27,16 +27,10 @@ class Runner:
         self.model = info.model.to(self.device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=args.lr)
 
-        def gen():
-            return torch.randint(0, info.config.vocab_size, (info.train_length,))
-
         self.data = SyntheticData(
             n=args.batch_size,
             repeat=100000,
-            generators={
-                "input_ids": gen,
-                "labels": gen,
-            },
+            generators=generators[info.category](info),
         )
         self.loader = DataLoader(self.data, batch_size=args.batch_size)
 

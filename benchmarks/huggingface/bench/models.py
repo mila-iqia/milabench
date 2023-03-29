@@ -208,5 +208,7 @@ def Whisper():
         config=config,
         train_length=config.max_target_positions,
         eval_length=config.max_target_positions,
+        sampling_rate=16000,
+        extractor_class=transformers.WhisperFeatureExtractor,
         model=_make(category, config),
     )
