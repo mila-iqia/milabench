@@ -197,3 +197,16 @@ def Bert_large():
         eval_length=512,
         model=_make(category, config),
     )
+
+
+@register_model
+def Whisper():
+    category = "AutoModelForAudioClassification"
+    config = AutoConfig.from_pretrained("openai/whisper-tiny")
+    return NS(
+        category=category,
+        config=config,
+        train_length=config.max_target_positions,
+        eval_length=config.max_target_positions,
+        model=_make(category, config),
+    )
