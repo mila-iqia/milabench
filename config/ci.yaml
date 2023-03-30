@@ -95,6 +95,10 @@ benchmarks:
     <<<: *torchvision
     tags:
       - convnet
+      
+    env:
+      - MIOPEN_FIND_MODE: 4
+      - MIOPEN_FIND_ENFORCE: 1
 
     argv:
       --model: efficientnet_b0
@@ -103,7 +107,11 @@ benchmarks:
     <<<: *torchvision
     tags:
       - convnet
-    
+   
+    env:
+      - MIOPEN_FIND_MODE: 4
+      - MIOPEN_FIND_ENFORCE: 1
+
     argv:
       --model: efficientnet_b4
       --batch-size: 32
@@ -113,6 +121,10 @@ benchmarks:
     tags:
       - convnet
     
+    env:
+      - MIOPEN_FIND_MODE: 4
+      - MIOPEN_FIND_ENFORCE: 1
+
     argv:
       --model: efficientnet_b7
       --batch-size: 32
