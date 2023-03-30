@@ -146,3 +146,31 @@ benchmarks:
       --strategy: "dp"
       --precision: 32
       --batch_size: 2048
+
+  accelerate:
+    <<<: *defaults
+
+    install_group: torch
+
+    plan:
+      method: njobs
+      n: 1
+
+    # This is for single-node
+    manager_addr: "127.0.0.1"
+    manager_port: 10000
+
+    num_processes: 2
+    cpus_per_gpu: 8
+
+    model_name: "facebook/bart-base"
+
+    gradient_accumulation_steps: 1
+    per_gpu_batch_size: 1
+    max_train_steps: 5
+
+    dataset_name: "wikitext"
+    dataset_config_name: "wikitext-103-v1"
+    validation_split_percentage: 5
+
+    definition: ../benchmarks/accelerate_opt

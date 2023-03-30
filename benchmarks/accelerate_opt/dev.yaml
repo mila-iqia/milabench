@@ -1,0 +1,38 @@
+defaults: &defaults
+  dirs:
+    code: code/{name}
+    venv: venv/{name}
+    data: data
+    runs: runs
+
+  venv:
+    type: virtualenv
+
+  plan:
+    method: njobs
+    n: 1
+
+benchmarks:
+  accelerate_opt:
+    <<<: *defaults
+
+    # This is for single-node
+    manager_addr: "127.0.0.1"
+    manager_port: 10000
+
+    num_processes: 8
+    cpus_per_gpu: 8
+
+    model_name: "facebook/opt-2.7b"
+    #model_name: "facebook/opt-1.3b"
+    #model_name: "facebook/opt-125m"
+
+    gradient_accumulation_steps: 1
+    per_gpu_batch_size: 1
+    max_train_steps: 1000
+
+    dataset_name: "wikitext"
+    dataset_config_name: "wikitext-103-v1"
+    validation_split_percentage: 5
+
+    definition: ./
