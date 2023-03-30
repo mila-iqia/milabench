@@ -158,10 +158,12 @@ def feedback_runner(gen):
 
 
 @feedback_runner
-def run(argv, setsid=None, info={}, **kwargs):
+def run(argv, setsid=None, info={}, process_accumulator=None, **kwargs):
     if setsid:
         kwargs["preexec_fn"] = os.setsid
     mx = voir_run(argv, info=info, **kwargs, timeout=0)
+    if process_accumulator is not None:
+        process_accumulator.extend(mx.processes)
     if setsid:
         for proc in mx.processes:
             proc.did_setsid = True
