@@ -21,13 +21,18 @@ def compute_diff(basefile, otherfile):
 
 
 def check_diff(line, allowed_diffs):
+    line = line.strip()
+    
     if len(line) > 2 and line[0] in (">", "<"):
-
+        
         for diff in allowed_diffs:
             if diff in line:
                 return True
 
-        assert False, f"{line} does not contain {allowed_diffs}"
+        return False
+    
+    return True
+
 
 
 def check_consistency(configurations, allowed_diffs):
@@ -49,11 +54,20 @@ def check_consistency(configurations, allowed_diffs):
         print(f" - {base}")
         print(f" - {other}")
         print(">>>> START")
-        print(diff)
-        print("<<<< END")
-
+        
+        bad = []
         for line in diff.splitlines():
-            check_diff(line, allowed_diffs)
+            
+            if check_diff(line, allowed_diffs):
+                ok = '[  OK]'
+            else:
+                bad.append(line)
+                ok = '[FAIL]'
+                
+            print(f'{ok}{line}')
+            
+        if bad:
+            assert False, "Unexpected diff, check {bad}"
 
 
 def test_configuration_consistency_standard():
