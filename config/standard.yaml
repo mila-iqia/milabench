@@ -23,18 +23,6 @@ torchvision: &torchvision
   definition: ../benchmarks/torchvision
 
 
-sb3: &sb3
-    <<<: *defaults
-
-    group: sb3
-
-    plan:
-      method: njobs
-      n: 1
-
-    definition: ../benchmarks/stable_baselines3
-
-
 hf: &hf
   <<<: *defaults
 
@@ -81,22 +69,6 @@ benchmarks:
 
     argv:
       --model: resnet50
-
-  squeezenet1_1:
-    <<<: *torchvision
-    tags:
-      - convnet
-
-    argv:
-      --model: squeezenet1_1
-
-  efficientnet_b0:
-    <<<: *torchvision
-    tags:
-      - convnet
-
-    argv:
-      --model: efficientnet_b0
 
   efficientnet_b4:
     <<<: *torchvision
@@ -163,47 +135,3 @@ benchmarks:
       --strategy: "dp"
       --precision: 32
       --batch_size: 2048
-
-  vit_l_32:
-    <<<: *lightning
-    tags:
-      - convnet
-    argv:
-      --backbone: "vit_l_32"  # (larger model)
-      --strategy: "fsdp"  # Fully-Sharded Data-Parallel
-      --precision: 32
-
-  ppo:
-    <<<: *sb3
-    tags:
-      - rl
-
-    argv:
-      --algo: ppo
-      --env: HalfCheetahBulletEnv-v0
-      -n: '-1'
-      --num-threads: '-1'
-      --seed: '0'
-      --vec-env: subproc
-      --device: auto
-      --: [-params, n_envs:16, n_steps:512, n_epochs:20, n_timesteps:50000]
-
-  td3:
-    <<<: *sb3
-    tags:
-      - rl
-
-    argv:
-      --algo: td3
-      --env: HalfCheetahBulletEnv-v0 # Default: CartPole-v1
-      --n-eval-envs: '1'
-      --n-timesteps: '50000' # Default: '-1'
-      --num-threads: '-1'
-      --log-interval: '-1'
-      --eval-episodes: '5'
-      --save-freq: '-1'
-      --seed: '0' # Default: -1
-      --vec-env: subproc # Default: dummy
-      --device: auto
-      --n-trials: '10' # Default: 500
-      --n-jobs: '1'
