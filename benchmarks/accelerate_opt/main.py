@@ -321,7 +321,9 @@ def main():
 
     # Train!
     total_batch_size = (
-        per_gpu_batch_size * gradient_accumulation_steps
+        per_gpu_batch_size *
+        accelerator.num_processes *
+        gradient_accumulation_steps
     )
 
     logger.info("***** Running training *****")
