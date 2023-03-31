@@ -90,6 +90,7 @@ class BasePackage:
         self.core = core
         self.config = config
         self.phase = None
+        self.processes = []
 
     def copy(self, config):
         return type(self)(config=merge(self.config, config))
@@ -205,6 +206,7 @@ class BasePackage:
             env=self.full_env(env) if not external else {**os.environ, **env},
             constructor=BenchLogEntry,
             cwd=cwd,
+            process_accumulator=self.processes,
         )
 
     async def python(self, *args, **kwargs):
@@ -355,7 +357,7 @@ class Package(BasePackage):
             the manifest's contents to ``self.dirs.code``, installing
             milabench in the venv, and then calling this method.
         """
-        self.phase = "install"
+        assert self.phase == "install"
         for reqs in self.requirements_files(self.config.get("install_variant", None)):
             if reqs.exists():
                 await self.pip_install("-r", reqs)
@@ -379,7 +381,7 @@ class Package(BasePackage):
         """
         if self.config.get("install_variant", None) == "unpinned":
             raise Exception("Cannot pin the 'unpinned' variant.")
-        self.phase = "pin"
+        assert self.phase == "pin"
         for base_reqs, reqs in self.requirements_map().items():
             if not base_reqs.exists():
                 raise FileNotFoundError(
@@ -433,7 +435,7 @@ class Package(BasePackage):
 
         The default value of ``self.prepare_script`` is ``"prepare.py"``.
         """
-        self.phase = "prepare"
+        assert self.phase == "prepare"
         if self.prepare_script is not None:
             prep = self.dirs.code / self.prepare_script
             if prep.exists():
@@ -459,7 +461,7 @@ class Package(BasePackage):
             voirargs: A list of arguments to ``voir``.
             env: Environment variables to set for the process.
         """
-        self.phase = "run"
+        assert self.phase == "run"
         main = self.dirs.code / self.main_script
         if not main.exists():
             raise FileNotFoundError(
