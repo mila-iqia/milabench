@@ -198,3 +198,17 @@ benchmarks:
       --batch_size: 16
 
     definition: ../benchmarks/stargan
+
+  super-slomo:
+    <<<: *defaults
+
+    group: super-slomo
+    install_group: torch
+
+    plan:
+      method: per_gpu
+
+    argv:
+      --train_batch_size: 32
+
+    definition: ../benchmarks/super-slomo

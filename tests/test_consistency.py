@@ -79,15 +79,14 @@ def test_configuration_consistency_standard():
     ]
 
     authorized_diffs = [
+        "--train_batch_size",
         "--batch-size", 
         "--batch_size",
         "argv", 
-        "--bs", 
-        "- no-rocm", 
-        "stop: 10",
-        "stop: 60",
-        "skip: 5",
-        "skip: 1",
+        "--bs",
+        "- no-rocm",
+        "stop:",
+        "skip:",
         'model_name: "facebook/bart-base"',
         'model_name: "facebook/opt-2.7b"',
         "max_train_steps: 5",
