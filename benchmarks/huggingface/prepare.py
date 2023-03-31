@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-from main import parser
-from models import models
+from bench.__main__ import parser
+from bench.models import models
 
 if __name__ == "__main__":
     args = parser().parse_args()

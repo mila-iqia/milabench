@@ -439,7 +439,7 @@ class Package(BasePackage):
         if self.prepare_script is not None:
             prep = self.dirs.code / self.prepare_script
             if prep.exists():
-                await self.execute(prep, *self.argv, env=self.make_env())
+                await self.execute(prep, *self.argv, env=self.make_env(), cwd=prep.parent)
 
     async def run(self):
         """Start the benchmark and return the running process.
