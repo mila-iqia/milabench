@@ -1,0 +1,219 @@
+defaults: &defaults
+  install_variant: "{arch}"
+
+  max_duration: 600
+
+  voir:
+    options:
+      skip: 1
+      stop: 60
+      interval: "1s"
+
+
+torchvision: &torchvision
+  <<<: *defaults
+
+  group: torchvision
+  install_group: torch
+
+  plan:
+    method: per_gpu
+
+  argv:
+    --with-amp: true
+    --lr: 0.01
+
+  definition: ../benchmarks/torchvision
+
+
+hf: &hf
+  <<<: *defaults
+
+  group: hf
+  install_group: torch
+
+  plan:
+    method: per_gpu
+
+  definition: ../benchmarks/huggingface
+
+
+lightning: &lightning
+  <<<: *defaults
+
+  group: lightning
+  install_group: torch
+
+  plan:
+    method: njobs
+    n: 1
+
+  definition: ../benchmarks/pytorch-lightning
+
+  argv:
+    --max_epochs: 1
+    --max_steps: 100
+    --limit_val_batches: 100
+    --devices: -1
+    --enable_progress_bar: "False"
+    --accelerator: "auto"
+    --enable_checkpointing: "False"
+
+##############
+# Benchmarks #
+##############
+
+benchmarks:
+  resnet50-fp16:
+    <<<: *torchvision
+    tags:
+      - vision
+      - classification
+      - cnn
+      - fp16
+      - e2e
+  
+    mem:
+      slope: 82
+      intercept: 2728
+      multiple: 16
+
+  resnet50-fp32:
+    <<<: *torchvision
+    tags:
+      - vision
+      - classification
+      - cnn
+      - fp32
+      - e2e
+
+    mem:
+      slope: 90
+      intercept: 2985
+      multiple: 16
+
+  efficientnet_b4:
+    <<<: *torchvision
+    tags:
+      - vision
+      - classification
+      - cnn
+      - fp16
+      - e2e
+   
+    mem:
+      slope: 115
+      intercept: 2765
+      multiple: 16
+
+  efficientnet_b7:
+    <<<: *torchvision
+    tags:
+      - vision
+      - classification
+      - cnn
+      - fp16
+      - e2e
+
+    mem:
+      slope: 264
+      intercept: 3236
+      multiple: 16
+
+  convnext_large:
+    <<<: *torchvision
+    tags:
+      - vision
+      - classification
+      - cnn
+      - fp16
+      - e2e
+
+    mem:
+      slope: 190
+      intercept: 4090
+      multiple: 16
+
+  regnet_y_128gf:
+    <<<: *torchvision
+    tags:
+      - vision
+      - classification
+      - cnn
+      - fp32
+      - lstm
+      - e2e
+
+    mem:
+      slope: 826
+      intercept: 5290
+      multiple: 16
+
+  bert:
+    <<<: *hf
+    tags:
+      - nlp
+      - language-modeling
+      - transformer
+      - no-io
+      - huggingface
+
+    mem:
+      slope: 1000
+      intercept: 3774
+      multiple: 8
+
+  t5:
+    <<<: *hf
+    tags:
+      - nlp
+      - language_modeling
+      - transformer
+      - huggingface
+      - no-io
+
+    mem:
+      slope: 2683
+      intercept: 1916
+      multiple: 8
+
+  reformer:
+    <<<: *hf
+    tags:
+      - nlp
+      - language-modeling
+      - transformer
+      - huggingface
+      - no-io
+
+    mem:
+      slope: 385
+      intercept: 1464
+      multiple: 8
+
+  resnet152:
+    <<<: *lightning
+    tags:
+      - vision
+      - classification
+      - convnet
+
+    mem:
+      slope: 4.23
+      intercept: 3323
+      multiple: 16
+
+  accelerate:
+    <<<: *defaults
+    
+    definition: ../benchmarks/accelerate_opt
+
+    install_group: torch
+
+    tags:
+      - LLM
+
+    plan:
+      method: njobs
+      n: 1
+

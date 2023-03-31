@@ -1,14 +1,29 @@
-import yaml
+import os
 
 from .fs import XPath
 from .merge import self_merge
 
 
+from omegaconf import OmegaConf
+
+
+
 def parse_config(config_file, base=None):
     config_file = XPath(config_file).absolute()
     config_base = config_file.parent
-    with open(config_file) as cf:
-        config = yaml.safe_load(cf)
+    config = OmegaConf.load(config_file)
+    
+    base_path = config.get('from')
+    
+    if base_path:
+        # Handles relative path
+        if base_path.startswith('.'):
+            base_path = os.path.join(config_base, base_path)
+        
+        base_config = OmegaConf.load(base_path)
+        config = OmegaConf.merge(base_config, config)
+
+    # Save the base 
     config.setdefault("defaults", {})
     config["defaults"]["config_base"] = str(config_base)
     config["defaults"]["config_file"] = str(config_file)
