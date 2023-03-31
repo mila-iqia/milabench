@@ -21,8 +21,11 @@ def compute_diff(basefile, otherfile):
 
 
 def check_diff(line, allowed_diffs):
+    line = line.strip()
+    
     if len(line) > 2 and line[0] in (">", "<"):
-        if line[1:].strip().startswith("#"):
+        line = line[1:].strip()
+        if line.startswith("#"):
             return True
 
         for diff in allowed_diffs:

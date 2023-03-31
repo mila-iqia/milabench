@@ -9,8 +9,6 @@ defaults: &defaults
       stop: 10
       interval: "1s"
 
-  venv:
-    type: virtualenv
 
 torchvision: &torchvision
   <<<: *defaults
@@ -36,9 +34,6 @@ hf: &hf
 
   plan:
     method: per_gpu
-
-  tags:
-    - rl
 
   definition: ../benchmarks/huggingface
 
@@ -68,12 +63,6 @@ lightning: &lightning
 benchmarks:
   resnet50-fp16:
     <<<: *torchvision
-
-    mem:
-      slope: 82
-      intercept: 2728
-      multiple: 16
-
     tags:
       - vision
       - classification
@@ -86,14 +75,13 @@ benchmarks:
       --batch-size: $(bs(gpu, mem, default=512))
       --with-amp: True
 
-  resnet50-fp32:
-    <<<: *torchvision
-
     mem:
-      slope: 90
-      intercept: 2985
+      slope: 82
+      intercept: 2728
       multiple: 16
 
+  resnet50-fp32:
+    <<<: *torchvision
     tags:
       - vision
       - classification
@@ -106,14 +94,13 @@ benchmarks:
       --batch-size: $(bs(gpu, mem, default=256))
       --with-amp: null
 
+    mem:
+      slope: 90
+      intercept: 2985
+      multiple: 16
+  
   efficientnet_b4:
     <<<: *torchvision
-    
-    mem:
-      slope: 115
-      intercept: 2765
-      multiple: 16
-
     tags:
       - vision
       - classification
@@ -123,16 +110,16 @@ benchmarks:
 
     argv:
       --model: efficientnet_b4
-      --batch-size: 32
+      --batch-size: $(bs(gpu, mem, default=256))
+    
+    mem:
+      slope: 115
+      intercept: 2765
+      multiple: 16
 
   efficientnet_b7:
     <<<: *torchvision
-    
-    mem:
-      slope: 264
-      intercept: 3236
-      multiple: 16
-      
+
     tags:
       - vision
       - classification
@@ -143,14 +130,14 @@ benchmarks:
     argv:
       --model: efficientnet_b7
       --batch-size: $(bs(gpu, mem, default=64))
-
+    
+    mem:
+      slope: 264
+      intercept: 3236
+      multiple: 16
+  
   convnext_large:
     <<<: *torchvision
-    mem:
-      slope: 190
-      intercept: 4090
-      multiple: 16
-    
     tags:
       - vision
       - classification
@@ -160,16 +147,16 @@ benchmarks:
 
     argv:
       --model: convnext_large
-      --batch-size: 16
-
+      --batch-size: $(bs(gpu, mem, default=64))
+  
+    mem:
+      slope: 190
+      intercept: 4090
+      multiple: 16
+  
   regnet_y_128gf:
     <<<: *torchvision
 
-    mem:
-      slope: 826
-      intercept: 5290
-      multiple: 16
-    
     tags:
       - vision
       - classification
@@ -180,48 +167,87 @@ benchmarks:
 
     argv:
       --model: regnet_y_128gf
-      --batch-size: 4
-
+      --batch-size: $(bs(gpu, mem, default=32))
+      --with-amp: null
+  
+    mem:
+      slope: 826
+      intercept: 5290
+      multiple: 16
+  
   bert:
-    <<<: *hf
-    tags:
-      - huggingface
-      - transformer
-    argv:
-      --model: "Bert"
-      --batch-size: 8
-
-  t5:
     <<<: *hf
     tags:
       - nlp
       - language-modeling
       - transformer
+      - no-io
+      - huggingface
+  
     argv:
-      --model: "T5"
-      --batch-size: 2
+      --model: "Bert"
+      --batch-size: $(bs(gpu, mem, default=16))
+    
+    mem:
+      slope: 1000
+      intercept: 3774
+      multiple: 8
 
-  reformer:
+  t5:
     <<<: *hf
     tags:
       - nlp
       - language_modeling
       - transformer
+      - huggingface
+      - no-io
+
+    argv:
+      --model: "T5"
+      --batch-size: $(bs(gpu, mem, default=16))
+  
+    mem:
+      slope: 2683
+      intercept: 1916
+      multiple: 8
+
+  reformer:
+    <<<: *hf
+    tags:
+      - nlp
+      - language-modeling
+      - transformer
+      - huggingface
+      - no-io
+  
     argv:
       --model: "Reformer"
+      --batch-size: $(bs(gpu, mem, default=16))
 
+    mem:
+      slope: 385
+      intercept: 1464
+      multiple: 8
+  
   resnet152:
     <<<: *lightning
     tags:
+      - vision
+      - classification
       - convnet
       - no-rocm
 
     argv:
       --backbone: "resnet152"
-      --strategy: "dp"
+      --strategy: "ddp"
       --precision: 32
-      --batch_size: 2048
-
+      --batch_size: $(bs(gpu, mem, default=12, multi_gpu=True))
+  
+    mem:
+      slope: 4.23
+      intercept: 3323
+      multiple: 16
+  
   accelerate:
     <<<: *defaults
 

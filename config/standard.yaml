@@ -5,6 +5,7 @@ defaults: &defaults
 
   voir:
     options:
+      skip: 1
       stop: 60
       interval: "1s"
 
@@ -101,45 +102,6 @@ benchmarks:
       intercept: 2985
       multiple: 16
 
-<<<<<<< HEAD
-  squeezenet1_1:
-    <<<: *torchvision
-    tags:
-      - vision
-      - classification
-      - cnn
-      - fp16
-      - e2e
-
-    argv:
-      --model: squeezenet1_1
-      --batch-size: $(bs(gpu, mem, default=256))
-
-    mem:
-      slope: 19
-      intercept: 3166
-      multiple: 16
-
-  efficientnet_b0:
-    <<<: *torchvision
-    tags:
-      - vision
-      - classification
-      - cnn
-      - fp16
-      - e2e
-
-    argv:
-      --model: efficientnet_b0
-      --batch-size: $(bs(gpu, mem, default=256))
-
-    mem:
-      slope: 47
-      intercept: 2570
-      multiple: 16
-
-=======
->>>>>>> 04af453c683076d67ea603394c38d25d2b3f2ee0
   efficientnet_b4:
     <<<: *torchvision
     tags:
@@ -147,7 +109,7 @@ benchmarks:
       - classification
       - cnn
       - fp16
-      - e2e 
+      - e2e
    
     argv:
       --model: efficientnet_b4
@@ -187,7 +149,7 @@ benchmarks:
 
     argv:
       --model: convnext_large
-      --batch-size: $(bs(gpu, mem, default=256))
+      --batch-size: $(bs(gpu, mem, default=64))
 
     mem:
       slope: 190
@@ -233,7 +195,6 @@ benchmarks:
   t5:
     <<<: *hf
     tags:
-      - huggingface
       - nlp
       - language_modeling
       - transformer
@@ -250,7 +211,6 @@ benchmarks:
   reformer:
     <<<: *hf
     tags:
-      - huggingface
       - nlp
       - language-modeling
       - transformer
@@ -269,35 +229,19 @@ benchmarks:
     tags:
       - vision
       - classification
-      - cnn
+      - convnet
     argv:
       --backbone: "resnet152"
       --strategy: "ddp"
       --precision: 32
-      --batch_size: 2048
-      --max_epochs: 100
-      --max_steps: 1000
       --batch_size: $(bs(gpu, mem, default=12, multi_gpu=True))
     mem:
       slope: 4.23
       intercept: 3323
       multiple: 16
 
-<<<<<<< HEAD
-  vit_l_32:
-    <<<: *lightning
-    tags:
-      - vision
-      - classification
-      - transformer
-    argv:
-      --backbone: "vit_l_32"  # (larger model)
-      --strategy: "fsdp"  # Fully-Sharded Data-Parallel
-      --precision: 32
-=======
   accelerate:
     <<<: *defaults
->>>>>>> 04af453c683076d67ea603394c38d25d2b3f2ee0
 
     install_group: torch
 
