@@ -207,3 +207,29 @@ td3:
     --device: auto
     --n-trials: '10' # Default: 500
     --n-jobs: '1'
+
+dlrm:
+  inherits: _defaults
+  definition: ../benchmarks/dlrm
+  group: dlrm
+  tags:
+    - rl
+  plan:
+    method: njobs
+    n: 1
+  argv:
+    --num-batches: 1000
+    --data-generation: "random"
+    --arch-mlp-bot: "512-512-64"
+    --arch-mlp-top: "1024-1024-1024-1"
+    --arch-sparse-feature-size: 64
+    --arch-embedding-size: "1000000-1000000-1000000-1000000-1000000-1000000-1000000-1000000"
+    --num-indices-per-lookup: 100
+    --arch-interaction-op: "dot"
+    --numpy-rand-seed: "727"
+    --print-freq: 999999
+    --enable-profiling: true
+    --mini-batch-size: 2048
+    --test-mini-batch-size: 16384
+    --test-num-workers: 0
+    --use-gpu: true
