@@ -323,17 +323,17 @@ class Main:
                 reports = _read_reports(*runs)
                 summary = make_summary(reports.values())
 
-            make_report(
-                summary,
-                compare=compare,
-                weights=weights,
-                html=html,
-                compare_gpus=compare_gpus,
-                price=price,
-                title=None,
-                sources=runs,
-                errdata=reports and _error_report(reports),
-            )
+                make_report(
+                    summary,
+                    compare=compare,
+                    weights=weights,
+                    html=html,
+                    compare_gpus=compare_gpus,
+                    price=price,
+                    title=None,
+                    sources=runs,
+                    errdata=reports and _error_report(reports),
+                )
 
         return success
 
