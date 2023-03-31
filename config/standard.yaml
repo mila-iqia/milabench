@@ -1,6 +1,8 @@
 defaults: &defaults
   install_variant: "{arch}"
 
+  max_duration: 600
+
   voir:
     options:
       stop: 60
@@ -21,18 +23,6 @@ torchvision: &torchvision
     --lr: 0.01
 
   definition: ../benchmarks/torchvision
-
-
-sb3: &sb3
-    <<<: *defaults
-
-    group: sb3
-
-    plan:
-      method: njobs
-      n: 1
-
-    definition: ../benchmarks/stable_baselines3
 
 
 hf: &hf
@@ -81,22 +71,6 @@ benchmarks:
 
     argv:
       --model: resnet50
-
-  squeezenet1_1:
-    <<<: *torchvision
-    tags:
-      - convnet
-
-    argv:
-      --model: squeezenet1_1
-
-  efficientnet_b0:
-    <<<: *torchvision
-    tags:
-      - convnet
-
-    argv:
-      --model: efficientnet_b0
 
   efficientnet_b4:
     <<<: *torchvision
@@ -164,46 +138,33 @@ benchmarks:
       --precision: 32
       --batch_size: 2048
 
-  vit_l_32:
-    <<<: *lightning
-    tags:
-      - convnet
-    argv:
-      --backbone: "vit_l_32"  # (larger model)
-      --strategy: "fsdp"  # Fully-Sharded Data-Parallel
-      --precision: 32
+  accelerate:
+    <<<: *defaults
 
-  ppo:
-    <<<: *sb3
-    tags:
-      - rl
+    install_group: torch
 
-    argv:
-      --algo: ppo
-      --env: HalfCheetahBulletEnv-v0
-      -n: '-1'
-      --num-threads: '-1'
-      --seed: '0'
-      --vec-env: subproc
-      --device: auto
-      --: [-params, n_envs:16, n_steps:512, n_epochs:20, n_timesteps:50000]
+    plan:
+      method: njobs
+      n: 1
 
-  td3:
-    <<<: *sb3
-    tags:
-      - rl
+    # This is for single-node
+    manager_addr: "127.0.0.1"
+    manager_port: 10000
 
-    argv:
-      --algo: td3
-      --env: HalfCheetahBulletEnv-v0 # Default: CartPole-v1
-      --n-eval-envs: '1'
-      --n-timesteps: '50000' # Default: '-1'
-      --num-threads: '-1'
-      --log-interval: '-1'
-      --eval-episodes: '5'
-      --save-freq: '-1'
-      --seed: '0' # Default: -1
-      --vec-env: subproc # Default: dummy
-      --device: auto
-      --n-trials: '10' # Default: 500
-      --n-jobs: '1'
+    num_processes: 2
+    cpus_per_gpu: 8
+
+    # model_name: "facebook/opt-350m"
+    model_name: "facebook/opt-2.7b"
+    #model_name: "facebook/opt-1.3b"
+    #model_name: "facebook/opt-125m"
+
+    gradient_accumulation_steps: 1
+    per_gpu_batch_size: 1
+    max_train_steps: 30
+
+    dataset_name: "wikitext"
+    dataset_config_name: "wikitext-103-v1"
+    validation_split_percentage: 5
+
+    definition: ../benchmarks/accelerate_opt

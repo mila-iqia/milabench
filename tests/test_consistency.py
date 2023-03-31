@@ -24,7 +24,9 @@ def check_diff(line, allowed_diffs):
     line = line.strip()
     
     if len(line) > 2 and line[0] in (">", "<"):
-        
+        if line[1:].strip().startswith("#"):
+            return True
+
         for diff in allowed_diffs:
             if diff in line:
                 return True
@@ -55,19 +57,19 @@ def check_consistency(configurations, allowed_diffs):
         print(f" - {other}")
         print(">>>> START")
         
-        bad = []
+        badlines = []
         for line in diff.splitlines():
             
             if check_diff(line, allowed_diffs):
                 ok = '[  OK]'
             else:
-                bad.append(line)
+                badlines.append(line)
                 ok = '[FAIL]'
                 
             print(f'{ok}{line}')
             
-        if bad:
-            assert False, "Unexpected diff, check {bad}"
+        if badlines:
+            assert False, "Unexpected diff, check {badlines}"
 
 
 def test_configuration_consistency_standard():
@@ -89,6 +91,10 @@ def test_configuration_consistency_standard():
         "stop: 60",
         "skip: 5",
         "skip: 1",
+        'model_name: "facebook/bart-base"',
+        'model_name: "facebook/opt-2.7b"',
+        "max_train_steps: 5",
+        "max_train_steps: 30",
     ]
 
     for configurations in configurations_pair:

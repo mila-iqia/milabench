@@ -1,0 +1,23 @@
+name: Clean space on the CI node
+
+on:
+  # Allow manual runs
+  workflow_dispatch:
+  
+# define build arguments
+
+jobs:
+  clean:
+    strategy:
+      matrix:
+        include:
+          - arch: cuda
+          - arch: rocm
+
+    runs-on: [self-hosted, "${{ matrix.arch }}"]
+
+    steps:
+      - name: Get an overview of available space
+        run: |
+          df -h
+          docker image ls
