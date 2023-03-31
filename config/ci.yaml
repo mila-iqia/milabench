@@ -51,6 +51,7 @@ lightning: &lightning
   definition: ../benchmarks/pytorch-lightning
 
   argv:
+    --gpus: -1
     --max_epochs: 1
     --max_steps: 100
     --limit_val_batches: 100
@@ -72,7 +73,6 @@ benchmarks:
 
     argv:
       --model: resnet50
-      --batch-size: $(bs(gpu, mem, default=256))
       --with-amp: True
 
     mem:
@@ -91,7 +91,6 @@ benchmarks:
 
     argv:
       --model: resnet50
-      --batch-size: $(bs(gpu, mem, default=128))
       --with-amp: null
 
     mem:
@@ -110,7 +109,7 @@ benchmarks:
 
     argv:
       --model: efficientnet_b4
-      --batch-size: $(bs(gpu, mem, default=128))
+      --batch-size: $(bs(gpu, mem, default=32))
     
     mem:
       slope: 115
@@ -147,7 +146,7 @@ benchmarks:
 
     argv:
       --model: convnext_large
-      --batch-size: $(bs(gpu, mem, default=32))
+      --batch-size: $(bs(gpu, mem, default=16))
   
     mem:
       slope: 190
@@ -167,7 +166,7 @@ benchmarks:
 
     argv:
       --model: regnet_y_128gf
-      --batch-size: $(bs(gpu, mem, default=16))
+      --batch-size: $(bs(gpu, mem, default=4))
       --with-amp: null
   
     mem:
@@ -204,7 +203,7 @@ benchmarks:
 
     argv:
       --model: "T5"
-      --batch-size: $(bs(gpu, mem, default=8))
+      --batch-size: $(bs(gpu, mem, default=2))
   
     mem:
       slope: 2683
@@ -239,9 +238,9 @@ benchmarks:
 
     argv:
       --backbone: "resnet152"
-      --strategy: "ddp"
+      --strategy: "dp"
       --precision: 32
-      --batch_size: $(bs(gpu, mem, default=6, multi_gpu=True))
+      --batch_size: $(bs(gpu, mem, default=12, multi_gpu=True))
   
     mem:
       slope: 4.23
