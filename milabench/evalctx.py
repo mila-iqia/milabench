@@ -1,6 +1,6 @@
 import re
 import os
-from math import log2
+from math import log2, isinf
 from argparse import Namespace
 
 from voir.instruments.gpu import get_gpu_info
@@ -21,6 +21,11 @@ def deduce_good_batch_size(estimate: float, method: str, multiplier: int = 8):
         return 2 ** int(log2(estimate))
 
     return int(estimate)
+
+
+
+def default_batch_size(gpu, mem, default=None, multi_gpu=False):
+    return default_batch_size
 
 
 def bs(gpu, mem, default=None, multi_gpu=False):
@@ -114,6 +119,11 @@ class ArgumentResolver:
 
         gpu = fetch_gpu_configuration()
         cpu = fetch_cpu_configuration()
+        resolver = bs
+        
+        if isinf(gpu['mem']):
+            print("Could not configure batch size")
+            resolver = default_batch_size
 
         mem_model = self.run.get(MMK)
         if mem_model is None:
@@ -123,7 +133,7 @@ class ArgumentResolver:
 
         self.globals = dict()
         self.locals = {
-            "bs": bs,
+            "bs": resolver,
             MMK: Namespace(**mem_model),
             "gpu": Namespace(**gpu),
             "cpu": Namespace(**cpu),
