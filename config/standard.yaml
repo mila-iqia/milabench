@@ -134,9 +134,11 @@ benchmarks:
       - convnet
     argv:
       --backbone: "resnet152"
-      --strategy: "dp"
+      --strategy: "ddp"
+      --n_workers: 8
       --precision: 32
-      --batch_size: 2048
+      --batch_size: 64
+      --move_metrics_to_cpu: True
 
   accelerate:
     <<<: *defaults
