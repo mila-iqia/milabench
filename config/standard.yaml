@@ -147,14 +147,30 @@ benchmarks:
       --model: "Reformer"
 
   resnet152:
-    <<<: *lightning
+    <<<: *timm
     tags:
       - convnet
+
+    plan:
+      method: njobs
+      n: 1
+
+    nproc: 2
+
     argv:
-      --backbone: "resnet152"
-      --strategy: "dp"
-      --precision: 32
-      --batch_size: 2048
+      --model: resnet152
+
+  vit_l_32:
+    <<<: *timm
+
+    plan:
+      method: njobs
+      n: 1
+
+    nproc: 2
+
+    argv:
+      --model: vit_large_patch32_224
 
   accelerate:
     <<<: *defaults
@@ -195,5 +211,3 @@ benchmarks:
 
     argv:
       --model: focalnet_small_lrf
-
-    definition: ../benchmarks/timm
