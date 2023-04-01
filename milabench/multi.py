@@ -1,14 +1,15 @@
 import asyncio
-import os
-import tempfile
 from collections import defaultdict
 from copy import deepcopy
-from milabench.alt_async import destroy
 
-from milabench.fs import XPath
-from milabench.utils import make_constraints_file
+from voir.instruments.gpu import get_gpu_info
 
+from .alt_async import destroy
+from .fs import XPath
 from .merge import merge
+from .utils import make_constraints_file
+
+gpus = get_gpu_info()["gpus"].values()
 
 planning_methods = {}
 
@@ -28,9 +29,6 @@ def clone_with(cfg, new_cfg):
 
 @planning_method
 def per_gpu(cfg):
-    from voir.instruments.gpu import get_gpu_info
-
-    gpus = get_gpu_info()["gpus"].values()
     ngpus = len(gpus)
     if not gpus:
         gpus = [{"device": 0, "selection_variable": "CPU_VISIBLE_DEVICE"}]
@@ -52,6 +50,7 @@ def njobs(cfg, n):
         gcfg = {
             "tag": [*cfg["tag"], f"{i}"],
             "job-number": i,
+            "devices": [gpu["device"] for gpu in gpus],
         }
         yield clone_with(cfg, gcfg)
 

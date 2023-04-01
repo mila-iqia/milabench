@@ -33,7 +33,8 @@ class TimmBenchmarkPack(Package):
     async def run(self):
         main = self.dirs.code / self.main_script
         assert main.exists()
-        nproc = self.config.get("nproc", 1)
+        devices = self.config.get("devices", [])
+        nproc = len(devices)
         if nproc > 1:
             return await self.voir(
                 self.main_script,
