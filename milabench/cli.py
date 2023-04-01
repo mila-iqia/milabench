@@ -314,7 +314,7 @@ class Main:
             runs = {pack.logdir for pack in mp.packs.values()}
             weights = None
             compare = None
-            compare_gpus = True
+            compare_gpus = False
             html = None
             price = None
 

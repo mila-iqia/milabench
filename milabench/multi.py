@@ -3,6 +3,7 @@ import os
 import tempfile
 from collections import defaultdict
 from copy import deepcopy
+from milabench.alt_async import destroy
 
 from milabench.fs import XPath
 from milabench.utils import make_constraints_file
@@ -84,7 +85,7 @@ class MultiPackage:
                     await pack.message(
                         f"Terminating process because it ran for longer than {delay} seconds."
                     )
-                    proc.kill()
+                    destroy(proc)
 
         for index in range(repeat):
             for pack in self.packs.values():
