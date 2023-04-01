@@ -216,7 +216,7 @@ class BasePackage:
         """
         return await self.execute("python", *args, **kwargs)
 
-    async def voir(self, script, args=(), cwd=None):
+    async def voir(self, script, args=(), wrapper=[], cwd=None, **kwargs):
         """Launch a script using ``voir``.
 
         This runs:
@@ -253,11 +253,13 @@ class BasePackage:
         else:
             voirargs = ()
 
-        command = ["voir", *voirargs, script, *args]
+        command = [*wrapper, "voir", *voirargs, script, *args]
+
         return await self.execute(
             *command,
             setsid=True,
             cwd=cwd,
+            **kwargs,
         )
 
 
