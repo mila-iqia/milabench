@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ubuntu:22.04 AS init
 
 # Arguments
 # ---------
@@ -27,14 +27,19 @@ WORKDIR /milabench
 COPY . /milabench/milabench/
 
 
+FROM init AS install
+
 # Install Dependencies
 # --------------------
 
-#     curl | wget: used to download anaconda
+#            curl: used to download anaconda
 #             git: used by milabench
 #           rustc: used by BERT models inside https://pypi.org/project/tokenizers/
 # build-essential: for rust
-RUN apt update && apt install -y wget git build-essential curl
+
+RUN apt-get update &&\
+    apt-get install -y git build-essential curl
+
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
@@ -42,10 +47,8 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 # --------------
 
 # Install anaconda because milabench will need it later anyway
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py39_23.1.0-1-Linux-x86_64.sh -O ~/miniconda.sh && \
+RUN curl https://repo.anaconda.com/miniconda/Miniconda3-py39_23.1.0-1-Linux-x86_64.sh -o ~/miniconda.sh && \
     /bin/bash ~/miniconda.sh -b -p $CONDA_PATH
-
-RUN rm ~/miniconda.sh
 ENV PATH=$CONDA_PATH/bin:$PATH
 
 
@@ -57,6 +60,9 @@ RUN python -m pip install -U pip            &&\
     python -m pip install -U poetry         &&\
     python -m pip install -e /milabench/milabench/
 
+
+FROM install AS prepare
+
 # Prepare bench
 # -------------
 
@@ -67,7 +73,9 @@ RUN milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABEN
     milabench prepare --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
 
 
-# Cleanup
-# Remove PIP cache
-# Remove APT unused packages
-# CMD milabench
+FROM init
+
+COPY --from=install /opt/anaconda /opt/anaconda
+COPY --from=prepare /milabench/envs /milabench/envs
+
+CMD ["milabench", "run"]
