@@ -241,8 +241,12 @@ class BasePackage:
             A subprocess.Popen instance representing the running process.
         """
 
-        if not XPath(script).is_absolute():
-            script = str(self.dirs.code / script)
+        if isinstance(script, list):
+            script_args = script
+        else:
+            if not XPath(script).is_absolute():
+                script = str(self.dirs.code / script)
+            script_args = [script]
 
         if voirconf := self.config.get("voir", None):
             hsh = md5(str(voirconf).encode("utf8"))
@@ -255,8 +259,7 @@ class BasePackage:
         else:
             voirargs = ()
 
-        command = [*wrapper, "voir", *voirargs, script, *args]
-
+        command = [*wrapper, "voir", *voirargs, *script_args, *args]
         return await self.execute(
             *command,
             setsid=True,
@@ -439,7 +442,7 @@ class Package(BasePackage):
         if self.prepare_script is not None:
             prep = self.dirs.code / self.prepare_script
             if prep.exists():
-                await self.execute(prep, *self.argv, env=self.make_env())
+                await self.execute(prep, *self.argv, env=self.make_env(), cwd=prep.parent)
 
     async def run(self):
         """Start the benchmark and return the running process.
@@ -468,4 +471,7 @@ class Package(BasePackage):
                 f"Cannot run main script because it does not exist: {main}"
             )
 
-        return await self.voir(self.main_script, args=self.argv, cwd=main.parent)
+        if main.is_dir():
+            return await self.voir(["-m", self.main_script], args=self.argv, cwd=main.parent)
+        else:
+            return await self.voir(self.main_script, args=self.argv, cwd=main.parent)

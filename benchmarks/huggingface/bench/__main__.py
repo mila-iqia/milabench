@@ -5,36 +5,11 @@ import torch
 import transformers
 import voir
 from giving import give
-from models import models
 from torch import optim
+from torch.utils.data import DataLoader
 
-
-class SyntheticData:
-    def __init__(self, device, vocab_size, sequence_length, batch_size, n, fixed_batch):
-        self.n = n
-        self.device = device
-        self.vocab_size = vocab_size
-        self.sequence_length = sequence_length
-        self.batch_size = batch_size
-        self.inputs = self.gen()
-        self.labels = self.gen()
-        self.fixed_batch = fixed_batch
-
-    def gen(self):
-        return torch.randint(
-            0, self.vocab_size, (self.batch_size, self.sequence_length)
-        ).to(self.device)
-
-    def __iter__(self):
-        inp, out = self.inputs, self.labels
-        for i in range(self.n):
-            if not self.fixed_batch:
-                inp = self.gen()
-                out = self.gen()
-            yield (inp, out)
-
-    def __len__(self):
-        return self.n
+from .models import models
+from .synth import SyntheticData, generators
 
 
 class Runner:
@@ -47,33 +22,37 @@ class Runner:
             torch.cuda.manual_seed(args.seed)
             transformers.set_seed(args.seed)
         self.device = torch.device("cuda" if use_cuda else "cpu")
+        self.batch_size = args.batch_size
         info = models[args.model]()
         self.model = info.model.to(self.device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=args.lr)
+
         self.data = SyntheticData(
-            device=self.device,
-            vocab_size=info.config.vocab_size,
-            sequence_length=info.train_length,
-            batch_size=args.batch_size,
-            n=100000,
-            fixed_batch=args.fixed_batch,
+            n=args.batch_size,
+            repeat=100000,
+            generators=generators[info.category](info),
         )
+        self.loader = DataLoader(self.data, batch_size=args.batch_size)
+
         if args.with_amp:
             self.amp_context = lambda: torch.cuda.amp.autocast(dtype=torch.float16)
         else:
             self.amp_context = nullcontext
 
-    def step(self, inputs, labels):
+    def step(self, data):
         with self.amp_context():
-            outputs = self.model(input_ids=inputs, labels=labels)
+            outputs = self.model(**data)
         loss = outputs.loss
         give(loss=loss.item())
         loss.backward()
         self.optimizer.step()
 
     def train(self):
-        for inputs, labels in voir.iterate("train", self.data, True):
-            self.step(inputs, labels)
+        for data in voir.iterate(
+            "train", self.loader, report_batch=True, batch_size=self.batch_size
+        ):
+            data = {k: v.to(self.device) for k, v in data.items()}
+            self.step(data)
 
 
 def parser():

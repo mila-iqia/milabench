@@ -124,6 +124,15 @@ benchmarks:
     argv:
       --model: "Reformer"
 
+  whisper:
+    <<<: *hf
+    tags:
+      - huggingface
+      - transformer
+      - audio
+    argv:
+      --model: "Whisper"
+
   resnet152:
     <<<: *timm
     tags:
@@ -169,7 +178,7 @@ benchmarks:
 
     gradient_accumulation_steps: 1
     per_gpu_batch_size: 1
-    max_train_steps: 30
+    max_train_steps: 100
 
     dataset_name: "wikitext"
     dataset_config_name: "wikitext-103-v1"
@@ -185,3 +194,32 @@ benchmarks:
 
     argv:
       --model: focalnet_small_lrf
+
+  stargan:
+    <<<: *defaults
+
+    plan:
+      method: per_gpu
+
+    group: stargan
+    install_group: torch
+    argv:
+      --image_size: 512
+      --c_dim: 5
+      --batch_size: 16
+
+    definition: ../benchmarks/stargan
+
+  super-slomo:
+    <<<: *defaults
+
+    group: super-slomo
+    install_group: torch
+
+    plan:
+      method: per_gpu
+
+    argv:
+      --train_batch_size: 32
+
+    definition: ../benchmarks/super-slomo
