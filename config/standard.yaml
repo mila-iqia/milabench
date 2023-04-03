@@ -5,7 +5,6 @@ defaults: &defaults
 
   voir:
     options:
-      skip: 1
       stop: 60
       interval: "1s"
 
@@ -35,7 +34,28 @@ hf: &hf
   plan:
     method: per_gpu
 
+  tags:
+    - rl
+
   definition: ../benchmarks/huggingface
+
+
+timm: &timm
+  <<<: *defaults
+
+  group: timm
+  install_group: torch
+
+  plan:
+    method: per_gpu
+
+  tags:
+    - vision
+
+  argv:
+    --amp: true
+
+  definition: ../benchmarks/timm
 
 
 lightning: &lightning
@@ -51,6 +71,7 @@ lightning: &lightning
   definition: ../benchmarks/pytorch-lightning
 
   argv:
+    --gpus: -1
     --max_epochs: 1
     --max_steps: 100
     --limit_val_batches: 100
@@ -59,186 +80,93 @@ lightning: &lightning
     --accelerator: "auto"
     --enable_checkpointing: "False"
 
-##############
-# Benchmarks #
-##############
 
 benchmarks:
-  resnet50-fp16:
+  resnet50:
     <<<: *torchvision
     tags:
-      - vision
-      - classification
-      - cnn
-      - fp16
-      - e2e
+      - convnet
 
     argv:
       --model: resnet50
-      --batch-size: $(bs(gpu, mem, default=512))
-      --with-amp: True
-
-    mem:
-      slope: 82
-      intercept: 2728
-      multiple: 16
-
-  resnet50-fp32:
-    <<<: *torchvision
-    tags:
-      - vision
-      - classification
-      - cnn
-      - fp32
-      - e2e
-
-    argv:
-      --model: resnet50
-      --batch-size: $(bs(gpu, mem, default=256))
-      --with-amp: null
-
-    mem:
-      slope: 90
-      intercept: 2985
-      multiple: 16
 
   efficientnet_b4:
     <<<: *torchvision
     tags:
-      - vision
-      - classification
-      - cnn
-      - fp16
-      - e2e
-   
+      - convnet
+    
     argv:
       --model: efficientnet_b4
-      --batch-size: $(bs(gpu, mem, default=256))
-
-    mem:
-      slope: 115
-      intercept: 2765
-      multiple: 16
 
   efficientnet_b7:
     <<<: *torchvision
     tags:
-      - vision
-      - classification
-      - cnn
-      - fp16
-      - e2e
-
+      - convnet
+    
     argv:
       --model: efficientnet_b7
-      --batch-size: $(bs(gpu, mem, default=64))
-
-    mem:
-      slope: 264
-      intercept: 3236
-      multiple: 16
 
   convnext_large:
     <<<: *torchvision
     tags:
-      - vision
-      - classification
-      - cnn
-      - fp16
-      - e2e
+      - convnet
 
     argv:
       --model: convnext_large
-      --batch-size: $(bs(gpu, mem, default=64))
-
-    mem:
-      slope: 190
-      intercept: 4090
-      multiple: 16
 
   regnet_y_128gf:
     <<<: *torchvision
     tags:
-      - vision
-      - classification
-      - cnn
-      - fp32
-      - lstm
-      - e2e
+      - convnet
 
     argv:
       --model: regnet_y_128gf
-      --batch-size: $(bs(gpu, mem, default=32))
-      --with-amp: null
-
-    mem:
-      slope: 826
-      intercept: 5290
-      multiple: 16
 
   bert:
     <<<: *hf
     tags:
-      - nlp
-      - language-modeling
-      - transformer
-      - no-io
       - huggingface
+      - transformer
     argv:
       --model: "Bert"
-      --batch-size: $(bs(gpu, mem, default=16))
-    mem:
-      slope: 1000
-      intercept: 3774
-      multiple: 8
 
   t5:
     <<<: *hf
     tags:
-      - nlp
-      - language_modeling
-      - transformer
       - huggingface
-      - no-io
+      - transformer
     argv:
       --model: "T5"
-      --batch-size: $(bs(gpu, mem, default=16))
-    mem:
-      slope: 2683
-      intercept: 1916
-      multiple: 8
 
   reformer:
     <<<: *hf
     tags:
-      - nlp
-      - language-modeling
-      - transformer
       - huggingface
-      - no-io
+      - transformer
     argv:
       --model: "Reformer"
-      --batch-size: $(bs(gpu, mem, default=16))
-    mem:
-      slope: 385
-      intercept: 1464
-      multiple: 8
 
   resnet152:
-    <<<: *lightning
+    <<<: *timm
     tags:
-      - vision
-      - classification
       - convnet
+
+    plan:
+      method: njobs
+      n: 1
+
     argv:
-      --backbone: "resnet152"
-      --strategy: "ddp"
-      --precision: 32
-      --batch_size: $(bs(gpu, mem, default=12, multi_gpu=True))
-    mem:
-      slope: 4.23
-      intercept: 3323
-      multiple: 16
+      --model: resnet152
+
+  vit_l_32:
+    <<<: *timm
+
+    plan:
+      method: njobs
+      n: 1
+
+    argv:
+      --model: vit_large_patch32_224
 
   accelerate:
     <<<: *defaults
@@ -270,3 +198,12 @@ benchmarks:
     validation_split_percentage: 5
 
     definition: ../benchmarks/accelerate_opt
+
+  focalnet:
+    <<<: *timm
+
+    plan:
+      method: per_gpu
+
+    argv:
+      --model: focalnet_small_lrf

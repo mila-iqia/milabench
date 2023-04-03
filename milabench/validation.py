@@ -19,6 +19,7 @@ class ErrorValidation:
         self.short = short
         self.errors = defaultdict(PackError)
         self.failed = False
+        self.early_stop = False
 
     def __call__(self, data):
         pack = data.pack
@@ -30,14 +31,18 @@ class ErrorValidation:
         if data.event == "line" and data.pipe == "stderr":
             error.stderr.append(data.data)
 
+        elif data.event == "stop":
+            self.early_stop = True
+
         elif data.event == "error":
             info = data.data
             error.message = f'{info["type"]}: {info["message"]}'
 
         elif data.event == "end":
             info = data.data
-            error.code = info["return_code"]
-            self.failed = self.failed or error.code != 0
+            if not self.early_stop:
+                error.code = info["return_code"]
+                self.failed = self.failed or error.code != 0
 
     def end(self):
         """Print an error report and exit with an error code if any error were found"""
