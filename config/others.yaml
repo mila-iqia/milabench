@@ -6,30 +6,6 @@ defaults: &defaults
       stop: 60
       interval: "1s"
 
-
-lightning: &lightning
-  <<<: *defaults
-
-  group: lightning
-  install_group: torch
-
-  plan:
-    method: njobs
-    n: 1
-
-  definition: ../benchmarks/pytorch-lightning
-
-  argv:
-    --gpus: -1
-    --max_epochs: 1
-    --max_steps: 100
-    --limit_val_batches: 100
-    --devices: -1
-    --enable_progress_bar: "False"
-    --accelerator: "auto"
-    --enable_checkpointing: "False"
-
-
 sb3: &sb3
     <<<: *defaults
 
@@ -43,15 +19,6 @@ sb3: &sb3
 
 
 benchmarks:
-  vit_l_32:
-    <<<: *lightning
-    tags:
-      - convnet
-    argv:
-      --backbone: "vit_l_32"  # (larger model)
-      --strategy: "fsdp"  # Fully-Sharded Data-Parallel
-      --precision: 32
-
   ppo:
     <<<: *sb3
     tags:
