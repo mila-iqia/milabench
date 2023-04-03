@@ -30,10 +30,9 @@ def clone_with(cfg, new_cfg):
 @planning_method
 def per_gpu(cfg):
     ngpus = len(gpus)
-    if not gpus:
-        gpus = [{"device": 0, "selection_variable": "CPU_VISIBLE_DEVICE"}]
+    devices = gpus or [{"device": 0, "selection_variable": "CPU_VISIBLE_DEVICE"}]
 
-    for gpu in gpus:
+    for gpu in devices:
         gid = gpu["device"]
         gcfg = {
             "tag": [*cfg["tag"], f"D{gid}"],
