@@ -76,6 +76,7 @@ RUN milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABEN
 FROM init
 
 COPY --from=install /opt/anaconda /opt/anaconda
+ENV PATH=$CONDA_PATH/bin:$PATH
 COPY --from=prepare /milabench/envs /milabench/envs
 
 CMD ["milabench", "run"]
