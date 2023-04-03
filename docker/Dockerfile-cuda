@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04
+FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04 AS prepare
 
 # CUDA-11.8 Fix
 ENV LD_LIBRARY_PATH="/usr/local/cuda/targets/x86_64-linux/lib/:$LD_LIBRARY_PATH"
@@ -54,8 +54,7 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Install anaconda because milabench will need it later anyway
 RUN curl https://repo.anaconda.com/miniconda/Miniconda3-py39_23.1.0-1-Linux-x86_64.sh -o ~/miniconda.sh &&\
-    /bin/bash ~/miniconda.sh -b -p $CONDA_PATH &&\
-    rm ~/miniconda.sh
+    /bin/bash ~/miniconda.sh -b -p $CONDA_PATH
 ENV PATH=$CONDA_PATH/bin:$PATH
 
 
@@ -65,8 +64,7 @@ ENV PATH=$CONDA_PATH/bin:$PATH
 RUN python -m pip install -U pip            &&\
     python -m pip install -U setuptools     &&\
     python -m pip install -U poetry         &&\
-    python -m pip install -e /milabench/milabench/ &&\
-    python -m pip cache purge
+    python -m pip install -e /milabench/milabench/
 
 # Prepare bench
 # -------------
@@ -75,8 +73,27 @@ RUN python -m pip install -U pip            &&\
 ENV PIP_DEFAULT_TIMEOUT=800
 
 RUN milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
-    milabench prepare --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
-    python -m pip cache purge
+    milabench prepare --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
 
 
-# CMD milabench
+FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04
+
+# CUDA-11.8 Fix
+ENV LD_LIBRARY_PATH="/usr/local/cuda/targets/x86_64-linux/lib/:$LD_LIBRARY_PATH"
+RUN ln /usr/local/cuda/targets/x86_64-linux/lib/libnvrtc.so.11.8.89 /usr/local/cuda/targets/x86_64-linux/lib/libnvrtc.so
+
+COPY --from=prepare /opt/anaconda /opt/anaconda
+
+WORKDIR /milabench
+COPY . /milabench/milabench
+
+COPY --from=prepare /milabench/envs /milabench/envs
+
+ENV MILABENCH_GPU_ARCH=$ARCH
+ENV MILABENCH_CONFIG_NAME=$CONFIG
+ENV MILABENCH_CONFIG=/milabench/milabench/config/$MILABENCH_CONFIG_NAME
+ENV MILABENCH_BASE=/milabench/envs
+ENV MILABENCH_OUTPUT=/milabench/results/
+ENV MILABENCH_ARGS=""
+
+CMD ["milabench", "run"]
