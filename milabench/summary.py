@@ -12,6 +12,7 @@ def aggregate(run_data):
     config = None
     start = None
     end = None
+    early_stop = False
     for entry in run_data:
         event = entry["event"]
 
@@ -28,6 +29,9 @@ def aggregate(run_data):
 
         elif event == "line":
             omnibus[entry["pipe"]].append(entry["data"])
+
+        elif event == "stop":
+            early_stop = True
 
         elif event == "start":
             assert start is None
@@ -59,7 +63,7 @@ def aggregate(run_data):
 
     omnibus["walltime"] = [end["time"] - start["time"]]
 
-    success = (
+    success = early_stop or (
         end["return_code"] == 0
         and not any(isnan(loss) for loss in omnibus.get("loss", []))
         and bool(omnibus.get("train_rate", []))

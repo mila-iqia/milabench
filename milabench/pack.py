@@ -14,12 +14,11 @@ from typing import Sequence
 
 from nox.sessions import Session, SessionRunner
 
-from milabench.utils import assemble_options, make_constraints_file, relativize
-
 from .alt_async import run, send
 from .fs import XPath
 from .merge import merge
 from .structs import BenchLogEntry
+from .utils import assemble_options, make_constraints_file, relativize
 
 
 class PackageCore:
@@ -216,7 +215,7 @@ class BasePackage:
         """
         return await self.execute("python", *args, **kwargs)
 
-    async def voir(self, script, args=(), cwd=None):
+    async def voir(self, script, args=(), wrapper=[], cwd=None, **kwargs):
         """Launch a script using ``voir``.
 
         This runs:
@@ -253,11 +252,13 @@ class BasePackage:
         else:
             voirargs = ()
 
-        command = ["voir", *voirargs, script, *args]
+        command = [*wrapper, "voir", *voirargs, script, *args]
+
         return await self.execute(
             *command,
             setsid=True,
             cwd=cwd,
+            **kwargs,
         )
 
 

@@ -41,6 +41,24 @@ hf: &hf
   definition: ../benchmarks/huggingface
 
 
+timm: &timm
+  <<<: *defaults
+
+  group: timm
+  install_group: torch
+
+  plan:
+    method: per_gpu
+
+  tags:
+    - vision
+
+  argv:
+    --amp: true
+
+  definition: ../benchmarks/timm
+
+
 lightning: &lightning
   <<<: *defaults
 
@@ -136,16 +154,28 @@ benchmarks:
       --model: "Reformer"
 
   resnet152:
-    <<<: *lightning
+    <<<: *timm
     tags:
       - convnet
-      - no-rocm
+
+    plan:
+      method: njobs
+      n: 1
 
     argv:
-      --backbone: "resnet152"
-      --strategy: "dp"
-      --precision: 32
-      --batch_size: 2048
+      --model: resnet152
+      --batch-size: 32
+
+  vit_l_32:
+    <<<: *timm
+
+    plan:
+      method: njobs
+      n: 1
+
+    argv:
+      --model: vit_large_patch32_224
+      --batch-size: 32
 
   accelerate:
     <<<: *defaults
@@ -174,3 +204,13 @@ benchmarks:
     validation_split_percentage: 5
 
     definition: ../benchmarks/accelerate_opt
+
+  focalnet:
+    <<<: *timm
+
+    plan:
+      method: per_gpu
+
+    argv:
+      --model: focalnet_small_lrf
+      --batch-size: 8

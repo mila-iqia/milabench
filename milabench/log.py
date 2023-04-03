@@ -56,6 +56,7 @@ class TerminalFormatter:
     def __init__(self):
         self.consoles = {}
         self.error_happened = set()
+        self.early_stop = False
 
     def console(self, tag):
         if tag not in self.consoles:
@@ -89,6 +90,9 @@ class TerminalFormatter:
                 T.gray(f'[at {datetime.fromtimestamp(data["time"])}]'),
             )
 
+        elif event == "stop":
+            self.early_stop = True
+
         elif event == "error":
             self.error_happened.add(tag)
             if data["message"]:
@@ -103,7 +107,9 @@ class TerminalFormatter:
             rc = data.get(
                 "return_code",
             )
-            wrong = (tag in self.error_happened) or data["return_code"] != 0
+            wrong = not self.early_stop and (
+                (tag in self.error_happened) or data["return_code"] != 0
+            )
             if wrong:
                 rc = data["return_code"] or "ERROR"
                 console.print(

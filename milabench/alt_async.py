@@ -124,10 +124,7 @@ class FeedbackEventLoop(type(asyncio.get_event_loop())):
                         },
                         **info,
                     )
-                    if getattr(proc, "did_setsid", False):
-                        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-                    else:
-                        proc.kill()
+                    destroy(proc)
                     yield mx.constructor(
                         event="end",
                         data={
@@ -157,6 +154,15 @@ def feedback_runner(gen):
     return wrapped
 
 
+def destroy(*processes):
+    for proc in processes:
+        if getattr(proc, "did_setsid", False):
+            os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+        else:
+            proc.kill()
+        # TODO: send SIGKILL after a certain time if the process is not dead
+
+
 @feedback_runner
 def run(argv, setsid=None, info={}, process_accumulator=None, **kwargs):
     if setsid:
@@ -169,7 +175,10 @@ def run(argv, setsid=None, info={}, process_accumulator=None, **kwargs):
             proc.did_setsid = True
     loop = asyncio.get_running_loop()
     loop._multiplexers.append(mx)
-    yield from mx
+    for entry in mx:
+        if entry and entry.event == "stop":
+            destroy(*mx.processes)
+        yield entry
 
 
 def proceed(coro):
