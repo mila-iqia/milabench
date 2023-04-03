@@ -3,6 +3,8 @@ defaults: &defaults
 
   max_duration: 600
 
+  benchmeta: meta.yaml
+
   voir:
     options:
       skip: 1
@@ -57,30 +59,6 @@ timm: &timm
     --amp: true
 
   definition: ../benchmarks/timm
-
-
-lightning: &lightning
-  <<<: *defaults
-
-  group: lightning
-  install_group: torch
-
-  plan:
-    method: njobs
-    n: 1
-
-  definition: ../benchmarks/pytorch-lightning
-
-  argv:
-    --gpus: -1
-    --max_epochs: 1
-    --max_steps: 100
-    --limit_val_batches: 100
-    --devices: -1
-    --enable_progress_bar: "False"
-    --accelerator: "auto"
-    --enable_checkpointing: "False"
-
 
 benchmarks:
   resnet50:

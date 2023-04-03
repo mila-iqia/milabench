@@ -5,6 +5,9 @@ from .merge import self_merge
 
 
 def load_meta(config_base, metafile):
+    if metafile is None:
+        return dict()
+
     with open(config_base / metafile) as cf:
         config = yaml.safe_load(cf)
         
