@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04 AS prepare
+FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04 AS init
 
 # CUDA-11.8 Fix
 ENV LD_LIBRARY_PATH="/usr/local/cuda/targets/x86_64-linux/lib/:$LD_LIBRARY_PATH"
@@ -30,6 +30,8 @@ ENV CONDA_PATH=/opt/anaconda
 WORKDIR /milabench
 COPY . /milabench/milabench/
 
+
+FROM init AS install
 
 # Install Dependencies
 # --------------------
@@ -69,6 +71,8 @@ RUN python -m pip install -U pip            &&\
 # Prepare bench
 # -------------
 
+FROM install AS prepare
+
 # pip times out often when downloading pytorch
 ENV PIP_DEFAULT_TIMEOUT=800
 
@@ -76,24 +80,9 @@ RUN milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABEN
     milabench prepare --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
 
 
-FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04
+FROM init
 
-# CUDA-11.8 Fix
-ENV LD_LIBRARY_PATH="/usr/local/cuda/targets/x86_64-linux/lib/:$LD_LIBRARY_PATH"
-RUN ln /usr/local/cuda/targets/x86_64-linux/lib/libnvrtc.so.11.8.89 /usr/local/cuda/targets/x86_64-linux/lib/libnvrtc.so
-
-COPY --from=prepare /opt/anaconda /opt/anaconda
-
-WORKDIR /milabench
-COPY . /milabench/milabench
-
+COPY --from=install /opt/anaconda /opt/anaconda
 COPY --from=prepare /milabench/envs /milabench/envs
-
-ENV MILABENCH_GPU_ARCH=$ARCH
-ENV MILABENCH_CONFIG_NAME=$CONFIG
-ENV MILABENCH_CONFIG=/milabench/milabench/config/$MILABENCH_CONFIG_NAME
-ENV MILABENCH_BASE=/milabench/envs
-ENV MILABENCH_OUTPUT=/milabench/results/
-ENV MILABENCH_ARGS=""
 
 CMD ["milabench", "run"]
