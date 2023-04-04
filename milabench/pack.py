@@ -439,7 +439,9 @@ class Package(BasePackage):
         if self.prepare_script is not None:
             prep = self.dirs.code / self.prepare_script
             if prep.exists():
-                await self.execute(prep, *self.argv, env=self.make_env(), cwd=prep.parent)
+                await self.execute(
+                    prep, *self.argv, env=self.make_env(), cwd=prep.parent
+                )
 
     async def run(self):
         """Start the benchmark and return the running process.
@@ -469,6 +471,8 @@ class Package(BasePackage):
             )
 
         if main.is_dir():
-            return await self.voir(["-m", self.main_script], args=self.argv, cwd=main.parent)
+            return await self.voir(
+                ["-m", self.main_script], args=self.argv, cwd=main.parent
+            )
         else:
             return await self.voir(self.main_script, args=self.argv, cwd=main.parent)

@@ -168,6 +168,11 @@ def make_report(
     sources=None,
     errdata=None,
 ):
+    if weights:
+        weights = {
+            name: value for name, value in weights.items() if value.get("weight", 0)
+        }
+
     all_keys = list(
         sorted(
             {

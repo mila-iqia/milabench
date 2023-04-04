@@ -79,30 +79,6 @@ def merge(a: object, b):
         return cleanup(b)
 
 
-##############
-# self_merge #
-##############
-
-
-@ovld
-def self_merge(self, d: dict):
-    d = {k: self(v) for k, v in d.items()}
-    if "<<<" in d:
-        m = d.pop("<<<")
-        d = merge(m, d)
-    return d
-
-
-@ovld
-def self_merge(self, li: list):
-    return list(map(self, li))
-
-
-@ovld
-def self_merge(self, x):
-    return x
-
-
 #############################
 # YAML parser modifications #
 #############################

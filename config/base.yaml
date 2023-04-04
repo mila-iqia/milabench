@@ -1,0 +1,209 @@
+_defaults:
+  install_variant: "${arch}"
+  max_duration: 600
+  voir:
+    options:
+      stop: 60
+      interval: "1s"
+
+_torchvision:
+  inherits: _defaults
+  definition: ../benchmarks/torchvision
+  group: torchvision
+  install_group: torch
+  tags:
+    - vision
+  plan:
+    method: per_gpu
+  argv:
+    --with-amp: true
+    --lr: 0.01
+
+_hf:
+  inherits: _defaults
+  definition: ../benchmarks/huggingface
+  group: hf
+  install_group: torch
+  tags:
+    - huggingface
+    - transformer
+  plan:
+    method: per_gpu
+
+_timm:
+  inherits: _defaults
+  definition: ../benchmarks/timm
+  group: timm
+  install_group: torch
+  tags:
+    - vision
+  plan:
+    method: per_gpu
+  argv:
+    --amp: true
+
+_sb3:
+  inherits: _defaults
+  definition: ../benchmarks/stable_baselines3
+  group: sb3
+  tags:
+    - rl
+  plan:
+    method: njobs
+    n: 1
+
+resnet50:
+  inherits: _torchvision
+  tags:
+    - convnet
+  argv:
+    --model: resnet50
+
+efficientnet_b4:
+  inherits: _torchvision
+  tags:
+    - convnet
+  argv:
+    --model: efficientnet_b4
+
+efficientnet_b7:
+  inherits: _torchvision
+  tags:
+    - convnet
+  argv:
+    --model: efficientnet_b7
+
+convnext_large:
+  inherits: _torchvision
+  tags:
+    - convnet
+  argv:
+    --model: convnext_large
+
+regnet_y_128gf:
+  inherits: _torchvision
+  tags:
+    - convnet
+  argv:
+    --model: regnet_y_128gf
+
+bert:
+  inherits: _hf
+  argv:
+    --model: "Bert"
+
+t5:
+  inherits: _hf
+  argv:
+    --model: "T5"
+
+reformer:
+  inherits: _hf
+  argv:
+    --model: "Reformer"
+
+whisper:
+  inherits: _hf
+  tags:
+    - audio
+  argv:
+    --model: "Whisper"
+
+resnet152:
+  inherits: _timm
+  tags:
+    - convnet
+  plan:
+    method: njobs
+    n: 1
+  argv:
+    --model: resnet152
+
+vit_l_32:
+  inherits: _timm
+  plan:
+    method: njobs
+    n: 1
+  argv:
+    --model: vit_large_patch32_224
+
+accelerate:
+  inherits: _defaults
+  definition: ../benchmarks/accelerate_opt
+  install_group: torch
+  plan:
+    method: njobs
+    n: 1
+  # This is for single-node
+  manager_addr: "127.0.0.1"
+  manager_port: 10000
+  num_processes: 2
+  cpus_per_gpu: 8
+  # model_name: "facebook/opt-350m"
+  model_name: "facebook/opt-2.7b"
+  #model_name: "facebook/opt-1.3b"
+  #model_name: "facebook/opt-125m"
+  gradient_accumulation_steps: 1
+  per_gpu_batch_size: 1
+  max_train_steps: 100
+  dataset_name: "wikitext"
+  dataset_config_name: "wikitext-103-v1"
+  validation_split_percentage: 5
+
+focalnet:
+  inherits: _timm
+  plan:
+    method: per_gpu
+  argv:
+    --model: focalnet_small_lrf
+
+stargan:
+  inherits: _defaults
+  definition: ../benchmarks/stargan
+  group: stargan
+  install_group: torch
+  plan:
+    method: per_gpu
+  argv:
+    --image_size: 512
+    --c_dim: 5
+    --batch_size: 16
+
+super-slomo:
+  inherits: _defaults
+  definition: ../benchmarks/super-slomo
+  group: super-slomo
+  install_group: torch
+  plan:
+    method: per_gpu
+  argv:
+    --train_batch_size: 32
+
+ppo:
+  inherits: _sb3
+  argv:
+    --algo: ppo
+    --env: HalfCheetahBulletEnv-v0
+    -n: '-1'
+    --num-threads: '-1'
+    --seed: '0'
+    --vec-env: subproc
+    --device: auto
+    --: [-params, n_envs:16, n_steps:512, n_epochs:20, n_timesteps:50000]
+
+td3:
+  inherits: _sb3
+  argv:
+    --algo: td3
+    --env: HalfCheetahBulletEnv-v0 # Default: CartPole-v1
+    --n-eval-envs: '1'
+    --n-timesteps: '50000' # Default: '-1'
+    --num-threads: '-1'
+    --log-interval: '-1'
+    --eval-episodes: '5'
+    --save-freq: '-1'
+    --seed: '0' # Default: -1
+    --vec-env: subproc # Default: dummy
+    --device: auto
+    --n-trials: '10' # Default: 500
+    --n-jobs: '1'
