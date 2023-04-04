@@ -117,7 +117,11 @@ class MultiPackage:
         for pack in self.packs.values():
             pack.phase = "pin"
             igrp = pack.config["install_group"]
+            ivar = pack.config["install_variant"]
+            ivar_constraints:XPath = pack.dirs.constraints / f"{ivar}.txt"
             base_reqs = pack.requirements_map().keys()
+            if ivar_constraints.exists():
+                constraints = {ivar_constraints, *constraints}
             groups[igrp].update({req: pack for req in base_reqs})
 
         groups = {
