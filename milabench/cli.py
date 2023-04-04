@@ -175,6 +175,7 @@ def _get_multipack(
         keys = selection_keys(defn)
         return (
             defn["enabled"]
+            and not defn["name"].startswith("_")
             and defn.get("definition", None)
             and (not select or (keys & select))
             and (not exclude or not (keys & exclude))
