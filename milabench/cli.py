@@ -17,7 +17,7 @@ from milabench.utils import blabla
 from milabench.validation import ErrorValidation
 
 from .compare import compare, fetch_runs
-from .config import build_config, parse_config
+from .config import build_config
 from .fs import XPath
 from .log import (
     DataReporter,
@@ -574,7 +574,7 @@ class Main:
         # [positional]
         config_file: Option & str = None
 
-        config = parse_config(config_file)
+        config = _get_multipack(config, return_config=True)
         config_file = XPath(config["defaults"]["config_file"])
         config_base = XPath(config["defaults"]["config_base"])
         benchmarks = config["benchmarks"]
