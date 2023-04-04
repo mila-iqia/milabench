@@ -261,6 +261,8 @@ def run_sync(coro, terminal=True):
 
 class Main:
     def run():
+        """Run the benchmarks."""
+
         # Name of the run
         run_name: Option = None
 
@@ -326,6 +328,8 @@ class Main:
         return success
 
     def prepare():
+        """Prepare a benchmark: download datasets, weights etc."""
+
         mp = get_multipack(run_name="prepare.{time}")
 
         # On error show full stacktrace
@@ -344,6 +348,8 @@ class Main:
         )
 
     def install():
+        """Install the benchmarks' dependencies."""
+
         # Force install
         force: Option & bool = False
 
@@ -376,6 +382,8 @@ class Main:
         )
 
     def pin():
+        """Pin the benchmarks' dependencies."""
+
         # Extra args to pass to pip-compile
         # [nargs: --]
         pip_compile: Option = tuple()
@@ -421,6 +429,8 @@ class Main:
         )
 
     def dev():
+        """Create a shell in a benchmark's environment for development."""
+
         # The name of the benchmark to develop
         select: Option & str
 
@@ -439,6 +449,8 @@ class Main:
         )
 
     def summary():
+        """Produce a JSON summary of a previous run."""
+
         # Directory(ies) containing the run data
         # [positional: +]
         runs: Option = []
@@ -457,29 +469,30 @@ class Main:
             print(json.dumps(summary, indent=4))
 
     def compare():
-        """Compare all runs with each other
-        Parameters
-        ----------
-        folder: str
-            Folder where milabench results are stored
-        last: int
-            Number of runs to compare i.e 3 means the 3 latest runs only
-        metric: str
-            Metric to compare
-        stat: str
-            statistic name to compare
-        Examples
-        --------
-        >>> milabench compare results/ --last 3 --metric train_rate --stat median
-                                               |   rufidoko |   sokilupa
-                                               | 2023-02-23 | 2023-03-09
-        bench                |          metric |   16:16:31 |   16:02:53
-        ----------------------------------------------------------------
-        bert                 |      train_rate |     243.05 |     158.50
-        convnext_large       |      train_rate |     210.11 |     216.23
-        dlrm                 |      train_rate |  338294.94 |  294967.41
-        efficientnet_b0      |      train_rate |     223.56 |     223.48
-        """
+        """Compare all runs with each other."""
+
+        # Parameters
+        # ----------
+        # folder: str
+        #     Folder where milabench results are stored
+        # last: int
+        #     Number of runs to compare i.e 3 means the 3 latest runs only
+        # metric: str
+        #     Metric to compare
+        # stat: str
+        #     statistic name to compare
+        # Examples
+        # --------
+        # >>> milabench compare results/ --last 3 --metric train_rate --stat median
+        #                                        |   rufidoko |   sokilupa
+        #                                        | 2023-02-23 | 2023-03-09
+        # bench                |          metric |   16:16:31 |   16:02:53
+        # ----------------------------------------------------------------
+        # bert                 |      train_rate |     243.05 |     158.50
+        # convnext_large       |      train_rate |     210.11 |     216.23
+        # dlrm                 |      train_rate |  338294.94 |  294967.41
+        # efficientnet_b0      |      train_rate |     223.56 |     223.48
+
         # [positional: ?]
         folder: Option = None
 
@@ -504,24 +517,25 @@ class Main:
         compare(runs, last, metric, stat)
 
     def report():
-        """Generate a report aggregating all runs together into a final report
-        Examples
-        --------
-        >>> milabench report --runs results/
-        Source: /home/newton/work/milabench/milabench/../tests/results
-        =================
-        Benchmark results
-        =================
-                           n fail       perf   perf_adj   std%   sem%% peak_memory
-        bert               2    0     201.06     201.06  21.3%   8.7%          -1
-        convnext_large     2    0     198.62     198.62  19.7%   2.5%       29878
-        td3                2    0   23294.73   23294.73  13.6%   2.1%        2928
-        vit_l_32           2    1     548.09     274.04   7.8%   0.8%        9771
-        <BLANKLINE>
-        Errors
-        ------
-        1 errors, details in HTML report.
-        """
+        """Generate a report aggregating all runs together into a final report."""
+
+        # Examples
+        # --------
+        # >>> milabench report --runs results/
+        # Source: /home/newton/work/milabench/milabench/../tests/results
+        # =================
+        # Benchmark results
+        # =================
+        #                    n fail       perf   perf_adj   std%   sem%% peak_memory
+        # bert               2    0     201.06     201.06  21.3%   8.7%          -1
+        # convnext_large     2    0     198.62     198.62  19.7%   2.5%       29878
+        # td3                2    0   23294.73   23294.73  13.6%   2.1%        2928
+        # vit_l_32           2    1     548.09     274.04   7.8%   0.8%        9771
+        # <BLANKLINE>
+        # Errors
+        # ------
+        # 1 errors, details in HTML report.
+
         # Runs directory
         # [action: append]
         runs: Option = []
@@ -573,6 +587,8 @@ class Main:
             run_sync(pack.pip_install(*args))
 
     def container():
+        """Build a container image (might not work properly at the moment)."""
+
         # Configuration file
         # [positional]
         config_file: Option & str = None
