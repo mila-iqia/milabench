@@ -427,3 +427,40 @@ dlrm:
     --test-mini-batch-size: 16384
     --test-num-workers: 0
     --use-gpu: true
+
+rwkv:
+  inherits: _defaults
+  definition: ../benchmarks/rwkv
+  group: rwkv
+  install_group: torch
+  tags:
+    - llm
+    - rnn
+    - no-rocm
+  plan:
+    method: per_gpu
+  argv:
+    --data_type: "dummy"
+    --ctx_len: 128
+    --epoch_steps: 1000
+    --epoch_count: 20
+    --epoch_begin: 0
+    --epoch_save: 0
+    --micro_bsz: 16
+    --n_layer: 12
+    --n_embd: 768
+    --pre_ffn: 0
+    --head_qk: 0
+    --lr_init: 6e-4
+    --lr_final: 1e-5
+    --warmup_steps: 0
+    --beta1: 0.9
+    --beta2: 0.99
+    --adam_eps: 1e-8
+    --accelerator: "gpu"
+    --devices: 1
+    --precision: "tf32"
+    --strategy: "ddp_find_unused_parameters_false"
+    --grad_cp: 0
+    --random_seed: 1234
+    --enable_progress_bar: "False"
