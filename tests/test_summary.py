@@ -1,7 +1,3 @@
-import json
-
-import pytest
-
 from milabench.cli import main
 
 

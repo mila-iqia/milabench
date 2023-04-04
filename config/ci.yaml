@@ -1,230 +1,54 @@
-defaults: &defaults
-  install_variant: "{arch}"
+include: standard2.yaml
 
-  max_duration: 600
-
+_defaults:
   voir:
     options:
       skip: 1
       stop: 10
-      interval: "1s"
 
-
-torchvision: &torchvision
-  <<<: *defaults
-
-  group: torchvision
-  install_group: torch
-
-  plan:
-    method: per_gpu
-
+efficientnet_b4:
   argv:
-    --with-amp: true
-    --lr: 0.01
+    --batch-size: 32
 
-  definition: ../benchmarks/torchvision
-
-
-hf: &hf
-  <<<: *defaults
-
-  group: hf
-  install_group: torch
-
-  plan:
-    method: per_gpu
-
-  tags:
-    - rl
-
-  definition: ../benchmarks/huggingface
-
-
-timm: &timm
-  <<<: *defaults
-
-  group: timm
-  install_group: torch
-
-  plan:
-    method: per_gpu
-
-  tags:
-    - vision
-
+efficientnet_b7:
   argv:
-    --amp: true
+    --batch-size: 32
 
-  definition: ../benchmarks/timm
+convnext_large:
+  argv:
+    --batch-size: 16
 
-benchmarks:
-  resnet50:
-    <<<: *torchvision
-    tags:
-      - convnet
+regnet_y_128gf:
+  argv:
+    --batch-size: 4
 
-    argv:
-      --model: resnet50
+bert:
+  argv:
+    --batch-size: 8
 
-  efficientnet_b4:
-    <<<: *torchvision
-    tags:
-      - convnet
-    
-    argv:
-      --model: efficientnet_b4
-      --batch-size: 32
+t5:
+  argv:
+    --batch-size: 2
 
-  efficientnet_b7:
-    <<<: *torchvision
-    tags:
-      - convnet
-    
-    argv:
-      --model: efficientnet_b7
-      --batch-size: 32
+resnet152:
+  argv:
+    --batch-size: 32
 
-  convnext_large:
-    <<<: *torchvision
-    tags:
-      - convnet
+vit_l_32:
+  argv:
+    --batch-size: 32
 
-    argv:
-      --model: convnext_large
-      --batch-size: 16
+accelerate:
+  model_name: "facebook/bart-base"
 
-  regnet_y_128gf:
-    <<<: *torchvision
-    tags:
-      - convnet
+focalnet:
+  argv:
+    --batch-size: 8
 
-    argv:
-      --model: regnet_y_128gf
-      --batch-size: 4
+stargan:
+  argv:
+    --batch_size: 2
 
-  bert:
-    <<<: *hf
-    tags:
-      - huggingface
-      - transformer
-    argv:
-      --model: "Bert"
-      --batch-size: 8
-
-  t5:
-    <<<: *hf
-    tags:
-      - huggingface
-      - transformer
-    argv:
-      --model: "T5"
-      --batch-size: 2
-
-  reformer:
-    <<<: *hf
-    tags:
-      - huggingface
-      - transformer
-    argv:
-      --model: "Reformer"
-
-  whisper:
-    <<<: *hf
-    tags:
-      - huggingface
-      - transformer
-      - audio
-    argv:
-      --model: "Whisper"
-
-  resnet152:
-    <<<: *timm
-    tags:
-      - convnet
-
-    plan:
-      method: njobs
-      n: 1
-
-    argv:
-      --model: resnet152
-      --batch-size: 32
-
-  vit_l_32:
-    <<<: *timm
-
-    plan:
-      method: njobs
-      n: 1
-
-    argv:
-      --model: vit_large_patch32_224
-      --batch-size: 32
-
-  accelerate:
-    <<<: *defaults
-
-    install_group: torch
-
-    plan:
-      method: njobs
-      n: 1
-
-    # This is for single-node
-    manager_addr: "127.0.0.1"
-    manager_port: 10000
-
-    num_processes: 2
-    cpus_per_gpu: 8
-
-    model_name: "facebook/bart-base"
-
-    gradient_accumulation_steps: 1
-    per_gpu_batch_size: 1
-    max_train_steps: 100
-
-    dataset_name: "wikitext"
-    dataset_config_name: "wikitext-103-v1"
-    validation_split_percentage: 5
-
-    definition: ../benchmarks/accelerate_opt
-
-  focalnet:
-    <<<: *timm
-
-    plan:
-      method: per_gpu
-
-    argv:
-      --model: focalnet_small_lrf
-      --batch-size: 8
-
-  stargan:
-    <<<: *defaults
-
-    plan:
-      method: per_gpu
-
-    group: stargan
-    install_group: torch
-    argv:
-      --image_size: 512
-      --c_dim: 5
-      --batch_size: 2
-
-    definition: ../benchmarks/stargan
-
-  super-slomo:
-    <<<: *defaults
-
-    group: super-slomo
-    install_group: torch
-
-    plan:
-      method: per_gpu
-
-    argv:
-      --train_batch_size: 8
-
-    definition: ../benchmarks/super-slomo
+super-slomo:
+  argv:
+    --train_batch_size: 8

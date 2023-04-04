@@ -1,27 +1,11 @@
 #
 # This configuration fails because the argument has the wrong type
 #
-defaults: &defaults
-  dirs:
-    code: code/{name}
-    venv: venv/{name}
-    data: data
-    runs: runs
-    extra: extra/{name}
-
-  venv:
-    type: virtualenv
-
-
-benchmarks:
-  benchio:
-    <<<: *defaults
-
-    plan:
-      method: njobs
-      n: 1
-
-    argv:
-      --start: 0
-
-    definition: ../yoshua-benchio
+benchio:
+  inherits: _defaults
+  definition: ../yoshua-benchio
+  plan:
+    method: njobs
+    n: 1
+  argv:
+    --start: 0

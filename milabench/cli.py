@@ -6,11 +6,10 @@ import subprocess
 import sys
 import tempfile
 import traceback
-from ast import literal_eval
-from collections import defaultdict
 from datetime import datetime
 
 from coleo import Option, config as configuration, default, run_cli, tooled
+from omegaconf import OmegaConf
 from voir.instruments.gpu import get_gpu_info
 
 from milabench.alt_async import proceed
@@ -18,7 +17,7 @@ from milabench.utils import blabla
 from milabench.validation import ErrorValidation
 
 from .compare import compare, fetch_runs
-from .config import parse_config
+from .config import build_config, parse_config
 from .fs import XPath
 from .log import (
     DataReporter,
@@ -27,6 +26,7 @@ from .log import (
     TerminalFormatter,
     TextReporter,
 )
+from .merge import merge
 from .multi import MultiPackage
 from .report import make_report
 from .summary import aggregate, make_summary
@@ -52,7 +52,7 @@ def get_pack(defn):
 
 
 @tooled
-def _get_multipack(run_name=None, overrides=[]):
+def get_multipack(run_name=None, overrides={}):
     # Configuration file
     config: Option & str = None
 
@@ -72,14 +72,20 @@ def _get_multipack(run_name=None, overrides=[]):
     # [action: append]
     override: Option = []
 
-    return get_multipack(
+    if override:
+        overrides = merge(
+            overrides,
+            OmegaConf.to_object(OmegaConf.from_dotlist(override)),
+        )
+
+    return _get_multipack(
         config,
         base,
         use_current_env,
         select,
         exclude,
         run_name=run_name,
-        overrides=[*overrides, *override],
+        overrides=overrides,
     )
 
 
@@ -94,32 +100,40 @@ def selection_keys(defn):
     return sel
 
 
-def get_multipack(
-    config,
+def get_base_defaults(base, arch="none", run_name="none"):
+    return {
+        "_defaults": {
+            "dirs": {
+                "base": base,
+                "venv": "${dirs.base}/venv/${install_group}",
+                "data": "${dirs.base}/data",
+                "runs": "${dirs.base}/runs",
+                "extra": "${dirs.base}/extra/${group}",
+                "cache": "${dirs.base}/cache",
+            },
+            "arch": arch,
+            "group": "${name}",
+            "install_group": "${group}",
+            "run_name": run_name,
+            "enabled": True,
+        }
+    }
+
+
+def _get_multipack(
+    config_path,
     base=None,
     use_current_env=False,
     select="",
     exclude="",
     run_name=None,
-    overrides=[],
+    overrides={},
+    return_config=False,
 ):
-    override_dict = defaultdict(list)
-    for override in overrides:
-        sel, value = override.split("=", 1)
-        try:
-            value = literal_eval(value)
-        except ValueError:
-            pass
-        sel, *fields = sel.split(".")
-        override_dict[sel].append((fields, value))
+    if config_path is None:
+        config_path = os.environ.get("MILABENCH_CONFIG", None)
 
-    arch_guess = os.environ.get("MILABENCH_GPU_ARCH", None)
-    arch = get_gpu_info(arch_guess)["arch"]
-
-    if config is None:
-        config = os.environ.get("MILABENCH_CONFIG", None)
-
-    if config is None:
+    if config_path is None:
         sys.exit("Error: CONFIG argument not provided and no $MILABENCH_CONFIG")
 
     if select:
@@ -131,77 +145,48 @@ def get_multipack(
     if base is None:
         base = os.environ.get("MILABENCH_BASE", None)
 
-    base = base and os.path.abspath(base)
-
-    config = parse_config(config, base)
-
-    if not config["defaults"]["dirs"].get("base", None):
+    if not base:
         sys.exit("Error: Neither --base nor $MILABENCH_BASE are set.")
 
-    objects = {}
+    base = base and os.path.abspath(os.path.expanduser(base))
+
+    if use_current_env:
+        venv = os.environ.get("CONDA_PREFIX", None)
+        if venv is None:
+            venv = os.environ.get("VIRTUAL_ENV", None)
+        if venv is None:
+            print("Could not find virtual environment", file=sys.stderr)
+            sys.exit(1)
+        overrides = merge(overrides, {"*": {"dirs": {"venv": venv}}})
+
+    arch_guess = os.environ.get("MILABENCH_GPU_ARCH", None)
+    arch = get_gpu_info(arch_guess)["arch"]
 
     if run_name is None:
         run_name = blabla() + ".{time}"
     now = str(datetime.today()).replace(" ", "_")
     run_name = run_name.format(time=now)
 
-    for name, defn in config["benchmarks"].items():
-        defn.setdefault("name", name)
-        defn["run_name"] = run_name
-        defn.setdefault("arch", arch)
-        defn["group"] = defn.get("group", "{name}").format(**defn)
-        defn["install_group"] = defn.get("install_group", "{group}").format(**defn)
-        defn["install_variant"] = defn.get("install_variant", "").format(**defn)
+    base_defaults = get_base_defaults(base=base, arch=arch, run_name=run_name)
 
+    config = build_config(base_defaults, config_path, overrides)
+
+    def is_selected(defn):
         keys = selection_keys(defn)
+        return (
+            defn["enabled"]
+            and defn.get("definition", None)
+            and (not select or (keys & select))
+            and (not exclude or not (keys & exclude))
+        )
 
-        if select and not (keys & select):
-            continue
-        if exclude and (keys & exclude):
-            continue
-
-        defn["tag"] = [defn["name"]]
-
-        dirs = defn.setdefault("dirs", {})
-
-        if use_current_env:
-            venv = os.environ.get("CONDA_PREFIX", None)
-            if venv is None:
-                venv = os.environ.get("VIRTUAL_ENV", None)
-            if venv is None:
-                print("Could not find virtual environment", file=sys.stderr)
-                sys.exit(1)
-            dirs["venv"] = venv
-
-        dirs.setdefault("venv", "venv/{install_group}")
-        dirs.setdefault("data", "data")
-        dirs.setdefault("runs", "runs")
-        dirs.setdefault("extra", "extra/{group}")
-        dirs.setdefault("cache", "cache")
-
-        def _format_path(pth):
-            formatted = pth.format(**defn)
-            xpth = XPath(formatted).expanduser()
-            if formatted.startswith("."):
-                xpth = xpth.absolute()
-            return xpth
-
-        dirs = {k: _format_path(v) for k, v in dirs.items()}
-        dirs = {
-            k: str(v if v.is_absolute() else dirs["base"] / v) for k, v in dirs.items()
-        }
-        defn["dirs"] = dirs
-
-        for k in keys:
-            for override, value in override_dict[k]:
-                curr = defn
-                for field in override[:-1]:
-                    curr = curr[field]
-                curr[override[-1]] = value
-
-        objects[name] = get_pack(defn)
-
-    return MultiPackage(objects)
+    selected_config = {name: defn for name, defn in config.items() if is_selected(defn)}
+    if return_config:
+        return selected_config
+    else:
+        return MultiPackage(
+            {name: get_pack(defn) for name, defn in selected_config.items()}
+        )
 
 
 def _read_reports(*runs):
@@ -295,7 +280,7 @@ class Main:
             "no": None,
         }[dash]
 
-        mp = _get_multipack(run_name=run_name)
+        mp = get_multipack(run_name=run_name)
 
         success = run_with_loggers(
             mp.do_run(repeat=repeat),
@@ -338,7 +323,7 @@ class Main:
         return success
 
     def prepare():
-        mp = _get_multipack(run_name="prepare.{time}")
+        mp = get_multipack(run_name="prepare.{time}")
 
         # On error show full stacktrace
         fulltrace: Option & bool = False
@@ -365,15 +350,15 @@ class Main:
         # Install variant
         variant: Option & str = None
 
-        overrides = [f"*.install_variant='{variant}'"] if variant else []
+        overrides = {"*": {"install_variant": variant}} if variant else {}
 
         if force:
-            mp = _get_multipack(run_name="install.{time}", overrides=overrides)
+            mp = get_multipack(run_name="install.{time}", overrides=overrides)
             for pack in mp.packs.values():
                 pack.install_mark_file.rm()
                 pack.dirs.venv.rm()
 
-        mp = _get_multipack(run_name="install.{time}", overrides=overrides)
+        mp = get_multipack(run_name="install.{time}", overrides=overrides)
 
         return run_with_loggers(
             mp.do_install(),
@@ -400,7 +385,7 @@ class Main:
         # Install variant
         variant: Option & str = None
 
-        overrides = [f"*.install_variant='{variant}'"] if variant else []
+        overrides = {"*": {"install_variant": variant}} if variant else {}
 
         if "-h" in pip_compile or "--help" in pip_compile:
             out = (
@@ -420,7 +405,7 @@ class Main:
             print("\n".join(out))
             exit(0)
 
-        mp = _get_multipack(run_name="pin", overrides=overrides)
+        mp = get_multipack(run_name="pin", overrides=overrides)
 
         return run_with_loggers(
             mp.do_pin(pip_compile_args=pip_compile, constraints=constraints),
@@ -436,7 +421,7 @@ class Main:
         # The name of the benchmark to develop
         select: Option & str
 
-        mp = _get_multipack(run_name="dev")
+        mp = get_multipack(run_name="dev")
 
         for pack in mp.packs.values():
             if select in selection_keys(pack.config):
@@ -538,8 +523,8 @@ class Main:
         # [action: append]
         runs: Option = []
 
-        # Weights configuration file
-        weights: Option & configuration = None
+        # Configuration file (for weights)
+        config: Option & str = os.environ.get("MILABENCH_CONFIG", None)
 
         # Comparison summary
         compare: Option & configuration = None
@@ -558,10 +543,13 @@ class Main:
             reports = _read_reports(*runs)
             summary = make_summary(reports.values())
 
+        if config:
+            config = _get_multipack(config, return_config=True)
+
         make_report(
             summary,
             compare=compare,
-            weights=weights,
+            weights=config,
             html=html,
             compare_gpus=compare_gpus,
             price=price,
@@ -572,26 +560,11 @@ class Main:
 
     def pip():
         """Run pip on every pack"""
-        # Configuration file
-        config: Option & str = None
-
-        # Base path for code, venvs, data and runs
-        base: Option & str = None
-
-        # Whether to use the current environment
-        use_current_env: Option & bool = False
-
-        # Packs to select
-        select: Option & str = default("")
-
-        # Packs to exclude
-        exclude: Option & str = default("")
-
         # pip arguments
         # [remainder]
         args: Option = []
 
-        mp = get_multipack(config, base, use_current_env, select, exclude)
+        mp = get_multipack(run_name="pip")
 
         for pack in mp.packs.values():
             run_sync(pack.pip_install(*args))

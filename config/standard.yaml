@@ -1,223 +1,75 @@
-defaults: &defaults
-  install_variant: "{arch}"
+include: base.yaml
 
-  max_duration: 600
+#################
+# Enabled tests #
+#################
 
-  voir:
-    options:
-      stop: 60
-      interval: "1s"
+resnet50:
+  enabled: true
+  weight: 1.0
 
+efficientnet_b4:
+  enabled: true
+  weight: 1.0
 
-torchvision: &torchvision
-  <<<: *defaults
+efficientnet_b7:
+  enabled: true
+  weight: 1.0
 
-  group: torchvision
-  install_group: torch
+convnext_large:
+  enabled: true
+  weight: 1.0
 
-  plan:
-    method: per_gpu
+regnet_y_128gf:
+  enabled: true
+  weight: 1.0
 
-  argv:
-    --with-amp: true
-    --lr: 0.01
+bert:
+  enabled: true
+  weight: 1.0
 
-  definition: ../benchmarks/torchvision
+t5:
+  enabled: true
+  weight: 1.0
 
+reformer:
+  enabled: true
+  weight: 1.0
 
-hf: &hf
-  <<<: *defaults
+whisper:
+  enabled: true
+  weight: 1.0
 
-  group: hf
-  install_group: torch
+resnet152:
+  enabled: true
+  weight: 1.0
 
-  plan:
-    method: per_gpu
+vit_l_32:
+  enabled: true
+  weight: 1.0
 
-  tags:
-    - rl
+accelerate:
+  enabled: true
+  weight: 1.0
 
-  definition: ../benchmarks/huggingface
+focalnet:
+  enabled: true
+  weight: 1.0
 
+stargan:
+  enabled: true
+  weight: 1.0
 
-timm: &timm
-  <<<: *defaults
+super-slomo:
+  enabled: true
+  weight: 1.0
 
-  group: timm
-  install_group: torch
+##################
+# Disabled tests #
+##################
 
-  plan:
-    method: per_gpu
+ppo:
+  enabled: false
 
-  tags:
-    - vision
-
-  argv:
-    --amp: true
-
-  definition: ../benchmarks/timm
-
-benchmarks:
-  resnet50:
-    <<<: *torchvision
-    tags:
-      - convnet
-
-    argv:
-      --model: resnet50
-
-  efficientnet_b4:
-    <<<: *torchvision
-    tags:
-      - convnet
-    
-    argv:
-      --model: efficientnet_b4
-
-  efficientnet_b7:
-    <<<: *torchvision
-    tags:
-      - convnet
-    
-    argv:
-      --model: efficientnet_b7
-
-  convnext_large:
-    <<<: *torchvision
-    tags:
-      - convnet
-
-    argv:
-      --model: convnext_large
-
-  regnet_y_128gf:
-    <<<: *torchvision
-    tags:
-      - convnet
-
-    argv:
-      --model: regnet_y_128gf
-
-  bert:
-    <<<: *hf
-    tags:
-      - huggingface
-      - transformer
-    argv:
-      --model: "Bert"
-
-  t5:
-    <<<: *hf
-    tags:
-      - huggingface
-      - transformer
-    argv:
-      --model: "T5"
-
-  reformer:
-    <<<: *hf
-    tags:
-      - huggingface
-      - transformer
-    argv:
-      --model: "Reformer"
-
-  whisper:
-    <<<: *hf
-    tags:
-      - huggingface
-      - transformer
-      - audio
-    argv:
-      --model: "Whisper"
-
-  resnet152:
-    <<<: *timm
-    tags:
-      - convnet
-
-    plan:
-      method: njobs
-      n: 1
-
-    argv:
-      --model: resnet152
-
-  vit_l_32:
-    <<<: *timm
-
-    plan:
-      method: njobs
-      n: 1
-
-    argv:
-      --model: vit_large_patch32_224
-
-  accelerate:
-    <<<: *defaults
-
-    install_group: torch
-
-    plan:
-      method: njobs
-      n: 1
-
-    # This is for single-node
-    manager_addr: "127.0.0.1"
-    manager_port: 10000
-
-    num_processes: 2
-    cpus_per_gpu: 8
-
-    # model_name: "facebook/opt-350m"
-    model_name: "facebook/opt-2.7b"
-    #model_name: "facebook/opt-1.3b"
-    #model_name: "facebook/opt-125m"
-
-    gradient_accumulation_steps: 1
-    per_gpu_batch_size: 1
-    max_train_steps: 100
-
-    dataset_name: "wikitext"
-    dataset_config_name: "wikitext-103-v1"
-    validation_split_percentage: 5
-
-    definition: ../benchmarks/accelerate_opt
-
-  focalnet:
-    <<<: *timm
-
-    plan:
-      method: per_gpu
-
-    argv:
-      --model: focalnet_small_lrf
-
-  stargan:
-    <<<: *defaults
-
-    plan:
-      method: per_gpu
-
-    group: stargan
-    install_group: torch
-    argv:
-      --image_size: 512
-      --c_dim: 5
-      --batch_size: 16
-
-    definition: ../benchmarks/stargan
-
-  super-slomo:
-    <<<: *defaults
-
-    group: super-slomo
-    install_group: torch
-
-    plan:
-      method: per_gpu
-
-    argv:
-      --train_batch_size: 32
-
-    definition: ../benchmarks/super-slomo
+td3:
+  enabled: false

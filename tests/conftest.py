@@ -1,8 +1,13 @@
+import os
 from pathlib import Path
 
 import pytest
 
 here = Path(__file__).parent
+
+
+if "MILABENCH_CONFIG" in os.environ:
+    del os.environ["MILABENCH_CONFIG"]
 
 
 @pytest.fixture
