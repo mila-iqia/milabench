@@ -5,7 +5,7 @@ BRANCH = "69d22b99ec02ff868dbc1170e39686935f9d1274"
 
 
 class DLRMBenchmarkPack(Package):
-    base_requirements = ["requirements.in"]
+    base_requirements = "requirements.in"
     main_script = "dlrm/dlrm_s_pytorch.py"
 
     async def install(self):
