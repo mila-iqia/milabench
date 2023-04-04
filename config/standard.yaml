@@ -67,6 +67,7 @@ benchmarks:
 
     argv:
       --model: resnet50
+      --batch-size: $(bs(gpu, mem, default=256))
 
   efficientnet_b4:
     <<<: *torchvision
@@ -75,6 +76,7 @@ benchmarks:
     
     argv:
       --model: efficientnet_b4
+      --batch-size: $(bs(gpu, mem, default=128))
 
   efficientnet_b7:
     <<<: *torchvision
@@ -83,6 +85,7 @@ benchmarks:
     
     argv:
       --model: efficientnet_b7
+      --batch-size: $(bs(gpu, mem, default=128))
 
   convnext_large:
     <<<: *torchvision
@@ -91,6 +94,7 @@ benchmarks:
 
     argv:
       --model: convnext_large
+      --batch-size: $(bs(gpu, mem, default=128))
 
   regnet_y_128gf:
     <<<: *torchvision
@@ -99,6 +103,7 @@ benchmarks:
 
     argv:
       --model: regnet_y_128gf
+      --batch-size: $(bs(gpu, mem, default=32))
 
   bert:
     <<<: *hf
@@ -115,6 +120,7 @@ benchmarks:
       - transformer
     argv:
       --model: "T5"
+      --batch-size: $(bs(gpu, mem, default=16))
 
   reformer:
     <<<: *hf
