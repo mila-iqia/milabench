@@ -136,9 +136,6 @@ def _get_multipack(
     if config_path is None:
         sys.exit("Error: CONFIG argument not provided and no $MILABENCH_CONFIG")
 
-    if select:
-        select = set(select.split(","))
-
     if exclude:
         exclude = set(exclude.split(","))
 

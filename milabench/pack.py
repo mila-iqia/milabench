@@ -401,8 +401,8 @@ class Package(BasePackage):
                 reqs, current_input_files, argv=pip_compile_args
             )
 
-            # Use previous requirements as a constraint
-            constraints = (reqs, *constraints)
+            # Add previous requirements as inputs
+            input_files = (reqs, *input_files)
 
     async def exec_pip_compile(
         self, requirements_file: XPath, input_files: XPath, argv=[]
