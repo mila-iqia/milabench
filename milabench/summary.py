@@ -110,7 +110,9 @@ nans = {
 
 @error_guard(nans)
 def _metrics(xs):
-    xs = [x for x in xs if x is not None]
+    xs = sorted(x for x in xs if x is not None)
+    if len(xs) >= 5:
+        xs = xs[1:-1]  # Remove min and max
     if not xs:
         return nans
     percentiles = [0, 25, 50, 75, 100]

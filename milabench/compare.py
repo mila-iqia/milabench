@@ -15,6 +15,8 @@ def fetch_runs(folder):
     runs = []
     for run in os.listdir(folder):
         pth = os.path.join(folder, run)
+        if not os.path.isdir(pth):
+            continue
         if "." in run:
             name, date = run.split(".", maxsplit=1)
             date = datetime.strptime(date, "%Y-%m-%d_%H:%M:%S.%f")
