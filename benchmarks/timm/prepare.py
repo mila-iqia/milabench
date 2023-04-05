@@ -4,11 +4,12 @@ import multiprocessing
 import os
 from pathlib import Path
 
-from torchvision.datasets import FakeData
 from tqdm import tqdm
 
 
 def write(args):
+    from torchvision.datasets import FakeData
+
     image_size, offset, count, outdir = args
     dataset = FakeData(
         size=count, image_size=image_size, num_classes=1000, random_offset=offset
@@ -54,5 +55,5 @@ if __name__ == "__main__":
     data_directory = os.environ["MILABENCH_DIR_DATA"]
     dest = os.path.join(data_directory, "FakeImageNet")
     print(f"Generating fake data into {dest}...")
-    generate_sets(dest, {"train": 1000, "val": 10, "test": 10}, (3, 512, 512))
+    generate_sets(dest, {"train": 4096, "val": 16, "test": 16}, (3, 384, 384))
     print("Done!")
