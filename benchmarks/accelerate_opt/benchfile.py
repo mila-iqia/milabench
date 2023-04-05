@@ -1,5 +1,4 @@
 from milabench.pack import Package
-import asyncssh
 import asyncio
 
 
@@ -26,18 +25,14 @@ class AccelerateBenchmark(Package):
         )
 
     async def run_remote_command(self, host, command):
-        print(f"Connecting to worker: {host}")
-        async with asyncssh.connect(host,
-                                    # disable host key validation
-                                    known_hosts=None,
-                                    # use our key to authenticate
-                                    client_keys=[asyncssh.read_private_key(self.dirs.code / "id_milabench")],
-                                    username="milabench",
-        ) as conn:
-            print(f"Running command: {command}")
-            path = str(self.dirs.runs / self.config['run_name'] / host)
-            return await conn.run(command, stderr=path + ".stderr",
-                                  stdout=path + ".stdout")
+        prepend = ["ssh", "-t", "-l", "milabench",
+                   "-i", str(self.dirs.code / "id_milabench"),
+                   "-o", "CheckHostIP=no",
+                   "-o", "StrictHostKeyChecking=no", host]
+        return await self.execute(
+            *prepend, *command,
+            use_stdout=True,
+	)
 
 
     def accelerate_command(self, rank):
@@ -63,11 +58,11 @@ class AccelerateBenchmark(Package):
     async def run(self):
         self.phase = "run"
         futs = []
-        futs.append(self.execute(
+        futs.append(asyncio.create_task(self.execute(
             *self.accelerate_command(rank=0),
             setsid=True,
             use_stdout=True,
-        ))
+        )))
         # XXX: this doesn't participate in the process timeout
         for i, worker in enumerate(self.config['worker_addrs']):
             command = ["docker", "run", "-i", "--rm",
@@ -81,7 +76,8 @@ class AccelerateBenchmark(Package):
             command.append(f"{self.dirs.code / 'activator'}")
             command.append(f"{self.dirs.venv}")
             command.extend(self.accelerate_command(rank=i + 1))
-            futs.append(self.run_remote_command(worker, " ".join(command)))
+            futs.append(asyncio.create_task(
+                self.run_remote_command(worker, command)))
         await asyncio.gather(*futs)
 
 __pack__ = AccelerateBenchmark
