@@ -102,7 +102,11 @@ class BasePackage:
 
     @property
     def logdir(self):
-        return self.dirs.runs / self.config["run_name"]
+        run_name = self.config["run_name"]
+        if run_name and run_name[0] in ("/", ".", "~"):
+            return XPath(run_name).expanduser().absolute()
+        else:
+            return self.dirs.runs / run_name
 
     def logfile(self, extension):
         return self.logdir / (".".join(self.config["tag"]) + f".{extension}")
