@@ -11,8 +11,6 @@ _torchvision:
   definition: ../benchmarks/torchvision
   group: torchvision
   install_group: torch
-  tags:
-    - vision
   plan:
     method: per_gpu
   argv:
@@ -24,9 +22,6 @@ _hf:
   definition: ../benchmarks/huggingface
   group: hf
   install_group: torch
-  tags:
-    - huggingface
-    - transformer
   plan:
     method: per_gpu
 
@@ -35,8 +30,6 @@ _timm:
   definition: ../benchmarks/timm
   group: timm
   install_group: torch
-  tags:
-    - vision
   plan:
     method: per_gpu
   argv:
@@ -46,8 +39,6 @@ _sb3:
   inherits: _defaults
   definition: ../benchmarks/stable_baselines3
   group: sb3
-  tags:
-    - rl
   plan:
     method: njobs
     n: 1
@@ -55,20 +46,30 @@ _sb3:
 resnet50:
   inherits: _torchvision
   tags:
+    - vision
+    - classification
     - convnet
+    - resnet
+  
   argv:
     --model: resnet50
 
 efficientnet_b4:
   inherits: _torchvision
   tags:
+  tags:
+    - vision
+    - classification
     - convnet
+
   argv:
     --model: efficientnet_b4
 
 efficientnet_b7:
   inherits: _torchvision
   tags:
+    - vision
+    - classification
     - convnet
   argv:
     --model: efficientnet_b7
@@ -76,6 +77,8 @@ efficientnet_b7:
 convnext_large:
   inherits: _torchvision
   tags:
+    - vision
+    - classification
     - convnet
   argv:
     --model: convnext_large
@@ -83,22 +86,41 @@ convnext_large:
 regnet_y_128gf:
   inherits: _torchvision
   tags:
+    - vision
+    - classification
     - convnet
+    - resnet
+    - lstm
   argv:
     --model: regnet_y_128gf
 
 bert:
   inherits: _hf
+  tags:
+    - nlp
+    - language-modeling
+    - transformer
+    - huggingface
   argv:
     --model: "Bert"
 
 t5:
   inherits: _hf
+  tags:
+    - nlp
+    - language-modeling
+    - transformer
+    - huggingface
   argv:
     --model: "T5"
 
 reformer:
   inherits: _hf
+  tags:
+    - nlp
+    - language-modeling
+    - transformer
+    - huggingface
   argv:
     --model: "Reformer"
 
@@ -106,13 +128,19 @@ whisper:
   inherits: _hf
   tags:
     - audio
+    - huggingface
   argv:
     --model: "Whisper"
 
 resnet152:
   inherits: _timm
   tags:
+    - vision
+    - classification
     - convnet
+    - resnet
+    - multigpu
+
   plan:
     method: njobs
     n: 1
@@ -121,6 +149,12 @@ resnet152:
 
 vit_l_32:
   inherits: _timm
+  tags:
+    - vision
+    - classification
+    - transformer
+    - multigpu
+
   plan:
     method: njobs
     n: 1
@@ -129,6 +163,14 @@ vit_l_32:
 
 accelerate:
   inherits: _defaults
+  tags:
+    - nlp
+    - language-modeling
+    - transformer
+    - huggingface
+    - llm
+    - multigpu
+
   definition: ../benchmarks/accelerate_opt
   install_group: torch
   plan:
@@ -152,6 +194,11 @@ accelerate:
 
 focalnet:
   inherits: _timm
+  tags:
+    - vision
+    - classification
+    - convnet
+
   plan:
     method: per_gpu
   argv:
@@ -159,6 +206,10 @@ focalnet:
 
 stargan:
   inherits: _defaults
+  tags:
+    - vision
+    - gan
+    - resnet
   definition: ../benchmarks/stargan
   group: stargan
   install_group: torch
@@ -171,6 +222,11 @@ stargan:
 
 super-slomo:
   inherits: _defaults
+  tags:
+    - vision
+    - video-interpolation
+    - unet
+    - convnet
   definition: ../benchmarks/super-slomo
   group: super-slomo
   install_group: torch
@@ -181,6 +237,9 @@ super-slomo:
 
 ppo:
   inherits: _sb3
+  tags:
+    - rl
+
   argv:
     --algo: ppo
     --env: HalfCheetahBulletEnv-v0
@@ -193,6 +252,9 @@ ppo:
 
 td3:
   inherits: _sb3
+  tags:
+    - rl
+
   argv:
     --algo: td3
     --env: HalfCheetahBulletEnv-v0 # Default: CartPole-v1
@@ -210,11 +272,13 @@ td3:
 
 dlrm:
   inherits: _defaults
+  tags:
+    - nlp
+    - rl
+    
   definition: ../benchmarks/dlrm
   group: dlrm
   install_group: torch
-  tags:
-    - rl
   plan:
     method: njobs
     n: 1
