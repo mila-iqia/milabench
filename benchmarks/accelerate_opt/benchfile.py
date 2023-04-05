@@ -11,19 +11,21 @@ class AccelerateBenchmark(Package):
 
     async def prepare(self):
         self.phase = "prepare"
+        nproc = len(self.config.get("devices", []))
         await self.execute(
             "accelerate",
             "launch",
             "--mixed_precision=fp16",
             "--num_machines=1",
             "--dynamo_backend=no",
-            "--num_processes=8",
+            f"--num_processes={nproc}",
             str(self.dirs.code / "main.py"),
             env={"MILABENCH_PREPARE_ONLY": "1"},
         )
 
     async def run(self):
         self.phase = "run"
+        nproc = len(self.config.get("devices", []))
         await self.execute(
             "accelerate",
             "launch",
@@ -37,7 +39,8 @@ class AccelerateBenchmark(Package):
             f"--num_cpu_threads_per_process={self.config['cpus_per_gpu']}",
             f"--main_process_ip={self.config['manager_addr']}",
             f"--main_process_port={self.config['manager_port']}",
-            f"--num_processes={self.config['num_processes']}",
+            # f"--num_processes={self.config['num_processes']}",
+            f"--num_processes={nproc}",
             str(self.dirs.code / "main.py"),
             setsid=True,
             use_stdout=True,
