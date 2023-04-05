@@ -65,7 +65,7 @@ class AccelerateBenchmark(Package):
         )))
         # XXX: this doesn't participate in the process timeout
         for i, worker in enumerate(self.config['worker_addrs']):
-            command = ["docker", "run", "-i", "--rm",
+            command = ["docker", "run", "-it", "--rm",
                        "--network", "host",
                        "--gpus", "all"]
             env = self.make_env()
