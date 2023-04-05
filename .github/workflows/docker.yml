@@ -44,10 +44,10 @@ jobs:
 
       - name: Prune
         run: |
-          # Prune all images older than 8 weeks
+          # Prune all images older than 2 weeks
           # The images are still on github registry
           docker image prune -f -a --filter "until=336h"
-          docker image prune -f
+          docker system prune -f
 
       - name: Check out the repo
         uses: actions/checkout@v3
