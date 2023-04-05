@@ -18,6 +18,7 @@ _torchvision:
   argv:
     --with-amp: true
     --lr: 0.01
+    --tf32: true
 
 _hf:
   inherits: _defaults
@@ -58,6 +59,35 @@ resnet50:
     - convnet
   argv:
     --model: resnet50
+    --with-amp: true
+    --tf32: true
+  
+resnet50-tf32:
+  inherits: _torchvision
+  tags:
+    - convnet
+  argv:
+    --model: resnet50
+    --with-amp: null
+    --tf32: true
+
+resnet50-fp16:
+  inherits: _torchvision
+  tags:
+    - convnet
+  argv:
+    --model: resnet50
+    --with-amp: true
+    --tf32: null
+
+resnet50-fp32:
+  inherits: _torchvision
+  tags:
+    - convnet
+  argv:
+    --model: resnet50
+    --with-amp: null
+    --no-tf32: true
 
 efficientnet_b4:
   inherits: _torchvision

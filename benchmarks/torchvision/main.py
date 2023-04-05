@@ -131,6 +131,12 @@ def main():
         action="store_false",
         help="do not allow tf32",
     )
+    parser.add_argument(
+        "--tf32",
+        dest="allow_tf32",
+        action="store_true",
+        help="Allow tf32",
+    )
 
     args = parser.parse_args()
     if args.fixed_batch:
