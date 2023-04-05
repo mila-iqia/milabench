@@ -172,6 +172,8 @@ def _get_multipack(
     config = build_config(base_defaults, config_path, overrides)
 
     def is_selected(defn):
+        if defn["name"] == "*":
+            return False
         keys = selection_keys(defn)
         return (
             defn["enabled"]

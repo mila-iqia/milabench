@@ -9,6 +9,8 @@ from .fs import XPath
 from .merge import merge
 from .utils import make_constraints_file
 
+here = XPath(__file__).parent
+
 gpus = get_gpu_info()["gpus"].values()
 
 planning_methods = {}
@@ -117,8 +119,15 @@ class MultiPackage:
         for pack in self.packs.values():
             pack.phase = "pin"
             igrp = pack.config["install_group"]
+            ivar = pack.config["install_variant"]
+            ivar_constraints: XPath = here.parent / "constraints" / f"{ivar}.txt"
             base_reqs = pack.requirements_map().keys()
+            if ivar_constraints.exists():
+                constraints = {ivar_constraints, *constraints}
             groups[igrp].update({req: pack for req in base_reqs})
+
+        for constraint in constraints:
+            print("Using constraint file:", constraint)
 
         groups = {
             name: (set(group.keys()), set(group.values()))
