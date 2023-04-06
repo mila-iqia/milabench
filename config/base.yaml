@@ -61,33 +61,50 @@ resnet50:
     --model: resnet50
     --with-amp: true
     --tf32: true
-  
-resnet50-tf32:
+
+fp32:
   inherits: _torchvision
+  group: torchvision
   tags:
     - convnet
   argv:
     --model: resnet50
+    --fixed-batch: true
+    --with-amp: null
+    --no-tf32: true
+
+fp16:
+  inherits: _torchvision
+  group: torchvision
+  tags:
+    - convnet
+  argv:
+    --model: resnet50
+    --fixed-batch: true
+    --with-amp: true
+    --no-tf32: true
+
+tf32:
+  inherits: _torchvision
+  group: torchvision
+  tags:
+    - convnet
+  argv:
+    --model: resnet50
+    --fixed-batch: true
     --with-amp: null
     --tf32: true
 
-resnet50-fp16:
+tf32-fp16:
   inherits: _torchvision
+  group: torchvision
   tags:
     - convnet
   argv:
     --model: resnet50
     --with-amp: true
-    --tf32: null
-
-resnet50-fp32:
-  inherits: _torchvision
-  tags:
-    - convnet
-  argv:
-    --model: resnet50
-    --with-amp: null
-    --no-tf32: true
+    --tf32: true
+    --fixed-batch: true
 
 efficientnet_b4:
   inherits: _torchvision
