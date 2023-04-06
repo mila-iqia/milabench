@@ -37,7 +37,7 @@ class AccelerateBenchmark(Package):
 
 
     def accelerate_command(self, rank):
-        nproc = len(self.config.get("devices", []))
+        nproc = len(self.config.get("devices", [])) * self.config['num_machines']
         return [
             "accelerate",
             "launch",
