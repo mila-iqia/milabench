@@ -1,9 +1,7 @@
 Docker
 ======
 
-`Docker Images <https://github.com/mila-iqia/milabench/pkgs/container/milabench>`_ are created for each release, 
-they come with all the benchmarks installed and the necessary datasets.
-No additional downloads are necessary.
+`Docker Images <https://github.com/mila-iqia/milabench/pkgs/container/milabench>`_ are created for each release. They come with all the benchmarks installed and the necessary datasets. No additional downloads are necessary.
 
 CUDA
 ----
@@ -11,9 +9,7 @@ CUDA
 Requirements
 ^^^^^^^^^^^^
 
-To run docker images you will need to install the softwares below.
-
-* nvidia driver
+* NVIDIA driver
 * `docker-ce <https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository>`_
 * `nvidia-docker <https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker>`_
 
@@ -51,8 +47,6 @@ ROCM
 Requirements
 ^^^^^^^^^^^^
 
-To run docker images you will need to install the softwares below.
-
 * rocm
 * docker
 
@@ -83,4 +77,4 @@ Images can be build locally for prototyping and testing.
 
 .. code-block::
 
-   sudo docker build -t milabench:cuda-nightly --build-arg ARCH=cuda --build-arg CONFIG=ci.yaml .
+   sudo docker build -t milabench:cuda-nightly --build-arg ARCH=cuda --build-arg CONFIG=standard.yaml .
