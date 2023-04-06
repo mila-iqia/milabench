@@ -25,7 +25,7 @@ class AccelerateBenchmark(Package):
         )
 
     async def run_remote_command(self, host, command):
-        prepend = ["ssh", "-t", "-l", "milabench",
+        prepend = ["ssh", "-l", "milabench",
                    "-i", str(self.dirs.code / "id_milabench"),
                    "-o", "CheckHostIP=no",
                    "-o", "StrictHostKeyChecking=no", host]
@@ -65,7 +65,7 @@ class AccelerateBenchmark(Package):
         )))
         # XXX: this doesn't participate in the process timeout
         for i, worker in enumerate(self.config['worker_addrs']):
-            command = ["docker", "run", "-it", "--rm",
+            command = ["docker", "run", "-i", "--rm",
                        "--network", "host",
                        "--gpus", "all"]
             env = self.make_env()
