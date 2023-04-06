@@ -25,8 +25,8 @@ class AccelerateBenchmark(Package):
         )
 
     async def run_remote_command(self, host, command):
-        prepend = ["ssh", "-l", "milabench",
-                   "-i", str(self.dirs.code / "id_milabench"),
+        prepend = ["ssh", "-l", self.config['worker_user'],
+                   "-i", "/milabench/id_milabench",
                    "-o", "CheckHostIP=no",
                    "-o", "StrictHostKeyChecking=no", host]
         new_pack = self.copy({"tag": [*self.config['tag'], host]})
