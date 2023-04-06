@@ -85,8 +85,7 @@ def main():
 
         init_process_group_kwargs = CustomInitProcessGroupKwargs(
             init_method=f"tcp://{MASTER_ADDR}:{MASTER_PORT}",
-            # Reduced the timeout here, so the job fails quicker if there's a communication problem between nodes.
-            timeout=timedelta(seconds=60),
+            timeout=timedelta(seconds=300),
             rank=int(os.environ["RANK"]),
             world_size=int(os.environ["WORLD_SIZE"]),
         )
