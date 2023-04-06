@@ -129,12 +129,14 @@ def main():
         "--no-tf32",
         dest="allow_tf32",
         action="store_false",
+        default=True,
         help="do not allow tf32",
     )
     parser.add_argument(
         "--tf32",
         dest="allow_tf32",
         action="store_true",
+        default=True,
         help="Allow tf32",
     )
 
