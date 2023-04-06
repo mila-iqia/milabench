@@ -108,6 +108,12 @@ def main():
         metavar="S",
         help="random seed (default: 1234)",
     )
+    parser.add_argument(
+        "--num-workers",
+        type=int,
+        default=8,
+        help="number of workers for data loading",
+    )
     parser.add_argument("--data", type=str, help="data directory")
     parser.add_argument(
         "--synthetic-data", action="store_true", help="whether to use synthetic data"
@@ -176,7 +182,7 @@ def main():
             train,
             batch_size=args.batch_size,
             shuffle=True,
-            num_workers=1,
+            num_workers=args.num_workers,
         )
     else:
         train_loader = SyntheticData(
