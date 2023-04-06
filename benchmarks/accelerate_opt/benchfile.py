@@ -29,7 +29,8 @@ class AccelerateBenchmark(Package):
                    "-i", str(self.dirs.code / "id_milabench"),
                    "-o", "CheckHostIP=no",
                    "-o", "StrictHostKeyChecking=no", host]
-        return await self.execute(
+        new_pack = self.copy({"tag": [*self.config['tag'], host]})
+        return await new_pack.execute(
             *prepend, *command,
             use_stdout=True,
 	)
