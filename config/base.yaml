@@ -68,9 +68,11 @@ fp32:
   tags:
     - convnet
   argv:
-    --model: resnet50
+    --batch-size: 512
+    --model: densenet121
     --fixed-batch: true
     --with-amp: null
+    --tf32: null
     --no-tf32: true
 
 fp16:
@@ -79,9 +81,11 @@ fp16:
   tags:
     - convnet
   argv:
+    --batch-size: 512
     --model: resnet50
     --fixed-batch: true
     --with-amp: true
+    --tf32: null
     --no-tf32: true
 
 tf32:
@@ -90,7 +94,8 @@ tf32:
   tags:
     - convnet
   argv:
-    --model: resnet50
+    --batch-size: 512
+    --model: densenet121
     --fixed-batch: true
     --with-amp: null
     --tf32: true
@@ -101,6 +106,7 @@ tf32-fp16:
   tags:
     - convnet
   argv:
+    --batch-size: 512
     --model: resnet50
     --with-amp: true
     --tf32: true
