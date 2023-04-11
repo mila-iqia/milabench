@@ -8,6 +8,7 @@ import torch.nn as nn
 import torchvision.datasets as datasets
 import torchvision.models as tvmodels
 import torchvision.transforms as transforms
+
 import voir
 from giving import give, given
 
@@ -22,6 +23,13 @@ data_transforms = transforms.Compose(
         normalize,
     ]
 )
+
+def is_tf32_allowed(args):
+    return "tf32" in args.precision
+
+
+def is_fp16_allowed(args):
+    return "fp16" in args.precision
 
 
 @contextlib.contextmanager
@@ -71,6 +79,84 @@ class SyntheticData:
     def __len__(self):
         return self.n
 
+def dali(args, images_dir):
+    from nvidia.dali.pipeline import pipeline_def
+    import nvidia.dali.types as types
+    import nvidia.dali.fn as fn
+    from nvidia.dali.plugin.pytorch import DALIGenericIterator
+
+    @pipeline_def(num_threads=args.num_workers, device_id=0)
+    def get_dali_pipeline():
+        images, labels = fn.readers.file(
+            file_root=images_dir, 
+            random_shuffle=True, 
+            name="Reader",
+        )
+        # decode data on the GPU
+        images = fn.decoders.image_random_crop(
+            images, 
+            device="mixed", 
+            output_type=types.RGB,
+        )
+        # the rest of processing happens on the GPU as well
+        images = fn.resize(images, resize_x=256, resize_y=256)
+        images = fn.crop_mirror_normalize(
+            images,
+            crop_h=224,
+            crop_w=224,
+            mean=[0.485 * 255, 0.456 * 255, 0.406 * 255],
+            std=[0.229 * 255, 0.224 * 255, 0.225 * 255],
+            mirror=fn.random.coin_flip()
+        )
+        return images, labels
+    
+    train_data = DALIGenericIterator(
+        [get_dali_pipeline(batch_size=args.batch_size)],
+        ['data', 'label'],
+        reader_name='Reader'
+    )
+    
+    def iter():
+        for _ in range(args.epochs):
+            for data in train_data:
+                x, y = data[0]['data'], data[0]['label']
+                yield x, torch.squeeze(y, dim=1).type(torch.LongTensor)
+            
+    yield from iter()
+
+
+def dataloader(args, model, device):
+    if args.synthetic_data:
+        args.data = None
+    else:
+        if not args.data:
+            data_directory = os.environ.get("MILABENCH_DIR_DATA", None)
+            if data_directory:
+                args.data = os.path.join(data_directory, "FakeImageNet")
+
+    if args.data:
+        if args.loader == "pytorch":    
+            train = datasets.ImageFolder(os.path.join(args.data, "train"), data_transforms)
+            train_loader = torch.utils.data.DataLoader(
+                train,
+                batch_size=args.batch_size,
+                shuffle=True,
+                num_workers=args.num_workers,
+            )
+        elif args.loader == "dali":  
+            train_loader = dali(args, os.path.join(args.data, "train"))
+        else:
+            raise RuntimeError(f"Loader {args.loader} not implemented")
+    else:
+        train_loader = SyntheticData(
+            model=model,
+            device=device,
+            batch_size=args.batch_size,
+            n=1000,
+            fixed_batch=args.fixed_batch,
+        )
+    
+    return train_loader
 
 def main():
     parser = argparse.ArgumentParser(description="Torchvision models")
@@ -83,6 +169,13 @@ def main():
     )
     parser.add_argument(
         "--model", type=str, help="torchvision model name", required=True
+    )
+    parser.add_argument(
+        "--loader", 
+        type=str, 
+        default="pytorch",
+        choices=["pytorch", "dali"],
+        help="torchvision model name", required=True
     )
     parser.add_argument(
         "--epochs",
@@ -122,39 +215,28 @@ def main():
         "--fixed-batch", action="store_true", help="use a fixed batch for training"
     )
     parser.add_argument(
-        "--with-amp",
-        action="store_true",
-        help="whether to use mixed precision with amp",
-    )
-    parser.add_argument(
         "--no-stdout",
         action="store_true",
         help="do not display the loss on stdout",
     )
     parser.add_argument(
-        "--no-tf32",
-        dest="allow_tf32",
-        action="store_false",
-        help="do not allow tf32",
+        "--precision",
+        type=str,
+        choices=["fp16", "fp32", "tf32", "tf32-fp16"],
+        default="fp32",
+        help="Precision configuration",
     )
 
     args = parser.parse_args()
     if args.fixed_batch:
         args.synthetic_data = True
 
-    if args.synthetic_data:
-        args.data = None
-    else:
-        if not args.data:
-            data_directory = os.environ.get("MILABENCH_DIR_DATA", None)
-            if data_directory:
-                args.data = os.path.join(data_directory, "FakeImageNet")
 
     use_cuda = not args.no_cuda and torch.cuda.is_available()
 
     torch.manual_seed(args.seed)
     if use_cuda:
-        if args.allow_tf32:
+        if is_tf32_allowed(args):
             torch.backends.cuda.matmul.allow_tf32 = True
             torch.backends.cudnn.allow_tf32 = True
         torch.cuda.manual_seed(args.seed)
@@ -168,24 +250,9 @@ def main():
 
     optimizer = torch.optim.SGD(model.parameters(), args.lr)
 
-    if args.data:
-        train = datasets.ImageFolder(os.path.join(args.data, "train"), data_transforms)
-        train_loader = torch.utils.data.DataLoader(
-            train,
-            batch_size=args.batch_size,
-            shuffle=True,
-            num_workers=args.num_workers,
-        )
-    else:
-        train_loader = SyntheticData(
-            model=model,
-            device=device,
-            batch_size=args.batch_size,
-            n=1000,
-            fixed_batch=args.fixed_batch,
-        )
+    train_loader = dataloader(args, model, device)
 
-    if args.with_amp:
+    if is_fp16_allowed(args):
         scaler = torch.cuda.amp.GradScaler()
     else:
         scaler = None

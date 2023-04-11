@@ -14,7 +14,7 @@ _torchvision:
   plan:
     method: per_gpu
   argv:
-    --with-amp: true
+    --precision: fp16
     --lr: 0.01
     --no-stdout: true
     --epochs: 50
@@ -59,6 +59,8 @@ resnet50:
   argv:
     --model: resnet50
     --batch-size: 64
+    --loader: dali
+    --num-workers: 4
 
 efficientnet_b4:
   inherits: _torchvision
