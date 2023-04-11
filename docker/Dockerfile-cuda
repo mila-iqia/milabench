@@ -1,13 +1,8 @@
-FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04 AS init
+FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04
 
 # CUDA-11.8 Fix
 ENV LD_LIBRARY_PATH="/usr/local/cuda/targets/x86_64-linux/lib/:$LD_LIBRARY_PATH"
 RUN ln /usr/local/cuda/targets/x86_64-linux/lib/libnvrtc.so.11.8.89 /usr/local/cuda/targets/x86_64-linux/lib/libnvrtc.so
-
-RUN apt-get update &&\
-    apt-get install -y git &&\
-    apt-get clean &&\
-    rm -rf /var/lib/apt/lists/*
 
 # Arguments
 # ---------
@@ -36,8 +31,6 @@ WORKDIR /milabench
 COPY . /milabench/milabench/
 
 
-FROM init AS install
-
 # Install Dependencies
 # --------------------
 
@@ -47,7 +40,9 @@ FROM init AS install
 # build-essential: for rust
 
 RUN apt-get update &&\
-    apt-get install -y git build-essential curl
+    apt-get install -y git build-essential curl &&\
+    apt-get clean &&\
+    rm -rf /var/lib/apt/lists/*
 
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
@@ -57,7 +52,7 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Install anaconda because milabench will need it later anyway
 RUN curl https://repo.anaconda.com/miniconda/Miniconda3-py39_23.1.0-1-Linux-x86_64.sh -o ~/miniconda.sh &&\
-    /bin/bash ~/miniconda.sh -b -p $CONDA_PATH
+    /bin/bash ~/miniconda.sh -b -p $CONDA_PATH && rm ~/miniconda.sh
 ENV PATH=$CONDA_PATH/bin:$PATH
 
 
@@ -67,10 +62,9 @@ ENV PATH=$CONDA_PATH/bin:$PATH
 RUN python -m pip install -U pip            &&\
     python -m pip install -U setuptools     &&\
     python -m pip install -U poetry         &&\
-    python -m pip install -e /milabench/milabench/
+    python -m pip install -e /milabench/milabench/ &&\
+    python -m pip cache purge
 
-
-FROM install AS prepare
 
 # Prepare bench
 # -------------
@@ -79,13 +73,7 @@ FROM install AS prepare
 ENV PIP_DEFAULT_TIMEOUT=800
 
 RUN milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
-    milabench prepare --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
-
-
-FROM init
-
-COPY --from=install /opt/anaconda /opt/anaconda
-ENV PATH=$CONDA_PATH/bin:$PATH
-COPY --from=prepare /milabench/envs /milabench/envs
+    milabench prepare --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
+    python -m pip cache purge
 
 CMD ["milabench", "run"]
