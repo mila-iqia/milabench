@@ -12,11 +12,19 @@ from .models import models
 from .synth import SyntheticData, generators
 
 
+def is_tf32_allowed(args):
+    return "tf32" in args.precision
+
+
+def is_fp16_allowed(args):
+    return "fp16" in args.precision
+
+
 class Runner:
     def __init__(self, args):
         use_cuda = not args.no_cuda and torch.cuda.is_available()
         if use_cuda:
-            if args.allow_tf32:
+            if is_tf32_allowed(args):
                 torch.backends.cuda.matmul.allow_tf32 = True
                 torch.backends.cudnn.allow_tf32 = True
             torch.cuda.manual_seed(args.seed)
@@ -34,7 +42,8 @@ class Runner:
         )
         self.loader = DataLoader(self.data, batch_size=args.batch_size)
 
-        if args.with_amp:
+        self.amp_scaler = torch.cuda.amp.GradScaler(enabled=args.with_amp)
+        if is_fp16_allowed(args):
             self.amp_context = lambda: torch.cuda.amp.autocast(dtype=torch.float16)
         else:
             self.amp_context = nullcontext
@@ -42,10 +51,14 @@ class Runner:
     def step(self, data):
         with self.amp_context():
             outputs = self.model(**data)
+
         loss = outputs.loss
+
+        self.amp_scaler.scale(loss).backward()
+        self.amp_scaler.step(self.optimizer)
+        self.amp_scaler.update()
+
         give(loss=loss.item())
-        loss.backward()
-        self.optimizer.step()
 
     def train(self):
         for data in voir.iterate(
@@ -108,6 +121,14 @@ def parser():
         dest="allow_tf32",
         action="store_false",
         help="do not allow tf32",
+        default=True,
+    )
+    parser.add_argument(
+        "--precision",
+        type=str,
+        choices=["fp16", "fp32", "tf32", "tf32-fp16"],
+        default="fp32",
+        help="Precision configuration",
     )
     # parser.add_argument(
     #     "--no-stdout",
