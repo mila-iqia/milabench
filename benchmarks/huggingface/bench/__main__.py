@@ -11,6 +11,8 @@ from torch.utils.data import DataLoader
 from .models import models
 from .synth import SyntheticData, generators
 
+import apex.amp as amp
+
 
 class Runner:
     def __init__(self, args):
@@ -39,16 +41,20 @@ class Runner:
             self.amp_context = lambda: torch.cuda.amp.autocast(dtype=torch.float16)
         else:
             self.amp_context = nullcontext
+            
+        opt_level = "O0"
+        # if args.with_amp:
+        #    opt_level = "O1"
+            
+        self.model, self.optimizer = amp.initialize(self.model, self.optimizer, opt_level=opt_level)
 
     def step(self, data):
-        with self.amp_context():
-            outputs = self.model(**data)
-
-        loss = outputs.loss
-
-        self.amp_scaler.scale(loss).backward()
-        self.amp_scaler.step(self.optimizer)
-        self.amp_scaler.update()
+        # with self.amp_context():
+        outputs = self.model(**data)
+        loss = outputs['loss']
+         
+        with amp.scale_loss(loss, self.optimizer) as scaled_loss:
+           scaled_loss.backward()
 
         give(loss=loss.item())
 
