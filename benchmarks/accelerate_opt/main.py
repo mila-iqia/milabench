@@ -361,25 +361,27 @@ def main():
                 # skipped steps after the start.
                 if not accelerator.optimizer_step_was_skipped:
                     completed_steps += 1
-            log_interval = 3
-            if (
-                accelerator.is_main_process
-                and completed_steps % log_interval == 0
-            ):
-                if completed_steps == 0:
-                    last_log_time = time.time()
-                else:
-                    seconds_since_last_log = time.time() - last_log_time
 
-                    n_samples_since_last_log = log_interval * total_batch_size
+                log_interval = 3
+                if (
+                    accelerator.is_main_process
+                    and completed_steps % log_interval == 0
+                ):
+                    torch.cuda.synchronize()
+                    if completed_steps == 0:
+                        last_log_time = time.time()
+                    else:
+                        seconds_since_last_log = time.time() - last_log_time
 
-                    throughput_samples_per_sec = (
-                        n_samples_since_last_log / seconds_since_last_log
-                    )
+                        n_samples_since_last_log = log_interval * total_batch_size
 
-                    mblog({"task": "train", "rate": throughput_samples_per_sec, "units": "items/s"})
+                        throughput_samples_per_sec = (
+                            n_samples_since_last_log / seconds_since_last_log
+                        )
 
-                    last_log_time = time.time()
+                        mblog({"task": "train", "rate": throughput_samples_per_sec, "units": "items/s"})
+
+                        last_log_time = time.time()
 
             if completed_steps >= max_train_steps:
                 break
