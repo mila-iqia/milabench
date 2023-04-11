@@ -34,6 +34,7 @@ class Runner:
         )
         self.loader = DataLoader(self.data, batch_size=args.batch_size)
 
+        self.amp_scaler = torch.cuda.amp.GradScaler(enabled=args.with_amp)
         if args.with_amp:
             self.amp_context = lambda: torch.cuda.amp.autocast(dtype=torch.float16)
         else:
@@ -42,10 +43,14 @@ class Runner:
     def step(self, data):
         with self.amp_context():
             outputs = self.model(**data)
+
         loss = outputs.loss
+
+        self.amp_scaler.scale(loss).backward()
+        self.amp_scaler.step(self.optimizer)
+        self.amp_scaler.update()
+
         give(loss=loss.item())
-        loss.backward()
-        self.optimizer.step()
 
     def train(self):
         for data in voir.iterate(
@@ -107,8 +112,8 @@ def parser():
         "--no-tf32",
         dest="allow_tf32",
         action="store_false",
-        default=True,
         help="do not allow tf32",
+        default=True,
     )
     parser.add_argument(
         "--tf32",
@@ -117,8 +122,6 @@ def parser():
         default=True,
         help="Allow tf32",
     )
-
-
     # parser.add_argument(
     #     "--no-stdout",
     #     action="store_true",
