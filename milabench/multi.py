@@ -90,6 +90,20 @@ class MultiPackage:
         for index in range(repeat):
             for pack in self.packs.values():
                 try:
+
+                    def capability_failure():
+                        caps = dict(pack.config["capabilities"])
+                        for condition in pack.config.get("requires_capabilities", []):
+                            if not eval(condition, caps):
+                                return condition
+                        return False
+
+                    if condition_failed := capability_failure():
+                        await pack.message(
+                            f"Skip {pack.config['name']} because the following capability is not satisfied: {condition_failed}"
+                        )
+                        continue
+
                     cfg = pack.config
                     plan = deepcopy(cfg["plan"])
                     method = get_planning_method(plan.pop("method"))

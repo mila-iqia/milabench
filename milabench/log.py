@@ -189,7 +189,10 @@ class DataReporter(BaseReporter):
     def log(self, entry):
         d = entry.dict()
         d.pop("pack")
-        j = json.dumps(d)
+        try:
+            j = json.dumps(d)
+        except TypeError:
+            j = {"#unrepresentable": str(d)}
         self.file(entry).write(f"{j}\n")
 
 

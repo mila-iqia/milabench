@@ -213,7 +213,7 @@ focalnet:
   argv:
     --model: focalnet_small_lrf
 
-opt-2.7b:
+opt-2_7b:
   inherits: _defaults
   tags:
     - nlp
@@ -232,16 +232,33 @@ opt-2.7b:
   manager_addr: "127.0.0.1"
   manager_port: 10000
   cpus_per_gpu: 8
-  # model_name: "facebook/opt-350m"
   model_name: "facebook/opt-2.7b"
-  #model_name: "facebook/opt-1.3b"
-  #model_name: "facebook/opt-125m"
+  # model_name: "facebook/opt-1.3b"
+  # model_name: "facebook/opt-350m"
+  # model_name: "facebook/opt-125m"
   gradient_accumulation_steps: 1
   per_gpu_batch_size: 1
   max_train_steps: 100
   dataset_name: "wikitext"
   dataset_config_name: "wikitext-103-v1"
   validation_split_percentage: 5
+  num_machines: 1
+
+opt-2_7b-2nodes:
+  inherits: opt-2_7b
+  tags:
+    - multinode
+  plan:
+    method: njobs
+    n: 1
+
+  requires_capabilities:
+    - "nodes >= 2"
+
+  docker_image: "ghcr.io/mila-iqia/milabench:cuda-nightly"
+  num_machines: 2
+  gradient_accumulation_steps: 1
+  per_gpu_batch_size: 4
 
 stargan:
   inherits: _defaults

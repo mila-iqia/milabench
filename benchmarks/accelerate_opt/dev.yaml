@@ -19,7 +19,9 @@ benchmarks:
     # This is for single-node
     manager_addr: "127.0.0.1"
     manager_port: 10000
+    worker_addrs: []
 
+    num_machines: 1
     num_processes: 8
     cpus_per_gpu: 8
 
@@ -30,6 +32,34 @@ benchmarks:
     gradient_accumulation_steps: 1
     per_gpu_batch_size: 1
     max_train_steps: 1000
+
+    dataset_name: "wikitext"
+    dataset_config_name: "wikitext-103-v1"
+    validation_split_percentage: 5
+
+    definition: ./
+
+  opt_2nodes:
+    <<<: *defaults
+
+    manager_addr: "manager"
+    manager_port: 10000
+    worker_addrs:
+      - "worker1"
+
+    docker_image: "milabench:cuda-nightly"
+
+    num_machines: 2
+    num_processes: 8
+    cpus_per_gpu: 8
+
+    model_name: "facebook/opt-2.7b"
+    #model_name: "facebook/opt-1.3b"
+    #model_name: "facebook/opt-125m"
+
+    gradient_accumulation_steps: 1
+    per_gpu_batch_size: 1
+    max_train_steps: 15
 
     dataset_name: "wikitext"
     dataset_config_name: "wikitext-103-v1"

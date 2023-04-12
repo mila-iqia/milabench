@@ -72,6 +72,13 @@ def get_multipack(run_name=None, overrides={}):
     # [action: append]
     override: Option = []
 
+    # Define capabilities
+    capabilities: Option = ""
+
+    override.extend(
+        [f"*.capabilities.{entry}" for entry in capabilities.split(",") if entry]
+    )
+
     if override:
         overrides = merge(
             overrides,
@@ -90,6 +97,8 @@ def get_multipack(run_name=None, overrides={}):
 
 
 def selection_keys(defn):
+    if "group" not in defn:
+        raise Exception("Invalid benchmark:", defn["name"])
     sel = {
         "*",
         defn["name"],
@@ -116,6 +125,9 @@ def get_base_defaults(base, arch="none", run_name="none"):
             "install_group": "${group}",
             "run_name": run_name,
             "enabled": True,
+            "capabilities": {
+                "nodes": 1,
+            },
         }
     }
 
