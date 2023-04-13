@@ -25,7 +25,7 @@ _hf:
   group: hf
   install_group: torch
   argv:
-    --precision: 'fp16'
+    --precision: 'tf32'
 
   plan:
     method: per_gpu
@@ -104,41 +104,36 @@ regnet_y_128gf:
     --model: regnet_y_128gf
     --batch-size: 64
 
-bert-fp32:
+_precision-showcase:
   inherits: _hf
   tags:
     - showcase
   argv:
     --model: "Bert"
-    --precision: 'fp32'
     --batch-size: 32
+  voir:
+    options:
+      stop: 20
+
+bert-fp32:
+  inherits: _precision-showcase
+  argv:
+    --precision: 'fp32'
 
 bert-fp16:
-  inherits: _hf
-  tags:
-    - showcase
+  inherits: _precision-showcase
   argv:
-    --model: "Bert"
     --precision: 'fp16'
-    --batch-size: 32
 
 bert-tf32:
-  inherits: _hf
-  tags:
-    - showcase
+  inherits: _precision-showcase
   argv:
-    --model: "Bert"
     --precision: 'tf32'
-    --batch-size: 32
 
 bert-tf32-fp16:
-  inherits: _hf
-  tags:
-    - showcase
+  inherits: _precision-showcase
   argv:
-    --model: "Bert"
     --precision: 'tf32-fp16'
-    --batch-size: 32
 
 t5:
   inherits: _hf
