@@ -6,7 +6,7 @@ sudo docker run -it --rm --shm-size=32G               \
       --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=all  \
       -v $(pwd)/results:/milabench/envs/runs          \
       ghcr.io/mila-iqia/milabench:cuda-nightly        \
-      milabench run --select efficientnet_b4
+      milabench run
 
 # Show Performance Report
 sudo docker run -it --rm --shm-size=32G                \
