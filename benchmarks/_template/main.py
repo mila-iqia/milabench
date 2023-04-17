@@ -4,13 +4,17 @@
 # clone_subtree in the benchfile.py, in which case this file can simply
 # be deleted.
 
+import time
+
+import voir
+from giving import give
+
 
 def main():
-    # Write code here
-    print("Hello this is the benchmark!")
+    for i in voir.iterate("train", range(10000), report_batch=True, batch_size=64):
+        give(loss=1 / (i + 1))
+        time.sleep(0.1)
 
 
 if __name__ == "__main__":
-    # Note: The line `if __name__ == "__main__"` is necessary for milabench
-    # to recognize the entry point (it does some funky stuff to it).
     main()
