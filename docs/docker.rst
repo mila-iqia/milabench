@@ -26,24 +26,10 @@ storing the results inside the `results` folder on the host machine.
 
 The last command will generate a json summary of each benchmarks.
 
-.. code-block:: bash
 
-   # Pull the image we are going to run
-   sudo docker pull ghcr.io/mila-iqia/milabench:cuda-nightly
+.. literalinclude:: ../docker/run-cuda.bash
+   :language: bash
 
-   # Run milabench
-   sudo docker run -it --rm --shm-size=1G                \
-         --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=all  \
-         -v $(pwd)/results:/milabench/envs/runs          \
-         ghcr.io/mila-iqia/milabench:cuda-nightly        \
-         milabench run
-
-   # Show Performance Report
-   sudo docker run -it --rm --shm-size=1G                \
-         --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=all  \
-         -v $(pwd)/results:/milabench/envs/runs          \
-         ghcr.io/mila-iqia/milabench:cuda-nightly        \
-         milabench summary /milabench/envs/runs
 
 ROCM
 ----
@@ -59,21 +45,8 @@ To run docker images you will need to install the softwares below.
 Usage
 ^^^^^
 
-.. code-block:: bash
- 
-   sudo docker run -it  --rm --shm-size=1G                        \
-         --device=/dev/kfd --device=/dev/dri                      \
-         --security-opt seccomp=unconfined --group-add video      \
-         -v $(pwd)/results:/milabench/envs/runs                   \
-         ghcr.io/mila-iqia/milabench:rocm-nightly                 \
-         milabench run
-
-   sudo docker run -it  --rm --shm-size=1G                        \
-         --device=/dev/kfd --device=/dev/dri                      \
-         --security-opt seccomp=unconfined --group-add video      \
-         -v $(pwd)/results:/milabench/envs/runs                   \
-         ghcr.io/mila-iqia/milabench:rocm-nightly                 \
-         milabench summary /milabench/envs/runs
+.. literalinclude:: ../docker/run-rocm.bash
+   :language: bash
 
 
 Publish
