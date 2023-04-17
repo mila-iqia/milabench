@@ -9,8 +9,6 @@ Welcome to milabench's documentation!
    usage.rst
    docker.rst
    dev-usage.rst
-   config.rst
-   instrument.rst
    new_benchmarks.rst
    reference.rst
 
