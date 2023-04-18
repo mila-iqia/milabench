@@ -136,7 +136,7 @@ For 4 nodes, use ``--override opt-2_7b-multinode.worker_addrs='["'$NODE2'","'$NO
 Building images
 ---------------
 
-Images can be build locally for prototyping and testing.
+Images can be built locally for prototyping and testing.
 
 .. code-block::
 
