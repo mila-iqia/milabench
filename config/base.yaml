@@ -238,7 +238,7 @@ opt-2_7b:
     method: njobs
     n: 1
   # This is for single-node
-  manager_addr: "127.0.0.1"
+  manager_addr: "override-me"
   manager_port: 10000
   cpus_per_gpu: 8
   model_name: "facebook/opt-2.7b"
@@ -253,7 +253,7 @@ opt-2_7b:
   validation_split_percentage: 5
   num_machines: 1
 
-opt-2_7b-2nodes:
+opt-2_7b-multinode:
   inherits: opt-2_7b
   tags:
     - multinode
@@ -262,11 +262,10 @@ opt-2_7b-2nodes:
     n: 1
 
   requires_capabilities:
-    - "nodes >= 2"
+    - "nodes >= ${num_machines}"
 
   docker_image: "ghcr.io/mila-iqia/milabench:cuda-nightly"
   num_machines: 2
-  gradient_accumulation_steps: 1
   per_gpu_batch_size: 4
 
 stargan:
