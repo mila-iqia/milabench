@@ -29,12 +29,12 @@ storing the results inside the ``results`` folder on the host machine:
    docker pull $MILABENCH_IMAGE
 
    # Run milabench
-   docker run -it --rm --shm-size=8G --gpus=all   \
+   docker run -it --rm --ipc=host --gpus=all      \
          -v $(pwd)/results:/milabench/envs/runs   \
          $MILABENCH_IMAGE                         \
          milabench run
 
-You may have to increase the value of ``--shm-size`` if it turns out to be insufficient.
+``--ipc=host`` removes shared memory restrictions, but you can also set ``--shm-size`` to a high value instead (at least ``8G``, possibly more).
 
 Each run should store results in a unique directory under ``results/`` on the host machine. To generate a readable report of the results you can run:
 
@@ -70,7 +70,7 @@ For ROCM the usage is similar to CUDA, but you must use a different image and th
    docker pull $MILABENCH_IMAGE
 
    # Run milabench
-   docker run -it --rm --shm-size=32G                        \
+   docker run -it --rm  --ipc=host                           \
          --device=/dev/kfd --device=/dev/dri                 \
          --security-opt seccomp=unconfined --group-add video \
          -v $(pwd)/results:/milabench/envs/runs              \
@@ -115,7 +115,7 @@ The command should look something like this:
     export NUM_MACHINES=2
     export MILABENCH_USER=$USER  # The user on worker-node that public key auth is set up for
 
-    docker run -it --rm --gpus all --network host --shm-size 32G \
+    docker run -it --rm --gpus all --network host --ipc=host \
       -v $SSH_KEY:/milabench/id_milabench \
       -v $(pwd)/results:/milabench/envs/runs \
       $MILABENCH_IMAGE \
@@ -140,6 +140,10 @@ Images can be built locally for prototyping and testing.
 
 .. code-block::
 
-   sudo docker build -t milabench:cuda-nightly --build-arg ARCH=cuda --build-arg CONFIG=standard.yaml .
+   docker build -f docker/Dockerfile-cuda -t milabench:cuda-nightly --build-arg CONFIG=standard.yaml .
 
-Set the ``ARCH`` and ``CONFIG`` build arguments to the appropriate values for your use case.
+Or for ROCm:
+
+.. code-block::
+
+   docker build -f docker/Dockerfile-rocm -t milabench:rocm-nightly --build-arg CONFIG=standard.yaml .
