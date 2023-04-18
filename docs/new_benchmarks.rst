@@ -2,11 +2,11 @@
 Creating a new benchmark
 ------------------------
 
-To define a new benchmark (let's assume it is called ``ornatebench``), make a copy of ``benchmarks/_template``:
+To define a new benchmark (let's assume it is called ``ornatebench``), make a copy of ``benchmarks/_template`` using ``cp-template``:
 
 .. code-block:: bash
 
-    cp -r benchmarks/_template benchmarks/ornatebench
+    cp-template benchmarks/_template/ benchmarks/ornatebench
 
 You should see a directory with the following structure:
 
