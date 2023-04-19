@@ -1,8 +1,5 @@
-FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04
+FROM ubuntu:22.04
 
-# CUDA-11.8 Fix
-ENV LD_LIBRARY_PATH="/usr/local/cuda/targets/x86_64-linux/lib/:$LD_LIBRARY_PATH"
-RUN ln /usr/local/cuda/targets/x86_64-linux/lib/libnvrtc.so.11.8.89 /usr/local/cuda/targets/x86_64-linux/lib/libnvrtc.so
 
 # Arguments
 # ---------
@@ -21,8 +18,6 @@ ENV MILABENCH_CONFIG=/milabench/milabench/config/$MILABENCH_CONFIG_NAME
 ENV MILABENCH_BASE=/milabench/envs
 ENV MILABENCH_OUTPUT=/milabench/results/
 ENV MILABENCH_ARGS=""
-ENV CONDA_PATH=/opt/anaconda
-
 
 # Copy milabench
 # --------------
@@ -40,20 +35,12 @@ COPY . /milabench/milabench/
 # build-essential: for rust
 
 RUN apt-get update &&\
-    apt-get install -y git build-essential curl &&\
+    apt-get install -y git build-essential curl python3 python-is-python3 python3-pip &&\
     apt-get clean &&\
     rm -rf /var/lib/apt/lists/*
 
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
-
-# Install Python
-# --------------
-
-# Install anaconda because milabench will need it later anyway
-RUN curl https://repo.anaconda.com/miniconda/Miniconda3-py39_23.1.0-1-Linux-x86_64.sh -o ~/miniconda.sh &&\
-    /bin/bash ~/miniconda.sh -b -p $CONDA_PATH && rm ~/miniconda.sh
-ENV PATH=$CONDA_PATH/bin:$PATH
 
 
 # Install Milabench
@@ -74,6 +61,11 @@ ENV PIP_DEFAULT_TIMEOUT=800
 
 RUN milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
     milabench prepare --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
-    python -m pip cache purge
+    python -m pip cache purge                                                          
 
+# Patch for https://github.com/pytorch/pytorch/issues/97041
+RUN cd /milabench/envs/venv/torch/lib/python3.10/site-packages/torch/lib                &&\
+   ln -sfn libnvrtc-672ee683.so.11.2 libnvrtc.so
+
+ENV LD_LIBRARY_PATH="/milabench/envs/venv/torch/lib/python3.10/site-packages/torch/lib:$LD_LIBRARY_PATH"
 CMD ["milabench", "run"]
