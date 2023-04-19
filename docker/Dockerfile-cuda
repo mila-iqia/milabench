@@ -1,5 +1,7 @@
 FROM ubuntu:22.04
 
+# For cuda-gdb
+# FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
 
 # Arguments
 # ---------
@@ -61,11 +63,11 @@ ENV PIP_DEFAULT_TIMEOUT=800
 
 RUN milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
     milabench prepare --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
+    milabench pip torch torchvision torchaudio -U --pre --index-url https://download.pytorch.org/whl/nightly/cu118 &&\
     python -m pip cache purge                                                          
 
 # Patch for https://github.com/pytorch/pytorch/issues/97041
 RUN cd /milabench/envs/venv/torch/lib/python3.10/site-packages/torch/lib                &&\
    ln -sfn libnvrtc-672ee683.so.11.2 libnvrtc.so
 
-ENV LD_LIBRARY_PATH="/milabench/envs/venv/torch/lib/python3.10/site-packages/torch/lib:$LD_LIBRARY_PATH"
 CMD ["milabench", "run"]
