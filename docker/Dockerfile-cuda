@@ -63,7 +63,6 @@ ENV PIP_DEFAULT_TIMEOUT=800
 
 RUN milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
     milabench prepare --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
-    milabench pip torch torchvision torchaudio -U --pre --index-url https://download.pytorch.org/whl/nightly/cu118 &&\
     python -m pip cache purge                                                          
 
 # Patch for https://github.com/pytorch/pytorch/issues/97041

@@ -197,6 +197,21 @@ vit_l_32:
     --model: vit_large_patch32_224
     --batch-size: 256
 
+davit_large:
+  inherits: _timm
+  tags:
+    - vision
+    - classification
+    - transformer
+    - multigpu
+
+  plan:
+    method: njobs
+    n: 1
+  argv:
+    --model: davit_large
+    --batch-size: 128
+
 focalnet:
   inherits: _timm
   tags:
