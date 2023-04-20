@@ -115,7 +115,7 @@ The command should look something like this:
     export NUM_MACHINES=2
     export MILABENCH_USER=$USER  # The user on worker-node that public key auth is set up for
 
-    docker run -it --rm --gpus all --network host --ipc=host \
+    docker run -it --rm --gpus all --network host --ipc=host --privileged \
       -v $SSH_KEY:/milabench/id_milabench \
       -v $(pwd)/results:/milabench/envs/runs \
       $MILABENCH_IMAGE \
@@ -131,6 +131,11 @@ The command should look something like this:
 The last line (``--select opt-2_7b-multinode``) specifically selects the multi-node benchmark. Omit that line to run all benchmarks.
 
 For 4 nodes, use ``--override opt-2_7b-multinode.worker_addrs='["'$NODE2'","'$NODE3'","'$NODE4'"]'`` (and of course ``NUM_MACHINES=4``).
+
+.. note::
+      The multi-node benchmark is sensitive to network performance. If the mono-node benchmark ``opt-2_7b`` is significantly faster than ``opt-2_7b-multinode``, this likely indicates that Infiniband is either not present or not used.
+
+      Even if Infiniband is properly configured, the benchmark may fail to use it unless the ``--privileged`` flag is set when running the container.
 
 
 Building images
