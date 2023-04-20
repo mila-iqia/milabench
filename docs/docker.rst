@@ -124,7 +124,7 @@ The command should look something like this:
       --override opt-2_7b-multinode.manager_addr='"'$NODE1'"' \
       --override opt-2_7b-multinode.worker_addrs='["'$NODE2'"]' \
       --override opt-2_7b-multinode.worker_user='"'$MILABENCH_USER'"' \
-      --override opt-2_7b-multinode.num_machines='"'$NUM_MACHINES'"' \
+      --override opt-2_7b-multinode.num_machines=$NUM_MACHINES \
       --capabilities nodes=$NUM_MACHINES \
       --select opt-2_7b-multinode
 
