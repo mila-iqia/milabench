@@ -2,6 +2,7 @@ import asyncio
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
 from itertools import count
+from typing import List, Dict
 
 from voir.proc import LogEntry
 
@@ -22,9 +23,9 @@ class BenchLogEntry(LogEntry):
 
 @dataclass
 class Job:
-    argv: list[str]
+    argv: List[str]
     info: dict = None
-    env: dict[str] = None
+    env: Dict[str, object] = None
     cwd: str = None
     preexec_fn: object = None
     properties: dict = None
