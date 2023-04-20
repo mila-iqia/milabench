@@ -68,6 +68,7 @@ class AccelerateBenchmark(Package):
         for i, worker in enumerate(self.config.get('worker_addrs', [])):
             command = ["docker", "run", "-i", "--rm",
                        "--network", "host",
+                       "--privileged",
                        "--gpus", "all"]
             env = self.make_env()
             for var in ('MILABENCH_CONFIG', 'XDG_CACHE_HOME', 'OMP_NUM_THREADS'):
