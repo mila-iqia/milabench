@@ -93,44 +93,77 @@ Multi-node benchmark
 
 There is currently one multi-node benchmark, ``opt-2_7b-multinode``. Here is how to run it:
 
-* Provided you have the following two machines that can see each other on the network:
-  * ``manager-node``
+1. Set up two or more machines that can see each other on the network. Suppose there are two and their addresses are:
+  * ``manager-node`` ⬅ this is the node you will launch the job on
   * ``worker-node``
-* ``docker pull`` the image on both nodes.
-* Prior to running the benchmark, create a SSH key pair on ``manager-node`` and set up public key authentication to ``worker-node``.
-* On ``manager-node``, execute ``milabench run`` via Docker.
+2. ``docker pull`` the image on both nodes.
+3. Prior to running the benchmark, create a SSH key pair on ``manager-node`` and set up public key authentication to the other nodes (in this case, ``worker-node``).
+4. Write an override file that will tell milabench about the network (see below)
+5. On ``manager-node``, execute ``milabench run`` via Docker.
   * Mount the private key at ``/milabench/id_milabench`` in the container
-  * Use ``--override`` statements as shown below to tell milabench about both nodes
+  * Use ``--override "$(cat overrides.yaml)"`` to pass the overrides
 
-The command should look something like this:
+Example YAML configuration (``overrides.yaml``):
+
+.. code-block:: yaml
+
+    # Name of the benchmark. You can also override values in other benchmarks.
+    opt-2_7b-multinode:
+
+      # Docker image to use on the worker nodes (should be same as the manager)
+      docker_image: "ghcr.io/mila-iqia/milabench:cuda-nightly"
+
+      # The user on worker-node that public key auth is set up for
+      worker_user: "username"
+
+      # Address of the manager node from the worker nodes
+      manager_addr: "manager-node"
+
+      # Addresses of the worker nodes (do not include the manager node,
+      # although it is also technically a worker node)
+      worker_addrs:
+        - "worker-node"
+
+      # Make sure that this is equal to length(worker_addrs) + 1
+      num_machines: 2
+
+      capabilities:
+        # Make sure that this is ALSO equal to length(worker_addrs) + 1
+        nodes: 2
+
+Then, the command should look like this:
 
 .. code-block:: bash
 
     # On manager-node:
 
-    # Modify these variables to match your setup
-    export SSH_KEY=$HOME/.ssh/id_rsa
-    export NODE1=manager-node
-    export NODE2=worker-node
-    export NUM_MACHINES=2
-    export MILABENCH_USER=$USER  # The user on worker-node that public key auth is set up for
+    # Change if needed
+    export SSH_KEY_FILE=$HOME/.ssh/id_rsa
 
     docker run -it --rm --gpus all --network host --ipc=host --privileged \
-      -v $SSH_KEY:/milabench/id_milabench \
+      -v $SSH_KEY_FILE:/milabench/id_milabench \
       -v $(pwd)/results:/milabench/envs/runs \
       $MILABENCH_IMAGE \
-      milabench run \
-      --override opt-2_7b-multinode.docker_image='"'$MILABENCH_IMAGE'"' \
-      --override opt-2_7b-multinode.manager_addr='"'$NODE1'"' \
-      --override opt-2_7b-multinode.worker_addrs='["'$NODE2'"]' \
-      --override opt-2_7b-multinode.worker_user='"'$MILABENCH_USER'"' \
-      --override opt-2_7b-multinode.num_machines=$NUM_MACHINES \
-      --capabilities nodes=$NUM_MACHINES \
+      milabench run --override "$(cat overrides.yaml)" \
       --select opt-2_7b-multinode
 
 The last line (``--select opt-2_7b-multinode``) specifically selects the multi-node benchmark. Omit that line to run all benchmarks.
 
-For 4 nodes, use ``--override opt-2_7b-multinode.worker_addrs='["'$NODE2'","'$NODE3'","'$NODE4'"]'`` (and of course ``NUM_MACHINES=4``).
+If you need to use more than two nodes, edit or copy ``overrides.yaml`` and simply add the other nodes' addresses in ``worker_addrs`` and adjust ``num_machines`` and ``capabilities.nodes`` accordingly. For example, for 4 nodes:
+
+.. code-block:: yaml
+
+    opt-2_7b-multinode:
+      docker_image: "ghcr.io/mila-iqia/milabench:cuda-nightly"
+      worker_user: "username"
+      manager_addr: "manager-node"
+      worker_addrs:
+        - "worker-node1"
+        - "worker-node2"
+        - "worker-node3"
+      num_machines: 4
+      capabilities:
+        nodes: 4
 
 .. note::
       The multi-node benchmark is sensitive to network performance. If the mono-node benchmark ``opt-2_7b`` is significantly faster than ``opt-2_7b-multinode``, this likely indicates that Infiniband is either not present or not used.
