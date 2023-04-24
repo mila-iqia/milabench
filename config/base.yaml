@@ -172,14 +172,19 @@ resnet152:
     - classification
     - convnet
     - resnet
-    - multigpu
-
   plan:
-    method: njobs
-    n: 1
+    method: per_gpu
   argv:
     --model: resnet152
     --batch-size: 256
+
+resnet152-multi:
+  inherits: resnet152
+  tags:
+    - multigpu
+  plan:
+    method: njobs
+    n: 1
 
 vit_l_32:
   inherits: _timm
@@ -202,14 +207,20 @@ davit_large:
     - vision
     - classification
     - transformer
-    - multigpu
-
   plan:
-    method: njobs
+    method: per_gpu
     n: 1
   argv:
     --model: davit_large
     --batch-size: 128
+
+davit_large-multi:
+  inherits: davit_large
+  tags:
+    - multigpu
+  plan:
+    method: njobs
+    n: 1
 
 focalnet:
   inherits: _timm
