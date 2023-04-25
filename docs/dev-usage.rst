@@ -35,40 +35,39 @@ Important options
 ~~~~~~~~~~~~~~~~~
 
 * Use the ``--select`` option with a comma-separated list of benchmarks in order to only install/prepare/run these benchmarks (or use ``--exclude`` to run all benchmarks except a specific set).
-* You may use ``--use-current-env`` to force the use the currently active virtual environment (useful for development).
+* You may use ``--use-current-env`` to force the use the currently active virtual environment.
 
 milabench install
 ~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
-    milabench install config/standard.yaml --select mybench
+    milabench install --config config/standard.yaml --select mybench
 
-* Copies the code for the benchmark (specified in the ``definition`` field of the benchmark's YAML, relative to the YAML file itself) into ``$MILABENCH_BASE/code/mybench``. Only files listed by the ``manifest`` file are copied.
-* Creates/reuses a virtual environment in ``$MILABENCH_BASE/venv/mybench`` and installs all pip dependencies in it.
-* Optionally extracts a shallow git clone of an external repository containing model code into ``$MILABENCH_BASE/code/mybench``.
+* Installs the benchmark specified in the ``definition`` field of the benchmark's YAML, relative to the YAML file itself.
+* Creates/reuses a virtual environment in ``$MILABENCH_BASE/venv/mybench`` (unless ``install_group`` is set to something different) and installs all pip dependencies in it.
 
 milabench prepare
 ~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
-    milabench prepare config/standard.yaml --select mybench
+    milabench prepare --config config/standard.yaml --select mybench
 
 * Prepares data for the benchmark into ``$MILABENCH_BASE/data/dataset_name``. Multiple benchmarks can share the same data. Some benchmarks need no preparation, so the prepare step does nothing.
+* May also download model weights or preprocess data.
 
 milabench run
 ~~~~~~~~~~~~~
 
 .. code-block:: bash
 
-    milabench run config/standard.yaml --select mybench
+    milabench run --config config/standard.yaml --select mybench
 
 * Creates a certain number of tasks from the benchmark using the ``plan`` defined in the YAML. For instance, one plan might be to run it in parallel on each GPU on the machine.
-* For each task, runs the benchmark installed in ``$MILABENCH_BASE/code/mybench`` in the appropriate virtual environment.
 * The benchmark is run from that directory using a command like ``voir [VOIR_OPTIONS] main.py [SCRIPT_OPTIONS]``
   * Both option groups are defined in the YAML.
-  * The VOIR_OPTIONS determine which instruments to use and what data to forward to milabench.
+  * The VOIR_OPTIONS determine/tweak which instruments to use and what data to forward to milabench.
   * The SCRIPT_OPTIONS are benchmark dependent.
 * Standard output/error and other data (training rates, etc.) are forwarded to the main dispatcher process and saved into ``$MILABENCH_BASE/runs/run_name/mybench.run_number.stdout`` (``.stderr`` / ``.data``) (the name of the directory is printed out for easy reference).
 
@@ -77,11 +76,13 @@ milabench pin
 
 .. code-block:: bash
 
-    milabench pin config/standard.yaml --select mybench --variant cuda --constraint constraints/cu118.txt
+    milabench pin --config config/standard.yaml --select mybench --variant cuda
 
 The basic idea behind ``milabench pin`` is to pin software versions for stability and reproducibility. Using the command above, the base requirements in ``benchmarks/mybench/requirements.in`` will be saved in ``requirements.cuda.txt``. If variant is not specified, the value of ``install_variant`` in the config file will be used (in ``standard.yaml``, which is ``install_value: "{{arch}}"``; that resolves to either "rocm" or "cuda" depending on the machine's architecture).
 
-The constraints file specifies appropriate constraints for the architecture, CUDA version, or other constraints that are specific to the environment.
+For a given variant, the installation is also constrained by ``constraints/variant.txt``, if the file exists. The file specifies appropriate constraints for the architecture, CUDA version, or other constraints that are specific to the environment.
+
+You can add more constraints with ``--constraints path/to/constraints.txt``.
 
 milabench report
 ~~~~~~~~~~~~~~~~
@@ -90,7 +91,7 @@ TODO.
 
 .. code-block:: bash
 
-    milabench report config/standard.yaml --runs <path_to_runs>
+    milabench report --config config/standard.yaml --runs <path_to_runs>
 
 milabench compare
 ~~~~~~~~~~~~~~~~~

@@ -1,4 +1,9 @@
 
+.. warning::
+
+  Outdated information, do not put in toctree.
+
+
 Benchmark configuration
 -----------------------
 

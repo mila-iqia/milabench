@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import runpy
 import shutil
 import subprocess
@@ -75,15 +76,19 @@ def get_multipack(run_name=None, overrides={}):
     # Define capabilities
     capabilities: Option = ""
 
+    override = [
+        o if re.match(pattern=r"[.\w]+=", string=o) else f"={o}" for o in override
+    ]
+
     override.extend(
         [f"*.capabilities.{entry}" for entry in capabilities.split(",") if entry]
     )
 
     if override:
-        overrides = merge(
-            overrides,
-            OmegaConf.to_object(OmegaConf.from_dotlist(override)),
-        )
+        override_obj = OmegaConf.to_object(OmegaConf.from_dotlist(override))
+        if "" in override_obj:
+            override_obj = merge(override_obj, override_obj.pop(""))
+        overrides = merge(overrides, override_obj)
 
     return _get_multipack(
         config,
@@ -123,6 +128,7 @@ def get_base_defaults(base, arch="none", run_name="none"):
             "arch": arch,
             "group": "${name}",
             "install_group": "${group}",
+            "install_variant": "${arch}",
             "run_name": run_name,
             "enabled": True,
             "capabilities": {
@@ -444,7 +450,7 @@ class Main:
         """Create a shell in a benchmark's environment for development."""
 
         # The name of the benchmark to develop
-        select: Option & str
+        select: Option & str = "*"
 
         mp = get_multipack(run_name="dev")
 
