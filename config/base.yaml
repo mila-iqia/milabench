@@ -266,7 +266,6 @@ davit_large:
     - transformer
   plan:
     method: per_gpu
-    n: 1
   argv:
     --model: davit_large
     --batch-size: 128
@@ -306,7 +305,7 @@ opt-1_3b-multinode:
   requires_capabilities:
     - "nodes >= ${num_machines}"
   docker_image: "ghcr.io/mila-iqia/milabench:cuda-nightly"
-  per_gpu_batch_size: 4
+  per_gpu_batch_size: 1
   num_machines: 2
 
 opt-6_7b:
