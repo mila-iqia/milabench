@@ -19,7 +19,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Benchmark configuration" href="config.html" />
+    <link rel="next" title="Creating a new benchmark" href="new_benchmarks.html" />
     <link rel="prev" title="Docker" href="docker.html" /> 
 </head>
 
@@ -56,8 +56,6 @@
 <li class="toctree-l2"><a class="reference internal" href="#milabench-compare">milabench compare</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="config.html">Benchmark configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="instrument.html">Instrumenting code</a></li>
 <li class="toctree-l1"><a class="reference internal" href="new_benchmarks.html">Creating a new benchmark</a></li>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
 </ul>
@@ -118,56 +116,56 @@
 <h2>Important options<a class="headerlink" href="#important-options" title="Permalink to this heading"></a></h2>
 <ul class="simple">
 <li><p>Use the <code class="docutils literal notranslate"><span class="pre">--select</span></code> option with a comma-separated list of benchmarks in order to only install/prepare/run these benchmarks (or use <code class="docutils literal notranslate"><span class="pre">--exclude</span></code> to run all benchmarks except a specific set).</p></li>
-<li><p>You may use <code class="docutils literal notranslate"><span class="pre">--use-current-env</span></code> to force the use the currently active virtual environment (useful for development).</p></li>
+<li><p>You may use <code class="docutils literal notranslate"><span class="pre">--use-current-env</span></code> to force the use the currently active virtual environment.</p></li>
 </ul>
 </section>
 <section id="milabench-install">
 <h2>milabench install<a class="headerlink" href="#milabench-install" title="Permalink to this heading"></a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench<span class="w"> </span>install<span class="w"> </span>config/standard.yaml<span class="w"> </span>--select<span class="w"> </span>mybench
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench<span class="w"> </span>install<span class="w"> </span>--config<span class="w"> </span>config/standard.yaml<span class="w"> </span>--select<span class="w"> </span>mybench
 </pre></div>
 </div>
 <ul class="simple">
-<li><p>Copies the code for the benchmark (specified in the <code class="docutils literal notranslate"><span class="pre">definition</span></code> field of the benchmark’s YAML, relative to the YAML file itself) into <code class="docutils literal notranslate"><span class="pre">$MILABENCH_BASE/code/mybench</span></code>. Only files listed by the <code class="docutils literal notranslate"><span class="pre">manifest</span></code> file are copied.</p></li>
-<li><p>Creates/reuses a virtual environment in <code class="docutils literal notranslate"><span class="pre">$MILABENCH_BASE/venv/mybench</span></code> and installs all pip dependencies in it.</p></li>
-<li><p>Optionally extracts a shallow git clone of an external repository containing model code into <code class="docutils literal notranslate"><span class="pre">$MILABENCH_BASE/code/mybench</span></code>.</p></li>
+<li><p>Installs the benchmark specified in the <code class="docutils literal notranslate"><span class="pre">definition</span></code> field of the benchmark’s YAML, relative to the YAML file itself.</p></li>
+<li><p>Creates/reuses a virtual environment in <code class="docutils literal notranslate"><span class="pre">$MILABENCH_BASE/venv/mybench</span></code> (unless <code class="docutils literal notranslate"><span class="pre">install_group</span></code> is set to something different) and installs all pip dependencies in it.</p></li>
 </ul>
 </section>
 <section id="milabench-prepare">
 <h2>milabench prepare<a class="headerlink" href="#milabench-prepare" title="Permalink to this heading"></a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench<span class="w"> </span>prepare<span class="w"> </span>config/standard.yaml<span class="w"> </span>--select<span class="w"> </span>mybench
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench<span class="w"> </span>prepare<span class="w"> </span>--config<span class="w"> </span>config/standard.yaml<span class="w"> </span>--select<span class="w"> </span>mybench
 </pre></div>
 </div>
 <ul class="simple">
 <li><p>Prepares data for the benchmark into <code class="docutils literal notranslate"><span class="pre">$MILABENCH_BASE/data/dataset_name</span></code>. Multiple benchmarks can share the same data. Some benchmarks need no preparation, so the prepare step does nothing.</p></li>
+<li><p>May also download model weights or preprocess data.</p></li>
 </ul>
 </section>
 <section id="milabench-run">
 <h2>milabench run<a class="headerlink" href="#milabench-run" title="Permalink to this heading"></a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench<span class="w"> </span>run<span class="w"> </span>config/standard.yaml<span class="w"> </span>--select<span class="w"> </span>mybench
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench<span class="w"> </span>run<span class="w"> </span>--config<span class="w"> </span>config/standard.yaml<span class="w"> </span>--select<span class="w"> </span>mybench
 </pre></div>
 </div>
 <ul class="simple">
 <li><p>Creates a certain number of tasks from the benchmark using the <code class="docutils literal notranslate"><span class="pre">plan</span></code> defined in the YAML. For instance, one plan might be to run it in parallel on each GPU on the machine.</p></li>
-<li><p>For each task, runs the benchmark installed in <code class="docutils literal notranslate"><span class="pre">$MILABENCH_BASE/code/mybench</span></code> in the appropriate virtual environment.</p></li>
 <li><p>The benchmark is run from that directory using a command like <code class="docutils literal notranslate"><span class="pre">voir</span> <span class="pre">[VOIR_OPTIONS]</span> <span class="pre">main.py</span> <span class="pre">[SCRIPT_OPTIONS]</span></code>
 * Both option groups are defined in the YAML.
-* The VOIR_OPTIONS determine which instruments to use and what data to forward to milabench.
+* The VOIR_OPTIONS determine/tweak which instruments to use and what data to forward to milabench.
 * The SCRIPT_OPTIONS are benchmark dependent.</p></li>
 <li><p>Standard output/error and other data (training rates, etc.) are forwarded to the main dispatcher process and saved into <code class="docutils literal notranslate"><span class="pre">$MILABENCH_BASE/runs/run_name/mybench.run_number.stdout</span></code> (<code class="docutils literal notranslate"><span class="pre">.stderr</span></code> / <code class="docutils literal notranslate"><span class="pre">.data</span></code>) (the name of the directory is printed out for easy reference).</p></li>
 </ul>
 </section>
 <section id="milabench-pin">
 <h2>milabench pin<a class="headerlink" href="#milabench-pin" title="Permalink to this heading"></a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench<span class="w"> </span>pin<span class="w"> </span>config/standard.yaml<span class="w"> </span>--select<span class="w"> </span>mybench<span class="w"> </span>--variant<span class="w"> </span>cuda<span class="w"> </span>--constraint<span class="w"> </span>constraints/cu118.txt
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench<span class="w"> </span>pin<span class="w"> </span>--config<span class="w"> </span>config/standard.yaml<span class="w"> </span>--select<span class="w"> </span>mybench<span class="w"> </span>--variant<span class="w"> </span>cuda
 </pre></div>
 </div>
 <p>The basic idea behind <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">pin</span></code> is to pin software versions for stability and reproducibility. Using the command above, the base requirements in <code class="docutils literal notranslate"><span class="pre">benchmarks/mybench/requirements.in</span></code> will be saved in <code class="docutils literal notranslate"><span class="pre">requirements.cuda.txt</span></code>. If variant is not specified, the value of <code class="docutils literal notranslate"><span class="pre">install_variant</span></code> in the config file will be used (in <code class="docutils literal notranslate"><span class="pre">standard.yaml</span></code>, which is <code class="docutils literal notranslate"><span class="pre">install_value:</span> <span class="pre">&quot;{{arch}}&quot;</span></code>; that resolves to either “rocm” or “cuda” depending on the machine’s architecture).</p>
-<p>The constraints file specifies appropriate constraints for the architecture, CUDA version, or other constraints that are specific to the environment.</p>
+<p>For a given variant, the installation is also constrained by <code class="docutils literal notranslate"><span class="pre">constraints/variant.txt</span></code>, if the file exists. The file specifies appropriate constraints for the architecture, CUDA version, or other constraints that are specific to the environment.</p>
+<p>You can add more constraints with <code class="docutils literal notranslate"><span class="pre">--constraints</span> <span class="pre">path/to/constraints.txt</span></code>.</p>
 </section>
 <section id="milabench-report">
 <h2>milabench report<a class="headerlink" href="#milabench-report" title="Permalink to this heading"></a></h2>
 <p>TODO.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench<span class="w"> </span>report<span class="w"> </span>config/standard.yaml<span class="w"> </span>--runs<span class="w"> </span>&lt;path_to_runs&gt;
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench<span class="w"> </span>report<span class="w"> </span>--config<span class="w"> </span>config/standard.yaml<span class="w"> </span>--runs<span class="w"> </span>&lt;path_to_runs&gt;
 </pre></div>
 </div>
 </section>
@@ -182,7 +180,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="docker.html" class="btn btn-neutral float-left" title="Docker" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="config.html" class="btn btn-neutral float-right" title="Benchmark configuration" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="new_benchmarks.html" class="btn btn-neutral float-right" title="Creating a new benchmark" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

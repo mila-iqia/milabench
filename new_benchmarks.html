@@ -20,7 +20,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Reference" href="reference.html" />
-    <link rel="prev" title="Instrumenting code" href="instrument.html" /> 
+    <link rel="prev" title="Using milabench (DEVELOPERS)" href="dev-usage.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -47,16 +47,17 @@
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Install and use</a></li>
 <li class="toctree-l1"><a class="reference internal" href="docker.html">Docker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dev-usage.html">Using milabench (DEVELOPERS)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config.html">Benchmark configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="instrument.html">Instrumenting code</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Creating a new benchmark</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#the-benchfile">The benchfile</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#prepare-main-scripts">Prepare/main scripts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#benchfile-py">benchfile.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#requirements-in">requirements.in</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#prepare-py">prepare.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main-py">main.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#voirfile-py">voirfile.py</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#benchmark-from-scratch">Benchmark from scratch</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#adapting-existing-code">Adapting existing code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#development">Development</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#integrating-in-base-yaml">Integrating in base.yaml</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
@@ -89,95 +90,118 @@
   <section id="creating-a-new-benchmark">
 <h1>Creating a new benchmark<a class="headerlink" href="#creating-a-new-benchmark" title="Permalink to this heading"></a></h1>
 <p>To define a new benchmark (let’s assume it is called <code class="docutils literal notranslate"><span class="pre">ornatebench</span></code>), make a copy of <code class="docutils literal notranslate"><span class="pre">benchmarks/_template</span></code> using <code class="docutils literal notranslate"><span class="pre">cp-template</span></code>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cp-template<span class="w"> </span>benchmarks/_template<span class="w"> </span>benchmarks/ornatebench
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cp-template<span class="w"> </span>benchmarks/_template/<span class="w"> </span>benchmarks/ornatebench
 </pre></div>
 </div>
 <p>You should see a directory with the following structure:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ornatebench</span>
 <span class="o">|-</span> <span class="n">README</span><span class="o">.</span><span class="n">md</span>          <span class="c1"># Document the benchmark here</span>
 <span class="o">|-</span> <span class="n">benchfile</span><span class="o">.</span><span class="n">py</span>       <span class="c1"># Benchmark definition file</span>
-<span class="o">|-</span> <span class="n">dev</span><span class="o">.</span><span class="n">yaml</span>           <span class="c1"># Bench file to use for development</span>
 <span class="o">|-</span> <span class="n">main</span><span class="o">.</span><span class="n">py</span>            <span class="c1"># Executed by milabench run</span>
-<span class="o">|-</span> <span class="n">manifest</span>           <span class="c1"># Lists the file milabench install should copy</span>
 <span class="o">|-</span> <span class="n">prepare</span><span class="o">.</span><span class="n">py</span>         <span class="c1"># Executed by milabench prepare (EXECUTABLE)</span>
-<span class="o">|-</span> <span class="n">requirements</span><span class="o">.</span><span class="n">txt</span>   <span class="c1"># Python requirements to install from pip</span>
+<span class="o">|-</span> <span class="n">requirements</span><span class="o">.</span><span class="ow">in</span>    <span class="c1"># Python requirements to install from pip</span>
 <span class="o">|-</span> <span class="n">voirfile</span><span class="o">.</span><span class="n">py</span>        <span class="c1"># Probes and extra instruments</span>
 </pre></div>
 </div>
-<p>Some of these files may be unnecessary depending on the benchmark. Others, like <code class="docutils literal notranslate"><span class="pre">manifest</span></code>, you can just leave alone.</p>
+<p>Some of these files may be unnecessary depending on the benchmark.</p>
 <p>First of all, if you want to verify that everything works, you can use the <code class="docutils literal notranslate"><span class="pre">dev.yaml</span></code> benchmark config that comes with the template:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench<span class="w"> </span>install<span class="w"> </span>benchmarks/ornatebench/dev.yaml<span class="w"> </span>--dev
-milabench<span class="w"> </span>prepare<span class="w"> </span>benchmarks/ornatebench/dev.yaml<span class="w"> </span>--dev
-milabench<span class="w"> </span>run<span class="w"> </span>benchmarks/ornatebench/dev.yaml<span class="w"> </span>--dev
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># You can also use --config</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">MILABENCH_CONFIG</span><span class="o">=</span>benchmarks/ornatebench/dev.yaml
+
+milabench<span class="w"> </span>install
+milabench<span class="w"> </span>prepare
+milabench<span class="w"> </span>run
 </pre></div>
 </div>
-<div class="admonition tip">
-<p class="admonition-title">Tip</p>
-<p>The <code class="docutils literal notranslate"><span class="pre">--dev</span></code> flag does a few things:</p>
-<ul class="simple">
-<li><p>Forces use of the current virtual environment.</p></li>
-<li><p>Syncs any of your changes to the copy of the code under <code class="docutils literal notranslate"><span class="pre">$MILABENCH_BASE</span></code>.</p></li>
-<li><p>Force the use of only one job.</p></li>
-</ul>
-</div>
-<p>The <code class="docutils literal notranslate"><span class="pre">dev.yaml</span></code> config is specially configured for development: the <code class="docutils literal notranslate"><span class="pre">code</span></code> directory is forced to be <code class="docutils literal notranslate"><span class="pre">_dev_&lt;benchdir&gt;</span></code> (relative to your current directory, so not necessarily in <code class="docutils literal notranslate"><span class="pre">$MILABENCH_BASE</span></code>). So for example if you are writing a benchmark in <code class="docutils literal notranslate"><span class="pre">benchmarks/ornatebench</span></code>, <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">install</span> <span class="pre">benchmarks/ornatebench/dev.yaml</span></code> will install the code for the benchmark in <code class="docutils literal notranslate"><span class="pre">_dev_ornatebench/</span></code>.</p>
 <section id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Permalink to this heading"></a></h2>
-<section id="the-benchfile">
-<h3>The benchfile<a class="headerlink" href="#the-benchfile" title="Permalink to this heading"></a></h3>
+<section id="benchfile-py">
+<h3>benchfile.py<a class="headerlink" href="#benchfile-py" title="Permalink to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">benchfile.py</span></code> defines what to do on <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">install/prepare/run</span></code>. It is run from the benchmark directory directly, in the <em>current</em> virtual environment, but it can create <em>new processes</em> in the virtual environment of the benchmark.</p>
-<p>By default it will dispatch to <code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code> for install requirements, <code class="docutils literal notranslate"><span class="pre">prepare.py</span></code> for prep work and downloading datasets, and <code class="docutils literal notranslate"><span class="pre">main.py</span></code> for running the actual benchmark. If that is suitable you may not need to change it at all.</p>
+<p>By default it will dispatch to <code class="docutils literal notranslate"><span class="pre">requirements.in</span></code> for install requirements, <code class="docutils literal notranslate"><span class="pre">prepare.py</span></code> for prep work and downloading datasets, and <code class="docutils literal notranslate"><span class="pre">main.py</span></code> for running the actual benchmark. If that is suitable you may not need to change it at all.</p>
 </section>
-<section id="prepare-main-scripts">
-<h3>Prepare/main scripts<a class="headerlink" href="#prepare-main-scripts" title="Permalink to this heading"></a></h3>
-<p>The <code class="docutils literal notranslate"><span class="pre">prepare.py</span></code> and <code class="docutils literal notranslate"><span class="pre">main.py</span></code> scripts are run in the venv for the benchmark, which is isolated.</p>
-<p>Moreover, they are <strong>not</strong> run from the benchmark directory, the reason being that in the course of the install process, the files in the benchmark directory may be layered over files pulled from GitHub or other places. For example, if you want to make a benchmark out of some script that is on GitHub called <code class="docutils literal notranslate"><span class="pre">train.py</span></code>, you may clone it during install (in <code class="docutils literal notranslate"><span class="pre">benchfile.py</span></code>), then in a <code class="docutils literal notranslate"><span class="pre">voirfile.py</span></code> you write instrumentation that will be copied over to the cloned code to extract the data you need. So the directory seen by <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">run</span></code> may contain a lot more files than your benchmark directory, all depending.</p>
-<p>This is why you should use the <code class="docutils literal notranslate"><span class="pre">--dev</span></code> flag during development, because that flag takes care of syncing your changes to the install location (without re-running the rest of the install process).</p>
+<section id="requirements-in">
+<h3>requirements.in<a class="headerlink" href="#requirements-in" title="Permalink to this heading"></a></h3>
+<p>Write all of the benchmark’s requirements in this file. Use <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">install</span> <span class="pre">--config</span> <span class="pre">benchmarks/ornatebench/dev.yaml</span></code> to install them during development (add <code class="docutils literal notranslate"><span class="pre">--force</span></code> if you made changes and want to reinstall.)</p>
 </section>
-</section>
-<section id="benchmark-from-scratch">
-<h2>Benchmark from scratch<a class="headerlink" href="#benchmark-from-scratch" title="Permalink to this heading"></a></h2>
-<p>If you are writing a benchmark from scratch, using pip installable libraries:</p>
+<section id="prepare-py">
+<h3>prepare.py<a class="headerlink" href="#prepare-py" title="Permalink to this heading"></a></h3>
+<p>This script is executed in the venv for the benchmark when you run <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">prepare</span></code>.</p>
+<p>The purpose of <code class="docutils literal notranslate"><span class="pre">prepare.py</span></code> is to download and/or generate everything that is required by the main script, so that the main script does not need to use the network and can start training right away. In particular, it must:</p>
 <ul class="simple">
-<li><p>Put the requirements in <code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code>. It’s unlikely you have to do anything fancier than that, but if you do, you can run arbitrary commands in <code class="docutils literal notranslate"><span class="pre">install</span></code> in the benchfile.</p></li>
-<li><p>If you need to download or generate data, write the code in <code class="docutils literal notranslate"><span class="pre">prepare.py</span></code>. Remember that the root data directory is in <code class="docutils literal notranslate"><span class="pre">$MILABENCH_DIR_DATA</span></code>, but do not store data directly in there, store it in the appropriate subdirectory. Do not repeat work if the data is already there.</p></li>
-<li><p>Write the main code in <code class="docutils literal notranslate"><span class="pre">main.py</span></code>.</p></li>
-<li><p>Write a <code class="docutils literal notranslate"><span class="pre">voirfile.py</span></code> that corresponds to the directions in <a class="reference internal" href="instrument.html#probingmb"><span class="std std-ref">Probing for milabench</span></a>.</p></li>
-<li><p>You can check the progress of your probing with <code class="docutils literal notranslate"><span class="pre">voir</span> <span class="pre">--verify</span> <span class="pre">main.py</span></code></p></li>
+<li><p>Download any datasets required by the main script into <code class="docutils literal notranslate"><span class="pre">$MILABENCH_DATA_DIR</span></code>.</p></li>
+<li><p>Preprocess the data, if this must be done prior to training.</p></li>
+<li><p>Generate synthetic data into <code class="docutils literal notranslate"><span class="pre">$MILABENCH_DATA_DIR</span></code> (if needed).</p></li>
+<li><p>Download and cache pretrained model weights (if needed).
+* Weights should ideally go somewhere under <code class="docutils literal notranslate"><span class="pre">$XDG_CACHE_HOME</span></code> (which milabench sets to <code class="docutils literal notranslate"><span class="pre">$MILABENCH_BASE/cache</span></code>).
+* Note that most frameworks already cache weights in subdirectories of <code class="docutils literal notranslate"><span class="pre">$XDG_CACHE_HOME</span></code>, so it is usually sufficient to import the framework, load the model, and then quit without training it.</p></li>
 </ul>
+<p>If no preparation is needed, this file should be removed.</p>
 </section>
-<section id="adapting-existing-code">
-<h2>Adapting existing code<a class="headerlink" href="#adapting-existing-code" title="Permalink to this heading"></a></h2>
-<p>Now, let’s say you want to adapt code from the repo at <code class="docutils literal notranslate"><span class="pre">https://github.com/snakeoilplz/agi</span></code>, more specifically the <code class="docutils literal notranslate"><span class="pre">train.py</span></code> script. Requirements are listed in <code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code> in the repo.</p>
-<p>First, remove <code class="docutils literal notranslate"><span class="pre">main.py</span></code> and <code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code> from the benchmark directory. You won’t need them.</p>
-<p>Your benchfile should look like this:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">milabench.pack</span> <span class="kn">import</span> <span class="n">Package</span>
-
-<span class="n">BRANCH</span> <span class="o">=</span> <span class="s2">&quot;master&quot;</span>
-
-<span class="k">class</span> <span class="nc">TheBenchmark</span><span class="p">(</span><span class="n">Package</span><span class="p">):</span>
-    <span class="n">main_script</span> <span class="o">=</span> <span class="s2">&quot;train.py&quot;</span>
-    <span class="n">prepare_script</span> <span class="o">=</span> <span class="s2">&quot;prepare.py&quot;</span>
-
-    <span class="k">def</span> <span class="nf">install</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dirs</span><span class="o">.</span><span class="n">code</span>
-        <span class="n">code</span><span class="o">.</span><span class="n">clone_subtree</span><span class="p">(</span><span class="s2">&quot;https://github.com/snakeoilplz/agi&quot;</span><span class="p">,</span> <span class="n">BRANCH</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pip_install</span><span class="p">(</span><span class="s2">&quot;-r&quot;</span><span class="p">,</span> <span class="n">code</span> <span class="o">/</span> <span class="s2">&quot;requirements.txt&quot;</span><span class="p">)</span>
-
-<span class="n">__pack__</span> <span class="o">=</span> <span class="n">TheBenchmark</span>
+<section id="main-py">
+<h3>main.py<a class="headerlink" href="#main-py" title="Permalink to this heading"></a></h3>
+<p>This is the main script that will be benchmarked when you run <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">run</span></code>. It is run as <code class="docutils literal notranslate"><span class="pre">voir</span> <span class="pre">main.py</span> <span class="pre">ARGV...</span></code></p>
+<p>The template <code class="docutils literal notranslate"><span class="pre">main.py</span></code> demonstrates a simple loop that you can adapt to any script:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">voir</span><span class="o">.</span><span class="n">iterate</span><span class="p">(</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">report_batch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">):</span>
+        <span class="n">give</span><span class="p">(</span><span class="n">loss</span><span class="o">=</span><span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Run <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">install</span> <span class="pre">dev.yaml</span></code> to install. In <code class="docutils literal notranslate"><span class="pre">_dev_agi</span></code> (assuming the project name is <code class="docutils literal notranslate"><span class="pre">agi</span></code>), you should have a checkout of the target repository.</p>
-<p>Now, you can <code class="docutils literal notranslate"><span class="pre">cd</span></code> to that directory and see if <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">train.py</span></code> actually works. If it doesn’t, well, look at the <code class="docutils literal notranslate"><span class="pre">README</span></code>, try to make it work, and add all the necessary steps to the <code class="docutils literal notranslate"><span class="pre">install</span></code> method.</p>
-<p>If a dataset is needed on disk, write the code in <code class="docutils literal notranslate"><span class="pre">prepare.py</span></code>. Remember that the root data directory is in <code class="docutils literal notranslate"><span class="pre">$MILABENCH_DIR_DATA</span></code>, but do not store data directly in there, store it in the appropriate subdirectory. Do not repeat work if the data is already there. Make sure to have <code class="docutils literal notranslate"><span class="pre">train.py</span></code> look for the data at the right place, either through a flag or an environment variable.</p>
-<p>Once it works, run it with <code class="docutils literal notranslate"><span class="pre">voir</span> <span class="pre">--verify</span> <span class="pre">train.py</span></code>, which shouldn’t give you much new information. But now you can follow these steps in a loop:</p>
 <ul class="simple">
-<li><p>Modify <code class="docutils literal notranslate"><span class="pre">voirfile.py</span></code> <em>in the benchmark directory</em> accordingly to the directions in <a class="reference internal" href="instrument.html#probingmb"><span class="std std-ref">Probing for milabench</span></a>.</p></li>
-<li><p>Run <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">install</span> <span class="pre">dev.yaml</span> <span class="pre">--sync</span></code> to transfer your changes to the dev directory.</p></li>
-<li><p>Run <code class="docutils literal notranslate"><span class="pre">voir</span> <span class="pre">--verify</span> <span class="pre">train.py</span></code> again, until everything looks good.</p></li>
+<li><p>Wrap the training loop with <code class="docutils literal notranslate"><span class="pre">voir.iterate</span></code>.
+* <code class="docutils literal notranslate"><span class="pre">report_batch=True</span></code> triggers the computation of the number of training samples per second.
+* Set <code class="docutils literal notranslate"><span class="pre">batch_size</span></code> to the batch_size. milabench can also figure it out automatically if you are iterating over the input batches (it will use the first number in the tensor’s shape).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">give(loss=loss.item())</span></code> will forward the value of the loss to milabench. Make sure the value is a plain Python <code class="docutils literal notranslate"><span class="pre">float</span></code>.</p></li>
 </ul>
-<p>Once it looks good, it’s just a matter of putting the necessary arguments into the benchmark YAML. You can set environment variables in the benchfile with <code class="docutils literal notranslate"><span class="pre">make_env()</span></code>.</p>
-<p>Finally, try <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">install/prepare/run</span></code> without the <code class="docutils literal notranslate"><span class="pre">--dev</span></code> flag.</p>
+<p>If the script takes command line arguments, you can parse them however you like, for example with <code class="docutils literal notranslate"><span class="pre">argparse.ArgumentParser</span></code>. Then, you can add an <code class="docutils literal notranslate"><span class="pre">argv</span></code> section in <code class="docutils literal notranslate"><span class="pre">dev.yaml</span></code>, just like this:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">trivial</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">inherits</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">_defaults</span>
+<span class="w">  </span><span class="nt">definition</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.</span>
+
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+
+<span class="w">  </span><span class="c1"># Pass arguments to main.py below</span>
+<span class="w">  </span><span class="nt">argv</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">--batch-size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">64</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">argv</span></code> can also be an array if you need to pass positional arguments, but I recommend using named parameters only.</p>
+</section>
+<section id="voirfile-py">
+<h3>voirfile.py<a class="headerlink" href="#voirfile-py" title="Permalink to this heading"></a></h3>
+<p>The voirfile contains instrumentation for the main script. You can usually just leave it as it is. By default, it will:</p>
+<ul class="simple">
+<li><p>Compute the train “rate” (number of samples per second) using events from <code class="docutils literal notranslate"><span class="pre">voir.iterate</span></code>.</p></li>
+<li><p>Forcefully stop the program after a certain number of rate measurements.</p></li>
+<li><p>Monitor GPU usage.</p></li>
+</ul>
+</section>
+</section>
+<section id="development">
+<h2>Development<a class="headerlink" href="#development" title="Permalink to this heading"></a></h2>
+<p>To develop the benchmark, first run <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">dev</span> <span class="pre">--config</span> <span class="pre">benchmarks/BENCHNAME/dev.yaml</span></code>. This will activate the benchmark’s virtual environment and put you into a shell.</p>
+<p>Then, try and run <code class="docutils literal notranslate"><span class="pre">voir</span> <span class="pre">--dash</span> <span class="pre">main.py</span></code>. This should show you a little dashboard and display losses, train rate calculations and one or more progress bars.</p>
+<p>From there, you can develop as you would any other Python program.</p>
+</section>
+<section id="integrating-in-base-yaml">
+<h2>Integrating in base.yaml<a class="headerlink" href="#integrating-in-base-yaml" title="Permalink to this heading"></a></h2>
+<p>You can copy-paste the contents of <code class="docutils literal notranslate"><span class="pre">dev.yaml</span></code> into <code class="docutils literal notranslate"><span class="pre">config/base.yaml</span></code>, you will only need to change:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">definition</span></code> should be the relative path to the <code class="docutils literal notranslate"><span class="pre">benchfile.py</span></code>.</p></li>
+<li><p>Remove <code class="docutils literal notranslate"><span class="pre">install_variant:</span> <span class="pre">unpinned</span></code></p></li>
+<li><p>If the benchmark’s requirements are compatible with those of other benchmarks, you can set <code class="docutils literal notranslate"><span class="pre">install_group</span></code> to the same <code class="docutils literal notranslate"><span class="pre">install_group</span></code> as them. For example, <code class="docutils literal notranslate"><span class="pre">install_group:</span> <span class="pre">torch</span></code>.</p></li>
+</ul>
+<p>Then, run the following commands:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">pin</span> <span class="pre">--select</span> <span class="pre">NAME_OR_INSTALL_GROUP</span> <span class="pre">--variant</span> <span class="pre">cuda</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">pin</span> <span class="pre">--select</span> <span class="pre">NAME_OR_INSTALL_GROUP</span> <span class="pre">--variant</span> <span class="pre">rocm</span></code></p></li>
+</ul>
+<p>This will create <code class="docutils literal notranslate"><span class="pre">requirements.&lt;arch&gt;.txt</span></code> for these two architectures. These files must be checked in under version control.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">--variant</span> <span class="pre">unpinned</span></code> means installing directly from <code class="docutils literal notranslate"><span class="pre">requirements.in</span></code>. This can be useful during development, but less stable over time since various dependencies may break.</p>
+</div>
 </section>
 </section>
 
@@ -185,7 +209,7 @@ milabench<span class="w"> </span>run<span class="w"> </span>benchmarks/ornateben
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="instrument.html" class="btn btn-neutral float-left" title="Instrumenting code" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="dev-usage.html" class="btn btn-neutral float-left" title="Using milabench (DEVELOPERS)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="reference.html" class="btn btn-neutral float-right" title="Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

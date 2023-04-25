@@ -52,8 +52,6 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="docker.html">Docker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dev-usage.html">Using milabench (DEVELOPERS)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config.html">Benchmark configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="instrument.html">Instrumenting code</a></li>
 <li class="toctree-l1"><a class="reference internal" href="new_benchmarks.html">Creating a new benchmark</a></li>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
 </ul>
@@ -84,6 +82,10 @@
              
   <section id="install-and-use">
 <h1>Install and use<a class="headerlink" href="#install-and-use" title="Permalink to this heading"></a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You may use Docker to run the benchmarks, which will likely be easier. See the Docker section of this documentation for more information.</p>
+</div>
 <p>To install, clone the repo:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># You may need to upgrade pip</span>
 pip<span class="w"> </span>install<span class="w"> </span>pip<span class="w"> </span>-U
@@ -99,17 +101,9 @@ pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </s
 <h2>Before running the benchmarks<a class="headerlink" href="#before-running-the-benchmarks" title="Permalink to this heading"></a></h2>
 <ol class="arabic simple">
 <li><p>Set the <code class="docutils literal notranslate"><span class="pre">$MILABENCH_BASE</span></code> environment variable to the base directory in which all the code, virtual environments and data should be put.</p></li>
-<li><p>Set the <code class="docutils literal notranslate"><span class="pre">$MILABENCH_CONFIG</span></code> environment variable to the configuration file that corresponds to your platform:</p></li>
-</ol>
-<blockquote>
-<div><ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">config/standard-cuda.yaml</span></code> for NVIDIA/CUDA platforms.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">config/standard-rocm.yaml</span></code> for AMD/ROCm platforms.</p></li>
-</ul>
-</div></blockquote>
-<ol class="arabic simple" start="3">
+<li><p>Set the <code class="docutils literal notranslate"><span class="pre">$MILABENCH_CONFIG</span></code> environment variable to the configuration file that represents the benchmark suite you want to run. Normally it should be set to <code class="docutils literal notranslate"><span class="pre">config/standard.yaml</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">install</span></code>: Install the individual benchmarks in virtual environments.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">prepare</span></code>: Download the datasets</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">prepare</span></code>: Download the datasets, weights, etc.</p></li>
 </ol>
 <p>If the machine has both NVIDIA/CUDA and AMD/ROCm GPUs, you may have to set the <code class="docutils literal notranslate"><span class="pre">MILABENCH_GPU_ARCH</span></code> environment variable as well, to either <code class="docutils literal notranslate"><span class="pre">cuda</span></code> or <code class="docutils literal notranslate"><span class="pre">rocm</span></code>.</p>
 </section>
@@ -119,29 +113,6 @@ pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </s
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench<span class="w"> </span>run
 </pre></div>
 </div>
-<p>The standard tests currently include:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">resnet50</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">squeezenet1_1</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">efficientnet_b0</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">efficientnet_b4</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">efficientnet_b7</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">convnext_large</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">regnet_y_128gf</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">bert</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">hf_reformer</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">hf_t5</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">dlrm</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">soft_actor_critic</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">speech_transformer</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">super_slomo</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">stargan</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">learning_to_paint</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ppo</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">td3</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">resnet152</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">vit_l_32</span></code></p></li>
-</ul>
 <p>Here are a few useful options for <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">run</span></code>:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Only run the bert benchmark</span>
 milabench<span class="w"> </span>run<span class="w"> </span>--select<span class="w"> </span>bert
@@ -160,10 +131,7 @@ milabench<span class="w"> </span>run<span class="w"> </span>--repeat<span class=
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench<span class="w"> </span>report<span class="w"> </span>--runs<span class="w"> </span><span class="nv">$MILABENCH_BASE</span>/runs/some_specific_run<span class="w"> </span>--html<span class="w"> </span>report.html
 </pre></div>
 </div>
-<p>To get an overall score, you must specify a weights file that specifies how much each test weighs. Use <code class="docutils literal notranslate"><span class="pre">weights/standard.json</span></code> in the repo for this purpose:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>milabench<span class="w"> </span>report<span class="w"> </span>--runs<span class="w"> </span><span class="nv">$MILABENCH_BASE</span>/runs/some_specific_run<span class="w"> </span>--weights<span class="w"> </span>weights/standard.json<span class="w"> </span>--html<span class="w"> </span>report.html
-</pre></div>
-</div>
+<p>The report will also print out a score based on a weighting of the metrics, as defined in the file <code class="docutils literal notranslate"><span class="pre">$MILABENCH_CONFIG</span></code> points to.</p>
 </section>
 </section>
 
