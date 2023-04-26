@@ -91,14 +91,14 @@ For the performance report, it is the same command:
 Multi-node benchmark
 ^^^^^^^^^^^^^^^^^^^^
 
-There is currently one multi-node benchmark, ``opt-2_7b-multinode``. Here is how to run it:
+There are currently two multi-node benchmarks, ``opt-1_3b-multinode`` (data-parallel) and ``opt-6_7b-multinode`` (model-parallel, that model is too large to fit on a single GPU). Here is how to run them:
 
 1. Set up two or more machines that can see each other on the network. Suppose there are two and their addresses are:
   * ``manager-node`` ⬅ this is the node you will launch the job on
   * ``worker-node``
 2. ``docker pull`` the image on both nodes.
 3. Prior to running the benchmark, create a SSH key pair on ``manager-node`` and set up public key authentication to the other nodes (in this case, ``worker-node``).
-4. Write an override file that will tell milabench about the network (see below)
+4. Write an override file that will tell milabench about the network (see below). Note that you will need to copy/paste the same configuration for both multinode tests.
 5. On ``manager-node``, execute ``milabench run`` via Docker.
   * Mount the private key at ``/milabench/id_milabench`` in the container
   * Use ``--override "$(cat overrides.yaml)"`` to pass the overrides
@@ -108,7 +108,7 @@ Example YAML configuration (``overrides.yaml``):
 .. code-block:: yaml
 
     # Name of the benchmark. You can also override values in other benchmarks.
-    opt-2_7b-multinode:
+    opt-6_7b-multinode:
 
       # Docker image to use on the worker nodes (should be same as the manager)
       docker_image: "ghcr.io/mila-iqia/milabench:cuda-nightly"
@@ -131,6 +131,18 @@ Example YAML configuration (``overrides.yaml``):
         # Make sure that this is ALSO equal to length(worker_addrs) + 1
         nodes: 2
 
+    opt-1_3b-multinode:
+      # Copy the contents of the opt-6_7b-multinode section without any changes.
+      docker_image: "ghcr.io/mila-iqia/milabench:cuda-nightly"
+      worker_user: "username"
+      manager_addr: "manager-node"
+      worker_addrs:
+        - "worker-node"
+      num_machines: 2
+      capabilities:
+        nodes: 2
+
+
 Then, the command should look like this:
 
 .. code-block:: bash
@@ -145,15 +157,15 @@ Then, the command should look like this:
       -v $(pwd)/results:/milabench/envs/runs \
       $MILABENCH_IMAGE \
       milabench run --override "$(cat overrides.yaml)" \
-      --select opt-2_7b-multinode
+      --select multinode
 
-The last line (``--select opt-2_7b-multinode``) specifically selects the multi-node benchmark. Omit that line to run all benchmarks.
+The last line (``--select multinode``) specifically selects the multi-node benchmarks. Omit that line to run all benchmarks.
 
 If you need to use more than two nodes, edit or copy ``overrides.yaml`` and simply add the other nodes' addresses in ``worker_addrs`` and adjust ``num_machines`` and ``capabilities.nodes`` accordingly. For example, for 4 nodes:
 
 .. code-block:: yaml
 
-    opt-2_7b-multinode:
+    opt-6_7b-multinode:
       docker_image: "ghcr.io/mila-iqia/milabench:cuda-nightly"
       worker_user: "username"
       manager_addr: "manager-node"
@@ -166,7 +178,7 @@ If you need to use more than two nodes, edit or copy ``overrides.yaml`` and simp
         nodes: 4
 
 .. note::
-      The multi-node benchmark is sensitive to network performance. If the mono-node benchmark ``opt-2_7b`` is significantly faster than ``opt-2_7b-multinode``, this likely indicates that Infiniband is either not present or not used.
+      The multi-node benchmark is sensitive to network performance. If the mono-node benchmark ``opt-6_7b`` is significantly faster than ``opt-6_7b-multinode`` (e.g. processes more than twice the items per second), this likely indicates that Infiniband is either not present or not used. (It is not abnormal for the multinode benchmark to perform *a bit* worse than the mono-node benchmark since it has not been optimized to minimize the impact of communication costs.)
 
       Even if Infiniband is properly configured, the benchmark may fail to use it unless the ``--privileged`` flag is set when running the container.
 

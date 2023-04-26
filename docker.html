@@ -168,7 +168,7 @@ docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </s
 </section>
 <section id="multi-node-benchmark">
 <h3>Multi-node benchmark<a class="headerlink" href="#multi-node-benchmark" title="Permalink to this heading"></a></h3>
-<p>There is currently one multi-node benchmark, <code class="docutils literal notranslate"><span class="pre">opt-2_7b-multinode</span></code>. Here is how to run it:</p>
+<p>There are currently two multi-node benchmarks, <code class="docutils literal notranslate"><span class="pre">opt-1_3b-multinode</span></code> (data-parallel) and <code class="docutils literal notranslate"><span class="pre">opt-6_7b-multinode</span></code> (model-parallel, that model is too large to fit on a single GPU). Here is how to run them:</p>
 <ol class="arabic simple">
 <li><p>Set up two or more machines that can see each other on the network. Suppose there are two and their addresses are:</p></li>
 </ol>
@@ -181,7 +181,7 @@ docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </s
 <ol class="arabic simple" start="2">
 <li><p><code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">pull</span></code> the image on both nodes.</p></li>
 <li><p>Prior to running the benchmark, create a SSH key pair on <code class="docutils literal notranslate"><span class="pre">manager-node</span></code> and set up public key authentication to the other nodes (in this case, <code class="docutils literal notranslate"><span class="pre">worker-node</span></code>).</p></li>
-<li><p>Write an override file that will tell milabench about the network (see below)</p></li>
+<li><p>Write an override file that will tell milabench about the network (see below). Note that you will need to copy/paste the same configuration for both multinode tests.</p></li>
 <li><p>On <code class="docutils literal notranslate"><span class="pre">manager-node</span></code>, execute <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">run</span></code> via Docker.</p></li>
 </ol>
 <blockquote>
@@ -192,7 +192,7 @@ docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </s
 </div></blockquote>
 <p>Example YAML configuration (<code class="docutils literal notranslate"><span class="pre">overrides.yaml</span></code>):</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># Name of the benchmark. You can also override values in other benchmarks.</span>
-<span class="nt">opt-2_7b-multinode</span><span class="p">:</span>
+<span class="nt">opt-6_7b-multinode</span><span class="p">:</span>
 
 <span class="w">  </span><span class="c1"># Docker image to use on the worker nodes (should be same as the manager)</span>
 <span class="w">  </span><span class="nt">docker_image</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ghcr.io/mila-iqia/milabench:cuda-nightly&quot;</span>
@@ -214,6 +214,17 @@ docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </s
 <span class="w">  </span><span class="nt">capabilities</span><span class="p">:</span>
 <span class="w">    </span><span class="c1"># Make sure that this is ALSO equal to length(worker_addrs) + 1</span>
 <span class="w">    </span><span class="nt">nodes</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+
+<span class="nt">opt-1_3b-multinode</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># Copy the contents of the opt-6_7b-multinode section without any changes.</span>
+<span class="w">  </span><span class="nt">docker_image</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ghcr.io/mila-iqia/milabench:cuda-nightly&quot;</span>
+<span class="w">  </span><span class="nt">worker_user</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;username&quot;</span>
+<span class="w">  </span><span class="nt">manager_addr</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;manager-node&quot;</span>
+<span class="w">  </span><span class="nt">worker_addrs</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;worker-node&quot;</span>
+<span class="w">  </span><span class="nt">num_machines</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="w">  </span><span class="nt">capabilities</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">nodes</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
 </pre></div>
 </div>
 <p>Then, the command should look like this:</p>
@@ -227,12 +238,12 @@ docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </s
 <span class="w">  </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/results:/milabench/envs/runs<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span><span class="nv">$MILABENCH_IMAGE</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>milabench<span class="w"> </span>run<span class="w"> </span>--override<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span>overrides.yaml<span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--select<span class="w"> </span>opt-2_7b-multinode
+<span class="w">  </span>--select<span class="w"> </span>multinode
 </pre></div>
 </div>
-<p>The last line (<code class="docutils literal notranslate"><span class="pre">--select</span> <span class="pre">opt-2_7b-multinode</span></code>) specifically selects the multi-node benchmark. Omit that line to run all benchmarks.</p>
+<p>The last line (<code class="docutils literal notranslate"><span class="pre">--select</span> <span class="pre">multinode</span></code>) specifically selects the multi-node benchmarks. Omit that line to run all benchmarks.</p>
 <p>If you need to use more than two nodes, edit or copy <code class="docutils literal notranslate"><span class="pre">overrides.yaml</span></code> and simply add the other nodes’ addresses in <code class="docutils literal notranslate"><span class="pre">worker_addrs</span></code> and adjust <code class="docutils literal notranslate"><span class="pre">num_machines</span></code> and <code class="docutils literal notranslate"><span class="pre">capabilities.nodes</span></code> accordingly. For example, for 4 nodes:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">opt-2_7b-multinode</span><span class="p">:</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">opt-6_7b-multinode</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">docker_image</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ghcr.io/mila-iqia/milabench:cuda-nightly&quot;</span>
 <span class="w">  </span><span class="nt">worker_user</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;username&quot;</span>
 <span class="w">  </span><span class="nt">manager_addr</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;manager-node&quot;</span>
@@ -247,7 +258,7 @@ docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </s
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The multi-node benchmark is sensitive to network performance. If the mono-node benchmark <code class="docutils literal notranslate"><span class="pre">opt-2_7b</span></code> is significantly faster than <code class="docutils literal notranslate"><span class="pre">opt-2_7b-multinode</span></code>, this likely indicates that Infiniband is either not present or not used.</p>
+<p>The multi-node benchmark is sensitive to network performance. If the mono-node benchmark <code class="docutils literal notranslate"><span class="pre">opt-6_7b</span></code> is significantly faster than <code class="docutils literal notranslate"><span class="pre">opt-6_7b-multinode</span></code> (e.g. processes more than twice the items per second), this likely indicates that Infiniband is either not present or not used. (It is not abnormal for the multinode benchmark to perform <em>a bit</em> worse than the mono-node benchmark since it has not been optimized to minimize the impact of communication costs.)</p>
 <p>Even if Infiniband is properly configured, the benchmark may fail to use it unless the <code class="docutils literal notranslate"><span class="pre">--privileged</span></code> flag is set when running the container.</p>
 </div>
 </section>
