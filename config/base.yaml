@@ -13,7 +13,7 @@ _torchvision:
   plan:
     method: per_gpu
   argv:
-    --precision: tf32
+    --precision: 'tf32-fp16'
     --lr: 0.01
     --no-stdout: true
     --epochs: 50
@@ -24,7 +24,7 @@ _hf:
   group: hf
   install_group: torch
   argv:
-    --precision: 'tf32'
+    --precision: 'tf32-fp16'
 
   plan:
     method: per_gpu
