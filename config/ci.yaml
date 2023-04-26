@@ -15,7 +15,7 @@ efficientnet_b7:
   argv:
     --batch-size: 32
 
-convnext_large:
+_convnext_large-base:
   argv:
     --batch-size: 16
 
@@ -23,19 +23,7 @@ regnet_y_128gf:
   argv:
     --batch-size: 4
 
-bert-fp32:
-  argv:
-    --batch-size: 8
-
-bert-fp16:
-  argv:
-    --batch-size: 8
-
-bert-tf32:
-  argv:
-    --batch-size: 8
-
-bert-tf32-fp16:
+_bert-base:
   argv:
     --batch-size: 8
 
@@ -63,8 +51,17 @@ davit_large:
   argv:
     --batch-size: 32
 
-opt-2_7b:
+opt-1_3b:
+  enabled: false
+
+opt-1_3b-multinode:
+  enabled: false
+
+opt-6_7b:
   model_name: "facebook/bart-base"
+
+opt-6_7b-multinode:
+  enabled: false
 
 focalnet:
   argv:

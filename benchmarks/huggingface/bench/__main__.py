@@ -42,7 +42,7 @@ class Runner:
         )
         self.loader = DataLoader(self.data, batch_size=args.batch_size)
 
-        self.amp_scaler = torch.cuda.amp.GradScaler(enabled=args.with_amp)
+        self.amp_scaler = torch.cuda.amp.GradScaler(enabled=is_fp16_allowed(args))
         if is_fp16_allowed(args):
             self.amp_context = lambda: torch.cuda.amp.autocast(dtype=torch.float16)
         else:
@@ -108,21 +108,21 @@ def parser():
     # parser.add_argument(
     #     "--synthetic-data", action="store_true", help="whether to use synthetic data"
     # )
-    parser.add_argument(
-        "--fixed-batch", action="store_true", help="use a fixed batch for training"
-    )
-    parser.add_argument(
-        "--with-amp",
-        action="store_true",
-        help="whether to use mixed precision with amp",
-    )
-    parser.add_argument(
-        "--no-tf32",
-        dest="allow_tf32",
-        action="store_false",
-        help="do not allow tf32",
-        default=True,
-    )
+    # parser.add_argument(
+    #     "--fixed-batch", action="store_true", help="use a fixed batch for training"
+    # )
+    # parser.add_argument(
+    #     "--with-amp",
+    #     action="store_true",
+    #     help="whether to use mixed precision with amp",
+    # )
+    # parser.add_argument(
+    #     "--no-tf32",
+    #     dest="allow_tf32",
+    #     action="store_false",
+    #     help="do not allow tf32",
+    #     default=True,
+    # )
     parser.add_argument(
         "--precision",
         type=str,

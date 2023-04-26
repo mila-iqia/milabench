@@ -10,40 +10,52 @@ resnet50:
   weight: 1.0
 
 efficientnet_b4:
-  enabled: true
+  enabled: false
   weight: 1.0
 
 efficientnet_b7:
-  enabled: true
+  enabled: false
   weight: 1.0
 
-convnext_large:
+convnext_large-fp32:
   enabled: true
-  weight: 1.0
+  weight: 0.0
+
+convnext_large-fp16:
+  enabled: true
+  weight: 0.0
+
+convnext_large-tf32:
+  enabled: true
+  weight: 0.0
+
+convnext_large-tf32-fp16:
+  enabled: true
+  weight: 3.0
 
 regnet_y_128gf:
   enabled: true
-  weight: 1.0
+  weight: 2.0
 
 bert-fp32:
   enabled: true
-  weight: 1.0
+  weight: 0.0
 
 bert-fp16:
   enabled: true
-  weight: 1.0
+  weight: 0.0
 
 bert-tf32:
   enabled: true
-  weight: 1.0
+  weight: 0.0
 
 bert-tf32-fp16:
   enabled: true
-  weight: 1.0
+  weight: 3.0
 
 t5:
   enabled: true
-  weight: 1.0
+  weight: 2.0
 
 reformer:
   enabled: true
@@ -57,25 +69,41 @@ resnet152:
   enabled: true
   weight: 1.0
 
+resnet152-multi:
+  enabled: true
+  weight: 5.0
+
 vit_l_32:
   enabled: false
-  weight: 1.0
+  weight: 0.0
 
 davit_large:
   enabled: true
   weight: 1.0
 
-opt-2_7b:
+davit_large-multi:
   enabled: true
-  weight: 1.0
+  weight: 5.0
 
-opt-2_7b-multinode:
+opt-1_3b:
   enabled: true
-  weight: 1.0
+  weight: 5.0
+
+opt-1_3b-multinode:
+  enabled: true
+  weight: 10.0
+
+opt-6_7b:
+  enabled: true
+  weight: 5.0
+
+opt-6_7b-multinode:
+  enabled: true
+  weight: 10.0
 
 focalnet:
   enabled: true
-  weight: 1.0
+  weight: 2.0
 
 stargan:
   enabled: true

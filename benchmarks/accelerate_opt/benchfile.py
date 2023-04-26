@@ -38,6 +38,11 @@ class AccelerateBenchmark(Package):
 
     def accelerate_command(self, rank):
         nproc = len(self.config.get("devices", [])) * self.config['num_machines']
+        deepspeed_arguments = [
+            "--use_deepspeed",
+            "--deepspeed_multinode_launcher=standard",
+            "--zero_stage=2",
+        ] if self.config["use_deepspeed"] else ["--multi_gpu"]
         return [
             "accelerate",
             "launch",
@@ -45,10 +50,8 @@ class AccelerateBenchmark(Package):
             "--dynamo_backend=no",
             f"--machine_rank={rank}",
             f"--num_machines={self.config['num_machines']}",
-            "--use_deepspeed",
-            "--deepspeed_multinode_launcher=standard",
+            *deepspeed_arguments,
             f"--gradient_accumulation_steps={self.config['gradient_accumulation_steps']}",
-            "--zero_stage=2",
             f"--num_cpu_threads_per_process={self.config['cpus_per_gpu']}",
             f"--main_process_ip={self.config['manager_addr']}",
             f"--main_process_port={self.config['manager_port']}",

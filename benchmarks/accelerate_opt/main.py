@@ -275,6 +275,8 @@ def main():
                 "gradient_accumulation_steps"
             ]
         )
+    else:
+        gradient_accumulation_steps = 1
 
     num_update_steps_per_epoch = math.ceil(
         len(train_dataloader) / gradient_accumulation_steps
@@ -318,7 +320,7 @@ def main():
     else:
         max_train_steps = num_train_epochs * num_update_steps_per_epoch
 
-    # Train!
+    # Train! Choo! Choo!
     total_batch_size = (
         per_gpu_batch_size *
         accelerator.num_processes *
@@ -338,6 +340,7 @@ def main():
     completed_steps = 0
     starting_epoch = 0
     best_metric = None
+    last_log_time = time.time()
 
     for epoch in range(starting_epoch, num_train_epochs):
         model.train()
