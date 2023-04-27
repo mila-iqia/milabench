@@ -203,6 +203,7 @@ class DashFormatter:
         self.live = Live(self.panel, refresh_per_second=4, console=self.console)
         self.rows = defaultdict(dict)
         self.endtimes = {}
+        self.early_stop = {}
 
     def prune(self):
         now = time.time()
@@ -230,6 +231,9 @@ class DashFormatter:
         method = getattr(self, f"on_{event}", None)
         if method:
             method(entry, data, row)
+
+    def on_stop(self, entry, data, row):
+        self.early_stop[entry.tag] = True
 
     def on_end(self, entry, data, row):
         self.endtimes[entry.tag] = time.time()
@@ -305,7 +309,7 @@ class ShortDashFormatter(DashFormatter):
     def on_end(self, entry, data, row):
         super().on_end(entry, data, row)
         rc = data["return_code"]
-        if rc == 0:
+        if rc == 0 or self.early_stop.get(entry.tag, False):
             row["status"] = Text("COMPLETED", style="bold green")
         else:
             row["status"] = Text(f"FAIL:{rc}", style="bold red")
