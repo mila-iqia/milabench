@@ -56,7 +56,7 @@ from transformers import (
 )
 from transformers.utils import get_full_repo_name
 from voir.smuggle import SmuggleWriter
-from voir.instruments.gpu import Monitor, get_gpu_info
+from voir.instruments.utils import Monitor, get_gpu_info
 
 logger = get_logger(__name__)
 
