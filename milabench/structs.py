@@ -2,7 +2,7 @@ import asyncio
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
 from itertools import count
-from typing import List, Dict
+from typing import Dict, List
 
 from voir.proc import LogEntry
 
