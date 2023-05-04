@@ -11,7 +11,7 @@ from datetime import datetime
 
 from coleo import Option, config as configuration, default, run_cli, tooled
 from omegaconf import OmegaConf
-from voir.instruments.gpu import get_gpu_info
+from voir.instruments.gpu import deduce_backend, get_gpu_info, select_backend
 
 from milabench.alt_async import proceed
 from milabench.utils import blabla
@@ -138,6 +138,22 @@ def get_base_defaults(base, arch="none", run_name="none"):
     }
 
 
+def deduce_arch():
+    """Deduce the arch for installation and preparation purposes"""
+    arch_guess = os.environ.get("MILABENCH_GPU_ARCH", None)
+
+    if arch_guess is not None:
+        return arch_guess
+
+    return deduce_backend()
+
+
+def init_arch():
+    """Initialize the monitor for the given arch"""
+    arch = deduce_arch()
+    return select_backend(arch)
+
+
 def _get_multipack(
     config_path,
     base=None,
@@ -177,15 +193,13 @@ def _get_multipack(
             sys.exit(1)
         overrides = merge(overrides, {"*": {"dirs": {"venv": venv}}})
 
-    arch_guess = os.environ.get("MILABENCH_GPU_ARCH", None)
-    arch = get_gpu_info(arch_guess)["arch"]
-
     if run_name is None:
         run_name = blabla() + ".{time}"
+
     now = str(datetime.today()).replace(" ", "_")
     run_name = run_name.format(time=now)
 
-    base_defaults = get_base_defaults(base=base, arch=arch, run_name=run_name)
+    base_defaults = get_base_defaults(base=base, arch=deduce_arch(), run_name=run_name)
 
     config = build_config(base_defaults, config_path, overrides)
 
@@ -304,6 +318,9 @@ class Main:
         }[dash]
 
         mp = get_multipack(run_name=run_name)
+
+        # Initialize the backend here so we can retrieve GPU stats
+        init_arch()
 
         success = run_with_loggers(
             mp.do_run(repeat=repeat),
