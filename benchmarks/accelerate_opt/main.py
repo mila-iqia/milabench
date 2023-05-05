@@ -116,9 +116,7 @@ def main():
             mblog({"task": "main", "gpudata": data})
 
         monitor_fn()
-        # NOTE: First argument to Monitor is not used and will be removed in the
-        # next version of voir, make sure to remove it when that happens!
-        monitor = Monitor(None, 3, monitor_fn)
+        monitor = Monitor(3, monitor_fn)
         monitor.start()
 
     else:
