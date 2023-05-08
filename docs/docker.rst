@@ -73,6 +73,7 @@ For ROCM the usage is similar to CUDA, but you must use a different image and th
    docker run -it --rm  --ipc=host                           \
          --device=/dev/kfd --device=/dev/dri                 \
          --security-opt seccomp=unconfined --group-add video \
+         -v /opt/rocm:/opt/rocm                              \
          -v $(pwd)/results:/milabench/envs/runs              \
          $MILABENCH_IMAGE                                    \
          milabench run
