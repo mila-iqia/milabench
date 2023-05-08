@@ -70,12 +70,13 @@ For ROCM the usage is similar to CUDA, but you must use a different image and th
    docker pull $MILABENCH_IMAGE
 
    # Run milabench
-   docker run -it --rm  --ipc=host                           \
-         --device=/dev/kfd --device=/dev/dri                 \
-         --security-opt seccomp=unconfined --group-add video \
-         -v /opt/rocm:/opt/rocm                              \
-         -v $(pwd)/results:/milabench/envs/runs              \
-         $MILABENCH_IMAGE                                    \
+   docker run -it --rm  --ipc=host                                                  \
+         --device=/dev/kfd --device=/dev/dri                                        \
+         --security-opt seccomp=unconfined --group-add video                        \
+         -v /opt/amdgpu/share/libdrm/amdgpu.ids:/opt/amdgpu/share/libdrm/amdgpu.ids \
+         -v /opt/rocm:/opt/rocm                                                     \
+         -v $(pwd)/results:/milabench/envs/runs                                     \
+         $MILABENCH_IMAGE                                                           \
          milabench run
 
 For the performance report, it is the same command:
