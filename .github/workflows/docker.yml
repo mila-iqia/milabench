@@ -20,17 +20,19 @@ permissions:
   packages: write
 
 
+# define build arguments
+
 jobs:
   build-image:
-    runs-on: [self-hosted, cuda]
-
-    # define build arguments
     strategy:
+      fail-fast: false
       matrix:
         include:
           - arch: cuda
-            config: standard-cuda.yaml
-    
+          - arch: rocm
+
+    runs-on: [self-hosted, "${{ matrix.arch }}"]
+
     permissions:
       contents: read
       packages: write
@@ -42,9 +44,10 @@ jobs:
 
       - name: Prune
         run: |
-          # Prune all images older than 8 weeks
+          # Prune all images older than 2 weeks
           # The images are still on github registry
-          docker image prune -f --filter "until=1344h"
+          docker image prune -f -a --filter "until=336h"
+          docker system prune -f
 
       - name: Check out the repo
         uses: actions/checkout@v3
@@ -78,8 +81,9 @@ jobs:
         with:
           context: .
           push: true
+          file: docker/Dockerfile-${{ matrix.arch }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             ARCH=${{ matrix.arch }}
-            CONFIG=${{ matrix.config }}
+            CONFIG=standard.yaml

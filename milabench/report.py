@@ -5,11 +5,14 @@ import numpy as np
 from hrepr import HTML, hrepr
 from pandas import DataFrame
 
+from milabench.utils import error_guard
+
 nan = math.nan
 
 H = HTML()
 
 
+@error_guard({})
 def _make_row(summary, compare, weights):
     mkey = "train_rate"
     metric = "mean"
@@ -137,14 +140,17 @@ class Outputter:
 def _report_pergpu(entries, measure="50"):
     ngpus = max(len(v["per_gpu"]) for v in entries.values())
 
-    df = DataFrame(
-        {
-            k: {i: v["per_gpu"][i][measure] for i in range(ngpus)}
-            for k, v in entries.items()
-            if set(v["per_gpu"].keys()) == set(range(ngpus))
-        }
-    ).transpose()
+    # {"bench": {"0": <value>, "1": <value>} ... }
+    data = {}
+    for k, v in entries.items():
+        values = dict()
+        data[k] = values
 
+        for i in range(ngpus):
+            gpu = v["per_gpu"].get(i, dict())
+            values[i] = gpu.get(measure, float("nan"))
+
+    df = DataFrame(data).transpose()
     maxes = df.loc[:, list(range(ngpus))].max(axis=1).transpose()
     df = (df.transpose() / maxes).transpose()
 
@@ -162,6 +168,11 @@ def make_report(
     sources=None,
     errdata=None,
 ):
+    if weights:
+        weights = {
+            name: value for name, value in weights.items() if value.get("weight", 0)
+        }
+
     all_keys = list(
         sorted(
             {

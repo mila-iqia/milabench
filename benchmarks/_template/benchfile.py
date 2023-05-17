@@ -3,7 +3,7 @@ from milabench.pack import Package
 
 class TheBenchmark(Package):
     # Requirements file installed by install(). It can be empty or absent.
-    requirements_file = "requirements.txt"
+    base_requirements = "requirements.in"
 
     # The preparation script called by prepare(). It must be executable,
     # but it can be any type of script. It can be empty or absent.
@@ -20,18 +20,14 @@ class TheBenchmark(Package):
         # main_script.
         return super().make_env()
 
-    def install(self):
-        super().install()  # super() call installs the requirements
+    async def install(self):
+        await super().install()  # super() call installs the requirements
 
-    def prepare(self):
-        super().prepare()  # super() call executes prepare_script
+    async def prepare(self):
+        await super().prepare()  # super() call executes prepare_script
 
-    def run(self, args, voirargs, env):
-        # You can insert new arguments to args/voirargs or change the env,
-        # although changing the env is a bit simpler if you modify make_env
-        return super().run(args, voirargs, env)
-        # Note: run() must return a running process, so make sure not to lose
-        # the return value of super() here.
+    async def run(self):
+        return await super().run()
 
 
 __pack__ = TheBenchmark

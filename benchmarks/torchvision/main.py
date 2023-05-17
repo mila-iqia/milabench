@@ -8,8 +8,18 @@ import torch.nn as nn
 import torchvision.datasets as datasets
 import torchvision.models as tvmodels
 import torchvision.transforms as transforms
+import voir
+from giving import give, given
 
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+
+
+def is_tf32_allowed(args):
+    return "tf32" in args.precision
+
+
+def is_fp16_allowed(args):
+    return "fp16" in args.precision
 
 
 data_transforms = transforms.Compose(
@@ -33,13 +43,14 @@ def scaling(enable):
 
 def train_epoch(model, criterion, optimizer, loader, device, scaler=None):
     model.train()
-    for inp, target in loader:
+    for inp, target in voir.iterate("train", loader, True):
         inp = inp.to(device)
         target = target.to(device)
         optimizer.zero_grad()
         with scaling(scaler is not None):
             output = model(inp)
             loss = criterion(output, target)
+            give(loss=loss.item())
 
         if scaler:
             scaler.scale(loss).backward()
@@ -65,15 +76,18 @@ class SyntheticData:
                 out = torch.rand_like(self.out)
             yield (inp, out)
 
+    def __len__(self):
+        return self.n
+
 
 def main():
     parser = argparse.ArgumentParser(description="Torchvision models")
     parser.add_argument(
         "--batch-size",
         type=int,
-        default=128,
+        default=16,
         metavar="N",
-        help="input batch size for training (default: 64)",
+        help="input batch size for training (default: 16)",
     )
     parser.add_argument(
         "--model", type=str, help="torchvision model name", required=True
@@ -88,9 +102,9 @@ def main():
     parser.add_argument(
         "--lr",
         type=float,
-        default=1.0,
+        default=0.01,
         metavar="LR",
-        help="learning rate (default: 1.0)",
+        help="learning rate (default: 0.01)",
     )
     parser.add_argument(
         "--no-cuda", action="store_true", default=False, help="disables CUDA training"
@@ -102,6 +116,12 @@ def main():
         metavar="S",
         help="random seed (default: 1234)",
     )
+    parser.add_argument(
+        "--num-workers",
+        type=int,
+        default=8,
+        help="number of workers for data loading",
+    )
     parser.add_argument("--data", type=str, help="data directory")
     parser.add_argument(
         "--synthetic-data", action="store_true", help="whether to use synthetic data"
@@ -109,10 +129,28 @@ def main():
     parser.add_argument(
         "--fixed-batch", action="store_true", help="use a fixed batch for training"
     )
+    # parser.add_argument(
+    #     "--with-amp",
+    #     action="store_true",
+    #     help="whether to use mixed precision with amp",
+    # )
     parser.add_argument(
-        "--with-amp",
+        "--no-stdout",
         action="store_true",
-        help="whether to use mixed precision with amp",
+        help="do not display the loss on stdout",
+    )
+    # parser.add_argument(
+    #     "--no-tf32",
+    #     dest="allow_tf32",
+    #     action="store_false",
+    #     help="do not allow tf32",
+    # )
+    parser.add_argument(
+        "--precision",
+        type=str,
+        choices=["fp16", "fp32", "tf32", "tf32-fp16"],
+        default="fp32",
+        help="Precision configuration",
     )
 
     args = parser.parse_args()
@@ -131,6 +169,9 @@ def main():
 
     torch.manual_seed(args.seed)
     if use_cuda:
+        if is_tf32_allowed(args):
+            torch.backends.cuda.matmul.allow_tf32 = True
+            torch.backends.cudnn.allow_tf32 = True
         torch.cuda.manual_seed(args.seed)
 
     device = torch.device("cuda" if use_cuda else "cpu")
@@ -148,7 +189,7 @@ def main():
             train,
             batch_size=args.batch_size,
             shuffle=True,
-            num_workers=1,
+            num_workers=args.num_workers,
         )
     else:
         train_loader = SyntheticData(
@@ -159,13 +200,21 @@ def main():
             fixed_batch=args.fixed_batch,
         )
 
-    if args.with_amp:
+    if is_fp16_allowed(args):
         scaler = torch.cuda.amp.GradScaler()
     else:
         scaler = None
 
-    for epoch in range(args.epochs):
-        train_epoch(model, criterion, optimizer, train_loader, device, scaler=scaler)
+    with given() as gv:
+        if not args.no_stdout:
+            gv.where("loss").display()
+
+        for epoch in voir.iterate("main", range(args.epochs)):
+            if not args.no_stdout:
+                print(f"Begin training epoch {epoch}/{args.epochs}")
+            train_epoch(
+                model, criterion, optimizer, train_loader, device, scaler=scaler
+            )
 
 
 if __name__ == "__main__":

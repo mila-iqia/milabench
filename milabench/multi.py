@@ -1,16 +1,17 @@
-import os
-import signal
-import subprocess
-import sys
-import time
+import asyncio
+from collections import defaultdict
 from copy import deepcopy
 
-from giving import give, given
-from ovld import ovld
-from voir.forward import MultiReader
+from voir.instruments.gpu import get_gpu_info
 
+from .alt_async import destroy
+from .fs import XPath
 from .merge import merge
-from .utils import give_std, validation
+from .utils import make_constraints_file
+
+here = XPath(__file__).parent
+
+gpus = get_gpu_info()["gpus"].values()
 
 planning_methods = {}
 
@@ -30,17 +31,13 @@ def clone_with(cfg, new_cfg):
 
 @planning_method
 def per_gpu(cfg):
-    from .gpu import get_gpu_info
-
-    gpus = get_gpu_info().values()
     ngpus = len(gpus)
-    if not gpus:
-        gpus = [{"device": 0, "selection_variable": "CPU_VISIBLE_DEVICE"}]
+    devices = gpus or [{"device": 0, "selection_variable": "CPU_VISIBLE_DEVICE"}]
 
-    for gpu in gpus:
+    for gpu in devices:
         gid = gpu["device"]
         gcfg = {
-            "tag": [f"D{gid}"],
+            "tag": [*cfg["tag"], f"D{gid}"],
             "device": gid,
             "devices": [gid] if ngpus else [],
             "env": {gpu["selection_variable"]: str(gid)},
@@ -52,157 +49,143 @@ def per_gpu(cfg):
 def njobs(cfg, n):
     for i in range(n):
         gcfg = {
-            "tag": [f"{i}"],
+            "tag": [*cfg["tag"], f"{i}"],
             "job-number": i,
+            "devices": [gpu["device"] for gpu in gpus],
         }
         yield clone_with(cfg, gcfg)
-
-
-@ovld
-def _assemble_options(options: list):
-    return options
-
-
-@ovld
-def _assemble_options(options: dict):
-    args = []
-    for k, v in options.items():
-        if v is None:
-            continue
-        elif v is True:
-            args.append(k)
-        elif k == "--":
-            args.extend(v)
-        elif v is False:
-            raise ValueError("Use null to cancel an option, not false")
-        else:
-            args.append(k)
-            args.append(",".join(map(str, v)) if isinstance(v, list) else str(v))
-    return args
 
 
 class MultiPackage:
     def __init__(self, packs):
         self.packs = packs
-        (self.rundir,) = {p.dirs.runs for p in packs.values()}
 
-    def do_install(self, dash, force=False, sync=False):
-        with given() as gv, dash(gv), give_std():
+    async def do_install(self):
+        for pack in self.packs.values():
+            pack.phase = "install"
+            try:
+                await pack.checked_install()
+            except Exception as exc:
+                await pack.message_error(exc)
+
+    async def do_prepare(self):
+        for pack in self.packs.values():
+            pack.phase = "prepare"
+            try:
+                await pack.prepare()
+            except Exception as exc:
+                await pack.message_error(exc)
+
+    async def do_run(self, repeat=1):
+        async def force_terminate(pack, delay):
+            await asyncio.sleep(delay)
+            for proc in pack.processes:
+                ret = proc.poll()
+                if ret is None:
+                    await pack.message(
+                        f"Terminating process because it ran for longer than {delay} seconds."
+                    )
+                    destroy(proc)
+
+        for index in range(repeat):
             for pack in self.packs.values():
-                with give.inherit(**{"#pack": pack}):
-                    pack.checked_install(force=force, sync=sync)
+                try:
 
-    def do_pin(self, *pip_compile_args, dash, constraints:list=tuple()):
-        installed_groups = set()
-        with given() as gv, dash(gv), give_std():
-            for pack in self.packs.values():
-                if pack.config['group'] in installed_groups:
-                    continue
-                with give.inherit(**{"#pack": pack}):
-                    pack.pin(*pip_compile_args, constraints=constraints)
-                    installed_groups.add(pack.config['group'])
+                    def capability_failure():
+                        caps = dict(pack.config["capabilities"])
+                        for condition in pack.config.get("requires_capabilities", []):
+                            if not eval(condition, caps):
+                                return condition
+                        return False
 
-    def do_prepare(self, dash):
-        with given() as gv, dash(gv), give_std():
-            for pack in self.packs.values():
-                with give.inherit(**{"#pack": pack}):
-                    mr = MultiReader()
-                    process = pack.prepare()
-                    if isinstance(process, subprocess.Popen):
-                        mr.add_process(process, info={"#pack": pack})
-                        for _ in mr:
-                            time.sleep(0.1)
+                    if condition_failed := capability_failure():
+                        await pack.message(
+                            f"Skip {pack.config['name']} because the following capability is not satisfied: {condition_failed}"
+                        )
+                        continue
 
-    def do_run(self, dash, report, repeat=1, short=True):
-        """Runs all the pack/benchmark"""
-        done = False
-        with given() as gv:
-            # Error checking
-            with validation(
-                gv, "error", "nan", "planning", "usage", short=short
-            ) as validations:
+                    cfg = pack.config
+                    plan = deepcopy(cfg["plan"])
+                    method = get_planning_method(plan.pop("method"))
+                    coroutines = []
 
-                # Dashboards
-                with dash(gv), report(gv, self.rundir):
-                    for i in range(repeat):
-                        if done:
-                            break
+                    for run in method(cfg, **plan):
+                        if repeat > 1:
+                            run["tag"].append(f"R{index}")
+                        run_pack = pack.copy(run)
+                        await run_pack.send(event="config", data=run)
+                        run_pack.phase = "run"
+                        coroutines.append(run_pack.run())
 
-                        for pack in self.packs.values():
-                            success, done = self.run_pack(i, pack, repeat)
+                        asyncio.create_task(
+                            force_terminate(
+                                run_pack, run_pack.config.get("max_duration", 600)
+                            )
+                        )
 
-                            if not success:
-                                break
-            # ---
+                    await asyncio.gather(*coroutines)
 
-        if validations["error"].failed:
-            sys.exit(-1)
+                except Exception as exc:
+                    await pack.message_error(exc)
 
-    def run_pack(self, i, pack, repeat):
-        cfg = pack.config
-        plan = deepcopy(cfg["plan"])
-        method = get_planning_method(plan.pop("method"))
+    async def do_pin(self, pip_compile_args, constraints: list = tuple()):
+        groups = defaultdict(dict)
+        for pack in self.packs.values():
+            pack.phase = "pin"
+            igrp = pack.config["install_group"]
+            ivar = pack.config["install_variant"]
+            ivar_constraints: XPath = here.parent / "constraints" / f"{ivar}.txt"
+            base_reqs = pack.requirements_map().keys()
+            if ivar_constraints.exists():
+                constraints = {ivar_constraints, *constraints}
+            groups[igrp].update({req: pack for req in base_reqs})
 
-        mr = MultiReader()
+        for constraint in constraints:
+            print("Using constraint file:", constraint)
 
-        for run in method(cfg, **plan):
-            if repeat > 1:
-                run["tag"].append(f"R{i}")
+        groups = {
+            name: (set(group.keys()), set(group.values()))
+            for name, group in groups.items()
+        }
 
-            info = {"#pack": pack, "#run": run}
-            give(**{"#start": time.time()}, **info)
-            give(**{"#config": run}, **info)
+        for ig, (reqs, packs) in groups.items():
+            if len(packs) < len(reqs):
+                if len(set(p.config["group"] for p in packs)) > 1:
+                    raise Exception(
+                        f"Install group '{ig}' contains benchmarks that have more than"
+                        " one requirements file. Please isolate such benchmarks in their"
+                        " own install_group."
+                    )
 
-            voirargs = _assemble_options(run.get("voir", {}))
-            args = _assemble_options(run.get("argv", {}))
-            env = run.get("env", {})
+        for ig, (reqs, packs) in groups.items():
+            packs = list(packs)
+            if len(packs) == 1:
+                (pack,) = packs
+                await pack.pin(
+                    pip_compile_args=pip_compile_args,
+                    constraints=constraints,
+                )
+            else:
+                pack0 = packs[0]
 
-            process = pack.run(args=args, voirargs=voirargs, env=env)
-            mr.add_process(process, info=info)
+                constraint_path = XPath(".pin-constraints-TMP.txt")
+                constraint_files = make_constraints_file(constraint_path, constraints)
 
-        try:
-            for _ in mr:
-                time.sleep(0.1)
+                ig_constraint_path = XPath(f".pin-constraints-{ig}.txt")
+                if ig_constraint_path.exists():
+                    ig_constraint_path.rm()
 
-            return True, False
+                # Create master requirements
+                await pack0.exec_pip_compile(
+                    requirements_file=ig_constraint_path.absolute(),
+                    input_files=(*constraint_files, *reqs),
+                    argv=pip_compile_args,
+                )
 
-        except BaseException as exc:
-            for (proc, info) in mr.processes:
-                errstring = f"{type(exc).__name__}: {exc}"
-                endinfo = {
-                    "#end": time.time(),
-                    "#completed": False,
-                    "#error": errstring,
-                }
-                give(**endinfo, **info)
-                if getattr(proc, "did_setsid", False):
-                    os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-                else:
-                    proc.kill()
-
-            if not isinstance(exc, KeyboardInterrupt):
-                raise
-
-            return False, True
-
-            self.summary(errors)
-
-    def do_dev(self, dash):
-        # TODO: share the common code between do_run and do_dev
-        with given() as gv, dash(gv):
-            for pack in self.packs.values():
-                cfg = pack.config
-                plan = {"method": "njobs", "n": 1}
-                method = get_planning_method(plan.pop("method"))
-                mr = MultiReader()
-                for run in method(cfg, **plan):
-                    run["tag"] = [run["name"]]
-                    give(**{"#pack": pack, "#run": run, "#start": time.time()})
-                    voirargs = _assemble_options(run.get("voir", {}))
-                    args = _assemble_options(run.get("argv", {}))
-                    env = run.get("env", {})
-                    process = pack.run(args=args, voirargs=voirargs, env=env)
-                    mr.add_process(process, info={"#pack": pack, "#run": run})
-
-                for _ in mr:
-                    time.sleep(0.1)
+                # Use master requirements to constrain the rest
+                new_constraints = [ig_constraint_path, *constraints]
+                for pack in packs:
+                    await pack.pin(
+                        pip_compile_args=pip_compile_args,
+                        constraints=new_constraints,
+                    )

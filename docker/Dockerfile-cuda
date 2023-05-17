@@ -1,0 +1,82 @@
+FROM ubuntu:22.04
+
+# For cuda-gdb
+# FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
+
+# Arguments
+# ---------
+
+ARG ARCH=cuda
+ENV MILABENCH_GPU_ARCH=$ARCH
+
+ARG CONFIG=standard.yaml
+ENV MILABENCH_CONFIG_NAME=$CONFIG
+ENV MILABENCH_DOCKER=1
+
+# Paths
+# -----
+
+ENV MILABENCH_CONFIG=/milabench/milabench/config/$MILABENCH_CONFIG_NAME
+ENV MILABENCH_BASE=/milabench/envs
+ENV MILABENCH_OUTPUT=/milabench/results/
+ENV MILABENCH_ARGS=""
+
+# Copy milabench
+# --------------
+
+WORKDIR /milabench
+COPY . /milabench/milabench/
+
+
+# Install Dependencies
+# --------------------
+
+#            curl: used to download anaconda and rust
+#             git: used by milabench
+#      libibverbs: used for infiniband
+#           rustc: used by BERT models inside https://pypi.org/project/tokenizers/
+# build-essential: for rust
+
+# Use ofed_info -s to get your local version
+ARG MOFED_VERSION=5.4-3.4.0.0
+
+RUN apt-get update -y &&\
+    apt-get install -y git build-essential curl python3 python-is-python3 python3-pip &&\
+    curl -o /etc/apt/trusted.gpg.d/mellanox.asc https://content.mellanox.com/ofed/RPM-GPG-KEY-Mellanox &&\
+    curl -o /etc/apt/sources.list.d/mellanox.list https://linux.mellanox.com/public/repo/mlnx_ofed/${MOFED_VERSION}/ubuntu22.04/mellanox_mlnx_ofed.list &&\
+    apt-get update -y &&\
+    apt-get install -y libibverbs1 &&\
+    apt-get clean &&\
+    rm -rf /var/lib/apt/lists/*
+
+# Install Rust
+
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+
+# Install Milabench
+# -----------------
+
+RUN python -m pip install -U pip            &&\
+    python -m pip install -U setuptools     &&\
+    python -m pip install -U poetry         &&\
+    python -m pip install -e /milabench/milabench/ &&\
+    python -m pip cache purge
+
+
+# Prepare bench
+# -------------
+
+# pip times out often when downloading pytorch
+ENV PIP_DEFAULT_TIMEOUT=800
+
+RUN milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
+    milabench prepare --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
+    python -m pip cache purge                                                          
+
+# Patch for https://github.com/pytorch/pytorch/issues/97041
+RUN cd /milabench/envs/venv/torch/lib/python3.10/site-packages/torch/lib                &&\
+   ln -sfn libnvrtc-672ee683.so.11.2 libnvrtc.so
+
+CMD ["milabench", "run"]

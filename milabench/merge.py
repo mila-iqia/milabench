@@ -60,7 +60,15 @@ def merge(d1: dict, d2):
 
 @ovld  # noqa: F811
 def merge(l1: list, l2: list):
-    return l1 + l2
+    return l2
+
+
+@ovld  # noqa: F811
+def merge(l1: list, d: dict):
+    if "append" in d:
+        return l1 + d["append"]
+    else:
+        raise TypeError("Cannot merge list and dict unless dict has 'append' key")
 
 
 @ovld  # noqa: F811
@@ -69,30 +77,6 @@ def merge(a: object, b):
         return a.__merge__(b)
     else:
         return cleanup(b)
-
-
-##############
-# self_merge #
-##############
-
-
-@ovld
-def self_merge(self, d: dict):
-    d = {k: self(v) for k, v in d.items()}
-    if "<<<" in d:
-        m = d.pop("<<<")
-        d = merge(m, d)
-    return d
-
-
-@ovld
-def self_merge(self, li: list):
-    return list(map(self, li))
-
-
-@ovld
-def self_merge(self, x):
-    return x
 
 
 #############################

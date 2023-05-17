@@ -1,0 +1,80 @@
+include:
+  - standard.yaml
+
+_defaults:
+  voir:
+    options:
+      skip: 1
+      stop: 10
+
+efficientnet_b4:
+  argv:
+    --batch-size: 32
+
+efficientnet_b7:
+  argv:
+    --batch-size: 32
+
+_convnext_large-base:
+  argv:
+    --batch-size: 16
+
+regnet_y_128gf:
+  argv:
+    --batch-size: 4
+
+_bert-base:
+  argv:
+    --batch-size: 8
+
+t5:
+  argv:
+    --batch-size: 2
+
+reformer:
+  argv:
+    --batch-size: 16
+
+whisper:
+  argv:
+    --batch-size: 16
+
+resnet152:
+  argv:
+    --batch-size: 32
+
+vit_l_32:
+  argv:
+    --batch-size: 32
+
+davit_large:
+  argv:
+    --batch-size: 32
+
+opt-1_3b:
+  enabled: false
+
+opt-1_3b-multinode:
+  enabled: false
+
+opt-6_7b:
+  model_name: "facebook/bart-base"
+
+opt-6_7b-multinode:
+  enabled: false
+
+focalnet:
+  argv:
+    --batch-size: 8
+
+stargan:
+  argv:
+    --batch_size: 2
+
+super-slomo:
+  argv:
+    --train_batch_size: 8
+
+dlrm:
+  argv:
+    --mini-batch-size: 2048

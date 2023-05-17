@@ -1,0 +1,423 @@
+_defaults:
+  max_duration: 600
+  voir:
+    options:
+      stop: 60
+      interval: "1s"
+
+_torchvision:
+  inherits: _defaults
+  definition: ../benchmarks/torchvision
+  group: torchvision
+  install_group: torch
+  plan:
+    method: per_gpu
+  argv:
+    --precision: 'tf32-fp16'
+    --lr: 0.01
+    --no-stdout: true
+    --epochs: 50
+
+_hf:
+  inherits: _defaults
+  definition: ../benchmarks/huggingface
+  group: hf
+  install_group: torch
+  argv:
+    --precision: 'tf32-fp16'
+
+  plan:
+    method: per_gpu
+
+_timm:
+  inherits: _defaults
+  definition: ../benchmarks/timm
+  group: timm
+  install_group: torch
+  plan:
+    method: per_gpu
+  argv:
+    --amp: true
+
+_sb3:
+  inherits: _defaults
+  definition: ../benchmarks/stable_baselines3
+  group: sb3
+  plan:
+    method: njobs
+    n: 1
+
+_accelerate_opt:
+  inherits: _defaults
+  tags:
+    - nlp
+    - language-modeling
+    - transformer
+    - huggingface
+    - llm
+  definition: ../benchmarks/accelerate_opt
+  group: opt
+  install_group: torch
+  plan:
+    method: njobs
+    n: 1
+  manager_addr: "override-me"
+  manager_port: 10000
+  cpus_per_gpu: 8
+  # model_name: "facebook/opt-2.7b"
+  # model_name: "facebook/opt-1.3b"
+  # model_name: "facebook/opt-350m"
+  # model_name: "facebook/opt-125m"
+  gradient_accumulation_steps: 1
+  max_train_steps: 100
+  dataset_name: "wikitext"
+  dataset_config_name: "wikitext-103-v1"
+  validation_split_percentage: 5
+  use_deepspeed: true
+  num_machines: 1
+
+resnet50:
+  inherits: _torchvision
+  tags:
+    - vision
+    - classification
+    - convnet
+    - resnet
+  
+  argv:
+    --model: resnet50
+    --batch-size: 64
+
+efficientnet_b4:
+  inherits: _torchvision
+  tags:
+  tags:
+    - vision
+    - classification
+    - convnet
+
+  argv:
+    --model: efficientnet_b4
+    --batch-size: 256
+
+efficientnet_b7:
+  inherits: _torchvision
+  tags:
+    - vision
+    - classification
+    - convnet
+  argv:
+    --model: efficientnet_b7
+    --batch-size: 128
+
+_convnext_large-base:
+  inherits: _torchvision
+  tags:
+    - vision
+    - classification
+    - convnet
+    - precision-showcase
+  argv:
+    --model: convnext_large
+    --batch-size: 128
+  voir:
+    options:
+      stop: 30
+
+convnext_large-fp32:
+  inherits: _convnext_large-base
+  argv:
+    --precision: 'fp32'
+
+convnext_large-fp16:
+  inherits: _convnext_large-base
+  argv:
+    --precision: 'fp16'
+
+convnext_large-tf32:
+  inherits: _convnext_large-base
+  argv:
+    --precision: 'tf32'
+
+convnext_large-tf32-fp16:
+  inherits: _convnext_large-base
+  argv:
+    --precision: 'tf32-fp16'
+
+regnet_y_128gf:
+  inherits: _torchvision
+  tags:
+    - vision
+    - classification
+    - convnet
+    - resnet
+    - lstm
+  argv:
+    --model: regnet_y_128gf
+    --batch-size: 64
+
+_bert-base:
+  inherits: _hf
+  tags:
+    - nlp
+    - language-modeling
+    - transformer
+    - huggingface
+    - precision-showcase
+  argv:
+    --model: "Bert"
+    --batch-size: 32
+  voir:
+    options:
+      stop: 30
+
+bert-fp32:
+  inherits: _bert-base
+  argv:
+    --precision: 'fp32'
+
+bert-fp16:
+  inherits: _bert-base
+  argv:
+    --precision: 'fp16'
+
+bert-tf32:
+  inherits: _bert-base
+  argv:
+    --precision: 'tf32'
+
+bert-tf32-fp16:
+  inherits: _bert-base
+  argv:
+    --precision: 'tf32-fp16'
+
+t5:
+  inherits: _hf
+  tags:
+    - nlp
+    - language-modeling
+    - transformer
+    - huggingface
+  argv:
+    --model: "T5"
+    --batch-size: 16
+
+reformer:
+  inherits: _hf
+  tags:
+    - nlp
+    - language-modeling
+    - transformer
+    - huggingface
+  argv:
+    --model: "Reformer"
+    --batch-size: 64
+
+whisper:
+  inherits: _hf
+  tags:
+    - audio
+    - huggingface
+  argv:
+    --model: "Whisper"
+    --batch-size: 64
+
+resnet152:
+  inherits: _timm
+  tags:
+    - vision
+    - classification
+    - convnet
+    - resnet
+  plan:
+    method: per_gpu
+  argv:
+    --model: resnet152
+    --batch-size: 256
+
+resnet152-multi:
+  inherits: resnet152
+  tags:
+    - multigpu
+  plan:
+    method: njobs
+    n: 1
+
+vit_l_32:
+  inherits: _timm
+  tags:
+    - vision
+    - classification
+    - transformer
+    - multigpu
+
+  plan:
+    method: njobs
+    n: 1
+  argv:
+    --model: vit_large_patch32_224
+    --batch-size: 256
+
+davit_large:
+  inherits: _timm
+  tags:
+    - vision
+    - classification
+    - transformer
+  plan:
+    method: per_gpu
+  argv:
+    --model: davit_large
+    --batch-size: 128
+    --lr-base: 0.01
+
+davit_large-multi:
+  inherits: davit_large
+  tags:
+    - multigpu
+  plan:
+    method: njobs
+    n: 1
+
+focalnet:
+  inherits: _timm
+  tags:
+    - vision
+    - classification
+    - convnet
+  plan:
+    method: per_gpu
+  argv:
+    --model: focalnet_base_lrf
+
+opt-1_3b:
+  inherits: _accelerate_opt
+  tags:
+    - multigpu
+  model_name: "facebook/opt-1.3b"
+  use_deepspeed: false
+  per_gpu_batch_size: 1
+  num_machines: 1
+
+opt-1_3b-multinode:
+  inherits: opt-1_3b
+  tags:
+    - multinode
+  requires_capabilities:
+    - "nodes >= ${num_machines}"
+  docker_image: "ghcr.io/mila-iqia/milabench:cuda-nightly"
+  per_gpu_batch_size: 1
+  num_machines: 2
+
+opt-6_7b:
+  inherits: _accelerate_opt
+  tags:
+    - multigpu
+  model_name: "facebook/opt-6.7b"
+  per_gpu_batch_size: 1
+  num_machines: 1
+
+opt-6_7b-multinode:
+  inherits: opt-6_7b
+  tags:
+    - multinode
+  requires_capabilities:
+    - "nodes >= ${num_machines}"
+  docker_image: "ghcr.io/mila-iqia/milabench:cuda-nightly"
+  per_gpu_batch_size: 1
+  num_machines: 2
+
+stargan:
+  inherits: _defaults
+  tags:
+    - vision
+    - gan
+    - resnet
+  definition: ../benchmarks/stargan
+  group: stargan
+  install_group: torch
+  plan:
+    method: per_gpu
+  argv:
+    --image_size: 512
+    --c_dim: 5
+    --batch_size: 16
+
+super-slomo:
+  inherits: _defaults
+  tags:
+    - vision
+    - video-interpolation
+    - unet
+    - convnet
+  definition: ../benchmarks/super-slomo
+  group: super-slomo
+  install_group: torch
+  plan:
+    method: per_gpu
+  argv:
+    --train_batch_size: 32
+
+ppo:
+  inherits: _sb3
+  tags:
+    - rl
+
+  argv:
+    --algo: ppo
+    --env: HalfCheetahBulletEnv-v0
+    -n: '-1'
+    --num-threads: '-1'
+    --seed: '0'
+    --vec-env: subproc
+    --device: auto
+    --: [-params, n_envs:16, n_steps:512, n_epochs:20, n_timesteps:50000]
+
+td3:
+  inherits: _sb3
+  tags:
+    - rl
+
+  argv:
+    --algo: td3
+    --env: HalfCheetahBulletEnv-v0 # Default: CartPole-v1
+    --n-eval-envs: '1'
+    --n-timesteps: '50000' # Default: '-1'
+    --num-threads: '-1'
+    --log-interval: '-1'
+    --eval-episodes: '5'
+    --save-freq: '-1'
+    --seed: '0' # Default: -1
+    --vec-env: subproc # Default: dummy
+    --device: auto
+    --n-trials: '10' # Default: 500
+    --n-jobs: '1'
+
+dlrm:
+  inherits: _defaults
+  tags:
+    - nlp
+    - rl
+    
+  definition: ../benchmarks/dlrm
+  group: dlrm
+  install_group: torch
+  plan:
+    method: njobs
+    n: 1
+  argv:
+    --num-batches: 1000
+    --data-generation: "random"
+    --arch-mlp-bot: "512-512-64"
+    --arch-mlp-top: "1024-1024-1024-1"
+    --arch-sparse-feature-size: 64
+    --arch-embedding-size: "1000000-1000000-1000000-1000000-1000000-1000000-1000000-1000000"
+    --num-indices-per-lookup: 100
+    --arch-interaction-op: "dot"
+    --numpy-rand-seed: "727"
+    --print-freq: 999999
+    --enable-profiling: true
+    --mini-batch-size: 16384
+    --test-mini-batch-size: 16384
+    --test-num-workers: 0
+    --use-gpu: true
