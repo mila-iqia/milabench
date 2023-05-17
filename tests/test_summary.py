@@ -14,23 +14,7 @@ def test_report(runs_folder, capsys, file_regression):
     file_regression.check(output)
 
 
-expected_output = """
-Errors
-======
-  matmult
-  -------
-    1. Errors stuff happened
-    2. Errors stuff happened
-    3. Errors stuff happened
-  matsub
-  ------
-    1. Errors stuff happened
-    2. Errors stuff happened
-    3. Errors stuff happened
-""".strip()
-
-
-def test_summary():
+def test_summary(file_regression):
     benchs = ["matmult", "matsub"]
     points = [
         "1. Errors stuff happened",
@@ -53,7 +37,7 @@ def test_summary():
 
     report.show()
     report.show(get_output)
-    assert output.strip() == expected_output
+    file_regression.check(output)
 
 
 def test_empty_summary():

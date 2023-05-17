@@ -1,4 +1,5 @@
 from giving import give, given
+
 from milabench.utils import validation
 
 
@@ -40,7 +41,7 @@ def test_nan_layer():
         newevent(loss=float("nan")),
     ]
     with given() as gv:
-        with validation(gv, "nan") as validations:
+        with validation("nan") as validations:
             for msg in nan_replay:
                 give(**msg)
 
@@ -48,7 +49,7 @@ def test_nan_layer():
 def test_planning_layer():
     planning_replay = []
     with given() as gv:
-        with validation(gv, "planning") as validations:
+        with validation("planning") as validations:
             for msg in planning_replay:
                 give(**msg)
 
@@ -61,7 +62,7 @@ def test_usage_layer_no_usage():
         newevent(**gpudata(2, 0, (0, 1))),
     ]
     with given() as gv:
-        with validation(gv, "usage") as validations:
+        with validation("usage") as validations:
             for msg in usage_replay:
                 give(**msg)
 
@@ -74,6 +75,8 @@ def test_usage_layer_usage():
         newevent(**gpudata(2, 1, (0.9, 1))),
     ]
     with given() as gv:
-        with validation(gv, "usage") as validations:
+        with validation("usage") as validations:
+            gv.subscribe(validation)
+            
             for msg in usage_replay:
                 give(**msg)

@@ -12,8 +12,7 @@ class _Layer(ValidationLayer):
 
     """
 
-    def __init__(self, gv) -> None:
-        super().__init__(gv)
+    def __init__(self) -> None:
         self.warnings = defaultdict(lambda: defaultdict(float))
 
         self.devices = set()

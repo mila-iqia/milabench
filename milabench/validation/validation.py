@@ -5,15 +5,25 @@ from dataclasses import dataclass, field
 class ValidationLayer:
     """Validation layer interface, captures events, makes report"""
 
-    def __init__(self, gv) -> None:
-        self.proxy = gv.subscribe(self._on_event)
+    def __init__(self) -> None:
+        self.early_stop = False
+        
+    def __call__(self, entry):
+        return self._on_event(entry)
 
     def _on_event(self, data):
+        self.early_stop = False
+
         data = dict(data)
         run = data.pop("#run", None)
         pack = data.pop("#pack", None)
         tg = ".".join(run["tag"]) if run else pack.config["name"]
         ks = set(data.keys())
+        
+        if data.event == "stop":
+            self.early_stop = True
+            return
+
         self.on_event(pack, run, tg, ks, data)
 
     def on_event(self, pack, run, tag, keys, data):
@@ -24,9 +34,9 @@ class ValidationLayer:
 
     def __enter__(self):
         return self
-
-    def __exit__(self, *args):
-        self.proxy.dispose()
+    
+    def __exit__(self, *args, **kwargs):
+        pass
 
 
 class Summary:

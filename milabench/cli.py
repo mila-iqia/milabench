@@ -11,11 +11,10 @@ from datetime import datetime
 
 from coleo import Option, config as configuration, default, run_cli, tooled
 from omegaconf import OmegaConf
-from voir.instruments.gpu import deduce_backend, get_gpu_info, select_backend
+from voir.instruments.gpu import deduce_backend, select_backend
 
 from milabench.alt_async import proceed
-from milabench.utils import blabla
-from milabench.validation import ErrorValidation
+from milabench.utils import blabla, validation
 
 from .compare import compare, fetch_runs
 from .config import build_config
@@ -330,7 +329,7 @@ class Main:
                 TextReporter("stdout"),
                 TextReporter("stderr"),
                 DataReporter(),
-                ErrorValidation(short=not fulltrace),
+                validation("error", short=not fulltrace),
             ],
             mp=mp,
         )

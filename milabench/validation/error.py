@@ -41,7 +41,6 @@ class _Layer(ValidationLayer):
         self.short = short
         self.errors = defaultdict(PackError)
         self.failed = False
-        super().__init__(gv)
 
     def __enter__(self):
         return self

@@ -1,14 +1,20 @@
 import itertools
 import os
+from contextlib import contextmanager, ExitStack
 import random
 import sys
 import tempfile
+import importlib
+import pkgutil
 import traceback
 from functools import wraps
+from typing import Any
 
 from ovld import ovld
 
 from milabench.fs import XPath
+import milabench.validation
+from milabench.validation.validation import Summary
 
 
 class Named:
@@ -101,4 +107,60 @@ def make_constraints_file(pth, constraints):
             tfile.write("\n".join([f"-c {relativize(c)}" for c in constraints]))
         return (pth,)
     else:
+        return ()
+
+
+def discover_validation_layers(module):
+    """Discover validation layer inside the milabench.validation module"""
+    path = module.__path__
+    name = module.__name__
+
+    layers = {}
+
+    for _, layerpath, _ in pkgutil.iter_modules(path, name + "."):
+        layername = layerpath.split(".")[-1]
+        layermodule = importlib.import_module(layerpath)
+
+        if hasattr(layermodule, "_Layer"):
+            layers[layername] = layermodule._Layer
+
+    return layers
+
+
+
+VALIDATION_LAYERS = discover_validation_layers(milabench.validation)
+
+class _LayerProxy:
+    def __init__(self, funs) -> None:
+        self.funs = funs
+
+    def __call__(self, *args: Any, **kwds: Any) -> Any:
+        for _, fun in self.funs.items():
+            fun(*args, **kwds)
+            
+
+@contextmanager
+def validation(*layer_names, short=True):
+    """Combine validation layers into a single context manager"""
+    results = dict()
+
+    with ExitStack() as stack:
+
+        for layer_name in layer_names:
+            layer = VALIDATION_LAYERS.get(layer_name)
+
+            if layer is not None:
+                results[layer_name] = stack.enter_context(layer())
+            else:
+                names = list(VALIDATION_LAYERS.keys())
+                raise RuntimeError(f"Layer `{layer_name}` does not exist: {names}")
+
+        yield _LayerProxy(results)
+
+        summary = Summary()
+
+        for _, layer in results.items():
+            layer.report(summary, short=short)
+
+        summary.show()
         return ()

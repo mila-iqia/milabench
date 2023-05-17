@@ -1,6 +1,7 @@
 from collections import defaultdict
 
 from .validation import ValidationLayer
+from voir.instruments.gpu import get_gpu_info
 
 
 class _Layer(ValidationLayer):
@@ -12,10 +13,7 @@ class _Layer(ValidationLayer):
 
     """
 
-    def __init__(self, gv) -> None:
-        super().__init__(gv)
-        from ..gpu import get_gpu_info
-
+    def __init__(self) -> None:
         gpus = get_gpu_info().values()
 
         self.gpus = len(gpus)
