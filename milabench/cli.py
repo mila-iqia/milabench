@@ -323,7 +323,7 @@ class Main:
                 TextReporter("stdout"),
                 TextReporter("stderr"),
                 DataReporter(),
-                validation("error", short=not fulltrace),
+                *validation("error", "nan", "usage", short=not fulltrace),
             ],
             mp=mp,
         )

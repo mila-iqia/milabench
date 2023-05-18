@@ -127,44 +127,24 @@ def discover_validation_layers(module):
     return layers
 
 
-
 VALIDATION_LAYERS = discover_validation_layers(milabench.validation)
 
-class _LayerProxy:
-    def __init__(self, funs) -> None:
-        self.funs = funs
 
-    def __call__(self, *args: Any, **kwds: Any) -> Any:
-        for _, fun in self.funs.items():
-            fun(*args, **kwds)
-            
-
-@contextmanager
-def validation(*layer_names, short=True):
-    """Combine validation layers into a single context manager"""
-    results = dict()
-
-    with ExitStack() as stack:
-
-        for layer_name in layer_names:
-            layer = VALIDATION_LAYERS.get(layer_name)
-
-            if layer is not None:
-                results[layer_name] = stack.enter_context(layer())
-            else:
-                names = list(VALIDATION_LAYERS.keys())
-                raise RuntimeError(f"Layer `{layer_name}` does not exist: {names}")
-
-        yield _LayerProxy(results)
-
-        summary = Summary()
-
-        for _, layer in results.items():
-            layer.report(summary, short=short)
-
-        summary.show()
-        return ()
+def validation(*layer_names, **kwargs):
+    """Initialize a list of validation layers"""
+    layers = []
    
+    for layer_name in layer_names:
+        layer = VALIDATION_LAYERS.get(layer_name)
+
+        if layer is not None:
+            layers.append(layer())
+        else:
+            names = list(VALIDATION_LAYERS.keys())
+            raise RuntimeError(f"Layer `{layer_name}` does not exist: {names}")
+
+    return layers
+
 
 class _LoggerProxy:
     def __init__(self, funs) -> None:
@@ -188,10 +168,18 @@ class _LoggerProxy:
         for _, fun in self.funs.items():
             rc = rc | fun._rc
         return rc
+    
+    def report(self, **kwargs):
+        """Generate a full report containing warnings from all loggers"""
+        summary = Summary()
+        for _, layer in self.funs.items():
+            if hasattr(layer, "report"):
+                layer.report(summary, **kwargs)
+        summary.show()
         
 
 @contextmanager
-def multilogger(*logs):
+def multilogger(*logs, **kwargs):
     """Combine loggers into a single context manager"""
     results = dict()
 
@@ -200,6 +188,7 @@ def multilogger(*logs):
         for log in logs:
             results[type(log)] = stack.enter_context(log)
 
-        yield _LoggerProxy(results)
-
-    return None
+        multilog = _LoggerProxy(results)
+        yield multilog
+        
+    multilog.report(**kwargs)

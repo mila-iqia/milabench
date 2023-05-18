@@ -13,21 +13,24 @@ class _Layer(ValidationLayer):
 
     """
 
-    def __init__(self) -> None:
+    def __init__(self, **kwargs) -> None:
         self.previous_loss = dict()
         self.warnings = defaultdict(lambda: defaultdict(int))
         self.nan_count = 0
         self.increasing_loss = 0
 
-    def on_event(self, pack, run, tag, keys, data):
-        loss = data.get("loss")
+    def on_event(self, entry):
+        tag = entry.tag
+        loss = entry.data.get("loss")
 
         if loss is not None:
             prev = self.previous_loss.get(tag)
             self.previous_loss[tag] = loss
 
             if prev is not None:
-                self.warnings[tag]["nan_count"] += int(math.isnan(loss))
+                latest = int(math.isnan(loss))
+                self.warnings[tag]["nan_count"] += latest
+                self._rc += latest
                 if loss > prev:
                     self.warnings[tag]["increasing_loss"] += 1
 

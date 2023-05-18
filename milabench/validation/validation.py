@@ -1,32 +1,29 @@
+import json
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 
 
 class ValidationLayer:
     """Validation layer interface, captures events, makes report"""
-
-    def __init__(self) -> None:
+    _rc = 0
+    
+    def __init__(self, **kwargs) -> None:
         self.early_stop = False
+        self._rc = 0
         
     def __call__(self, entry):
         return self._on_event(entry)
 
-    def _on_event(self, data):
+    def _on_event(self, entry):
         self.early_stop = False
 
-        data = dict(data)
-        run = data.pop("#run", None)
-        pack = data.pop("#pack", None)
-        tg = ".".join(run["tag"]) if run else pack.config["name"]
-        ks = set(data.keys())
-        
-        if data.event == "stop":
+        if entry.event == "stop":
             self.early_stop = True
             return
 
-        self.on_event(pack, run, tg, ks, data)
+        self.on_event(entry)
 
-    def on_event(self, pack, run, tag, keys, data):
+    def on_event(self, entry, run, tag):
         raise NotImplementedError()
 
     def report(self, summary, **kwargs):

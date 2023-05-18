@@ -12,7 +12,7 @@ class _Layer(ValidationLayer):
 
     """
 
-    def __init__(self) -> None:
+    def __init__(self, **kwargs) -> None:
         self.warnings = defaultdict(lambda: defaultdict(float))
 
         self.devices = set()
@@ -20,7 +20,8 @@ class _Layer(ValidationLayer):
         self.mem_threshold = 0.50
         self.load_threshold = 0.01
 
-    def on_event(self, pack, run, tag, keys, data):
+    def on_event(self, entry, run, tag):
+        data = entry.data
         gpudata = data.get("gpudata")
 
         if gpudata is not None:

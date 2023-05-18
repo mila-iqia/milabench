@@ -37,8 +37,7 @@ def _extract_traceback(lines):
 class _Layer(ValidationLayer):
     """Capture all error event and save them to generate a summary"""
 
-    def __init__(self, short=True) -> None:
-        self.short = short
+    def __init__(self, **kwargs) -> None:
         self.errors = defaultdict(PackError)
         self.failed = False
 
@@ -48,21 +47,24 @@ class _Layer(ValidationLayer):
     def __exit__(self, *args):
         pass
 
-    def on_event(self, pack, run, tg, ks, data):
+    def on_event(self, entry, run, tg):
         error = self.errors[tg]
 
-        if data.event == "line" and data.pipe == "stderr":
-            error.stderr.append(data.data)
+        if entry.event == "line" and entry.pipe == "stderr":
+            error.stderr.append(entry.data)
 
-        elif data.event == "error":
-            info = data.data
+        elif entry.event == "error":
+            info = entry.data
             error.message = f'{info["type"]}: {info["message"]}'
             
-        elif data.event == "end":
-            info = data.data
+        elif entry.event == "end":
+            info = entry.data
             if not self.early_stop:
                 error.code = info["return_code"]
                 self.failed = self.failed or error.code != 0
+
+    def end(self):
+        return self.failed
 
     def report(self, summary, short=True, **kwargs):
         """Print an error report and exit with an error code if any error were found"""

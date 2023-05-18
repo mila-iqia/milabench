@@ -21,8 +21,10 @@ color_wheel = [T.cyan, T.magenta, T.yellow, T.red, T.green, T.blue]
 
 
 class BaseLogger:
+    _rc = 0
+
     def __init__(self) -> None:
-        self._rc = None
+        self._rc = 0
     
     def __enter__(self):
         if hasattr(self, 'start'):
@@ -35,7 +37,7 @@ class BaseLogger:
             self._rc = self.end()
 
 
-class TagConsole:
+class TagConsole(BaseLogger):
     def __init__(self, tag, i):
         self.header = color_wheel[i % len(color_wheel)](T.bold(tag))
 
@@ -67,7 +69,7 @@ class TagConsole:
         pass
 
 
-class TerminalFormatter:
+class TerminalFormatter(BaseLogger):
     def __init__(self):
         self.consoles = {}
         self.error_happened = set()
@@ -160,7 +162,7 @@ class TerminalFormatter:
             console.pretty(T.bold(f"[{event}]"), data)
 
 
-class BaseReporter:
+class BaseReporter(BaseLogger):
     def __init__(self, pipe):
         self.pipe = pipe
         self.files = {}
@@ -211,7 +213,7 @@ class DataReporter(BaseReporter):
         self.file(entry).write(f"{j}\n")
 
 
-class DashFormatter:
+class DashFormatter(BaseLogger):
     def __init__(self):
         self.panel = Panel("")
         self.console = Console()

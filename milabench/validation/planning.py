@@ -13,14 +13,14 @@ class _Layer(ValidationLayer):
 
     """
 
-    def __init__(self) -> None:
+    def __init__(self, **kwargs) -> None:
         gpus = get_gpu_info().values()
 
         self.gpus = len(gpus)
         self.configs = defaultdict(lambda: defaultdict(int))
 
-    def on_event(self, pack, run, tag, keys, data):
-        cfg = pack.config
+    def on_event(self, entry, run, tag):
+        cfg = entry.pack.config
         plan = cfg["plan"]
         method = plan["method"].replace("-", "_")
 
@@ -30,7 +30,7 @@ class _Layer(ValidationLayer):
         assert method in ("per_gpu", "njobs")
 
         # Counts the number of loss we are receiving
-        loss = data.get("loss")
+        loss = entry.data.get("loss")
         if loss is not None:
             self.configs[tag]["loss"] += 1
 
