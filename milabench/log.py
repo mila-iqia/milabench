@@ -20,6 +20,21 @@ T = Terminal()
 color_wheel = [T.cyan, T.magenta, T.yellow, T.red, T.green, T.blue]
 
 
+class BaseLogger:
+    def __init__(self) -> None:
+        self._rc = None
+    
+    def __enter__(self):
+        if hasattr(self, 'start'):
+            self.start()
+        
+        return self
+    
+    def __exit__(self, *args, **kwargs):
+        if hasattr(self, 'end'):
+            self._rc = self.end()
+
+
 class TagConsole:
     def __init__(self, tag, i):
         self.header = color_wheel[i % len(color_wheel)](T.bold(tag))

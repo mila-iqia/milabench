@@ -181,17 +181,24 @@ class _LoggerProxy:
                 print("=" * 80)
                 traceback.print_exc()
                 print("=" * 80)
-             
+                
+    def result(self):
+        """Combine error codes"""
+        rc = 0
+        for _, fun in self.funs.items():
+            rc = rc | fun._rc
+        return rc
+        
 
 @contextmanager
-def loggers(*logs, short=True):
-    """Combine validation layers into a single context manager"""
+def multilogger(*logs):
+    """Combine loggers into a single context manager"""
     results = dict()
 
     with ExitStack() as stack:
 
         for log in logs:
-            results[type(log)] = stack.enter_context(log())
+            results[type(log)] = stack.enter_context(log)
 
         yield _LoggerProxy(results)
 
