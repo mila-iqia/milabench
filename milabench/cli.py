@@ -14,7 +14,7 @@ from omegaconf import OmegaConf
 from voir.instruments.gpu import deduce_backend, select_backend
 
 from milabench.alt_async import proceed
-from milabench.utils import blabla, validation
+from milabench.utils import blabla, validation, multilogger
 
 from .compare import compare, fetch_runs
 from .config import build_config
@@ -255,34 +255,28 @@ def _error_report(reports):
 
 
 def run_with_loggers(coro, loggers, mp=None):
+    # I feel we could clean up this code with ExitStack
+    # if loggers are contextmanagers
     retcode = 0
     loggers = [logger for logger in loggers if logger is not None]
+    
     try:
-        for logger in loggers:
-            if hasattr(logger, "start"):
-                logger.start()
-        for entry in proceed(coro):
-            for logger in loggers:
-                try:
-                    logger(entry)
-                except Exception:
-                    logger_name = getattr(logger, "__name__", logger)
-                    print(f"Error happened in logger {logger_name}", file=sys.stderr)
-                    print("=" * 80)
-                    traceback.print_exc()
-                    print("=" * 80)
+        with multilogger(*loggers) as log:
+            for entry in proceed(coro):
+                log(entry)
+
     except Exception:
         traceback.print_exc()
         retcode = -1
+        
     finally:
-        for logger in loggers:
-            if hasattr(logger, "end"):
-                if (rc := logger.end()) is not None:
-                    retcode = retcode or rc
+        retcode = retcode | log.result()
+
         if mp:
             logdirs = {pack.logdir for pack in mp.packs.values() if pack.logdir}
             for logdir in logdirs:
                 print(f"[DONE] Reports directory: {logdir}")
+        
         return retcode
 
 
@@ -376,7 +370,7 @@ class Main:
                 TextReporter("stdout"),
                 TextReporter("stderr"),
                 DataReporter(),
-                ErrorValidation(short=not fulltrace),
+                validation('error', short=not fulltrace),
             ],
             mp=mp,
         )
@@ -410,7 +404,7 @@ class Main:
                 TextReporter("stdout"),
                 TextReporter("stderr"),
                 DataReporter(),
-                ErrorValidation(short=not fulltrace),
+                validation('error', short=not fulltrace),
             ],
             mp=mp,
         )
