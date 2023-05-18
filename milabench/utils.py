@@ -164,3 +164,35 @@ def validation(*layer_names, short=True):
 
         summary.show()
         return ()
+   
+
+class _LoggerProxy:
+    def __init__(self, funs) -> None:
+        self.funs = funs
+
+    def __call__(self, *args: Any, **kwds: Any) -> Any:
+        for _, fun in self.funs.items():
+            try:
+                fun(*args, **kwds)
+            
+            except Exception:
+                logger_name = getattr(fun, "__name__", fun)
+                print(f"Error happened in logger {logger_name}", file=sys.stderr)
+                print("=" * 80)
+                traceback.print_exc()
+                print("=" * 80)
+             
+
+@contextmanager
+def loggers(*logs, short=True):
+    """Combine validation layers into a single context manager"""
+    results = dict()
+
+    with ExitStack() as stack:
+
+        for log in logs:
+            results[type(log)] = stack.enter_context(log())
+
+        yield _LoggerProxy(results)
+
+    return None
