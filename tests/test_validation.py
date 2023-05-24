@@ -42,3 +42,8 @@ def test_usage_layer_no_usage(replayfolder):
 def test_usage_layer_usage(replayfolder):
     log = replay_scenario(replayfolder, "usage")
     assert log.result() == 0
+
+
+def test_rate_layer(replayfolder):
+    log = replay_scenario(replayfolder, "ensure_rate")
+    assert log.result() != 0
