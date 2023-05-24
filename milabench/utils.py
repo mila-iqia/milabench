@@ -133,7 +133,7 @@ VALIDATION_LAYERS = discover_validation_layers(milabench.validation)
 def validation(*layer_names, **kwargs):
     """Initialize a list of validation layers"""
     layers = []
-   
+
     for layer_name in layer_names:
         layer = VALIDATION_LAYERS.get(layer_name)
 
@@ -154,21 +154,23 @@ class _LoggerProxy:
         for _, fun in self.funs.items():
             try:
                 fun(*args, **kwds)
-            
+
             except Exception:
                 logger_name = getattr(fun, "__name__", fun)
                 print(f"Error happened in logger {logger_name}", file=sys.stderr)
                 print("=" * 80)
                 traceback.print_exc()
                 print("=" * 80)
-                
+
     def result(self):
         """Combine error codes"""
         rc = 0
         for _, fun in self.funs.items():
-            rc = rc | fun._rc
+            if hasattr(fun, "error_code") and fun.error_code:
+                rc = rc | fun.error_code
+
         return rc
-    
+
     def report(self, **kwargs):
         """Generate a full report containing warnings from all loggers"""
         summary = Summary()
@@ -176,7 +178,7 @@ class _LoggerProxy:
             if hasattr(layer, "report"):
                 layer.report(summary, **kwargs)
         summary.show()
-        
+
 
 @contextmanager
 def multilogger(*logs, **kwargs):
@@ -184,11 +186,10 @@ def multilogger(*logs, **kwargs):
     results = dict()
 
     with ExitStack() as stack:
-
         for log in logs:
             results[type(log)] = stack.enter_context(log)
 
         multilog = _LoggerProxy(results)
         yield multilog
-        
+
     multilog.report(**kwargs)

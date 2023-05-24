@@ -22,7 +22,7 @@ def test_error_reporting_short(capsys, args, matcher, config):
         main(["run", "--config", config("argerror"), *args])
 
     assert err.type is SystemExit
-    assert err.value.code == -1
+    assert err.value.code != 0
 
     captured = capsys.readouterr()
     print("==")

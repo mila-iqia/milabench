@@ -22,6 +22,7 @@ def config():
 
     return get_config
 
+
 @pytest.fixture
 def replayfolder():
     return here / "replays"

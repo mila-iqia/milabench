@@ -2,19 +2,22 @@ import json
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 
+from ..structs import BenchLogEntry
+
 
 class ValidationLayer:
     """Validation layer interface, captures events, makes report"""
+
     _rc = 0
-    
+
     def __init__(self, **kwargs) -> None:
         self.early_stop = False
         self._rc = 0
-        
+
     def __call__(self, entry):
         return self._on_event(entry)
 
-    def _on_event(self, entry):
+    def _on_event(self, entry: BenchLogEntry):
         self.early_stop = False
 
         if entry.event == "stop":
@@ -23,7 +26,17 @@ class ValidationLayer:
 
         self.on_event(entry)
 
-    def on_event(self, entry, run, tag):
+    @property
+    def error_code(self):
+        return self._rc
+
+    def set_error_code(self, code):
+        self._rc = code
+
+    def end(self):
+        return self._rc
+
+    def on_event(self, entry: BenchLogEntry):
         raise NotImplementedError()
 
     def report(self, summary, **kwargs):
@@ -31,7 +44,7 @@ class ValidationLayer:
 
     def __enter__(self):
         return self
-    
+
     def __exit__(self, *args, **kwargs):
         pass
 
@@ -93,7 +106,6 @@ class Summary:
         self.stack[-1].body.append(txt)
 
     def show(self, printfun=print):
-
         if self.has_content:
             output = []
             self._show(self.root.body, 0, output)

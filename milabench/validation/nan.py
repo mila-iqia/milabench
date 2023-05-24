@@ -20,6 +20,9 @@ class _Layer(ValidationLayer):
         self.increasing_loss = 0
 
     def on_event(self, entry):
+        if entry.pipe != "data":
+            return
+
         tag = entry.tag
         loss = entry.data.get("loss")
 
@@ -30,14 +33,16 @@ class _Layer(ValidationLayer):
             if prev is not None:
                 latest = int(math.isnan(loss))
                 self.warnings[tag]["nan_count"] += latest
-                self._rc += latest
+                self.nan_count += latest
+
                 if loss > prev:
                     self.warnings[tag]["increasing_loss"] += 1
 
     def report(self, summary, **kwargs):
         for bench, warnings in self.warnings.items():
             with summary.section(bench):
-                summary.add(f'Loss was Nan {warnings["nan_count"]} times')
-                summary.add(f'Loss increased {warnings["increasing_loss"]} times')
+                summary.add(f'* Loss was Nan {warnings["nan_count"]} times')
+                summary.add(f'* Loss increased {warnings["increasing_loss"]} times')
 
-        return self.nan_count == 0
+        self.set_error_code(self.nan_count)
+        return self.nan_count

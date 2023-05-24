@@ -2,7 +2,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import List
 
-from .validation import ValidationLayer
+from .validation import ValidationLayer, BenchLogEntry
 
 
 @dataclass
@@ -39,7 +39,6 @@ class _Layer(ValidationLayer):
 
     def __init__(self, **kwargs) -> None:
         self.errors = defaultdict(PackError)
-        self.failed = False
 
     def __enter__(self):
         return self
@@ -47,8 +46,8 @@ class _Layer(ValidationLayer):
     def __exit__(self, *args):
         pass
 
-    def on_event(self, entry, run, tg):
-        error = self.errors[tg]
+    def on_event(self, entry: BenchLogEntry):
+        error = self.errors[entry.tag]
 
         if entry.event == "line" and entry.pipe == "stderr":
             error.stderr.append(entry.data)
@@ -56,15 +55,11 @@ class _Layer(ValidationLayer):
         elif entry.event == "error":
             info = entry.data
             error.message = f'{info["type"]}: {info["message"]}'
-            
+
         elif entry.event == "end":
             info = entry.data
             if not self.early_stop:
                 error.code = info["return_code"]
-                self.failed = self.failed or error.code != 0
-
-    def end(self):
-        return self.failed
 
     def report(self, summary, short=True, **kwargs):
         """Print an error report and exit with an error code if any error were found"""
@@ -76,13 +71,12 @@ class _Layer(ValidationLayer):
             if error.code == 0:
                 success += 1
                 continue
-            
+
             if error.code == 0:
                 success += 1
                 continue
 
             with summary.section(name):
-                self.failed = True
                 failures += 1
                 tracebacks = _extract_traceback(error.stderr)
 
@@ -96,4 +90,5 @@ class _Layer(ValidationLayer):
                 else:
                     summary.add("No traceback info about the error")
 
-        return self.failed
+        self.set_error_code(failures)
+        return failures

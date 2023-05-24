@@ -19,7 +19,11 @@ class _Layer(ValidationLayer):
         self.gpus = len(gpus)
         self.configs = defaultdict(lambda: defaultdict(int))
 
-    def on_event(self, entry, run, tag):
+    def on_event(self, entry):
+        if entry.pipe != "data":
+            return
+
+        tag = entry.tag
         cfg = entry.pack.config
         plan = cfg["plan"]
         method = plan["method"].replace("-", "_")
@@ -35,7 +39,7 @@ class _Layer(ValidationLayer):
             self.configs[tag]["loss"] += 1
 
     def report(self, summary, **kwargs):
-        failed = False
+        failed = 0
         config_count = len(self.configs)
 
         for bench, config in self.configs.items():
@@ -45,10 +49,11 @@ class _Layer(ValidationLayer):
 
                 if method == "njobs" and config_count != njobs:
                     summary.add(f"* Wrong number of configs")
-                    failed = True
+                    failed += 1
 
                 if method == "per_gpu" and config_count != self.gpus:
                     summary.add(f"* Wrong number of configs")
-                    failed = True
+                    failed += 1
 
+        self.set_error_code(failed)
         return failed

@@ -21,20 +21,18 @@ color_wheel = [T.cyan, T.magenta, T.yellow, T.red, T.green, T.blue]
 
 
 class BaseLogger:
-    _rc = 0
+    def start(self):
+        pass
 
-    def __init__(self) -> None:
-        self._rc = 0
-    
+    def end(self):
+        pass
+
     def __enter__(self):
-        if hasattr(self, 'start'):
-            self.start()
-        
+        self.start()
         return self
-    
+
     def __exit__(self, *args, **kwargs):
-        if hasattr(self, 'end'):
-            self._rc = self.end()
+        self.end()
 
 
 class TagConsole(BaseLogger):

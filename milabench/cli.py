@@ -259,24 +259,24 @@ def run_with_loggers(coro, loggers, mp=None):
     # if loggers are contextmanagers
     retcode = 0
     loggers = [logger for logger in loggers if logger is not None]
-    
+
     try:
         with multilogger(*loggers) as log:
             for entry in proceed(coro):
                 log(entry)
 
+        retcode = log.result()
+
     except Exception:
         traceback.print_exc()
         retcode = -1
-        
-    finally:
-        retcode = retcode | log.result()
 
+    finally:
         if mp:
             logdirs = {pack.logdir for pack in mp.packs.values() if pack.logdir}
             for logdir in logdirs:
                 print(f"[DONE] Reports directory: {logdir}")
-        
+
         return retcode
 
 
@@ -370,7 +370,7 @@ class Main:
                 TextReporter("stdout"),
                 TextReporter("stderr"),
                 DataReporter(),
-                validation('error', short=not fulltrace),
+                *validation("error", short=not fulltrace),
             ],
             mp=mp,
         )
@@ -404,7 +404,7 @@ class Main:
                 TextReporter("stdout"),
                 TextReporter("stderr"),
                 DataReporter(),
-                validation('error', short=not fulltrace),
+                *validation("error", short=not fulltrace),
             ],
             mp=mp,
         )
