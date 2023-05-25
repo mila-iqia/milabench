@@ -31,34 +31,41 @@ class _Layer(ValidationLayer):
 
         if gpudata is not None:
             for device, data in gpudata.items():
+                loadkey = f"{device}-load_avg"
+                memkey = f"{device}-mem_avg"
+                countkey = f"{device}-count"
+
+                stats = self.warnings[tag]
                 self.devices.add(device)
-                self.warnings[tag][f"{device}-load_avg"] += data.get("load", 0)
-
                 usage, total = data.get("memory", [0, 1])
-                self.warnings[tag][f"{device}-mem_avg"] += usage / total
 
-            self.warnings[tag]["count"] += 1
+                stats[loadkey] += data.get("load", 0)
+                stats[memkey] += usage / total
+                stats[countkey] += 1
 
     def report(self, summary, **kwargs):
         failed = 0
 
         for bench, warnings in self.warnings.items():
             with summary.section(bench):
-                count = warnings["count"]
-
                 for device in self.devices:
-                    load = warnings[f"{device}-load_avg"] / count
-                    mem = warnings[f"{device}-mem_avg"] / count
+                    loadkey = f"{device}-load_avg"
+                    memkey = f"{device}-mem_avg"
+                    countkey = f"{device}-count"
+                    count = warnings[countkey]
 
-                    if load < self.load_threshold:
+                    load = warnings.get(loadkey, None)
+                    mem = warnings.get(memkey, None)
+
+                    if load and load / count < self.load_threshold:
                         summary.add(
-                            f"* Device {device} loads is below threshold {load:5.2f} < {self.load_threshold:5.2f}"
+                            f"* Device {device} loads is below threshold {load / count:5.2f} < {self.load_threshold:5.2f}"
                         )
                         failed += 1
 
-                    if mem < self.mem_threshold:
+                    if mem and mem / count < self.mem_threshold:
                         summary.add(
-                            f"* Device {device} used memory is below threshold {mem:5.2f} < {self.mem_threshold:5.2f}"
+                            f"* Device {device} used memory is below threshold {mem / count/ count:5.2f} < {self.mem_threshold:5.2f}"
                         )
                         failed += 1
 

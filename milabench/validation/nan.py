@@ -41,8 +41,14 @@ class _Layer(ValidationLayer):
     def report(self, summary, **kwargs):
         for bench, warnings in self.warnings.items():
             with summary.section(bench):
-                summary.add(f'* Loss was Nan {warnings["nan_count"]} times')
-                summary.add(f'* Loss increased {warnings["increasing_loss"]} times')
+                nan_counts = warnings["nan_count"]
+                loss_inc = warnings["increasing_loss"]
+
+                if nan_counts > 0:
+                    summary.add(f"* Loss was Nan {nan_counts} times")
+
+                if loss_inc > 0:
+                    summary.add(f"* Loss increased {loss_inc} times")
 
         self.set_error_code(self.nan_count)
         return self.nan_count
