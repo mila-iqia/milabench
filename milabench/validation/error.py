@@ -78,7 +78,9 @@ class _Layer(ValidationLayer):
 
             with summary.section(name):
                 failures += 1
+
                 tracebacks = _extract_traceback(error.stderr)
+                summary.add(f"* Error code = {error.code}")
 
                 if len(tracebacks) != 0:
                     if short:
@@ -88,7 +90,7 @@ class _Layer(ValidationLayer):
                         for line in tracebacks[1:]:
                             summary.add("  " + line)
                 else:
-                    summary.add("No traceback info about the error")
+                    summary.add(f"* No traceback info about the error")
 
         self.set_error_code(failures)
         return failures

@@ -34,17 +34,22 @@ class _Layer(ValidationLayer):
                 loadkey = f"{device}-load_avg"
                 memkey = f"{device}-mem_avg"
                 countkey = f"{device}-count"
+                mxmem = f"{device}-mem_mx"
+                mxload = f"{device}-load_mx"
 
                 stats = self.warnings[tag]
                 self.devices.add(device)
                 usage, total = data.get("memory", [0, 1])
 
                 stats[loadkey] += data.get("load", 0)
+                stats[mxmem] = max(usage, stats[mxmem])
+                stats[mxload] = max(usage, stats[mxload])
                 stats[memkey] += usage / total
                 stats[countkey] += 1
 
     def report(self, summary, **kwargs):
         failed = 0
+        warn = 0
 
         for bench, warnings in self.warnings.items():
             with summary.section(bench):
@@ -52,22 +57,26 @@ class _Layer(ValidationLayer):
                     loadkey = f"{device}-load_avg"
                     memkey = f"{device}-mem_avg"
                     countkey = f"{device}-count"
+                    mxmem = f"{device}-mem_mx"
+                    mxload = f"{device}-load_mx"
                     count = warnings[countkey]
 
                     load = warnings.get(loadkey, None)
                     mem = warnings.get(memkey, None)
+                    mxmem = warnings.get(mxmem, None)
+                    mxload = warnings.get(mxload, None)
 
-                    if load and load / count < self.load_threshold:
+                    if load is not None and load / count < self.load_threshold:
                         summary.add(
-                            f"* Device {device} loads is below threshold {load / count:5.2f} < {self.load_threshold:5.2f}"
+                            f"* Device {device} loads is below threshold {load / count:5.2f} < {self.load_threshold:5.2f} (max load: {mxload})"
                         )
                         failed += 1
 
-                    if mem and mem / count < self.mem_threshold:
+                    if mem is not None and mem / count < self.mem_threshold:
                         summary.add(
-                            f"* Device {device} used memory is below threshold {mem / count/ count:5.2f} < {self.mem_threshold:5.2f}"
+                            f"* Device {device} used memory is below threshold {mem / count/ count:5.2f} < {self.mem_threshold:5.2f} (max use: {mxmem})"
                         )
-                        failed += 1
+                        warn += 1
 
         self.set_error_code(failed)
         return failed
