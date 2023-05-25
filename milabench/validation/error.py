@@ -12,6 +12,7 @@ class PackError:
     stderr: List[str] = field(default_factory=list)
     code: int = 0
     message: str = None
+    early_stop: bool = False
 
 
 def _extract_traceback(lines):
@@ -48,6 +49,7 @@ class _Layer(ValidationLayer):
 
     def on_event(self, entry: BenchLogEntry):
         error = self.errors[entry.tag]
+        error.early_stop = self.early_stop
 
         if entry.event == "line" and entry.pipe == "stderr":
             error.stderr.append(entry.data)

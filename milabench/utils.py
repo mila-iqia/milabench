@@ -130,7 +130,11 @@ def discover_validation_layers(module):
 VALIDATION_LAYERS = discover_validation_layers(milabench.validation)
 
 
-def validation(*layer_names, **kwargs):
+def available_layers():
+    return VALIDATION_LAYERS.keys()
+
+
+def validation_layers(*layer_names, **kwargs):
     """Initialize a list of validation layers"""
     layers = []
 

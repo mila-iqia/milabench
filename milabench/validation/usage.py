@@ -74,7 +74,7 @@ class _Layer(ValidationLayer):
 
                     if mem is not None and mem / count < self.mem_threshold:
                         summary.add(
-                            f"* Device {device} used memory is below threshold {mem / count/ count:5.2f} < {self.mem_threshold:5.2f} (max use: {mxmem})"
+                            f"* Device {device} used memory is below threshold {mem / count:5.2f} < {self.mem_threshold:5.2f} (max use: {mxmem})"
                         )
                         warn += 1
 

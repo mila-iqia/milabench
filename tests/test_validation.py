@@ -1,6 +1,6 @@
 import json
 
-from milabench.utils import validation, multilogger
+from milabench.utils import validation_layers, multilogger
 from milabench.structs import BenchLogEntry
 from milabench.pack import BasePackage
 
@@ -18,7 +18,7 @@ def replay(filename):
 
 
 def replay_scenario(folder, name, filename=None):
-    with multilogger(*validation(name)) as log:
+    with multilogger(*validation_layers(name)) as log:
         for entry in replay(folder / f"{filename or name}.txt"):
             log(entry)
     return log

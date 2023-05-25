@@ -14,7 +14,7 @@ from omegaconf import OmegaConf
 from voir.instruments.gpu import deduce_backend, select_backend
 
 from milabench.alt_async import proceed
-from milabench.utils import blabla, validation, multilogger
+from milabench.utils import blabla, validation_layers, multilogger, available_layers
 
 from .compare import compare, fetch_runs
 from .config import build_config
@@ -284,6 +284,26 @@ def run_sync(coro, terminal=True):
     return run_with_loggers(coro, [TerminalFormatter()] if terminal else [])
 
 
+def validation_names(layers):
+    if layers is None:
+        layers = ""
+
+    layers = layers.split(",")
+    all_layers = available_layers()
+
+    if "all" in layers:
+        return all_layers
+
+    results = set(["error", "ensure_rate"])
+    for l in layers:
+        if l in all_layers:
+            results.add(l)
+        else:
+            print("Layer {l} doees not exist")
+
+    return results
+
+
 class Main:
     def run():
         """Run the benchmarks."""
@@ -304,6 +324,10 @@ class Main:
         # Which type of dashboard to show (short, long, or no)
         dash: Option & str = os.environ.get("MILABENCH_DASH", "long")
 
+        validations: Option & str = None
+
+        layers = validation_names(validations)
+
         dash_class = {
             "short": ShortDashFormatter,
             "long": LongDashFormatter,
@@ -323,7 +347,7 @@ class Main:
                 TextReporter("stdout"),
                 TextReporter("stderr"),
                 DataReporter(),
-                *validation("error", "nan", "usage", short=not fulltrace),
+                *validation_layers(*layers, short=not fulltrace),
             ],
             mp=mp,
         )
@@ -370,7 +394,7 @@ class Main:
                 TextReporter("stdout"),
                 TextReporter("stderr"),
                 DataReporter(),
-                *validation("error", short=not fulltrace),
+                *validation_layers("error", short=not fulltrace),
             ],
             mp=mp,
         )
@@ -404,7 +428,7 @@ class Main:
                 TextReporter("stdout"),
                 TextReporter("stderr"),
                 DataReporter(),
-                *validation("error", short=not fulltrace),
+                *validation_layers("error", short=not fulltrace),
             ],
             mp=mp,
         )
