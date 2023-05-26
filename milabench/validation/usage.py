@@ -46,10 +46,7 @@ class Layer(ValidationLayer):
         self.devices = set()
         self.count = 0
 
-    def on_event(self, entry):
-        if entry.pipe != "data":
-            return
-
+    def on_data(self, entry):
         if entry.data is None:
             return
 
@@ -70,7 +67,7 @@ class Layer(ValidationLayer):
                 stats.avg_mem[device] += usage
                 stats.count[device] += 1
                 stats.max_load[device] = max(load, stats.max_load[device])
-                stats.max_mem[device] = max(usage, stats.max_mem)
+                stats.max_mem[device] = max(usage, stats.max_mem[device])
 
     def report(self, summary, **kwargs):
         failed = 0
@@ -88,14 +85,14 @@ class Layer(ValidationLayer):
                     if load is not None and load / count < warnings.gpu_load_threshold:
                         summary.add(
                             f"* Device {device} loads is below threshold "
-                            f"{load / count:5.2f} < {warnings.gpu_load_threshold:5.2f} (max load: {mxload})"
+                            f"{load / count:5.2f} < {warnings.gpu_load_threshold:5.2f} (max load: {mxload:5.2f})"
                         )
                         failed += 1
 
                     if mem is not None and mem / count < warnings.gpu_mem_threshold:
                         summary.add(
                             f"* Device {device} used memory is below threshold "
-                            f"{mem / count:5.2f} < {warnings.gpu_mem_threshold:5.2f} (max use: {mxmem})"
+                            f"{mem / count:5.2f} < {warnings.gpu_mem_threshold:5.2f} (max use: {mxmem:5.2f})"
                         )
                         warn += 1
 

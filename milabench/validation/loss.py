@@ -1,7 +1,24 @@
 from collections import defaultdict
+from dataclasses import dataclass, field
 import math
 
+
 from .validation import ValidationLayer
+
+
+@dataclass
+class LossError:
+    """Loss tracking state"""
+
+    nan_count: int = 0
+    loss_count: int = 0
+    increased_count: int = 0
+    prev_loss: float = None
+    first_loss: float = None
+
+    @property
+    def overall_loss_change(self):
+        return self.first_loss - self.prev_loss
 
 
 class Layer(ValidationLayer):
@@ -15,39 +32,41 @@ class Layer(ValidationLayer):
 
     def __init__(self, **kwargs) -> None:
         self.previous_loss = dict()
-        self.warnings = defaultdict(lambda: defaultdict(int))
+        self.warnings = defaultdict(LossError)
         self.nan_count = 0
         self.increasing_loss = 0
 
-    def on_event(self, entry):
-        if entry.pipe != "data":
-            return
-
+    def on_data(self, entry):
         if entry.data is None:
             return
 
         tag = entry.tag
         loss = entry.data.get("loss")
+        warning = self.warnings[tag]
 
         if loss is not None:
             prev = self.previous_loss.get(tag)
             self.previous_loss[tag] = loss
 
             if prev is not None:
+                if warning.first_loss is None:
+                    warning.first_loss = prev
+
                 latest = int(math.isnan(loss))
-                self.warnings[tag]["nan_count"] += latest
-                self.warnings[tag]["loss_count"] += 1
+
+                warning.nan_count += latest
+                warning.loss_count += 1
                 self.nan_count += latest
 
-                if loss > prev:
-                    self.warnings[tag]["increasing_loss"] += 1
+                if loss >= prev:
+                    warning.increased_count += 1
 
     def report(self, summary, **kwargs):
         for bench, warnings in self.warnings.items():
             with summary.section(bench):
-                nan_counts = warnings["nan_count"]
-                loss_inc = warnings["increasing_loss"]
-                loss_count = warnings["loss_count"]
+                nan_counts = warnings.nan_count
+                loss_inc = warnings.increased_count
+                loss_count = warnings.loss_count
 
                 if loss_count == 0:
                     summary.add(f"* No loss was found")

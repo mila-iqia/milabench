@@ -296,8 +296,8 @@ def validation_names(layers):
     for l in layers:
         if l in all_layers:
             results.add(l)
-        else:
-            print("Layer {l} does not exist")
+        elif l != "":
+            print(f"Layer {l} does not exist")
 
     return results
 

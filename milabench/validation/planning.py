@@ -27,10 +27,7 @@ class Layer(ValidationLayer):
         self.gpus = len(gpus)
         self.configs = defaultdict(Planning)
 
-    def on_event(self, entry):
-        if entry.pipe != "data":
-            return
-
+    def on_data(self, entry):
         tag = entry.tag
         benchname = entry.tag.split(".")[0]
 

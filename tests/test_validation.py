@@ -73,8 +73,8 @@ def test_error_layer_early_stop_per_gpu(replayfolder):
     assert log.result() == 0
 
 
-def test_nan_layer(replayfolder):
-    log = replay_scenario(replayfolder, "nan")
+def test_loss_layer(replayfolder):
+    log = replay_scenario(replayfolder, "loss")
     assert log.result() != 0
 
 

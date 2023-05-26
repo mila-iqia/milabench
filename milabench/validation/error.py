@@ -47,22 +47,24 @@ class Layer(ValidationLayer):
     def __exit__(self, *args):
         pass
 
-    def on_event(self, entry: BenchLogEntry):
+    def on_stop(self, entry):
         error = self.errors[entry.tag]
+        error.early_stop = True
 
-        if entry.event == "stop":
-            error.early_stop = True
-
-        if entry.event == "line" and entry.pipe == "stderr":
+    def on_line(self, entry):
+        error = self.errors[entry.tag]
+        if entry.pipe == "stderr":
             error.stderr.append(entry.data)
 
-        elif entry.event == "error":
-            info = entry.data
-            error.message = f'{info["type"]}: {info["message"]}'
+    def on_error(self, entry):
+        error = self.errors[entry.tag]
+        info = entry.data
+        error.message = f'{info["type"]}: {info["message"]}'
 
-        elif entry.event == "end":
-            info = entry.data
-            error.code = info["return_code"]
+    def on_end(self, entry):
+        error = self.errors[entry.tag]
+        info = entry.data
+        error.code = info["return_code"]
 
     def report(self, summary, short=True, **kwargs):
         """Print an error report and exit with an error code if any error were found"""

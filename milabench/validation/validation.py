@@ -28,7 +28,32 @@ class ValidationLayer:
         if entry.event == "stop":
             self.early_stop = True
 
-        self.on_event(entry)
+        method = getattr(self, f"on_{entry.event}", self.on_event)
+        method(entry)
+
+    def on_stop(self, entry):
+        pass
+
+    def on_config(self, entry):
+        pass
+
+    def on_start(self, entry):
+        pass
+
+    def on_error(self, entry):
+        pass
+
+    def on_line(self, entry):
+        pass
+
+    def on_data(Self, entry):
+        pass
+
+    def on_end(self, entry):
+        pass
+
+    def on_phase(self, entry):
+        pass
 
     @property
     def error_code(self):
@@ -41,7 +66,7 @@ class ValidationLayer:
         return self._return_code
 
     def on_event(self, entry: BenchLogEntry):
-        raise NotImplementedError()
+        raise NotImplementedError(f"Event on_{entry.event} not implemented")
 
     def report(self, summary, **kwargs):
         raise NotImplementedError()
