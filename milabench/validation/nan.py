@@ -4,7 +4,7 @@ import math
 from .validation import ValidationLayer
 
 
-class _Layer(ValidationLayer):
+class Layer(ValidationLayer):
     """Makes sures the loss we receive is not Nan.
 
     Notes
@@ -36,6 +36,7 @@ class _Layer(ValidationLayer):
             if prev is not None:
                 latest = int(math.isnan(loss))
                 self.warnings[tag]["nan_count"] += latest
+                self.warnings[tag]["loss_count"] += 1
                 self.nan_count += latest
 
                 if loss > prev:
@@ -46,6 +47,10 @@ class _Layer(ValidationLayer):
             with summary.section(bench):
                 nan_counts = warnings["nan_count"]
                 loss_inc = warnings["increasing_loss"]
+                loss_count = warnings["loss_count"]
+
+                if loss_count == 0:
+                    summary.add(f"* No loss was found")
 
                 if nan_counts > 0:
                     summary.add(f"* Loss was Nan {nan_counts} times")

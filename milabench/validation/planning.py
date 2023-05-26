@@ -13,7 +13,7 @@ class Planning:
     loss: dict = field(default_factory=dict)
 
 
-class _Layer(ValidationLayer):
+class Layer(ValidationLayer):
     """Makes sure the events we are receiving are consistent with the planning method
 
     Notes

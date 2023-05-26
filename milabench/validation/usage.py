@@ -3,7 +3,7 @@ from collections import defaultdict
 from .validation import ValidationLayer
 
 
-class _Layer(ValidationLayer):
+class Layer(ValidationLayer):
     """Checks that GPU utilisation is > 0.01 and that memory used is above 50%.
 
     Notes
@@ -17,8 +17,8 @@ class _Layer(ValidationLayer):
 
         self.devices = set()
         self.count = 0
-        self.mem_threshold = 0.50
-        self.load_threshold = 0.01
+        self.gpu_mem_threshold = 0.50
+        self.gpu_load_threshold = 0.01
 
     def on_event(self, entry):
         if entry.pipe != "data":
@@ -43,7 +43,7 @@ class _Layer(ValidationLayer):
                 self.devices.add(device)
                 usage, total = data.get("memory", [0, 1])
                 load = data.get("load", 0)
-                
+
                 stats[loadkey] += load
                 stats[mxmem] = max(usage, stats[mxmem])
                 stats[mxload] = max(load, stats[mxload])
@@ -69,15 +69,17 @@ class _Layer(ValidationLayer):
                     mxmem = warnings.get(mxmem, None)
                     mxload = warnings.get(mxload, None)
 
-                    if load is not None and load / count < self.load_threshold:
+                    if load is not None and load / count < self.gpu_mem_threshold:
                         summary.add(
-                            f"* Device {device} loads is below threshold {load / count:5.2f} < {self.load_threshold:5.2f} (max load: {mxload})"
+                            f"* Device {device} loads is below threshold "
+                            f"{load / count:5.2f} < {self.gpu_mem_threshold:5.2f} (max load: {mxload})"
                         )
                         failed += 1
 
-                    if mem is not None and mem / count < self.mem_threshold:
+                    if mem is not None and mem / count < self.gpu_mem_threshold:
                         summary.add(
-                            f"* Device {device} used memory is below threshold {mem / count:5.2f} < {self.mem_threshold:5.2f} (max use: {mxmem})"
+                            f"* Device {device} used memory is below threshold "
+                            f"{mem / count:5.2f} < {self.gpu_mem_threshold:5.2f} (max use: {mxmem})"
                         )
                         warn += 1
 

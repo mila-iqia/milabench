@@ -255,8 +255,6 @@ def _error_report(reports):
 
 
 def run_with_loggers(coro, loggers, mp=None):
-    # I feel we could clean up this code with ExitStack
-    # if loggers are contextmanagers
     retcode = 0
     loggers = [logger for logger in loggers if logger is not None]
 

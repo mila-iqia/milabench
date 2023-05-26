@@ -121,8 +121,11 @@ def discover_validation_layers(module):
         layername = layerpath.split(".")[-1]
         layermodule = importlib.import_module(layerpath)
 
-        if hasattr(layermodule, "_Layer"):
-            layers[layername] = layermodule._Layer
+        if hasattr(layermodule, "Layer"):
+            layers[layername] = layermodule.Layer
+
+        if hasattr(layermodule, "__layers__"):
+            layers.update(layermodule.__layers__)
 
     return layers
 
@@ -150,7 +153,7 @@ def validation_layers(*layer_names, **kwargs):
     return layers
 
 
-class _LoggerProxy:
+class MultiLogger:
     def __init__(self, funs) -> None:
         self.funs = funs
 
@@ -162,15 +165,15 @@ class _LoggerProxy:
             except Exception:
                 logger_name = getattr(fun, "__name__", fun)
                 print(f"Error happened in logger {logger_name}", file=sys.stderr)
-                print("=" * 80)
-                traceback.print_exc()
-                print("=" * 80)
+                print("=" * 80, file=sys.stderr)
+                traceback.print_exc(file=sys.stderr)
+                print("=" * 80, file=sys.stderr)
 
     def result(self):
         """Combine error codes"""
         rc = 0
         for _, fun in self.funs.items():
-            if hasattr(fun, "error_code") and fun.error_code:
+            if hasattr(fun, "error_code") and fun.error_code is not None:
                 rc = rc | fun.error_code
 
         return rc
@@ -193,7 +196,7 @@ def multilogger(*logs, **kwargs):
         for log in logs:
             results[type(log)] = stack.enter_context(log)
 
-        multilog = _LoggerProxy(results)
+        multilog = MultiLogger(results)
         yield multilog
 
     multilog.report(**kwargs)

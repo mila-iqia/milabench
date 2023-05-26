@@ -5,7 +5,7 @@ from typing import List
 from .validation import ValidationLayer, BenchLogEntry
 
 
-class _Layer(ValidationLayer):
+class Layer(ValidationLayer):
     """Makes sure the training rate is generated for each benchmarks"""
 
     def __init__(self, **kwargs) -> None:

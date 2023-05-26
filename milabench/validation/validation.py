@@ -8,11 +8,16 @@ from ..structs import BenchLogEntry
 class ValidationLayer:
     """Validation layer interface, captures events, makes report"""
 
-    _rc = 0
+    _return_code = None
 
     def __init__(self, **kwargs) -> None:
+        # early stop means voir requested milabench to stop the benchmark
+        # this means we can ignore the process return code because it got SIGTERM'ed
         self.early_stop = False
-        self._rc = 0
+
+        # return code of the validation layer
+        # this is used to make milabench fail on critical errors
+        self._return_code = None
 
     def __call__(self, entry):
         return self._on_event(entry)
@@ -27,13 +32,13 @@ class ValidationLayer:
 
     @property
     def error_code(self):
-        return self._rc
+        return self._return_code
 
     def set_error_code(self, code):
-        self._rc = code
+        self._return_code = code
 
     def end(self):
-        return self._rc
+        return self._return_code
 
     def on_event(self, entry: BenchLogEntry):
         raise NotImplementedError()

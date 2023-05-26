@@ -35,7 +35,7 @@ def _extract_traceback(lines):
     return output
 
 
-class _Layer(ValidationLayer):
+class Layer(ValidationLayer):
     """Capture all error event and save them to generate a summary"""
 
     def __init__(self, **kwargs) -> None:
