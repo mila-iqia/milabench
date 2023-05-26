@@ -49,7 +49,9 @@ class _Layer(ValidationLayer):
 
     def on_event(self, entry: BenchLogEntry):
         error = self.errors[entry.tag]
-        error.early_stop = self.early_stop
+
+        if entry.event == "stop":
+            error.early_stop = True
 
         if entry.event == "line" and entry.pipe == "stderr":
             error.stderr.append(entry.data)
@@ -60,8 +62,7 @@ class _Layer(ValidationLayer):
 
         elif entry.event == "end":
             info = entry.data
-            if not self.early_stop:
-                error.code = info["return_code"]
+            error.code = info["return_code"]
 
     def report(self, summary, short=True, **kwargs):
         """Print an error report and exit with an error code if any error were found"""
@@ -79,7 +80,11 @@ class _Layer(ValidationLayer):
                 continue
 
             with summary.section(name):
-                failures += 1
+                if not error.early_stop:
+                    failures += 1
+                else:
+                    summary.add("* early stopped")
+                    continue
 
                 tracebacks = _extract_traceback(error.stderr)
                 summary.add(f"* Error code = {error.code}")

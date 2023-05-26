@@ -23,6 +23,9 @@ class _Layer(ValidationLayer):
         if entry.pipe != "data":
             return
 
+        if entry.data is None:
+            return
+
         tag = entry.tag
         loss = entry.data.get("loss")
 

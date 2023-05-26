@@ -22,7 +22,6 @@ class ValidationLayer:
 
         if entry.event == "stop":
             self.early_stop = True
-            return
 
         self.on_event(entry)
 

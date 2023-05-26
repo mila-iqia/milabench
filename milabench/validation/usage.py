@@ -24,9 +24,11 @@ class _Layer(ValidationLayer):
         if entry.pipe != "data":
             return
 
+        if entry.data is None:
+            return
+
         data = entry.data
         tag = entry.tag
-
         gpudata = data.get("gpudata")
 
         if gpudata is not None:
@@ -40,10 +42,11 @@ class _Layer(ValidationLayer):
                 stats = self.warnings[tag]
                 self.devices.add(device)
                 usage, total = data.get("memory", [0, 1])
-
-                stats[loadkey] += data.get("load", 0)
+                load = data.get("load", 0)
+                
+                stats[loadkey] += load
                 stats[mxmem] = max(usage, stats[mxmem])
-                stats[mxload] = max(usage, stats[mxload])
+                stats[mxload] = max(load, stats[mxload])
                 stats[memkey] += usage / total
                 stats[countkey] += 1
 
