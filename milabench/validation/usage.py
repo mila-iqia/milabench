@@ -1,10 +1,39 @@
 from collections import defaultdict
+from dataclasses import dataclass, field
 
 from .validation import ValidationLayer
 
 
+def defaultfloatdict():
+    return field(default_factory=lambda: defaultdict(float))
+
+
+@dataclass
+class UsageCheck:
+    avg_load: dict = defaultfloatdict()
+    avg_mem: dict = defaultfloatdict()
+    count: dict = defaultfloatdict()
+    max_load: dict = defaultfloatdict()
+    max_mem: dict = defaultfloatdict()
+    config: dict = None
+
+    def get_config(self):
+        if self.config is None:
+            return {}
+
+        return self.config.get("validations", {}).get("usage", {})
+
+    @property
+    def gpu_mem_threshold(self):
+        return self.get_config().get("gpu_mem_threshold", 0.5)
+
+    @property
+    def gpu_load_threshold(self):
+        return self.get_config().get("gpu_load_threshold", 0.5)
+
+
 class Layer(ValidationLayer):
-    """Checks that GPU utilisation is > 0.01 and that memory used is above 50%.
+    """Checks that GPU utilisation and memory is above a given threshold.
 
     Notes
     -----
@@ -13,12 +42,9 @@ class Layer(ValidationLayer):
     """
 
     def __init__(self, **kwargs) -> None:
-        self.warnings = defaultdict(lambda: defaultdict(float))
-
+        self.warnings = defaultdict(UsageCheck)
         self.devices = set()
         self.count = 0
-        self.gpu_mem_threshold = 0.50
-        self.gpu_load_threshold = 0.01
 
     def on_event(self, entry):
         if entry.pipe != "data":
@@ -29,26 +55,22 @@ class Layer(ValidationLayer):
 
         data = entry.data
         tag = entry.tag
+        stats = self.warnings[tag]
         gpudata = data.get("gpudata")
 
         if gpudata is not None:
             for device, data in gpudata.items():
-                loadkey = f"{device}-load_avg"
-                memkey = f"{device}-mem_avg"
-                countkey = f"{device}-count"
-                mxmem = f"{device}-mem_mx"
-                mxload = f"{device}-load_mx"
-
-                stats = self.warnings[tag]
                 self.devices.add(device)
                 usage, total = data.get("memory", [0, 1])
                 load = data.get("load", 0)
 
-                stats[loadkey] += load
-                stats[mxmem] = max(usage, stats[mxmem])
-                stats[mxload] = max(load, stats[mxload])
-                stats[memkey] += usage / total
-                stats[countkey] += 1
+                usage = usage / total
+
+                stats.avg_load[device] += load
+                stats.avg_mem[device] += usage
+                stats.count[device] += 1
+                stats.max_load[device] = max(load, stats.max_load[device])
+                stats.max_mem[device] = max(usage, stats.max_mem)
 
     def report(self, summary, **kwargs):
         failed = 0
@@ -57,29 +79,23 @@ class Layer(ValidationLayer):
         for bench, warnings in self.warnings.items():
             with summary.section(bench):
                 for device in self.devices:
-                    loadkey = f"{device}-load_avg"
-                    memkey = f"{device}-mem_avg"
-                    countkey = f"{device}-count"
-                    mxmem = f"{device}-mem_mx"
-                    mxload = f"{device}-load_mx"
-                    count = warnings[countkey]
+                    load = warnings.avg_load.get(device, None)
+                    mem = warnings.avg_mem.get(device, None)
+                    mxmem = warnings.max_mem.get(device, None)
+                    mxload = warnings.max_load.get(device, None)
+                    count = warnings.count.get(device, 0)
 
-                    load = warnings.get(loadkey, None)
-                    mem = warnings.get(memkey, None)
-                    mxmem = warnings.get(mxmem, None)
-                    mxload = warnings.get(mxload, None)
-
-                    if load is not None and load / count < self.gpu_mem_threshold:
+                    if load is not None and load / count < warnings.gpu_load_threshold:
                         summary.add(
                             f"* Device {device} loads is below threshold "
-                            f"{load / count:5.2f} < {self.gpu_mem_threshold:5.2f} (max load: {mxload})"
+                            f"{load / count:5.2f} < {warnings.gpu_load_threshold:5.2f} (max load: {mxload})"
                         )
                         failed += 1
 
-                    if mem is not None and mem / count < self.gpu_mem_threshold:
+                    if mem is not None and mem / count < warnings.gpu_mem_threshold:
                         summary.add(
                             f"* Device {device} used memory is below threshold "
-                            f"{mem / count:5.2f} < {self.gpu_mem_threshold:5.2f} (max use: {mxmem})"
+                            f"{mem / count:5.2f} < {warnings.gpu_mem_threshold:5.2f} (max use: {mxmem})"
                         )
                         warn += 1
 
