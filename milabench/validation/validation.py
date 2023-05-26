@@ -46,7 +46,7 @@ class ValidationLayer:
     def on_line(self, entry):
         pass
 
-    def on_data(Self, entry):
+    def on_data(self, entry):
         pass
 
     def on_end(self, entry):
