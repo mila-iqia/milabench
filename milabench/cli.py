@@ -11,11 +11,10 @@ from datetime import datetime
 
 from coleo import Option, config as configuration, default, run_cli, tooled
 from omegaconf import OmegaConf
-from voir.instruments.gpu import deduce_backend, get_gpu_info, select_backend
+from voir.instruments.gpu import deduce_backend, select_backend
 
 from milabench.alt_async import proceed
-from milabench.utils import blabla
-from milabench.validation import ErrorValidation
+from milabench.utils import blabla, validation_layers, multilogger, available_layers
 
 from .compare import compare, fetch_runs
 from .config import build_config
@@ -258,37 +257,49 @@ def _error_report(reports):
 def run_with_loggers(coro, loggers, mp=None):
     retcode = 0
     loggers = [logger for logger in loggers if logger is not None]
+
     try:
-        for logger in loggers:
-            if hasattr(logger, "start"):
-                logger.start()
-        for entry in proceed(coro):
-            for logger in loggers:
-                try:
-                    logger(entry)
-                except Exception:
-                    logger_name = getattr(logger, "__name__", logger)
-                    print(f"Error happened in logger {logger_name}", file=sys.stderr)
-                    print("=" * 80)
-                    traceback.print_exc()
-                    print("=" * 80)
+        with multilogger(*loggers) as log:
+            for entry in proceed(coro):
+                log(entry)
+
+        retcode = log.result()
+
     except Exception:
         traceback.print_exc()
         retcode = -1
+
     finally:
-        for logger in loggers:
-            if hasattr(logger, "end"):
-                if (rc := logger.end()) is not None:
-                    retcode = retcode or rc
         if mp:
             logdirs = {pack.logdir for pack in mp.packs.values() if pack.logdir}
             for logdir in logdirs:
                 print(f"[DONE] Reports directory: {logdir}")
+
         return retcode
 
 
 def run_sync(coro, terminal=True):
     return run_with_loggers(coro, [TerminalFormatter()] if terminal else [])
+
+
+def validation_names(layers):
+    if layers is None:
+        layers = ""
+
+    layers = layers.split(",")
+    all_layers = available_layers()
+
+    if "all" in layers:
+        return all_layers
+
+    results = set(["error", "ensure_rate"])
+    for l in layers:
+        if l in all_layers:
+            results.add(l)
+        elif l != "":
+            print(f"Layer {l} does not exist")
+
+    return results
 
 
 class Main:
@@ -311,6 +322,10 @@ class Main:
         # Which type of dashboard to show (short, long, or no)
         dash: Option & str = os.environ.get("MILABENCH_DASH", "long")
 
+        validations: Option & str = None
+
+        layers = validation_names(validations)
+
         dash_class = {
             "short": ShortDashFormatter,
             "long": LongDashFormatter,
@@ -330,7 +345,7 @@ class Main:
                 TextReporter("stdout"),
                 TextReporter("stderr"),
                 DataReporter(),
-                ErrorValidation(short=not fulltrace),
+                *validation_layers(*layers, short=not fulltrace),
             ],
             mp=mp,
         )
@@ -377,7 +392,7 @@ class Main:
                 TextReporter("stdout"),
                 TextReporter("stderr"),
                 DataReporter(),
-                ErrorValidation(short=not fulltrace),
+                *validation_layers("error", short=not fulltrace),
             ],
             mp=mp,
         )
@@ -411,7 +426,7 @@ class Main:
                 TextReporter("stdout"),
                 TextReporter("stderr"),
                 DataReporter(),
-                ErrorValidation(short=not fulltrace),
+                *validation_layers("error", short=not fulltrace),
             ],
             mp=mp,
         )

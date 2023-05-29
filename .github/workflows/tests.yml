@@ -78,7 +78,7 @@ jobs:
 
       - name: tests
         run: |
-          export PATH="/opt/rocm-5.4.3/bin:$PATH"
+          export PATH="/opt/rocm/bin:$PATH"
           pytest tests/
 
       - name: install benchmarks
@@ -91,8 +91,8 @@ jobs:
 
       - name: run benchmarks
         run: |
-          export PATH="/opt/rocm-5.4.3/bin:$PATH"
-          milabench run --exclude "${{ matrix.exclude }}"
+          export PATH="/opt/rocm/bin:$PATH"
+          milabench run --validations all --exclude "${{ matrix.exclude }}"
 
       - name: Summary
         run: |
