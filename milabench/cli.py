@@ -17,7 +17,7 @@ from milabench.alt_async import proceed
 from milabench.utils import blabla, validation_layers, multilogger, available_layers
 
 from .compare import compare, fetch_runs
-from .config import build_config
+from .config import build_config, build_system_config
 from .fs import XPath
 from .log import (
     DataReporter,
@@ -53,6 +53,9 @@ def get_pack(defn):
 
 @tooled
 def get_multipack(run_name=None, overrides={}):
+    # System Configuration file
+    system: Option & str
+
     # Configuration file
     config: Option & str = None
 
@@ -90,6 +93,7 @@ def get_multipack(run_name=None, overrides={}):
         overrides = merge(overrides, override_obj)
 
     return _get_multipack(
+        system,
         config,
         base,
         use_current_env,
@@ -154,6 +158,7 @@ def init_arch():
 
 
 def _get_multipack(
+    system_config_path,
     config_path,
     base=None,
     use_current_env=False,
@@ -163,6 +168,9 @@ def _get_multipack(
     overrides={},
     return_config=False,
 ):
+    if system_config_path is None:
+        sys.exit("Error: SYSTEM argument not provided")
+
     if config_path is None:
         config_path = os.environ.get("MILABENCH_CONFIG", None)
 
@@ -197,6 +205,9 @@ def _get_multipack(
 
     now = str(datetime.today()).replace(" ", "_")
     run_name = run_name.format(time=now)
+
+    system_config = build_system_config(system_config_path)
+    overrides = merge(overrides, {"system": system_config})
 
     base_defaults = get_base_defaults(base=base, arch=deduce_arch(), run_name=run_name)
 
