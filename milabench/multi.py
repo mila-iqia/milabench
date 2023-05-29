@@ -9,6 +9,8 @@ from .fs import XPath
 from .merge import merge
 from .utils import make_constraints_file
 
+from .metadata import machine_metadata
+
 here = XPath(__file__).parent
 
 gpus = get_gpu_info()["gpus"].values()
@@ -112,8 +114,12 @@ class MultiPackage:
                     for run in method(cfg, **plan):
                         if repeat > 1:
                             run["tag"].append(f"R{index}")
+
                         run_pack = pack.copy(run)
+
                         await run_pack.send(event="config", data=run)
+                        await run_pack.send(event="meta", data=machine_metadata())
+
                         run_pack.phase = "run"
                         coroutines.append(run_pack.run())
 
