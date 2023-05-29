@@ -8,8 +8,6 @@ from ..structs import BenchLogEntry
 class ValidationLayer:
     """Validation layer interface, captures events, makes report"""
 
-    _return_code = None
-
     def __init__(self, **kwargs) -> None:
         # early stop means voir requested milabench to stop the benchmark
         # this means we can ignore the process return code because it got SIGTERM'ed
@@ -43,7 +41,7 @@ class ValidationLayer:
     def on_line(self, entry):
         pass
 
-    def on_data(Self, entry):
+    def on_data(self, entry):
         pass
 
     def on_end(self, entry):

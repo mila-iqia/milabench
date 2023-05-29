@@ -1,7 +1,7 @@
 from collections import defaultdict
 from dataclasses import dataclass, field
 
-from .validation import ValidationLayer
+from .validation import ValidationLayer, BenchLogEntry
 
 
 def defaultfloatdict():
@@ -46,7 +46,7 @@ class Layer(ValidationLayer):
         self.devices = set()
         self.count = 0
 
-    def on_data(self, entry):
+    def on_data(self, entry: BenchLogEntry):
         if entry.data is None:
             return
 
@@ -54,6 +54,7 @@ class Layer(ValidationLayer):
         tag = entry.tag
         stats = self.warnings[tag]
         gpudata = data.get("gpudata")
+        stats.config = entry.pack.config
 
         if gpudata is not None:
             for device, data in gpudata.items():
