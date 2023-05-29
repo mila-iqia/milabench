@@ -14,14 +14,18 @@ class Config:
     # How often to log the rates
     interval: str = "1s"
 
+    # Number of rates to skip before logging
+    skip: int = 5
+
     # Number of rates to log before stopping
     stop: int = 20
+
+    # Number of seconds between each gpu poll
+    gpu_poll: int = 3
 
 
 @configurable
 def instrument_main(ov, options: Config):
-    # import torch
-
     yield ov.phases.init
 
     if options.dash:
@@ -31,7 +35,7 @@ def instrument_main(ov, options: Config):
         log("value", "progress", "rate", "units", "loss", "gpudata", context="task"),
         rate(
             interval=options.interval,
-            sync=None,  # torch.cuda.synchronize if torch.cuda.is_available() else None,
+            sync=None,
         ),
         early_stop(n=options.stop, key="rate", task="train"),
         gpu_monitor(poll_interval=3),
