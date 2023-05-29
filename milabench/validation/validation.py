@@ -20,19 +20,16 @@ class ValidationLayer:
         self._return_code = None
 
     def __call__(self, entry):
-        return self._on_event(entry)
+        return self.on_event(entry)
 
-    def _on_event(self, entry: BenchLogEntry):
-        self.early_stop = False
+    def on_event(self, entry: BenchLogEntry):
+        method = getattr(self, f"on_{entry.event}", None)
 
-        if entry.event == "stop":
-            self.early_stop = True
-
-        method = getattr(self, f"on_{entry.event}", self.on_event)
-        method(entry)
+        if method is not None:
+            method(entry)
 
     def on_stop(self, entry):
-        pass
+        self.early_stop = True
 
     def on_config(self, entry):
         pass
@@ -64,9 +61,6 @@ class ValidationLayer:
 
     def end(self):
         return self._return_code
-
-    def on_event(self, entry: BenchLogEntry):
-        raise NotImplementedError(f"Event on_{entry.event} not implemented")
 
     def report(self, summary, **kwargs):
         raise NotImplementedError()

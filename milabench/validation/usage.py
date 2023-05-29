@@ -21,7 +21,7 @@ class UsageCheck:
         if self.config is None:
             return {}
 
-        return self.config.get("validations", {}).get("usage", {})
+        return self.config.get("validation", {}).get("usage", {})
 
     @property
     def gpu_mem_threshold(self):
