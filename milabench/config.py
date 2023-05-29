@@ -75,13 +75,13 @@ def build_config(*config_files):
     return all_configs
 
 
-def build_system_config(config_file):
+def build_system_config(config_file, defaults=None):
     config_file = XPath(config_file).absolute()
     with open(config_file) as cf:
-        config = yaml.safe_load(cf)
+        config = yaml.safe_load(cf) or {}
 
-    config.setdefault("arch", None)
-    config.setdefault("sshkey", None)
+    if defaults:
+        config = merge(defaults, config)
 
     if config["sshkey"] is not None:
         config["sshkey"] = XPath(config["sshkey"]).resolve()
@@ -94,7 +94,7 @@ def build_system_config(config_file):
         if node.get("main", None):
             config.setdefault("main_node", node)
     config.setdefault("main_node", config["nodes"][0])
-    assert config["main_node"].get("port", None) is not None, \
+    assert len(config["nodes"]) == 1 or config["main_node"].get("port", None), \
         (f"The `port` of the main node `{config['main_node']['name']}` is"
           " missing")
 
