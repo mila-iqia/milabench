@@ -433,11 +433,14 @@ brax:
   tags:
     - rl
     - jax
-
-  group: torch
-
+  definition: ../benchmarks/brax
+  group: brax
+  install_group: torch
   plan:
     method: njobs
     n: 1
-
-  definition: ../benchmarks/brax
+  argv:
+    --episode-length: 20
+    --batch-size: 1024
+    --num-minibatches: 32
+    --num-envs: 8192
