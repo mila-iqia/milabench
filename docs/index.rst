@@ -7,9 +7,8 @@ Welcome to milabench's documentation!
    :caption: Contents:
 
    usage.rst
+   docker.rst
    dev-usage.rst
-   config.rst
-   instrument.rst
    new_benchmarks.rst
    reference.rst
 

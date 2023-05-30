@@ -3,14 +3,49 @@ from math import isnan, nan
 
 import numpy as np
 
+from .utils import error_guard
 
+
+@error_guard(None)
 def aggregate(run_data):
     omnibus = defaultdict(list)
+    config = None
+    start = None
+    end = None
+    early_stop = False
     for entry in run_data:
-        for k, v in entry.items():
-            omnibus[k].append(v)
+        event = entry["event"]
 
-    (config,) = omnibus["#config"]
+        if event == "config":
+            config = entry["data"]
+
+        elif event == "data":
+            data = dict(entry["data"])
+            task = data.pop("task", None)
+            for k, v in data.items():
+                if task is not None and k == "rate":
+                    k = f"{task}_{k}"
+                omnibus[k].append(v)
+
+        elif event == "line":
+            omnibus[entry["pipe"]].append(entry["data"])
+
+        elif event == "stop":
+            early_stop = True
+
+        elif event == "start":
+            assert start is None
+            start = entry["data"]
+
+        elif event == "end":
+            assert end is None
+            end = entry["data"]
+
+    if not config:
+        # This is not a run
+        return None
+
+    assert config and start and end
 
     device = config.get("device", None)
     omnibus["gpudata"] = [
@@ -26,45 +61,60 @@ def aggregate(run_data):
         fl, ll = omnibus["loss"][0], omnibus["loss"][-1]
         omnibus["loss_gain"] = [ll - fl]
 
-    omnibus["walltime"] = [omnibus["#end"][-1] - omnibus["#start"][0]]
-    omnibus["success"] = [
-        omnibus.get("#return_code", [-1])[-1] == 0
-        and not any(isnan(loss) for loss in omnibus.get("loss", []))
-        # and omnibus.get("loss_gain", [-1])[-1] < 0
-        and bool(omnibus.get("train_rate", []))
-    ]
+    omnibus["walltime"] = [end["time"] - start["time"]]
 
-    return omnibus
+    success = early_stop or (
+        end["return_code"] == 0
+        and not any(isnan(loss) for loss in omnibus.get("loss", []))
+        and bool(omnibus.get("train_rate", []))
+    )
+    omnibus["success"] = [success]
+
+    return {
+        "config": config,
+        "start": start,
+        "end": end,
+        "data": omnibus,
+    }
 
 
 def _classify(all_aggregates):
     classified = defaultdict(list)
     for agg in all_aggregates:
-        (config,) = agg["#config"]
+        config = agg["config"]
         classified[config["name"]].append(agg)
     return classified
 
 
 def _merge(aggs):
-    results = defaultdict(list)
+    results = {"data": defaultdict(list)}
     for agg in aggs:
-        for k, v in agg.items():
-            results[k].extend(v)
+        data = agg.pop("data")
+        results.update(agg)
+        for k, v in data.items():
+            results["data"][k].extend(v)
     return results
 
 
+nans = {
+    "min": nan,
+    "q1": nan,
+    "median": nan,
+    "q3": nan,
+    "max": nan,
+    "mean": nan,
+    "std": nan,
+    "sem": nan,
+}
+
+
+@error_guard(nans)
 def _metrics(xs):
+    xs = sorted(x for x in xs if x is not None)
+    if len(xs) >= 5:
+        xs = xs[1:-1]  # Remove min and max
     if not xs:
-        return {
-            "min": nan,
-            "q1": nan,
-            "median": nan,
-            "q3": nan,
-            "max": nan,
-            "mean": nan,
-            "std": nan,
-            "sem": nan,
-        }
+        return nans
     percentiles = [0, 25, 50, 75, 100]
     percentile_names = ["min", "q1", "median", "q3", "max"]
     metrics = dict(zip(percentile_names, np.percentile(xs, percentiles)))
@@ -74,7 +124,9 @@ def _metrics(xs):
     return metrics
 
 
-def _summarize(agg):
+@error_guard(None)
+def _summarize(group):
+    agg = group["data"]
     gpudata = defaultdict(lambda: defaultdict(list))
     for entry in agg["gpudata"]:
         for device, data in entry.items():
@@ -87,7 +139,7 @@ def _summarize(agg):
     for device, tr in agg["per_gpu"]:
         per_gpu[device].append(tr)
 
-    config = agg["#config"][0]
+    config = group["config"]
     return {
         "name": config["name"],
         "n": len(agg["success"]),
@@ -109,7 +161,7 @@ def _summarize(agg):
 
 
 def make_summary(runs):
-    aggs = [aggregate(run) for run in runs]
+    aggs = [agg for run in runs if (agg := aggregate(run))]
     classified = _classify(aggs)
     merged = {name: _merge(runs) for name, runs in classified.items()}
     summarized = {name: _summarize(agg) for name, agg in merged.items()}

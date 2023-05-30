@@ -9,7 +9,6 @@ license = "MIT"
 python = ">=3.8,<3.11"
 giving = "^0.4.0"
 ptera = "^1.2.0"
-rich = "^10.13.0"
 coleo = "^0.3.0"
 requests = "^2.26.0"
 nox = "^2021.10.1"
@@ -20,11 +19,14 @@ hrepr = "^0.4.0"
 blessed = "^1.19.1"
 pathspec = "^0.9.0"
 cp-template = "^0.3.0"
-voir = "^0.1.0"
+voir = "^0.2.10"
 pandas = "^1.4.2"
-numpy = ">=1.15.0"
+numpy = ">=1.23.0"
 pynvml = "^11.4.1"
-psutil = ">=5.9.4"
+tqdm = "^4.64.1"
+pip-tools = "^6.12.3"
+rich = "^13.3.2"
+omegaconf = "^2.3.0"
 
 [tool.poetry.dev-dependencies]
 black = ">=21.10b0"
@@ -34,6 +36,7 @@ pytest = "^6.2.5"
 pytest-cov = "^3.0.0"
 Sphinx = "^4.5.0"
 sphinx-rtd-theme = "^1.0.0"
+pytest-regressions = "^2.4.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -41,17 +44,6 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 milabench = "milabench.cli:main"
-
-[tool.poetry.plugins."voir.instrument"]
-compute_rate = "milabench.instruments:compute_rate"
-dash = "milabench.instruments:dash"
-display = "milabench.instruments:display"
-loading_rate = "milabench.instruments:loading_rate"
-profile_gpu = "milabench.instruments:profile_gpu"
-stop = "milabench.instruments:stop"
-train_rate = "milabench.instruments:train_rate"
-verify = "milabench.instruments:verify"
-metric = "milabench.instruments:metric"
 
 [tool.isort]
 multi_line_output = 3

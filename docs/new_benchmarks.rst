@@ -6,7 +6,7 @@ To define a new benchmark (let's assume it is called ``ornatebench``), make a co
 
 .. code-block:: bash
 
-    cp-template benchmarks/_template benchmarks/ornatebench
+    cp-template benchmarks/_template/ benchmarks/ornatebench
 
 You should see a directory with the following structure:
 
@@ -15,105 +15,140 @@ You should see a directory with the following structure:
     ornatebench
     |- README.md          # Document the benchmark here
     |- benchfile.py       # Benchmark definition file
-    |- dev.yaml           # Bench file to use for development
     |- main.py            # Executed by milabench run
-    |- manifest           # Lists the file milabench install should copy
     |- prepare.py         # Executed by milabench prepare (EXECUTABLE)
-    |- requirements.txt   # Python requirements to install from pip
+    |- requirements.in    # Python requirements to install from pip
     |- voirfile.py        # Probes and extra instruments
 
-Some of these files may be unnecessary depending on the benchmark. Others, like ``manifest``, you can just leave alone.
+Some of these files may be unnecessary depending on the benchmark.
 
 First of all, if you want to verify that everything works, you can use the ``dev.yaml`` benchmark config that comes with the template:
 
 .. code-block:: bash
 
-    milabench install benchmarks/ornatebench/dev.yaml --dev
-    milabench prepare benchmarks/ornatebench/dev.yaml --dev
-    milabench run benchmarks/ornatebench/dev.yaml --dev
+    # You can also use --config
+    export MILABENCH_CONFIG=benchmarks/ornatebench/dev.yaml
 
-.. tip::
-    The ``--dev`` flag does a few things:
-
-    * Forces use of the current virtual environment.
-    * Syncs any of your changes to the copy of the code under ``$MILABENCH_BASE``.
-    * Force the use of only one job.
-
-The ``dev.yaml`` config is specially configured for development: the ``code`` directory is forced to be ``_dev_<benchdir>`` (relative to your current directory, so not necessarily in ``$MILABENCH_BASE``). So for example if you are writing a benchmark in ``benchmarks/ornatebench``, ``milabench install benchmarks/ornatebench/dev.yaml`` will install the code for the benchmark in ``_dev_ornatebench/``.
+    milabench install
+    milabench prepare
+    milabench run
 
 
 Overview
 ~~~~~~~~
 
 
-The benchfile
-+++++++++++++
+benchfile.py
+++++++++++++
 
 ``benchfile.py`` defines what to do on ``milabench install/prepare/run``. It is run from the benchmark directory directly, in the *current* virtual environment, but it can create *new processes* in the virtual environment of the benchmark.
 
-By default it will dispatch to ``requirements.txt`` for install requirements, ``prepare.py`` for prep work and downloading datasets, and ``main.py`` for running the actual benchmark. If that is suitable you may not need to change it at all.
+By default it will dispatch to ``requirements.in`` for install requirements, ``prepare.py`` for prep work and downloading datasets, and ``main.py`` for running the actual benchmark. If that is suitable you may not need to change it at all.
 
 
-Prepare/main scripts
-++++++++++++++++++++
+requirements.in
++++++++++++++++
 
-The ``prepare.py`` and ``main.py`` scripts are run in the venv for the benchmark, which is isolated.
-
-Moreover, they are **not** run from the benchmark directory, the reason being that in the course of the install process, the files in the benchmark directory may be layered over files pulled from GitHub or other places. For example, if you want to make a benchmark out of some script that is on GitHub called ``train.py``, you may clone it during install (in ``benchfile.py``), then in a ``voirfile.py`` you write instrumentation that will be copied over to the cloned code to extract the data you need. So the directory seen by ``milabench run`` may contain a lot more files than your benchmark directory, all depending.
-
-This is why you should use the ``--dev`` flag during development, because that flag takes care of syncing your changes to the install location (without re-running the rest of the install process).
+Write all of the benchmark's requirements in this file. Use ``milabench install --config benchmarks/ornatebench/dev.yaml`` to install them during development (add ``--force`` if you made changes and want to reinstall.)
 
 
-Benchmark from scratch
-~~~~~~~~~~~~~~~~~~~~~~
+prepare.py
+++++++++++
 
-If you are writing a benchmark from scratch, using pip installable libraries:
+This script is executed in the venv for the benchmark when you run ``milabench prepare``.
 
-* Put the requirements in ``requirements.txt``. It's unlikely you have to do anything fancier than that, but if you do, you can run arbitrary commands in ``install`` in the benchfile.
-* If you need to download or generate data, write the code in ``prepare.py``. Remember that the root data directory is in ``$MILABENCH_DIR_DATA``, but do not store data directly in there, store it in the appropriate subdirectory. Do not repeat work if the data is already there.
-* Write the main code in ``main.py``.
-* Write a ``voirfile.py`` that corresponds to the directions in :ref:`probingmb`.
-* You can check the progress of your probing with ``voir --verify main.py``
+The purpose of ``prepare.py`` is to download and/or generate everything that is required by the main script, so that the main script does not need to use the network and can start training right away. In particular, it must:
+
+* Download any datasets required by the main script into ``$MILABENCH_DATA_DIR``.
+* Preprocess the data, if this must be done prior to training.
+* Generate synthetic data into ``$MILABENCH_DATA_DIR`` (if needed).
+* Download and cache pretrained model weights (if needed).
+  * Weights should ideally go somewhere under ``$XDG_CACHE_HOME`` (which milabench sets to ``$MILABENCH_BASE/cache``).
+  * Note that most frameworks already cache weights in subdirectories of ``$XDG_CACHE_HOME``, so it is usually sufficient to import the framework, load the model, and then quit without training it.
+
+If no preparation is needed, this file should be removed.
 
 
-Adapting existing code
-~~~~~~~~~~~~~~~~~~~~~~
+main.py
++++++++
 
-Now, let's say you want to adapt code from the repo at ``https://github.com/snakeoilplz/agi``, more specifically the ``train.py`` script. Requirements are listed in ``requirements.txt`` in the repo.
+This is the main script that will be benchmarked when you run ``milabench run``. It is run as ``voir main.py ARGV...``
 
-First, remove ``main.py`` and ``requirements.txt`` from the benchmark directory. You won't need them.
-
-Your benchfile should look like this:
+The template ``main.py`` demonstrates a simple loop that you can adapt to any script:
 
 .. code-block:: python
 
-    from milabench.pack import Package
+    def main():
+        for i in voir.iterate("train", range(100), report_batch=True, batch_size=64):
+            give(loss=1/(i + 1))
+            time.sleep(0.1)
 
-    BRANCH = "master"
+* Wrap the training loop with ``voir.iterate``.
+  * ``report_batch=True`` triggers the computation of the number of training samples per second.
+  * Set ``batch_size`` to the batch_size. milabench can also figure it out automatically if you are iterating over the input batches (it will use the first number in the tensor's shape).
+* ``give(loss=loss.item())`` will forward the value of the loss to milabench. Make sure the value is a plain Python ``float``.
 
-    class TheBenchmark(Package):
-        main_script = "train.py"
-        prepare_script = "prepare.py"
+If the script takes command line arguments, you can parse them however you like, for example with ``argparse.ArgumentParser``. Then, you can add an ``argv`` section in ``dev.yaml``, just like this:
 
-        def install(self):
-            code = self.dirs.code
-            code.clone_subtree("https://github.com/snakeoilplz/agi", BRANCH)
-            self.pip_install("-r", code / "requirements.txt")
+.. code-block:: yaml
 
-    __pack__ = TheBenchmark
+    trivial:
+      inherits: _defaults
+      definition: .
 
-Run ``milabench install dev.yaml`` to install. In ``_dev_agi`` (assuming the project name is ``agi``), you should have a checkout of the target repository.
+      ...
 
-Now, you can ``cd`` to that directory and see if ``python train.py`` actually works. If it doesn't, well, look at the ``README``, try to make it work, and add all the necessary steps to the ``install`` method.
+      # Pass arguments to main.py below
+      argv:
+        --batch-size: 64
 
-If a dataset is needed on disk, write the code in ``prepare.py``. Remember that the root data directory is in ``$MILABENCH_DIR_DATA``, but do not store data directly in there, store it in the appropriate subdirectory. Do not repeat work if the data is already there. Make sure to have ``train.py`` look for the data at the right place, either through a flag or an environment variable.
+``argv`` can also be an array if you need to pass positional arguments, but I recommend using named parameters only.
 
-Once it works, run it with ``voir --verify train.py``, which shouldn't give you much new information. But now you can follow these steps in a loop:
 
-* Modify ``voirfile.py`` *in the benchmark directory* accordingly to the directions in :ref:`probingmb`.
-* Run ``milabench install dev.yaml --sync`` to transfer your changes to the dev directory.
-* Run ``voir --verify train.py`` again, until everything looks good.
+voirfile.py
++++++++++++
 
-Once it looks good, it's just a matter of putting the necessary arguments into the benchmark YAML. You can set environment variables in the benchfile with ``make_env()``.
+The voirfile contains instrumentation for the main script. You can usually just leave it as it is. By default, it will:
 
-Finally, try ``milabench install/prepare/run`` without the ``--dev`` flag.
+* Compute the train "rate" (number of samples per second) using events from ``voir.iterate``.
+* Forcefully stop the program after a certain number of rate measurements.
+* Monitor GPU usage.
+
+
+Development
+~~~~~~~~~~~
+
+To develop the benchmark, first run ``milabench dev --config benchmarks/BENCHNAME/dev.yaml``. This will activate the benchmark's virtual environment and put you into a shell.
+
+Then, try and run ``voir --dash main.py``. This should show you a little dashboard and display losses, train rate calculations and one or more progress bars.
+
+From there, you can develop as you would any other Python program.
+
+
+Integrating in base.yaml
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can copy-paste the contents of ``dev.yaml`` into ``config/base.yaml``, you will only need to change:
+
+* ``definition`` should be the relative path to the ``benchfile.py``.
+* Remove ``install_variant: unpinned``
+* If the benchmark's requirements are compatible with those of other benchmarks, you can set ``install_group`` to the same ``install_group`` as them. For example, ``install_group: torch``.
+
+Then, run the following commands:
+
+* ``milabench pin --select NAME_OR_INSTALL_GROUP --variant cuda``
+* ``milabench pin --select NAME_OR_INSTALL_GROUP --variant rocm``
+
+This will create ``requirements.<arch>.txt`` for these two architectures. These files must be checked in under version control.
+
+.. note::
+
+    ``--variant unpinned`` means installing directly from ``requirements.in``. This can be useful during development, but less stable over time since various dependencies may break.
+
+
+.. Adapting existing code
+.. ~~~~~~~~~~~~~~~~~~~~~~
+
+.. Now, let's say you want to adapt code from the repo at ``https://github.com/snakeoilplz/agi``, more specifically the ``train.py`` script.
+
+.. TODO
