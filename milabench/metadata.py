@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 import subprocess
 import cpuinfo
+import warnings
 
 from voir.instruments.gpu import get_gpu_info
 
@@ -9,9 +10,11 @@ from voir.instruments.gpu import get_gpu_info
 def _exec(cmd, default):
     try:
         return subprocess.check_output(cmd.split(" "), encoding="utf-8").strip()
-    except:
+    except subprocess.CalledProcessError:
+        warnings.warn("out of tree; milabench could not retrieve version info")
         return default
-
+    
+    
 
 def machine_metadata():
     """Retrieve machine metadata"""
