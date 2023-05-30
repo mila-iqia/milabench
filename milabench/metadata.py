@@ -6,6 +6,8 @@ import warnings
 
 from voir.instruments.gpu import get_gpu_info
 
+from ._version import __commit__, __tag__, __date__
+
 
 def _exec(cmd, default):
     try:
@@ -37,8 +39,8 @@ def machine_metadata():
         "accelerators": gpus,
         "date": datetime.utcnow(),
         "milabench": {
-            "tag": _exec("git describe --tags", "<tag>"),
-            "commit": _exec("git rev-parse HEAD", "<commit>"),
-            "date": _exec("git show -s --format=%ci", "<date>"),
+            "tag": _exec("git describe --tags", __tag__),
+            "commit": _exec("git rev-parse HEAD", __commit__),
+            "date": _exec("git show -s --format=%ci", __date__),
         },
     }
