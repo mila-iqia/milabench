@@ -13,8 +13,7 @@ def _exec(cmd, default):
     except subprocess.CalledProcessError:
         warnings.warn("out of tree; milabench could not retrieve version info")
         return default
-    
-    
+
 
 def machine_metadata():
     """Retrieve machine metadata"""

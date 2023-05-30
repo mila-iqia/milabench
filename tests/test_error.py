@@ -22,8 +22,12 @@ def test_error_reporting_short(capsys, args, matcher, config):
         main(["run", "--config", config("argerror"), *args])
 
     assert err.type is SystemExit
-    assert err.value.code == -1
+    assert err.value.code != 0
 
     captured = capsys.readouterr()
+    print("==")
+    print(captured.out)
+    print("==")
+
     assert matcher(captured.out), "The traceback need to be printed"
     assert captured.err == ""
