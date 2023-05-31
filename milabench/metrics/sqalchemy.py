@@ -126,7 +126,7 @@ class SQLAlchemy:
 
         self.states = defaultdict(PackState)
         self.session.commit()
-        self.session.close_all()
+        self.session.__exit__()
 
     def update_run_status(self, status):
         self.run.status = status

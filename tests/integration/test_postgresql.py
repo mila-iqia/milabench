@@ -29,20 +29,20 @@ def test_sqlalchemy_report():
 
     stmt = (
         sqlalchemy.select(
-            Exec.name, 
-            Pack.name, 
-            Metric.name, 
+            Exec.name,
+            Pack.name,
+            Metric.name,
             sqlalchemy.func.avg(Metric.value),
-            sqlalchemy.func.count(Metric.value)
+            sqlalchemy.func.count(Metric.value),
         )
         .join(Exec, Metric.exec_id == Exec._id)
         .join(Pack, Metric.pack_id == Pack._id)
         .group_by(Exec.name, Pack.name, Metric.name)
     )
-    
+
     results = []
     with Session(engine) as sess:
         for row in sess.execute(stmt):
             results.append(row)
-            
+
     print(pd.DataFrame(results))

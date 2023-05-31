@@ -636,6 +636,34 @@ class Main:
         for pack in mp.packs.values():
             run_sync(pack.pip_install(*args))
 
+    def publish():
+        """Publish an archived run to a database"""
+        # URI to the database
+        #   ex:
+        #       - mongodb://localhost:27017/
+        #       - sqlite:///sqlite.db
+        uri: str
+
+        # Run folder to save
+        folder: str
+
+        # Json string of file to append to the meta dictionary
+        meta: str
+
+        from .metrics.archive import publish_archived_run
+
+        backend = None
+        if uri.starswith("mongo"):
+            from .metrics.mongodb import MongoDB
+
+            backend = MongoDB(uri)
+        else:
+            from .metrics.sqalchemy import SQLAlchemy
+
+            backend = SQLAlchemy(uri)
+
+        publish_archived_run(backend, folder)
+
     def container():
         """Build a container image (might not work properly at the moment)."""
 

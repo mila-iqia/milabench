@@ -78,7 +78,6 @@ def test_mongodb(runs_folder, monkeypatch):
     assert len(db["metrics"]) == 42
 
 
-
 def test_sqlalchemy(runs_folder, monkeypatch):
     with multilogger(SQLAlchemy()) as log:
         for msg in replay_run(runs_folder / "sedumoje.2023-03-24_13:57:35.089747"):

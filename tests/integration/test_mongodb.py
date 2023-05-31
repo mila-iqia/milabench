@@ -75,25 +75,19 @@ def test_reporting(runs_folder):
                     "tag": "$packs.tag",
                     "metric": "$metrics.name",
                     "value": {
-                        "$avg": 
-                            "$metrics.value"
-                        ,
+                        "$avg": "$metrics.value",
                     },
                 }
             },
             {
                 "$group": {
-                    "_id":{"$concat": ["$bench", ".", "$metric"]},
+                    "_id": {"$concat": ["$bench", ".", "$metric"]},
                     "name": {"$first": "$name"},
                     "bench": {"$first": "$bench"},
                     "metric": {"$first": "$metric"},
                     "count": {"$count": {}},
-                    "value": {
-                        "$avg": "$value"
-                    },
-                    "sds": {
-                        "$stdDevSamp": "$value"
-                    }
+                    "value": {"$avg": "$value"},
+                    "sds": {"$stdDevSamp": "$value"},
                 }
             },
             {
@@ -103,7 +97,6 @@ def test_reporting(runs_folder):
             },
         ]
     )
-
 
     print()
     print(run)
@@ -116,4 +109,3 @@ def test_reporting(runs_folder):
     print(to_json(d, indent=2))
     print(len(d))
     print(pd.DataFrame(d))
-
