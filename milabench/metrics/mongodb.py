@@ -128,6 +128,7 @@ class MongoDB:
             "exec_id": self.run["_id"],
             "create_time": datetime.utcnow(),
             "name": entry.pack.config["name"],
+            "tag": entry.tag,
             "config": entry.pack.config,
         }
         result = self._pack.insert_one(state.pack)
@@ -159,7 +160,32 @@ class MongoDB:
 
     def on_line(self, entry):
         pass
-
+    
+    
+    def _push_metric(self, run_id, pack_id, name, value, gpu_id=None):
+        self.pending_metrics.append(
+                pymongo.InsertOne(
+                    {
+                        "exec_id": run_id,
+                        "pack_id": pack_id,
+                        "name": name,
+                        "value": value,
+                        'gpu_id': gpu_id
+                    }
+                )
+            )
+        
+    def _change_gpudata(self, run_id, pack_id, k, v):
+        new = defaultdict(lambda: defaultdict(dict))
+        
+        for gpu_id, values in v.items():
+            for metric, value in values.items():
+                if metric == 'memory':
+                    use, mx = value
+                    value = use / mx
+                    
+                self._push_metric(run_id, pack_id, f'gpu.{metric}', value, gpu_id)
+    
     def on_data(self, entry):
         state = self.pack_state(entry)
         assert state.step == DATA
@@ -170,6 +196,10 @@ class MongoDB:
         for k, v in entry.data.items():
             if k in ("task", "units", "progress"):
                 continue
+            
+            if k == 'gpudata':
+                self._change_gpudata(run_id, pack_id, k, v)
+                return
 
             # GPU data might be a bit hard to query
             # exanple : name': 'gpudata', 'value': {'1': {'memory': [24456.0, 81251.1875], 'load': 0.98, 'temperature': 51}},
@@ -178,16 +208,7 @@ class MongoDB:
 
             # We request an ordered write so the document
             # will be ordered by their _id (i.e insert time)
-            self.pending_metrics.append(
-                pymongo.InsertOne(
-                    {
-                        "exec_id": run_id,
-                        "pack_id": pack_id,
-                        "name": k,
-                        "value": v,
-                    }
-                )
-            )
+            self._push_metric(run_id, pack_id, k, v)
 
         if len(self.pending_metrics) >= self.batch_size:
             self._bulk_insert()

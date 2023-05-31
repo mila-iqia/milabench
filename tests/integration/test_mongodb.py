@@ -29,7 +29,7 @@ def test_mongodb_real(runs_folder):
     metric_count = len(list(db.metrics.find({}))) // run_count
 
     assert pack_count == 2
-    assert metric_count == 38
+    assert metric_count == 42
 
 
 def test_reporting(runs_folder):
@@ -76,10 +76,36 @@ def test_reporting(runs_folder):
             },
             {
                 "$project": {
+                    "_id": 0,
                     "name": 1,
                     "bench": "$packs.name",
+                    "tag": "$packs.tag",
                     "metric": "$metrics.name",
-                    "value": "$metrics.value",
+                    "value": {
+                        "$avg": 
+                            "$metrics.value"
+                        ,
+                    },
+                }
+            },
+            {
+                "$group": {
+                    "_id":{"$concat": ["$bench", ".", "$metric"]},
+                    "name": {"$first": "$name"},
+                    "bench": {"$first": "$bench"},
+                    "metric": {"$first": "$metric"},
+                    "count": {"$count": {}},
+                    "value": {
+                        "$avg": "$value"
+                    },
+                    "sds": {
+                        "$stdDevSamp": "$value"
+                    }
+                }
+            },
+            {
+                "$project": {
+                    "_id": 0,
                 }
             },
         ]
@@ -90,6 +116,8 @@ def test_reporting(runs_folder):
     d = list(agg)
     print(to_json(d, indent=2))
     print(len(d))
+
+    print(pd.DataFrame(d))
 
     # print("====")
     # packs = d[0]['packs']
