@@ -117,7 +117,7 @@ class MongoDB:
             "namespace": None,
             "created_time": datetime.utcnow(),
             "meta": entry.data,
-            "phase": "running",
+            "status": "running",
         }
         result = self._run.insert_one(self.run)
         self.run["_id"] = result.inserted_id
@@ -126,7 +126,7 @@ class MongoDB:
         state = self.pack_state(entry)
         state.pack = {
             "exec_id": self.run["_id"],
-            "create_time": datetime.utcnow(),
+            "created_time": datetime.utcnow(),
             "name": entry.pack.config["name"],
             "tag": entry.tag,
             "config": entry.pack.config,
@@ -160,32 +160,29 @@ class MongoDB:
 
     def on_line(self, entry):
         pass
-    
-    
+
     def _push_metric(self, run_id, pack_id, name, value, gpu_id=None):
         self.pending_metrics.append(
-                pymongo.InsertOne(
-                    {
-                        "exec_id": run_id,
-                        "pack_id": pack_id,
-                        "name": name,
-                        "value": value,
-                        'gpu_id': gpu_id
-                    }
-                )
+            pymongo.InsertOne(
+                {
+                    "exec_id": run_id,
+                    "pack_id": pack_id,
+                    "name": name,
+                    "value": value,
+                    "gpu_id": gpu_id,
+                }
             )
-        
+        )
+
     def _change_gpudata(self, run_id, pack_id, k, v):
-        new = defaultdict(lambda: defaultdict(dict))
-        
         for gpu_id, values in v.items():
             for metric, value in values.items():
-                if metric == 'memory':
+                if metric == "memory":
                     use, mx = value
                     value = use / mx
-                    
-                self._push_metric(run_id, pack_id, f'gpu.{metric}', value, gpu_id)
-    
+
+                self._push_metric(run_id, pack_id, f"gpu.{metric}", value, gpu_id)
+
     def on_data(self, entry):
         state = self.pack_state(entry)
         assert state.step == DATA
@@ -196,11 +193,11 @@ class MongoDB:
         for k, v in entry.data.items():
             if k in ("task", "units", "progress"):
                 continue
-            
+
             # GPU data would have been too hard to query
             # so the gpu_id is moved to its own column
             # and each metric is pushed as a separate document
-            if k == 'gpudata':
+            if k == "gpudata":
                 self._change_gpudata(run_id, pack_id, k, v)
                 return
 

@@ -4,6 +4,7 @@ from collections import defaultdict
 from milabench.utils import multilogger
 from milabench.testing import replay_run
 from milabench.metrics.mongodb import MongoDB
+from milabench.metrics.sqalchemy import SQLAlchemy
 
 import pymongo
 from bson import ObjectId
@@ -75,3 +76,11 @@ def test_mongodb(runs_folder, monkeypatch):
     assert len(db["run"]) == 1
     assert len(db["pack"]) == 2
     assert len(db["metrics"]) == 42
+
+
+
+def test_sqlalchemy(runs_folder, monkeypatch):
+    with multilogger(SQLAlchemy()) as log:
+        for msg in replay_run(runs_folder / "sedumoje.2023-03-24_13:57:35.089747"):
+            print(msg)
+            log(msg)

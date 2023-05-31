@@ -1,4 +1,8 @@
-import datetime
+from collections import defaultdict
+from datetime import datetime
+from dataclasses import dataclass
+
+from ..structs import BenchLogEntry
 
 import sqlalchemy
 
@@ -14,6 +18,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
+    insert,
 )
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session, declarative_base
@@ -27,8 +32,9 @@ class Exec(Base):
     _id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(256))
     namespace = Column(String(256))
-    created_time = Column(DateTime, default=datetime.datetime.utcnow)
+    created_time = Column(DateTime, default=datetime.utcnow)
     meta = Column(JSON)
+    status = Column(String(256))
 
 
 class Pack(Base):
@@ -36,8 +42,9 @@ class Pack(Base):
 
     _id = Column(Integer, primary_key=True, autoincrement=True)
     exec_id = Column(Integer, ForeignKey("execs._id"), nullable=False)
-    created_time = Column(DateTime, default=datetime.datetime.utcnow)
+    created_time = Column(DateTime, default=datetime.utcnow)
     name = Column(String(256))
+    tag = Column(String(256))
     config = Column(JSON)
 
 
@@ -48,51 +55,32 @@ class Metric(Base):
     exec_id = Column(Integer, ForeignKey("execs._id"), nullable=False)
     pack_id = Column(Integer, ForeignKey("packs._id"), nullable=False)
     name = Column(String(256))
-    repeat = Column(Integer)  # Repetition
-    index = Column(Integer)  # njobs or ngpus
-    gpuid = Column(Integer)  # GPU id
     value = Column(Float)
+    gpu_id = Column(Integer)  # GPU id
 
 
-import os
-import sys
-
-from ..fs import XPath
-from ..log import blabla
-
-
-def get_rundir(rundir, runname=None):
-    now = str(datetime.datetime.today()).replace(" ", "_")
-    if runname is None:
-        bla = blabla()
-        runname = bla
-
-    rundir = XPath(rundir) / runname
-    if XPath(rundir).exists():
-        print(f"Rundir {rundir} already exists", file=sys.stderr)
-        sys.exit(1)
-
-    os.makedirs(rundir, exist_ok=True)
-    return rundir, runname
-
-
-def mergedb(namespace, src, dest):
-    """Insert a database src into dest"""
+class SQLAlchemy:
     pass
 
 
-class Database:
-    """Save the event stream inside a database to easily query it later"""
+META = 0
+START = 1
+DATA = 2
 
-    def __init__(
-        self, gv, rundir=None, runname=None, uri="sqlite:///sqlite.db"
-    ) -> None:
-        _, self.name = get_rundir(rundir, runname)
-        self.exec = None
-        self.pack = None
-        self.pack_to_idx = dict()
-        self.repeat = -1
 
+@dataclass
+class PackState:
+    # Order safety check
+    # makes sure events are called in order
+    step: int = 0
+    pack: dict = None
+    config: dict = None
+    early_stop: bool = False
+    error: int = 0
+
+
+class SQLAlchemy:
+    def __init__(self, uri="sqlite:///sqlite.db") -> None:
         self.engine = sqlalchemy.create_engine(
             uri,
             echo=False,
@@ -105,132 +93,184 @@ class Database:
         except DBAPIError:
             pass
 
-        gv.subscribe(self.on_event)
+        self.session = Session(self.engine)
+        self.meta = None
+        self.run = None
+        self.states = defaultdict(PackState)
+
+        self.pending_metrics = []
+        self.batch_size = 50
+
+    def pack_state(self, entry) -> PackState:
+        return self.states[entry.tag]
+
+    def __call__(self, entry):
+        return self.on_event(entry)
 
     def __enter__(self):
-        return self.name
+        return self
 
-    def __exit__(self, *args):
+    def __exit__(self, *args, **kwargs):
+        self._bulk_insert()
+
+        # Interrupted because on_end() was not called
+        for state in self.states.values():
+            self.update_pack_status(state.pack, "interrupted")
+
+        status = "done"
+        if len(self.states) > 0:
+            status = "interrupted"
+
+        if self.run is not None:
+            self.update_run_status(status)
+
+        self.states = defaultdict(PackState)
+        self.session.commit()
+        self.session.close_all()
+
+    def update_run_status(self, status):
+        self.run.status = status
+        self.session.commit()
+
+    def update_pack_status(self, pack, status):
+        pack.status = status
+        self.session.commit()
+
+    def on_event(self, entry: BenchLogEntry):
+        method = getattr(self, f"on_{entry.event}", None)
+
+        if method is not None:
+            method(entry)
+
+    def on_new_run(self, entry):
+        self.run = Exec(
+            name=entry.pack.config["run_name"],
+            namespace=None,
+            created_time=datetime.utcnow(),
+            meta=entry.data,
+            status="running",
+        )
+        self.session.add(self.run)
+        self.session.commit()
+        self.session.refresh(self.run)
+
+    def on_new_pack(self, entry):
+        state = self.pack_state(entry)
+        state.pack = Pack(
+            exec_id=self.run._id,
+            created_time=datetime.utcnow(),
+            name=entry.pack.config["name"],
+            tag=entry.tag,
+            config=entry.pack.config,
+        )
+        self.session.add(state.pack)
+        self.session.commit()
+        self.session.refresh(state.pack)
+
+    def on_meta(self, entry: BenchLogEntry):
+        if self.run is None:
+            self.on_new_run(entry)
+
+        if entry.tag not in self.states:
+            self.on_new_pack(entry)
+
+        state = self.pack_state(entry)
+        assert state.step == META
+        state.step += 1
+
+    def on_start(self, entry):
+        state = self.pack_state(entry)
+
+        assert state.step == START
+        state.step += 1
+
+    def on_phase(self, entry):
         pass
 
-    def create_run(self, data):
-        name = data.get("#run-name")
-        metadata = data.get("#meta")
+    def on_error(self, entry):
+        state = self.pack_state(entry)
+        state.error += 1
 
-        with Session(self.engine) as sess:
-            self.exec = Exec(name=str(name), meta=metadata)
+    def on_line(self, entry):
+        pass
 
-            sess.add(self.exec)
-            sess.commit()
-            sess.refresh(self.exec)
-
-    def create_pack(self, run, data={}):
-        pid = id(run)
-        if self.pack is not None and pid not in self.pack_to_idx:
-            self.pack_to_idx[pid] = len(self.pack_to_idx)
-
-        elif self.pack is None:
-            with Session(self.engine) as sess:
-                self.pack = Pack(
-                    exec_id=self.exec._id,
-                    config=run,
-                    name=run["name"],
-                )
-                self.pack_to_idx[pid] = 0
-
-                sess.add(self.pack)
-                sess.commit()
-                sess.refresh(self.pack)
-
-        idx = self.pack_to_idx[pid]
-        return self.pack, idx
-
-    def on_event(self, data):
-        data = dict(data)
-        run = data.pop("#run", None)
-        pack = data.pop("#pack", None)
-
-        if "#run-start" in data:
-            return self.on_exec(data)
-
-        if "#run-end" in data:
-            self.exec = None
-            return
-
-        if "#start" in data:
-            run, idx = self.create_pack(run, data)
-            self.save_metric("#start", data["#start"], idx)
-            return
-
-        if "#end" in data:
-            run, idx = self.create_pack(run)
-            self.save_metric("#end", data["#end"], idx)
-            self.pack = None
-            return
-
-        if "#repeat" in data:
-            self.repeat = data.get("#repeat")
-            return
-
-        if "#config" in data:
-            return
-
-        if "#stderr" in data:
-            return
-
-        if "progress" in data:
-            return
-
-        if "gpudata" in data:
-            self.on_gpudata(run, data)
-            return
-
-        self.on_metric(run, data)
-
-    def on_exec(self, data):
-        self.create_run(data)
-
-    def on_start(self, run, data):
-        self.create_pack(run, data)
-
-    def on_metric(self, run, data):
-        run, idx = self.create_pack(run)
-
-        with Session(self.engine) as sess:
-            for k, v in data.items():
-                self._save_metric(sess, k, v, idx)
-            sess.commit()
-
-    def on_gpudata(self, run, data):
-        run, idx = self.create_pack(run)
-        gpudata = data.get("gpudata", {})
-
-        with Session(self.engine) as sess:
-            for gpid, gpu in gpudata.items():
-                for metric, value in gpu.items():
-                    self._save_metric(
-                        sess,
-                        metric,
-                        value,
-                        idx,
-                        gpid,
-                    )
-            sess.commit()
-
-    def save_metric(self, key, value, idx, gpuid=-1):
-        with Session(self.engine) as sess:
-            self._save_metric(sess, key, value, idx, gpuid)
-            sess.commit()
-
-    def _save_metric(self, sess, key, value, idx, gpuid=-1):
-        sess.add(
+    def _push_metric(self, run_id, pack_id, name, value, gpu_id=None):
+        print(name, value)
+        self.pending_metrics.append(
             Metric(
-                exec_id=self.exec._id,
-                pack_id=self.pack._id,
-                name=key,
+                exec_id=run_id,
+                pack_id=pack_id,
+                name=name,
                 value=value,
-                index=idx,
-                gpuid=gpuid,
-                repeat=self.repeat,
+                gpu_id=gpu_id,
             )
         )
+
+    def _change_gpudata(self, run_id, pack_id, k, v):
+        for gpu_id, values in v.items():
+            for metric, value in values.items():
+                if metric == "memory":
+                    use, mx = value
+                    value = use / mx
+
+                self._push_metric(run_id, pack_id, f"gpu.{metric}", value, gpu_id)
+
+    def on_data(self, entry):
+        state = self.pack_state(entry)
+        assert state.step == DATA
+
+        run_id = self.run._id
+        pack_id = state.pack._id
+
+        for k, v in entry.data.items():
+            if k in ("task", "units", "progress"):
+                continue
+
+            # GPU data would have been too hard to query
+            # so the gpu_id is moved to its own column
+            # and each metric is pushed as a separate document
+            if k == "gpudata":
+                self._change_gpudata(run_id, pack_id, k, v)
+                return
+
+            # We request an ordered write so the document
+            # will be ordered by their _id (i.e insert time)
+            self._push_metric(run_id, pack_id, k, v)
+
+        if len(self.pending_metrics) >= self.batch_size:
+            self._bulk_insert()
+
+    def _bulk_insert(self):
+        if len(self.pending_metrics) <= 0:
+            return
+
+        # stmt = insert(Metric).values(self.pending_metrics)
+        # self.session.execute(stmt)
+
+        self.session.add_all(self.pending_metrics)
+        self.session.commit()
+        self.pending_metrics = []
+
+    def on_stop(self, entry):
+        state = self.pack_state(entry)
+        assert state.step == DATA
+        state.early_stop = True
+
+    def on_end(self, entry):
+        state = self.pack_state(entry)
+        assert state.step == DATA
+
+        status = "done"
+        if state.early_stop:
+            status = "early_stop"
+
+        if state.error > 0:
+            status = "error"
+
+        self.update_pack_status(state.pack, status)
+        self.states.pop(entry.tag)
+
+        # even if the pack has ended we have other
+        # packs still pushing metrics
+        if len(self.states) == 0:
+            self._bulk_insert()
