@@ -32,51 +32,53 @@ class Report:
             raw_data,
             con,
         )
-        
+
     def normalized_metric(self, metric, baseline):
         normalized = self.data.copy()
-        
-        extracted = self.data[self.data['metric'] == metric]
-        baseline = extracted[extracted['run'] == baseline].groupby(['bench']).median()
-        
+
+        extracted = self.data[self.data["metric"] == metric]
+        baseline = extracted[extracted["run"] == baseline].groupby(["bench"]).median()
+
         for bench in baseline.index:
-            selection = (normalized['metric'] == metric) & (normalized['bench'] == bench)
-            
-            normalized.loc[selection, 'value'] = \
-                normalized.loc[selection, 'value'] / baseline.loc[bench]['value']
-            
+            selection = (normalized["metric"] == metric) & (
+                normalized["bench"] == bench
+            )
+
+            normalized.loc[selection, "value"] = (
+                normalized.loc[selection, "value"] / baseline.loc[bench]["value"]
+            )
+
         return normalized
-    
+
     def plot_runs(self, metric, baseline):
         data = self.normalized_metric(metric, baseline)
-        
-        mn = data[data['metric'] == metric].min().value
-        mx = data[data['metric'] == metric].max().value
-        
-        bars = (alt.Chart()
+
+        mn = data[data["metric"] == metric].min().value
+        mx = data[data["metric"] == metric].max().value
+
+        bars = (
+            alt.Chart()
             .transform_filter((datum.metric == metric))
             .mark_boxplot()
             .encode(
-                x='run:N',
-                y=alt.Y('value:Q', title="Speed Up", scale=alt.Scale(domain=[mn, mx])),
-                color='run:N',
+                x="run:N",
+                y=alt.Y("value:Q", title="Speed Up", scale=alt.Scale(domain=[mn, mx])),
+                color="run:N",
             )
         )
-        return alt.layer(bars, data=data).facet(
-            column='bench:N'
-        )
-        
-    def compute_stats(self, metric='train_rate'):
+        return alt.layer(bars, data=data).facet(column="bench:N")
+
+    def compute_stats(self, metric="train_rate"):
         stats = dict(
-            median=np.median, 
-            q25=partial(np.quantile, q=0.25), 
+            median=np.median,
+            q25=partial(np.quantile, q=0.25),
             q75=partial(np.quantile, q=0.75),
             sd=np.std,
         )
-        
-        data = self.data[self.data['metric'] == metric]
+
+        data = self.data[self.data["metric"] == metric]
         result = None
-        
+
         for name, stat in stats.items():
             values = pd.pivot_table(
                 data,
@@ -85,16 +87,16 @@ class Report:
                 columns="metric",
                 aggfunc=stat,
             ).rename(columns={metric: name})
-            
+
             if result is None:
                 result = values
             else:
                 result = result.join(values)
-        
+
         print(pd.concat({metric: result}))
-    
+
 
 rep = Report("sqlite.db")
-plot = rep.plot_runs('train_rate', 'zijudibi')
-plot.save('com.html')
+plot = rep.plot_runs("train_rate", "zijudibi")
+plot.save("com.html")
 rep.compute_stats()
