@@ -446,6 +446,9 @@ class Main:
         # Install variant
         variant: Option & str = None
 
+        # Do not use previous pins if they exist
+        from_scratch: Option & bool = False
+
         overrides = {"*": {"install_variant": variant}} if variant else {}
 
         if "-h" in pip_compile or "--help" in pip_compile:
@@ -469,7 +472,11 @@ class Main:
         mp = get_multipack(run_name="pin", overrides=overrides)
 
         return run_with_loggers(
-            mp.do_pin(pip_compile_args=pip_compile, constraints=constraints),
+            mp.do_pin(
+                pip_compile_args=pip_compile,
+                constraints=constraints,
+                from_scratch=from_scratch,
+            ),
             loggers=[
                 TerminalFormatter(),
                 TextReporter("stdout"),

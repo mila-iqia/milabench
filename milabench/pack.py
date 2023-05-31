@@ -383,7 +383,8 @@ class Package(BasePackage):
             input_files: A list of inputs to piptools compile
             constraint: The constraint file
         """
-        if self.config.get("install_variant", None) == "unpinned":
+        ivar = self.config.get("install_variant", None)
+        if ivar == "unpinned":
             raise Exception("Cannot pin the 'unpinned' variant.")
         assert self.phase == "pin"
         for base_reqs, reqs in self.requirements_map().items():
@@ -397,7 +398,7 @@ class Package(BasePackage):
                 reqs.rm()
 
             grp = self.config["group"]
-            constraint_path = f".pin-constraints-{grp}.txt"
+            constraint_path = XPath(".pin") / f"tmp-constraints-{ivar}-{grp}.txt"
             constraint_files = make_constraints_file(constraint_path, constraints)
             current_input_files = constraint_files + (base_reqs, *input_files)
 
