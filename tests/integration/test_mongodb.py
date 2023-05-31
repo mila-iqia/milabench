@@ -5,7 +5,7 @@ from milabench.metrics.mongodb import MongoDB
 import pandas as pd
 import pymongo
 from bson.json_util import dumps as to_json
-from bson.json_util import loads as from_json
+
 
 TEST_INSTANCE = "mongodb://localhost:27017/"
 
@@ -37,13 +37,6 @@ def test_reporting(runs_folder):
     db = client["milabench"]
 
     run = db.run.find_one({})
-
-    print()
-    print(run)
-
-    # packs = db.pack.find(filter={"run_id": run['_id']})
-    # data = db.metrics.find(filter={'pack_id': {"$in": list(p['_id'] for p in packs)}})
-    # print(list(data))
 
     agg = db.run.aggregate(
         [
@@ -111,19 +104,16 @@ def test_reporting(runs_folder):
         ]
     )
 
-    import json
+
+    print()
+    print(run)
+
+    # packs = db.pack.find(filter={"run_id": run['_id']})
+    # data = db.metrics.find(filter={'pack_id': {"$in": list(p['_id'] for p in packs)}})
+    # print(list(data))
 
     d = list(agg)
     print(to_json(d, indent=2))
     print(len(d))
-
     print(pd.DataFrame(d))
 
-    # print("====")
-    # packs = d[0]['packs']
-
-    # print(to_json(packs, indent=2))
-
-    # print(list(d[0].keys()))
-    # print(list(packs.keys()))
-    # print(len(packs))

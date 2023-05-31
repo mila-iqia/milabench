@@ -197,14 +197,12 @@ class MongoDB:
             if k in ("task", "units", "progress"):
                 continue
             
+            # GPU data would have been too hard to query
+            # so the gpu_id is moved to its own column
+            # and each metric is pushed as a separate document
             if k == 'gpudata':
                 self._change_gpudata(run_id, pack_id, k, v)
                 return
-
-            # GPU data might be a bit hard to query
-            # exanple : name': 'gpudata', 'value': {'1': {'memory': [24456.0, 81251.1875], 'load': 0.98, 'temperature': 51}},
-            # GPU id has to be a string for MIG; cannot turn it into an array
-            # Multi GPU will have multiple entries
 
             # We request an ordered write so the document
             # will be ordered by their _id (i.e insert time)

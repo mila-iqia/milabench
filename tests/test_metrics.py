@@ -74,4 +74,4 @@ def test_mongodb(runs_folder, monkeypatch):
 
     assert len(db["run"]) == 1
     assert len(db["pack"]) == 2
-    assert len(db["metrics"]) == 38
+    assert len(db["metrics"]) == 42
