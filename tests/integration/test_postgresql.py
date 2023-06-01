@@ -1,14 +1,10 @@
 import os
 
 from milabench.utils import multilogger
-from milabench.testing import replay_run
-from milabench.metrics.sqlalchemy import SQLAlchemy, Pack, Exec, Metric, create_database
-
-import pandas as pd
-from bson.json_util import dumps as to_json
-from bson.json_util import loads as from_json
-import sqlalchemy
-from sqlalchemy.orm import Session
+from milabench.testing import replay_run, show_diff
+from milabench.metrics.sqlalchemy import SQLAlchemy, create_database
+from milabench.metrics.report import fetch_data, make_pivot_summary
+from milabench.cli import _read_reports, make_summary
 
 
 # Setup POSTGRESQL instance
@@ -20,47 +16,32 @@ from sqlalchemy.orm import Session
 # \c milabench
 # setup.sql
 
-USER = os.getenv('POSTGRES_USER', 'username')
-PSWD = os.getenv('POSTGRES_PSWD', 'password')
-DB = os.getenv('POSTGRES_DB', 'milabench')
-HOST = os.getenv('POSTGRES_HOST', 'localhost')
-PORT = os.getenv('POSTGRES_PORT', 5432)
+USER = os.getenv("POSTGRES_USER", "username")
+PSWD = os.getenv("POSTGRES_PSWD", "password")
+DB = os.getenv("POSTGRES_DB", "milabench")
+HOST = os.getenv("POSTGRES_HOST", "localhost")
+PORT = os.getenv("POSTGRES_PORT", 5432)
 
 TEST_INSTANCE = f"postgresql://{USER}:{PSWD}@{HOST}:{PORT}/{DB}"
 create_database(TEST_INSTANCE)
 
 
-def test_sqlalchemy(runs_folder):
-    with multilogger(SQLAlchemy(TEST_INSTANCE)) as log:
-        for msg in replay_run(runs_folder / "sedumoje.2023-03-24_13:57:35.089747"):
-            log(msg)
+def test_sqlalchemy_sqlite(runs_folder):
+    run_dir = runs_folder / "sedumoje.2023-03-24_13:57:35.089747"
 
+    with SQLAlchemy(TEST_INSTANCE) as logger:
+        with multilogger(logger) as log:
+            for msg in replay_run(run_dir):
+                log(msg)
 
-def test_sqlalchemy_report():
-    engine = sqlalchemy.create_engine(
-        TEST_INSTANCE,
-        echo=False,
-        future=True,
-        json_serializer=to_json,
-        json_deserializer=from_json,
-    )
+        df_post = fetch_data(logger.client, "sedumoje")
 
-    stmt = (
-        sqlalchemy.select(
-            Exec.name,
-            Pack.name,
-            Metric.name,
-            sqlalchemy.func.avg(Metric.value),
-            sqlalchemy.func.count(Metric.value),
-        )
-        .join(Exec, Metric.exec_id == Exec._id)
-        .join(Pack, Metric.pack_id == Pack._id)
-        .group_by(Exec.name, Pack.name, Metric.name)
-    )
+    replicated = make_pivot_summary("sedumoje", df_post)
 
-    results = []
-    with Session(engine) as sess:
-        for row in sess.execute(stmt):
-            results.append(row)
+    # Compare
+    # -------
+    runs = [run_dir]
+    reports = _read_reports(*runs)
+    summary = make_summary(reports.values())
 
-    print(pd.DataFrame(results))
+    show_diff(summary, replicated)

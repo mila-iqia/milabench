@@ -4,12 +4,10 @@ from dataclasses import dataclass
 
 from ..structs import BenchLogEntry
 
-import sqlalchemy
-from sqlalchemy.dialects import postgresql
-
 from bson.json_util import dumps as to_json
 from bson.json_util import loads as from_json
-
+import sqlalchemy
+from sqlalchemy.dialects import postgresql
 from sqlalchemy import (
     JSON,
     Float,
@@ -35,10 +33,8 @@ class Exec(Base):
     created_time = Column(DateTime, default=datetime.utcnow)
     meta = Column(JSON)
     status = Column(String(256))
-    
-    __table_args__ = (
-        Index("exec_name", "name"),
-    )
+
+    __table_args__ = (Index("exec_name", "name"),)
 
 
 class Pack(Base):
@@ -50,12 +46,13 @@ class Pack(Base):
     name = Column(String(256))
     tag = Column(String(256))
     config = Column(JSON)
-    
+
     __table_args__ = (
         Index("exec_pack_query", "exec_id"),
         Index("pack_query", "name", "exec_id"),
         Index("pack_tag", "tag"),
     )
+
 
 class Metric(Base):
     __tablename__ = "metrics"
@@ -65,12 +62,13 @@ class Metric(Base):
     pack_id = Column(Integer, ForeignKey("packs._id"), nullable=False)
     name = Column(String(256))
     value = Column(Float)
-    gpu_id = Column(Integer)  # GPU id
-    
+    gpu_id = Column(String(36))  # GPU id
+
     __table_args__ = (
         Index("metric_query", "exec_id", "pack_id"),
         Index("metric_name", "name"),
     )
+
 
 class SQLAlchemy:
     pass
@@ -179,6 +177,10 @@ class SQLAlchemy:
         self.pending_metrics = []
         self.batch_size = 50
 
+    @property
+    def client(self):
+        return self.engine
+
     def pack_state(self, entry) -> PackState:
         return self.states[entry.tag]
 
@@ -283,13 +285,14 @@ class SQLAlchemy:
             )
         )
 
-    def _change_gpudata(self, run_id, pack_id, k, v):
+    def _change_gpudata(self, run_id, pack_id, k, v, jobid):
         for gpu_id, values in v.items():
             for metric, value in values.items():
                 if metric == "memory":
                     use, mx = value
                     value = use / mx
 
+                assert jobid == gpu_id, f"{type(jobid)} == {type(gpu_id)}"
                 self._push_metric(run_id, pack_id, f"gpu.{metric}", value, gpu_id)
 
     def on_data(self, entry):
@@ -298,6 +301,7 @@ class SQLAlchemy:
 
         run_id = self.run._id
         pack_id = state.pack._id
+        jobid = str(state.pack.config["job-number"])
 
         for k, v in entry.data.items():
             if k in ("task", "units", "progress"):
@@ -307,12 +311,12 @@ class SQLAlchemy:
             # so the gpu_id is moved to its own column
             # and each metric is pushed as a separate document
             if k == "gpudata":
-                self._change_gpudata(run_id, pack_id, k, v)
+                self._change_gpudata(run_id, pack_id, k, v, jobid)
                 return
 
             # We request an ordered write so the document
             # will be ordered by their _id (i.e insert time)
-            self._push_metric(run_id, pack_id, k, v)
+            self._push_metric(run_id, pack_id, k, v, gpu_id=jobid)
 
         if len(self.pending_metrics) >= self.batch_size:
             self._bulk_insert()

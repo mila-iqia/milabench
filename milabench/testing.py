@@ -1,3 +1,4 @@
+from copy import deepcopy
 from collections import defaultdict
 import json
 import os
@@ -50,3 +51,34 @@ def replay_run(folder):
 
     for benchfiles in benches.values():
         yield from interleave(*benchfiles)
+
+
+def show_diff(a, b, depth=0, path=None):
+    indent = " " * depth
+    acc = 0
+
+    if depth == 0:
+        print()
+
+    if path is None:
+        path = []
+
+    for k in a.keys():
+        p = deepcopy(path) + [k]
+
+        v1 = a.get(k)
+        v2 = b.get(k)
+
+        if v1 is None or v2 is None:
+            print(f"Missing key {k}")
+            continue
+
+        if isinstance(v1, dict):
+            acc += show_diff(v1, v2, depth + 1, p)
+            continue
+
+        if v1 != v2:
+            print(f'{indent} {".".join(p)} {v1} != {v2}')
+            acc += 1
+
+    return acc
