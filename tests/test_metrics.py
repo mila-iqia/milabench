@@ -15,6 +15,7 @@ def test_sqlalchemy_sqlite(runs_folder):
             for msg in replay_run(run_dir):
                 log(msg)
 
+        assert len(logger.pending_metrics) == 0
         df_post = fetch_data(logger.client, "sedumoje")
 
     replicated = make_pivot_summary("sedumoje", df_post)

@@ -46,6 +46,7 @@ class Pack(Base):
     name = Column(String(256))
     tag = Column(String(256))
     config = Column(JSON)
+    command = Column(JSON)
 
     __table_args__ = (
         Index("exec_pack_query", "exec_id"),
@@ -88,31 +89,8 @@ class PackState:
     config: dict = None
     early_stop: bool = False
     error: int = 0
-
-
-SETUP = """
-CREATE SCHEMA milabench_schema;
-ALTER TABLE execs SET SCHEMA milabench_schema;
-ALTER TABLE packs SET SCHEMA milabench_schema;
-ALTER TABLE metrics SET SCHEMA milabench_schema;
-
-CREATE GROUP milabench_user;
-
-GRANT CONNECT ON DATABASE milabench TO milabench_user;
-GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA milabench_schema TO milabench_user;
-
-ALTER TABLE execs OWNER TO milabench_user;
-ALTER TABLE execs OWNER TO milabench_user;
-ALTER TABLE execs OWNER TO milabench_user;
-
-CREATE GROUP milabench_viewer;
-
-GRANT CONNECT ON DATABASE milabench TO milabench_viewer;
-GRANT select ON ALL TABLES IN SCHEMA milabench_schema TO milabench_viewer;
-
-CREATE USER username PASSWORD 'password';
-ALTER GROUP milabench_user ADD USER username;
-"""
+    start: int = 0
+    command = None
 
 
 def generate_database_sql_setup(uri=None):
@@ -137,8 +115,6 @@ def generate_database_sql_setup(uri=None):
             uri, strategy="mock", executor=metadata_dump
         )
         Base.metadata.create_all(engine)
-
-        file.write(SETUP)
 
 
 def create_database(uri):
@@ -260,6 +236,8 @@ class SQLAlchemy:
 
     def on_start(self, entry):
         state = self.pack_state(entry)
+        state.pack.command = entry.data["command"]
+        state.start = entry.data["time"]
 
         assert state.step == START
         state.step += 1
@@ -340,6 +318,17 @@ class SQLAlchemy:
     def on_end(self, entry):
         state = self.pack_state(entry)
         assert state.step == DATA
+
+        run_id = self.run._id
+        pack_id = state.pack._id
+        jobid = str(state.pack.config["job-number"])
+
+        end = entry.data["time"]
+        self._push_metric(run_id, pack_id, "walltime", end - state.start, jobid)
+
+        self._push_metric(
+            run_id, pack_id, "return_code", entry.data["return_code"], jobid
+        )
 
         status = "done"
         if state.early_stop:
