@@ -1,6 +1,6 @@
 from milabench.utils import multilogger
 from milabench.testing import replay_run
-from milabench.metrics.sqlalchemy import SQLAlchemy, Pack, Exec, Metric
+from milabench.metrics.sqlalchemy import SQLAlchemy, Pack, Exec, Metric, create_database
 
 import pandas as pd
 from bson.json_util import dumps as to_json
@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 # setup.sql
 
 TEST_INSTANCE = "postgresql://username:password@localhost:5432/milabench"
-TEST_INSTANCE = "sqlite:///sqlite.db"
+create_database(TEST_INSTANCE)
 
 
 def test_sqlalchemy(runs_folder, monkeypatch):

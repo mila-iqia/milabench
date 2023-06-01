@@ -131,8 +131,26 @@ def generate_database_sql_setup(uri=None):
         file.write(SETUP)
 
 
+def create_database(uri):
+    engine = sqlalchemy.create_engine(
+        uri,
+        echo=False,
+        future=True,
+        json_serializer=to_json,
+        json_deserializer=from_json,
+    )
+
+    try:
+        Base.metadata.create_all(engine)
+    except DBAPIError as err:
+        print("could not create database schema because of {err}")
+
+
 class SQLAlchemy:
     def __init__(self, uri="sqlite:///sqlite.db") -> None:
+        if uri.startswith("sqlite"):
+            create_database(uri)
+
         self.engine = sqlalchemy.create_engine(
             uri,
             echo=False,
@@ -140,12 +158,6 @@ class SQLAlchemy:
             json_serializer=to_json,
             json_deserializer=from_json,
         )
-
-        if uri.startswith("sqlite"):
-            try:
-                Base.metadata.create_all(self.engine)
-            except DBAPIError as err:
-                print("could not create database schema because of {err}")
 
         self.session = Session(self.engine)
         self.meta = None
