@@ -1,3 +1,5 @@
+import os
+
 from milabench.utils import multilogger
 from milabench.testing import replay_run
 from milabench.metrics.sqlalchemy import SQLAlchemy, Pack, Exec, Metric, create_database
@@ -18,11 +20,17 @@ from sqlalchemy.orm import Session
 # \c milabench
 # setup.sql
 
-TEST_INSTANCE = "postgresql://username:password@localhost:5432/milabench"
+USER = os.getenv('POSTGRES_USER', 'username')
+PSWD = os.getenv('POSTGRES_PSWD', 'password')
+DB = os.getenv('POSTGRES_DB', 'milabench')
+HOST = os.getenv('POSTGRES_HOST', 'localhost')
+PORT = os.getenv('POSTGRES_PORT', 5432)
+
+TEST_INSTANCE = f"postgresql://{USER}:{PSWD}@{HOST}:{PORT}/{DB}"
 create_database(TEST_INSTANCE)
 
 
-def test_sqlalchemy(runs_folder, monkeypatch):
+def test_sqlalchemy(runs_folder):
     with multilogger(SQLAlchemy(TEST_INSTANCE)) as log:
         for msg in replay_run(runs_folder / "sedumoje.2023-03-24_13:57:35.089747"):
             log(msg)

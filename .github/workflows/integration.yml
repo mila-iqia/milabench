@@ -1,4 +1,4 @@
-name: mongodb
+name: integration
 
 on:
   # Runs every sunday
@@ -20,20 +20,35 @@ on:
 
 jobs:
   # Label of the container job
-  container-job:
+  postgresql:
     runs-on: ubuntu-latest
 
+    concurrency:
+      group: "${{ github.ref }}"
+      cancel-in-progress: true
+  
     services:
-      db:
+      # The hostname of the PostgreSQL service is the label
+      postgres:
         image: postgres
         env:
           POSTGRES_PASSWORD: password
           POSTGRES_USER: username
           POSTGRES_DB: milabench
-
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
 
     steps:
-      # Downloads a copy of the code in your repository before running CI tests
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9' 
+
       - name: Check out repository code
         uses: actions/checkout@v3
 
@@ -45,14 +60,18 @@ jobs:
           export PATH="~/.cargo/bin:${PATH}"
           python -m pip install -U pip
           python -m pip install -U poetry
-          poetry lock --no-update
-          poetry install
 
-      - name: Connect to PostgreSQL
+      - name: install
+        run: |
+          pip install pytest
+          poetry lock --no-update
+          pip install -e .
+
+      - name: tests
         env:
           POSTGRES_USER: username
           POSTGRES_PSWD: password
           POSTGRES_DB: milabench
-          POSTGRES_HOST: postgres
+          POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
         run: pytest tests/integration

@@ -104,7 +104,9 @@ def make_constraints_file(pth, constraints):
     if constraints:
         os.makedirs(XPath(pth).parent, exist_ok=True)
         with open(pth, "w") as tfile:
-            tfile.write("\n".join([f"-c {relativize(c)}" for c in constraints]))
+            # We prefix the constraint with ../ because we are creating a constraint
+            # file in ./.pin/,but containing constraints with paths relative to ./
+            tfile.write("\n".join([f"-c ../{relativize(c)}" for c in constraints]))
         return (pth,)
     else:
         return ()

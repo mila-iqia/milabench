@@ -11,7 +11,6 @@ from bson.json_util import dumps as to_json
 from bson.json_util import loads as from_json
 
 from sqlalchemy import (
-    BINARY,
     JSON,
     Float,
     Column,
@@ -19,7 +18,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
-    insert,
+    Index,
 )
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session, declarative_base
@@ -36,6 +35,10 @@ class Exec(Base):
     created_time = Column(DateTime, default=datetime.utcnow)
     meta = Column(JSON)
     status = Column(String(256))
+    
+    __table_args__ = (
+        Index("exec_name", "name"),
+    )
 
 
 class Pack(Base):
@@ -47,7 +50,12 @@ class Pack(Base):
     name = Column(String(256))
     tag = Column(String(256))
     config = Column(JSON)
-
+    
+    __table_args__ = (
+        Index("exec_pack_query", "exec_id"),
+        Index("pack_query", "name", "exec_id"),
+        Index("pack_tag", "tag"),
+    )
 
 class Metric(Base):
     __tablename__ = "metrics"
@@ -58,7 +66,11 @@ class Metric(Base):
     name = Column(String(256))
     value = Column(Float)
     gpu_id = Column(Integer)  # GPU id
-
+    
+    __table_args__ = (
+        Index("metric_query", "exec_id", "pack_id"),
+        Index("metric_name", "name"),
+    )
 
 class SQLAlchemy:
     pass

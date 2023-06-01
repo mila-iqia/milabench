@@ -128,7 +128,9 @@ class MultiPackage:
                 except Exception as exc:
                     await pack.message_error(exc)
 
-    async def do_pin(self, pip_compile_args, constraints: list = tuple()):
+    async def do_pin(
+        self, pip_compile_args, constraints: list = tuple(), from_scratch=False
+    ):
         groups = defaultdict(dict)
         for pack in self.packs.values():
             pack.phase = "pin"
@@ -167,12 +169,15 @@ class MultiPackage:
                 )
             else:
                 pack0 = packs[0]
+                ivar = pack0.config["install_variant"]
 
-                constraint_path = XPath(".pin-constraints-TMP.txt")
+                pindir = XPath(".pin")
+
+                constraint_path = pindir / "tmp-constraints.txt"
                 constraint_files = make_constraints_file(constraint_path, constraints)
 
-                ig_constraint_path = XPath(f".pin-constraints-{ig}.txt")
-                if ig_constraint_path.exists():
+                ig_constraint_path = pindir / f"constraints-{ivar}-{ig}.txt"
+                if ig_constraint_path.exists() and from_scratch:
                     ig_constraint_path.rm()
 
                 # Create master requirements
