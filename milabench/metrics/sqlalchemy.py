@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from ..structs import BenchLogEntry
 
 import sqlalchemy
+from sqlalchemy.dialects import postgresql
 
 from bson.json_util import dumps as to_json
 from bson.json_util import loads as from_json
@@ -79,6 +80,53 @@ class PackState:
     error: int = 0
 
 
+SETUP = """
+CREATE SCHEMA milabench_schema;
+ALTER TABLE execs SET SCHEMA milabench_schema;
+ALTER TABLE packs SET SCHEMA milabench_schema;
+ALTER TABLE metrics SET SCHEMA milabench_schema;
+
+CREATE GROUP milabench_user;
+
+GRANT CONNECT ON DATABASE milabench TO milabench_user;
+GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA milabench_schema TO milabench_user;
+
+ALTER TABLE execs OWNER TO milabench_user;
+ALTER TABLE execs OWNER TO milabench_user;
+ALTER TABLE execs OWNER TO milabench_user;
+
+CREATE GROUP milabench_viewer;
+
+GRANT CONNECT ON DATABASE milabench TO milabench_viewer;
+GRANT select ON ALL TABLES IN SCHEMA milabench_schema TO milabench_viewer;
+
+CREATE USER username PASSWORD 'password';
+ALTER GROUP milabench_user ADD USER username;
+"""
+
+
+def generate_database_sql_setup(uri=None):
+    """Users usally do not have create table permission.
+    We generate the code to create the table so someone with permission can execute the script."""
+    
+    dummy = "sqlite:///sqlite.db"
+    if uri is None:
+        uri = dummy
+    
+    with open('setup.sql', 'w') as file:
+        def metadata_dump(sql, *multiparams, **params):
+            sql = str(sql.compile(dialect=postgresql.dialect()))
+            sql = sql.replace('CREATE TABLE', 'CREATE TABLE IF NOT EXISTS')
+            
+            file.write(f'{sql};')
+            file.write('-- \n')
+        
+        engine = sqlalchemy.create_mock_engine(uri, strategy='mock', executor=metadata_dump)
+        Base.metadata.create_all(engine)
+        
+        file.write(SETUP);
+
+
 class SQLAlchemy:
     def __init__(self, uri="sqlite:///sqlite.db") -> None:
         self.engine = sqlalchemy.create_engine(
@@ -88,10 +136,12 @@ class SQLAlchemy:
             json_serializer=to_json,
             json_deserializer=from_json,
         )
-        try:
-            Base.metadata.create_all(self.engine)
-        except DBAPIError:
-            pass
+        
+        if uri.startswith('sqlite'):
+            try:
+                Base.metadata.create_all(self.engine)
+            except DBAPIError as err:
+                print("could not create database schema because of {err}")
 
         self.session = Session(self.engine)
         self.meta = None
@@ -126,7 +176,7 @@ class SQLAlchemy:
 
         self.states = defaultdict(PackState)
         self.session.commit()
-        self.session.__exit__()
+        self.session.__exit__(*args, **kwargs)
 
     def update_run_status(self, status):
         self.run.status = status
@@ -195,7 +245,6 @@ class SQLAlchemy:
         pass
 
     def _push_metric(self, run_id, pack_id, name, value, gpu_id=None):
-        print(name, value)
         self.pending_metrics.append(
             Metric(
                 exec_id=run_id,
@@ -274,3 +323,8 @@ class SQLAlchemy:
         # packs still pushing metrics
         if len(self.states) == 0:
             self._bulk_insert()
+
+
+
+if __name__ == '__main__':
+    generate_database_sql_setup()
