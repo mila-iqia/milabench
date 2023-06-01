@@ -118,6 +118,10 @@ def selection_keys(defn):
 
 
 def get_base_defaults(base, arch="none", run_name="none"):
+    try:
+        user = os.getlogin()
+    except OSError:
+        user = "root"
     return {
         "_defaults": {
             "system": {
@@ -128,7 +132,7 @@ def get_base_defaults(base, arch="none", run_name="none"):
                         "name": "local", 
                         "ip": "127.0.0.1", 
                         "port": None, 
-                        "user": os.getlogin(), 
+                        "user": user, 
                         "main": True 
                     }
                 ]
