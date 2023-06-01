@@ -651,17 +651,9 @@ class Main:
         meta: str
 
         from .metrics.archive import publish_archived_run
+        from .metrics.sqlalchemy import SQLAlchemy
 
-        backend = None
-        if uri.starswith("mongo"):
-            from .metrics.mongodb import MongoDB
-
-            backend = MongoDB(uri)
-        else:
-            from .metrics.sqalchemy import SQLAlchemy
-
-            backend = SQLAlchemy(uri)
-
+        backend = SQLAlchemy(uri)
         publish_archived_run(backend, folder)
 
     def container():

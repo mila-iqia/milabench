@@ -107,24 +107,28 @@ ALTER GROUP milabench_user ADD USER username;
 
 def generate_database_sql_setup(uri=None):
     """Users usally do not have create table permission.
-    We generate the code to create the table so someone with permission can execute the script."""
-    
+    We generate the code to create the table so someone with permission can execute the script.
+    """
+
     dummy = "sqlite:///sqlite.db"
     if uri is None:
         uri = dummy
-    
-    with open('setup.sql', 'w') as file:
+
+    with open("setup.sql", "w") as file:
+
         def metadata_dump(sql, *multiparams, **params):
             sql = str(sql.compile(dialect=postgresql.dialect()))
-            sql = sql.replace('CREATE TABLE', 'CREATE TABLE IF NOT EXISTS')
-            
-            file.write(f'{sql};')
-            file.write('-- \n')
-        
-        engine = sqlalchemy.create_mock_engine(uri, strategy='mock', executor=metadata_dump)
+            sql = sql.replace("CREATE TABLE", "CREATE TABLE IF NOT EXISTS")
+
+            file.write(f"{sql};")
+            file.write("-- \n")
+
+        engine = sqlalchemy.create_mock_engine(
+            uri, strategy="mock", executor=metadata_dump
+        )
         Base.metadata.create_all(engine)
-        
-        file.write(SETUP);
+
+        file.write(SETUP)
 
 
 class SQLAlchemy:
@@ -136,8 +140,8 @@ class SQLAlchemy:
             json_serializer=to_json,
             json_deserializer=from_json,
         )
-        
-        if uri.startswith('sqlite'):
+
+        if uri.startswith("sqlite"):
             try:
                 Base.metadata.create_all(self.engine)
             except DBAPIError as err:
@@ -325,6 +329,5 @@ class SQLAlchemy:
             self._bulk_insert()
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     generate_database_sql_setup()

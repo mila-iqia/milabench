@@ -9,7 +9,6 @@ import sqlalchemy
 from sqlalchemy.orm import Session
 
 
-
 # Setup POSTGRESQL instance
 # -------------------------
 #
