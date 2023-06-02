@@ -58,6 +58,10 @@ jobs:
           miniconda-version: "latest"
           activate-environment: test
 
+      - name: check
+        run: |
+          ls -l /usr/local/ /opt
+
       - name: Pytorch Sanity
         run: |
           if [[ "${{ matrix.arch }}" == "rocm" ]]; then
