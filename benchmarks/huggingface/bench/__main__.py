@@ -40,7 +40,9 @@ class Runner:
             repeat=100000,
             generators=generators[info.category](info),
         )
-        self.loader = DataLoader(self.data, batch_size=args.batch_size)
+        self.loader = DataLoader(
+            self.data, batch_size=args.batch_size, num_workers=args.num_workers
+        )
 
         self.amp_scaler = torch.cuda.amp.GradScaler(enabled=is_fp16_allowed(args))
         if is_fp16_allowed(args):
@@ -129,6 +131,12 @@ def parser():
         choices=["fp16", "fp32", "tf32", "tf32-fp16"],
         default="fp32",
         help="Precision configuration",
+    )
+    parser.add_argument(
+        "--num-workers",
+        type=int,
+        default=8,
+        help="number of workers for data loading",
     )
     # parser.add_argument(
     #     "--no-stdout",
