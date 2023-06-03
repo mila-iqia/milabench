@@ -8,7 +8,7 @@ ENV MILABENCH_GPU_ARCH=$ARCH
 
 ARG CONFIG=standard.yaml
 ENV MILABENCH_CONFIG_NAME=$CONFIG
-
+ENV MILABENCH_DOCKER=1
 
 # Paths
 # -----
@@ -35,21 +35,22 @@ COPY . /milabench/milabench/
 #           rustc: used by BERT models inside https://pypi.org/project/tokenizers/
 # build-essential: for rust
 
-RUN apt-get update &&\
-    apt-get install -y git build-essential curl &&\
+# Use ofed_info -s to get your local version
+ARG MOFED_VERSION=5.4-3.4.0.0
+
+RUN apt-get update -y &&\
+    apt-get install -y git build-essential curl python3 python-is-python3 python3-pip &&\
+    curl -o /etc/apt/trusted.gpg.d/mellanox.asc https://content.mellanox.com/ofed/RPM-GPG-KEY-Mellanox &&\
+    curl -o /etc/apt/sources.list.d/mellanox.list https://linux.mellanox.com/public/repo/mlnx_ofed/${MOFED_VERSION}/ubuntu22.04/mellanox_mlnx_ofed.list &&\
+    apt-get update -y &&\
+    apt-get install -y libibverbs1 &&\
     apt-get clean &&\
     rm -rf /var/lib/apt/lists/*
 
+# Install Rust
+
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
-
-# Install Python
-# --------------
-
-# Install anaconda because milabench will need it later anyway
-RUN curl https://repo.anaconda.com/miniconda/Miniconda3-py39_23.1.0-1-Linux-x86_64.sh -o ~/miniconda.sh && \
-    /bin/bash ~/miniconda.sh -b -p $CONDA_PATH && rm ~/miniconda.sh
-ENV PATH=$CONDA_PATH/bin:$PATH
 
 
 # Install Milabench

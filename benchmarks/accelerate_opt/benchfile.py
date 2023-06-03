@@ -70,9 +70,16 @@ class AccelerateBenchmark(Package):
         # XXX: this doesn't participate in the process timeout
         for i, worker in enumerate(self.config.get('worker_addrs', [])):
             command = ["docker", "run", "-i", "--rm",
+                       "--ipc", "host",
                        "--network", "host",
-                       "--privileged",
-                       "--gpus", "all"]
+                       "--privileged"]
+            if self.config['arch'] == 'cuda':
+                command.extend(["--gpus", "all"])
+            elif self.config['arch'] == 'rocm':
+                command.extend(["--security-opt", "seccomp=unconfined",
+                                "--group-add", "video",
+                                "-v", "/opt/amdgpu/share/libdrm/amdgpu.ids:/opt/amdgpu/share/libdrm/amdgpu.ids",
+                                "-v", "/opt/rocm:/opt/rocm"])
             env = self.make_env()
             for var in ('MILABENCH_CONFIG', 'XDG_CACHE_HOME', 'OMP_NUM_THREADS'):
                 command.append("--env")
