@@ -1,20 +1,11 @@
 import os
 from datetime import datetime
-import subprocess
 import cpuinfo
-import warnings
 
 from voir.instruments.gpu import get_gpu_info
 
 from ._version import __commit__, __tag__, __date__
-
-
-def _exec(cmd, default):
-    try:
-        return subprocess.check_output(cmd.split(" "), encoding="utf-8").strip()
-    except subprocess.CalledProcessError:
-        warnings.warn("out of tree; milabench could not retrieve version info")
-        return default
+from .vcs import retrieve_git_versions
 
 
 def machine_metadata():
@@ -38,9 +29,9 @@ def machine_metadata():
         },
         "accelerators": gpus,
         "date": datetime.utcnow(),
-        "milabench": {
-            "tag": _exec("git describe --tags", __tag__),
-            "commit": _exec("git rev-parse HEAD", __commit__),
-            "date": _exec("git show -s --format=%ci", __date__),
-        },
+        "milabench": retrieve_git_versions(
+            __tag__,
+            __commit__,
+            __date__,
+        ),
     }
