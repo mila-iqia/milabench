@@ -1,3 +1,5 @@
-__tag__ = "v0.0.6-9-g9905a32"
-__commit__ = "9905a320bd8e21342d894cca2f3431bd9ec3590d"
-__date__ = "2023-05-30 13:01:30 -0400"
+"""This file is generated, do not modify"""
+
+__tag__ = "v0.0.6-11-g1421935"
+__commit__ = "14219356e9e2d4052ce19ed0dd27a988bd8d8437"
+__date__ = "2023-06-05 10:39:37 -0400"

@@ -29,6 +29,10 @@ def update_version_file():
     version_info = retrieve_git_versions()
 
     with open(os.path.join(ROOT, "milabench", "_version.py"), "w") as file:
+        file.write('"""')
+        file.write("This file is generated, do not modify")
+        file.write('"""\n\n')
+
         for key, data in version_info.items():
             file.write(f'__{key}__ = "{data}"\n')
 
