@@ -13,7 +13,7 @@ H = HTML()
 
 
 @error_guard({})
-def _make_row(summary, compare, mode):
+def _make_row(summary, compare):
     mkey = "train_rate"
     metric = "mean"
     row = {}
@@ -176,8 +176,7 @@ def make_report(
     price=None,
     title=None,
     sources=None,
-    errdata=None,
-    mode="per_gpu",
+    errdata=None
 ):
     all_keys = list(
         sorted(
@@ -193,7 +192,6 @@ def make_report(
             key: _make_row(
                 summary.get(key, {}),
                 compare and compare.get(key, {}),
-                mode=mode,
             )
             for key in all_keys
         }
@@ -215,8 +213,9 @@ def make_report(
         # This computes a weighted geometric mean
         perf = df[column]
         weights = df["weight"]
-        logscore = np.sum(np.log(perf) * weights) / np.sum(weights)
-        return np.exp(logscore)
+        logscore_valid = np.sum(np.log(perf) * weights) / np.sum(weights)
+        # logscore = np.sum(np.log(perf) * weights)
+        return np.exp(logscore_valid)
 
     score = _score("score")
     failure_rate = df["fail"].sum() / df["n"].sum()
