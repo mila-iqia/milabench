@@ -76,9 +76,12 @@ def build_config(*config_files):
 
 
 def build_system_config(config_file, defaults=None):
-    config_file = XPath(config_file).absolute()
-    with open(config_file) as cf:
-        config = yaml.safe_load(cf) or {}
+    if config_file is None:
+        config = {}
+    else:
+        config_file = XPath(config_file).absolute()
+        with open(config_file) as cf:
+            config = yaml.safe_load(cf)
 
     if defaults:
         config = merge(defaults, config)
