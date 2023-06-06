@@ -1,0 +1,119 @@
+Namespace(c_dim=5, c2_dim=8, celeba_crop_size=178, rafd_crop_size=256, image_size=512, g_conv_dim=64, d_conv_dim=64, g_repeat_num=6, d_repeat_num=6, lambda_cls=1, lambda_rec=10, lambda_gp=10, dataset='synth', batch_size=16, num_iters=200000, num_iters_decay=100000, g_lr=0.0001, d_lr=0.0001, n_critic=5, beta1=0.5, beta2=0.999, resume_iters=None, selected_attrs=['Black_Hair', 'Blond_Hair', 'Brown_Hair', 'Male', 'Young'], test_iters=200000, num_workers=1, mode='train', use_tensorboard=False, celeba_image_dir='data/celeba/images', attr_path='data/celeba/list_attr_celeba.txt', rafd_image_dir='data/RaFD/train', log_dir='/Tmp/slurm.3188069.0/milabench_dev/results/extra/stargan/logs', model_save_dir='/Tmp/slurm.3188069.0/milabench_dev/results/extra/stargan/models', sample_dir='/Tmp/slurm.3188069.0/milabench_dev/results/extra/stargan/samples', result_dir='/Tmp/slurm.3188069.0/milabench_dev/results/extra/stargan/results', log_step=10, sample_step=1000, model_save_step=10000, lr_update_step=1000)
+Generator(
+  (main): Sequential(
+    (0): Conv2d(8, 64, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), bias=False)
+    (1): InstanceNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (2): ReLU(inplace=True)
+    (3): Conv2d(64, 128, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)
+    (4): InstanceNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (5): ReLU(inplace=True)
+    (6): Conv2d(128, 256, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)
+    (7): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (8): ReLU(inplace=True)
+    (9): ResidualBlock(
+      (main): Sequential(
+        (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (1): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU(inplace=True)
+        (3): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (4): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+    )
+    (10): ResidualBlock(
+      (main): Sequential(
+        (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (1): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU(inplace=True)
+        (3): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (4): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+    )
+    (11): ResidualBlock(
+      (main): Sequential(
+        (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (1): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU(inplace=True)
+        (3): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (4): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+    )
+    (12): ResidualBlock(
+      (main): Sequential(
+        (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (1): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU(inplace=True)
+        (3): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (4): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+    )
+    (13): ResidualBlock(
+      (main): Sequential(
+        (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (1): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU(inplace=True)
+        (3): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (4): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+    )
+    (14): ResidualBlock(
+      (main): Sequential(
+        (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (1): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU(inplace=True)
+        (3): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (4): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+    )
+    (15): ConvTranspose2d(256, 128, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)
+    (16): InstanceNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (17): ReLU(inplace=True)
+    (18): ConvTranspose2d(128, 64, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)
+    (19): InstanceNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (20): ReLU(inplace=True)
+    (21): Conv2d(64, 3, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), bias=False)
+    (22): Tanh()
+  )
+)
+G
+The number of parameters: 8430528
+Discriminator(
+  (main): Sequential(
+    (0): Conv2d(3, 64, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
+    (1): LeakyReLU(negative_slope=0.01)
+    (2): Conv2d(64, 128, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
+    (3): LeakyReLU(negative_slope=0.01)
+    (4): Conv2d(128, 256, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
+    (5): LeakyReLU(negative_slope=0.01)
+    (6): Conv2d(256, 512, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
+    (7): LeakyReLU(negative_slope=0.01)
+    (8): Conv2d(512, 1024, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
+    (9): LeakyReLU(negative_slope=0.01)
+    (10): Conv2d(1024, 2048, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
+    (11): LeakyReLU(negative_slope=0.01)
+  )
+  (conv1): Conv2d(2048, 1, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+  (conv2): Conv2d(2048, 5, kernel_size=(8, 8), stride=(1, 1), bias=False)
+)
+D
+The number of parameters: 45376448
+Start training...
+Elapsed [0:00:36], Iteration [10/200000], D/loss_real: -0.9811, D/loss_fake: 0.0327, D/loss_cls: 3.1970, D/loss_gp: 0.0579, G/loss_fake: -0.6736, G/loss_rec: 0.5481, G/loss_cls: 3.3528
+Elapsed [0:00:39], Iteration [20/200000], D/loss_real: -1.2238, D/loss_fake: 0.9413, D/loss_cls: 3.4744, D/loss_gp: 0.0454, G/loss_fake: -0.5413, G/loss_rec: 0.5382, G/loss_cls: 3.3023
+Elapsed [0:00:43], Iteration [30/200000], D/loss_real: -4.8941, D/loss_fake: 1.9052, D/loss_cls: 4.2531, D/loss_gp: 0.0353, G/loss_fake: -1.7742, G/loss_rec: 0.5652, G/loss_cls: 3.6107
+Elapsed [0:00:46], Iteration [40/200000], D/loss_real: -5.1386, D/loss_fake: 0.1676, D/loss_cls: 3.5583, D/loss_gp: 0.0733, G/loss_fake: -0.0339, G/loss_rec: 0.5617, G/loss_cls: 3.4029
+Elapsed [0:00:49], Iteration [50/200000], D/loss_real: 0.4989, D/loss_fake: -3.1281, D/loss_cls: 4.4783, D/loss_gp: 0.1857, G/loss_fake: -1.1096, G/loss_rec: 0.5327, G/loss_cls: 3.5440
+Elapsed [0:00:53], Iteration [60/200000], D/loss_real: -5.1563, D/loss_fake: 2.7473, D/loss_cls: 3.2634, D/loss_gp: 0.0030, G/loss_fake: -2.9999, G/loss_rec: 0.5273, G/loss_cls: 3.2884
+Elapsed [0:00:56], Iteration [70/200000], D/loss_real: -4.5183, D/loss_fake: 1.8785, D/loss_cls: 3.2457, D/loss_gp: 0.0047, G/loss_fake: -2.0084, G/loss_rec: 0.5422, G/loss_cls: 3.3004
+Elapsed [0:01:00], Iteration [80/200000], D/loss_real: -4.5380, D/loss_fake: 3.1905, D/loss_cls: 3.4101, D/loss_gp: 0.0069, G/loss_fake: -3.5460, G/loss_rec: 0.5496, G/loss_cls: 3.3129
+Elapsed [0:01:03], Iteration [90/200000], D/loss_real: -5.4619, D/loss_fake: 2.9460, D/loss_cls: 3.2454, D/loss_gp: 0.0320, G/loss_fake: -3.0130, G/loss_rec: 0.5784, G/loss_cls: 3.2963
+Elapsed [0:01:06], Iteration [100/200000], D/loss_real: -5.1423, D/loss_fake: 2.8452, D/loss_cls: 3.2113, D/loss_gp: 0.0603, G/loss_fake: -1.9873, G/loss_rec: 0.5693, G/loss_cls: 3.3041
+Elapsed [0:01:10], Iteration [110/200000], D/loss_real: -3.7765, D/loss_fake: 2.5653, D/loss_cls: 3.1794, D/loss_gp: 0.0117, G/loss_fake: -2.4383, G/loss_rec: 0.5585, G/loss_cls: 3.2776
+Elapsed [0:01:13], Iteration [120/200000], D/loss_real: -4.3345, D/loss_fake: 3.5512, D/loss_cls: 3.1684, D/loss_gp: 0.0002, G/loss_fake: -3.1450, G/loss_rec: 0.5389, G/loss_cls: 3.2999
+Elapsed [0:01:17], Iteration [130/200000], D/loss_real: -1.5149, D/loss_fake: 0.4703, D/loss_cls: 3.1418, D/loss_gp: 0.0841, G/loss_fake: -1.2438, G/loss_rec: 0.5202, G/loss_cls: 3.2878
+Elapsed [0:01:20], Iteration [140/200000], D/loss_real: 0.5633, D/loss_fake: -0.5469, D/loss_cls: 3.7022, D/loss_gp: 0.6705, G/loss_fake: 0.8347, G/loss_rec: 0.5052, G/loss_cls: 3.6455
+Elapsed [0:01:24], Iteration [150/200000], D/loss_real: -0.9799, D/loss_fake: 0.7743, D/loss_cls: 3.3200, D/loss_gp: 0.4351, G/loss_fake: -1.3735, G/loss_rec: 0.5009, G/loss_cls: 3.3695
+Elapsed [0:01:27], Iteration [160/200000], D/loss_real: -2.0493, D/loss_fake: 1.4128, D/loss_cls: 3.2515, D/loss_gp: 0.0004, G/loss_fake: -1.3309, G/loss_rec: 0.4992, G/loss_cls: 3.2996
+Elapsed [0:01:30], Iteration [170/200000], D/loss_real: -1.9794, D/loss_fake: 0.7200, D/loss_cls: 3.2330, D/loss_gp: 0.0353, G/loss_fake: 0.0811, G/loss_rec: 0.5004, G/loss_cls: 3.5868
+Elapsed [0:01:34], Iteration [180/200000], D/loss_real: -2.8263, D/loss_fake: 1.9462, D/loss_cls: 3.2570, D/loss_gp: 0.0011, G/loss_fake: -1.3315, G/loss_rec: 0.4999, G/loss_cls: 3.3476
+Elapsed [0:01:37], Iteration [190/200000], D/loss_real: -2.1271, D/loss_fake: 1.4280, D/loss_cls: 3.2137, D/loss_gp: 0.0024, G/loss_fake: -1.2429, G/loss_rec: 0.4997, G/loss_cls: 3.3168
+Elapsed [0:01:41], Iteration [200/200000], D/loss_real: -2.3970, D/loss_fake: 1.1120, D/loss_cls: 3.1960, D/loss_gp: 0.0085, G/loss_fake: -2.1404, G/loss_rec: 0.4992, G/loss_cls: 3.2781

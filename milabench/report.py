@@ -13,28 +13,24 @@ H = HTML()
 
 
 @error_guard({})
-def _make_row(summary, compare, weights, mode):
+def _make_row(summary, compare, mode):
     mkey = "train_rate"
     metric = "mean"
     row = {}
-    score = 0
-
-    if weights is not None:
-        row["weight"] = weights["weight"] if weights else nan
 
     row["n"] = summary["n"] if summary else nan
     row["fail"] = summary["failures"] if summary else nan
 
-    if mode == "per_gpu":
-        row["perf"] = summary[mkey][metric] if summary else nan
+    row["perf"] = summary[mkey][metric] if summary else nan
 
-    elif mode == "full":
-        # per_gpu is only the train rate so mkey is not used here
-        acc = 0
-        for _, metrics in summary["perf_gpu"].items():
-            acc += metrics[metric]
-
-        row["perf"] = acc
+    # Sum of all the GPU performance
+    # to get the overall perf of the whole machine
+    acc = 0
+    for _, metrics in summary["per_gpu"].items():
+        acc += metrics[metric]
+    row["score"] = acc if acc > 0 else row["perf"]
+    row["weight"] = summary["weight"]
+    # ----
 
     row["perf_adj"] = (
         summary[mkey][metric] * (1 - row["fail"] / row["n"]) if summary else nan
@@ -175,7 +171,6 @@ def _report_pergpu(entries, measure="50"):
 def make_report(
     summary,
     compare=None,
-    weights=None,
     html=None,
     compare_gpus=False,
     price=None,
@@ -184,17 +179,11 @@ def make_report(
     errdata=None,
     mode="per_gpu",
 ):
-    if weights:
-        weights = {
-            name: value for name, value in weights.items() if value.get("weight", 0)
-        }
-
     all_keys = list(
         sorted(
             {
                 *(summary.keys() if summary else []),
                 *(compare.keys() if compare else []),
-                *(weights.keys() if weights else []),
             }
         )
     )
@@ -204,7 +193,6 @@ def make_report(
             key: _make_row(
                 summary.get(key, {}),
                 compare and compare.get(key, {}),
-                weights and weights.get(key, {}),
                 mode=mode,
             )
             for key in all_keys
@@ -221,30 +209,29 @@ def make_report(
     out.title(title or "Benchmark results")
     out.print(df)
 
-    if weights:
-        out.section("Scores")
+    out.section("Scores")
 
-        def _score(column):
-            # This computes a weighted geometric mean
-            perf = df[column]
-            weights = df["weight"]
-            logscore = np.sum(np.log(perf) * weights) / np.sum(weights)
-            return np.exp(logscore)
+    def _score(column):
+        # This computes a weighted geometric mean
+        perf = df[column]
+        weights = df["weight"]
+        logscore = np.sum(np.log(perf) * weights) / np.sum(weights)
+        return np.exp(logscore)
 
-        score = _score("perf")
-        failure_rate = df["fail"].sum() / df["n"].sum()
-        scores = {
-            "Failure rate": PassFail(failure_rate, failure_rate <= 0.01),
-            "Score": WithClass(f"{score:10.2f}", "score"),
-        }
-        if compare:
-            score_base = _score("perf_base")
-            scores.update({"Score (baseline)": score_base, "Ratio": score / score_base})
-        if price:
-            rpp = price / score
-            scores["Price ($)"] = f"{price:10.2f}"
-            scores["RPP (Price / Score)"] = WithClass(f"{rpp:10.2f}", "rpp")
-        out.print(Table(scores))
+    score = _score("score")
+    failure_rate = df["fail"].sum() / df["n"].sum()
+    scores = {
+        "Failure rate": PassFail(failure_rate, failure_rate <= 0.01),
+        "Score": WithClass(f"{score:10.2f}", "score"),
+    }
+    if compare:
+        score_base = _score("perf_base")
+        scores.update({"Score (baseline)": score_base, "Ratio": score / score_base})
+    if price:
+        rpp = price / score
+        scores["Price ($)"] = f"{price:10.2f}"
+        scores["RPP (Price / Score)"] = WithClass(f"{rpp:10.2f}", "rpp")
+    out.print(Table(scores))
 
     if compare_gpus:
         for measure in ["mean", "min", "max"]:

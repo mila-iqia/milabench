@@ -154,6 +154,7 @@ def _summarize(group):
         "failures": sum(not x for x in agg["success"]),
         "train_rate": _metrics(agg["train_rate"]),
         "walltime": _metrics(agg["walltime"]),
+        "weight": config.get("weight", 0),
         "per_gpu": {
             device: _metrics(train_rates) for device, train_rates in per_gpu.items()
         },
