@@ -95,7 +95,7 @@ def _merge(aggs):
     for agg in aggs:
         data = agg.pop("data")
         results.update(agg)
-        
+
         for k, v in data.items():
             results["data"][k].extend(v)
 
@@ -134,7 +134,7 @@ def _metrics(xs):
 def _summarize(group):
     agg = group["data"]
     gpudata = defaultdict(lambda: defaultdict(list))
-    
+
     for entry in agg["gpudata"]:
         for device, data in entry.items():
             if data["memory"][0] == 1 or data["load"] == 0:
@@ -173,4 +173,3 @@ def make_summary(runs):
     merged = {name: _merge(runs) for name, runs in classified.items()}
     summarized = {name: _summarize(agg) for name, agg in merged.items()}
     return summarized
-

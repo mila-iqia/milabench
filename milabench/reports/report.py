@@ -116,13 +116,13 @@ class ReportMachinePerf(ValidationLayer):
                 )
 
         return reduced
-    
+
     def summary(self):
         summary = dict()
-        
+
         for k, acc in self.accumulator.items():
             summary[k] = self.reduce(acc)
-        
+
         return summary
 
     def show_bench(self, acc: MetricAcc, show_header=True):
@@ -139,20 +139,20 @@ class ReportMachinePerf(ValidationLayer):
         lines = []
         for metric in ordered:
             stats = reduced[metric]
-            
+
             line = [f"{metric:>20}"]
             header = [f"{'name':>20}"]
 
             for stat, value in stats.items():
                 line.append(f"{value:10.2f}")
-                header.append(f'{stat:>10}')
+                header.append(f"{stat:>10}")
 
             lines.append(" | ".join(line))
 
         if show_header and not self.header_shown:
             self.header_shown = True
             print(" | ".join(header))
-            
+
         print("\n".join(lines))
 
     def on_data(self, entry):

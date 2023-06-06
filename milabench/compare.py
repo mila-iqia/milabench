@@ -11,6 +11,15 @@ class _Output:
     summary: dict = None
 
 
+def retrive_datetime_fromname(date):
+    formats = ["%Y-%m-%d_%H:%M:%S.%f", "%Y-%m-%d_%H_%M_%S.%f"]
+    for fmt in formats:
+        try:
+            return datetime.strptime(date, fmt)
+        except ValueError:
+            pass
+
+
 def fetch_runs(folder):
     runs = []
     for run in os.listdir(folder):
@@ -19,10 +28,13 @@ def fetch_runs(folder):
             continue
         if "." in run:
             name, date = run.split(".", maxsplit=1)
-            date = datetime.strptime(date, "%Y-%m-%d_%H:%M:%S.%f")
+            date = retrive_datetime_fromname(date)
         else:
             name = run
+
+        if date is None:
             date = datetime.fromtimestamp(os.path.getmtime(pth))
+
         out = _Output(pth, name, date)
         runs.append(out)
 

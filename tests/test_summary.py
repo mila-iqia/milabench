@@ -87,7 +87,6 @@ def test_compare(runs_folder, capsys, file_regression):
 
 # ---
 import json
-from milabench.utils import validation_layers, multilogger
 from milabench.structs import BenchLogEntry
 from milabench.pack import BasePackage
 
@@ -147,13 +146,11 @@ def test_make_summary(runs_folder):
     with ReportMachinePerf() as log:
         for event in replay_run(run):
             log(event)
-            
-    print(json.dumps(log.summary(), indent=2))
 
+    print(json.dumps(log.summary(), indent=2))
 
     # with ReportGPUPerf() as log:
     #     for event in replay_run(run):
     #         log(event)
-            
+
     # print(json.dumps(log.summary(), indent=2))
-    
