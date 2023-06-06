@@ -1,0 +1,20 @@
+# Default arch
+arch: cuda
+# sshkey used in remote milabench operations
+sshkey: ~/.ssh/id_ed25519
+
+# Nodes list
+nodes:
+    # Alias to use to reference the node
+  - name: node1
+    ip: 192.168.11.12
+    port: 5000
+    # Use this node as the master node or not
+    main: true
+    # User to use in remote milabench operations
+    user: worker1
+
+  - name: node2
+    ip: 192.168.11.13
+    main: false 
+    user: worker1
