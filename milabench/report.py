@@ -13,18 +13,33 @@ H = HTML()
 
 
 @error_guard({})
-def _make_row(summary, compare, weights):
+def _make_row(summary, compare, weights, mode):
     mkey = "train_rate"
     metric = "mean"
     row = {}
+    score = 0
+
     if weights is not None:
         row["weight"] = weights["weight"] if weights else nan
+
     row["n"] = summary["n"] if summary else nan
     row["fail"] = summary["failures"] if summary else nan
-    row["perf"] = summary[mkey][metric] if summary else nan
+
+    if mode == "per_gpu":
+        row["perf"] = summary[mkey][metric] if summary else nan
+
+    elif mode == "full":
+        # per_gpu is only the train rate so mkey is not used here
+        acc = 0
+        for _, metrics in summary["perf_gpu"].items():
+            acc += metrics[metric]
+
+        row["perf"] = acc
+
     row["perf_adj"] = (
         summary[mkey][metric] * (1 - row["fail"] / row["n"]) if summary else nan
     )
+
     if compare:
         row["perf_base"] = compare[mkey][metric]
         row["perf_ratio"] = row["perf_adj"] / row["perf_base"]
@@ -167,6 +182,7 @@ def make_report(
     title=None,
     sources=None,
     errdata=None,
+    mode="per_gpu",
 ):
     if weights:
         weights = {
@@ -189,6 +205,7 @@ def make_report(
                 summary.get(key, {}),
                 compare and compare.get(key, {}),
                 weights and weights.get(key, {}),
+                mode=mode,
             )
             for key in all_keys
         }

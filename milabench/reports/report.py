@@ -15,6 +15,10 @@ class MetricAcc:
     started: int = 0
     finished: int = 0
     shown: bool = False
+    successes: int = 0
+    failures: int = 0
+    early_stop: bool = False
+    times: dict = field(default_factory=dict)
 
 
 def get_benchname(config):
@@ -69,6 +73,7 @@ class ReportMachinePerf(ValidationLayer):
         name = get_benchname(entry.pack.config)
         acc = self.accumulator[name]
         acc.started += 1
+        acc.times[entry.tag] = entry.data["time"]
 
         if self.print_live and acc.started == acc.finished:
             self.show_bench(acc)
@@ -78,28 +83,48 @@ class ReportMachinePerf(ValidationLayer):
 
     def on_end(self, entry):
         name = get_benchname(entry.pack.config)
+        group = self.groupkey(entry.pack.config)
+
         acc = self.accumulator[name]
         acc.finished += 1
 
+        # Compute walltime
+        start = acc.times[entry.tag]
+        walltime = entry.data["time"] - start
+        self.add_metric(name, group, "walltime", walltime)
+
+        good = entry.data["return_code"] == 0 or acc.early_stop
+        acc.successes += int(good)
+        acc.failures += int(not good)
+
+    def on_stop(self, entry):
+        name = get_benchname(entry.pack.config)
+        acc = self.accumulator[name]
+        acc.early_stop = True
+
     def groupkey(self, config):
+        """Key used to group observation of the same benchmark"""
         return get_per_gpu_key(config)
 
     def group_reduce(self, metric, stat, xs):
+        """Combine group metrics to form an overal perf score for a given benchmark"""
         if stat in ("std", "sem"):
             return sum(np.power(xs, 2)) ** 0.5
 
-        if metric in ("temperature", "memory", "loss", "load"):
+        if metric in ("temperature", "memory", "loss", "load", "walltime"):
             return np.mean(xs)
 
         return sum(xs)
 
-    def add_metric(self, bench, group, metric, value):
+    def add_metric(self, bench, group, metric, value: float):
+        """Add a single metric value"""
         acc = self.accumulator[bench]
 
         acc.name = bench
         acc.metrics[metric][group].append(value)
 
     def reduce(self, acc: MetricAcc):
+        """Compute the score of a benchmark"""
         reduced = dict()
 
         for metric, groups in acc.metrics.items():
@@ -117,15 +142,27 @@ class ReportMachinePerf(ValidationLayer):
 
         return reduced
 
+    def _backward_compat(self, summary):
+        for k, metrics in summary.items():
+            metrics["name"] = k
+            metrics["train_rate"] = metrics.pop("rate", {})
+
     def summary(self):
         summary = dict()
 
         for k, acc in self.accumulator.items():
-            summary[k] = self.reduce(acc)
+            result = self.reduce(acc)
+            result["successes"] = acc.successes
+            result["failures"] = acc.failures
+            result["n"] = acc.successes + acc.failures
 
+            summary[k] = result
+
+        self._backward_compat(summary)
         return summary
 
     def show_bench(self, acc: MetricAcc, show_header=True):
+        """Show metrics as a table"""
         if acc.shown:
             return
 

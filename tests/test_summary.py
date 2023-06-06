@@ -137,6 +137,40 @@ def replay_run(folder):
             yield from replay(bench)
 
 
+from copy import deepcopy
+
+
+def show_diff(a, b, depth=0, path=None):
+    indent = " " * depth
+    acc = 0
+
+    if depth == 0:
+        print()
+
+    if path is None:
+        path = []
+
+    for k in a.keys():
+        p = deepcopy(path) + [k]
+
+        v1 = a.get(k)
+        v2 = b.get(k)
+
+        if v1 is None or v2 is None:
+            print(f"Missing key {k}")
+            continue
+
+        if isinstance(v1, dict):
+            acc += show_diff(v1, v2, depth + 1, p)
+            continue
+
+        if v1 != v2:
+            print(f'{indent} {".".join(p)} {v1} != {v2}')
+            acc += 1
+
+    return acc
+
+
 def test_make_summary(runs_folder):
     from milabench.reports.report import ReportMachinePerf, ReportGPUPerf
     import json
@@ -146,8 +180,24 @@ def test_make_summary(runs_folder):
     with ReportMachinePerf() as log:
         for event in replay_run(run):
             log(event)
+            
+    new = log.summary()
+    
+    
+    from milabench.cli import _read_reports, make_summary
+    runs = [run]
+    reports = _read_reports(*runs)
+    summary = make_summary(reports.values())
+    
+    show_diff(new, summary)
+    
+    with open('new.json', 'w') as f:
+        json.dump(new, f, indent=2)
 
-    print(json.dumps(log.summary(), indent=2))
+    with open('old.json', 'w') as f:
+        json.dump(summary, f, indent=2)
+        
+    # print(json.dumps(log.summary(), indent=2))
 
     # with ReportGPUPerf() as log:
     #     for event in replay_run(run):

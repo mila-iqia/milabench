@@ -12,6 +12,7 @@ class _Output:
 
 
 def retrive_datetime_fromname(date):
+    """Windows does not support : in folders/filenames"""
     formats = ["%Y-%m-%d_%H:%M:%S.%f", "%Y-%m-%d_%H_%M_%S.%f"]
     for fmt in formats:
         try:
