@@ -2,16 +2,9 @@ import asyncio
 import os
 
 from milabench.executors import Executor, PackExecutor, VoirExecutor, NJobs, TimeOutExecutor
-from milabench.pack import Package
 from milabench.cli import _get_multipack
 from milabench.alt_async import proceed
 
-class MockPack(Package):
-    async def execute(self, *args, **kwargs):
-        return (
-            *args,
-            *[f"{k}:{v}" for k, v in kwargs.items()]
-        )
 
 class ExecMock1(Executor):
     def __init__(

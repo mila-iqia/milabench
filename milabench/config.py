@@ -89,13 +89,17 @@ def build_system_config(config_file, defaults=None):
     if config["sshkey"] is not None:
         config["sshkey"] = XPath(config["sshkey"]).resolve()
 
-    for node in config["nodes"]:
+    main_node = []
+    for i, node in enumerate(config["nodes"]):
         for field in ("name", "ip", "user"):
             _name = node.get("name", None)
             assert node[field], \
                 f"The `{field}` of the node `{_name}` is missing"
-        if node.get("main", None):
-            config.setdefault("main_node", node)
+        if node.get("main", False) and not main_node:
+            main_node.append(node)
+            config["nodes"][i] = None
+    config["nodes"] = [*main_node,
+                       *[n for n in config["nodes"] if n is not None]]
     config.setdefault("main_node", config["nodes"][0])
     assert len(config["nodes"]) == 1 or config["main_node"].get("port", None), \
         (f"The `port` of the main node `{config['main_node']['name']}` is"

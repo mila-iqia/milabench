@@ -215,10 +215,12 @@ class DockerRunExecutor(Executor):
 
     def _argv(self, **kwargs) -> List:
         del kwargs
+
         if self.image is None or os.environ.get("MILABENCH_DOCKER", None):
             # No-op when there's no docker image to run or inside a docker
             # container
             return []
+
         argv = [
             "docker",
             "run", "-i", "--rm", 
@@ -255,6 +257,8 @@ class SSHExecutor(Executor):
              will be used to find the username
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
+    _CMD="ssh"
+
     def __init__(
             self,
             executor:Executor,
@@ -292,7 +296,7 @@ class SSHExecutor(Executor):
         host = f"{user}@{self.host}" if user else self.host
 
         argv = [
-            "ssh",
+            self._CMD,
             "-oCheckHostIP=no",
             "-oStrictHostKeyChecking=no",
             *self.ssh_argv,
@@ -300,6 +304,38 @@ class SSHExecutor(Executor):
         if key:
             argv.append(f"-i{key}")
         argv.append(host)
+        return argv
+
+
+class SCPExecutor(SSHExecutor, CmdExecutor):
+    _CMD="scp"
+
+    def __init__(
+            self,
+            pack:BasePackage,
+            host:str,
+            directory:str,
+            *scp_argv,
+            user:str=None,
+            key:str=None,
+            **kwargs
+    ) -> None:
+        super().__init__(
+            pack,
+            host,
+            *("-r", *scp_argv),
+            user=user,
+            key=key,
+            **kwargs
+        )
+        self.dir = directory
+
+    def _argv(self, **kwargs) -> List:
+        argv = super()._argv(**kwargs)
+        # Pop host
+        host = argv.pop()
+        argv.append(self.dir)
+        argv.append(f"{host}:{self.dir}")
         return argv
 
 
@@ -524,6 +560,7 @@ class AccelerateLaunchExecutor(Executor):
 
     def _argv(self, rank, **kwargs) -> List:
         del kwargs
+
         nproc = len(self.pack.config.get("devices", [])) * self.pack.config['num_machines']
         deepspeed_argv = [
             "--use_deepspeed",
@@ -571,10 +608,16 @@ class AccelerateLoopExecutor(Executor):
             ssh_exec:SSHExecutor=None,
             **kwargs
     ) -> None:
-        if not isinstance(ssh_exec, SSHExecutor):
+        if not isinstance(executor, SSHExecutor):
             raise ValueError(f"{self.__class__.__name__} only accepts"
                              f" {SSHExecutor.__class__.__name__} as nested"
                              f" {Executor.__class__.__name__}")
+        if executor.host is not None:
+            executor.host = None
+            warnings.warn(
+                f"Resetting executor's host field to"
+                f" {executor.host}"
+            )
         super().__init__(
             ssh_exec,
             **kwargs
@@ -592,9 +635,9 @@ class AccelerateLoopExecutor(Executor):
             self.accelerate_exec.argv(rank=0),
             {"setsid":True, "use_stdout":True, **self.kwargs()}
         )
-        for i, worker in enumerate(self.pack.config.get("worker_addrs", [])):
-            self.exec.host = worker
+        for i, node in enumerate(self.pack.config["system"]["nodes"][1:]):
+            self.exec.host = node["ip"]
             run_pack = self.pack.copy({
-                "tag": [*self.pack.config["tag"], worker]
+                "tag": [*self.pack.config["tag"], node["name"]]
             })
             yield run_pack, self.argv(rank=i + 1), self.kwargs()
