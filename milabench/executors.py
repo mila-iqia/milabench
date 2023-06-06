@@ -76,7 +76,7 @@ class PackExecutor(Executor):
         )
 
         script = script_argv[:1]
-        if script and XPath(script[0]).exists:
+        if script and XPath(script[0]).exists():
             script = script[0]
             script_argv = script_argv[1:]
         else:
@@ -89,9 +89,8 @@ class PackExecutor(Executor):
         del kwargs
         main = self.script or self.pack.main_script
         if not XPath(main).is_absolute():
-            main = str(self.pack.dirs.code / main)  # Could this lead any
-                                                    # unexpected path during
-                                                    # exec?
+            main = self.pack.dirs.code / main   # Could this lead any unexpected
+                                                # path during exec?
 
         if not main.exists():
             raise FileNotFoundError(
@@ -99,9 +98,9 @@ class PackExecutor(Executor):
             )
 
         if main.is_dir():
-            main = ["-m", main]
+            main = ["-m", str(main)]
         else:
-            main = [main]
+            main = [str(main)]
         return [*main, *self.script_argv]
 
 
