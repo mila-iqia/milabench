@@ -27,15 +27,25 @@ def get_per_gpu_key(config):
     return f"N{jobid}-D{device}"
 
 
-class Report(ValidationLayer):
+def drop_min_max(xs):
+    xs = sorted(x for x in xs if x is not None)
+    if len(xs) >= 5:
+        xs = xs[1:-1]  # Remove min and max
+    return xs
+
+
+class ReportMachinePerf(ValidationLayer):
     """Generate the report live"""
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, print_live=False, **kwargs) -> None:
         super().__init__(**kwargs)
 
         self.ignored_metrics = {"task", "progress", "units"}
         self.accumulator = defaultdict(MetricAcc)
         self.config = None
+        self.header_shown = False
+        self.print_live = print_live
+        self.preprocessor = drop_min_max
         self.stats = {
             "min": lambda xs: np.percentile(xs, 0),
             "q1": lambda xs: np.percentile(xs, 25),
@@ -48,8 +58,9 @@ class Report(ValidationLayer):
         }
 
     def __exit__(self, *args, **kwargs):
-        for acc in self.accumulator.values():
-            self.show_bench(acc)
+        if self.print_live:
+            for acc in self.accumulator.values():
+                self.show_bench(acc)
 
     def benchname(self):
         return self.config["name"]
@@ -59,7 +70,7 @@ class Report(ValidationLayer):
         acc = self.accumulator[name]
         acc.started += 1
 
-        if acc.started == acc.finished:
+        if self.print_live and acc.started == acc.finished:
             self.show_bench(acc)
 
     def on_config(self, entry):
@@ -74,8 +85,11 @@ class Report(ValidationLayer):
         return get_per_gpu_key(config)
 
     def group_reduce(self, metric, stat, xs):
-        if stat == "std":
+        if stat in ("std", "sem"):
             return sum(np.power(xs, 2)) ** 0.5
+
+        if metric in ("temperature", "memory", "loss", "load"):
+            return np.mean(xs)
 
         return sum(xs)
 
@@ -94,7 +108,7 @@ class Report(ValidationLayer):
             group_values = defaultdict(list)
             for _, values in groups.items():
                 for stat, statfun in self.stats.items():
-                    group_values[stat].append(statfun(values))
+                    group_values[stat].append(statfun(self.preprocessor(values)))
 
             for stat in self.stats:
                 reduced[metric][stat] = self.group_reduce(
@@ -102,8 +116,16 @@ class Report(ValidationLayer):
                 )
 
         return reduced
+    
+    def summary(self):
+        summary = dict()
+        
+        for k, acc in self.accumulator.items():
+            summary[k] = self.reduce(acc)
+        
+        return summary
 
-    def show_bench(self, acc: MetricAcc):
+    def show_bench(self, acc: MetricAcc, show_header=True):
         if acc.shown:
             return
 
@@ -111,11 +133,27 @@ class Report(ValidationLayer):
         print(acc.name)
 
         reduced = self.reduce(acc)
+        ordered = sorted(reduced.keys())
 
-        for metric, stats in reduced.items():
-            print(f"    {metric}")
+        header = []
+        lines = []
+        for metric in ordered:
+            stats = reduced[metric]
+            
+            line = [f"{metric:>20}"]
+            header = [f"{'name':>20}"]
+
             for stat, value in stats.items():
-                print(f"        {stat:>10}: {value}")
+                line.append(f"{value:10.2f}")
+                header.append(f'{stat:>10}')
+
+            lines.append(" | ".join(line))
+
+        if show_header and not self.header_shown:
+            self.header_shown = True
+            print(" | ".join(header))
+            
+        print("\n".join(lines))
 
     def on_data(self, entry):
         name = get_benchname(entry.pack.config)
@@ -134,3 +172,10 @@ class Report(ValidationLayer):
                         self.add_metric(name, group, m, v)
             else:
                 self.add_metric(name, group, metric, v)
+
+
+class ReportGPUPerf(ReportMachinePerf):
+    """Report performance per GPU"""
+
+    def groupkey(self, config):
+        return "all"

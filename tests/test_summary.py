@@ -139,18 +139,21 @@ def replay_run(folder):
 
 
 def test_make_summary(runs_folder):
-    from milabench.reports.report import Report
+    from milabench.reports.report import ReportMachinePerf, ReportGPUPerf
+    import json
 
     run = runs_folder / "MI250.2023-05-08_17_54_51.224604"
 
-    with Report() as log:
+    with ReportMachinePerf() as log:
         for event in replay_run(run):
             log(event)
+            
+    print(json.dumps(log.summary(), indent=2))
 
-    # from milabench.cli import _read_reports
-    # from milabench.summary import make_fullmachine_summary
 
-    # reports = _read_reports(*runs)
-    # # print(reports)
-    # sum = make_fullmachine_summary(reports.values())
-    # # print(sum)
+    # with ReportGPUPerf() as log:
+    #     for event in replay_run(run):
+    #         log(event)
+            
+    # print(json.dumps(log.summary(), indent=2))
+    

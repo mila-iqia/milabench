@@ -95,7 +95,7 @@ def _merge(aggs):
     for agg in aggs:
         data = agg.pop("data")
         results.update(agg)
-
+        
         for k, v in data.items():
             results["data"][k].extend(v)
 
@@ -134,7 +134,7 @@ def _metrics(xs):
 def _summarize(group):
     agg = group["data"]
     gpudata = defaultdict(lambda: defaultdict(list))
-
+    
     for entry in agg["gpudata"]:
         for device, data in entry.items():
             if data["memory"][0] == 1 or data["load"] == 0:
@@ -168,99 +168,9 @@ def _summarize(group):
 
 
 def make_summary(runs):
-    # dict(config=..., data=dict(loss=[0, 1, 2, 3], train_rate=[0, 1, 2, 3]))
     aggs = [agg for run in runs if (agg := aggregate(run))]
-
-    # dict(
-    #     benchname=[
-    #         benchname.D0, benchname.D1, ...
-    #     ]
-    # )
     classified = _classify(aggs)
     merged = {name: _merge(runs) for name, runs in classified.items()}
     summarized = {name: _summarize(agg) for name, agg in merged.items()}
     return summarized
 
-
-def get_per_gpu_key(config):
-    jobid = config.get("job-number", "X")
-    device = config.get("device", "Y")
-    return f"{jobid}-{device}"
-
-
-def _machine_merge(aggs):
-    """Group bench data per gpu and per job-id"""
-
-    results = {"data": defaultdict(lambda: defaultdict(list))}
-
-    for agg in aggs:
-        data = agg.pop("data")
-        results.update(agg)
-
-        key = get_per_gpu_key(results["config"])
-
-        for k, v in data.items():
-            results["data"][k][key].extend(v)
-
-    return results
-
-
-def _machine_metric(data, reduce):
-    results = []
-    for _, v in data.items():
-        results.append(reduce(v))
-    return results
-
-
-@error_guard(None)
-def _machine_summarize(group):
-    agg = group["data"]
-
-    def sum_dicts(*a):
-        n = dict()
-        for k in a[0]:
-            acc = 0
-
-            for b in a:
-                acc += b[k]
-
-            n[k] = acc
-        return n
-
-    n = sum(_machine_metric(agg["success"], len))
-    successes = sum(_machine_metric(agg["success"], sum))
-    failures = n - successes
-    print(_machine_metric(agg["train_rate"], _metrics))
-
-    config = group["config"]
-    return {
-        "name": config["name"],
-        "n": n,
-        "successes": successes,
-        "failures": failures,
-        "train_rate": sum_dicts(*_machine_metric(agg["train_rate"], _metrics)),
-        "walltime": sum_dicts(*_machine_metric(agg["walltime"], _metrics)),
-    }
-
-
-def make_fullmachine_summary(runs):
-    print(runs)
-
-    for run in runs:
-        for event in run:
-            print(event)
-
-    # # dict(config=..., data=dict(loss=[0, 1, 2, 3], train_rate=[0, 1, 2, 3]))
-    # aggs = [agg for run in runs if (agg := aggregate(run))]
-
-    # # dict(
-    # #     benchname=[
-    # #         benchname.D0, benchname.D1, ...
-    # #     ]
-    # # )
-    # classified = _classify(aggs)
-
-    # merged = {name: _machine_merge(runs) for name, runs in classified.items()}
-
-    # summarized = {name: _machine_summarize(agg) for name, agg in merged.items()}
-    # return summarized
