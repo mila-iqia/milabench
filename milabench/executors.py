@@ -60,11 +60,11 @@ class Executor():
 
 
 # Leafs
-class PackExecutor(Executor):
+class CmdExecutor(Executor):
     def __init__(
             self,
             pack:BasePackage,
-            *script_argv,
+            *cmd_argv,
             **kwargs
     ) -> None:
         if isinstance(pack, Executor):
@@ -74,7 +74,20 @@ class PackExecutor(Executor):
             pack,
             **kwargs
         )
+        self.bin_argv = cmd_argv
 
+    def _argv(self, **kwargs) -> List:
+        del kwargs
+        return [*self.bin_argv]
+
+
+class PackExecutor(CmdExecutor):
+    def __init__(
+            self,
+            pack:BasePackage,
+            *script_argv,
+            **kwargs
+    ) -> None:
         script = script_argv[:1]
         if script and XPath(script[0]).exists():
             script = script[0]
@@ -82,11 +95,15 @@ class PackExecutor(Executor):
         else:
             script = None
 
+        super().__init__(
+            pack,
+            *script_argv,
+            **kwargs
+        )
+
         self.script = script
-        self.script_argv = script_argv
 
     def _argv(self, **kwargs) -> List:
-        del kwargs
         main = self.script or self.pack.main_script
         if not XPath(main).is_absolute():
             main = self.pack.dirs.code / main   # Could this lead any unexpected
@@ -101,7 +118,22 @@ class PackExecutor(Executor):
             main = ["-m", str(main)]
         else:
             main = [str(main)]
-        return [*main, *self.script_argv]
+        return main + super()._argv(**kwargs)
+
+
+class VoidExecutor(Executor):
+    class _VoidPack(BasePackage):
+        def __init__(self, *args, **kwargs):
+            del args, kwargs
+            pass
+
+        def execute(self, *args, **kwargs):
+            del args, kwargs
+            pass
+
+    def __init__(self, *args, **kwargs) -> None:
+        del args, kwargs
+        super().__init__(VoidExecutor._VoidPack())
 
 
 # Branches or Roots
@@ -122,6 +154,9 @@ class DockerRunExecutor(Executor):
 
     def _argv(self, **kwargs) -> List:
         del kwargs
+        # TODO: If in docker: no-op
+        # if :
+        #     return []
         argv = [
             "docker",
             "run", "-i", "--rm", 
@@ -168,6 +203,9 @@ class SSHExecutor(Executor):
 
     def _argv(self, **kwargs) -> List:
         del kwargs
+        # TODO: If in main node: no-op
+        # if :
+        #     return []
         return [
             "ssh",
             "-oCheckHostIP=no",
@@ -191,6 +229,7 @@ class VoirExecutor(Executor):
         self.voir_argv = voir_argv
 
     def _argv(self, **kwargs) -> List:
+        del kwargs
         if voirconf := self.pack.config.get("voir", None):
             hsh = md5(str(voirconf).encode("utf8"))
             voirconf_file = (
@@ -208,6 +247,26 @@ class VoirExecutor(Executor):
             *self.voir_argv,    # Is this going to cause errors? Should we only
                                 # *us voir_argv and remove self.voir_argv from
                                 # class?
+        ]
+
+
+class WrapperExecutor(Executor):
+    def __init__(
+            self,
+            executor:Executor,
+            *wrapper_argv,
+            **kwargs
+    ) -> None:
+        super().__init__(
+            executor,
+            **kwargs
+        )
+        self.wrapper_argv = wrapper_argv
+
+    def _argv(self, **kwargs) -> List:
+        del kwargs
+        return [
+            *self.wrapper_argv
         ]
 
 
@@ -251,7 +310,25 @@ class TimeOutExecutor(Executor):
         return await asyncio.gather(*coro)
 
 
-class NJobs(Executor):
+class ListExecutor(Executor):
+    """Runs n instance of the same job in parallel"""
+    def __init__(
+            self,
+            *executors:Tuple[Executor],
+            **kwargs
+    ) -> None:
+        super().__init__(
+            None,
+            **kwargs
+        )
+        self.executors = executors
+
+    def commands(self) -> Generator[Tuple[BasePackage, List, Dict], None, None]:
+        for executor in self.executors:
+            yield from executor.commands()
+
+
+class NJobs(ListExecutor):
     """Runs n instance of the same job in parallel"""
     def __init__(
             self,
@@ -260,14 +337,9 @@ class NJobs(Executor):
             **kwargs
     ) -> None:
         super().__init__(
-            executor,
+            *([executor] * n),
             **kwargs
         )
-        self.n = n
-
-    def commands(self) -> Generator[Tuple[BasePackage, List, Dict], None, None]:
-        for _ in range(self.n):
-            yield from super().commands()
 
 
 class PerGPU(Executor):
@@ -376,9 +448,9 @@ class AccelerateLoopExecutor(Executor):
             self.accelerate_exec.argv(rank=0),
             {"setsid":True, "use_stdout":True, **self.kwargs()}
         )
-        for i, worker in enumerate(self.pack.config.get('worker_addrs', [])):
+        for i, worker in enumerate(self.pack.config.get("worker_addrs", [])):
             self.exec.host = worker
             run_pack = self.pack.copy({
-                "tag": [*self.pack.config['tag'], worker]
+                "tag": [*self.pack.config["tag"], worker]
             })
             yield run_pack, self.argv(rank=i + 1), self.kwargs()

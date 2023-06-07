@@ -1,3 +1,4 @@
+from milabench.executors import WrapperExecutor
 from milabench.pack import Package
 
 BRANCH = "56b90317cd9db1038b42ebdfc5bd81b1a2275cc1"
@@ -30,21 +31,13 @@ class TimmBenchmarkPack(Package):
         if not timm.exists():
             timm.clone_subtree("https://github.com/huggingface/pytorch-image-models", BRANCH)
 
-    async def run(self):
-        main = self.dirs.code / self.main_script
-        assert main.exists()
+    def build_run_plan(self):
+        plan = super().build_run_plan()
         devices = self.config.get("devices", [])
         nproc = len(devices)
         if nproc > 1:
-            return await self.voir(
-                self.main_script,
-                args=self.argv,
-                cwd=main.parent,
-                wrapper=["torchrun", f"--nproc_per_node={nproc}", "-m"],
-                use_stdout=True,
-            )
-        else:
-            return await self.voir(self.main_script, args=self.argv, cwd=main.parent)
+            plan = WrapperExecutor(plan, "torchrun", f"--nproc_per_node={nproc}", "-m", use_stdout=True)
+        return plan
 
 
 __pack__ = TimmBenchmarkPack
