@@ -85,25 +85,9 @@ def test_compare(runs_folder, capsys, file_regression):
     file_regression.check(output)
 
 
-def test_summary_per_gpu(runs_folder):
-    from milabench.cli import _read_reports, make_summary, make_report
-
-    # run = runs_folder / "MI250.2023-05-08_17_54_51.224604"
-    run = runs_folder / "8xA100-SXM-80Go.2023-05-10_13_37_18.387537"
-    run = runs_folder / "rijubigo.2023-03-24_13:45:27.512446"
-    
-    runs = [run]
-    reports = _read_reports(*runs)
-    summary = make_summary(reports.values())
-
-    make_report(summary, None, mode="per_gpu")
-
-
 def test_summary_full(runs_folder):
     from milabench.cli import _read_reports, make_summary, make_report
 
-    run = runs_folder / "MI250.2023-05-08_17_54_51.224604"
-    # run = runs_folder / "8xA100-SXM-80Go.2023-05-10_13_37_18.387537"
     run = runs_folder / "rijubigo.2023-03-24_13:45:27.512446"
 
     runs = [run]

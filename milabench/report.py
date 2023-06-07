@@ -20,25 +20,12 @@ def _make_row(summary, compare):
 
     row["n"] = summary["n"] if summary else nan
     row["fail"] = summary["failures"] if summary else nan
-
     row["perf"] = summary[mkey][metric] if summary else nan
-
-    # Sum of all the GPU performance
-    # to get the overall perf of the whole machine
-    acc = 0
-    for _, metrics in summary["per_gpu"].items():
-        acc += metrics[metric]
-    row["score"] = acc if acc > 0 else row["perf"]
-    row["weight"] = summary["weight"]
-    # ----
-
-    row["perf_adj"] = (
-        summary[mkey][metric] * (1 - row["fail"] / row["n"]) if summary else nan
-    )
 
     if compare:
         row["perf_base"] = compare[mkey][metric]
         row["perf_ratio"] = row["perf_adj"] / row["perf_base"]
+
     row["std%"] = summary[mkey]["std"] / summary[mkey][metric] if summary else nan
     row["sem%"] = summary[mkey]["sem"] / summary[mkey][metric] if summary else nan
     # row["iqr%"] = (summary[mkey]["q3"] - summary[mkey]["q1"]) / summary[mkey]["median"] if summary else nan
@@ -51,6 +38,18 @@ def _make_row(summary, compare):
         if summary
         else nan
     )
+
+    # Sum of all the GPU performance
+    # to get the overall perf of the whole machine
+    acc = 0
+    for _, metrics in summary["per_gpu"].items():
+        acc += metrics[metric]
+
+    success_ratio = 1 - row["fail"] / row["n"]
+    row["score"] = (acc if acc > 0 else row["perf"]) * success_ratio
+    row["weight"] = summary["weight"]
+    # ----
+
     return row
 
 
@@ -168,6 +167,19 @@ def _report_pergpu(entries, measure="50"):
     return df
 
 
+columns_order = {
+    "fail": 1,
+    "n": 2,
+    "perf": 3,
+    "perf_adj": 4,
+    "sem%": 5,
+    "std%": 6,
+    "peak_memory": 7,
+    "score": 8,
+    "weight": 9,
+}
+
+
 def make_report(
     summary,
     compare=None,
@@ -176,7 +188,7 @@ def make_report(
     price=None,
     title=None,
     sources=None,
-    errdata=None
+    errdata=None,
 ):
     all_keys = list(
         sorted(
@@ -197,6 +209,9 @@ def make_report(
         }
     ).transpose()
 
+    # Reorder columns
+    df = df[sorted(df.columns, key=lambda k: columns_order.get(k, 0))]
+
     out = Outputter(stdout=sys.stdout, html=html)
 
     if sources:
@@ -213,9 +228,8 @@ def make_report(
         # This computes a weighted geometric mean
         perf = df[column]
         weights = df["weight"]
-        logscore_valid = np.sum(np.log(perf) * weights) / np.sum(weights)
-        # logscore = np.sum(np.log(perf) * weights)
-        return np.exp(logscore_valid)
+        logscore = np.sum(np.log(perf) * weights) / np.sum(weights)
+        return np.exp(logscore)
 
     score = _score("score")
     failure_rate = df["fail"].sum() / df["n"].sum()
@@ -226,10 +240,12 @@ def make_report(
     if compare:
         score_base = _score("perf_base")
         scores.update({"Score (baseline)": score_base, "Ratio": score / score_base})
+
     if price:
         rpp = price / score
         scores["Price ($)"] = f"{price:10.2f}"
         scores["RPP (Price / Score)"] = WithClass(f"{rpp:10.2f}", "rpp")
+
     out.print(Table(scores))
 
     if compare_gpus:
