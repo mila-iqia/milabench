@@ -352,7 +352,6 @@ class Main:
 
         if report:
             runs = {pack.logdir for pack in mp.packs.values()}
-            weights = None
             compare = None
             compare_gpus = False
             html = None
@@ -366,7 +365,6 @@ class Main:
                 make_report(
                     summary,
                     compare=compare,
-                    weights=weights,
                     html=html,
                     compare_gpus=compare_gpus,
                     price=price,
@@ -623,7 +621,6 @@ class Main:
         make_report(
             summary,
             compare=compare,
-            weights=config,
             html=html,
             compare_gpus=compare_gpus,
             price=price,
