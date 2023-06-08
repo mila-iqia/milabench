@@ -175,9 +175,9 @@ def test_make_summary(runs_folder):
     from milabench.reports.report import ReportMachinePerf, ReportGPUPerf
     import json
 
-    run = runs_folder / "MI250.2023-05-08_17_54_51.224604"
+    run = runs_folder / ".." / ".." / ".." / "MI250.2023-05-08_17_54_51.224604"
 
-    with ReportMachinePerf() as log:
+    with ReportMachinePerf(print_live=True) as log:
         for event in replay_run(run):
             log(event)
             
@@ -189,13 +189,13 @@ def test_make_summary(runs_folder):
     reports = _read_reports(*runs)
     summary = make_summary(reports.values())
     
-    show_diff(new, summary)
+    # show_diff(new, summary)
     
-    with open('new.json', 'w') as f:
-        json.dump(new, f, indent=2)
+    # with open('new.json', 'w') as f:
+    #     json.dump(new, f, indent=2)
 
-    with open('old.json', 'w') as f:
-        json.dump(summary, f, indent=2)
+    # with open('old.json', 'w') as f:
+    #     json.dump(summary, f, indent=2)
         
     # print(json.dumps(log.summary(), indent=2))
 

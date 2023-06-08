@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 
 from ..validation.validation import ValidationLayer
 
+import time
 import numpy as np
 
 
@@ -38,17 +39,41 @@ def drop_min_max(xs):
     return xs
 
 
+class LivePrinter:
+    pass
+
+
+def _get(dictionary, *path, default=float("nan")):
+    s = dictionary
+    for p in path[:-1]:
+        s = s.get(p, {})
+    return s.get(path[-1], default)
+
+
 class ReportMachinePerf(ValidationLayer):
     """Generate the report live"""
 
-    def __init__(self, print_live=False, **kwargs) -> None:
+    def __init__(self, print_live=False, count=None, **kwargs) -> None:
         super().__init__(**kwargs)
 
         self.ignored_metrics = {"task", "progress", "units"}
+        self.metrics = {
+            "perf": lambda stats: _get(stats, "rate", "mean"),
+            "std": lambda stats: _get(stats, "rate", "std"),
+            "peak_memory": lambda stats: _get(stats, "memory", "max"),
+        }
         self.accumulator = defaultdict(MetricAcc)
+
+        self.current_bench = None
+        self.current_group = None
+        self.current_acc = None
+        self.prev_acc = None
+
         self.config = None
         self.header_shown = False
+        self.bench_count = None
         self.print_live = print_live
+        self.time = time.time()
         self.preprocessor = drop_min_max
         self.stats = {
             "min": lambda xs: np.percentile(xs, 0),
@@ -60,23 +85,29 @@ class ReportMachinePerf(ValidationLayer):
             "std": np.std,
             "sem": lambda xs: np.std(xs) / len(xs) ** 0.5,
         }
+        print()
+        print(self.show_header())
+
+    def show_pending(self):
+        pass
 
     def __exit__(self, *args, **kwargs):
-        if self.print_live:
-            for acc in self.accumulator.values():
-                self.show_bench(acc)
+        pass
+        # if self.print_live:
+        #     for acc in self.accumulator.values():
+        #         self.show_bench(acc)
 
     def benchname(self):
         return self.config["name"]
 
     def on_start(self, entry):
-        name = get_benchname(entry.pack.config)
-        acc = self.accumulator[name]
+        acc = self.current_acc
         acc.started += 1
         acc.times[entry.tag] = entry.data["time"]
 
-        if self.print_live and acc.started == acc.finished:
-            self.show_bench(acc)
+        if self.print_live and self.prev_acc and self.prev_acc.name != acc.name:
+            if self.prev_acc.started == self.prev_acc.finished:
+                print("\r", self.bench_line(self.prev_acc))
 
     def on_config(self, entry):
         self.config = entry.data
@@ -161,13 +192,32 @@ class ReportMachinePerf(ValidationLayer):
         self._backward_compat(summary)
         return summary
 
-    def show_bench(self, acc: MetricAcc, show_header=True):
+    def show_header(self):
+        header = [f'{"name":>30}']
+
+        for m in self.metrics:
+            header.append(f"{m:>10}")
+
+        return " | ".join(header)
+
+    def bench_line(self, acc: MetricAcc):
+        reduced = self.reduce(acc)
+        line = [
+            f"{acc.name:>30}",
+        ]
+
+        for metric, fun in self.metrics.items():
+            value = fun(reduced)
+            line.append(f"{value:10.2f}")
+
+        return " | ".join(line)
+
+    def dump_metric_table(self, acc: MetricAcc, show_header=True):
         """Show metrics as a table"""
         if acc.shown:
             return
 
         acc.shown = True
-        print(acc.name)
 
         reduced = self.reduce(acc)
         ordered = sorted(reduced.keys())
@@ -192,9 +242,27 @@ class ReportMachinePerf(ValidationLayer):
 
         print("\n".join(lines))
 
+    def on_event(self, entry):
+        self.prev_acc = self.current_acc
+        self.current_bench = get_benchname(entry.pack.config)
+        self.current_acc = self.accumulator[self.current_bench]
+        self.current_acc.name = self.current_bench
+        self.current_group = self.groupkey(entry.pack.config)
+
+        super().on_event(entry)
+
+        self.show_progress_line()
+
+    def show_progress_line(self):
+        now = time.time()
+        if now - self.time > 0.1:
+            line = self.bench_line(self.current_acc)
+            print(f"\r{line}", end="")
+            self.time = now
+
     def on_data(self, entry):
-        name = get_benchname(entry.pack.config)
-        group = self.groupkey(entry.pack.config)
+        name = self.current_bench
+        group = self.current_group
 
         for metric, v in entry.data.items():
             if metric in self.ignored_metrics:
