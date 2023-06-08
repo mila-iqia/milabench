@@ -20,6 +20,16 @@ def is_fp16_allowed(args):
     return "fp16" in args.precision
 
 
+class ModelWrapper(torch.nn.Module):
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+        
+    def forward(self, x):
+        out =  self.model(input_ids=x['input_ids'], labels=x['labels'])
+        return out['loss'], out['logits']
+
+
 class Runner:
     def __init__(self, args):
         use_cuda = not args.no_cuda and torch.cuda.is_available()
@@ -32,17 +42,29 @@ class Runner:
         self.device = torch.device("cuda" if use_cuda else "cpu")
         self.batch_size = args.batch_size
         info = models[args.model]()
-        self.model = info.model.to(self.device)
-        self.optimizer = optim.Adam(self.model.parameters(), lr=args.lr)
-
+        
+        
         self.data = SyntheticData(
             n=args.batch_size,
             repeat=100000,
             generators=generators[info.category](info),
         )
+        
         self.loader = DataLoader(
             self.data, batch_size=args.batch_size, num_workers=args.num_workers
         )
+        
+        example = next(iter(self.loader))
+        example = {k: x.to(self.device) for k, x in example.items()}
+        
+        # print({k: x.shape for k, x in example.items()})
+        
+        model = ModelWrapper(info.model).to(self.device)
+        model = torch.jit.trace(model, example)
+        
+        self.model = model
+        self.optimizer = optim.Adam(self.model.parameters(), lr=args.lr)
+
 
         self.amp_scaler = torch.cuda.amp.GradScaler(enabled=is_fp16_allowed(args))
         if is_fp16_allowed(args):
@@ -52,9 +74,7 @@ class Runner:
 
     def step(self, data):
         with self.amp_context():
-            outputs = self.model(**data)
-
-        loss = outputs.loss
+            loss, _ = self.model(data)
 
         self.amp_scaler.scale(loss).backward()
         self.amp_scaler.step(self.optimizer)
@@ -67,6 +87,8 @@ class Runner:
             "train", self.loader, report_batch=True, batch_size=self.batch_size
         ):
             data = {k: v.to(self.device) for k, v in data.items()}
+            
+            template = {k: (v.shape, v.dtype) for k, v in data.items()}
             self.step(data)
 
 
