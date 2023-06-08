@@ -12,6 +12,7 @@ from .models import models
 from .synth import SyntheticData, generators
 
 
+
 def is_tf32_allowed(args):
     return "tf32" in args.precision
 
@@ -56,11 +57,12 @@ class Runner:
         
         example = next(iter(self.loader))
         example = {k: x.to(self.device) for k, x in example.items()}
-        
-        # print({k: x.shape for k, x in example.items()})
-        
+
         model = ModelWrapper(info.model).to(self.device)
-        model = torch.jit.trace(model, example)
+        
+        jit = False
+        if jit:
+            model = torch.jit.trace(model, example)
         
         self.model = model
         self.optimizer = optim.Adam(self.model.parameters(), lr=args.lr)
@@ -87,8 +89,6 @@ class Runner:
             "train", self.loader, report_batch=True, batch_size=self.batch_size
         ):
             data = {k: v.to(self.device) for k, v in data.items()}
-            
-            template = {k: (v.shape, v.dtype) for k, v in data.items()}
             self.step(data)
 
 

@@ -49,8 +49,6 @@ jobs:
       MILABENCH_DASH: "no"
     
     steps:
-      - uses: actions/checkout@v3
-    
       - uses: conda-incubator/setup-miniconda@v2
         with:
           auto-activate-base: false
@@ -58,6 +56,12 @@ jobs:
           miniconda-version: "latest"
           activate-environment: test
 
+      # - name: clean
+      #   run: |
+      #     python -c "import shutil; shutil.rmtree('/opt/actions-runner/_work/milabench/milabench')"
+
+      - uses: actions/checkout@v3
+    
       - name: Pytorch Sanity
         run: |
           if [[ "${{ matrix.arch }}" == "rocm" ]]; then
