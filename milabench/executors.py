@@ -3,9 +3,9 @@ from hashlib import md5
 import json
 from typing import Dict, Generator, List, Tuple, Union
 
+from . import pack
 from .fs import XPath
 from .multi import clone_with
-from .pack import BasePackage
 from .alt_async import destroy
 
 from voir.instruments.gpu import get_gpu_info
@@ -14,7 +14,7 @@ from voir.instruments.gpu import get_gpu_info
 class Executor():
     def __init__(
             self,
-            pack_or_exec:Union["Executor", BasePackage],
+            pack_or_exec:Union["Executor", "pack.BasePackage"],
             **kwargs
     ) -> None:
         if isinstance(pack_or_exec, Executor):
@@ -27,7 +27,7 @@ class Executor():
         self._kwargs = kwargs
 
     @property
-    def pack(self) -> BasePackage:
+    def pack(self) -> "pack.BasePackage":
         if self._pack:
             return self._pack
         return self.exec.pack
@@ -43,7 +43,7 @@ class Executor():
             return self.exec.kwargs(**kwargs)
         return kwargs
 
-    def commands(self) -> Generator[Tuple[BasePackage, List, Dict], None, None]:
+    def commands(self) -> Generator[Tuple["pack.BasePackage", List, Dict], None, None]:
         yield self.pack, self.argv(), self.kwargs()
 
     async def execute(self, **kwargs):
@@ -63,7 +63,7 @@ class Executor():
 class CmdExecutor(Executor):
     def __init__(
             self,
-            pack:BasePackage,
+            pack:"pack.BasePackage",
             *cmd_argv,
             **kwargs
     ) -> None:
@@ -84,7 +84,7 @@ class CmdExecutor(Executor):
 class PackExecutor(CmdExecutor):
     def __init__(
             self,
-            pack:BasePackage,
+            pack:"pack.BasePackage",
             *script_argv,
             **kwargs
     ) -> None:
@@ -122,18 +122,27 @@ class PackExecutor(CmdExecutor):
 
 
 class VoidExecutor(Executor):
-    class _VoidPack(BasePackage):
-        def __init__(self, *args, **kwargs):
-            del args, kwargs
-            pass
+    _VoidPack=None
+    _VOIDPACK=None
 
-        def execute(self, *args, **kwargs):
-            del args, kwargs
-            pass
+    def __new__(cls, *args, **kwargs):
+        if cls._VOIDPACK is None:
+            class _VoidPack(pack.BasePackage):
+                def __init__(self, *args, **kwargs):
+                    del args, kwargs
+                    pass
+
+                def execute(self, *args, **kwargs):
+                    del args, kwargs
+                    pass
+            cls._VoidPack = _VoidPack
+            cls._VOIDPACK = cls._VoidPack()
+
+        return super().__new__(*args, **kwargs)
 
     def __init__(self, *args, **kwargs) -> None:
         del args, kwargs
-        super().__init__(VoidExecutor._VoidPack())
+        super().__init__(VoidExecutor._VOIDPACK)
 
 
 # Branches or Roots
@@ -233,7 +242,7 @@ class VoirExecutor(Executor):
         if voirconf := self.pack.config.get("voir", None):
             hsh = md5(str(voirconf).encode("utf8"))
             voirconf_file = (
-                self.dirs.extra / f"voirconf-{self.tag}-{hsh.hexdigest()}.json"
+                self.pack.dirs.extra / f"voirconf-{self.pack.tag}-{hsh.hexdigest()}.json"
             )
             with open(voirconf_file, "w") as f:
                 json.dump(fp=f, obj=voirconf, indent=4)
@@ -323,7 +332,7 @@ class ListExecutor(Executor):
         )
         self.executors = executors
 
-    def commands(self) -> Generator[Tuple[BasePackage, List, Dict], None, None]:
+    def commands(self) -> Generator[Tuple["pack.BasePackage", List, Dict], None, None]:
         for executor in self.executors:
             yield from executor.commands()
 
@@ -353,7 +362,7 @@ class PerGPU(Executor):
             **kwargs
         )
 
-    def commands(self) -> Generator[Tuple[BasePackage, List, Dict], None, None]:
+    def commands(self) -> Generator[Tuple["pack.BasePackage", List, Dict], None, None]:
         gpus = get_gpu_info()["gpus"].values()
         ngpus = len(gpus)
         devices = gpus or [{
@@ -378,7 +387,7 @@ class PerGPU(Executor):
 class AccelerateLaunchExecutor(Executor):
     def __init__(
             self,
-            pack:BasePackage,
+            pack:"pack.BasePackage",
             *accelerate_argv,
             **kwargs
     ) -> None:
@@ -442,7 +451,7 @@ class AccelerateLoopExecutor(Executor):
                 _exec.exec = self.accelerate_exec
             _exec = _exec.exec
 
-    def commands(self) -> Generator[Tuple[BasePackage, List, Dict], None, None]:
+    def commands(self) -> Generator[Tuple["pack.BasePackage", List, Dict], None, None]:
         yield (
             self.pack,
             self.accelerate_exec.argv(rank=0),
