@@ -8,7 +8,7 @@ from .utils import error_guard
 
 @error_guard(None)
 def aggregate(run_data):
-    """Group all the data inside a dictionnary of lists"""
+    """Group all the data inside a dictionary of lists"""
     omnibus = defaultdict(list)
     config = None
     start = None
