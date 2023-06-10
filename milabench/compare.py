@@ -11,7 +11,7 @@ class _Output:
     summary: dict = None
 
 
-def retrive_datetime_fromname(date):
+def retrieve_datetime_from_name(date):
     """Windows does not support : in folders/filenames"""
     formats = ["%Y-%m-%d_%H:%M:%S.%f", "%Y-%m-%d_%H_%M_%S.%f"]
     for fmt in formats:
@@ -29,7 +29,7 @@ def fetch_runs(folder):
             continue
         if "." in run:
             name, date = run.split(".", maxsplit=1)
-            date = retrive_datetime_fromname(date)
+            date = retrieve_datetime_from_name(date)
         else:
             name = run
 
