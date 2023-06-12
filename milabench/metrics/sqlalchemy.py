@@ -1,8 +1,12 @@
 from collections import defaultdict
+from copy import deepcopy
 from datetime import datetime
 from dataclasses import dataclass
+import numbers
+import time
 
 from ..structs import BenchLogEntry
+from ..metadata import machine_metadata
 
 from bson.json_util import dumps as to_json
 from bson.json_util import loads as from_json
@@ -61,8 +65,16 @@ class Metric(Base):
     _id = Column(Integer, primary_key=True, autoincrement=True)
     exec_id = Column(Integer, ForeignKey("execs._id"), nullable=False)
     pack_id = Column(Integer, ForeignKey("packs._id"), nullable=False)
+
+    # Insert Time
+    order = Column(Integer)
+
     name = Column(String(256))
+    namespace = Column(String(256))
     value = Column(Float)
+    unit = Column(String(128))
+
+    job_id = Column(Integer)  # Job ID
     gpu_id = Column(String(36))  # GPU id
 
     __table_args__ = (
@@ -132,6 +144,15 @@ def create_database(uri):
         print("could not create database schema because of {err}")
 
 
+def _get_pack_ids(pack):
+    devices = pack.config.get("devices", ["ALL"])
+
+    job_id = str(pack.config.get("job-number", 0))
+    gpu_id = ",".join(str(i) for i in devices)
+
+    return job_id, gpu_id
+
+
 class SQLAlchemy:
     def __init__(self, uri="sqlite:///sqlite.db") -> None:
         if uri.startswith("sqlite"):
@@ -151,7 +172,7 @@ class SQLAlchemy:
         self.states = defaultdict(PackState)
 
         self.pending_metrics = []
-        self.batch_size = 50
+        self.batch_size = 1000
 
     @property
     def client(self):
@@ -171,7 +192,8 @@ class SQLAlchemy:
 
         # Interrupted because on_end() was not called
         for state in self.states.values():
-            self.update_pack_status(state.pack, "interrupted")
+            if state.pack:
+                self.update_pack_status(state.pack, "interrupted")
 
         status = "done"
         if len(self.states) > 0:
@@ -235,7 +257,12 @@ class SQLAlchemy:
         state.step += 1
 
     def on_start(self, entry):
+        if entry.tag not in self.states:
+            # We have not received the meta tag
+            self.on_meta(BenchLogEntry(entry.pack))
+
         state = self.pack_state(entry)
+
         state.pack.command = entry.data["command"]
         state.start = entry.data["time"]
 
@@ -252,14 +279,32 @@ class SQLAlchemy:
     def on_line(self, entry):
         pass
 
-    def _push_metric(self, run_id, pack_id, name, value, gpu_id=None):
+    def _push_metric(
+        self,
+        run_id,
+        pack_id,
+        name,
+        value,
+        gpu_id=None,
+        job_id=None,
+        namespace=None,
+        unit=None,
+    ):
+        if not isinstance(value, numbers.Number):
+            print(f"Unexpected value {value} for metric {name}")
+            return
+
         self.pending_metrics.append(
             Metric(
                 exec_id=run_id,
                 pack_id=pack_id,
+                order=time.time(),
                 name=name,
+                namespace=namespace,
+                unit=unit,
                 value=value,
                 gpu_id=gpu_id,
+                job_id=job_id,
             )
         )
 
@@ -270,8 +315,9 @@ class SQLAlchemy:
                     use, mx = value
                     value = use / mx
 
-                assert jobid == gpu_id, f"{type(jobid)} == {type(gpu_id)}"
-                self._push_metric(run_id, pack_id, f"gpu.{metric}", value, gpu_id)
+                self._push_metric(
+                    run_id, pack_id, f"gpu.{metric}", value, gpu_id, job_id=jobid
+                )
 
     def on_data(self, entry):
         state = self.pack_state(entry)
@@ -279,22 +325,40 @@ class SQLAlchemy:
 
         run_id = self.run._id
         pack_id = state.pack._id
-        jobid = str(state.pack.config["job-number"])
+        job_id, gpu_id = _get_pack_ids(state.pack)
 
-        for k, v in entry.data.items():
-            if k in ("task", "units", "progress"):
-                continue
+        if "progress" in entry.data:
+            return
 
+        data = deepcopy(entry.data)
+
+        # GPU
+        gpudata = data.pop("gpudata", None)
+        if gpudata is not None:
             # GPU data would have been too hard to query
             # so the gpu_id is moved to its own column
             # and each metric is pushed as a separate document
-            if k == "gpudata":
-                self._change_gpudata(run_id, pack_id, k, v, jobid)
-                return
+            self._change_gpudata(run_id, pack_id, "gpudata", gpudata, job_id)
+        else:
+            # Standard
+            unit = data.pop("units", None)
+            task = data.pop("task", None)
 
-            # We request an ordered write so the document
-            # will be ordered by their _id (i.e insert time)
-            self._push_metric(run_id, pack_id, k, v, gpu_id=jobid)
+            if len(data) == 1:
+                k, v = list(data.items())[0]
+
+                self._push_metric(
+                    run_id,
+                    pack_id,
+                    k,
+                    v,
+                    gpu_id=gpu_id,
+                    job_id=job_id,
+                    unit=unit,
+                    namespace=task,
+                )
+            else:
+                print(f"Unknown format {entry.data}")
 
         if len(self.pending_metrics) >= self.batch_size:
             self._bulk_insert()
@@ -302,9 +366,6 @@ class SQLAlchemy:
     def _bulk_insert(self):
         if len(self.pending_metrics) <= 0:
             return
-
-        # stmt = insert(Metric).values(self.pending_metrics)
-        # self.session.execute(stmt)
 
         self.session.add_all(self.pending_metrics)
         self.session.commit()
@@ -321,13 +382,16 @@ class SQLAlchemy:
 
         run_id = self.run._id
         pack_id = state.pack._id
-        jobid = str(state.pack.config["job-number"])
+
+        job_id, gpu_id = _get_pack_ids(state.pack)
 
         end = entry.data["time"]
-        self._push_metric(run_id, pack_id, "walltime", end - state.start, jobid)
+        self._push_metric(
+            run_id, pack_id, "walltime", end - state.start, gpu_id, job_id
+        )
 
         self._push_metric(
-            run_id, pack_id, "return_code", entry.data["return_code"], jobid
+            run_id, pack_id, "return_code", entry.data["return_code"], gpu_id, job_id
         )
 
         status = "done"

@@ -8,16 +8,31 @@ from milabench.structs import BenchLogEntry
 from milabench.pack import BasePackage
 
 
+class ReplayPackage(BasePackage):
+    """Disable some folder creation for replay purposes"""
+
+    def __init__(self, config, core=None):
+        self.core = core
+        self.config = config
+        self.phase = None
+        self.processes = []
+
+
 def replay(filename):
+    pack = None
     with open(filename, "r") as f:
         for line in f.readlines():
-            entry = json.loads(line)
+            try:
+                entry = json.loads(line)
+            except Exception as e:
+                raise RuntimeError(f"Could not read `{line}` from {filename}") from e
 
             if entry["event"] == "config":
-                pack = BasePackage(entry["data"])
+                pack = ReplayPackage(entry["data"])
                 continue
 
-            yield BenchLogEntry(pack, **entry)
+            if pack is not None:
+                yield BenchLogEntry(pack, **entry)
 
 
 def interleave(*filenames):

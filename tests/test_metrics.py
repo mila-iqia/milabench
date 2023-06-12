@@ -9,6 +9,10 @@ from milabench.cli import _read_reports, make_summary
 
 def test_sqlalchemy_sqlite(runs_folder):
     run_dir = runs_folder / "sedumoje.2023-03-24_13:57:35.089747"
+    run_name = "sedumoje"
+
+    # run_dir = runs_folder / ".."/ ".." / ".." / "MI250.2023-05-08_17_54_51.224604"
+    # run_name = "redizilo"
 
     with SQLAlchemy() as logger:
         with multilogger(logger) as log:
@@ -16,14 +20,13 @@ def test_sqlalchemy_sqlite(runs_folder):
                 log(msg)
 
         assert len(logger.pending_metrics) == 0
-        df_post = fetch_data(logger.client, "sedumoje")
+        df_post = fetch_data(logger.client, run_name)
 
-    replicated = make_pivot_summary("sedumoje", df_post)
+    print(df_post)
+    replicated = make_pivot_summary(run_name, df_post)
 
     # Compare
     # -------
-    from milabench.report import make_dataframe
-
     runs = [run_dir]
     reports = _read_reports(*runs)
     summary = make_summary(reports.values())

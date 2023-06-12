@@ -104,6 +104,8 @@ def make_pivot_summary(runame, df: pd.DataFrame, metrics=None):
     if metrics is None:
         metrics = default_metrics
 
+    print(df)
+
     # Per-GPU
     stats = pd.pivot_table(
         df,
@@ -114,7 +116,7 @@ def make_pivot_summary(runame, df: pd.DataFrame, metrics=None):
     )
 
     overall = pd.pivot_table(
-        df.drop(columns=['gpu_id'], inplace=False),
+        df.drop(columns=["gpu_id"], inplace=False),
         index=["run", "bench"],
         columns="metric",
         aggfunc=list(metrics.values()),
