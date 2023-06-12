@@ -182,6 +182,7 @@ columns_order = {
 }
 
 
+@error_guard({})
 def make_report(
     summary,
     compare=None,
@@ -210,8 +211,6 @@ def make_report(
             for key in all_keys
         }
     ).transpose()
-    
-    print(df)
 
     # Reorder columns
     df = df[sorted(df.columns, key=lambda k: columns_order.get(k, 0))]
@@ -234,6 +233,7 @@ def make_report(
         weights = df["weight"]
         logscore = np.sum(np.log(perf) * weights) / np.sum(weights)
         return np.exp(logscore)
+
 
     score = _score("score")
     failure_rate = df["fail"].sum() / df["n"].sum()
