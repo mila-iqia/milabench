@@ -21,7 +21,7 @@ def _make_row(summary, compare):
     row["n"] = summary["n"] if summary else nan
     row["fail"] = summary["failures"] if summary else nan
     row["perf"] = summary[mkey][metric] if summary else nan
-
+    
     if compare:
         row["perf_base"] = compare[mkey][metric]
         row["perf_ratio"] = row["perf_adj"] / row["perf_base"]
@@ -46,10 +46,12 @@ def _make_row(summary, compare):
         acc += metrics[metric]
 
     success_ratio = 1 - row["fail"] / row["n"]
-    row["score"] = (acc if acc > 0 else row["perf"]) * success_ratio
+    score = (acc if acc > 0 else row["perf"]) * success_ratio
+
+    row["score"] = score
     row["weight"] = summary["weight"]
     # ----
-
+    
     return row
 
 
@@ -208,6 +210,8 @@ def make_report(
             for key in all_keys
         }
     ).transpose()
+    
+    print(df)
 
     # Reorder columns
     df = df[sorted(df.columns, key=lambda k: columns_order.get(k, 0))]
