@@ -30,6 +30,8 @@ omegaconf = "^2.3.0"
 sqlalchemy = "^2.0.15"
 pymongo =  "^4.3.3"
 psycopg2-binary = {version = "^2.9.6", optional = true}
+py-cpuinfo = "^9.0.0"
+
 
 [tool.poetry.dev-dependencies]
 black = ">=21.10b0"
@@ -45,6 +47,10 @@ pytest-regressions = "^2.4.2"
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
+[tool.poetry.build]
+generate-setup-file = false
+script = "milabench/vcs.py"
+
 [tool.poetry.scripts]
 milabench = "milabench.cli:main"
 
@@ -52,3 +58,6 @@ milabench = "milabench.cli:main"
 multi_line_output = 3
 include_trailing_comma = true
 combine_as_imports = true
+
+[tool.poetry-git-version-plugin]
+alpha_version_format = '{version}a{distance}+{commit_hash}'

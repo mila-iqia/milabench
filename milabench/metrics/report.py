@@ -6,7 +6,7 @@ import sqlalchemy
 from sqlalchemy.orm import Session
 
 
-def fetch_data(client, runame):
+def fetch_data(client, run_name):
     stmt = (
         sqlalchemy.select(
             Exec.name.label("run"),
@@ -17,7 +17,7 @@ def fetch_data(client, runame):
         )
         .join(Exec, Metric.exec_id == Exec._id)
         .join(Pack, Metric.pack_id == Pack._id)
-        .where(Exec.name.startswith(runame))
+        .where(Exec.name.startswith(run_name))
     )
 
     results = []

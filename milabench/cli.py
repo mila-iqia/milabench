@@ -17,7 +17,7 @@ from milabench.alt_async import proceed
 from milabench.utils import blabla, validation_layers, multilogger, available_layers
 
 from .compare import compare, fetch_runs
-from .config import build_config
+from .config import build_config, build_system_config
 from .fs import XPath
 from .log import (
     DataReporter,
@@ -56,6 +56,9 @@ def get_multipack(run_name=None, overrides={}):
     # Configuration file
     config: Option & str = None
 
+    # System Configuration file
+    system: Option & str = None
+
     # Base path for code, venvs, data and runs
     base: Option & str = None
 
@@ -91,6 +94,7 @@ def get_multipack(run_name=None, overrides={}):
 
     return _get_multipack(
         config,
+        system,
         base,
         use_current_env,
         select,
@@ -114,8 +118,25 @@ def selection_keys(defn):
 
 
 def get_base_defaults(base, arch="none", run_name="none"):
+    try:
+        user = os.getlogin()
+    except OSError:
+        user = "root"
     return {
         "_defaults": {
+            "system": {
+                "arch": arch,
+                "sshkey": None,
+                "nodes": [
+                    { 
+                        "name": "local", 
+                        "ip": "127.0.0.1", 
+                        "port": None, 
+                        "user": user, 
+                        "main": True 
+                    }
+                ]
+            },
             "dirs": {
                 "base": base,
                 "venv": "${dirs.base}/venv/${install_group}",
@@ -124,10 +145,9 @@ def get_base_defaults(base, arch="none", run_name="none"):
                 "extra": "${dirs.base}/extra/${group}",
                 "cache": "${dirs.base}/cache",
             },
-            "arch": arch,
             "group": "${name}",
             "install_group": "${group}",
-            "install_variant": "${arch}",
+            "install_variant": "${system.arch}",
             "run_name": run_name,
             "enabled": True,
             "capabilities": {
@@ -147,14 +167,15 @@ def deduce_arch():
     return deduce_backend()
 
 
-def init_arch():
+def init_arch(arch=None):
     """Initialize the monitor for the given arch"""
-    arch = deduce_arch()
+    arch = arch or deduce_arch()
     return select_backend(arch)
 
 
 def _get_multipack(
     config_path,
+    system_config_path=None,
     base=None,
     use_current_env=False,
     select="",
@@ -199,6 +220,9 @@ def _get_multipack(
     run_name = run_name.format(time=now)
 
     base_defaults = get_base_defaults(base=base, arch=deduce_arch(), run_name=run_name)
+
+    system_config = build_system_config(system_config_path, defaults=base_defaults["_defaults"]["system"])
+    overrides = merge({"*": {"system": system_config}}, overrides)
 
     config = build_config(base_defaults, config_path, overrides)
 
@@ -292,7 +316,7 @@ def validation_names(layers):
     if "all" in layers:
         return all_layers
 
-    results = set(["error", "ensure_rate"])
+    results = set(["error", "ensure_rate", "version"])
     for l in layers:
         if l in all_layers:
             results.add(l)
@@ -333,9 +357,10 @@ class Main:
         }[dash]
 
         mp = get_multipack(run_name=run_name)
+        arch = next(iter(mp.packs.values())).config["system"]["arch"]
 
         # Initialize the backend here so we can retrieve GPU stats
-        init_arch()
+        init_arch(arch)
 
         success = run_with_loggers(
             mp.do_run(repeat=repeat),

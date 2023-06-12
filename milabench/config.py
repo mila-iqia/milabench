@@ -73,3 +73,32 @@ def build_config(*config_files):
     for name, bench_config in all_configs.items():
         all_configs[name] = finalize_config(name, bench_config)
     return all_configs
+
+
+def build_system_config(config_file, defaults=None):
+    if config_file is None:
+        config = {}
+    else:
+        config_file = XPath(config_file).absolute()
+        with open(config_file) as cf:
+            config = yaml.safe_load(cf)
+
+    if defaults:
+        config = merge(defaults, config)
+
+    if config["sshkey"] is not None:
+        config["sshkey"] = XPath(config["sshkey"]).resolve()
+
+    for node in config["nodes"]:
+        for field in ("name", "ip", "user"):
+            _name = node.get("name", None)
+            assert node[field], \
+                f"The `{field}` of the node `{_name}` is missing"
+        if node.get("main", None):
+            config.setdefault("main_node", node)
+    config.setdefault("main_node", config["nodes"][0])
+    assert len(config["nodes"]) == 1 or config["main_node"].get("port", None), \
+        (f"The `port` of the main node `{config['main_node']['name']}` is"
+          " missing")
+
+    return config
