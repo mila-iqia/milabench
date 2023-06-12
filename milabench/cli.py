@@ -16,6 +16,7 @@ from voir.instruments.gpu import deduce_backend, select_backend
 from milabench.alt_async import proceed
 from milabench.utils import blabla, validation_layers, multilogger, available_layers
 
+from .metadata import machine_metadata
 from .compare import compare, fetch_runs
 from .config import build_config, build_system_config
 from .fs import XPath
@@ -670,11 +671,20 @@ class Main:
         for pack in mp.packs.values():
             run_sync(pack.pip_install(*args))
 
+    def machine():
+        """Display machine metadata.
+        Used to generate metadata json to back populate archived run
+
+        """
+        from bson.json_util import dumps as to_json
+
+        print(to_json(machine_metadata(), indent=2))
+
     def publish():
         """Publish an archived run to a database"""
         # URI to the database
         #   ex:
-        #       - mongodb://localhost:27017/
+        #       - postgresql://user:password@hostname:27017/database
         #       - sqlite:///sqlite.db
         uri: str
 
@@ -682,12 +692,16 @@ class Main:
         folder: str
 
         # Json string of file to append to the meta dictionary
-        meta: str
+        meta: Option & str = None
 
         from .metrics.archive import publish_archived_run
         from .metrics.sqlalchemy import SQLAlchemy
 
-        backend = SQLAlchemy(uri)
+        if meta is not None:
+            with open(meta, "r") as file:
+                meta = json.load(file)
+
+        backend = SQLAlchemy(uri, meta_override=meta)
         publish_archived_run(backend, folder)
 
     def container():
