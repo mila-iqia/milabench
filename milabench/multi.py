@@ -37,45 +37,20 @@ def make_execution_plan(pack, step=0, repeat=1):
     run_pack = pack.copy(cfg)
     method = plan.pop("method").replace("-", "_")
 
-    exec_plan = exec.VoirExecutor(exec.PackExecutor(run_pack))
+    exec_plan = run_pack.build_run_plan()
 
     if method == "per_gpu":
         exec_plan = exec.PerGPU(exec_plan)
 
     elif method == "njobs":
-        exec_plan = exec.NJobs(exec_plan)
+        n = plan.pop('n')
+        exec_plan = exec.NJobs(exec_plan, n)
 
     else:
         raise RuntimeError("Execution plan not specified")
 
+    print(run_pack, exec_plan)
     return exec.TimeOutExecutor(exec_plan, delay=cfg.get("max_duration", 600))
-
-
-@planning_method
-def per_gpu(cfg):
-    ngpus = len(gpus)
-    devices = gpus or [{"device": 0, "selection_variable": "CPU_VISIBLE_DEVICE"}]
-
-    for gpu in devices:
-        gid = gpu["device"]
-        gcfg = {
-            "tag": [*cfg["tag"], f"D{gid}"],
-            "device": gid,
-            "devices": [gid] if ngpus else [],
-            "env": {gpu["selection_variable"]: str(gid)},
-        }
-        yield clone_with(cfg, gcfg)
-
-
-@planning_method
-def njobs(cfg, n):
-    for i in range(n):
-        gcfg = {
-            "tag": [*cfg["tag"], f"{i}"],
-            "job-number": i,
-            "devices": [gpu["device"] for gpu in gpus],
-        }
-        yield clone_with(cfg, gcfg)
 
 
 class MultiPackage:
@@ -130,6 +105,8 @@ class MultiPackage:
                     await exec_plan.execute()
 
                 except Exception as exc:
+                    import traceback
+                    traceback.print_exc()
                     await pack.message_error(exc)
 
     async def do_pin(

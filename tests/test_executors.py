@@ -63,7 +63,7 @@ def mock_pack(pack):
 
 
 def test_executor_argv():
-    submock = ExecMock1(None, "a1", "a2")
+    submock = ExecMock1(mock_pack(benchio()), "a1", "a2")
     wrapmock = ExecMock2(submock, "a3")
 
     assert (
@@ -72,7 +72,7 @@ def test_executor_argv():
          "cmdExecMock1", "a1", "a2", "ExecMock1[arg0]", "ExecMock1[arg1]"]
     )
 
-    submock = ExecMock2(None)
+    submock = ExecMock2(mock_pack(benchio()))
     wrapmock = ExecMock1(submock)
 
     assert (
@@ -83,7 +83,7 @@ def test_executor_argv():
 
 
 def test_executor_kwargs():
-    submock = ExecMock1(None, selfk1="sv1", selfk2="sv2")
+    submock = ExecMock1(mock_pack(benchio()), selfk1="sv1", selfk2="sv2")
     wrapmock = ExecMock2(submock, selfk1="sv1'", selfk3="sv3")
     kwargs = {"selfk2":"v2''", "selfk3":"v3''", "k4":"v4"}
 
@@ -116,7 +116,7 @@ def test_pack_executor():
         print(r)
         acc += 1
 
-    assert acc == 2, "Only two message received"
+    assert acc == 4, "Only 4 message received (config, meta, start, end)"
 
 
 def test_voir_executor():
@@ -128,7 +128,7 @@ def test_voir_executor():
         print(r)
         acc += 1
 
-    assert  acc == 70
+    assert  acc == 72
 
 
 def test_timeout():
@@ -141,7 +141,7 @@ def test_timeout():
         print(r)
         acc += 1
 
-    assert acc > 2 and acc < 70 
+    assert acc > 2 and acc < 72
 
 
 def test_njobs_executor():
@@ -154,7 +154,7 @@ def test_njobs_executor():
         print(r)
         acc += 1
 
-    assert acc == 70 * 5
+    assert acc == 72 * 5
 
 
 def test_njobs_novoir_executor():
@@ -166,7 +166,7 @@ def test_njobs_novoir_executor():
         print(r)
         acc += 1
 
-    assert acc == 2 * 5
+    assert acc == 2 * 10
 
 
 def test_void_executor():

@@ -9,7 +9,6 @@ from copy import deepcopy
 import socket
 
 from .metadata import machine_metadata
-from . import pack
 from .fs import XPath
 from .alt_async import destroy
 from .merge import merge
@@ -23,14 +22,16 @@ def clone_with(cfg, new_cfg):
 
 
 class Executor:
-    def __init__(self, pack_or_exec: Executor | pack.BasePackage, **kwargs) -> None:
+    def __init__(self, pack_or_exec: Executor | BasePackage, **kwargs) -> None:
         if isinstance(pack_or_exec, Executor):
             self.exec = pack_or_exec
             self._pack = None
-        else:
+        elif isinstance(pack_or_exec, BasePackage):
             self.exec = None
             self._pack = pack_or_exec
-
+        else:
+            raise RuntimeError(f"Need to be pack or executor {pack_or_exec}")
+    
         self._kwargs = kwargs
 
     @property
@@ -59,6 +60,7 @@ class Executor:
         for pack, argv, _kwargs in self.commands():
             await pack.send(event="config", data=pack.config)
             await pack.send(event="meta", data=machine_metadata())
+            
             pack.phase = "run"
             coro.append(pack.execute(*argv, **{**_kwargs, **kwargs}))
 
@@ -288,7 +290,7 @@ class ListExecutor(Executor):
     """Runs n instance of the same job in parallel"""
 
     def __init__(self, *executors: Tuple[Executor], **kwargs) -> None:
-        super().__init__(None, **kwargs)
+        super().__init__(executors[0], **kwargs)
         self.executors = executors
 
     def commands(self) -> Generator[Tuple[BasePackage, List, Dict], None, None]:

@@ -14,7 +14,6 @@ from typing import Sequence
 from nox.sessions import Session, SessionRunner
 
 from .alt_async import run, send
-from . import executors as execs
 from .fs import XPath
 from .merge import merge
 from .structs import BenchLogEntry
@@ -241,6 +240,8 @@ class BasePackage:
         Returns:
             A subprocess.Popen instance representing the running process.
         """
+        from . import executors as execs
+        
         if isinstance(script, list):
             executor = execs.CmdExecutor(self, *script, *args)
         else:
@@ -396,6 +397,8 @@ class Package(BasePackage):
     async def exec_pip_compile(
         self, requirements_file: XPath, input_files: XPath, argv=[]
     ):
+        from . import executors as execs
+        
         input_files = [relativize(inp) for inp in input_files]
         return await execs.CmdExecutor(
             self,
@@ -429,6 +432,8 @@ class Package(BasePackage):
         return await self.build_prepare_plan().execute()
 
     def build_prepare_plan(self) -> "execs.Executor":
+        from . import executors as execs
+        
         if self.prepare_script is not None:
             prep = self.dirs.code / self.prepare_script
             if prep.exists():
@@ -461,6 +466,8 @@ class Package(BasePackage):
         return await self.build_run_plan().execute()
 
     def build_run_plan(self) -> "execs.Executor":
+        from . import executors as execs
+        
         main = self.dirs.code / self.main_script
         pack = execs.PackExecutor(self, *self.argv)
         return execs.VoirExecutor(pack, cwd=main.parent)
