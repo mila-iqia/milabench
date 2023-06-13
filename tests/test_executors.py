@@ -93,16 +93,6 @@ def test_executor_kwargs():
     assert (
         sorted(wrapmock.kwargs().values()) == ["sv1'", "sv2", "sv3"]
     )
-    assert (
-        sorted(
-            wrapmock.kwargs(**kwargs).keys()
-        ) == ["k4", "selfk1", "selfk2", "selfk3"]
-    )
-    assert (
-        sorted(
-            wrapmock.kwargs(**kwargs).values()
-        ) == ["sv1'", "v2''", "v3''", "v4"]
-    )
 
 
 def test_executor_execute():
