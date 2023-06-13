@@ -196,24 +196,38 @@ class SSHExecutor(Executor):
             **kwargs
         )
         self.host = host
-        self.ssh_argv = list(*ssh_argv)
-        if user:
-            self.ssh_argv.append(f"-l{user}")
-        if key:
-            self.ssh_argv.append(f"-i{key}")
+        self.ssh_argv = [*ssh_argv]
+        self.user = user
+        self.key = key
+
+    def _find_node_config(self) -> Dict:
+        for n in self.pack.config["system"]["nodes"]:
+            if n["ip"] == self.host:
+                return n
+        return {}
 
     def _argv(self, **kwargs) -> List:
         del kwargs
+
         if socket.gethostname() == self.host:
             # No-op when executing on the main node
             return []
-        return [
+
+        node = self._find_node_config()
+        user = self.user or node.get("user", None)
+        key = self.key or node.get("key", None)
+        host = f"{user}@{self.host}" if user else self.host
+
+        argv = [
             "ssh",
             "-oCheckHostIP=no",
             "-oStrictHostKeyChecking=no",
             *self.ssh_argv,
-            self.host,
         ]
+        if key:
+            argv.append(f"-i{key}")
+        argv.append(host)
+        return argv
 
 
 class VoirExecutor(Executor):
