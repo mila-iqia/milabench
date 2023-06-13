@@ -55,6 +55,11 @@ class Executor:
         yield self.pack, self.argv(), self.kwargs()
 
     async def execute(self, **kwargs):
+        from .alt_async import FeedbackEventLoop
+        
+        loop = FeedbackEventLoop()
+        asyncio.set_event_loop(loop)
+    
         coro = []
 
         for pack, argv, _kwargs in self.commands():
@@ -123,7 +128,7 @@ class PackExecutor(CmdExecutor):
             )
 
         if main.is_dir():
-            main = ["-m", str(main)]
+            main = ["-m", str(self.pack.main_script)]
         else:
             main = [str(main)]
         return main + super()._argv(**kwargs)

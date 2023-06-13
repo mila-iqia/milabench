@@ -4,7 +4,7 @@ from copy import deepcopy
 
 from voir.instruments.gpu import get_gpu_info
 
-import milabench.executors as exec
+from .executors import NJobs, PerGPU, TimeOutExecutor
 
 from .alt_async import destroy
 from .fs import XPath
@@ -40,17 +40,16 @@ def make_execution_plan(pack, step=0, repeat=1):
     exec_plan = run_pack.build_run_plan()
 
     if method == "per_gpu":
-        exec_plan = exec.PerGPU(exec_plan)
+        exec_plan = PerGPU(exec_plan)
 
     elif method == "njobs":
         n = plan.pop('n')
-        exec_plan = exec.NJobs(exec_plan, n)
+        exec_plan = NJobs(exec_plan, n)
 
     else:
         raise RuntimeError("Execution plan not specified")
 
-    print(run_pack, exec_plan)
-    return exec.TimeOutExecutor(exec_plan, delay=cfg.get("max_duration", 600))
+    return TimeOutExecutor(exec_plan, delay=cfg.get("max_duration", 600))
 
 
 class MultiPackage:
