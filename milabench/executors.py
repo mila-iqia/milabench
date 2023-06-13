@@ -16,7 +16,7 @@ from voir.instruments.gpu import get_gpu_info
 class Executor():
     def __init__(
             self,
-            pack_or_exec:Union["Executor", "pack.BasePackage"],
+            pack_or_exec: Executor | pack.BasePackage,
             **kwargs
     ) -> None:
         if isinstance(pack_or_exec, Executor):
