@@ -433,11 +433,7 @@ class Package(BasePackage):
             prep = self.dirs.code / self.prepare_script
             if prep.exists():
                 return execs.PackExecutor(
-                    self,
-                    prep,
-                    *self.argv,
-                    env=self.make_env(),
-                    cwd=prep.parent
+                    self, prep, *self.argv, env=self.make_env(), cwd=prep.parent
                 )
         return execs.VoidExecutor()
 

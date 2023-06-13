@@ -182,6 +182,7 @@ def test_njobs_novoir_executor():
 def test_void_executor():
     from milabench.executors import VoidExecutor
     
-    for _ in proceed(VoidExecutor().execute()):
-        pass
+    plan = TimeOutExecutor(VoirExecutor(VoidExecutor()))
     
+    for _ in proceed(plan.execute()):
+        pass

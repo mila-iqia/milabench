@@ -4,23 +4,23 @@ import asyncio
 from hashlib import md5
 import json
 from typing import Dict, Generator, List, Tuple
-
+from copy import deepcopy
 
 from .metadata import machine_metadata
 from . import pack
 from .fs import XPath
-from .multi import clone_with
 from .alt_async import destroy
+from .merge import merge
 
 from voir.instruments.gpu import get_gpu_info
 
 
-class Executor():
-    def __init__(
-            self,
-            pack_or_exec:Executor | pack.BasePackage,
-            **kwargs
-    ) -> None:
+def clone_with(cfg, new_cfg):
+    return merge(deepcopy(cfg), new_cfg)
+
+
+class Executor:
+    def __init__(self, pack_or_exec: Executor | pack.BasePackage, **kwargs) -> None:
         if isinstance(pack_or_exec, Executor):
             self.exec = pack_or_exec
             self._pack = None
@@ -68,19 +68,12 @@ class Executor():
 
 # Leafs
 class CmdExecutor(Executor):
-    def __init__(
-            self,
-            pack:"pack.BasePackage",
-            *cmd_argv,
-            **kwargs
-    ) -> None:
+    def __init__(self, pack: "pack.BasePackage", *cmd_argv, **kwargs) -> None:
         if isinstance(pack, Executor):
-            raise ValueError(f"{self.__class__} does not accept nested"
-                             f" {Executor.__class__}")
-        super().__init__(
-            pack,
-            **kwargs
-        )
+            raise ValueError(
+                f"{self.__class__} does not accept nested" f" {Executor.__class__}"
+            )
+        super().__init__(pack, **kwargs)
         self.bin_argv = cmd_argv
 
     def _argv(self, **kwargs) -> List:
@@ -89,12 +82,7 @@ class CmdExecutor(Executor):
 
 
 class PackExecutor(CmdExecutor):
-    def __init__(
-            self,
-            pack:"pack.BasePackage",
-            *script_argv,
-            **kwargs
-    ) -> None:
+    def __init__(self, pack: "pack.BasePackage", *script_argv, **kwargs) -> None:
         script = script_argv[:1]
         if script and XPath(script[0]).exists():
             script = script[0]
@@ -102,19 +90,15 @@ class PackExecutor(CmdExecutor):
         else:
             script = None
 
-        super().__init__(
-            pack,
-            *script_argv,
-            **kwargs
-        )
+        super().__init__(pack, *script_argv, **kwargs)
 
         self.script = script
 
     def _argv(self, **kwargs) -> List:
         main = self.script or self.pack.main_script
         if not XPath(main).is_absolute():
-            main = self.pack.dirs.code / main   # Could this lead any unexpected
-                                                # path during exec?
+            main = self.pack.dirs.code / main  # Could this lead any unexpected
+            # path during exec?
 
         if not main.exists():
             raise FileNotFoundError(
@@ -129,27 +113,25 @@ class PackExecutor(CmdExecutor):
 
 
 class VoidExecutor(Executor):
+    class _FakePack:
+        config = dict()
+
+        async def execute(self, *args, **kwargs):
+            pass
+        
+        async def send(self, *args, **kwargs):
+            pass
+
     def __init__(self, *args, **kwargs) -> None:
-        pass
-    
-    async def execute(self, **kwargs):
-        return
-    
+        self._pack = VoidExecutor._FakePack()
+        self.exec = None
+        self._kwargs = dict()
 
 
 # Branches or Roots
 class DockerRunExecutor(Executor):
-    def __init__(
-            self,
-            executor:Executor,
-            image:str,
-            *docker_argv,
-            **kwargs
-    ) -> None:
-        super().__init__(
-            executor,
-            **kwargs
-        )
+    def __init__(self, executor: Executor, image: str, *docker_argv, **kwargs) -> None:
+        super().__init__(executor, **kwargs)
         self.image = image
         self.docker_argv = docker_argv
 
@@ -160,41 +142,42 @@ class DockerRunExecutor(Executor):
         #     return []
         argv = [
             "docker",
-            "run", "-i", "--rm", 
-            "--network", "host",
+            "run",
+            "-i",
+            "--rm",
+            "--network",
+            "host",
             "--privileged",
-            "--gpus", "all",
-            *self.docker_argv
+            "--gpus",
+            "all",
+            *self.docker_argv,
         ]
         env = self.pack.make_env()
-        for var in ('MILABENCH_CONFIG', 'XDG_CACHE_HOME', 'OMP_NUM_THREADS'):
+        for var in ("MILABENCH_CONFIG", "XDG_CACHE_HOME", "OMP_NUM_THREADS"):
             argv.append("--env")
             argv.append(f"{var}='{env[var]}'")
         argv.append(self.image)
-        argv.append(f"{self.pack.dirs.code / 'activator'}") # What does this do?
-                                                            # Should it be part
-                                                            # of DockerExec or
-                                                            # sub exec?
-        argv.append(f"{self.pack.dirs.venv}")   # What does this do? Should it
-                                                # be part of DockerExec or sub
-                                                # exec?
+        argv.append(f"{self.pack.dirs.code / 'activator'}")  # What does this do?
+        # Should it be part
+        # of DockerExec or
+        # sub exec?
+        argv.append(f"{self.pack.dirs.venv}")  # What does this do? Should it
+        # be part of DockerExec or sub
+        # exec?
         return argv
 
 
 class SSHExecutor(Executor):
     def __init__(
-            self,
-            executor:Executor,
-            host:str,
-            *ssh_argv,
-            user:str=None,
-            key:str=None,
-            **kwargs
+        self,
+        executor: Executor,
+        host: str,
+        *ssh_argv,
+        user: str = None,
+        key: str = None,
+        **kwargs,
     ) -> None:
-        super().__init__(
-            executor,
-            **kwargs
-        )
+        super().__init__(executor, **kwargs)
         self.host = host
         self.ssh_argv = list(*ssh_argv)
         if user:
@@ -217,16 +200,8 @@ class SSHExecutor(Executor):
 
 
 class VoirExecutor(Executor):
-    def __init__(
-            self,
-            executor:Executor,
-            *voir_argv,
-            **kwargs
-    ) -> None:
-        super().__init__(
-            executor,
-            **{"setsid":True, **kwargs}
-        )
+    def __init__(self, executor: Executor, *voir_argv, **kwargs) -> None:
+        super().__init__(executor, **{"setsid": True, **kwargs})
         self.voir_argv = voir_argv
 
     def _argv(self, **kwargs) -> List:
@@ -234,7 +209,8 @@ class VoirExecutor(Executor):
         if voirconf := self.pack.config.get("voir", None):
             hsh = md5(str(voirconf).encode("utf8"))
             voirconf_file = (
-                self.pack.dirs.extra / f"voirconf-{self.pack.tag}-{hsh.hexdigest()}.json"
+                self.pack.dirs.extra
+                / f"voirconf-{self.pack.tag}-{hsh.hexdigest()}.json"
             )
             with open(voirconf_file, "w") as f:
                 json.dump(fp=f, obj=voirconf, indent=4)
@@ -245,48 +221,31 @@ class VoirExecutor(Executor):
         return [
             "voir",
             *voir_argv,
-            *self.voir_argv,    # Is this going to cause errors? Should we only
-                                # *us voir_argv and remove self.voir_argv from
-                                # class?
+            *self.voir_argv,  # Is this going to cause errors? Should we only
+            # *us voir_argv and remove self.voir_argv from
+            # class?
         ]
 
 
 class WrapperExecutor(Executor):
-    def __init__(
-            self,
-            executor:Executor,
-            *wrapper_argv,
-            **kwargs
-    ) -> None:
-        super().__init__(
-            executor,
-            **kwargs
-        )
+    def __init__(self, executor: Executor, *wrapper_argv, **kwargs) -> None:
+        super().__init__(executor, **kwargs)
         self.wrapper_argv = wrapper_argv
 
     def _argv(self, **kwargs) -> List:
         del kwargs
-        return [
-            *self.wrapper_argv
-        ]
+        return [*self.wrapper_argv]
 
 
 # Roots
 class TimeOutExecutor(Executor):
-    def __init__(
-            self,
-            executor:Executor,
-            delay: int = 600,
-            **kwargs
-    ) -> None:
-        super().__init__(
-            executor,
-            **kwargs
-        )
+    def __init__(self, executor: Executor, delay: int = 600, **kwargs) -> None:
+        super().__init__(executor, **kwargs)
         self.delay = delay
 
     async def execute(self):
         """Execute with timeout"""
+
         async def force_terminate(pack, delay):
             await asyncio.sleep(delay)
             for proc in pack.processes:
@@ -301,11 +260,9 @@ class TimeOutExecutor(Executor):
 
         for pack, argv, kwargs in self.commands():
             coro.append(pack.execute(*argv, **kwargs))
-            
+
             asyncio.create_task(
-                force_terminate(
-                    pack, pack.config.get("max_duration", self.delay)
-                )
+                force_terminate(pack, pack.config.get("max_duration", self.delay))
             )
 
         return await asyncio.gather(*coro)
@@ -313,15 +270,9 @@ class TimeOutExecutor(Executor):
 
 class ListExecutor(Executor):
     """Runs n instance of the same job in parallel"""
-    def __init__(
-            self,
-            *executors:Tuple[Executor],
-            **kwargs
-    ) -> None:
-        super().__init__(
-            None,
-            **kwargs
-        )
+
+    def __init__(self, *executors: Tuple[Executor], **kwargs) -> None:
+        super().__init__(None, **kwargs)
         self.executors = executors
 
     def commands(self) -> Generator[Tuple["pack.BasePackage", List, Dict], None, None]:
@@ -331,36 +282,19 @@ class ListExecutor(Executor):
 
 class NJobs(ListExecutor):
     """Runs n instance of the same job in parallel"""
-    def __init__(
-            self,
-            executor:Executor,
-            n:int,
-            **kwargs
-    ) -> None:
-        super().__init__(
-            *([executor] * n),
-            **kwargs
-        )
+
+    def __init__(self, executor: Executor, n: int, **kwargs) -> None:
+        super().__init__(*([executor] * n), **kwargs)
 
 
 class PerGPU(Executor):
-    def __init__(
-            self,
-            executor:Executor,
-            **kwargs
-    ) -> None:
-        super().__init__(
-            executor,
-            **kwargs
-        )
+    def __init__(self, executor: Executor, **kwargs) -> None:
+        super().__init__(executor, **kwargs)
 
     def commands(self) -> Generator[Tuple["pack.BasePackage", List, Dict], None, None]:
         gpus = get_gpu_info()["gpus"].values()
         ngpus = len(gpus)
-        devices = gpus or [{
-            "device": 0,
-            "selection_variable": "CPU_VISIBLE_DEVICE"
-        }]
+        devices = gpus or [{"device": 0, "selection_variable": "CPU_VISIBLE_DEVICE"}]
 
         for gpu in devices:
             gid = gpu["device"]
@@ -377,26 +311,24 @@ class PerGPU(Executor):
 
 # Accelerate
 class AccelerateLaunchExecutor(Executor):
-    def __init__(
-            self,
-            pack:"pack.BasePackage",
-            *accelerate_argv,
-            **kwargs
-    ) -> None:
-        super().__init__(
-            pack,
-            **kwargs
-        )
+    def __init__(self, pack: "pack.BasePackage", *accelerate_argv, **kwargs) -> None:
+        super().__init__(pack, **kwargs)
         self.accelerate_argv = accelerate_argv
 
     def _argv(self, rank, **kwargs) -> List:
         del kwargs
-        nproc = len(self.pack.config.get("devices", [])) * self.pack.config['num_machines']
-        deepspeed_argv = [
-            "--use_deepspeed",
-            "--deepspeed_multinode_launcher=standard",
-            "--zero_stage=2",
-        ] if self.pack.config["use_deepspeed"] else ["--multi_gpu"]
+        nproc = (
+            len(self.pack.config.get("devices", [])) * self.pack.config["num_machines"]
+        )
+        deepspeed_argv = (
+            [
+                "--use_deepspeed",
+                "--deepspeed_multinode_launcher=standard",
+                "--zero_stage=2",
+            ]
+            if self.pack.config["use_deepspeed"]
+            else ["--multi_gpu"]
+        )
         return [
             "accelerate",
             "launch",
@@ -411,7 +343,7 @@ class AccelerateLaunchExecutor(Executor):
             f"--main_process_port={self.pack.config['manager_port']}",
             f"--num_processes={nproc}",
             *self.accelerate_argv,
-            str(self.pack.dirs.code / "main.py")
+            str(self.pack.dirs.code / "main.py"),
         ]
 
 
@@ -420,22 +352,21 @@ class AccelerateLoopExecutor(Executor):
         def __init__(self) -> None:
             pass
 
-    PLACEHOLDER=_Placeholder()
+    PLACEHOLDER = _Placeholder()
 
     def __init__(
-            self,
-            accelerate_exec:AccelerateLaunchExecutor,
-            executor:SSHExecutor=None,
-            **kwargs
+        self,
+        accelerate_exec: AccelerateLaunchExecutor,
+        executor: SSHExecutor = None,
+        **kwargs,
     ) -> None:
         if not isinstance(executor, SSHExecutor):
-            raise ValueError(f"{self.__class__} only accepts"
-                             f" {SSHExecutor.__class__} as nested"
-                             f" {Executor.__class__}")
-        super().__init__(
-            executor,
-            **kwargs
-        )
+            raise ValueError(
+                f"{self.__class__} only accepts"
+                f" {SSHExecutor.__class__} as nested"
+                f" {Executor.__class__}"
+            )
+        super().__init__(executor, **kwargs)
         self.accelerate_exec = accelerate_exec
         _exec = self
         while _exec:
@@ -447,11 +378,9 @@ class AccelerateLoopExecutor(Executor):
         yield (
             self.pack,
             self.accelerate_exec.argv(rank=0),
-            {"setsid":True, "use_stdout":True, **self.kwargs()}
+            {"setsid": True, "use_stdout": True, **self.kwargs()},
         )
         for i, worker in enumerate(self.pack.config.get("worker_addrs", [])):
             self.exec.host = worker
-            run_pack = self.pack.copy({
-                "tag": [*self.pack.config["tag"], worker]
-            })
+            run_pack = self.pack.copy({"tag": [*self.pack.config["tag"], worker]})
             yield run_pack, self.argv(rank=i + 1), self.kwargs()
