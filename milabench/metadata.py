@@ -28,7 +28,7 @@ def machine_metadata():
             "machine": uname.machine,
         },
         "accelerators": gpus,
-        "date": datetime.utcnow(),
+        "date": datetime.utcnow().timestamp(),
         "milabench": retrieve_git_versions(
             __tag__,
             __commit__,

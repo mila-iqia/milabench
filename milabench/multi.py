@@ -38,14 +38,14 @@ def make_execution_plan(pack, step=0, repeat=1):
     method = plan.pop("method").replace("-", "_")
 
     exec_plan = run_pack.build_run_plan()
-
+    devices = get_gpu_info()["gpus"].values()
+    
     if method == "per_gpu":
-        devices = get_gpu_info()["gpus"].values()
         exec_plan = PerGPU(exec_plan, devices)
 
     elif method == "njobs":
         n = plan.pop('n')
-        exec_plan = NJobs(exec_plan, n)
+        exec_plan = NJobs(exec_plan, n, devices)
 
     else:
         raise RuntimeError("Execution plan not specified")

@@ -12,7 +12,7 @@ from .metadata import machine_metadata
 from .fs import XPath
 from .alt_async import destroy
 from .merge import merge
-from .pack import BasePackage
+from .pack import BasePackage, Package
 
 
 def clone_with(cfg, new_cfg):
@@ -29,8 +29,20 @@ async def force_terminate(pack, delay):
             )
             destroy(proc)
 
+class Executor():
+    """Base class for an execution plan
 
-class Executor:
+    Will reculsevly go through it's embedded `Executor` to build a command
+    line's arguments list to be passed to the leaf `Executor`'s
+    `BasePackage.execute()`
+
+    Arguments:
+        pack_or_exec: `Executor` or `BasePackage`. If a `BasePackage`, the
+                      instance's `execute()` will be used to perform the
+                      commands calls
+        **kwargs: kwargs to be passed to the `pack_or_exec.execute()`, if a
+                  `BasePackage`
+    """
     def __init__(self, pack_or_exec: Executor | BasePackage, **kwargs) -> None:
         if isinstance(pack_or_exec, Executor):
             self.exec = pack_or_exec
@@ -50,20 +62,39 @@ class Executor:
         return self.exec.pack
 
     def argv(self, **kwargs) -> List:
+        """Return the list of command line's arguments for this `Executor`
+        followed by its embedded `Executor`'s list of command line's arguments
+
+        Arguments:
+            **kwargs: some `Executor` might need an argument to dynamically
+                      generate the list of command line's arguments
+        """
         if self.exec:
             return self._argv(**kwargs) + self.exec.argv(**kwargs)
         return self._argv(**kwargs)
 
     def kwargs(self) -> Dict:
+        """Return the `Executor`'s kwargs to send to `BasePackage.execute()`
+        merged with the embeded `Executor`, if any
+
+        The `Executor`'s kwargs will take priority over the embeded `Executor`'s
+        kwargs
+        """
         kwargs = self._kwargs
         if self.exec:
             kwargs = {**self.exec.kwargs(), **kwargs}
         return kwargs
 
     def commands(self) -> Generator[Tuple[BasePackage, List, Dict], None, None]:
+        """Return a tuple of the leaf's `BasePackage`, the `Executor`'s list of
+        command line's arguments and the `Executor`'s kwargs to send to
+        `BasePackage.execute()`
+        """
         yield self.pack, self.argv(), self.kwargs()
 
     async def execute(self, timeout=False, timeout_delay=600, **kwargs):
+        """Execute all the commands and return the aggregated results
+        """
         coro = []
         for pack, argv, _kwargs in self.commands():
             await pack.send(event="config", data=pack.config)
@@ -85,6 +116,14 @@ class Executor:
 
 # Leafs
 class CmdExecutor(Executor):
+    """Execute a command
+
+    Arguments:
+        pack: `BasePackage`'s instance from which `execute()` will be used to
+              perform the command
+        *cmd_argv: command line arguments list to execute
+        **kwargs: kwargs to be passed to the `pack.execute()`
+    """
     def __init__(
             self,
             pack:BasePackage,
@@ -106,9 +145,20 @@ class CmdExecutor(Executor):
 
 
 class PackExecutor(CmdExecutor):
+    """Execute a `Package`'s script. If not specified, the `Package`'s
+    main_script will be used
+
+    Arguments:
+        pack: `Package`'s instance from which `execute()` will be used to
+              perform the command
+        *script_argv: script's command line arguments list. If the first
+                      argument is a file that can be found, the file will be
+                      used instead of the `pack`'s main_script
+        **kwargs: kwargs to be passed to the `pack.execute()`
+    """
     def __init__(
             self,
-            pack:BasePackage,
+            pack:Package,
             *script_argv,
             **kwargs
     ) -> None:
@@ -159,8 +209,25 @@ class VoidExecutor(Executor):
 
 # Branches or Roots
 class DockerRunExecutor(Executor):
-    def __init__(self, executor: Executor, image: str, *docker_argv, **kwargs) -> None:
-        super().__init__(executor, **kwargs)
+    """Execute an `Executor` through Docker
+
+    Arguments:
+        executor: `Executor` to be executed through Docker
+        image: the Docker image to use
+        *docker_argv: Docker command line arguments list
+        **kwargs: kwargs to be passed to the `pack.execute()`
+    """
+    def __init__(
+            self,
+            executor:Executor,
+            image:str,
+            *docker_argv,
+            **kwargs
+    ) -> None:
+        super().__init__(
+            executor,
+            **kwargs
+        )
         self.image = image
         self.docker_argv = docker_argv
 
@@ -198,6 +265,18 @@ class DockerRunExecutor(Executor):
 
 
 class SSHExecutor(Executor):
+    """Execute an `Executor` through ssh
+
+    Arguments:
+        executor: `Executor` to be executed through ssh
+        host: host's address
+        *ssh_argv: ssh command line arguments list
+        user: username to use to connect to the host. By default, `pack.config`
+              will be used to find the username
+        key: ssh key to use to connect to the host. By default, `pack.config`
+             will be used to find the username
+        **kwargs: kwargs to be passed to the `pack.execute()`
+    """
     def __init__(
         self,
         executor: Executor,
@@ -209,29 +288,58 @@ class SSHExecutor(Executor):
     ) -> None:
         super().__init__(executor, **kwargs)
         self.host = host
-        self.ssh_argv = list(*ssh_argv)
-        if user:
-            self.ssh_argv.append(f"-l{user}")
-        if key:
-            self.ssh_argv.append(f"-i{key}")
+        self.ssh_argv = [*ssh_argv]
+        self.user = user
+        self.key = key
+
+    def _find_node_config(self) -> Dict:
+        for n in self.pack.config["system"]["nodes"]:
+            if n["ip"] == self.host:
+                return n
+        return {}
 
     def _argv(self, **kwargs) -> List:
         del kwargs
+
         if socket.gethostname() == self.host:
             # No-op when executing on the main node
             return []
-        return [
+
+        node = self._find_node_config()
+        user = self.user or node.get("user", None)
+        key = self.key or node.get("key", None)
+        host = f"{user}@{self.host}" if user else self.host
+
+        argv = [
             "ssh",
             "-oCheckHostIP=no",
             "-oStrictHostKeyChecking=no",
             *self.ssh_argv,
-            self.host,
         ]
+        if key:
+            argv.append(f"-i{key}")
+        argv.append(host)
+        return argv
 
 
 class VoirExecutor(Executor):
-    def __init__(self, executor: Executor, *voir_argv, **kwargs) -> None:
-        super().__init__(executor, **{"setsid": True, **kwargs})
+    """Execute an `Executor` through voir
+
+    Arguments:
+        executor: `Executor` to be executed
+        *voir_argv: voir command line arguments list
+        **kwargs: kwargs to be passed to the `pack.execute()`
+    """
+    def __init__(
+            self,
+            executor:Executor,
+            *voir_argv,
+            **kwargs
+    ) -> None:
+        super().__init__(
+            executor,
+            **{"setsid":True, **kwargs}
+        )
         self.voir_argv = voir_argv
 
     def _argv(self, **kwargs) -> List:
@@ -258,8 +366,23 @@ class VoirExecutor(Executor):
 
 
 class WrapperExecutor(Executor):
-    def __init__(self, executor: Executor, *wrapper_argv, **kwargs) -> None:
-        super().__init__(executor, **kwargs)
+    """Wrap an `Executor` with any command
+
+    Arguments:
+        executor: `Executor` to be executed
+        *wrapper_argv: command line arguments list
+        **kwargs: kwargs to be passed to the `pack.execute()`
+    """
+    def __init__(
+            self,
+            executor:Executor,
+            *wrapper_argv,
+            **kwargs
+    ) -> None:
+        super().__init__(
+            executor,
+            **kwargs
+        )
         self.wrapper_argv = wrapper_argv
 
     def _argv(self, **kwargs) -> List:
@@ -269,10 +392,21 @@ class WrapperExecutor(Executor):
 
 # Roots
 class ListExecutor(Executor):
-    """Runs n instance of the same job in parallel"""
+    """Execute a list of `Executor`s in parallel
 
-    def __init__(self, *executors: Tuple[Executor], **kwargs) -> None:
-        super().__init__(executors[0], **kwargs)
+    Arguments:
+        executors: `Executor`s to be executed
+        **kwargs: kwargs to be passed to the `pack.execute()`
+    """
+    def __init__(
+            self,
+            *executors:Tuple[Executor],
+            **kwargs
+    ) -> None:
+        super().__init__(
+            executors[0],
+            **kwargs
+        )
         self.executors = executors
 
     def commands(self) -> Generator[Tuple[BasePackage, List, Dict], None, None]:
@@ -280,15 +414,45 @@ class ListExecutor(Executor):
             yield from executor.commands()
 
 
-class NJobs(ListExecutor):
-    """Runs n instance of the same job in parallel"""
+class NJobs(Executor):
+    """Execute n instances of the same `Executor` in parallel
 
-    def __init__(self, executor: Executor, n: int, **kwargs) -> None:
-        super().__init__(*([executor] * n), **kwargs)
+    Arguments:
+        executor: `Executor` to be executed
+        n: number of times `executor` should be executed 
+        **kwargs: kwargs to be passed to the `pack.execute()`
+    """
+
+    def __init__(self, executor: Executor, n: int, gpus: list = None, **kwargs) -> None:
+        super().__init__(executor, **kwargs)
+        self.n = n
+        
+        if gpus is None:
+            gpus = []
+        self.gpus = gpus
+
+    def commands(self) -> Generator[Tuple[BasePackage, List, Dict], None, None]:
+        for i in range(self.n):
+            gcfg = {
+                "tag": [*self.exec.pack.config["tag"], f"{i}"],
+                "job-number": i,
+                "devices": [gpu["device"] for gpu in self.gpus],
+            }
+            
+            run = clone_with(self.exec.pack.config, gcfg)
+            run_pack = self.exec.pack.copy(run)
+            yield run_pack, self.argv(), self.kwargs()
 
 
 class PerGPU(Executor):
-    def __init__(self, executor: Executor, gpus=None, **kwargs) -> None:
+    """Execute one instance of an `Executor` on each gpu
+
+    Arguments:
+        executor: `Executor` to be executed
+        **kwargs: kwargs to be passed to the `pack.execute()`
+    """
+    
+    def __init__(self, executor: Executor, gpus: list = None, **kwargs) -> None:
         super().__init__(executor, **kwargs)
         if gpus is None:
             gpus = [{"device": 0, "selection_variable": "CPU_VISIBLE_DEVICE"}]
@@ -312,6 +476,14 @@ class PerGPU(Executor):
 
 # Accelerate
 class AccelerateLaunchExecutor(Executor):
+    """Execute a `BasePackage` with Accelerate
+
+    Arguments:
+        pack: `BasePackage`'s instance from which `execute()` will be used to
+              perform the command
+        *accelerate_argv: Accelerate's command line arguments list
+        **kwargs: kwargs to be passed to the `pack.execute()`
+    """
     def __init__(
             self,
             pack:BasePackage,
@@ -357,6 +529,16 @@ class AccelerateLaunchExecutor(Executor):
 
 
 class AccelerateLoopExecutor(Executor):
+    """Execute an `AccelerateLaunchExecutor`
+
+    Arguments:
+        executor: `AccelerateLaunchExecutor` to be executed
+        ssh_exec: `SSHExecutor` to be used. It must embed, directly or
+                   indirectly, a `AccelerateLoopExecutor.PLACEHOLDER` which will
+                   be replaced by `accelerate_exec`
+        **kwargs: kwargs to be passed to the `pack.execute()`
+    """
+
     class _Placeholder(Executor):
         def __init__(self) -> None:
             pass
@@ -364,20 +546,20 @@ class AccelerateLoopExecutor(Executor):
     PLACEHOLDER = _Placeholder()
 
     def __init__(
-        self,
-        accelerate_exec: AccelerateLaunchExecutor,
-        executor: SSHExecutor = None,
-        **kwargs,
+            self,
+            executor:AccelerateLaunchExecutor,
+            ssh_exec:SSHExecutor=None,
+            **kwargs
     ) -> None:
-        if not isinstance(executor, SSHExecutor):
+        if not isinstance(ssh_exec, SSHExecutor):
             raise ValueError(f"{self.__class__.__name__} only accepts"
                              f" {SSHExecutor.__class__.__name__} as nested"
                              f" {Executor.__class__.__name__}")
         super().__init__(
-            executor,
+            ssh_exec,
             **kwargs
         )
-        self.accelerate_exec = accelerate_exec
+        self.accelerate_exec = executor
         _exec = self
         while _exec:
             if _exec.exec is AccelerateLoopExecutor.PLACEHOLDER:

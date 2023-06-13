@@ -192,29 +192,6 @@ def test_per_gpu_executor():
     assert acc == len(devices) * 72
 
 
-def test_per_gpu_executor():
-    executor = PackExecutor(benchio(), "--start", "2", "--end", "20")
-    voir = VoirExecutor(executor)
-    devices = [
-        {
-            "device": 0,
-            "selection_variable": "CUDA_VISIBLE_DEVICE"
-        },
-        {
-            "device": 1,
-            "selection_variable": "CUDA_VISIBLE_DEVICE"
-        }
-    ]
-    plan = PerGPU(voir, devices)
-    
-    acc = 0
-    for r in proceed(plan.execute()):
-        print(r)
-        acc += 1
-
-    assert acc == len(devices) * 72
-
-
 def test_void_executor():
     from milabench.executors import VoidExecutor
 

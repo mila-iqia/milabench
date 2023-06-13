@@ -260,9 +260,13 @@ def _read_reports(*runs):
                 with pth.open() as f:
                     lines = f.readlines()
                     try:
-                        data = [json.loads(line) for line in lines]
-                    except Exception as exc:
-                        print(f"Could not parse {pth}")
+                        data = []
+                        for line in lines:
+                            data.append(json.loads(line))
+                    except Exception:
+                        import traceback
+                        print(f"Could not parse line inside {pth}\n\t- {line}")
+                        traceback.print_exc()
                     else:
                         all_data[str(pth)] = data
     return all_data
