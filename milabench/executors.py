@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import asyncio
-from hashlib import md5
 import json
-from typing import Dict, Generator, List, Tuple, Union
+import os
+import socket
+from hashlib import md5
+from typing import Dict, Generator, List, Tuple
 
-from . import pack
+from .alt_async import destroy
 from .fs import XPath
 from .multi import clone_with
-from .alt_async import destroy
+from .pack import BasePackage
 
 from voir.instruments.gpu import get_gpu_info
 
@@ -16,7 +18,7 @@ from voir.instruments.gpu import get_gpu_info
 class Executor():
     def __init__(
             self,
-            pack_or_exec: Executor | pack.BasePackage,
+            pack_or_exec:Executor | BasePackage,
             **kwargs
     ) -> None:
         if isinstance(pack_or_exec, Executor):
@@ -29,7 +31,7 @@ class Executor():
         self._kwargs = kwargs
 
     @property
-    def pack(self) -> "pack.BasePackage":
+    def pack(self) -> BasePackage:
         if self._pack:
             return self._pack
         return self.exec.pack
@@ -39,13 +41,13 @@ class Executor():
             return self._argv(**kwargs) + self.exec.argv(**kwargs)
         return self._argv(**kwargs)
 
-    def kwargs(self, **kwargs) -> Dict:
-        kwargs = {**self._kwargs, **kwargs}
+    def kwargs(self) -> Dict:
+        kwargs = self._kwargs
         if self.exec:
-            return self.exec.kwargs(**kwargs)
+            kwargs = {**self.exec.kwargs(), **kwargs}
         return kwargs
 
-    def commands(self) -> Generator[Tuple["pack.BasePackage", List, Dict], None, None]:
+    def commands(self) -> Generator[Tuple[BasePackage, List, Dict], None, None]:
         yield self.pack, self.argv(), self.kwargs()
 
     async def execute(self, **kwargs):
@@ -65,28 +67,28 @@ class Executor():
 class CmdExecutor(Executor):
     def __init__(
             self,
-            pack:"pack.BasePackage",
+            pack:BasePackage,
             *cmd_argv,
             **kwargs
     ) -> None:
         if isinstance(pack, Executor):
-            raise ValueError(f"{self.__class__} does not accept nested"
-                             f" {Executor.__class__}")
+            raise ValueError(f"{self.__class__.__name__} does not accept nested"
+                             f" {Executor.__class__.__name__}")
         super().__init__(
             pack,
             **kwargs
         )
-        self.bin_argv = cmd_argv
+        self.cmd_argv = cmd_argv
 
     def _argv(self, **kwargs) -> List:
         del kwargs
-        return [*self.bin_argv]
+        return [*self.cmd_argv]
 
 
 class PackExecutor(CmdExecutor):
     def __init__(
             self,
-            pack:"pack.BasePackage",
+            pack:BasePackage,
             *script_argv,
             **kwargs
     ) -> None:
@@ -123,28 +125,15 @@ class PackExecutor(CmdExecutor):
         return main + super()._argv(**kwargs)
 
 
-class VoidExecutor(Executor):
-    _VoidPack=None
-    _VOIDPACK=None
-
-    def __new__(cls, *args, **kwargs):
-        if cls._VOIDPACK is None:
-            class _VoidPack(pack.BasePackage):
-                def __init__(self, *args, **kwargs):
-                    del args, kwargs
-                    pass
-
-                def execute(self, *args, **kwargs):
-                    del args, kwargs
-                    pass
-            cls._VoidPack = _VoidPack
-            cls._VOIDPACK = cls._VoidPack()
-
-        return super().__new__(*args, **kwargs)
-
-    def __init__(self, *args, **kwargs) -> None:
-        del args, kwargs
-        super().__init__(VoidExecutor._VOIDPACK)
+class VoidExecutor(CmdExecutor):
+    def __init__(
+            self,
+            pack:BasePackage,
+            *argv,
+            **kwargs
+    ) -> None:
+        del argv
+        super().__init__(pack, "true", *argv, **kwargs)
 
 
 # Branches or Roots
@@ -165,9 +154,10 @@ class DockerRunExecutor(Executor):
 
     def _argv(self, **kwargs) -> List:
         del kwargs
-        # TODO: If in docker: no-op
-        # if :
-        #     return []
+        if self.image is None or os.environ.get("MILABENCH_DOCKER", None):
+            # No-op when there's no docker image to run or inside a docker
+            # container
+            return []
         argv = [
             "docker",
             "run", "-i", "--rm", 
@@ -214,9 +204,9 @@ class SSHExecutor(Executor):
 
     def _argv(self, **kwargs) -> List:
         del kwargs
-        # TODO: If in main node: no-op
-        # if :
-        #     return []
+        if socket.gethostname() == self.host:
+            # No-op when executing on the main node
+            return []
         return [
             "ssh",
             "-oCheckHostIP=no",
@@ -334,7 +324,7 @@ class ListExecutor(Executor):
         )
         self.executors = executors
 
-    def commands(self) -> Generator[Tuple["pack.BasePackage", List, Dict], None, None]:
+    def commands(self) -> Generator[Tuple[BasePackage, List, Dict], None, None]:
         for executor in self.executors:
             yield from executor.commands()
 
@@ -364,7 +354,7 @@ class PerGPU(Executor):
             **kwargs
         )
 
-    def commands(self) -> Generator[Tuple["pack.BasePackage", List, Dict], None, None]:
+    def commands(self) -> Generator[Tuple[BasePackage, List, Dict], None, None]:
         gpus = get_gpu_info()["gpus"].values()
         ngpus = len(gpus)
         devices = gpus or [{
@@ -389,7 +379,7 @@ class PerGPU(Executor):
 class AccelerateLaunchExecutor(Executor):
     def __init__(
             self,
-            pack:"pack.BasePackage",
+            pack:BasePackage,
             *accelerate_argv,
             **kwargs
     ) -> None:
@@ -439,9 +429,9 @@ class AccelerateLoopExecutor(Executor):
             **kwargs
     ) -> None:
         if not isinstance(executor, SSHExecutor):
-            raise ValueError(f"{self.__class__} only accepts"
-                             f" {SSHExecutor.__class__} as nested"
-                             f" {Executor.__class__}")
+            raise ValueError(f"{self.__class__.__name__} only accepts"
+                             f" {SSHExecutor.__class__.__name__} as nested"
+                             f" {Executor.__class__.__name__}")
         super().__init__(
             executor,
             **kwargs
@@ -453,7 +443,7 @@ class AccelerateLoopExecutor(Executor):
                 _exec.exec = self.accelerate_exec
             _exec = _exec.exec
 
-    def commands(self) -> Generator[Tuple["pack.BasePackage", List, Dict], None, None]:
+    def commands(self) -> Generator[Tuple[BasePackage, List, Dict], None, None]:
         yield (
             self.pack,
             self.accelerate_exec.argv(rank=0),
