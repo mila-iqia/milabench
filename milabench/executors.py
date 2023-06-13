@@ -10,12 +10,25 @@ from typing import Dict, Generator, List, Tuple
 from .alt_async import destroy
 from .fs import XPath
 from .multi import clone_with
-from .pack import BasePackage
+from .pack import BasePackage, Package
 
 from voir.instruments.gpu import get_gpu_info
 
 
 class Executor():
+    """Base class for an execution plan
+
+    Will reculsevly go through it's embedded `Executor` to build a command
+    line's arguments list to be passed to the leaf `Executor`'s
+    `BasePackage.execute()`
+
+    Arguments:
+        pack_or_exec: `Executor` or `BasePackage`. If a `BasePackage`, the
+                      instance's `execute()` will be used to perform the
+                      commands calls
+        **kwargs: kwargs to be passed to the `pack_or_exec.execute()`, if a
+                  `BasePackage`
+    """
     def __init__(
             self,
             pack_or_exec:Executor | BasePackage,
@@ -37,20 +50,39 @@ class Executor():
         return self.exec.pack
 
     def argv(self, **kwargs) -> List:
+        """Return the list of command line's arguments for this `Executor`
+        followed by its embedded `Executor`'s list of command line's arguments
+
+        Arguments:
+            **kwargs: some `Executor` might need an argument to dynamically
+                      generate the list of command line's arguments
+        """
         if self.exec:
             return self._argv(**kwargs) + self.exec.argv(**kwargs)
         return self._argv(**kwargs)
 
     def kwargs(self) -> Dict:
+        """Return the `Executor`'s kwargs to send to `BasePackage.execute()`
+        merged with the embeded `Executor`, if any
+
+        The `Executor`'s kwargs will take priority over the embeded `Executor`'s
+        kwargs
+        """
         kwargs = self._kwargs
         if self.exec:
             kwargs = {**self.exec.kwargs(), **kwargs}
         return kwargs
 
     def commands(self) -> Generator[Tuple[BasePackage, List, Dict], None, None]:
+        """Return a tuple of the leaf's `BasePackage`, the `Executor`'s list of
+        command line's arguments and the `Executor`'s kwargs to send to
+        `BasePackage.execute()`
+        """
         yield self.pack, self.argv(), self.kwargs()
 
     async def execute(self, **kwargs):
+        """Execute all the commands and return the aggregated results
+        """
         coro = []
 
         for pack, argv, _kwargs in self.commands():
@@ -65,6 +97,14 @@ class Executor():
 
 # Leafs
 class CmdExecutor(Executor):
+    """Execute a command
+
+    Arguments:
+        pack: `BasePackage`'s instance from which `execute()` will be used to
+              perform the command
+        *cmd_argv: command line arguments list to execute
+        **kwargs: kwargs to be passed to the `pack.execute()`
+    """
     def __init__(
             self,
             pack:BasePackage,
@@ -86,9 +126,20 @@ class CmdExecutor(Executor):
 
 
 class PackExecutor(CmdExecutor):
+    """Execute a `Package`'s script. If not specified, the `Package`'s
+    main_script will be used
+
+    Arguments:
+        pack: `Package`'s instance from which `execute()` will be used to
+              perform the command
+        *script_argv: script's command line arguments list. If the first
+                      argument is a file that can be found, the file will be
+                      used instead of the `pack`'s main_script
+        **kwargs: kwargs to be passed to the `pack.execute()`
+    """
     def __init__(
             self,
-            pack:BasePackage,
+            pack:Package,
             *script_argv,
             **kwargs
     ) -> None:
@@ -126,6 +177,8 @@ class PackExecutor(CmdExecutor):
 
 
 class VoidExecutor(CmdExecutor):
+    """Execute nothing
+    """
     def __init__(
             self,
             pack:BasePackage,
@@ -138,6 +191,14 @@ class VoidExecutor(CmdExecutor):
 
 # Branches or Roots
 class DockerRunExecutor(Executor):
+    """Execute an `Executor` through Docker
+
+    Arguments:
+        executor: `Executor` to be executed through Docker
+        image: the Docker image to use
+        *docker_argv: Docker command line arguments list
+        **kwargs: kwargs to be passed to the `pack.execute()`
+    """
     def __init__(
             self,
             executor:Executor,
@@ -182,6 +243,18 @@ class DockerRunExecutor(Executor):
 
 
 class SSHExecutor(Executor):
+    """Execute an `Executor` through ssh
+
+    Arguments:
+        executor: `Executor` to be executed through ssh
+        host: host's address
+        *ssh_argv: ssh command line arguments list
+        user: username to use to connect to the host. By default, `pack.config`
+              will be used to find the username
+        key: ssh key to use to connect to the host. By default, `pack.config`
+             will be used to find the username
+        **kwargs: kwargs to be passed to the `pack.execute()`
+    """
     def __init__(
             self,
             executor:Executor,
@@ -231,6 +304,13 @@ class SSHExecutor(Executor):
 
 
 class VoirExecutor(Executor):
+    """Execute an `Executor` through voir
+
+    Arguments:
+        executor: `Executor` to be executed
+        *voir_argv: voir command line arguments list
+        **kwargs: kwargs to be passed to the `pack.execute()`
+    """
     def __init__(
             self,
             executor:Executor,
@@ -266,6 +346,13 @@ class VoirExecutor(Executor):
 
 
 class WrapperExecutor(Executor):
+    """Wrap an `Executor` with any command
+
+    Arguments:
+        executor: `Executor` to be executed
+        *wrapper_argv: command line arguments list
+        **kwargs: kwargs to be passed to the `pack.execute()`
+    """
     def __init__(
             self,
             executor:Executor,
@@ -287,6 +374,13 @@ class WrapperExecutor(Executor):
 
 # Roots
 class TimeOutExecutor(Executor):
+    """Execute an `Executor` and terminate it after a delay
+
+    Arguments:
+        executor: `Executor` to be executed through Docker
+        delay: delay before terminating the `Executor`
+        **kwargs: kwargs to be passed to the `pack.execute()`
+    """
     def __init__(
             self,
             executor:Executor,
@@ -326,7 +420,12 @@ class TimeOutExecutor(Executor):
 
 
 class ListExecutor(Executor):
-    """Runs n instance of the same job in parallel"""
+    """Execute a list of `Executor`s in parallel
+
+    Arguments:
+        executors: `Executor`s to be executed
+        **kwargs: kwargs to be passed to the `pack.execute()`
+    """
     def __init__(
             self,
             *executors:Tuple[Executor],
@@ -344,7 +443,13 @@ class ListExecutor(Executor):
 
 
 class NJobs(ListExecutor):
-    """Runs n instance of the same job in parallel"""
+    """Execute n instances of the same `Executor` in parallel
+
+    Arguments:
+        executor: `Executor` to be executed
+        n: number of times `executor` should be executed 
+        **kwargs: kwargs to be passed to the `pack.execute()`
+    """
     def __init__(
             self,
             executor:Executor,
@@ -358,6 +463,12 @@ class NJobs(ListExecutor):
 
 
 class PerGPU(Executor):
+    """Execute one instance of an `Executor` on each gpu
+
+    Arguments:
+        executor: `Executor` to be executed
+        **kwargs: kwargs to be passed to the `pack.execute()`
+    """
     def __init__(
             self,
             executor:Executor,
@@ -391,6 +502,14 @@ class PerGPU(Executor):
 
 # Accelerate
 class AccelerateLaunchExecutor(Executor):
+    """Execute a `BasePackage` with Accelerate
+
+    Arguments:
+        pack: `BasePackage`'s instance from which `execute()` will be used to
+              perform the command
+        *accelerate_argv: Accelerate's command line arguments list
+        **kwargs: kwargs to be passed to the `pack.execute()`
+    """
     def __init__(
             self,
             pack:BasePackage,
@@ -430,6 +549,16 @@ class AccelerateLaunchExecutor(Executor):
 
 
 class AccelerateLoopExecutor(Executor):
+    """Execute an `AccelerateLaunchExecutor`
+
+    Arguments:
+        executor: `AccelerateLaunchExecutor` to be executed
+        ssh_exec: `SSHExecutor` to be used. It must embed, directly or
+                   indirectly, a `AccelerateLoopExecutor.PLACEHOLDER` which will
+                   be replaced by `accelerate_exec`
+        **kwargs: kwargs to be passed to the `pack.execute()`
+    """
+
     class _Placeholder(Executor):
         def __init__(self) -> None:
             pass
@@ -438,19 +567,19 @@ class AccelerateLoopExecutor(Executor):
 
     def __init__(
             self,
-            accelerate_exec:AccelerateLaunchExecutor,
-            executor:SSHExecutor=None,
+            executor:AccelerateLaunchExecutor,
+            ssh_exec:SSHExecutor=None,
             **kwargs
     ) -> None:
-        if not isinstance(executor, SSHExecutor):
+        if not isinstance(ssh_exec, SSHExecutor):
             raise ValueError(f"{self.__class__.__name__} only accepts"
                              f" {SSHExecutor.__class__.__name__} as nested"
                              f" {Executor.__class__.__name__}")
         super().__init__(
-            executor,
+            ssh_exec,
             **kwargs
         )
-        self.accelerate_exec = accelerate_exec
+        self.accelerate_exec = executor
         _exec = self
         while _exec:
             if _exec.exec is AccelerateLoopExecutor.PLACEHOLDER:
