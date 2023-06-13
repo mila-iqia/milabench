@@ -115,7 +115,7 @@ class PackExecutor(CmdExecutor):
             )
 
         if main.is_dir():
-            main = ["-m", str(main)]
+            main = ["-m", str(self.pack.main_script)]
         else:
             main = [str(main)]
         return main + super()._argv(**kwargs)
