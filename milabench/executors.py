@@ -14,11 +14,20 @@ from .alt_async import destroy
 from .merge import merge
 from .pack import BasePackage
 
-from voir.instruments.gpu import get_gpu_info
-
 
 def clone_with(cfg, new_cfg):
     return merge(deepcopy(cfg), new_cfg)
+
+
+async def force_terminate(pack, delay):
+    await asyncio.sleep(delay)
+    for proc in pack.processes:
+        ret = proc.poll()
+        if ret is None:
+            await pack.message(
+                f"Terminating process because it ran for longer than {delay} seconds."
+            )
+            destroy(proc)
 
 
 class Executor:
@@ -54,15 +63,18 @@ class Executor:
     def commands(self) -> Generator[Tuple[BasePackage, List, Dict], None, None]:
         yield self.pack, self.argv(), self.kwargs()
 
-    async def execute(self, **kwargs):
+    async def execute(self, timeout=False, timeout_delay=600, **kwargs):
         coro = []
-
         for pack, argv, _kwargs in self.commands():
             await pack.send(event="config", data=pack.config)
             await pack.send(event="meta", data=machine_metadata())
             
             pack.phase = "run"
             coro.append(pack.execute(*argv, **{**_kwargs, **kwargs}))
+            
+            if timeout:
+                delay = pack.config.get("max_duration", timeout_delay)
+                asyncio.create_task(force_terminate(pack, delay))
 
         return await asyncio.gather(*coro)
 
@@ -256,36 +268,6 @@ class WrapperExecutor(Executor):
 
 
 # Roots
-class TimeOutExecutor(Executor):
-    def __init__(self, executor: Executor, delay: int = 600, **kwargs) -> None:
-        super().__init__(executor, **kwargs)
-        self.delay = delay
-
-    async def execute(self):
-        """Execute with timeout"""
-
-        async def force_terminate(pack, delay):
-            await asyncio.sleep(delay)
-            for proc in pack.processes:
-                ret = proc.poll()
-                if ret is None:
-                    await pack.message(
-                        f"Terminating process because it ran for longer than {delay} seconds."
-                    )
-                    destroy(proc)
-
-        coro = []
-
-        for pack, argv, kwargs in self.commands():
-            coro.append(pack.execute(*argv, **kwargs))
-
-            asyncio.create_task(
-                force_terminate(pack, pack.config.get("max_duration", self.delay))
-            )
-
-        return await asyncio.gather(*coro)
-
-
 class ListExecutor(Executor):
     """Runs n instance of the same job in parallel"""
 

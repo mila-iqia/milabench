@@ -4,7 +4,7 @@ from copy import deepcopy
 
 from voir.instruments.gpu import get_gpu_info
 
-from .executors import NJobs, PerGPU, TimeOutExecutor
+from .executors import NJobs, PerGPU
 
 from .alt_async import destroy
 from .fs import XPath
@@ -37,7 +37,7 @@ def make_execution_plan(pack, step=0, repeat=1):
     run_pack = pack.copy(cfg)
     method = plan.pop("method").replace("-", "_")
 
-    exec_plan = TimeOutExecutor(run_pack.build_run_plan(),  delay=cfg.get("max_duration", 600))
+    exec_plan = run_pack.build_run_plan()
 
     if method == "per_gpu":
         devices = get_gpu_info()["gpus"].values()
@@ -102,7 +102,7 @@ class MultiPackage:
                         continue
 
                     exec_plan = make_execution_plan(pack, index, repeat)
-                    await exec_plan.execute()
+                    await exec_plan.execute(timeout=True, timeout_delay=600)
 
                 except Exception as exc:
                     import traceback

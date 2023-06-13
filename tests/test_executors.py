@@ -1,7 +1,7 @@
 import asyncio
 import os
 
-from milabench.executors import Executor, PerGPU, PackExecutor, VoirExecutor, NJobs, TimeOutExecutor
+from milabench.executors import Executor, PerGPU, PackExecutor, VoirExecutor, NJobs
 from milabench.pack import Package
 from milabench.cli import _get_multipack
 from milabench.alt_async import proceed
@@ -134,10 +134,9 @@ def test_voir_executor():
 def test_timeout():
     executor = PackExecutor(benchio(), "--start", "2", "--end", "20", "--sleep", 20)
     voir = VoirExecutor(executor)
-    timed = TimeOutExecutor(voir, delay=1)
 
     acc = 0
-    for r in proceed(timed.execute()):
+    for r in proceed(voir.execute(timeout=True, timeout_delay=1)):
         print(r)
         acc += 1
 
@@ -206,7 +205,7 @@ def test_per_gpu_executor():
             "selection_variable": "CUDA_VISIBLE_DEVICE"
         }
     ]
-    plan = PerGPU(TimeOutExecutor(voir), devices)
+    plan = PerGPU(voir, devices)
     
     acc = 0
     for r in proceed(plan.execute()):
@@ -218,8 +217,8 @@ def test_per_gpu_executor():
 
 def test_void_executor():
     from milabench.executors import VoidExecutor
-    
-    plan = TimeOutExecutor(VoirExecutor(VoidExecutor()))
+
+    plan = VoirExecutor(VoidExecutor())
     
     for _ in proceed(plan.execute()):
         pass
