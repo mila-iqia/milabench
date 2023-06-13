@@ -316,7 +316,7 @@ def validation_names(layers):
     if "all" in layers:
         return all_layers
 
-    results = set(["error", "ensure_rate"])
+    results = set(["error", "ensure_rate", "version"])
     for l in layers:
         if l in all_layers:
             results.add(l)

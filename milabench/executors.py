@@ -3,8 +3,10 @@ from __future__ import annotations
 import asyncio
 from hashlib import md5
 import json
-from typing import Dict, Generator, List, Tuple, Union
+from typing import Dict, Generator, List, Tuple
 
+
+from .metadata import machine_metadata
 from . import pack
 from .fs import XPath
 from .multi import clone_with
@@ -45,7 +47,7 @@ class Executor():
             return self.exec.kwargs(**kwargs)
         return kwargs
 
-    def commands(self) -> Generator[(pack.BasePackage, List, Dict), None, None]:
+    def commands(self) -> Generator[Tuple[pack.BasePackage, List, Dict], None, None]:
         yield self.pack, self.argv(), self.kwargs()
 
     async def execute(self, **kwargs):
@@ -53,6 +55,7 @@ class Executor():
 
         for pack, argv, _kwargs in self.commands():
             await pack.send(event="config", data=pack.config)
+            await pack.send(event="meta", data=machine_metadata())
             pack.phase = "run"
             coro.append(pack.execute(*argv, **{**_kwargs, **kwargs}))
 

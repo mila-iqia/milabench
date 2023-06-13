@@ -41,12 +41,6 @@ class Layer(ValidationLayer):
     def __init__(self, **kwargs) -> None:
         self.errors = defaultdict(PackError)
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *args):
-        pass
-
     def on_stop(self, entry):
         error = self.errors[entry.tag]
         error.early_stop = True

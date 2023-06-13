@@ -11,7 +11,6 @@ from .fs import XPath
 from .merge import merge
 from .utils import make_constraints_file
 
-
 here = XPath(__file__).parent
 
 gpus = get_gpu_info()["gpus"].values()

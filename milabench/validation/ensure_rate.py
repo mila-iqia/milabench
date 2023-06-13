@@ -8,12 +8,6 @@ class Layer(ValidationLayer):
         self.rates = dict()
         self.errors = 0
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *args):
-        pass
-
     def on_start(self, entry):
         tag = entry.tag
 
