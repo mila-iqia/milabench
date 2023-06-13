@@ -177,3 +177,11 @@ def test_njobs_novoir_executor():
         acc += 1
 
     assert acc == 2 * 5
+
+
+def test_void_executor():
+    from milabench.executors import VoidExecutor
+    
+    for _ in proceed(VoidExecutor().execute()):
+        pass
+    

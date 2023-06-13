@@ -4,10 +4,13 @@ from copy import deepcopy
 
 from voir.instruments.gpu import get_gpu_info
 
+import milabench.executors as exec
+
 from .alt_async import destroy
 from .fs import XPath
 from .merge import merge
 from .utils import make_constraints_file
+
 
 here = XPath(__file__).parent
 
@@ -27,6 +30,30 @@ def planning_method(f):
 
 def clone_with(cfg, new_cfg):
     return merge(deepcopy(cfg), new_cfg)
+
+
+def make_execution_plan(pack, step=0, repeat=1):
+    cfg = deepcopy(pack.config)
+    plan = deepcopy(cfg["plan"])
+    
+    if repeat > 1:
+        cfg["tag"].append(f"R{step}")
+    
+    run_pack = pack.copy(cfg)
+    method = plan.pop("method").replace('-', '_')
+    
+    exec_plan = exec.VoirExecutor(exec.PackExecutor(run_pack))
+    
+    if method == 'per_gpu':
+        exec_plan = exec.PerGPU(exec_plan)
+
+    elif method == 'njobs':
+        exec_plan = exec.NJobs(exec_plan)
+    
+    else:
+        raise RuntimeError("Execution plan not specified")
+    
+    return exec.TimeOutExecutor(exec_plan, delay=cfg.get("max_duration", 600))
 
 
 @planning_method
@@ -104,26 +131,8 @@ class MultiPackage:
                         )
                         continue
 
-                    cfg = pack.config
-                    plan = deepcopy(cfg["plan"])
-                    method = get_planning_method(plan.pop("method"))
-                    coroutines = []
-
-                    for run in method(cfg, **plan):
-                        if repeat > 1:
-                            run["tag"].append(f"R{index}")
-                        run_pack = pack.copy(run)
-                        await run_pack.send(event="config", data=run)
-                        run_pack.phase = "run"
-                        coroutines.append(run_pack.run())
-
-                        asyncio.create_task(
-                            force_terminate(
-                                run_pack, run_pack.config.get("max_duration", 600)
-                            )
-                        )
-
-                    await asyncio.gather(*coroutines)
+                    exec_plan = make_execution_plan(pack, index, repeat)
+                    await exec_plan.execute()
 
                 except Exception as exc:
                     await pack.message_error(exc)

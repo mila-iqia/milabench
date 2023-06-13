@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 from hashlib import md5
 import json
@@ -14,7 +16,7 @@ from voir.instruments.gpu import get_gpu_info
 class Executor():
     def __init__(
             self,
-            pack_or_exec:Union["Executor", "pack.BasePackage"],
+            pack_or_exec:Executor | pack.BasePackage,
             **kwargs
     ) -> None:
         if isinstance(pack_or_exec, Executor):
@@ -43,13 +45,15 @@ class Executor():
             return self.exec.kwargs(**kwargs)
         return kwargs
 
-    def commands(self) -> Generator[Tuple["pack.BasePackage", List, Dict], None, None]:
+    def commands(self) -> Generator[(pack.BasePackage, List, Dict), None, None]:
         yield self.pack, self.argv(), self.kwargs()
 
     async def execute(self, **kwargs):
         coro = []
 
         for pack, argv, _kwargs in self.commands():
+            await pack.send(event="config", data=pack.config)
+            pack.phase = "run"
             coro.append(pack.execute(*argv, **{**_kwargs, **kwargs}))
 
         return await asyncio.gather(*coro)
@@ -122,27 +126,12 @@ class PackExecutor(CmdExecutor):
 
 
 class VoidExecutor(Executor):
-    _VoidPack=None
-    _VOIDPACK=None
-
-    def __new__(cls, *args, **kwargs):
-        if cls._VOIDPACK is None:
-            class _VoidPack(pack.BasePackage):
-                def __init__(self, *args, **kwargs):
-                    del args, kwargs
-                    pass
-
-                def execute(self, *args, **kwargs):
-                    del args, kwargs
-                    pass
-            cls._VoidPack = _VoidPack
-            cls._VOIDPACK = cls._VoidPack()
-
-        return super().__new__(*args, **kwargs)
-
     def __init__(self, *args, **kwargs) -> None:
-        del args, kwargs
-        super().__init__(VoidExecutor._VOIDPACK)
+        pass
+    
+    async def execute(self, **kwargs):
+        return
+    
 
 
 # Branches or Roots
