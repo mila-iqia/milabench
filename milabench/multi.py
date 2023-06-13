@@ -37,10 +37,11 @@ def make_execution_plan(pack, step=0, repeat=1):
     run_pack = pack.copy(cfg)
     method = plan.pop("method").replace("-", "_")
 
-    exec_plan = run_pack.build_run_plan()
+    exec_plan = TimeOutExecutor(run_pack.build_run_plan(),  delay=cfg.get("max_duration", 600))
 
     if method == "per_gpu":
-        exec_plan = PerGPU(exec_plan)
+        devices = get_gpu_info()["gpus"].values()
+        exec_plan = PerGPU(exec_plan, devices)
 
     elif method == "njobs":
         n = plan.pop('n')
@@ -49,7 +50,7 @@ def make_execution_plan(pack, step=0, repeat=1):
     else:
         raise RuntimeError("Execution plan not specified")
 
-    return TimeOutExecutor(exec_plan, delay=cfg.get("max_duration", 600))
+    return exec_plan
 
 
 class MultiPackage:

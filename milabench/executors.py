@@ -55,11 +55,6 @@ class Executor:
         yield self.pack, self.argv(), self.kwargs()
 
     async def execute(self, **kwargs):
-        from .alt_async import FeedbackEventLoop
-        
-        loop = FeedbackEventLoop()
-        asyncio.set_event_loop(loop)
-    
         coro = []
 
         for pack, argv, _kwargs in self.commands():
@@ -311,15 +306,16 @@ class NJobs(ListExecutor):
 
 
 class PerGPU(Executor):
-    def __init__(self, executor: Executor, **kwargs) -> None:
+    def __init__(self, executor: Executor, gpus=None, **kwargs) -> None:
         super().__init__(executor, **kwargs)
+        if gpus is None:
+            gpus = [{"device": 0, "selection_variable": "CPU_VISIBLE_DEVICE"}]
+        self.devices = gpus
 
     def commands(self) -> Generator[Tuple[BasePackage, List, Dict], None, None]:
-        gpus = get_gpu_info()["gpus"].values()
-        ngpus = len(gpus)
-        devices = gpus or [{"device": 0, "selection_variable": "CPU_VISIBLE_DEVICE"}]
-
-        for gpu in devices:
+        ngpus = len(self.devices)
+        
+        for gpu in self.devices:
             gid = gpu["device"]
             gcfg = {
                 "tag": [*self.exec.pack.config["tag"], f"D{gid}"],

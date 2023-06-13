@@ -1,7 +1,7 @@
 import asyncio
 import os
 
-from milabench.executors import Executor, PackExecutor, VoirExecutor, NJobs, TimeOutExecutor
+from milabench.executors import Executor, PerGPU, PackExecutor, VoirExecutor, NJobs, TimeOutExecutor
 from milabench.pack import Package
 from milabench.cli import _get_multipack
 from milabench.alt_async import proceed
@@ -105,7 +105,7 @@ def test_executor_execute():
           "cmdExecMock1", "a1", "ExecMock1[arg0]", "ExecMock1[arg1]",
           "selfk1:sv1", "selfk2:sv2", "k3:v3"]]
     )
-
+    
 
 def test_pack_executor():
     # voir is not setup so we are not receiving anything
@@ -167,6 +167,53 @@ def test_njobs_novoir_executor():
         acc += 1
 
     assert acc == 2 * 10
+
+
+
+def test_per_gpu_executor():
+    executor = PackExecutor(benchio(), "--start", "2", "--end", "20")
+    voir = VoirExecutor(executor)
+    devices = [
+        {
+            "device": 0,
+            "selection_variable": "CUDA_VISIBLE_DEVICE"
+        },
+        {
+            "device": 1,
+            "selection_variable": "CUDA_VISIBLE_DEVICE"
+        }
+    ]
+    plan = PerGPU(voir, devices)
+    
+    acc = 0
+    for r in proceed(plan.execute()):
+        print(r)
+        acc += 1
+
+    assert acc == len(devices) * 72
+
+
+def test_per_gpu_executor():
+    executor = PackExecutor(benchio(), "--start", "2", "--end", "20")
+    voir = VoirExecutor(executor)
+    devices = [
+        {
+            "device": 0,
+            "selection_variable": "CUDA_VISIBLE_DEVICE"
+        },
+        {
+            "device": 1,
+            "selection_variable": "CUDA_VISIBLE_DEVICE"
+        }
+    ]
+    plan = PerGPU(TimeOutExecutor(voir), devices)
+    
+    acc = 0
+    for r in proceed(plan.execute()):
+        print(r)
+        acc += 1
+
+    assert acc == len(devices) * 72
 
 
 def test_void_executor():
