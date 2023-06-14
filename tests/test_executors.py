@@ -1,7 +1,9 @@
 import asyncio
 import os
 
-from milabench.executors import Executor, PerGPU, PackExecutor, VoirExecutor, NJobs
+import pytest
+
+from milabench.executors import Executor, PerGPU, PackExecutor, VoirExecutor, NJobs, TorchRun
 from milabench.pack import Package
 from milabench.cli import _get_multipack
 from milabench.alt_async import proceed
@@ -156,6 +158,50 @@ def test_njobs_executor():
     assert acc == 72 * 5
 
 
+def test_njobs_gpus_executor():
+    """Two GPUs so torch run IS used"""
+    devices = mock_gpu_list()
+    
+    try:
+        import torch
+    except ImportError:
+        pytest.skip("Pytorch is not installed")
+    
+    executor = PackExecutor(benchio(), "--start", "2", "--end", "20")
+    voir = VoirExecutor(executor)
+    torch = TorchRun(voir, use_stdout=True)
+    njobs = NJobs(torch, 1, devices)
+
+    acc = 0
+    for r in proceed(njobs.execute()):
+        if r.event == 'start':
+            assert r.data['command'][0] == 'torchrun'
+        acc += 1
+        print(r)
+
+    assert acc == len(devices) * 72
+
+
+def test_njobs_gpu_executor():
+    """One GPU, so torch run is not used"""
+    devices = [mock_gpu_list()[0]]
+    
+    executor = PackExecutor(benchio(), "--start", "2", "--end", "20")
+    voir = VoirExecutor(executor)
+    torch = TorchRun(voir, use_stdout=True)
+    njobs = NJobs(torch, 1, devices)
+
+    acc = 0
+    for r in proceed(njobs.execute()):
+        print(r)
+        
+        if r.event == 'start':
+            assert r.data['command'][0] == 'voir'
+            
+        acc += 1
+
+    assert acc == len(devices) * 72
+
 def test_njobs_novoir_executor():
     executor = PackExecutor(benchio(), "--start", "2", "--end", "20")
     njobs = NJobs(executor, 5)
@@ -168,11 +214,8 @@ def test_njobs_novoir_executor():
     assert acc == 2 * 10
 
 
-
-def test_per_gpu_executor():
-    executor = PackExecutor(benchio(), "--start", "2", "--end", "20")
-    voir = VoirExecutor(executor)
-    devices = [
+def mock_gpu_list():
+    return [
         {
             "device": 0,
             "selection_variable": "CUDA_VISIBLE_DEVICE"
@@ -182,6 +225,13 @@ def test_per_gpu_executor():
             "selection_variable": "CUDA_VISIBLE_DEVICE"
         }
     ]
+
+
+def test_per_gpu_executor():
+    devices = mock_gpu_list()
+    
+    executor = PackExecutor(benchio(), "--start", "2", "--end", "20")
+    voir = VoirExecutor(executor)
     plan = PerGPU(voir, devices)
     
     acc = 0

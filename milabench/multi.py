@@ -25,6 +25,7 @@ def get_planning_method(name):
 
 def planning_method(f):
     planning_methods[f.__name__] = f
+        
 
 
 def make_execution_plan(pack, step=0, repeat=1):
@@ -37,6 +38,8 @@ def make_execution_plan(pack, step=0, repeat=1):
     run_pack = pack.copy(cfg)
     method = plan.pop("method").replace("-", "_")
 
+    # This is wrong because it does not know yet 
+    # own many GPUs will be used for the GPU
     exec_plan = run_pack.build_run_plan()
     devices = get_gpu_info()["gpus"].values()
     

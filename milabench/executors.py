@@ -29,6 +29,7 @@ async def force_terminate(pack, delay):
             )
             destroy(proc)
 
+
 class Executor():
     """Base class for an execution plan
 
@@ -54,13 +55,32 @@ class Executor():
             raise RuntimeError(f"Need to be pack or executor {pack_or_exec}")
     
         self._kwargs = kwargs
+        
 
     @property
     def pack(self) -> BasePackage:
         if self._pack:
             return self._pack
         return self.exec.pack
-
+    
+    
+    def _set_pack(self, pack):
+        if self._pack:
+            self._pack = pack
+            return True
+        
+        elif self.exec:
+            return self.exec._set_pack(pack)
+    
+        return False
+    
+    def copy(self, pack):
+        """Copy the execution plan but use a different pack"""
+        from copy import deepcopy
+        copy = deepcopy(self)
+        copy._set_pack(pack)
+        return copy
+        
     def argv(self, **kwargs) -> List:
         """Return the list of command line's arguments for this `Executor`
         followed by its embedded `Executor`'s list of command line's arguments
@@ -205,6 +225,19 @@ class VoidExecutor(Executor):
         self._pack = VoidExecutor._FakePack()
         self.exec = None
         self._kwargs = dict()
+
+
+
+class TorchRun(Executor):
+    def __init__(self, executor, **kwargs) -> None:
+        super().__init__(executor, **kwargs)
+
+    def _argv(self, **kwargs):
+        devices = self.pack.config.get("devices", [])
+        nproc = len(devices)
+        if nproc > 1:
+            return ["torchrun", f"--nproc_per_node={nproc}", "--", "-m"]
+        return []
 
 
 # Branches or Roots
@@ -414,7 +447,7 @@ class ListExecutor(Executor):
             yield from executor.commands()
 
 
-class NJobs(Executor):
+class NJobs(ListExecutor):
     """Execute n instances of the same `Executor` in parallel
 
     Arguments:
@@ -426,25 +459,26 @@ class NJobs(Executor):
     def __init__(self, executor: Executor, n: int, gpus: list = None, **kwargs) -> None:
         super().__init__(executor, **kwargs)
         self.n = n
-        
         if gpus is None:
             gpus = []
         self.gpus = gpus
-
-    def commands(self) -> Generator[Tuple[BasePackage, List, Dict], None, None]:
+        
+        executors = []
         for i in range(self.n):
             gcfg = {
-                "tag": [*self.exec.pack.config["tag"], f"{i}"],
+                "tag": [*executor.pack.config["tag"], f"{i}"],
                 "job-number": i,
                 "devices": [gpu["device"] for gpu in self.gpus],
             }
             
-            run = clone_with(self.exec.pack.config, gcfg)
-            run_pack = self.exec.pack.copy(run)
-            yield run_pack, self.argv(), self.kwargs()
+            run = clone_with(executor.pack.config, gcfg)
+            new_pack = executor.pack.copy(run)
+            executors.append(executor.copy(new_pack))
+        
+        super().__init__(*executors, **kwargs)
 
 
-class PerGPU(Executor):
+class PerGPU(ListExecutor):
     """Execute one instance of an `Executor` on each gpu
 
     Arguments:
@@ -453,26 +487,27 @@ class PerGPU(Executor):
     """
     
     def __init__(self, executor: Executor, gpus: list = None, **kwargs) -> None:
-        super().__init__(executor, **kwargs)
         if gpus is None:
             gpus = [{"device": 0, "selection_variable": "CPU_VISIBLE_DEVICE"}]
+            
         self.devices = gpus
-
-    def commands(self) -> Generator[Tuple[BasePackage, List, Dict], None, None]:
+        executors = []
         ngpus = len(self.devices)
         
         for gpu in self.devices:
             gid = gpu["device"]
             gcfg = {
-                "tag": [*self.exec.pack.config["tag"], f"D{gid}"],
+                "tag": [*executor.pack.config["tag"], f"D{gid}"],
                 "device": gid,
                 "devices": [gid] if ngpus else [],
                 "env": {gpu["selection_variable"]: str(gid)},
             }
-            run = clone_with(self.exec.pack.config, gcfg)
-            run_pack = self.exec.pack.copy(run)
-            yield run_pack, self.argv(), self.kwargs()
-
+            run = clone_with(executor.pack.config, gcfg)
+            new_pack = executor.pack.copy(run)
+            executors.append(executor.copy(new_pack))
+            
+        super().__init__(*executors, **kwargs)
+            
 
 # Accelerate
 class AccelerateLaunchExecutor(Executor):
