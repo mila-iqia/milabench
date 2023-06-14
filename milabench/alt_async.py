@@ -8,6 +8,8 @@ from asyncio import events, futures, tasks
 from asyncio.base_events import _run_until_complete_cb
 from collections import deque
 from functools import wraps
+import warnings
+
 
 from voir.proc import run as voir_run
 
@@ -189,4 +191,7 @@ def proceed(coro):
 
 async def send(message):
     loop = asyncio.get_running_loop()
-    await loop.send(message)
+    if isinstance(loop, FeedbackEventLoop):
+        await loop.send(message)
+    else:
+        warnings.warn("Could not send message, wrong event loop used")

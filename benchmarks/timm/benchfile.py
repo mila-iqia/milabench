@@ -1,4 +1,4 @@
-from milabench.executors import WrapperExecutor
+from milabench.executors import TorchRun
 from milabench.pack import Package
 
 BRANCH = "56b90317cd9db1038b42ebdfc5bd81b1a2275cc1"
@@ -32,12 +32,9 @@ class TimmBenchmarkPack(Package):
             timm.clone_subtree("https://github.com/huggingface/pytorch-image-models", BRANCH)
 
     def build_run_plan(self):
+        # self.config is not the right config for this
         plan = super().build_run_plan()
-        devices = self.config.get("devices", [])
-        nproc = len(devices)
-        if nproc > 1:
-            plan = WrapperExecutor(plan, "torchrun", f"--nproc_per_node={nproc}", "-m", use_stdout=True)
-        return plan
+        return TorchRun(plan, use_stdout=True)
 
 
 __pack__ = TimmBenchmarkPack

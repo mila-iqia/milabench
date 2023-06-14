@@ -5,8 +5,8 @@ from copy import deepcopy
 from voir.instruments.gpu import get_gpu_info
 
 from .alt_async import destroy
+from .executors import NJobs, PerGPU
 from .fs import XPath
-from .merge import merge
 from .utils import make_constraints_file
 
 here = XPath(__file__).parent
@@ -25,35 +25,33 @@ def planning_method(f):
     planning_methods[f.__name__] = f
 
 
-def clone_with(cfg, new_cfg):
-    return merge(deepcopy(cfg), new_cfg)
 
+def make_execution_plan(pack, step=0, repeat=1):
+    cfg = deepcopy(pack.config)
+    plan = deepcopy(cfg["plan"])
 
-@planning_method
-def per_gpu(cfg):
-    ngpus = len(gpus)
-    devices = gpus or [{"device": 0, "selection_variable": "CPU_VISIBLE_DEVICE"}]
+    if repeat > 1:
+        cfg["tag"].append(f"R{step}")
 
-    for gpu in devices:
-        gid = gpu["device"]
-        gcfg = {
-            "tag": [*cfg["tag"], f"D{gid}"],
-            "device": gid,
-            "devices": [gid] if ngpus else [],
-            "env": {gpu["selection_variable"]: str(gid)},
-        }
-        yield clone_with(cfg, gcfg)
+    run_pack = pack.copy(cfg)
+    method = plan.pop("method").replace("-", "_")
 
+    # This is wrong because it does not know yet
+    # own many GPUs will be used for the GPU
+    exec_plan = run_pack.build_run_plan()
+    devices = get_gpu_info()["gpus"].values()
 
-@planning_method
-def njobs(cfg, n):
-    for i in range(n):
-        gcfg = {
-            "tag": [*cfg["tag"], f"{i}"],
-            "job-number": i,
-            "devices": [gpu["device"] for gpu in gpus],
-        }
-        yield clone_with(cfg, gcfg)
+    if method == "per_gpu":
+        exec_plan = PerGPU(exec_plan, devices)
+
+    elif method == "njobs":
+        n = plan.pop('n')
+        exec_plan = NJobs(exec_plan, n, devices)
+
+    else:
+        raise RuntimeError("Execution plan not specified")
+
+    return exec_plan
 
 
 class MultiPackage:
@@ -104,28 +102,12 @@ class MultiPackage:
                         )
                         continue
 
-                    cfg = pack.config
-                    plan = deepcopy(cfg["plan"])
-                    method = get_planning_method(plan.pop("method"))
-                    coroutines = []
-
-                    for run in method(cfg, **plan):
-                        if repeat > 1:
-                            run["tag"].append(f"R{index}")
-                        run_pack = pack.copy(run)
-                        await run_pack.send(event="config", data=run)
-                        run_pack.phase = "run"
-                        coroutines.append(run_pack.run())
-
-                        asyncio.create_task(
-                            force_terminate(
-                                run_pack, run_pack.config.get("max_duration", 600)
-                            )
-                        )
-
-                    await asyncio.gather(*coroutines)
+                    exec_plan = make_execution_plan(pack, index, repeat)
+                    await exec_plan.execute(timeout=True, timeout_delay=600)
 
                 except Exception as exc:
+                    import traceback
+                    traceback.print_exc()
                     await pack.message_error(exc)
 
     async def do_pin(

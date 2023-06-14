@@ -128,14 +128,14 @@ def get_base_defaults(base, arch="none", run_name="none"):
                 "arch": arch,
                 "sshkey": None,
                 "nodes": [
-                    { 
-                        "name": "local", 
-                        "ip": "127.0.0.1", 
-                        "port": None, 
-                        "user": user, 
-                        "main": True 
+                    {
+                        "name": "local",
+                        "ip": "127.0.0.1",
+                        "port": None,
+                        "user": user,
+                        "main": True,
                     }
-                ]
+                ],
             },
             "dirs": {
                 "base": base,
@@ -221,7 +221,9 @@ def _get_multipack(
 
     base_defaults = get_base_defaults(base=base, arch=deduce_arch(), run_name=run_name)
 
-    system_config = build_system_config(system_config_path, defaults=base_defaults["_defaults"]["system"])
+    system_config = build_system_config(
+        system_config_path, defaults=base_defaults["_defaults"]["system"]
+    )
     overrides = merge({"*": {"system": system_config}}, overrides)
 
     config = build_config(base_defaults, config_path, overrides)
@@ -259,8 +261,10 @@ def _read_reports(*runs):
                     lines = f.readlines()
                     try:
                         data = [json.loads(line) for line in lines]
-                    except Exception as exc:
-                        print(f"Could not parse {pth}")
+                    except Exception:
+                        import traceback
+                        print(f"Could not parse line inside {pth}\n\t- {line}")
+                        traceback.print_exc()
                     else:
                         all_data[str(pth)] = data
     return all_data
@@ -316,7 +320,7 @@ def validation_names(layers):
     if "all" in layers:
         return all_layers
 
-    results = set(["error", "ensure_rate"])
+    results = set(["error", "ensure_rate", "version"])
     for l in layers:
         if l in all_layers:
             results.add(l)

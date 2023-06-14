@@ -1,7 +1,9 @@
 import asyncio
 import os
 
-from milabench.executors import Executor, PackExecutor, VoirExecutor, NJobs, TimeOutExecutor
+import pytest
+
+from milabench.executors import Executor, PerGPU, PackExecutor, VoirExecutor, NJobs, TorchRun
 from milabench.pack import Package
 from milabench.cli import _get_multipack
 from milabench.alt_async import proceed
@@ -63,7 +65,7 @@ def mock_pack(pack):
 
 
 def test_executor_argv():
-    submock = ExecMock1(None, "a1", "a2")
+    submock = ExecMock1(mock_pack(benchio()), "a1", "a2")
     wrapmock = ExecMock2(submock, "a3")
 
     assert (
@@ -72,7 +74,7 @@ def test_executor_argv():
          "cmdExecMock1", "a1", "a2", "ExecMock1[arg0]", "ExecMock1[arg1]"]
     )
 
-    submock = ExecMock2(None)
+    submock = ExecMock2(mock_pack(benchio()))
     wrapmock = ExecMock1(submock)
 
     assert (
@@ -83,7 +85,7 @@ def test_executor_argv():
 
 
 def test_executor_kwargs():
-    submock = ExecMock1(None, selfk1="sv1", selfk2="sv2")
+    submock = ExecMock1(mock_pack(benchio()), selfk1="sv1", selfk2="sv2")
     wrapmock = ExecMock2(submock, selfk1="sv1'", selfk3="sv3")
     kwargs = {"selfk2":"v2''", "selfk3":"v3''", "k4":"v4"}
 
@@ -105,7 +107,7 @@ def test_executor_execute():
           "cmdExecMock1", "a1", "ExecMock1[arg0]", "ExecMock1[arg1]",
           "selfk1:sv1", "selfk2:sv2", "k3:v3"]]
     )
-
+    
 
 def test_pack_executor():
     # voir is not setup so we are not receiving anything
@@ -116,7 +118,7 @@ def test_pack_executor():
         print(r)
         acc += 1
 
-    assert acc == 2, "Only two message received"
+    assert acc == 4, "Only 4 message received (config, meta, start, end)"
 
 
 def test_voir_executor():
@@ -128,20 +130,19 @@ def test_voir_executor():
         print(r)
         acc += 1
 
-    assert  acc == 70
+    assert  acc == 72
 
 
 def test_timeout():
     executor = PackExecutor(benchio(), "--start", "2", "--end", "20", "--sleep", 20)
     voir = VoirExecutor(executor)
-    timed = TimeOutExecutor(voir, delay=1)
 
     acc = 0
-    for r in proceed(timed.execute()):
+    for r in proceed(voir.execute(timeout=True, timeout_delay=1)):
         print(r)
         acc += 1
 
-    assert acc > 2 and acc < 70 
+    assert acc > 2 and acc < 72
 
 
 def test_njobs_executor():
@@ -154,8 +155,52 @@ def test_njobs_executor():
         print(r)
         acc += 1
 
-    assert acc == 70 * 5
+    assert acc == 72 * 5
 
+
+def test_njobs_gpus_executor():
+    """Two GPUs so torch run IS used"""
+    devices = mock_gpu_list()
+    
+    try:
+        import torch
+    except ImportError:
+        pytest.skip("Pytorch is not installed")
+    
+    executor = PackExecutor(benchio(), "--start", "2", "--end", "20")
+    voir = VoirExecutor(executor)
+    torch = TorchRun(voir, use_stdout=True)
+    njobs = NJobs(torch, 1, devices)
+
+    acc = 0
+    for r in proceed(njobs.execute()):
+        if r.event == 'start':
+            assert r.data['command'][0] == 'torchrun'
+        acc += 1
+        print(r)
+
+    assert acc == len(devices) * 72
+
+
+def test_njobs_gpu_executor():
+    """One GPU, so torch run is not used"""
+    devices = [mock_gpu_list()[0]]
+    
+    executor = PackExecutor(benchio(), "--start", "2", "--end", "20")
+    voir = VoirExecutor(executor)
+    torch = TorchRun(voir, use_stdout=True)
+    njobs = NJobs(torch, 1, devices)
+
+    acc = 0
+    for r in proceed(njobs.execute()):
+        print(r)
+        
+        if r.event == 'start':
+            assert r.data['command'][0] == 'voir'
+            
+        acc += 1
+
+    assert acc == len(devices) * 72
 
 def test_njobs_novoir_executor():
     executor = PackExecutor(benchio(), "--start", "2", "--end", "20")
@@ -166,4 +211,41 @@ def test_njobs_novoir_executor():
         print(r)
         acc += 1
 
-    assert acc == 2 * 5
+    assert acc == 2 * 10
+
+
+def mock_gpu_list():
+    return [
+        {
+            "device": 0,
+            "selection_variable": "CUDA_VISIBLE_DEVICE"
+        },
+        {
+            "device": 1,
+            "selection_variable": "CUDA_VISIBLE_DEVICE"
+        }
+    ]
+
+
+def test_per_gpu_executor():
+    devices = mock_gpu_list()
+    
+    executor = PackExecutor(benchio(), "--start", "2", "--end", "20")
+    voir = VoirExecutor(executor)
+    plan = PerGPU(voir, devices)
+    
+    acc = 0
+    for r in proceed(plan.execute()):
+        print(r)
+        acc += 1
+
+    assert acc == len(devices) * 72
+
+
+def test_void_executor():
+    from milabench.executors import VoidExecutor
+
+    plan = VoirExecutor(VoidExecutor(benchio()))
+    
+    for _ in proceed(plan.execute()):
+        pass

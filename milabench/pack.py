@@ -13,8 +13,8 @@ from typing import Sequence
 
 from nox.sessions import Session, SessionRunner
 
-from .alt_async import run, send
 from . import executors as execs
+from .alt_async import run, send
 from .fs import XPath
 from .merge import merge
 from .structs import BenchLogEntry
@@ -433,13 +433,9 @@ class Package(BasePackage):
             prep = self.dirs.code / self.prepare_script
             if prep.exists():
                 return execs.PackExecutor(
-                    self,
-                    prep,
-                    *self.argv,
-                    env=self.make_env(),
-                    cwd=prep.parent
+                    self, prep, *self.argv, env=self.make_env(), cwd=prep.parent
                 )
-        return execs.VoidExecutor()
+        return execs.VoidExecutor(self)
 
     async def run(self):
         """Start the benchmark and return the running process.
