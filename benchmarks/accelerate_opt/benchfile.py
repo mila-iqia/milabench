@@ -59,7 +59,7 @@ class AccelerateBenchmark(Package):
             str(self.dirs.code / "main.py"),
         ]
 
-    async def run(self):
+    async def override_run(self):
         self.phase = "run"
         futs = []
         futs.append(asyncio.create_task(self.execute(

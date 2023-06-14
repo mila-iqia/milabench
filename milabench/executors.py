@@ -120,9 +120,14 @@ class Executor():
             await pack.send(event="config", data=pack.config)
             await pack.send(event="meta", data=machine_metadata())
             
-            pack.phase = "run"
-            coro.append(pack.execute(*argv, **{**_kwargs, **kwargs}))
-            
+            if hasattr(pack, 'override_run'):
+                fut = pack.override_run()
+            else:
+                pack.phase = "run"
+                fut = pack.execute(*argv, **{**_kwargs, **kwargs})
+                
+            coro.append(fut)
+                
             if timeout:
                 delay = pack.config.get("max_duration", timeout_delay)
                 asyncio.create_task(force_terminate(pack, delay))
