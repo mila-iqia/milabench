@@ -98,14 +98,8 @@ class Executor:
             await pack.send(event="config", data=pack.config)
             await pack.send(event="meta", data=machine_metadata())
 
-            if hasattr(pack, "override_run"):
-                # TODO: This is only to hack the CI and have the test passing
-                # using the old system. Remove override_run() and use `Executor`
-                # instead
-                fut = pack.override_run()
-            else:
-                pack.phase = "run"
-                fut = pack.execute(*argv, **{**_kwargs, **kwargs})
+            pack.phase = "run"
+            fut = pack.execute(*argv, **{**_kwargs, **kwargs})
 
             coro.append(fut)
 
