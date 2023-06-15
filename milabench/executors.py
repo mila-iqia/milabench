@@ -43,6 +43,10 @@ class Executor():
                       commands calls
         **kwargs: kwargs to be passed to the `pack_or_exec.execute()`, if a
                   `BasePackage`
+                  
+    Notes:
+        All dynamic operations need to happen inside the argv/_argv methods.
+        Those methods are guaranteed to be called with the final configuration.
     """
     def __init__(self, pack_or_exec: Executor | pack.BasePackage, **kwargs) -> None:
         if isinstance(pack_or_exec, Executor):
