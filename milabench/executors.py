@@ -177,8 +177,8 @@ class PackExecutor(CmdExecutor):
         pack: `Package`'s instance from which `execute()` will be used to
               perform the command
         *script_argv: script's command line arguments list. If the first
-                      argument is a file that can be found, the file will be
-                      used instead of the `pack`'s main_script
+                      argument is a file or directory that can be found, the
+                      file will be used instead of the `pack`'s main_script
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
     def __init__(
@@ -201,17 +201,19 @@ class PackExecutor(CmdExecutor):
     def _argv(self, **kwargs) -> List:
         main = self.script or self.pack.main_script
         if not XPath(main).is_absolute():
-            main = self.pack.dirs.code / main
+            abs_main = self.pack.dirs.code / main
+        else:
+            abs_main = main
 
-        if not main.exists():
+        if not abs_main.exists():
             raise FileNotFoundError(
-                f"Cannot run main script because it does not exist: {main}"
+                f"Cannot run script or directory because it does not exist: {main}"
             )
 
-        if main.is_dir():
+        if abs_main.is_dir():
             main = ["-m", str(main)]
         else:
-            main = [str(main)]
+            main = [str(abs_main)]
         return main + super()._argv(**kwargs)
 
 
