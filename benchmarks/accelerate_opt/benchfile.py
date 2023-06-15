@@ -59,7 +59,9 @@ class AccelerateBenchmark(Package):
             str(self.dirs.code / "main.py"),
         ]
 
-    async def run(self):
+    # TODO: This is only to hack the CI and have the test passing using the old
+    # system. Remove override_run() and use `Executor` instead 
+    async def override_run(self):
         self.phase = "run"
         futs = []
         futs.append(asyncio.create_task(self.execute(
