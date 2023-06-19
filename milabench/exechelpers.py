@@ -48,6 +48,7 @@ async def python(pack, *args, **kwargs):
     return await run_command(pack, "python", *args, **kwargs)
 
 
+
 async def run_pip_install(pack, *args):
     """Install a package in the virtual environment.
 
@@ -55,28 +56,23 @@ async def run_pip_install(pack, *args):
     e.g. do ``pack.pip_install("-r", filename)`` to install a list
     of requirements.
     """
-    args = [str(x) for x in args]
+    
+    cmd = pack.pip_install(pack, *args)
+    await run_command(pack, *cmd)
 
-    if pack.constraints:
-        pack.constraints.write_text("\n".join(pack.config["pip"]["constraints"]))
-        args += ["-c", str(pack.constraints)]
-        
-    for line in pack.config.get("pip", {}).get("args", []):
-        args += line.split(" ")
-        
-    await run(
-        ["pip", "install", *args],
-        info={"pack": pack},
-        env={
-            **pack.core._nox_session.env,
-            **pack.make_env(),
-            **pack.config.get("env", {}),
-        },
-        constructor=BenchLogEntry,
-    )
+    # await run(
+    #     cmd,
+    #     info={"pack": pack},
+    #     env={
+    #         **pack.core._nox_session.env,
+    #         **pack.make_env(),
+    #         **pack.config.get("env", {}),
+    #     },
+    #     constructor=BenchLogEntry,
+    # )
 
 
-async def install(pack):
+async def run_install(pack):
     """Install the benchmark.
 
     By default, this installs the requirements file pointed to by the
@@ -98,11 +94,9 @@ async def install(pack):
         milabench in the venv, and then calling this method.
     """
     assert pack.phase == "install"
-    for reqs in pack.requirements_files(pack.config.get("install_variant", None)):
-        if reqs.exists():
-            await pack.pip_install("-r", reqs)
-        else:
-            raise FileNotFoundError(f"Requirements file not found: {reqs}")
+    
+    cmd = pack.install()
+    await run_command(pack, *cmd)
 
 
 async def pin(
@@ -136,38 +130,35 @@ async def pin(
         if clear_previous and reqs.exists():
             await pack.message(f"Clearing out existing {reqs}")
             reqs.rm()
-
-        grp = pack.config["group"]
-        constraint_path = XPath(".pin") / f"tmp-constraints-{ivar}-{grp}.txt"
-        constraint_files = make_constraints_file(constraint_path, constraints)
-        current_input_files = constraint_files + (base_reqs, *input_files)
-
-        await pack.exec_pip_compile(
-            reqs, current_input_files, argv=pip_compile_args
-        )
-
+            
+        cmd = pack.pin(base_reqs, reqs, pip_compile_args, input_files, constraints)
+        await run_command(pack, cmd)
+        
         # Add previous requirements as inputs
         input_files = (reqs, *input_files)
 
 
-async def exec_pip_compile(
+async def run_pip_compile(
     pack, requirements_file: XPath, input_files: XPath, argv=[]
 ):
-    input_files = [relativize(inp) for inp in input_files]
-    return await pack.execute(
-        "python3",
-        "-m",
-        "piptools",
-        "compile",
-        "--resolver",
-        "backtracking",
-        "--output-file",
-        relativize(requirements_file),
-        *argv,
-        *input_files,
-        cwd=XPath(".").absolute(),
-        external=True,
-    )
+    cmd = pack.pip_compile(requirements_file, input_files, argv)
+    await run_command(pack, cmd)
+    
+    # input_files = [relativize(inp) for inp in input_files]
+    # return await pack.execute(
+    #     "python3",
+    #     "-m",
+    #     "piptools",
+    #     "compile",
+    #     "--resolver",
+    #     "backtracking",
+    #     "--output-file",
+    #     relativize(requirements_file),
+    #     *argv,
+    #     *input_files,
+    #     cwd=XPath(".").absolute(),
+    #     external=True,
+    # )
 
 
 async def prepare(pack):
@@ -183,11 +174,13 @@ async def prepare(pack):
     The default value of ``pack.prepare_script`` is ``"prepare.py"``.
     """
     assert pack.phase == "prepare"
+    cmd = pack.prepare()
+    await run_command(pack, cmd)
     
-    if pack.prepare_script is not None:
-        prep = pack.dirs.code / pack.prepare_script
+    # if pack.prepare_script is not None:
+    #     prep = pack.dirs.code / pack.prepare_script
         
-        if prep.exists():
-            await pack.execute(
-                prep, *pack.argv, env=pack.make_env(), cwd=prep.parent
-            )
+    #     if prep.exists():
+    #         await pack.execute(
+    #             prep, *pack.argv, env=pack.make_env(), cwd=prep.parent
+    #         )

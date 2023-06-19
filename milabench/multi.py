@@ -61,12 +61,29 @@ def njobs(cfg, n):
 class MultiPackage:
     def __init__(self, packs):
         self.packs = packs
+        
+    def build_execution_plan(self, pack):
+        cmd = getattr(pack, pack.phase)
+        cmd = CmdExecutor(pack, *cmd)
+        
+        jobs = []
+        
+        for worker in workers:
+            jobs.append(SSHExecutor(cmd, worker))
+
+        return ListExecutor(*jobs)
+    
+    async def exec_phase(self, pack, *args):
+        plan = self.build_execution_plan(pack)
+        await plan.execute(*args)
 
     async def do_install(self):
         for pack in self.packs.values():
             pack.phase = "install"
             try:
-                await pack.checked_install()
+                await self.exec_phase(pack)
+                
+                # await pack.checked_install()
             except Exception as exc:
                 await pack.message_error(exc)
 
@@ -74,7 +91,8 @@ class MultiPackage:
         for pack in self.packs.values():
             pack.phase = "prepare"
             try:
-                await pack.prepare()
+                await self.exec_phase(pack)
+            
             except Exception as exc:
                 await pack.message_error(exc)
 

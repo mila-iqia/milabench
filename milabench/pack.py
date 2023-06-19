@@ -9,6 +9,7 @@ import json
 import os
 from argparse import Namespace as NS
 from sys import version_info as pyv
+from typing import Sequence
 
 from nox.sessions import Session, SessionRunner
 
@@ -17,7 +18,7 @@ from .fs import XPath
 from .merge import merge
 from .structs import BenchLogEntry
 from .utils import assemble_options
-
+from .utils import make_constraints_file, relativize
 
 class PackageCore:
     def __init__(self, config):
@@ -230,3 +231,68 @@ class Package(BasePackage):
             **self.config.get("env", {}),
             **env,
         }
+        
+    def pip_install(self, *args):
+        args = [str(x) for x in args]
+
+        if self.constraints:
+            self.constraints.write_text("\n".join(self.config["pip"]["constraints"]))
+            args += ["-c", str(self.constraints)]
+            
+        for line in self.config.get("pip", {}).get("args", []):
+            args += line.split(" ")
+            
+        return ["pip", "install", *args]
+    
+    def install(self):
+        cmd = self.pip_install()
+        
+        for reqs in self.requirements_files(self.config.get("install_variant", None)):
+            if reqs.exists():
+                cmd += ["-r", reqs]
+            else:
+                raise FileNotFoundError(f"Requirements file not found: {reqs}")
+        
+        return cmd
+    
+    def prepare(self):
+        assert self.phase == "prepare"
+        
+        if self.prepare_script is not None:
+            prep = self.dirs.code / self.prepare_script
+            return [prep, *self.argv]
+        
+        return []
+    
+    def pip_compile(self, requirements_file: XPath, input_files: XPath, argv=[]):
+        input_files = [relativize(inp) for inp in input_files]
+        return [
+            "python3",
+            "-m",
+            "piptools",
+            "compile",
+            "--resolver",
+            "backtracking",
+            "--output-file",
+            relativize(requirements_file),
+            *argv, 
+            *input_files,
+        ]
+        
+    def pin(self,
+            base_reqs, 
+            reqs,
+            pip_compile_args: Sequence = tuple(),
+            input_files: Sequence = tuple(),
+            constraints: Sequence = tuple()):
+        
+        ivar = self.config.get("install_variant", None)
+        
+        grp = self.config["group"]
+        constraint_path = XPath(".pin") / f"tmp-constraints-{ivar}-{grp}.txt"
+        constraint_files = make_constraints_file(constraint_path, constraints)
+        current_input_files = constraint_files + (base_reqs, *input_files)
+
+        return self.pip_compile(
+            reqs, current_input_files, argv=pip_compile_args
+        )
