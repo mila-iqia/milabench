@@ -41,12 +41,15 @@ def scaling(enable):
         yield
 
 
-def train_epoch(model, criterion, optimizer, loader, device, scaler=None):
-    model.train()
+def train_epoch(args, model, criterion, optimizer, loader, device, scaler=None):
+    transform = dict(device=device)
+    if "channel_last" in args.optim:
+        transform["memory_format"] = torch.channels_last
+
     for inp, target in voir.iterate("train", loader, True):
-        inp = inp.to(device)
+        inp = inp.to(**transform)
         target = target.to(device)
-        optimizer.zero_grad()
+        optimizer.zero_grad(set_to_none="set_grad_none" in args.optim)
         with scaling(scaler is not None):
             output = model(inp)
             loss = criterion(output, target)
@@ -61,13 +64,35 @@ def train_epoch(model, criterion, optimizer, loader, device, scaler=None):
             optimizer.step()
 
 
+
 def model_optimizer(args, model, device):
+    model.train()
     
-    if "jit" in args.optim:
+    if "channel_last" in args.optim:
+        model = model.to(memory_format=torch.channels_last)
+    
+    if "trace" in args.optim:
         input = torch.randn((args.batch_size, 3, 224, 224)).to(device)
         model = torch.jit.trace(model, input)
+        return model, model.parameters()
     
-    return model
+    if "inductor" in args.optim:
+        from functorch import make_functional_with_buffers
+        from functorch.compile import make_boxed_func
+        
+        model, params, buffers = make_functional_with_buffers(model)
+
+        model = make_boxed_func(model)
+        
+        # backend , nvprims_nvfuser, cnvprims_nvfuser
+        model = torch.compile(model, backend="inductor")
+        
+        def forward(*args):
+            return model((params, buffers, *args))
+        
+        return forward, params
+
+    return model, model.parameters()
 
 
 def dali(args, images_dir):
@@ -178,7 +203,7 @@ def main():
         type=str, 
         default="",
         nargs="+",
-        choices=["jit"],
+        choices=["trace", "inductor", "script", "channel_last", "set_grad_none"],
         help="Optimization to enable",
     )
     parser.add_argument(
@@ -271,11 +296,11 @@ def main():
     model = getattr(tvmodels, args.model)()
     model.to(device)
     
-    model = model_optimizer(args, model, device)
+    model, params = model_optimizer(args, model, device)
 
     criterion = nn.CrossEntropyLoss().to(device)
 
-    optimizer = torch.optim.SGD(model.parameters(), args.lr)
+    optimizer = torch.optim.SGD(params, args.lr)
 
     train_loader = dataloader(args, model, device)
 
@@ -292,7 +317,7 @@ def main():
             if not args.no_stdout:
                 print(f"Begin training epoch {epoch}/{args.epochs}")
             train_epoch(
-                model, criterion, optimizer, train_loader, device, scaler=scaler
+                args, model, criterion, optimizer, train_loader, device, scaler=scaler
             )
 
 
