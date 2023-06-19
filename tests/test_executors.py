@@ -3,19 +3,12 @@ import os
 
 import pytest
 
-from milabench.executors import Executor, PerGPU, PackExecutor, VoirExecutor, NJobs, TorchRun
-from milabench.pack import Package
+from milabench.executors import PerGPU, PackExecutor, SingleCmdExecutor, VoirExecutor, NJobs, TorchRunExecutor
 from milabench.cli import _get_multipack
 from milabench.alt_async import proceed
 
-class MockPack(Package):
-    async def execute(self, *args, **kwargs):
-        return (
-            *args,
-            *[f"{k}:{v}" for k, v in kwargs.items()]
-        )
 
-class ExecMock1(Executor):
+class ExecMock1(SingleCmdExecutor):
     def __init__(
             self,
             pack_or_exec,
@@ -161,15 +154,15 @@ def test_njobs_executor():
 def test_njobs_gpus_executor():
     """Two GPUs so torch run IS used"""
     devices = mock_gpu_list()
-    
+
     try:
         import torch
     except ImportError:
         pytest.skip("Pytorch is not installed")
-    
+
     executor = PackExecutor(benchio(), "--start", "2", "--end", "20")
     voir = VoirExecutor(executor)
-    torch = TorchRun(voir, use_stdout=True)
+    torch = TorchRunExecutor(voir, use_stdout=True)
     njobs = NJobs(torch, 1, devices)
 
     acc = 0
@@ -185,19 +178,19 @@ def test_njobs_gpus_executor():
 def test_njobs_gpu_executor():
     """One GPU, so torch run is not used"""
     devices = [mock_gpu_list()[0]]
-    
+
     executor = PackExecutor(benchio(), "--start", "2", "--end", "20")
     voir = VoirExecutor(executor)
-    torch = TorchRun(voir, use_stdout=True)
+    torch = TorchRunExecutor(voir, use_stdout=True)
     njobs = NJobs(torch, 1, devices)
 
     acc = 0
     for r in proceed(njobs.execute()):
         print(r)
-        
+
         if r.event == 'start':
             assert r.data['command'][0] == 'voir'
-            
+
         acc += 1
 
     assert acc == len(devices) * 72
@@ -229,11 +222,11 @@ def mock_gpu_list():
 
 def test_per_gpu_executor():
     devices = mock_gpu_list()
-    
+
     executor = PackExecutor(benchio(), "--start", "2", "--end", "20")
     voir = VoirExecutor(executor)
     plan = PerGPU(voir, devices)
-    
+
     acc = 0
     for r in proceed(plan.execute()):
         print(r)
@@ -246,6 +239,6 @@ def test_void_executor():
     from milabench.executors import VoidExecutor
 
     plan = VoirExecutor(VoidExecutor(benchio()))
-    
+
     for _ in proceed(plan.execute()):
         pass

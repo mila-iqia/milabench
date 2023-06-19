@@ -1,4 +1,4 @@
-from milabench.executors import TorchRun
+from milabench.executors import TorchRunExecutor
 from milabench.pack import Package
 
 BRANCH = "56b90317cd9db1038b42ebdfc5bd81b1a2275cc1"
@@ -34,7 +34,7 @@ class TimmBenchmarkPack(Package):
     def build_run_plan(self):
         # self.config is not the right config for this
         plan = super().build_run_plan()
-        return TorchRun(plan, use_stdout=True)
+        return TorchRunExecutor(plan, use_stdout=True)
 
 
 __pack__ = TimmBenchmarkPack
