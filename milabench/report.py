@@ -157,17 +157,7 @@ def _report_pergpu(entries, measure="50"):
     return df
 
 
-def make_report(
-    summary,
-    compare=None,
-    weights=None,
-    html=None,
-    compare_gpus=False,
-    price=None,
-    title=None,
-    sources=None,
-    errdata=None,
-):
+def make_dataframe(summary, compare=None, weights=None):
     if weights:
         weights = {
             name: value for name, value in weights.items() if value.get("weight", 0)
@@ -183,7 +173,7 @@ def make_report(
         )
     )
 
-    df = DataFrame(
+    return DataFrame(
         {
             key: _make_row(
                 summary.get(key, {}),
@@ -193,6 +183,20 @@ def make_report(
             for key in all_keys
         }
     ).transpose()
+
+
+def make_report(
+    summary,
+    compare=None,
+    weights=None,
+    html=None,
+    compare_gpus=False,
+    price=None,
+    title=None,
+    sources=None,
+    errdata=None,
+):
+    df = make_dataframe(summary, compare, weights)
 
     out = Outputter(stdout=sys.stdout, html=html)
 

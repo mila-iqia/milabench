@@ -16,6 +16,7 @@ from voir.instruments.gpu import deduce_backend, select_backend
 from milabench.alt_async import proceed
 from milabench.utils import blabla, validation_layers, multilogger, available_layers
 
+from .metadata import machine_metadata
 from .compare import compare, fetch_runs
 from .config import build_config, build_system_config
 from .fs import XPath
@@ -128,14 +129,14 @@ def get_base_defaults(base, arch="none", run_name="none"):
                 "arch": arch,
                 "sshkey": None,
                 "nodes": [
-                    { 
-                        "name": "local", 
-                        "ip": "127.0.0.1", 
-                        "port": None, 
-                        "user": user, 
-                        "main": True 
+                    {
+                        "name": "local",
+                        "ip": "127.0.0.1",
+                        "port": None,
+                        "user": user,
+                        "main": True,
                     }
-                ]
+                ],
             },
             "dirs": {
                 "base": base,
@@ -221,7 +222,9 @@ def _get_multipack(
 
     base_defaults = get_base_defaults(base=base, arch=deduce_arch(), run_name=run_name)
 
-    system_config = build_system_config(system_config_path, defaults=base_defaults["_defaults"]["system"])
+    system_config = build_system_config(
+        system_config_path, defaults=base_defaults["_defaults"]["system"]
+    )
     overrides = merge({"*": {"system": system_config}}, overrides)
 
     config = build_config(base_defaults, config_path, overrides)
@@ -667,6 +670,39 @@ class Main:
 
         for pack in mp.packs.values():
             run_sync(pack.pip_install(*args))
+
+    def machine():
+        """Display machine metadata.
+        Used to generate metadata json to back populate archived run
+
+        """
+        from bson.json_util import dumps as to_json
+
+        print(to_json(machine_metadata(), indent=2))
+
+    def publish():
+        """Publish an archived run to a database"""
+        # URI to the database
+        #   ex:
+        #       - postgresql://user:password@hostname:27017/database
+        #       - sqlite:///sqlite.db
+        uri: str
+
+        # Run folder to save
+        folder: str
+
+        # Json string of file to append to the meta dictionary
+        meta: Option & str = None
+
+        from .metrics.archive import publish_archived_run
+        from .metrics.sqlalchemy import SQLAlchemy
+
+        if meta is not None:
+            with open(meta, "r") as file:
+                meta = json.load(file)
+
+        backend = SQLAlchemy(uri, meta_override=meta)
+        publish_archived_run(backend, folder)
 
     def container():
         """Build a container image (might not work properly at the moment)."""

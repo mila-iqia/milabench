@@ -92,13 +92,12 @@ def build_system_config(config_file, defaults=None):
     for node in config["nodes"]:
         for field in ("name", "ip", "user"):
             _name = node.get("name", None)
-            assert node[field], \
-                f"The `{field}` of the node `{_name}` is missing"
+            assert node[field], f"The `{field}` of the node `{_name}` is missing"
         if node.get("main", None):
             config.setdefault("main_node", node)
     config.setdefault("main_node", config["nodes"][0])
-    assert len(config["nodes"]) == 1 or config["main_node"].get("port", None), \
-        (f"The `port` of the main node `{config['main_node']['name']}` is"
-          " missing")
+    assert len(config["nodes"]) == 1 or config["main_node"].get("port", None), (
+        f"The `port` of the main node `{config['main_node']['name']}` is missing"
+    )
 
     return config
