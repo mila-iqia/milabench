@@ -61,8 +61,13 @@ def train_epoch(model, criterion, optimizer, loader, device, scaler=None):
             optimizer.step()
 
 
-def model_optimizer(model, args):
-    return args
+def model_optimizer(args, model, device):
+    
+    if "jit" in args.optim:
+        input = torch.randn((args.batch_size, 3, 224, 224)).to(device)
+        model = torch.jit.trace(model, input)
+    
+    return model
 
 
 def dali(args, images_dir):
@@ -169,6 +174,14 @@ def main():
         help="Dataloader backend",
     )
     parser.add_argument(
+        "--optim", 
+        type=str, 
+        default="",
+        nargs="+",
+        choices=["jit"],
+        help="Optimization to enable",
+    )
+    parser.add_argument(
         "--model", type=str, help="torchvision model name", required=True
     )
     parser.add_argument(
@@ -258,7 +271,7 @@ def main():
     model = getattr(tvmodels, args.model)()
     model.to(device)
     
-    model = model_optimizer(model)
+    model = model_optimizer(args, model, device)
 
     criterion = nn.CrossEntropyLoss().to(device)
 
