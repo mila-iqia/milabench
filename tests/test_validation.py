@@ -1,40 +1,9 @@
-import json
 import os
 
 import voir.instruments.gpu
 
 from milabench.utils import validation_layers, multilogger
-from milabench.structs import BenchLogEntry
-from milabench.pack import BasePackage
-
-
-def replay(filename):
-    with open(filename, "r") as f:
-        for line in f.readlines():
-            entry = json.loads(line)
-
-            if entry["event"] == "config":
-                pack = BasePackage(entry["data"])
-                continue
-
-            yield BenchLogEntry(pack, **entry)
-
-
-def interleave(*filenames):
-    """Interleaves replay lines to simulate multiple bench sending events in parallel"""
-    generators = [replay(file) for file in filenames]
-
-    while len(generators) > 0:
-        finished = []
-
-        for gen in generators:
-            try:
-                yield next(gen)
-            except StopIteration:
-                finished.append(gen)
-
-        for gen in finished:
-            generators.remove(gen)
+from milabench.testing import interleave, replay
 
 
 def replay_scenario(folder, name, filename=None):
