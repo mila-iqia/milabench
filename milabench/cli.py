@@ -384,6 +384,8 @@ class Main:
             html = None
             price = None
 
+            weights = dict()
+
             reports = None
             if runs:
                 reports = _read_reports(*runs)
@@ -398,6 +400,7 @@ class Main:
                     title=None,
                     sources=runs,
                     errdata=reports and _error_report(reports),
+                    weights=weights,
                 )
 
         return success
