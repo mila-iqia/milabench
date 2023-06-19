@@ -11,9 +11,6 @@ def test_sqlalchemy_sqlite(runs_folder):
     run_dir = runs_folder / "sedumoje.2023-03-24_13:57:35.089747"
     run_name = "sedumoje"
 
-    # run_dir = runs_folder / ".."/ ".." / ".." / "MI250.2023-05-08_17_54_51.224604"
-    # run_name = "redizilo"
-
     with SQLAlchemy() as logger:
         with multilogger(logger) as log:
             for msg in replay_run(run_dir):
