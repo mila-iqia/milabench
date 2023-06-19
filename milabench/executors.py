@@ -33,7 +33,7 @@ async def force_terminate(pack, delay):
 class Executor():
     """Base class for an execution plan
 
-    Will reculsevly go through it's embedded `Executor` to build a command
+    Will recursively go through its embedded `Executor` to build a command
     line's arguments list to be passed to the leaf `Executor`'s
     `BasePackage.execute()`
 
