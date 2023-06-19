@@ -182,6 +182,32 @@ columns_order = {
 }
 
 
+def make_dataframe(summary, compare=None, weights=None):
+    if weights is None:
+        weights = dict()
+
+    all_keys = list(
+        sorted(
+            {
+                *(summary.keys() if summary else []),
+                *(compare.keys() if compare else []),
+                *(weights.keys() if weights else []),
+            }
+        )
+    )
+
+    return DataFrame(
+        {
+            key: _make_row(
+                summary.get(key, {}),
+                compare and compare.get(key, {}),
+                weights and weights.get(key, {}),
+            )
+            for key in all_keys
+        }
+    ).transpose()
+
+
 @error_guard({})
 def make_report(
     summary,
@@ -197,26 +223,7 @@ def make_report(
     if weights is None:
         weights = dict()
 
-    all_keys = list(
-        sorted(
-            {
-                *(summary.keys() if summary else []),
-                *(compare.keys() if compare else []),
-                *(weights.keys() if weights else []),
-            }
-        )
-    )
-
-    df = DataFrame(
-        {
-            key: _make_row(
-                summary.get(key, {}),
-                compare and compare.get(key, {}),
-                weights and weights.get(key, {}),
-            )
-            for key in all_keys
-        }
-    ).transpose()
+    df = make_dataframe(summary, compare, weights)
 
     # Reorder columns
     df = df[sorted(df.columns, key=lambda k: columns_order.get(k, 0))]
