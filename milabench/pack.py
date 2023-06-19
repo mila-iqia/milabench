@@ -8,17 +8,15 @@ class defines good default behavior.
 import json
 import os
 from argparse import Namespace as NS
-from hashlib import md5
 from sys import version_info as pyv
-from typing import Sequence
 
 from nox.sessions import Session, SessionRunner
 
-from .alt_async import run, send
+from .alt_async import send
 from .fs import XPath
 from .merge import merge
 from .structs import BenchLogEntry
-from .utils import assemble_options, make_constraints_file, relativize
+from .utils import assemble_options
 
 
 class PackageCore:
@@ -156,117 +154,10 @@ class BasePackage:
         await self.install()
         self.install_mark_file.touch()
 
-    async def pip_install(self, *args):
-        """Install a package in the virtual environment.
-
-        The arguments are given to ``pip install`` verbatim, so you can
-        e.g. do ``self.pip_install("-r", filename)`` to install a list
-        of requirements.
-        """
-        args = [str(x) for x in args]
-        if self.constraints:
-            self.constraints.write_text("\n".join(self.config["pip"]["constraints"]))
-            args += ["-c", str(self.constraints)]
-        for line in self.config.get("pip", {}).get("args", []):
-            args += line.split(" ")
-        await run(
-            ["pip", "install", *args],
-            info={"pack": self},
-            env={
-                **self.core._nox_session.env,
-                **self.make_env(),
-                **self.config.get("env", {}),
-            },
-            constructor=BenchLogEntry,
-        )
-
     def conda_install(self, *args, **kwargs):
         """Install a package using conda."""
         args = [str(x) for x in args]
         return self._nox_session.conda_install(*args, **kwargs, silent=False)
-
-    async def execute(self, *args, cwd=None, env={}, external=False, **kwargs):
-        """Run a command in the virtual environment.
-
-        Unless specified otherwise, the command is run with
-        ``self.dirs.code`` as the cwd.
-
-        Arguments:
-            args: The arguments to the command
-            cwd: The cwd to use (defaults to ``self.dirs.code``)
-        """
-        args = [str(x) for x in args]
-        if cwd is None:
-            cwd = self.dirs.code
-        return await run(
-            args,
-            **kwargs,
-            info={"pack": self},
-            env=self.full_env(env) if not external else {**os.environ, **env},
-            constructor=BenchLogEntry,
-            cwd=cwd,
-            process_accumulator=self.processes,
-        )
-
-    async def python(self, *args, **kwargs):
-        """Run a Python script.
-
-        Equivalent to:
-
-        .. code-block:: python
-
-            self.execute("python", *args, **kwargs)
-        """
-        return await self.execute("python", *args, **kwargs)
-
-    async def voir(self, script, args=(), wrapper=[], cwd=None, **kwargs):
-        """Launch a script using ``voir``.
-
-        This runs:
-
-        .. code-block::
-
-            voir {*voirargs} {self.dirs.code / self.main_script} {*args}
-
-        Using ``self.dirs.code`` as the current working directory.
-
-        .. note::
-            stderr is piped to stdout in the process
-
-        Arguments:
-            args: A list of arguments to the program.
-            voirargs: A list of arguments to ``voir``.
-            env: Environment variables to set for the process.
-
-        Returns:
-            A subprocess.Popen instance representing the running process.
-        """
-
-        if isinstance(script, list):
-            script_args = script
-        else:
-            if not XPath(script).is_absolute():
-                script = str(self.dirs.code / script)
-            script_args = [script]
-
-        if voirconf := self.config.get("voir", None):
-            hsh = md5(str(voirconf).encode("utf8"))
-            voirconf_file = (
-                self.dirs.extra / f"voirconf-{self.tag}-{hsh.hexdigest()}.json"
-            )
-            with open(voirconf_file, "w") as f:
-                json.dump(fp=f, obj=voirconf, indent=4)
-            voirargs = ("--config", voirconf_file)
-        else:
-            voirargs = ()
-
-        command = [*wrapper, "voir", *voirargs, *script_args, *args]
-        return await self.execute(
-            *command,
-            setsid=True,
-            cwd=cwd,
-            **kwargs,
-        )
 
 
 class Package(BasePackage):
@@ -339,145 +230,3 @@ class Package(BasePackage):
             **self.config.get("env", {}),
             **env,
         }
-
-    async def install(self):
-        """Install the benchmark.
-
-        By default, this installs the requirements file pointed to by the
-        instance or class attribute ``self.requirements_file``, which is set
-        to ``"requirements.txt"`` by default. That path is understood to be
-        relative to self.dirs.code. In other words, if ``self.dirs.code == /blah``
-        and ``self.requirements_file == "requirements.txt"``, ``self.install()``
-        executes:
-
-        .. code-block::
-
-            pip install -r /blah/requirements.txt``
-
-        .. note::
-            The main method ``milabench install`` calls is
-            :meth:`~milabench.pack.BasePackage.checked_install` which takes
-            care of checking if the install already occurred, copying over
-            the manifest's contents to ``self.dirs.code``, installing
-            milabench in the venv, and then calling this method.
-        """
-        assert self.phase == "install"
-        for reqs in self.requirements_files(self.config.get("install_variant", None)):
-            if reqs.exists():
-                await self.pip_install("-r", reqs)
-            else:
-                raise FileNotFoundError(f"Requirements file not found: {reqs}")
-
-    async def pin(
-        self,
-        clear_previous: bool = True,
-        pip_compile_args: Sequence = tuple(),
-        input_files: Sequence = tuple(),
-        constraints: Sequence = tuple(),
-    ):
-        """Pin versions to requirements file.
-
-        Arguments:
-            *pip_compile_args: `python3 -m piptools compile` extra arguments
-            requirements_file: The output requirements file
-            input_files: A list of inputs to piptools compile
-            constraint: The constraint file
-        """
-        ivar = self.config.get("install_variant", None)
-        if ivar == "unpinned":
-            raise Exception("Cannot pin the 'unpinned' variant.")
-        assert self.phase == "pin"
-        for base_reqs, reqs in self.requirements_map().items():
-            if not base_reqs.exists():
-                raise FileNotFoundError(
-                    f"Cannot find base requirements file: {base_reqs}"
-                )
-
-            if clear_previous and reqs.exists():
-                await self.message(f"Clearing out existing {reqs}")
-                reqs.rm()
-
-            grp = self.config["group"]
-            constraint_path = XPath(".pin") / f"tmp-constraints-{ivar}-{grp}.txt"
-            constraint_files = make_constraints_file(constraint_path, constraints)
-            current_input_files = constraint_files + (base_reqs, *input_files)
-
-            await self.exec_pip_compile(
-                reqs, current_input_files, argv=pip_compile_args
-            )
-
-            # Add previous requirements as inputs
-            input_files = (reqs, *input_files)
-
-    async def exec_pip_compile(
-        self, requirements_file: XPath, input_files: XPath, argv=[]
-    ):
-        input_files = [relativize(inp) for inp in input_files]
-        return await self.execute(
-            "python3",
-            "-m",
-            "piptools",
-            "compile",
-            "--resolver",
-            "backtracking",
-            "--output-file",
-            relativize(requirements_file),
-            *argv,
-            *input_files,
-            cwd=XPath(".").absolute(),
-            external=True,
-        )
-
-    async def prepare(self):
-        """Prepare the benchmark.
-
-        By default, this executes ``self.dirs.code / self.prepare_script``,
-        which should be an executable (python, bash, etc.)
-
-        The environment variables from :meth:`~milabench.pack.BasePackage.make_env` are set for that
-        invocation, so the script can use e.g. ``$MILABENCH_DIR_DATA`` to
-        access the data directory for the benchmark.
-
-        The default value of ``self.prepare_script`` is ``"prepare.py"``.
-        """
-        assert self.phase == "prepare"
-        if self.prepare_script is not None:
-            prep = self.dirs.code / self.prepare_script
-            if prep.exists():
-                await self.execute(
-                    prep, *self.argv, env=self.make_env(), cwd=prep.parent
-                )
-
-    async def run(self):
-        """Start the benchmark and return the running process.
-
-        By default, this runs:
-
-        .. code-block::
-
-            voir {*voirargs} {self.dirs.code / self.main_script} {*args}
-
-        The environment variables from :meth:`~milabench.pack.BasePackage.make_env` are set for that
-        invocation, so the script can use e.g. ``$MILABENCH_DIR_DATA`` to
-        access the data directory for the benchmark.
-
-        The default value of ``self.main_script`` is ``"main.py"``.
-
-        Arguments:
-            args: A list of arguments to the program.
-            voirargs: A list of arguments to ``voir``.
-            env: Environment variables to set for the process.
-        """
-        assert self.phase == "run"
-        main = self.dirs.code / self.main_script
-        if not main.exists():
-            raise FileNotFoundError(
-                f"Cannot run main script because it does not exist: {main}"
-            )
-
-        if main.is_dir():
-            return await self.voir(
-                ["-m", self.main_script], args=self.argv, cwd=main.parent
-            )
-        else:
-            return await self.voir(self.main_script, args=self.argv, cwd=main.parent)
