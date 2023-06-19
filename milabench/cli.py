@@ -128,14 +128,14 @@ def get_base_defaults(base, arch="none", run_name="none"):
                 "arch": arch,
                 "sshkey": None,
                 "nodes": [
-                    { 
-                        "name": "local", 
-                        "ip": "127.0.0.1", 
-                        "port": None, 
-                        "user": user, 
-                        "main": True 
+                    {
+                        "name": "local",
+                        "ip": "127.0.0.1",
+                        "port": None,
+                        "user": user,
+                        "main": True,
                     }
-                ]
+                ],
             },
             "dirs": {
                 "base": base,
@@ -221,7 +221,9 @@ def _get_multipack(
 
     base_defaults = get_base_defaults(base=base, arch=deduce_arch(), run_name=run_name)
 
-    system_config = build_system_config(system_config_path, defaults=base_defaults["_defaults"]["system"])
+    system_config = build_system_config(
+        system_config_path, defaults=base_defaults["_defaults"]["system"]
+    )
     overrides = merge({"*": {"system": system_config}}, overrides)
 
     config = build_config(base_defaults, config_path, overrides)
@@ -652,6 +654,7 @@ class Main:
             title=None,
             sources=runs,
             errdata=reports and _error_report(reports),
+            weights=config,
         )
 
     def pip():

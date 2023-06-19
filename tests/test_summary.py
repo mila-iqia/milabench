@@ -2,10 +2,10 @@ from milabench.validation.validation import Summary
 from milabench.cli import main
 
 
-def test_report(runs_folder, capsys, file_regression):
+def test_report(runs_folder, capsys, file_regression, config):
     folder = runs_folder / "rijubigo.2023-03-24_13:45:27.512446"
     try:
-        main(["report", "--runs", folder])
+        main(["report", "--runs", folder, "--config", config("benchio")])
     except SystemExit as exc:
         assert not exc.code
 

@@ -13,7 +13,7 @@ H = HTML()
 
 
 @error_guard({})
-def _make_row(summary, compare):
+def _make_row(summary, compare, weights):
     mkey = "train_rate"
     metric = "mean"
     row = {}
@@ -21,7 +21,7 @@ def _make_row(summary, compare):
     row["n"] = summary["n"] if summary else nan
     row["fail"] = summary["failures"] if summary else nan
     row["perf"] = summary[mkey][metric] if summary else nan
-    
+
     if compare:
         row["perf_base"] = compare[mkey][metric]
         row["perf_ratio"] = row["perf_adj"] / row["perf_base"]
@@ -49,9 +49,9 @@ def _make_row(summary, compare):
     score = (acc if acc > 0 else row["perf"]) * success_ratio
 
     row["score"] = score
-    row["weight"] = summary["weight"]
+    row["weight"] = weights.get("weight", summary["weight"])
     # ----
-    
+
     return row
 
 
@@ -192,12 +192,17 @@ def make_report(
     title=None,
     sources=None,
     errdata=None,
+    weights=None,
 ):
+    if weights is None:
+        weights = dict()
+
     all_keys = list(
         sorted(
             {
                 *(summary.keys() if summary else []),
                 *(compare.keys() if compare else []),
+                *(weights.keys() if weights else []),
             }
         )
     )
@@ -207,6 +212,7 @@ def make_report(
             key: _make_row(
                 summary.get(key, {}),
                 compare and compare.get(key, {}),
+                weights and weights.get(key, {}),
             )
             for key in all_keys
         }
@@ -233,7 +239,6 @@ def make_report(
         weights = df["weight"]
         logscore = np.sum(np.log(perf) * weights) / np.sum(weights)
         return np.exp(logscore)
-
 
     score = _score("score")
     failure_rate = df["fail"].sum() / df["n"].sum()
