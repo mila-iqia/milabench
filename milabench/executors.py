@@ -455,7 +455,6 @@ class NJobs(ListExecutor):
     """
 
     def __init__(self, executor: Executor, n: int, gpus: list = None, **kwargs) -> None:
-        super().__init__(executor, **kwargs)
         self.n = n
         if gpus is None:
             gpus = []
