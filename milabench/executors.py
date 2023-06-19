@@ -78,7 +78,6 @@ class Executor():
 
     def copy(self, pack):
         """Copy the execution plan but use a different pack"""
-        from copy import deepcopy
         copy = deepcopy(self)
         copy._set_pack(pack)
         return copy
