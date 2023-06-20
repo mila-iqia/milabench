@@ -196,8 +196,7 @@ class CmdExecutor(SingleCmdExecutor):
         )
         self.cmd_argv = cmd_argv
 
-    def _argv(self, **kwargs) -> List:
-        del kwargs
+    def _argv(self, **_) -> List:
         return [*self.cmd_argv]
 
 
@@ -541,7 +540,7 @@ class PerGPU(ListExecutor):
 
 
 # Accelerate
-class AccelerateLaunchExecutor(Executor):
+class AccelerateLaunchExecutor(SingleCmdExecutor):
     """Execute a `BasePackage` with Accelerate
 
     Arguments:
@@ -562,8 +561,7 @@ class AccelerateLaunchExecutor(Executor):
         )
         self.accelerate_argv = accelerate_argv
 
-    def _argv(self, rank, **kwargs) -> List:
-        del kwargs
+    def _argv(self, rank, **_) -> List:
         nproc = (
             len(self.pack.config.get("devices", [])) * self.pack.config["num_machines"]
         )
@@ -613,14 +611,14 @@ class AccelerateLoopExecutor(Executor):
 
     def __init__(
             self,
-            executor:AccelerateLaunchExecutor,
-            ssh_exec:SSHExecutor=None,
+            executor: AccelerateLaunchExecutor,
+            ssh_exec: SSHExecutor = None,
             **kwargs
     ) -> None:
         if not isinstance(ssh_exec, SSHExecutor):
             raise ValueError(f"{self.__class__.__name__} only accepts"
-                             f" {SSHExecutor.__class__.__name__} as nested"
-                             f" {Executor.__class__.__name__}")
+                             f" {SSHExecutor.__name__} as nested"
+                             f" {Executor.__name__}")
         super().__init__(
             ssh_exec,
             **kwargs
