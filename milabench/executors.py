@@ -386,7 +386,7 @@ class SSHExecutor(WrapperExecutor):
         key = self.key or node.get("key", None)
         host = f"{user}@{self.host}" if user else self.host
 
-        argv = [] # super().argv(**kwargs)
+        argv = super()._argv(**kwargs)
 
         if key:
             argv.append(f"-i{key}")
