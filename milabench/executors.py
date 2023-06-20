@@ -406,7 +406,8 @@ class TorchRunExecutor(WrapperExecutor):
             argv = [*super()._argv(**kwargs), f"--nproc_per_node={nproc}", "--"]
             # Check if the sub-executor targets a module or not
             cmd = next(iter(self.exec.argv()), None)
-            if cmd and not XPath(cmd).absolute():
+            # if the command exists and it is not a path assume it is a module
+            if cmd and not XPath(cmd).exists():
                 argv.append("-m")
             return argv
         return []
