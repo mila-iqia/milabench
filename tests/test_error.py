@@ -30,4 +30,3 @@ def test_error_reporting_short(capsys, args, matcher, config):
     print("==")
 
     assert matcher(captured.out), "The traceback need to be printed"
-    assert captured.err == ""

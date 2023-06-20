@@ -8,6 +8,7 @@ from .utils import error_guard
 
 @error_guard(None)
 def aggregate(run_data):
+    """Group all the data inside a dictionary of lists"""
     omnibus = defaultdict(list)
     config = None
     start = None
@@ -79,6 +80,7 @@ def aggregate(run_data):
 
 
 def _classify(all_aggregates):
+    """Group data by benchmark names"""
     classified = defaultdict(list)
     for agg in all_aggregates:
         config = agg["config"]
@@ -87,12 +89,16 @@ def _classify(all_aggregates):
 
 
 def _merge(aggs):
+    """Merge same bench data into a single list of observations"""
+
     results = {"data": defaultdict(list)}
     for agg in aggs:
         data = agg.pop("data")
         results.update(agg)
+
         for k, v in data.items():
             results["data"][k].extend(v)
+
     return results
 
 
@@ -128,6 +134,7 @@ def _metrics(xs):
 def _summarize(group):
     agg = group["data"]
     gpudata = defaultdict(lambda: defaultdict(list))
+
     for entry in agg["gpudata"]:
         for device, data in entry.items():
             if data["memory"][0] == 1 or data["load"] == 0:
@@ -157,6 +164,7 @@ def _summarize(group):
             }
             for device, data in gpudata.items()
         },
+        "weight": config.get("weight", 0),
     }
 
 
