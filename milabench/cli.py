@@ -262,8 +262,10 @@ def _read_reports(*runs):
                     lines = f.readlines()
                     try:
                         data = [json.loads(line) for line in lines]
-                    except Exception as exc:
-                        print(f"Could not parse {pth}")
+                    except Exception:
+                        import traceback
+                        print(f"Could not parse line inside {pth}\n\t- {line}")
+                        traceback.print_exc()
                     else:
                         all_data[str(pth)] = data
     return all_data
@@ -380,7 +382,6 @@ class Main:
 
         if report:
             runs = {pack.logdir for pack in mp.packs.values()}
-            weights = None
             compare = None
             compare_gpus = False
             html = None
@@ -394,7 +395,6 @@ class Main:
                 make_report(
                     summary,
                     compare=compare,
-                    weights=weights,
                     html=html,
                     compare_gpus=compare_gpus,
                     price=price,

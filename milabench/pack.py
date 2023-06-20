@@ -20,6 +20,7 @@ from .structs import BenchLogEntry
 from .utils import assemble_options
 from .utils import make_constraints_file, relativize
 
+
 class PackageCore:
     def __init__(self, config):
         self.pack_path = XPath(config["definition"])

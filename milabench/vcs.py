@@ -19,14 +19,35 @@ def _exec(cmd, default):
 
 def retrieve_git_versions(tag="<tag>", commit="<commit>", date="<date>"):
     return {
-        "tag": _exec("git describe --tags", tag),
+        "tag": _exec("git describe --always --tags", tag),
         "commit": _exec("git rev-parse HEAD", commit),
         "date": _exec("git show -s --format=%ci", date),
     }
 
 
+
+def read_previous():
+    info = ["<tag>", "<commit>", "<date>"]
+    
+    with open(os.path.join(ROOT, "milabench", "_version.py"), "r") as file:
+        for line in file.readlines():
+            
+            if 'tag' in line:
+                _, v = line.split('=')
+                info[0] = v.strip()
+                
+            if 'commit' in line:
+                _, v = line.split('=')
+                info[1] = v.strip()
+
+            if 'date' in line:
+                _, v = line.split('=')
+                info[2] = v.strip()
+        
+    return info
+
 def update_version_file():
-    version_info = retrieve_git_versions()
+    version_info = retrieve_git_versions(*read_previous())
 
     with open(os.path.join(ROOT, "milabench", "_version.py"), "w") as file:
         file.write('"""')
