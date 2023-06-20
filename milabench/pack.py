@@ -460,7 +460,7 @@ class Package(BasePackage):
         assert self.phase == "run"
         return await self.build_run_plan().execute()
 
-    def build_run_plan(self) -> "execs.Executor":
+    def build_run_plan(self, dry=False) -> "execs.Executor":
         main = self.dirs.code / self.main_script
-        pack = execs.PackExecutor(self, *self.argv)
+        pack = execs.PackExecutor(self, *self.argv, dry=dry)
         return execs.VoirExecutor(pack, cwd=main.parent)

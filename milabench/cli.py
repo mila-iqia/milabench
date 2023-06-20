@@ -28,7 +28,7 @@ from .log import (
     TextReporter,
 )
 from .merge import merge
-from .multi import MultiPackage
+from .multi import MultiPackage, make_execution_plan
 from .report import make_report
 from .summary import aggregate, make_summary
 
@@ -602,6 +602,18 @@ class Main:
             run.summary = make_summary(all_data.values())
 
         compare(runs, last, metric, stat)
+
+    def dry():
+        mp = get_multipack(run_name="dev")
+        repeat = 1
+
+        for index in range(repeat):
+            for pack in mp.packs.values():
+   
+                exec_plan = make_execution_plan(pack, index, repeat, dry=True)
+                for _, argv, _ in exec_plan.commands():
+                    print(' '.join(str(a) for a in argv))
+                            
 
     def report():
         """Generate a report aggregating all runs together into a final report."""

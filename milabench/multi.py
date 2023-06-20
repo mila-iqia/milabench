@@ -26,7 +26,7 @@ def planning_method(f):
 
 
 
-def make_execution_plan(pack, step=0, repeat=1):
+def make_execution_plan(pack, step=0, repeat=1, dry=False):
     cfg = deepcopy(pack.config)
     plan = deepcopy(cfg["plan"])
 
@@ -38,8 +38,8 @@ def make_execution_plan(pack, step=0, repeat=1):
 
     # This is wrong because it does not know yet
     # own many GPUs will be used for the GPU
-    exec_plan = run_pack.build_run_plan()
-    devices = get_gpu_info()["gpus"].values()
+    exec_plan = run_pack.build_run_plan(dry=dry)
+    devices = gpus
 
     if method == "per_gpu":
         exec_plan = PerGPU(exec_plan, devices)
@@ -75,16 +75,6 @@ class MultiPackage:
                 await pack.message_error(exc)
 
     async def do_run(self, repeat=1):
-        async def force_terminate(pack, delay):
-            await asyncio.sleep(delay)
-            for proc in pack.processes:
-                ret = proc.poll()
-                if ret is None:
-                    await pack.message(
-                        f"Terminating process because it ran for longer than {delay} seconds."
-                    )
-                    destroy(proc)
-
         for index in range(repeat):
             for pack in self.packs.values():
                 try:

@@ -26,3 +26,8 @@ def config():
 @pytest.fixture
 def replayfolder():
     return here / "replays"
+
+
+@pytest.fixture
+def standard():
+    return here / ".." / "config" / "standard.yaml"

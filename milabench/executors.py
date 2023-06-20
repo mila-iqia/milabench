@@ -217,6 +217,7 @@ class PackExecutor(CmdExecutor):
             self,
             pack: pack.Package,
             *script_argv,
+            dry=False,
             **kwargs
     ) -> None:
         script = script_argv[:1]
@@ -227,6 +228,7 @@ class PackExecutor(CmdExecutor):
             script = None
 
         super().__init__(pack, *script_argv, **kwargs)
+        self.dry = dry
 
         self.script = script
 
@@ -237,7 +239,7 @@ class PackExecutor(CmdExecutor):
         else:
             abs_main = script
 
-        if not abs_main.exists():
+        if not self.dry and not abs_main.exists():
             raise FileNotFoundError(
                 f"Cannot run script or directory because it does not exist: {script}"
             )
@@ -406,7 +408,7 @@ class TorchRunExecutor(WrapperExecutor):
             argv = [*super()._argv(**kwargs), f"--nproc_per_node={nproc}", "--"]
             # Check if the sub-executor targets a module or not
             cmd = next(iter(self.exec.argv()), None)
-            if cmd and not XPath(cmd).absolute():
+            if cmd and not XPath(cmd).exists():
                 argv.append("-m")
             return argv
         return []
@@ -517,7 +519,7 @@ class PerGPU(ListExecutor):
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
     def __init__(self, executor: Executor, gpus: list = None, **kwargs) -> None:
-        if gpus is None:
+        if gpus is None or len(gpus) == 0:
             gpus = [{"device": 0, "selection_variable": "CPU_VISIBLE_DEVICE"}]
 
         self.devices = gpus
