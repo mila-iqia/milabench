@@ -17,17 +17,15 @@ def _make_row(summary, compare, weights):
     mkey = "train_rate"
     metric = "mean"
     row = {}
-    if weights is not None:
-        row["weight"] = weights["weight"] if weights else nan
+
     row["n"] = summary["n"] if summary else nan
     row["fail"] = summary["failures"] if summary else nan
     row["perf"] = summary[mkey][metric] if summary else nan
-    row["perf_adj"] = (
-        summary[mkey][metric] * (1 - row["fail"] / row["n"]) if summary else nan
-    )
+
     if compare:
         row["perf_base"] = compare[mkey][metric]
         row["perf_ratio"] = row["perf_adj"] / row["perf_base"]
+
     row["std%"] = summary[mkey]["std"] / summary[mkey][metric] if summary else nan
     row["sem%"] = summary[mkey]["sem"] / summary[mkey][metric] if summary else nan
     # row["iqr%"] = (summary[mkey]["q3"] - summary[mkey]["q1"]) / summary[mkey]["median"] if summary else nan
@@ -40,6 +38,20 @@ def _make_row(summary, compare, weights):
         if summary
         else nan
     )
+
+    # Sum of all the GPU performance
+    # to get the overall perf of the whole machine
+    acc = 0
+    for _, metrics in summary["per_gpu"].items():
+        acc += metrics[metric]
+
+    success_ratio = 1 - row["fail"] / row["n"]
+    score = (acc if acc > 0 else row["perf"]) * success_ratio
+
+    row["score"] = score
+    row["weight"] = weights.get("weight", summary["weight"])
+    # ----
+
     return row
 
 
@@ -157,11 +169,22 @@ def _report_pergpu(entries, measure="50"):
     return df
 
 
+columns_order = {
+    "fail": 1,
+    "n": 2,
+    "perf": 3,
+    "perf_adj": 4,
+    "sem%": 5,
+    "std%": 6,
+    "peak_memory": 7,
+    "score": 8,
+    "weight": 9,
+}
+
+
 def make_dataframe(summary, compare=None, weights=None):
-    if weights:
-        weights = {
-            name: value for name, value in weights.items() if value.get("weight", 0)
-        }
+    if weights is None:
+        weights = dict()
 
     all_keys = list(
         sorted(
@@ -185,18 +208,25 @@ def make_dataframe(summary, compare=None, weights=None):
     ).transpose()
 
 
+@error_guard({})
 def make_report(
     summary,
     compare=None,
-    weights=None,
     html=None,
     compare_gpus=False,
     price=None,
     title=None,
     sources=None,
     errdata=None,
+    weights=None,
 ):
+    if weights is None:
+        weights = dict()
+
     df = make_dataframe(summary, compare, weights)
+
+    # Reorder columns
+    df = df[sorted(df.columns, key=lambda k: columns_order.get(k, 0))]
 
     out = Outputter(stdout=sys.stdout, html=html)
 
@@ -208,30 +238,31 @@ def make_report(
     out.title(title or "Benchmark results")
     out.print(df)
 
-    if weights:
-        out.section("Scores")
+    out.section("Scores")
 
-        def _score(column):
-            # This computes a weighted geometric mean
-            perf = df[column]
-            weights = df["weight"]
-            logscore = np.sum(np.log(perf) * weights) / np.sum(weights)
-            return np.exp(logscore)
+    def _score(column):
+        # This computes a weighted geometric mean
+        perf = df[column]
+        weights = df["weight"]
+        logscore = np.sum(np.log(perf) * weights) / np.sum(weights)
+        return np.exp(logscore)
 
-        score = _score("perf")
-        failure_rate = df["fail"].sum() / df["n"].sum()
-        scores = {
-            "Failure rate": PassFail(failure_rate, failure_rate <= 0.01),
-            "Score": WithClass(f"{score:10.2f}", "score"),
-        }
-        if compare:
-            score_base = _score("perf_base")
-            scores.update({"Score (baseline)": score_base, "Ratio": score / score_base})
-        if price:
-            rpp = price / score
-            scores["Price ($)"] = f"{price:10.2f}"
-            scores["RPP (Price / Score)"] = WithClass(f"{rpp:10.2f}", "rpp")
-        out.print(Table(scores))
+    score = _score("score")
+    failure_rate = df["fail"].sum() / df["n"].sum()
+    scores = {
+        "Failure rate": PassFail(failure_rate, failure_rate <= 0.01),
+        "Score": WithClass(f"{score:10.2f}", "score"),
+    }
+    if compare:
+        score_base = _score("perf_base")
+        scores.update({"Score (baseline)": score_base, "Ratio": score / score_base})
+
+    if price:
+        rpp = price / score
+        scores["Price ($)"] = f"{price:10.2f}"
+        scores["RPP (Price / Score)"] = WithClass(f"{rpp:10.2f}", "rpp")
+
+    out.print(Table(scores))
 
     if compare_gpus:
         for measure in ["mean", "min", "max"]:
