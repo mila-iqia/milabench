@@ -31,9 +31,9 @@ class TimmBenchmarkPack(Package):
         if not timm.exists():
             timm.clone_subtree("https://github.com/huggingface/pytorch-image-models", BRANCH)
 
-    def build_run_plan(self, dry=False):
+    def build_run_plan(self):
         # self.config is not the right config for this
-        plan = super().build_run_plan(dry=dry)
+        plan = super().build_run_plan()
         return TorchRunExecutor(plan, use_stdout=True)
 
 
