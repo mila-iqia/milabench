@@ -1,6 +1,7 @@
 import asyncio
 from collections import defaultdict
 from copy import deepcopy
+import traceback
 
 from voir.instruments.gpu import get_gpu_info
 
@@ -66,8 +67,8 @@ class MultiPackage:
         self.packs = packs
         
     def build_execution_plan(self, pack):
-        cmd = getattr(pack, pack.phase)
-        cmd = CmdExecutor(pack, *cmd)
+        cmd = getattr(pack, pack.phase)()
+        plan = CmdExecutor(pack, *cmd)
         
         jobs = []
         nodes = pack.config["system"]["nodes"]
@@ -75,7 +76,12 @@ class MultiPackage:
         for worker in nodes:
             host = worker["ip"]
             user = worker["user"]
-            jobs.append(SSHExecutor(cmd, host=host, user=user))
+            
+            # One pack per process
+            run_pack = pack.copy(dict())
+            run_plan = plan.copy(run_pack)
+            
+            jobs.append(SSHExecutor(run_plan, host=host, user=user))
 
         return ListExecutor(*jobs)
     
@@ -91,6 +97,7 @@ class MultiPackage:
                 
                 # await pack.checked_install()
             except Exception as exc:
+                traceback.print_exc()
                 await pack.message_error(exc)
 
     async def do_prepare(self):
@@ -100,6 +107,7 @@ class MultiPackage:
                 await self.exec_phase(pack)
             
             except Exception as exc:
+                traceback.print_exc()
                 await pack.message_error(exc)
 
     async def do_run(self, repeat=1):
@@ -134,7 +142,6 @@ class MultiPackage:
                     await exec_plan.execute(timeout=True, timeout_delay=600)
 
                 except Exception as exc:
-                    import traceback
                     traceback.print_exc()
                     await pack.message_error(exc)
 

@@ -377,8 +377,8 @@ class SSHExecutor(WrapperExecutor):
         return {}
 
     def _argv(self, **kwargs) -> List:
-        if socket.gethostname() == self.host:
-            # No-op when executing on the main node
+        if self.host in (socket.gethostname(), "localhost", "127.0.0.1") :
+            # No-op when executing on the main node or locally
             return []
 
         node = self._find_node_config()
@@ -386,7 +386,7 @@ class SSHExecutor(WrapperExecutor):
         key = self.key or node.get("key", None)
         host = f"{user}@{self.host}" if user else self.host
 
-        argv = super().argv(**kwargs)
+        argv = [] # super().argv(**kwargs)
 
         if key:
             argv.append(f"-i{key}")
