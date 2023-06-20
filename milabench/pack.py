@@ -8,12 +8,12 @@ class defines good default behavior.
 import json
 import os
 from argparse import Namespace as NS
-from hashlib import md5
 from sys import version_info as pyv
 from typing import Sequence
 
 from nox.sessions import Session, SessionRunner
 
+from . import executors as execs
 from .alt_async import run, send
 from .fs import XPath
 from .merge import merge
@@ -241,32 +241,16 @@ class BasePackage:
         Returns:
             A subprocess.Popen instance representing the running process.
         """
-
         if isinstance(script, list):
-            script_args = script
+            executor = execs.CmdExecutor(self, *script, *args)
         else:
             if not XPath(script).is_absolute():
                 script = str(self.dirs.code / script)
-            script_args = [script]
+            executor = execs.PackExecutor(self, script, *args)
 
-        if voirconf := self.config.get("voir", None):
-            hsh = md5(str(voirconf).encode("utf8"))
-            voirconf_file = (
-                self.dirs.extra / f"voirconf-{self.tag}-{hsh.hexdigest()}.json"
-            )
-            with open(voirconf_file, "w") as f:
-                json.dump(fp=f, obj=voirconf, indent=4)
-            voirargs = ("--config", voirconf_file)
-        else:
-            voirargs = ()
-
-        command = [*wrapper, "voir", *voirargs, *script_args, *args]
-        return await self.execute(
-            *command,
-            setsid=True,
-            cwd=cwd,
-            **kwargs,
-        )
+        voir = execs.VoirExecutor(executor, cwd=cwd, **kwargs)
+        wrapper = execs.WrapperExecutor(voir, *wrapper)
+        return await wrapper.execute()
 
 
 class Package(BasePackage):
@@ -413,7 +397,8 @@ class Package(BasePackage):
         self, requirements_file: XPath, input_files: XPath, argv=[]
     ):
         input_files = [relativize(inp) for inp in input_files]
-        return await self.execute(
+        return await execs.CmdExecutor(
+            self,
             "python3",
             "-m",
             "piptools",
@@ -426,7 +411,7 @@ class Package(BasePackage):
             *input_files,
             cwd=XPath(".").absolute(),
             external=True,
-        )
+        ).execute()
 
     async def prepare(self):
         """Prepare the benchmark.
@@ -441,12 +426,16 @@ class Package(BasePackage):
         The default value of ``self.prepare_script`` is ``"prepare.py"``.
         """
         assert self.phase == "prepare"
+        return await self.build_prepare_plan().execute()
+
+    def build_prepare_plan(self) -> "execs.Executor":
         if self.prepare_script is not None:
             prep = self.dirs.code / self.prepare_script
             if prep.exists():
-                await self.execute(
-                    prep, *self.argv, env=self.make_env(), cwd=prep.parent
+                return execs.PackExecutor(
+                    self, prep, *self.argv, env=self.make_env(), cwd=prep.parent
                 )
+        return execs.VoidExecutor(self)
 
     async def run(self):
         """Start the benchmark and return the running process.
@@ -469,15 +458,9 @@ class Package(BasePackage):
             env: Environment variables to set for the process.
         """
         assert self.phase == "run"
-        main = self.dirs.code / self.main_script
-        if not main.exists():
-            raise FileNotFoundError(
-                f"Cannot run main script because it does not exist: {main}"
-            )
+        return await self.build_run_plan().execute()
 
-        if main.is_dir():
-            return await self.voir(
-                ["-m", self.main_script], args=self.argv, cwd=main.parent
-            )
-        else:
-            return await self.voir(self.main_script, args=self.argv, cwd=main.parent)
+    def build_run_plan(self) -> "execs.Executor":
+        main = self.dirs.code / self.main_script
+        pack = execs.PackExecutor(self, *self.argv)
+        return execs.VoirExecutor(pack, cwd=main.parent)
