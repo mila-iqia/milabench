@@ -5,7 +5,7 @@ from copy import deepcopy
 from voir.instruments.gpu import get_gpu_info
 
 from .alt_async import destroy
-from .executors import NJobs, PerGPU
+from .executors import NJobs, PerGPU, CmdExecutor, SSHExecutor, ListExecutor, VoirExecutor, PackExecutor
 from .fs import XPath
 from .utils import make_constraints_file
 
@@ -36,9 +36,16 @@ def make_execution_plan(pack, step=0, repeat=1):
     run_pack = pack.copy(cfg)
     method = plan.pop("method").replace("-", "_")
 
-    # This is wrong because it does not know yet
-    # own many GPUs will be used for the GPU
-    exec_plan = run_pack.build_run_plan()
+    #  Override when the benchmark use a particular way to run
+    if hasattr(run_pack, "build_run_plan"):
+        exec_plan = run_pack.build_run_plan()
+    else:
+        main = pack.dirs.code / pack.main_script
+        exec_plan = VoirExecutor(
+            PackExecutor(run_pack, *pack.argv), 
+            cwd=main.parent,
+        )
+        
     devices = get_gpu_info()["gpus"].values()
 
     if method == "per_gpu":
@@ -63,9 +70,12 @@ class MultiPackage:
         cmd = CmdExecutor(pack, *cmd)
         
         jobs = []
+        nodes = pack.config["system"]["nodes"]
         
-        for worker in workers:
-            jobs.append(SSHExecutor(cmd, worker))
+        for worker in nodes:
+            host = worker["ip"]
+            user = worker["user"]
+            jobs.append(SSHExecutor(cmd, host=host, user=user))
 
         return ListExecutor(*jobs)
     

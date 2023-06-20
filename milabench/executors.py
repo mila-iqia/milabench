@@ -9,6 +9,7 @@ from hashlib import md5
 from typing import Dict, Generator, List, Tuple
 
 from . import pack
+from .exechelpers import run_command
 from .alt_async import destroy
 from .fs import XPath
 from .merge import merge
@@ -105,7 +106,7 @@ class Executor():
                 fut = pack.override_run()
             else:
                 pack.phase = "run"
-                fut = pack.execute(*argv, **{**_kwargs, **kwargs})
+                fut = run_command(pack, *argv,  **{**_kwargs, **kwargs})
 
             coro.append(fut)
 
@@ -210,7 +211,7 @@ class PackExecutor(CmdExecutor):
         *script_argv: script's command line arguments list. If the first
                       argument is a file or directory that can be found, the
                       file will be used instead of the `pack`'s main_script
-        **kwargs: kwargs to be passed to the `pack.execute()`
+        **kwargs: kwargs to be passed to the `run_command()`
     """
     def __init__(
             self,

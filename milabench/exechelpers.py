@@ -1,4 +1,4 @@
-"""Execute commands inside a pack context"""
+f"""Execute commands inside a pack context"""
 
 import os
 from hashlib import md5
@@ -132,7 +132,7 @@ async def pin(
             reqs.rm()
             
         cmd = pack.pin(base_reqs, reqs, pip_compile_args, input_files, constraints)
-        await run_command(pack, cmd)
+        await run_command(pack, *cmd)
         
         # Add previous requirements as inputs
         input_files = (reqs, *input_files)
@@ -142,7 +142,7 @@ async def run_pip_compile(
     pack, requirements_file: XPath, input_files: XPath, argv=[]
 ):
     cmd = pack.pip_compile(requirements_file, input_files, argv)
-    await run_command(pack, cmd)
+    await run_command(pack, *cmd)
     
     # input_files = [relativize(inp) for inp in input_files]
     # return await pack.execute(
@@ -175,7 +175,7 @@ async def prepare(pack):
     """
     assert pack.phase == "prepare"
     cmd = pack.prepare()
-    await run_command(pack, cmd)
+    await run_command(pack, *cmd)
     
     # if pack.prepare_script is not None:
     #     prep = pack.dirs.code / pack.prepare_script

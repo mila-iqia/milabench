@@ -3,6 +3,8 @@ import os
 
 import pytest
 
+import milabench.executors
+
 from milabench.executors import PerGPU, PackExecutor, SingleCmdExecutor, VoirExecutor, NJobs, TorchRunExecutor
 from milabench.cli import _get_multipack
 from milabench.alt_async import proceed
@@ -90,7 +92,15 @@ def test_executor_kwargs():
     )
 
 
-def test_executor_execute():
+def test_executor_execute(monkeypatch):
+    async def fake_run(self, *args, **kwargs):
+        return [
+            *args,
+            *[f"{k}:{v}" for k, v in kwargs.items()]
+        ]
+   
+    monkeypatch.setattr(milabench.executors, "run_command", fake_run)
+    
     submock = ExecMock1(mock_pack(benchio()), "a1", selfk1="sv1")
     wrapmock = ExecMock2(submock, "a2", selfk2="sv2")
 
