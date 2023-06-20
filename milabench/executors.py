@@ -5,6 +5,7 @@ import os
 import json
 import socket
 from copy import deepcopy
+import warnings
 from hashlib import md5
 from typing import Dict, Generator, List, Tuple
 
@@ -83,12 +84,24 @@ class Executor:
         copy._set_pack(pack)
         return copy
 
+    def kwargs(self) -> Dict:
+        """Return the `Executor`'s kwargs to send to `BasePackage.execute()`
+        merged with the embeded `Executor`, if any
+
+        The `Executor`'s kwargs will take priority over the embeded `Executor`'s
+        kwargs
+        """
+        kwargs = self._kwargs
+        if self.exec:
+            kwargs = {**self.exec.kwargs(), **kwargs}
+        return kwargs
+
     def commands(self) -> Generator[Tuple[pack.BasePackage, List, Dict], None, None]:
         """Return a tuple of the leaf's `BasePackage`, the `Executor`'s list of
         command line's arguments and the `Executor`'s kwargs to send to
         `BasePackage.execute()`
         """
-        raise NotImplemented()
+        yield self.pack, [], self.kwargs()
 
     async def execute(self, timeout=False, timeout_delay=600, **kwargs):
         """Execute all the commands and return the aggregated results"""
@@ -122,18 +135,6 @@ class SingleCmdExecutor(Executor):
         if self.exec:
             return self._argv(**kwargs) + self.exec.argv(**kwargs)
         return self._argv(**kwargs)
-
-    def kwargs(self) -> Dict:
-        """Return the `Executor`'s kwargs to send to `BasePackage.execute()`
-        merged with the embeded `Executor`, if any
-
-        The `Executor`'s kwargs will take priority over the embeded `Executor`'s
-        kwargs
-        """
-        kwargs = self._kwargs
-        if self.exec:
-            kwargs = {**self.exec.kwargs(), **kwargs}
-        return kwargs
 
     def commands(self) -> Generator[Tuple[pack.BasePackage, List, Dict], None, None]:
         yield self.pack, self.argv(), self.kwargs()
@@ -287,7 +288,7 @@ class DockerRunExecutor(WrapperExecutor):
             # container
             return []
 
-        argv = super().argv(**kwargs)
+        argv = super()._argv(**kwargs)
 
         env = self.pack.make_env()
         for var in ("MILABENCH_CONFIG", "XDG_CACHE_HOME", "OMP_NUM_THREADS"):
@@ -314,6 +315,7 @@ class SSHExecutor(WrapperExecutor):
              will be used to find the username
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
+    _BIN="ssh"
 
     def __init__(
         self,
@@ -326,7 +328,7 @@ class SSHExecutor(WrapperExecutor):
     ) -> None:
         super().__init__(
             executor,
-            "ssh",
+            self._BIN,
             "-oCheckHostIP=no",
             "-oStrictHostKeyChecking=no",
             *ssh_argv,
@@ -352,7 +354,7 @@ class SSHExecutor(WrapperExecutor):
         key = self.key or node.get("key", None)
         host = f"{user}@{self.host}" if user else self.host
 
-        argv = super().argv(**kwargs)
+        argv = super()._argv(**kwargs)
 
         if key:
             argv.append(f"-i{key}")
@@ -361,8 +363,42 @@ class SSHExecutor(WrapperExecutor):
         return argv
 
 
+class SCPExecutor(SSHExecutor, CmdExecutor):
+    _BIN="scp"
+
+    def __init__(
+            self,
+            pack: pack.BasePackage,
+            host: str,
+            directory: str,
+            *scp_argv,
+            user: str = None,
+            key: str = None,
+            **kwargs
+    ) -> None:
+        super().__init__(
+            pack,
+            host,
+            "-r",
+            *scp_argv,
+            user=user,
+            key=key,
+            **kwargs
+        )
+        self.dir = directory
+
+    def _argv(self, **kwargs) -> List:
+        argv = super()._argv(**kwargs)
+
+        host = argv.pop()
+        argv.append(self.dir)
+        argv.append(f"{host}:{self.dir}")
+
+        return argv
+
+
 class TorchRunExecutor(WrapperExecutor):
-    def __init__(self, executor: Executor, *torchrun_argv, **kwargs) -> None:
+    def __init__(self, executor: SingleCmdExecutor, *torchrun_argv, **kwargs) -> None:
         super().__init__(executor, "torchrun", *torchrun_argv, **kwargs)
 
     def _argv(self, **kwargs):
@@ -450,11 +486,6 @@ class SequenceExecutor(ListExecutor):
         executors: `Executor`s to be executed
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
-
-    def __init__(self, *executors: Tuple[Executor], **kwargs) -> None:
-        super().__init__(None, **kwargs)
-        self.executors = executors
-
     async def execute(self, **kwargs):
         results = []
         for executor in self.executors:
@@ -522,18 +553,21 @@ class AccelerateLaunchExecutor(SingleCmdExecutor):
             if self.pack.config["use_deepspeed"]
             else ["--multi_gpu"]
         )
+        manager = self.pack.config["system"]["nodes"][0]
+        nodes = self.pack.config["system"]["nodes"][1:]
+        num_machines = max(1, len(nodes))
         return [
             "accelerate",
             "launch",
             "--mixed_precision=fp16",
             "--dynamo_backend=no",
             f"--machine_rank={rank}",
-            f"--num_machines={self.pack.config['num_machines']}",
+            f"--num_machines={num_machines}",
             *deepspeed_argv,
             f"--gradient_accumulation_steps={self.pack.config['gradient_accumulation_steps']}",
             f"--num_cpu_threads_per_process={self.pack.config['cpus_per_gpu']}",
-            f"--main_process_ip={self.pack.config['manager_addr']}",
-            f"--main_process_port={self.pack.config['manager_port']}",
+            f"--main_process_ip={manager['ip']}",
+            f"--main_process_port={manager['port']}",
             f"--num_processes={nproc}",
             *self.accelerate_argv,
             str(self.pack.dirs.code / "main.py"),
@@ -561,16 +595,20 @@ class AccelerateLoopExecutor(Executor):
         self, executor: AccelerateLaunchExecutor, ssh_exec: SSHExecutor = None, **kwargs
     ) -> None:
         if not isinstance(ssh_exec, SSHExecutor):
-            raise ValueError(
-                f"{self.__class__.__name__} only accepts"
-                f" {SSHExecutor.__name__} as nested"
-                f" {Executor.__name__}"
+            raise TypeError(f"{self.__class__.__name__} only accepts"
+                            f" {SSHExecutor.__name__} as nested"
+                            f" {Executor.__name__}")
+        if ssh_exec.host is not None:
+            ssh_exec.host = None
+            warnings.warn(
+                f"Resetting ssh_exec's host field to"
+                f" {ssh_exec.host}"
             )
         super().__init__(ssh_exec, **kwargs)
         self.accelerate_exec = executor
         _exec = self
         while _exec:
-            if _exec.exec is AccelerateLoopExecutor.PLACEHOLDER:
+            if isinstance(_exec.exec, AccelerateLoopExecutor._Placeholder):
                 _exec.exec = self.accelerate_exec
             _exec = _exec.exec
 
@@ -580,7 +618,9 @@ class AccelerateLoopExecutor(Executor):
             self.accelerate_exec.argv(rank=0),
             {"setsid": True, "use_stdout": True, **self.kwargs()},
         )
-        for i, worker in enumerate(self.pack.config.get("worker_addrs", [])):
-            self.exec.host = worker
-            run_pack = self.pack.copy({"tag": [*self.pack.config["tag"], worker]})
+        for i, node in enumerate(self.pack.config["system"]["nodes"][1:]):
+            self.exec.host = node["ip"]
+            run_pack = self.pack.copy({
+                "tag": [*self.pack.config["tag"], node["name"]]
+            })
             yield run_pack, self.argv(rank=i + 1), self.kwargs()

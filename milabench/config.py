@@ -86,18 +86,29 @@ def build_system_config(config_file, defaults=None):
     if defaults:
         config = merge(defaults, config)
 
-    if config["sshkey"] is not None:
-        config["sshkey"] = XPath(config["sshkey"]).resolve()
+    sys_cfg = config["system"]
 
-    for node in config["nodes"]:
+    if sys_cfg["sshkey"] is not None:
+        sys_cfg["sshkey"] = str(XPath(sys_cfg["sshkey"]).resolve())
+
+    main_node = []
+    aliases = {}
+    for i, node in enumerate(sys_cfg["nodes"]):
         for field in ("name", "ip", "user"):
             _name = node.get("name", None)
             assert node[field], f"The `{field}` of the node `{_name}` is missing"
-        if node.get("main", None):
-            config.setdefault("main_node", node)
-    config.setdefault("main_node", config["nodes"][0])
-    assert len(config["nodes"]) == 1 or config["main_node"].get(
-        "port", None
-    ), f"The `port` of the main node `{config['main_node']['name']}` is missing"
+        assert node["name"] not in aliases, (
+            f"Usage of name {node['name']} for multiple nodes"
+        )
+        aliases[node["name"]] = node
+        if node.get("main", False) and not main_node:
+            main_node.append(node)
+            sys_cfg["nodes"][i] = None
+    sys_cfg["nodes"] = [*main_node,
+                        *[n for n in sys_cfg["nodes"] if n is not None]]
+    sys_cfg["aliases"] = aliases
+    assert len(sys_cfg["nodes"]) == 1 or sys_cfg["nodes"][0].get("port", None), (
+        f"The `port` of the main node `{sys_cfg['nodes'][0]['name']}` is missing"
+    )
 
     return config

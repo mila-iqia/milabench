@@ -10,13 +10,16 @@ ARG ARCH=cuda
 ENV MILABENCH_GPU_ARCH=$ARCH
 
 ARG CONFIG=standard.yaml
+ARG SYSCONFIG=cuda_multinodes_system.yaml
 ENV MILABENCH_CONFIG_NAME=$CONFIG
+ENV MILABENCH_SYSCONFIG_NAME=$SYSCONFIG
 ENV MILABENCH_DOCKER=1
 
 # Paths
 # -----
 
 ENV MILABENCH_CONFIG=/milabench/milabench/config/$MILABENCH_CONFIG_NAME
+ENV MILABENCH_SYSTEM_CONFIG=/milabench/milabench/config/$MILABENCH_SYSCONFIG_NAME
 ENV MILABENCH_BASE=/milabench/envs
 ENV MILABENCH_OUTPUT=/milabench/results/
 ENV MILABENCH_ARGS=""
@@ -74,12 +77,12 @@ RUN python -m pip install -U pip            &&\
 # pip times out often when downloading pytorch
 ENV PIP_DEFAULT_TIMEOUT=800
 
-RUN milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
-    milabench prepare --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
+RUN milabench install --config $MILABENCH_CONFIG --system $MILABENCH_SYSTEM_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
+    milabench prepare --config $MILABENCH_CONFIG --system $MILABENCH_SYSTEM_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
     python -m pip cache purge                                                          
 
 # Patch for https://github.com/pytorch/pytorch/issues/97041
 RUN cd /milabench/envs/venv/torch/lib/python3.10/site-packages/torch/lib                &&\
    ln -sfn libnvrtc-672ee683.so.11.2 libnvrtc.so
 
-CMD ["milabench", "run"]
+CMD milabench run --system $MILABENCH_SYSTEM_CONFIG

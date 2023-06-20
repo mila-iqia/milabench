@@ -223,9 +223,9 @@ def _get_multipack(
     base_defaults = get_base_defaults(base=base, arch=deduce_arch(), run_name=run_name)
 
     system_config = build_system_config(
-        system_config_path, defaults=base_defaults["_defaults"]["system"]
+        system_config_path, defaults={"system":base_defaults["_defaults"]["system"]}
     )
-    overrides = merge({"*": {"system": system_config}}, overrides)
+    overrides = merge({"*": system_config}, overrides)
 
     config = build_config(base_defaults, config_path, overrides)
 
