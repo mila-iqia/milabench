@@ -2,6 +2,7 @@ import asyncio
 from collections import defaultdict
 from copy import deepcopy
 import traceback
+import os
 
 from voir.instruments.gpu import get_gpu_info
 
@@ -74,13 +75,13 @@ class MultiPackage:
         remote_setup_plan = milabench_remote_install(self.setup_pack())
         remote_setup = remote_setup_plan.execute()
         
-        # for pack in self.packs.values():
-        #     pack.phase = "install"
-        #     try:
-        #         await pack.checked_install()
-        #     except Exception as exc:
-        #         traceback.print_exc()
-        #         await pack.message_error(exc)
+        for pack in self.packs.values():
+            pack.phase = "install"
+            try:
+                await pack.checked_install()
+            except Exception as exc:
+                traceback.print_exc()
+                await pack.message_error(exc)
 
         await remote_setup
 

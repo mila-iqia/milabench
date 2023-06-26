@@ -2,15 +2,16 @@
 arch: cuda
 
 # sshkey used in remote milabench operations
-sshkey: ~/.ssh/id_ed25519
+# sshkey: ~/.ssh/id_ed25519
 
 # Nodes list
 nodes:
+  # Main node is accessed locally, no need for SSH info
   - name: node1
     main: true
 
   - name: node2
-    ip: localhost
-    port: 2222
+    ip: 192.168.2.27
+    port: 22
     main: false 
-    user: tester
+    user: setepenre

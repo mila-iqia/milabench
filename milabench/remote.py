@@ -1,6 +1,7 @@
 import os
+import sys
 
-from .executors import CmdExecutor, SSHExecutor, ListExecutor, SequenceExecutor
+from .executors import CmdExecutor, SSHExecutor, ListExecutor, SequenceExecutor, VoidExecutor
 
 
 INSTALL_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -24,8 +25,25 @@ def scp(node, folder, dest=None):
     return [
         "scp",
         "-CBr",
-        "-vvv",
         "-P", str(port),
+        folder,
+        f"{user}@{host}:{dest}",
+    ]
+
+
+def rsync(node, folder, dest=None):
+    """Copy a folder from local node to remote node"""
+    host = node["ip"]
+    user = node["user"]
+    port = node.get("port", 22)
+    
+    if dest is None:
+        dest = os.path.abspath(os.path.join(folder, ".."))
+            
+    return [
+        "rsync",
+        "-av",
+        "-e", f"ssh -p {port}",
         folder,
         f"{user}@{host}:{dest}",
     ]
@@ -56,7 +74,7 @@ def milabench_remote_setup_plan(pack):
     
     for worker in nodes:
         if not worker["main"]:
-            copy.append(CmdExecutor(pack, *scp(worker, INSTALL_FOLDER)))
+            copy.append(CmdExecutor(pack, *rsync(worker, INSTALL_FOLDER)))
         
     install = []
     for worker in nodes:
@@ -72,25 +90,40 @@ def milabench_remote_command(pack, *command):
     nodes = pack.config["system"]["nodes"]
     cmds = []
     
+    config = os.getenv("MILABENCH_CONFIG", "")
+    base = os.getenv("MILABENCH_BASE", "")
+    arch = os.getenv("MILABENCH_GPU_ARCH", "")
+    
+    env = f"MILABENCH_CONFIG=${config} MILABENCH_BASE={base} MILABENCH_GPU_ARCH={arch} MILABENCH_REMOTE=1"
+    
     for worker in nodes:
         if not worker["main"]:
             host = worker["ip"]
             user = worker["user"]
             port = worker.get("port", 22)
             
-            cmds.append(SSHExecutor(CmdExecutor(pack, "milabench", *command), host=host, user=user, port=port))
+            cmds.append(SSHExecutor(CmdExecutor(pack, f"{env} milabench", *command), host=host, user=user, port=port))
             
     return ListExecutor(*cmds)
 
 
 def milabench_remote_install(pack):
     """Copy milabench code, install milabench, execute milabench install"""
+    if int(os.getenv("MILABENCH_REMOTE", "0")) == 0:
+        return VoidExecutor(pack)
+    
+    argv = sys.argv[2:]
+    
     return SequenceExecutor(
         *milabench_remote_setup_plan(pack),
-        milabench_remote_command(pack, "install")
+        milabench_remote_command(pack, "install", *argv)
     )
 
 
 def milabench_remote_prepare(pack):
     """Execute milabench prepare"""
-    return milabench_remote_command(pack, "prepare")
+    if int(os.getenv("MILABENCH_REMOTE", "0")) == 0:
+        return VoidExecutor(pack)
+    
+    argv = sys.argv[2:]
+    return milabench_remote_command(pack, "prepare", *argv)
