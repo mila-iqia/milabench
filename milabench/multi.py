@@ -54,6 +54,13 @@ def make_execution_plan(pack, step=0, repeat=1):
     return exec_plan
 
 
+def remote_install(system):
+    # Git clone milabench
+    
+    for worker in nodes:
+        pass
+
+
 class MultiPackage:
     def __init__(self, packs):
         self.packs = packs
