@@ -376,7 +376,7 @@ class SSHExecutor(WrapperExecutor):
         return {}
 
     def _argv(self, **kwargs) -> List:
-        if socket.gethostname() == self.host:
+        if self.host in (socket.gethostname(), "localhost", "127.0.0.1"):
             # No-op when executing on the main node
             return []
 

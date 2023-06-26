@@ -52,11 +52,11 @@ def milabench_remote_setup_plan(pack):
     for worker in nodes:
         install.append(pip_install_milabench(pack, worker, INSTALL_FOLDER))
 
-    return SequenceExecutor(
+    return (
         ListExecutor(*copy),
         ListExecutor(*install),
     )
-    
+
 def milabench_remote_command(pack, *command):
     nodes = pack.config["system"]["nodes"]
     cmds = []
@@ -71,8 +71,13 @@ def milabench_remote_command(pack, *command):
 
 
 def milabench_remote_install(pack):
-    return milabench_remote_command(pack, "install")
+    """Copy milabench code, install milabench, execute milabench install"""
+    return SequenceExecutor(
+        *milabench_remote_setup_plan(pack),
+        milabench_remote_command(pack, "install")
+    )
 
 
 def milabench_remote_prepare(pack):
+    """Execute milabench prepare"""
     return milabench_remote_command(pack, "prepare")

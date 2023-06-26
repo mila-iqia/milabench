@@ -8,6 +8,7 @@ from .alt_async import destroy
 from .executors import NJobs, PerGPU
 from .fs import XPath
 from .utils import make_constraints_file
+from .remote import milabench_remote_install, milabench_remote_prepare
 
 here = XPath(__file__).parent
 
@@ -54,11 +55,6 @@ def make_execution_plan(pack, step=0, repeat=1):
     return exec_plan
 
 
-def remote_install(system):
-    # Git clone milabench
-    
-    for worker in nodes:
-        pass
 
 
 class MultiPackage:
@@ -66,32 +62,35 @@ class MultiPackage:
         self.packs = packs
 
     async def do_install(self):
-        for pack in self.packs.values():
+        packs = list(self.packs.values())
+        remote_setup = milabench_remote_install(packs[0])
+        
+        for pack in packs:
             pack.phase = "install"
             try:
                 await pack.checked_install()
             except Exception as exc:
                 await pack.message_error(exc)
 
+        await remote_setup
+
     async def do_prepare(self):
-        for pack in self.packs.values():
+        packs = list(self.packs.values())
+        remote_prepare = milabench_remote_prepare(packs[0])
+        
+        for pack in packs:
             pack.phase = "prepare"
             try:
                 await pack.prepare()
             except Exception as exc:
                 await pack.message_error(exc)
 
-    async def do_run(self, repeat=1):
-        async def force_terminate(pack, delay):
-            await asyncio.sleep(delay)
-            for proc in pack.processes:
-                ret = proc.poll()
-                if ret is None:
-                    await pack.message(
-                        f"Terminating process because it ran for longer than {delay} seconds."
-                    )
-                    destroy(proc)
+        await remote_prepare
 
+    async def do_run(self, repeat=1):
+        # We could run single node bench remotely as well here
+        # remote_run = 
+        
         for index in range(repeat):
             for pack in self.packs.values():
                 try:
