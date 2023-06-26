@@ -671,6 +671,32 @@ class Main:
         for pack in mp.packs.values():
             run_sync(pack.pip_install(*args))
 
+    def slurm_system():
+        """Generate a system file based of slurm environment variables"""
+        import getpass
+        
+        node_list = filter(lambda x: len(x) > 0, os.getenv("SLURM_JOB_NODELIST", "").split(","))
+        
+        def make_node(i, ip):
+            return dict(
+                name=ip,
+                ip=ip,
+                port=22,
+                user=getpass.getuser(),
+                main=i == 0
+            )
+        
+        system = dict(
+            arch="cuda",
+            nodes=[
+                make_node(i, ip) for i, ip in enumerate(node_list)
+            ]
+        )
+        
+        import yaml
+        print(yaml.dump(system))
+        
+
     def machine():
         """Display machine metadata.
         Used to generate metadata json to back populate archived run
