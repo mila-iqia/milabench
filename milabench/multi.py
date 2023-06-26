@@ -70,34 +70,49 @@ class MultiPackage:
             "tag": ["setup"],
         })
         return setup_pack
-
-    async def do_install(self):
-        remote_setup_plan = milabench_remote_install(self.setup_pack())
-        remote_setup = remote_setup_plan.execute()
+    
+    
+    async def do_phase(self, phase_name, remote_plan, method):
+        """Run a phase on all the nodes"""
+        remote_task = asyncio.create_task(remote_plan.execute())
+        pending = [remote_task]
         
         for pack in self.packs.values():
-            pack.phase = "install"
+            pack.phase = phase_name
             try:
-                await pack.checked_install()
+                phase_task = asyncio.create_task(getattr(pack, method)())
+                
+                coro = [phase_task, *pending]
+                done = []
+            
+                while phase_task not in done:
+                    done, pending = await asyncio.wait(coro, return_when=asyncio.FIRST_COMPLETED)
+                    coro = pending
+                
             except Exception as exc:
                 traceback.print_exc()
                 await pack.message_error(exc)
 
-        await remote_setup
-
-    async def do_prepare(self):
-        packs = list(self.packs.values())
-        remote_prepare = milabench_remote_prepare(packs[0])
+        if pending:
+            await asyncio.wait(pending)
+    
+    async def do_install(self):
+        # Something we could do is run the remote setup first (COPY & install milabench)
+        # then later we could remotely do `milabench install|prepare --select {current_pack}`
+        # to install & prepare packs in groups
+        await self.do_phase(
+            "install", 
+            milabench_remote_install(self.setup_pack()), 
+            "checked_install"
+        )
         
-        for pack in packs:
-            pack.phase = "prepare"
-            try:
-                await pack.prepare()
-            except Exception as exc:
-                await pack.message_error(exc)
-
-        await remote_prepare
-
+    async def do_prepare(self):
+        await self.do_phase(
+            "prepare", 
+            milabench_remote_prepare(self.setup_pack()), 
+            "prepare"
+        )
+        
     async def do_run(self, repeat=1):
         # We could run single node bench remotely as well here
         # remote_run = 

@@ -56,7 +56,7 @@ class Executor():
             self.exec = None
             self._pack = pack_or_exec
         else:
-            raise TypeError(f"Need to be pack or executor {pack_or_exec}")
+            raise TypeError(f"Need to be pack or executor not `{pack_or_exec}`")
 
         self._kwargs = kwargs
 
@@ -520,7 +520,7 @@ class SequenceExecutor(ListExecutor):
                 error_count += 1
                 
             if msg.event == "end":
-                error_count += msg.data.get("return_code", 0)
+                error_count += int(msg.data.get("return_code", 0))
 
         loop = asyncio.get_running_loop()
         loop._callbacks.append(on_message)
