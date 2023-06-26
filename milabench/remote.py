@@ -3,20 +3,29 @@ import os
 from .executors import CmdExecutor, SSHExecutor, ListExecutor, SequenceExecutor
 
 
-INSTALL_FOLDER = os.path.abspath(os.path.dirname(__file__))
+INSTALL_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+# docker pull kabirbaidhya/fakeserver
+# docker run -d -p 2222:22 \
+#             -v "/tmp/milabench/tests/config:/etc/authorized_keys/tester" \
+#             -e SSH_USERS="tester:1001:1001" \
+#             --name=fakeserver kabirbaidhya/fakeserver
 
 
 def scp(node, folder, dest=None):
     """Copy a folder from local node to remote node"""
     host = node["ip"]
     user = node["user"]
+    port = node.get("port", 22)
     
     if dest is None:
         dest = folder
             
     return [
         "scp",
-        "-r",
+        "-CBr",
+        "-vvv",
+        "-P", str(port),
         folder,
         f"{user}@{host}:{dest}",
     ]
@@ -46,11 +55,13 @@ def milabench_remote_setup_plan(pack):
     copy = []
     
     for worker in nodes:
-        copy.append(CmdExecutor(pack, *scp(worker, INSTALL_FOLDER)))
+        if not worker["main"]:
+            copy.append(CmdExecutor(pack, *scp(worker, INSTALL_FOLDER)))
         
     install = []
     for worker in nodes:
-        install.append(pip_install_milabench(pack, worker, INSTALL_FOLDER))
+        if not worker["main"]:
+            install.append(pip_install_milabench(pack, worker, INSTALL_FOLDER))
 
     return (
         ListExecutor(*copy),
@@ -62,11 +73,13 @@ def milabench_remote_command(pack, *command):
     cmds = []
     
     for worker in nodes:
-        host = worker["ip"]
-        user = worker["user"]
-        
-        cmds.append(SSHExecutor(CmdExecutor(pack, "milabench", *command), host=host, user=user))
-        
+        if not worker["main"]:
+            host = worker["ip"]
+            user = worker["user"]
+            port = worker.get("port", 22)
+            
+            cmds.append(SSHExecutor(CmdExecutor(pack, "milabench", *command), host=host, user=user, port=port))
+            
     return ListExecutor(*cmds)
 
 
