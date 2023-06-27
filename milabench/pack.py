@@ -9,6 +9,7 @@ import json
 import os
 from argparse import Namespace as NS
 from sys import version_info as pyv
+import traceback
 from typing import Sequence
 
 from nox.sessions import Session, SessionRunner
@@ -129,7 +130,11 @@ class BasePackage:
         await send(
             BenchLogEntry(
                 event="error",
-                data={"type": type(exc).__name__, "message": str(exc)},
+                data={
+                    "type": type(exc).__name__, 
+                    "message": str(exc),
+                    "trace": traceback.format_exc(),
+                },
                 pack=self,
             )
         )

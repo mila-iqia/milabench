@@ -13,6 +13,7 @@ class PackError:
     code: int = 0
     message: str = None
     early_stop: bool = False
+    trace: str = None
 
 
 def _extract_traceback(lines):
@@ -52,8 +53,13 @@ class Layer(ValidationLayer):
 
     def on_error(self, entry):
         error = self.errors[entry.tag]
+        
+        if error.code == 0:
+            error.code = 1
+        
         info = entry.data
         error.message = f'{info["type"]}: {info["message"]}'
+        error.trace = info.get("trace")
 
     def on_end(self, entry):
         error = self.errors[entry.tag]
@@ -81,8 +87,11 @@ class Layer(ValidationLayer):
                 else:
                     summary.add("* early stopped")
                     continue
-
-                tracebacks = _extract_traceback(error.stderr)
+                
+                if error.trace:
+                    tracebacks = error.trace.splitlines()
+                else:
+                    tracebacks = _extract_traceback(error.stderr)
                 summary.add(f"* Error code = {error.code}")
 
                 if len(tracebacks) != 0:
