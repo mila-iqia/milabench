@@ -53,10 +53,10 @@ class Layer(ValidationLayer):
 
     def on_error(self, entry):
         error = self.errors[entry.tag]
-        
+
         if error.code == 0:
             error.code = 1
-        
+
         info = entry.data
         error.message = f'{info["type"]}: {info["message"]}'
         error.trace = info.get("trace")
@@ -87,7 +87,7 @@ class Layer(ValidationLayer):
                 else:
                     summary.add("* early stopped")
                     continue
-                
+
                 if error.trace:
                     tracebacks = error.trace.splitlines()
                 else:

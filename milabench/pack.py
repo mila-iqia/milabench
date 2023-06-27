@@ -131,7 +131,7 @@ class BasePackage:
             BenchLogEntry(
                 event="error",
                 data={
-                    "type": type(exc).__name__, 
+                    "type": type(exc).__name__,
                     "message": str(exc),
                     "trace": traceback.format_exc(),
                 },

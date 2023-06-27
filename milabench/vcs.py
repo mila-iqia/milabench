@@ -25,26 +25,25 @@ def retrieve_git_versions(tag="<tag>", commit="<commit>", date="<date>"):
     }
 
 
-
 def read_previous():
     info = ["<tag>", "<commit>", "<date>"]
-    
+
     with open(os.path.join(ROOT, "milabench", "_version.py"), "r") as file:
         for line in file.readlines():
-            
-            if 'tag' in line:
-                _, v = line.split('=')
+            if "tag" in line:
+                _, v = line.split("=")
                 info[0] = v.strip()
-                
-            if 'commit' in line:
-                _, v = line.split('=')
+
+            if "commit" in line:
+                _, v = line.split("=")
                 info[1] = v.strip()
 
-            if 'date' in line:
-                _, v = line.split('=')
+            if "date" in line:
+                _, v = line.split("=")
                 info[2] = v.strip()
-        
+
     return info
+
 
 def update_version_file():
     version_info = retrieve_git_versions(*read_previous())

@@ -264,6 +264,7 @@ def _read_reports(*runs):
                         data = [json.loads(line) for line in lines]
                     except Exception:
                         import traceback
+
                         print(f"Could not parse line inside {pth}\n\t- {line}")
                         traceback.print_exc()
                     else:
