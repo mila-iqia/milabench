@@ -95,7 +95,7 @@ def find_main_node(nodes):
 
 
 def resolve_addresses(nodes):
-    # Note: it is possible for self to be node
+    # Note: it is possible for self to be none
     # if we are running milabench on a node that is not part of the system
     # in that case it should still work; the local is then going to
     # ssh into the main node which will dispatch the work to the other nodes
