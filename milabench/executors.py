@@ -30,7 +30,7 @@ async def force_terminate(pack, delay):
             destroy(proc)
 
 
-class Executor():
+class Executor:
     """Base class for an execution plan
 
     Will recursively go through its embedded `Executor` to build a command
@@ -43,19 +43,23 @@ class Executor():
                       commands calls
         **kwargs: kwargs to be passed to the `pack_or_exec.execute()`, if a
                   `BasePackage`
-                  
+
     Notes:
         All dynamic operations need to happen inside the argv/_argv methods.
         Those methods are guaranteed to be called with the final configuration.
     """
+
     def __init__(self, pack_or_exec: Executor | pack.BasePackage, **kwargs) -> None:
+        self._pack = None
+        self.exec = None
+
         if isinstance(pack_or_exec, Executor):
             self.exec = pack_or_exec
             self._pack = None
         elif isinstance(pack_or_exec, pack.BasePackage):
             self.exec = None
             self._pack = pack_or_exec
-        else:
+        elif pack_or_exec is not None:
             raise TypeError(f"Need to be pack or executor not `{pack_or_exec}`")
 
         self._kwargs = kwargs
@@ -90,18 +94,17 @@ class Executor():
         raise NotImplemented()
 
     async def execute(self, timeout=False, timeout_delay=600, **kwargs):
-        """Execute all the commands and return the aggregated results
-        """
+        """Execute all the commands and return the aggregated results"""
         coro = []
 
         for pack, argv, _kwargs in self.commands():
             await pack.send(event="config", data=pack.config)
             await pack.send(event="meta", data=machine_metadata())
 
-            if hasattr(pack, 'override_run'):
+            if hasattr(pack, "override_run"):
                 # TODO: This is only to hack the CI and have the test passing
                 # using the old system. Remove override_run() and use `Executor`
-                # instead 
+                # instead
                 fut = pack.override_run()
             else:
                 pack.phase = "run"
@@ -156,16 +159,14 @@ class ListExecutor(Executor):
         executors: `Executor`s to be executed
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
-    def __init__(
-            self,
-            *executors: Tuple[Executor],
-            **kwargs
-    ) -> None:
-        super().__init__(
-            executors[0],
-            **kwargs
-        )
+
+    def __init__(self, *executors: Tuple[Executor], **kwargs) -> None:
+        super().__init__(None, **kwargs)
         self.executors = executors
+
+    @property
+    def pack(self):
+        return self.executors[0].pack
 
     def commands(self) -> Generator[Tuple[pack.BasePackage, List, Dict], None, None]:
         for executor in self.executors:
@@ -181,19 +182,14 @@ class CmdExecutor(SingleCmdExecutor):
         *cmd_argv: command line arguments list to execute
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
-    def __init__(
-            self,
-            pack: pack.BasePackage,
-            *cmd_argv,
-            **kwargs
-    ) -> None:
+
+    def __init__(self, pack: pack.BasePackage, *cmd_argv, **kwargs) -> None:
         if isinstance(pack, Executor):
-            raise TypeError(f"{self.__class__.__name__} does not accept nested"
-                            f" {Executor.__name__}")
-        super().__init__(
-            pack,
-            **kwargs
-        )
+            raise TypeError(
+                f"{self.__class__.__name__} does not accept nested"
+                f" {Executor.__name__}"
+            )
+        super().__init__(pack, **kwargs)
         self.cmd_argv = cmd_argv
 
     def _argv(self, **_) -> List:
@@ -212,12 +208,8 @@ class PackExecutor(CmdExecutor):
                       file will be used instead of the `pack`'s main_script
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
-    def __init__(
-            self,
-            pack: pack.Package,
-            *script_argv,
-            **kwargs
-    ) -> None:
+
+    def __init__(self, pack: pack.Package, *script_argv, **kwargs) -> None:
         script = script_argv[:1]
         if script and XPath(script[0]).exists():
             script = script[0]
@@ -250,12 +242,8 @@ class PackExecutor(CmdExecutor):
 
 class VoidExecutor(CmdExecutor):
     """Execute nothing"""
-    def __init__(
-            self,
-            pack: pack.BasePackage,
-            *argv,
-            **kwargs
-    ) -> None:
+
+    def __init__(self, pack: pack.BasePackage, *argv, **kwargs) -> None:
         super().__init__(pack, "true", *argv, **kwargs)
 
 
@@ -267,16 +255,9 @@ class WrapperExecutor(SingleCmdExecutor):
         *wrapper_argv: command line arguments list
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
-    def __init__(
-            self,
-            executor: SingleCmdExecutor,
-            *wrapper_argv,
-            **kwargs
-    ) -> None:
-        super().__init__(
-            executor,
-            **kwargs
-        )
+
+    def __init__(self, executor: SingleCmdExecutor, *wrapper_argv, **kwargs) -> None:
+        super().__init__(executor, **kwargs)
         self.wrapper_argv = wrapper_argv
 
     def _argv(self, **kwargs) -> List:
@@ -293,12 +274,9 @@ class DockerRunExecutor(WrapperExecutor):
         *docker_argv: Docker command line arguments list
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
+
     def __init__(
-            self,
-            executor: SingleCmdExecutor,
-            image: str,
-            *docker_argv,
-            **kwargs
+        self, executor: SingleCmdExecutor, image: str, *docker_argv, **kwargs
     ) -> None:
         super().__init__(
             executor,
@@ -312,7 +290,7 @@ class DockerRunExecutor(WrapperExecutor):
             "--gpus",
             "all",
             *docker_argv,
-            **kwargs
+            **kwargs,
         )
         self.image = image
 
@@ -347,8 +325,10 @@ class SSHExecutor(WrapperExecutor):
               will be used to find the username
         key: ssh key to use to connect to the host. By default, `pack.config`
              will be used to find the username
+        port: ssh port to connect to. By default port 22 will be used
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
+
     def __init__(
         self,
         executor: SingleCmdExecutor,
@@ -357,7 +337,6 @@ class SSHExecutor(WrapperExecutor):
         user: str = None,
         key: str = None,
         port: int = 22,
-        main: bool = False,
         **kwargs,
     ) -> None:
         super().__init__(
@@ -366,12 +345,12 @@ class SSHExecutor(WrapperExecutor):
             "-oCheckHostIP=no",
             "-oStrictHostKeyChecking=no",
             *ssh_argv,
-            **kwargs)
+            **kwargs,
+        )
         self.host = host
         self.user = user
         self.key = key
         self.port = port
-        self.main = main
 
     def _find_node_config(self) -> Dict:
         for n in self.pack.config["system"]["nodes"]:
@@ -379,13 +358,25 @@ class SSHExecutor(WrapperExecutor):
                 return n
         return {}
 
+    def is_local(self):
+        localnode = self.pack.config["system"]["self"]
+
+        return (
+            (localnode is None)
+            or  # self is nonee; the node we are currently
+            # on is not part of the system; we are running
+            # milabench remotely, sending remote commands to
+            # the main node
+            (localnode["ip"] == self.host)
+            or (  # ip or hostname match, we are running command locally
+                localnode["hostname"] == self.host
+            )
+        )
+
     def _argv(self, **kwargs) -> List:
-        if self.main:
+        # No-op when executing on a local node
+        if self.is_local():
             return []
-    
-        # if self.host in (socket.gethostname(), "localhost", "127.0.0.1"):
-        #    # No-op when executing on the main node
-        #    return []
 
         node = self._find_node_config()
         user = self.user or node.get("user", None)
@@ -395,12 +386,11 @@ class SSHExecutor(WrapperExecutor):
         argv = super()._argv(**kwargs)
         argv.extend(["-oPasswordAuthentication=no"])
         argv.extend(["-p", str(self.port)])
-        
 
         if key:
             argv.append(f"-i{key}")
         argv.append(host)
-        
+
         return argv
 
 
@@ -430,17 +420,9 @@ class VoirExecutor(WrapperExecutor):
         *voir_argv: voir command line arguments list
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
-    def __init__(
-            self,
-            executor: SingleCmdExecutor,
-            *voir_argv,
-            **kwargs
-    ) -> None:
-        super().__init__(
-            executor,
-            "voir",
-            **{"setsid":True, **kwargs}
-        )
+
+    def __init__(self, executor: SingleCmdExecutor, *voir_argv, **kwargs) -> None:
+        super().__init__(executor, "voir", **{"setsid": True, **kwargs})
         self.voir_argv = voir_argv
 
     def _argv(self, **kwargs) -> List:
@@ -470,9 +452,10 @@ class NJobs(ListExecutor):
 
     Arguments:
         executor: `Executor` to be executed
-        n: number of times `executor` should be executed 
+        n: number of times `executor` should be executed
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
+
     def __init__(self, executor: Executor, n: int, gpus: list = None, **kwargs) -> None:
         self.n = n
         if gpus is None:
@@ -500,37 +483,32 @@ class SequenceExecutor(ListExecutor):
         executors: `Executor`s to be executed
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
-    def __init__(
-            self,
-            *executors: Tuple[Executor],
-            **kwargs
-    ) -> None:
-        super().__init__(
-            executors[0],
-            **kwargs
-        )
+
+    def __init__(self, *executors: Tuple[Executor], **kwargs) -> None:
+        super().__init__(None, **kwargs)
         self.executors = executors
 
     async def execute(self, **kwargs):
         error_count = 0
+
         def on_message(msg):
             nonlocal error_count
-            
+
             if msg.event == "error":
                 error_count += 1
-                
+
             if msg.event == "end":
                 error_count += int(msg.data.get("return_code", 0))
 
         loop = asyncio.get_running_loop()
         loop._callbacks.append(on_message)
-        
+
         for executor in self.executors:
             await executor.execute(**{**self._kwargs, **kwargs})
-            
+
             if error_count > 0:
                 break
-            
+
         loop._callbacks.remove(on_message)
         return error_count
 
@@ -542,6 +520,7 @@ class PerGPU(ListExecutor):
         executor: `Executor` to be executed
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
+
     def __init__(self, executor: Executor, gpus: list = None, **kwargs) -> None:
         if gpus is None:
             gpus = [{"device": 0, "selection_variable": "CPU_VISIBLE_DEVICE"}]
@@ -575,16 +554,9 @@ class AccelerateLaunchExecutor(SingleCmdExecutor):
         *accelerate_argv: Accelerate's command line arguments list
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
-    def __init__(
-            self,
-            pack: pack.BasePackage,
-            *accelerate_argv,
-            **kwargs
-    ) -> None:
-        super().__init__(
-            pack,
-            **kwargs
-        )
+
+    def __init__(self, pack: pack.BasePackage, *accelerate_argv, **kwargs) -> None:
+        super().__init__(pack, **kwargs)
         self.accelerate_argv = accelerate_argv
 
     def _argv(self, rank, **_) -> List:
@@ -636,19 +608,15 @@ class AccelerateLoopExecutor(Executor):
     PLACEHOLDER = _Placeholder()
 
     def __init__(
-            self,
-            executor: AccelerateLaunchExecutor,
-            ssh_exec: SSHExecutor = None,
-            **kwargs
+        self, executor: AccelerateLaunchExecutor, ssh_exec: SSHExecutor = None, **kwargs
     ) -> None:
         if not isinstance(ssh_exec, SSHExecutor):
-            raise ValueError(f"{self.__class__.__name__} only accepts"
-                             f" {SSHExecutor.__name__} as nested"
-                             f" {Executor.__name__}")
-        super().__init__(
-            ssh_exec,
-            **kwargs
-        )
+            raise ValueError(
+                f"{self.__class__.__name__} only accepts"
+                f" {SSHExecutor.__name__} as nested"
+                f" {Executor.__name__}"
+            )
+        super().__init__(ssh_exec, **kwargs)
         self.accelerate_exec = executor
         _exec = self
         while _exec:

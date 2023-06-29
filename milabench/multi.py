@@ -2,15 +2,19 @@ import asyncio
 from collections import defaultdict
 from copy import deepcopy
 import traceback
-import os
 
 from voir.instruments.gpu import get_gpu_info
 
-from .alt_async import destroy
 from .executors import NJobs, PerGPU
 from .fs import XPath
 from .utils import make_constraints_file
-from .remote import milabench_remote_install, milabench_remote_prepare
+from .pack import Package
+from .remote import (
+    milabench_remote_install,
+    milabench_remote_prepare,
+    milabench_remote_run,
+    is_main_local,
+)
 
 here = XPath(__file__).parent
 
@@ -26,7 +30,6 @@ def get_planning_method(name):
 
 def planning_method(f):
     planning_methods[f.__name__] = f
-
 
 
 def make_execution_plan(pack, step=0, repeat=1):
@@ -48,7 +51,7 @@ def make_execution_plan(pack, step=0, repeat=1):
         exec_plan = PerGPU(exec_plan, devices)
 
     elif method == "njobs":
-        n = plan.pop('n')
+        n = plan.pop("n")
         exec_plan = NJobs(exec_plan, n, devices)
 
     else:
@@ -57,66 +60,75 @@ def make_execution_plan(pack, step=0, repeat=1):
     return exec_plan
 
 
-
-
 class MultiPackage:
     def __init__(self, packs):
         self.packs = packs
 
-    def setup_pack(self):
+    def setup_pack(self) -> Package:
         pack = list(self.packs.values())[0]
-        setup_pack = pack.copy({
-            "name": "setup",
-            "tag": ["setup"],
-        })
-        return setup_pack
-    
-    
+
+        return Package(
+            {
+                "name": "setup",
+                "tag": ["setup"],
+                "definition": ".",
+                "run_name": pack.config["run_name"],
+                "dirs": pack.config["dirs"],
+                "config_base": pack.config["config_base"],
+                "config_file": pack.config["config_file"],
+                "system": pack.config["system"],
+            }
+        )
+
     async def do_phase(self, phase_name, remote_plan, method):
         """Run a phase on all the nodes"""
         remote_task = asyncio.create_task(remote_plan.execute())
         pending = [remote_task]
-        
+
         for pack in self.packs.values():
             pack.phase = phase_name
             try:
                 phase_task = asyncio.create_task(getattr(pack, method)())
-                
+
                 coro = [phase_task, *pending]
                 done = []
-            
+
                 while phase_task not in done:
-                    done, pending = await asyncio.wait(coro, return_when=asyncio.FIRST_COMPLETED)
+                    done, pending = await asyncio.wait(
+                        coro, return_when=asyncio.FIRST_COMPLETED
+                    )
                     coro = pending
-                
+
             except Exception as exc:
                 traceback.print_exc()
                 await pack.message_error(exc)
 
         if pending:
             await asyncio.wait(pending)
-    
+
     async def do_install(self):
         # Something we could do is run the remote setup first (COPY & install milabench)
         # then later we could remotely do `milabench install|prepare --select {current_pack}`
         # to install & prepare packs in groups
         await self.do_phase(
-            "install", 
-            milabench_remote_install(self.setup_pack()), 
-            "checked_install"
+            "install", milabench_remote_install(self.setup_pack()), "checked_install"
         )
-        
+
     async def do_prepare(self):
         await self.do_phase(
-            "prepare", 
-            milabench_remote_prepare(self.setup_pack()), 
-            "prepare"
+            "prepare", milabench_remote_prepare(self.setup_pack()), "prepare"
         )
-        
+
     async def do_run(self, repeat=1):
-        # We could run single node bench remotely as well here
-        # remote_run = 
-        
+        if not is_main_local():
+            # if we are not on the main node right now
+            # ssh to the main node and launch milabench
+
+            remote_plan = milabench_remote_run(self.setup_pack)
+            remote_task = asyncio.create_task(remote_plan.execute())
+            await asyncio.wait([remote_task])
+            return
+
         for index in range(repeat):
             for pack in self.packs.values():
                 try:
@@ -139,6 +151,7 @@ class MultiPackage:
 
                 except Exception as exc:
                     import traceback
+
                     traceback.print_exc()
                     await pack.message_error(exc)
 

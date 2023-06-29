@@ -113,36 +113,39 @@ class FeedbackEventLoop(type(asyncio.get_event_loop())):
 
         super()._run_once()
 
-
     def _callback(self, msg):
         for callback in self._callbacks:
             callback(msg)
         return msg
-    
+
     def proceed(self, coro):
         try:
             yield from self.run_until_complete(coro)
         except BaseException as exc:
             for mx in self._multiplexers:
                 for proc, (streams, argv, info) in mx.processes.items():
-                    yield self._callback(mx.constructor(
-                        event="error",
-                        data={
-                            "type": type(exc).__name__,
-                            "message": str(exc),
-                        },
-                        **info,
-                    ))
+                    yield self._callback(
+                        mx.constructor(
+                            event="error",
+                            data={
+                                "type": type(exc).__name__,
+                                "message": str(exc),
+                            },
+                            **info,
+                        )
+                    )
                     destroy(proc)
-                    yield self._callback(mx.constructor(
-                        event="end",
-                        data={
-                            "command": argv,
-                            "time": time.time(),
-                            "return_code": "ERROR",
-                        },
-                        **info,
-                    ))
+                    yield self._callback(
+                        mx.constructor(
+                            event="end",
+                            data={
+                                "command": argv,
+                                "time": time.time(),
+                                "return_code": "ERROR",
+                            },
+                            **info,
+                        )
+                    )
             raise
 
 

@@ -8,6 +8,7 @@ import sys
 import tempfile
 import traceback
 from datetime import datetime
+import getpass
 
 from coleo import Option, config as configuration, default, run_cli, tooled
 from omegaconf import OmegaConf
@@ -264,6 +265,7 @@ def _read_reports(*runs):
                         data = [json.loads(line) for line in lines]
                     except Exception:
                         import traceback
+
                         print(f"Could not parse line inside {pth}\n\t- {line}")
                         traceback.print_exc()
                     else:
@@ -673,29 +675,20 @@ class Main:
 
     def slurm_system():
         """Generate a system file based of slurm environment variables"""
-        import getpass
-        
-        node_list = filter(lambda x: len(x) > 0, os.getenv("SLURM_JOB_NODELIST", "").split(","))
-        
-        def make_node(i, ip):
-            return dict(
-                name=ip,
-                ip=ip,
-                port=22,
-                user=getpass.getuser(),
-                main=i == 0
-            )
-        
-        system = dict(
-            arch="cuda",
-            nodes=[
-                make_node(i, ip) for i, ip in enumerate(node_list)
-            ]
+        node_list = filter(
+            lambda x: len(x) > 0, os.getenv("SLURM_JOB_NODELIST", "").split(",")
         )
-        
+
+        def make_node(i, ip):
+            return dict(name=ip, ip=ip, port=22, user=getpass.getuser(), main=i == 0)
+
+        system = dict(
+            arch="cuda", nodes=[make_node(i, ip) for i, ip in enumerate(node_list)]
+        )
+
         import yaml
+
         print(yaml.dump(system))
-        
 
     def machine():
         """Display machine metadata.

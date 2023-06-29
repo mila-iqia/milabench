@@ -1,4 +1,5 @@
 import io
+import socket
 
 import yaml
 from omegaconf import OmegaConf
@@ -75,7 +76,57 @@ def build_config(*config_files):
     return all_configs
 
 
+def check_node_config(nodes):
+    mandatory_fields = ["name", "ip", "user"]
+
+    for node in nodes:
+        name = node.get("name", None)
+
+        for field in mandatory_fields:
+            assert field in node, f"The `{field}` of the node `{name}` is missing"
+
+
+def find_main_node(nodes):
+    for node in nodes:
+        if node.get("main", False):
+            return node
+
+    return nodes[0]
+
+
+def resolve_addresses(nodes):
+    # Note: it is possible for self to be node
+    # if we are running milabench on a node that is not part of the system
+    # in that case it should still work; the local is then going to
+    # ssh into the main node which will dispatch the work to the other nodes
+    self = None
+
+    for node in nodes:
+        # Resolve the IP
+        hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(node["ip"])
+
+        node["hostname"] = hostname
+        node["aliaslist"] = aliaslist
+        node["ipaddrlist"] = ipaddrlist
+
+        is_local = hostname == socket.gethostname()
+        node["local"] = is_local
+
+        if is_local:
+            self = node
+
+    return self
+
+
 def build_system_config(config_file, defaults=None):
+    """Load the system configuration, verify its validity and resolve ip addresses
+
+    Notes
+    -----
+    * node['local'] true when the code is executing on the machine directly
+    * node["main"] true when the machine is in charge of distributing the workload
+    """
+
     if config_file is None:
         config = {}
     else:
@@ -89,16 +140,12 @@ def build_system_config(config_file, defaults=None):
     if config["sshkey"] is not None:
         config["sshkey"] = str(XPath(config["sshkey"]).resolve())
 
-    for node in config["nodes"]:
-        
-        if node.get('main', False) is False:
-            for field in ("name", "ip", "user"):
-                _name = node.get("name", None)
-                assert node[field], f"The `{field}` of the node `{_name}` is missing"
-            
-        if node.get("main", None):
-            config.setdefault("main_node", node)
-        
-    config.setdefault("main_node", config["nodes"][0])
+    check_node_config(config["nodes"])
+
+    self = resolve_addresses(config["nodes"])
+
+    # Helpers
+    config["main_node"] = find_main_node(config["nodes"])
+    config["self"] = self
 
     return config
