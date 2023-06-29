@@ -25,7 +25,6 @@ def planning_method(f):
     planning_methods[f.__name__] = f
 
 
-
 def make_execution_plan(pack, step=0, repeat=1):
     cfg = deepcopy(pack.config)
     plan = deepcopy(cfg["plan"])
@@ -45,7 +44,7 @@ def make_execution_plan(pack, step=0, repeat=1):
         exec_plan = PerGPU(exec_plan, devices)
 
     elif method == "njobs":
-        n = plan.pop('n')
+        n = plan.pop("n")
         exec_plan = NJobs(exec_plan, n, devices)
 
     else:
@@ -107,6 +106,7 @@ class MultiPackage:
 
                 except Exception as exc:
                     import traceback
+
                     traceback.print_exc()
                     await pack.message_error(exc)
 
