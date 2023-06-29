@@ -1,5 +1,4 @@
-# 20.04 is needed for cuda-compat-11-8
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 # For cuda-gdb
 # FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
@@ -42,13 +41,16 @@ COPY . /milabench/milabench/
 ARG MOFED_VERSION=5.4-3.4.0.0
 
 RUN apt-get update -y &&\
-    apt-get install -y git build-essential curl python3 python-is-python3 python3-pip cuda-compat-11-8 &&\
+    apt-get install -y git build-essential curl python3 python-is-python3 python3-pip &&\
     curl -o /etc/apt/trusted.gpg.d/mellanox.asc https://content.mellanox.com/ofed/RPM-GPG-KEY-Mellanox &&\
     curl -o /etc/apt/sources.list.d/mellanox.list https://linux.mellanox.com/public/repo/mlnx_ofed/${MOFED_VERSION}/ubuntu22.04/mellanox_mlnx_ofed.list &&\
+    curl -o cuda-keyring_1.1-1_all.deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb &&\
+    dpkg -i cuda-keyring_1.1-1_all.deb &&\
     apt-get update -y &&\
-    apt-get install -y libibverbs1 &&\
+    apt-get install -y libibverbs1 cuda-compat-11-8 &&\
     apt-get clean &&\
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* &&\
+    rm cuda-keyring_1.1-1_all.deb
 
 # Install Rust
 
