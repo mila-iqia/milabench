@@ -52,8 +52,7 @@ class AccelerateBenchmark(Package):
                     remote_prepare.append(
                         SCPExecutor(self, node["ip"], str(d))
                     )
-            if remote_prepare:
-                prepare.append = ListExecutor(*remote_prepare)
+            prepare.append(ListExecutor(*remote_prepare))
 
         return SequenceExecutor(*prepare)
 

@@ -1,4 +1,4 @@
-import io
+import socket
 
 import yaml
 from omegaconf import OmegaConf
@@ -75,7 +75,39 @@ def build_config(*config_files):
     return all_configs
 
 
+def resolve_addresses(nodes):
+    # Note: it is possible for self to be none
+    # if we are running milabench on a node that is not part of the system
+    # in that case it should still work; the local is then going to
+    # ssh into the main node which will dispatch the work to the other nodes
+    self = None
+
+    for node in nodes:
+        # Resolve the IP
+        hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(node["ip"])
+
+        node["hostname"] = hostname
+        node["aliaslist"] = aliaslist
+        node["ipaddrlist"] = ipaddrlist
+
+        is_local = hostname == socket.gethostname()
+        node["local"] = is_local
+
+        if is_local:
+            self = node
+
+    return self
+
+
 def build_system_config(config_file, defaults=None):
+    """Load the system configuration, verify its validity and resolve ip addresses
+
+    Notes
+    -----
+    * node['local'] true when the code is executing on the machine directly
+    * node["main"] true when the machine is in charge of distributing the workload
+    """
+
     if config_file is None:
         config = {}
     else:
@@ -91,24 +123,27 @@ def build_system_config(config_file, defaults=None):
     if sys_cfg["sshkey"] is not None:
         sys_cfg["sshkey"] = str(XPath(sys_cfg["sshkey"]).resolve())
 
-    main_node = []
+    main_node = None
     aliases = {}
     for i, node in enumerate(sys_cfg["nodes"]):
         for field in ("name", "ip", "user"):
             _name = node.get("name", None)
             assert node[field], f"The `{field}` of the node `{_name}` is missing"
+
         assert node["name"] not in aliases, (
             f"Usage of name {node['name']} for multiple nodes"
         )
+
         aliases[node["name"]] = node
+
         if node.get("main", False) and not main_node:
-            main_node.append(node)
+            main_node = node
             sys_cfg["nodes"][i] = None
-    sys_cfg["nodes"] = [*main_node,
+
+    # Helpers
+    sys_cfg["nodes"] = [*([main_node] if main_node is not None else []),
                         *[n for n in sys_cfg["nodes"] if n is not None]]
+    sys_cfg["self"] = resolve_addresses(sys_cfg["nodes"])
     sys_cfg["aliases"] = aliases
-    assert len(sys_cfg["nodes"]) == 1 or sys_cfg["nodes"][0].get("port", None), (
-        f"The `port` of the main node `{sys_cfg['nodes'][0]['name']}` is missing"
-    )
 
     return config

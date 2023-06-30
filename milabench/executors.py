@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import os
 import json
-import socket
 from copy import deepcopy
 import warnings
 from hashlib import md5
@@ -51,14 +50,17 @@ class Executor:
     """
 
     def __init__(self, pack_or_exec: Executor | pack.BasePackage, **kwargs) -> None:
+        self._pack = None
+        self.exec = None
+
         if isinstance(pack_or_exec, Executor):
             self.exec = pack_or_exec
             self._pack = None
         elif isinstance(pack_or_exec, pack.BasePackage):
             self.exec = None
             self._pack = pack_or_exec
-        else:
-            raise TypeError(f"Need to be pack or executor {pack_or_exec}")
+        elif pack_or_exec is not None:
+            raise TypeError(f"Need to be pack or executor not `{pack_or_exec}`")
 
         self._kwargs = kwargs
 
@@ -153,8 +155,12 @@ class ListExecutor(Executor):
     """
 
     def __init__(self, *executors: Tuple[Executor], **kwargs) -> None:
-        super().__init__(executors[0], **kwargs)
+        super().__init__(None, **kwargs)
         self.executors = executors
+
+    @property
+    def pack(self):
+        return self.executors[0].pack
 
     def commands(self) -> Generator[Tuple[pack.BasePackage, List, Dict], None, None]:
         for executor in self.executors:
@@ -313,6 +319,7 @@ class SSHExecutor(WrapperExecutor):
               will be used to find the username
         key: ssh key to use to connect to the host. By default, `pack.config`
              will be used to find the username
+        port: ssh port to connect to. By default port 22 will be used
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
     _BIN="ssh"
@@ -324,6 +331,7 @@ class SSHExecutor(WrapperExecutor):
         *ssh_argv,
         user: str = None,
         key: str = None,
+        port: int = 22,
         **kwargs,
     ) -> None:
         super().__init__(
@@ -331,12 +339,14 @@ class SSHExecutor(WrapperExecutor):
             self._BIN,
             "-oCheckHostIP=no",
             "-oStrictHostKeyChecking=no",
+            "-oPasswordAuthentication=no",
             *ssh_argv,
             **kwargs,
         )
         self.host = host
         self.user = user
         self.key = key
+        self.port = port
 
     def _find_node_config(self) -> Dict:
         for n in self.pack.config["system"]["nodes"]:
@@ -344,9 +354,24 @@ class SSHExecutor(WrapperExecutor):
                 return n
         return {}
 
+    def is_local(self):
+        localnode = self.pack.config["system"]["self"]
+
+        return (
+            (localnode is None)
+            or  # self is None; the node we are currently
+            # on is not part of the system; we are running
+            # milabench remotely, sending remote commands to
+            # the main node
+            (localnode["ip"] == self.host)
+            or (  # ip or hostname match, we are running command locally
+                localnode["hostname"] == self.host
+            )
+        )
+
     def _argv(self, **kwargs) -> List:
-        if socket.gethostname() == self.host:
-            # No-op when executing on the main node
+        # No-op when executing on a local node
+        if self.is_local():
             return []
 
         node = self._find_node_config()
@@ -355,6 +380,7 @@ class SSHExecutor(WrapperExecutor):
         host = f"{user}@{self.host}" if user else self.host
 
         argv = super()._argv(**kwargs)
+        argv.extend(["-p", str(self.port)])
 
         if key:
             argv.append(f"-i{key}")
@@ -486,6 +512,7 @@ class SequenceExecutor(ListExecutor):
         executors: `Executor`s to be executed
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
+
     async def execute(self, **kwargs):
         results = []
         for executor in self.executors:
@@ -595,9 +622,11 @@ class AccelerateLoopExecutor(Executor):
         self, executor: AccelerateLaunchExecutor, ssh_exec: SSHExecutor = None, **kwargs
     ) -> None:
         if not isinstance(ssh_exec, SSHExecutor):
-            raise TypeError(f"{self.__class__.__name__} only accepts"
-                            f" {SSHExecutor.__name__} as nested"
-                            f" {Executor.__name__}")
+            raise TypeError(
+                f"{self.__class__.__name__} only accepts"
+                f" {SSHExecutor.__name__} as nested"
+                f" {Executor.__name__}"
+            )
         if ssh_exec.host is not None:
             ssh_exec.host = None
             warnings.warn(
@@ -620,7 +649,5 @@ class AccelerateLoopExecutor(Executor):
         )
         for i, node in enumerate(self.pack.config["system"]["nodes"][1:]):
             self.exec.host = node["ip"]
-            run_pack = self.pack.copy({
-                "tag": [*self.pack.config["tag"], node["name"]]
-            })
+            run_pack = self.pack.copy({"tag": [*self.pack.config["tag"], node["name"]]})
             yield run_pack, self.argv(rank=i + 1), self.kwargs()
