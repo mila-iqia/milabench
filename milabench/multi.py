@@ -112,42 +112,40 @@ class MultiPackage:
     async def do_install(self):
         setup = self.setup_pack()
         remote_task = None
-        
+
         if is_remote(setup):
             # We are outside system, setup the main node first
             remote_plan = milabench_remote_install(setup, setup_for="main")
             remote_task = asyncio.create_task(remote_plan.execute())
             await asyncio.wait([remote_task])
-            
+
             # We do not install benchmarks on that node
             return
-        
+
         elif is_main_local(setup):
             # We are the main node, setup workers
             remote_plan = milabench_remote_install(setup, setup_for="worker")
             remote_task = asyncio.create_task(remote_plan.execute())
-            
+
         # do the installation step
         await self.do_phase("install", remote_task, "checked_install")
 
     async def do_prepare(self):
         setup = self.setup_pack()
         remote_task = None
-        
+
         if is_remote(setup):
             remote_plan = milabench_remote_prepare(setup, setup_for="main")
             remote_task = asyncio.create_task(remote_plan.execute())
             await asyncio.wait([remote_task])
-            
+
             return
-        
+
         elif is_main_local(setup):
             remote_plan = milabench_remote_prepare(setup, setup_for="worker")
             remote_task = asyncio.create_task(remote_plan.execute())
-            
-        await self.do_phase(
-            "prepare", remote_task, "prepare"
-        )
+
+        await self.do_phase("prepare", remote_task, "prepare")
 
     async def do_run(self, repeat=1):
         setup = self.setup_pack()
@@ -159,8 +157,8 @@ class MultiPackage:
             remote_task = asyncio.create_task(remote_plan.execute())
             await asyncio.wait([remote_task])
             return
-        
-        assert is_main_local(), "Running benchmarks only works on the main node"
+
+        assert is_main_local(setup), "Running benchmarks only works on the main node"
 
         for index in range(repeat):
             for pack in self.packs.values():
