@@ -361,16 +361,14 @@ class SSHExecutor(WrapperExecutor):
     def is_local(self):
         localnode = self.pack.config["system"]["self"]
 
-        return (
-            (localnode is not None) and (
-              # self is nonee; the node we are currently
+        return (localnode is not None) and (
+            # self is nonee; the node we are currently
             # on is not part of the system; we are running
             # milabench remotely, sending remote commands to
             # the main node
             (localnode["ip"] == self.host)
             or (  # ip or hostname match, we are running command locally
                 localnode["hostname"] == self.host
-            )
             )
         )
 

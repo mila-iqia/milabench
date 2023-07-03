@@ -137,13 +137,13 @@ class MultiPackage:
     async def do_prepare(self):
         setup = self.setup_pack()
         remote_task = None
-        
+
         async def aprint(msg):
             setup.send(event="line", data=msg, pipe="stdout")
 
         if is_remote(setup):
             await aprint("remote")
-            
+
             remote_plan = milabench_remote_prepare(setup, run_for="main")
             remote_task = asyncio.create_task(remote_plan.execute())
             await asyncio.wait([remote_task])
@@ -152,7 +152,7 @@ class MultiPackage:
 
         elif is_main_local(setup) and is_multinode(setup):
             await aprint("main")
-            
+
             remote_plan = milabench_remote_prepare(setup, run_for="worker")
             remote_task = asyncio.create_task(remote_plan.execute())
 

@@ -116,8 +116,6 @@ def resolve_addresses(nodes):
         )
         node["local"] = is_local
 
-
-        print(node)
         if is_local:
             self = node
 
