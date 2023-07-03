@@ -139,14 +139,14 @@ class MultiPackage:
         remote_task = None
 
         if is_remote(setup):
-            remote_plan = milabench_remote_prepare(setup, setup_for="main")
+            remote_plan = milabench_remote_prepare(setup, run_for="main")
             remote_task = asyncio.create_task(remote_plan.execute())
             await asyncio.wait([remote_task])
 
             return
 
         elif is_main_local(setup) and is_multinode(setup):
-            remote_plan = milabench_remote_prepare(setup, setup_for="worker")
+            remote_plan = milabench_remote_prepare(setup, run_for="worker")
             remote_task = asyncio.create_task(remote_plan.execute())
 
         await self.do_phase("prepare", remote_task, "prepare")
