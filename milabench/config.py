@@ -109,7 +109,11 @@ def resolve_addresses(nodes):
         node["aliaslist"] = aliaslist
         node["ipaddrlist"] = ipaddrlist
 
-        is_local = hostname == socket.gethostname()
+        is_local = (
+            ('127.0.0.1' in ipaddrlist) or 
+            (hostname == "localhost") or
+            (hostname == socket.gethostname())
+        )
         node["local"] = is_local
 
         if is_local:
