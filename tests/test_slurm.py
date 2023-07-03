@@ -27,5 +27,3 @@ def test_slurm_node_expand_1():
 
 def test_slurm_node_expand_2():
     assert expand_node_list("cn-d[003,005,007]") == ["cn-d003", "cn-d005", "cn-d007"]
-
-

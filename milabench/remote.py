@@ -61,15 +61,14 @@ def pip_install_milabench(pack, node, folder) -> SSHExecutor:
     return SSHExecutor(plan, host=host, user=user)
 
 
-
 def milabench_remote_sync(pack, worker):
     setup_for = "worker"
-    
+
     # If we are outside the system prepare main only
     # main will take care of preparing the workers
     if is_remote(pack):
         setup_for = "main"
-        
+
     return milabench_remote_setup_plan(pack, setup_for)
 
 
@@ -84,10 +83,10 @@ def milabench_remote_setup_plan(pack, setup_for="worker") -> SequenceExecutor:
     nodes = pack.config["system"]["nodes"]
     copy = []
     node_packs = []
-    
+
     def should_run_for(worker):
-        return (setup_for == "worker" and (not worker["main"]) or worker["main"])
-    
+        return setup_for == "worker" and (not worker["main"]) or worker["main"]
+
     for node in nodes:
         node_pack = None
 
@@ -130,9 +129,7 @@ def milabench_remote_command(pack, *command, run_for="worker") -> ListExecutor:
 
             cmds.append(
                 SSHExecutor(
-                    CmdExecutor(
-                        worker_pack(pack, worker), f"milabench", *command
-                    ),
+                    CmdExecutor(worker_pack(pack, worker), f"milabench", *command),
                     host=host,
                     user=user,
                     port=port,
@@ -154,7 +151,7 @@ def is_multinode(pack):
 
 def is_remote(pack):
     self = pack.config["system"]["self"]
-    return self is None 
+    return self is None
 
 
 def is_main_local(pack):
@@ -171,7 +168,7 @@ def is_worker(pack):
 def _sanity(pack, setup_for):
     if setup_for == "worker":
         assert is_main_local(pack), "Only main node can setup workers"
-        
+
     if setup_for == "main":
         assert is_remote(pack), "Only a remote node can setup the main node"
 
@@ -179,10 +176,10 @@ def _sanity(pack, setup_for):
 def milabench_remote_install(pack, setup_for="worker") -> SequenceExecutor:
     """Copy milabench code, install milabench, execute milabench install"""
     _sanity(pack, setup_for)
-        
+
     if is_worker(pack):
         return VoidExecutor(pack)
-    
+
     argv = sys.argv[2:]
 
     return SequenceExecutor(
@@ -194,7 +191,7 @@ def milabench_remote_install(pack, setup_for="worker") -> SequenceExecutor:
 def milabench_remote_prepare(pack, run_for="worker") -> Executor:
     """Execute milabench prepare"""
     _sanity(pack, run_for)
-        
+
     if is_worker(pack):
         return VoidExecutor(pack)
 
