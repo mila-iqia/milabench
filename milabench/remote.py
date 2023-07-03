@@ -92,15 +92,15 @@ def milabench_remote_setup_plan(pack, setup_for="worker") -> SequenceExecutor:
         node_pack = None
 
         if should_run_for(node):
-            node_pack = worker_pack(pack, worker)
-            copy.append(CmdExecutor(node_pack, *rsync(worker, INSTALL_FOLDER)))
+            node_pack = worker_pack(pack, node)
+            copy.append(CmdExecutor(node_pack, *rsync(node, INSTALL_FOLDER)))
 
         node_packs.append(node_pack)
 
     install = []
-    for i, worker in enumerate(nodes):
+    for i, node in enumerate(nodes):
         if should_run_for(node):
-            install.append(pip_install_milabench(node_packs[i], worker, INSTALL_FOLDER))
+            install.append(pip_install_milabench(node_packs[i], node, INSTALL_FOLDER))
 
     return SequenceExecutor(
         ListExecutor(*copy),
