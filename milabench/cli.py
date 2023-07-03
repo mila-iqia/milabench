@@ -31,6 +31,7 @@ from .log import (
 from .merge import merge
 from .multi import MultiPackage
 from .report import make_report
+from .slurm import expand_node_list
 from .summary import aggregate, make_summary
 
 
@@ -675,9 +676,8 @@ class Main:
 
     def slurm_system():
         """Generate a system file based of slurm environment variables"""
-        node_list = filter(
-            lambda x: len(x) > 0, os.getenv("SLURM_JOB_NODELIST", "").split(",")
-        )
+
+        node_list = expand_node_list(os.getenv("SLURM_JOB_NODELIST", ""))
 
         def make_node(i, ip):
             return dict(name=ip, ip=ip, port=22, user=getpass.getuser(), main=i == 0)
