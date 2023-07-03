@@ -126,7 +126,7 @@ class MultiPackage:
     async def do_prepare(self):
         setup = self.setup_pack()
         
-        if is_remote():
+        if is_remote(setup):
             remote_plan = milabench_remote_prepare(setup)
             remote_task = asyncio.create_task(remote_plan.execute())
             await asyncio.wait([remote_task])
