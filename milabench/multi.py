@@ -15,6 +15,7 @@ from .remote import (
     milabench_remote_run,
     is_main_local,
     is_remote,
+    is_multinode,
 )
 
 here = XPath(__file__).parent
@@ -122,7 +123,7 @@ class MultiPackage:
             # We do not install benchmarks on that node
             return
 
-        elif is_main_local(setup):
+        elif is_main_local(setup) and is_multinode(setup):
             # We are the main node, setup workers
             remote_plan = milabench_remote_install(setup, setup_for="worker")
             remote_task = asyncio.create_task(remote_plan.execute())
@@ -141,7 +142,7 @@ class MultiPackage:
 
             return
 
-        elif is_main_local(setup):
+        elif is_main_local(setup) and is_multinode(setup):
             remote_plan = milabench_remote_prepare(setup, setup_for="worker")
             remote_task = asyncio.create_task(remote_plan.execute())
 
