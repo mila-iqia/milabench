@@ -173,7 +173,6 @@ def is_multinode(pack):
 
 def is_remote(pack):
     self = pack.config["system"]["self"]
-    print(self)
     return self is None 
 
 
