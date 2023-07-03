@@ -62,7 +62,7 @@ def pip_install_milabench(pack, node, folder) -> SSHExecutor:
 
 
 
-def milabench_remote_sync(pack):
+def milabench_remote_sync(pack, worker):
     setup_for = "worker"
     
     # If we are outside the system prepare main only
@@ -85,12 +85,13 @@ def milabench_remote_setup_plan(pack, setup_for="worker") -> SequenceExecutor:
     copy = []
     node_packs = []
     
-    for worker in nodes:
+    def should_run_for(worker):
+        return (setup_for == "worker" and (not worker["main"]) or worker["main"])
+    
+    for node in nodes:
         node_pack = None
 
-        # Copy the source of truth
-        # Here it is the remote we are currently on
-        if (setup_for == "worker" and (not worker["main"]) or worker["main"]):
+        if should_run_for(node):
             node_pack = worker_pack(pack, worker)
             copy.append(CmdExecutor(node_pack, *rsync(worker, INSTALL_FOLDER)))
 
@@ -98,7 +99,7 @@ def milabench_remote_setup_plan(pack, setup_for="worker") -> SequenceExecutor:
 
     install = []
     for i, worker in enumerate(nodes):
-        if not worker["main"]:
+        if should_run_for(node):
             install.append(pip_install_milabench(node_packs[i], worker, INSTALL_FOLDER))
 
     return SequenceExecutor(
@@ -135,12 +136,12 @@ def worker_pack(pack, worker):
 #     )
     
 
-def milabench_remote_command(pack, *command) -> ListExecutor:
+def milabench_remote_command(pack, *command, run_for="worker") -> ListExecutor:
     nodes = pack.config["system"]["nodes"]
     cmds = []
 
     for worker in nodes:
-        if not worker["main"]:
+        if (run_for == "worker" and not worker["main"]) or (worker["main"]):
             host = worker["ip"]
             user = worker["user"]
             port = worker.get("port", 22)
@@ -184,14 +185,18 @@ def is_main_local(pack):
 def milabench_remote_install(pack) -> SequenceExecutor:
     """Copy milabench code, install milabench, execute milabench install"""
 
-    if not is_remote(pack) and (not is_multinode(pack) or not is_main_local(pack)):
+    setup_for = "worker"
+    if is_remote(pack):
+        setup_for = "main"
+    
+    elif not is_multinode(pack) or not is_main_local(pack):
         return VoidExecutor(pack)
 
     argv = sys.argv[2:]
 
     return SequenceExecutor(
-        milabench_remote_setup_plan(pack),
-        milabench_remote_command(pack, "install", *argv),
+        milabench_remote_setup_plan(pack, setup_for),
+        milabench_remote_command(pack, "install", *argv, run_for=setup_for),
     )
 
 
