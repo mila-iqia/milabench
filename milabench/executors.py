@@ -362,7 +362,7 @@ class SSHExecutor(WrapperExecutor):
         localnode = self.pack.config["system"]["self"]
 
         return (
-            (localnode is None)
+            (localnode is not None) and (
             or  # self is nonee; the node we are currently
             # on is not part of the system; we are running
             # milabench remotely, sending remote commands to
@@ -370,6 +370,7 @@ class SSHExecutor(WrapperExecutor):
             (localnode["ip"] == self.host)
             or (  # ip or hostname match, we are running command locally
                 localnode["hostname"] == self.host
+            )
             )
         )
 

@@ -68,11 +68,14 @@ class MultiPackage:
 
     def setup_pack(self) -> Package:
         pack = list(self.packs.values())[0]
+        name = "setup"
+        if is_remote(pack):
+            name = "remote"
 
         return Package(
             {
-                "name": "setup",
-                "tag": ["setup"],
+                "name": name,
+                "tag": [name],
                 "definition": ".",
                 "run_name": pack.config["run_name"],
                 "dirs": pack.config["dirs"],

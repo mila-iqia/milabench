@@ -108,8 +108,10 @@ def milabench_remote_setup_plan(pack, setup_for="worker") -> SequenceExecutor:
 
 
 def worker_pack(pack, worker):
+    if is_remote(pack):
+        return pack.copy({})
+    
     name = worker.get("name", worker.get("ip", "REMOTE"))
-
     return pack.copy(
         {
             "tag": dict(append=[f"{name}"]),
