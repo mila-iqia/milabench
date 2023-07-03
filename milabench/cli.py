@@ -413,7 +413,7 @@ class Main:
         mp = get_multipack(run_name="prepare.{time}")
 
         # On error show full stacktrace
-        fulltrace: Option & bool = False
+        shortrace: Option & bool = False
 
         return run_with_loggers(
             mp.do_prepare(),
@@ -422,7 +422,7 @@ class Main:
                 TextReporter("stdout"),
                 TextReporter("stderr"),
                 DataReporter(),
-                *validation_layers("error", short=not fulltrace),
+                *validation_layers("error", short=shortrace),
             ],
             mp=mp,
         )
@@ -434,7 +434,7 @@ class Main:
         force: Option & bool = False
 
         # On error show full stacktrace
-        fulltrace: Option & bool = False
+        shorttrace: Option & bool = False
 
         # Install variant
         variant: Option & str = None
@@ -456,7 +456,7 @@ class Main:
                 TextReporter("stdout"),
                 TextReporter("stderr"),
                 DataReporter(),
-                *validation_layers("error", short=not fulltrace),
+                *validation_layers("error", short=shorttrace),
             ],
             mp=mp,
         )
