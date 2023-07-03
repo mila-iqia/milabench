@@ -118,24 +118,6 @@ def worker_pack(pack, worker):
     )
 
 
-
-# def milabench_ask_main(pack, *command):
-#     main = pack.config["system"]["main_node"]
-    
-#     host = main["ip"]
-#     user = main["user"]
-#     port = main.get("port", 22)
-            
-#     return SSHExecutor(
-#         CmdExecutor(
-#             worker_pack(pack, main), f"milabench", *command
-#         ),
-#         host=host,
-#         user=user,
-#         port=port,
-#     )
-    
-
 def milabench_remote_command(pack, *command, run_for="worker") -> ListExecutor:
     nodes = pack.config["system"]["nodes"]
     cmds = []
@@ -170,7 +152,6 @@ def is_multinode(pack):
     return count > 0
 
 
-
 def is_remote(pack):
     self = pack.config["system"]["self"]
     return self is None 
@@ -182,16 +163,26 @@ def is_main_local(pack):
     return self is not None and self["local"] and self["main"]
 
 
-def milabench_remote_install(pack) -> SequenceExecutor:
+def is_worker(pack):
+    self = pack.config["system"]["self"]
+    return self is not None and (not self["main"])
+
+
+def _sanity(pack, setup_for):
+    if setup_for == "worker":
+        assert is_main_local(pack), "Only main node can setup workers"
+        
+    if setup_for == "main":
+        assert is_remote(pack), "Only a remote node can setup the main node"
+
+
+def milabench_remote_install(pack, setup_for="worker") -> SequenceExecutor:
     """Copy milabench code, install milabench, execute milabench install"""
-
-    setup_for = "worker"
-    if is_remote(pack):
-        setup_for = "main"
-    
-    elif not is_multinode(pack) or not is_main_local(pack):
+    _sanity(pack, setup_for)
+        
+    if is_worker(pack):
         return VoidExecutor(pack)
-
+    
     argv = sys.argv[2:]
 
     return SequenceExecutor(
@@ -200,13 +191,15 @@ def milabench_remote_install(pack) -> SequenceExecutor:
     )
 
 
-def milabench_remote_prepare(pack) -> Executor:
+def milabench_remote_prepare(pack, run_for="worker") -> Executor:
     """Execute milabench prepare"""
-    if not is_multinode(pack) or not is_main_local(pack):
+    _sanity(pack, run_for)
+        
+    if is_worker(pack):
         return VoidExecutor(pack)
 
     argv = sys.argv[2:]
-    return milabench_remote_command(pack, "prepare", *argv)
+    return milabench_remote_command(pack, "prepare", *argv, run_for=run_for)
 
 
 def milabench_remote_run(pack) -> Executor:

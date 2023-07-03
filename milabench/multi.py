@@ -81,10 +81,12 @@ class MultiPackage:
             }
         )
 
-    async def do_phase(self, phase_name, remote_plan, method):
+    async def do_phase(self, phase_name, remote_task, method):
         """Run a phase on all the nodes"""
-        remote_task = asyncio.create_task(remote_plan.execute())
-        pending = [remote_task]
+
+        pending = []
+        if remote_task:
+            pending = [remote_task]
 
         for pack in self.packs.values():
             pack.phase = phase_name
@@ -109,31 +111,42 @@ class MultiPackage:
 
     async def do_install(self):
         setup = self.setup_pack()
+        remote_task = None
         
         if is_remote(setup):
-            remote_plan = milabench_remote_install(setup)
+            # We are outside system, setup the main node first
+            remote_plan = milabench_remote_install(setup, setup_for="main")
             remote_task = asyncio.create_task(remote_plan.execute())
             await asyncio.wait([remote_task])
-            return
             
-        # Something we could do is run the remote setup first (COPY & install milabench)
-        # then later we could remotely do `milabench install|prepare --select {current_pack}`
-        # to install & prepare packs in groups
-        await self.do_phase(
-            "install", milabench_remote_install(setup), "checked_install"
-        )
+            # We do not install benchmarks on that node
+            return
+        
+        elif is_main_local(setup):
+            # We are the main node, setup workers
+            remote_plan = milabench_remote_install(setup, setup_for="worker")
+            remote_task = asyncio.create_task(remote_plan.execute())
+            
+        # do the installation step
+        await self.do_phase("install", remote_task, "checked_install")
 
     async def do_prepare(self):
         setup = self.setup_pack()
+        remote_task = None
         
         if is_remote(setup):
-            remote_plan = milabench_remote_prepare(setup)
+            remote_plan = milabench_remote_prepare(setup, setup_for="main")
             remote_task = asyncio.create_task(remote_plan.execute())
             await asyncio.wait([remote_task])
+            
             return
+        
+        elif is_main_local(setup):
+            remote_plan = milabench_remote_prepare(setup, setup_for="worker")
+            remote_task = asyncio.create_task(remote_plan.execute())
             
         await self.do_phase(
-            "prepare", milabench_remote_prepare(setup), "prepare"
+            "prepare", remote_task, "prepare"
         )
 
     async def do_run(self, repeat=1):
@@ -142,11 +155,12 @@ class MultiPackage:
         if is_remote(setup):
             # if we are not on the main node right now
             # ssh to the main node and launch milabench
-
             remote_plan = milabench_remote_run(setup)
             remote_task = asyncio.create_task(remote_plan.execute())
             await asyncio.wait([remote_task])
             return
+        
+        assert is_main_local(), "Running benchmarks only works on the main node"
 
         for index in range(repeat):
             for pack in self.packs.values():
