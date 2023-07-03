@@ -72,10 +72,12 @@ def milabench_remote_setup_plan(pack) -> SequenceExecutor:
     nodes = pack.config["system"]["nodes"]
     copy = []
     node_packs = []
-
+    
     for worker in nodes:
         node_pack = None
 
+        # Copy the source of truth
+        # Here it is the remote we are currently on
         if not worker["main"]:
             node_pack = worker_pack(pack, worker)
             copy.append(CmdExecutor(node_pack, *rsync(worker, INSTALL_FOLDER)))
@@ -103,15 +105,27 @@ def worker_pack(pack, worker):
     )
 
 
+
+# def milabench_ask_main(pack, *command):
+#     main = pack.config["system"]["main_node"]
+    
+#     host = main["ip"]
+#     user = main["user"]
+#     port = main.get("port", 22)
+            
+#     return SSHExecutor(
+#         CmdExecutor(
+#             worker_pack(pack, main), f"milabench", *command
+#         ),
+#         host=host,
+#         user=user,
+#         port=port,
+#     )
+    
+
 def milabench_remote_command(pack, *command) -> ListExecutor:
     nodes = pack.config["system"]["nodes"]
     cmds = []
-
-    config = pack.config["config_file"]
-    base = pack.config["dirs"]["base"]
-    arch = pack.config["system"]["arch"]
-
-    env = f"MILABENCH_CONFIG=${config} MILABENCH_BASE={base} MILABENCH_GPU_ARCH={arch} MILABENCH_REMOTE=1"
 
     for worker in nodes:
         if not worker["main"]:
@@ -122,7 +136,7 @@ def milabench_remote_command(pack, *command) -> ListExecutor:
             cmds.append(
                 SSHExecutor(
                     CmdExecutor(
-                        worker_pack(pack, worker), f"{env} milabench", *command
+                        worker_pack(pack, worker), f"milabench", *command
                     ),
                     host=host,
                     user=user,
@@ -143,16 +157,22 @@ def is_multinode(pack):
     return count > 0
 
 
+
+def is_remote(pack):
+    self = pack.config["system"]["self"]
+    return self is None 
+
+
 def is_main_local(pack):
     """Only the local main can send remote commands to remote"""
     self = pack.config["system"]["self"]
-    return self["local"] and self["main"]
+    return self is not None and self["local"] and self["main"]
 
 
 def milabench_remote_install(pack) -> SequenceExecutor:
     """Copy milabench code, install milabench, execute milabench install"""
 
-    if not is_multinode(pack) or not is_main_local(pack):
+    if not is_remote(pack) and (not is_multinode(pack) or not is_main_local(pack)):
         return VoidExecutor(pack)
 
     argv = sys.argv[2:]

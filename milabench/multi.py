@@ -14,6 +14,7 @@ from .remote import (
     milabench_remote_prepare,
     milabench_remote_run,
     is_main_local,
+    is_remote,
 )
 
 here = XPath(__file__).parent
@@ -107,24 +108,42 @@ class MultiPackage:
             await asyncio.wait(pending)
 
     async def do_install(self):
+        setup = self.setup_pack()
+        
+        if is_remote(setup):
+            remote_plan = milabench_remote_install(setup)
+            remote_task = asyncio.create_task(remote_plan.execute())
+            await asyncio.wait([remote_task])
+            return
+            
         # Something we could do is run the remote setup first (COPY & install milabench)
         # then later we could remotely do `milabench install|prepare --select {current_pack}`
         # to install & prepare packs in groups
         await self.do_phase(
-            "install", milabench_remote_install(self.setup_pack()), "checked_install"
+            "install", milabench_remote_install(setup), "checked_install"
         )
 
     async def do_prepare(self):
+        setup = self.setup_pack()
+        
+        if is_remote():
+            remote_plan = milabench_remote_prepare(setup)
+            remote_task = asyncio.create_task(remote_plan.execute())
+            await asyncio.wait([remote_task])
+            return
+            
         await self.do_phase(
-            "prepare", milabench_remote_prepare(self.setup_pack()), "prepare"
+            "prepare", milabench_remote_prepare(setup), "prepare"
         )
 
     async def do_run(self, repeat=1):
-        if not is_main_local():
+        setup = self.setup_pack()
+
+        if is_remote(setup):
             # if we are not on the main node right now
             # ssh to the main node and launch milabench
 
-            remote_plan = milabench_remote_run(self.setup_pack)
+            remote_plan = milabench_remote_run(setup)
             remote_task = asyncio.create_task(remote_plan.execute())
             await asyncio.wait([remote_task])
             return
