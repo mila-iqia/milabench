@@ -61,7 +61,19 @@ def pip_install_milabench(pack, node, folder) -> SSHExecutor:
     return SSHExecutor(plan, host=host, user=user)
 
 
-def milabench_remote_setup_plan(pack) -> SequenceExecutor:
+
+def milabench_remote_sync(pack):
+    setup_for = "worker"
+    
+    # If we are outside the system prepare main only
+    # main will take care of preparing the workers
+    if is_remote(pack):
+        setup_for = "main"
+        
+    return milabench_remote_setup_plan(pack, setup_for)
+
+
+def milabench_remote_setup_plan(pack, setup_for="worker") -> SequenceExecutor:
     """Copy milabench source files to remote
 
     Notes
@@ -78,7 +90,7 @@ def milabench_remote_setup_plan(pack) -> SequenceExecutor:
 
         # Copy the source of truth
         # Here it is the remote we are currently on
-        if not worker["main"]:
+        if (setup_for == "worker" and (not worker["main"]) or worker["main"]):
             node_pack = worker_pack(pack, worker)
             copy.append(CmdExecutor(node_pack, *rsync(worker, INSTALL_FOLDER)))
 
@@ -197,7 +209,7 @@ def milabench_remote_run(pack) -> Executor:
 
     # already on the main node, the regular flow
     # will be executed
-    if is_main_local():
+    if is_main_local(pack):
         return VoidExecutor(pack)
 
     argv = sys.argv[2:]
