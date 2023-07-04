@@ -623,12 +623,13 @@ class AccelerateLaunchExecutor(SingleCmdExecutor):
             f"--num_machines={num_machines}",
             *deepspeed_argv,
             f"--gradient_accumulation_steps={self.pack.config['gradient_accumulation_steps']}",
-            f"--num_cpu_threads_per_process={self.pack.config['cpus_per_gpu']}",
+            f"--num_cpu_threads_per_process={self.pack.config['argv']['--cpus_per_gpu']}",
             f"--main_process_ip={manager['ip']}",
             f"--main_process_port={manager['port']}",
             f"--num_processes={nproc}",
             *self.accelerate_argv,
             str(self.pack.dirs.code / "main.py"),
+            *self.pack.argv,
         ]
 
 

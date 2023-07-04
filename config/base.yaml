@@ -67,16 +67,22 @@ _accelerate_opt:
   plan:
     method: njobs
     n: 1
-  cpus_per_gpu: 8
-  # model_name: "facebook/opt-2.7b"
-  # model_name: "facebook/opt-1.3b"
-  # model_name: "facebook/opt-350m"
-  # model_name: "facebook/opt-125m"
+  
+  # Script Args
+  argv:
+    --max_train_steps: 100
+    --dataset_name: "wikitext"
+    --dataset_config_name: "wikitext-103-v1"
+    --validation_split_percentage: 5
+    --per_gpu_batch_size: 1
+    --cpus_per_gpu: 8
+    # --model_name: "facebook/opt-2.7b"
+    # --model_name: "facebook/opt-1.3b"
+    # --model_name: "facebook/opt-350m"
+    # --model_name: "facebook/opt-125m"
+
+  # Accelerate Args
   gradient_accumulation_steps: 1
-  max_train_steps: 100
-  dataset_name: "wikitext"
-  dataset_config_name: "wikitext-103-v1"
-  validation_split_percentage: 5
   use_deepspeed: true
   num_machines: 1
 
@@ -298,37 +304,45 @@ opt-1_3b:
   inherits: _accelerate_opt
   tags:
     - multigpu
-  model_name: "facebook/opt-1.3b"
+  
+  argv:
+    --model_name: "facebook/opt-1.3b"
+    --per_gpu_batch_size: 1
+
   use_deepspeed: false
-  per_gpu_batch_size: 1
   num_machines: 1
 
 opt-1_3b-multinode:
   inherits: opt-1_3b
+
   tags:
     - multinode
   requires_capabilities:
     - "len(nodes) >= ${num_machines}"
+
   docker_image: "ghcr.io/mila-iqia/milabench:cuda-nightly"
-  per_gpu_batch_size: 1
   num_machines: 2
 
 opt-6_7b:
   inherits: _accelerate_opt
   tags:
     - multigpu
-  model_name: "facebook/opt-6.7b"
-  per_gpu_batch_size: 1
+
+  argv:
+    --model_name: "facebook/opt-6.7b"
+    --per_gpu_batch_size: 1
+
   num_machines: 1
 
 opt-6_7b-multinode:
   inherits: opt-6_7b
   tags:
     - multinode
+
   requires_capabilities:
     - "len(nodes) >= ${num_machines}"
+
   docker_image: "ghcr.io/mila-iqia/milabench:cuda-nightly"
-  per_gpu_batch_size: 1
   num_machines: 2
 
 stargan:

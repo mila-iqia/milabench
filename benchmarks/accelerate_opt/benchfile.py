@@ -7,7 +7,7 @@ class AccelerateBenchmark(Package):
 
     def make_env(self):
         env = super().make_env()
-        env["OMP_NUM_THREADS"] = str(self.config["cpus_per_gpu"])
+        env["OMP_NUM_THREADS"] = str(self.config["argv"]["--cpus_per_gpu"])
         return env
 
     def build_docker_prepare_remote_plan(self):

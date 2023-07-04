@@ -62,9 +62,32 @@ from voir.instruments.utils import Monitor
 logger = get_logger(__name__)
 
 
+def arguments():
+    from argparse import ArgumentParser
+    
+    parser = ArgumentParser()
+    parser.add_argument("--per_gpu_batch_size")
+    parser.add_argument("--max_train_steps", )
+    parser.add_argument('--cpus_per_gpu')
+    parser.add_argument('--validation_split_percentage')
+    parser.add_argument('--dataset_name')
+    parser.add_argument('--dataset_config_name')
+    parser.add_argument('--model_name')
+    
+    #
+    #   Is this still needed for docker?
+    #
+    # overrides = os.getenv("MILABENCH_CONFIG")
+    # if overrides:
+    #     return json.loads(overrides)
+    
+    return vars(parser.parse_args())
+    
+
 def main():
     is_prepare_phase = os.environ.get('MILABENCH_PREPARE_ONLY', None) == "1"
-    config = json.loads(os.environ["MILABENCH_CONFIG"])
+    config = arguments()
+    
     per_gpu_batch_size = config["per_gpu_batch_size"]
     max_train_steps = config["max_train_steps"]
 
