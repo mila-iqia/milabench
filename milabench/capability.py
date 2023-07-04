@@ -5,7 +5,7 @@ async def _failure(pack, condition):
     await pack.message(msg)
 
 
-async def is_system_capatible(pack):
+async def is_system_capable(pack):
     # eval add __builtins__ to the dictionary, we copy it to not
     # spoil our beautiful config
     capability_context = deepcopy(pack.config["system"])
@@ -19,9 +19,9 @@ async def is_system_capatible(pack):
     return is_compatible
 
 
-def sync_is_system_capatible(pack):
+def sync_is_system_capable(pack):
     import asyncio
 
     loop = asyncio.get_event_loop()
-    task = loop.create_task(is_system_capatible(pack))
+    task = loop.create_task(is_system_capable(pack))
     return loop.run_until_complete(task)

@@ -9,7 +9,7 @@ from .executors import NJobs, PerGPU
 from .fs import XPath
 from .utils import make_constraints_file
 from .pack import Package
-from .capability import is_system_capatible
+from .capability import is_system_capable
 from .remote import (
     milabench_remote_install,
     milabench_remote_prepare,
@@ -172,7 +172,7 @@ class MultiPackage:
         for index in range(repeat):
             for pack in self.packs.values():
                 try:
-                    if not await is_system_capatible(pack):
+                    if not await is_system_capable(pack):
                         continue
 
                     exec_plan = make_execution_plan(pack, index, repeat)
