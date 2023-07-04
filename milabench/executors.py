@@ -350,23 +350,21 @@ class SSHExecutor(WrapperExecutor):
 
     def _find_node_config(self) -> Dict:
         for n in self.pack.config["system"]["nodes"]:
-            if n["ip"] == self.host:
+            if n.get("ip") == self.host:
                 return n
         return {}
 
     def is_local(self):
         localnode = self.pack.config["system"]["self"]
 
-        return (
-            (localnode is None)
-            or  # self is None; the node we are currently
-            # on is not part of the system; we are running
-            # milabench remotely, sending remote commands to
-            # the main node
-            (localnode["ip"] == self.host)
-            or (  # ip or hostname match, we are running command locally
-                localnode["hostname"] == self.host
-            )
+        # self is none; the node we are currently
+        # on is not part of the system; we are running
+        # milabench remotely, sending remote commands to
+        # the main node
+        return (localnode is not None) and (
+            self.host in localnode["ipaddrlist"]
+            or self.host  # The ip belongs to the local node
+            == localnode["hostname"]  # The hostname is the local node
         )
 
     def _argv(self, **kwargs) -> List:
@@ -380,6 +378,7 @@ class SSHExecutor(WrapperExecutor):
         host = f"{user}@{self.host}" if user else self.host
 
         argv = super()._argv(**kwargs)
+        argv.extend(["-oPasswordAuthentication=no"])
         argv.extend(["-p", str(self.port)])
 
         if key:
@@ -514,11 +513,28 @@ class SequenceExecutor(ListExecutor):
     """
 
     async def execute(self, **kwargs):
-        results = []
-        for executor in self.executors:
-            results.append(await executor.execute(**{**self._kwargs, **kwargs}))
+        error_count = 0
 
-        return results
+        def on_message(msg):
+            nonlocal error_count
+
+            if msg.event == "error":
+                error_count += 1
+
+            if msg.event == "end":
+                error_count += int(msg.data.get("return_code", 0))
+
+        loop = asyncio.get_running_loop()
+        loop._callbacks.append(on_message)
+
+        for executor in self.executors:
+            await executor.execute(**{**self._kwargs, **kwargs})
+
+            if error_count > 0:
+                break
+
+        loop._callbacks.remove(on_message)
+        return error_count
 
 
 class PerGPU(ListExecutor):

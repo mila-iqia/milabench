@@ -8,6 +8,7 @@ import sys
 import tempfile
 import traceback
 from datetime import datetime
+import getpass
 
 from coleo import Option, config as configuration, default, run_cli, tooled
 from omegaconf import OmegaConf
@@ -30,6 +31,7 @@ from .log import (
 from .merge import merge
 from .multi import MultiPackage
 from .report import make_report
+from .slurm import expand_node_list
 from .summary import aggregate, make_summary
 
 
@@ -671,6 +673,22 @@ class Main:
 
         for pack in mp.packs.values():
             run_sync(pack.pip_install(*args))
+
+    def slurm_system():
+        """Generate a system file based of slurm environment variables"""
+
+        node_list = expand_node_list(os.getenv("SLURM_JOB_NODELIST", ""))
+
+        def make_node(i, ip):
+            return dict(name=ip, ip=ip, port=22, user=getpass.getuser(), main=i == 0)
+
+        system = dict(
+            arch="cuda", nodes=[make_node(i, ip) for i, ip in enumerate(node_list)]
+        )
+
+        import yaml
+
+        print(yaml.dump(system))
 
     def machine():
         """Display machine metadata.

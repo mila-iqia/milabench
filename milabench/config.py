@@ -2,6 +2,7 @@ import socket
 
 import yaml
 from omegaconf import OmegaConf
+import psutil
 
 from .fs import XPath
 from .merge import merge
@@ -75,26 +76,85 @@ def build_config(*config_files):
     return all_configs
 
 
+def check_node_config(nodes):
+    mandatory_fields = ["name", "ip", "user"]
+
+    for node in nodes:
+        name = node.get("name", None)
+
+        for field in mandatory_fields:
+            assert field in node, f"The `{field}` of the node `{name}` is missing"
+
+
+def find_main_node(nodes):
+    for node in nodes:
+        if node.get("main", False):
+            return node
+
+    return nodes[0]
+
+
+def get_remote_ip():
+    """Get all the ip of all the network interfaces"""
+    addresses = psutil.net_if_addrs()
+    stats = psutil.net_if_stats()
+
+    result = []
+
+    for interface, address_list in addresses.items():
+        for address in address_list:
+            if interface in stats and getattr(stats[interface], "isup"):
+                result.append(address.address)
+
+    return set(result)
+
+
 def resolve_addresses(nodes):
     # Note: it is possible for self to be none
     # if we are running milabench on a node that is not part of the system
     # in that case it should still work; the local is then going to
     # ssh into the main node which will dispatch the work to the other nodes
     self = None
+    lazy_raise = None
+    ip_list = get_remote_ip()
 
     for node in nodes:
         # Resolve the IP
-        hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(node["ip"])
+        try:
+            hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(node["ip"])
+
+        except socket.gaierror as err:
+            # Get Addr Info (GAI) Error
+            #
+            # When we are connecting to a node through a ssh proxy jump
+            # the node IPs/Hostnames are not available until we reach
+            # the first node inside the cluster
+            #
+            hostname = node["ip"]
+            aliaslist = []
+            ipaddrlist = []
+
+            lazy_raise = err
 
         node["hostname"] = hostname
         node["aliaslist"] = aliaslist
         node["ipaddrlist"] = ipaddrlist
 
-        is_local = hostname == socket.gethostname()
+        is_local = (
+            ("127.0.0.1" in ipaddrlist)
+            or (hostname in ("localhost", socket.gethostname()))
+            or len(ip_list.intersection(ipaddrlist)) > 0
+        )
         node["local"] = is_local
 
         if is_local:
             self = node
+            node["ipaddrlist"] = list(ip_list)
+
+    # if self is node we might be outisde the cluster
+    # which explains why we could not resolve the IP of the nodes
+    if self is not None and lazy_raise:
+        raise RuntimeError("Could not resolve node ip") from lazy_raise
 
     return self
 
@@ -118,32 +178,15 @@ def build_system_config(config_file, defaults=None):
     if defaults:
         config = merge(defaults, config)
 
-    sys_cfg = config["system"]
+    if config["sshkey"] is not None:
+        config["sshkey"] = str(XPath(config["sshkey"]).resolve())
 
-    if sys_cfg["sshkey"] is not None:
-        sys_cfg["sshkey"] = str(XPath(sys_cfg["sshkey"]).resolve())
+    check_node_config(config["nodes"])
 
-    main_node = None
-    aliases = {}
-    for i, node in enumerate(sys_cfg["nodes"]):
-        for field in ("name", "ip", "user"):
-            _name = node.get("name", None)
-            assert node[field], f"The `{field}` of the node `{_name}` is missing"
-
-        assert node["name"] not in aliases, (
-            f"Usage of name {node['name']} for multiple nodes"
-        )
-
-        aliases[node["name"]] = node
-
-        if node.get("main", False) and not main_node:
-            main_node = node
-            sys_cfg["nodes"][i] = None
+    self = resolve_addresses(config["nodes"])
 
     # Helpers
-    sys_cfg["nodes"] = [*([main_node] if main_node is not None else []),
-                        *[n for n in sys_cfg["nodes"] if n is not None]]
-    sys_cfg["self"] = resolve_addresses(sys_cfg["nodes"])
-    sys_cfg["aliases"] = aliases
+    config["main_node"] = find_main_node(config["nodes"])
+    config["self"] = self
 
     return config
