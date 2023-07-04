@@ -322,7 +322,8 @@ class SSHExecutor(WrapperExecutor):
         port: ssh port to connect to. By default port 22 will be used
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
-    _BIN="ssh"
+
+    _BIN = "ssh"
 
     def __init__(
         self,
@@ -389,27 +390,19 @@ class SSHExecutor(WrapperExecutor):
 
 
 class SCPExecutor(SSHExecutor, CmdExecutor):
-    _BIN="scp"
+    _BIN = "scp"
 
     def __init__(
-            self,
-            pack: pack.BasePackage,
-            host: str,
-            directory: str,
-            *scp_argv,
-            user: str = None,
-            key: str = None,
-            **kwargs
+        self,
+        pack: pack.BasePackage,
+        host: str,
+        directory: str,
+        *scp_argv,
+        user: str = None,
+        key: str = None,
+        **kwargs,
     ) -> None:
-        super().__init__(
-            pack,
-            host,
-            "-r",
-            *scp_argv,
-            user=user,
-            key=key,
-            **kwargs
-        )
+        super().__init__(pack, host, "-r", *scp_argv, user=user, key=key, **kwargs)
         self.dir = directory
 
     def _argv(self, **kwargs) -> List:
@@ -645,10 +638,7 @@ class AccelerateLoopExecutor(Executor):
             )
         if ssh_exec.host is not None:
             ssh_exec.host = None
-            warnings.warn(
-                f"Resetting ssh_exec's host field to"
-                f" {ssh_exec.host}"
-            )
+            warnings.warn(f"Resetting ssh_exec's host field to" f" {ssh_exec.host}")
         super().__init__(ssh_exec, **kwargs)
         self.accelerate_exec = executor
         _exec = self
