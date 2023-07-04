@@ -46,7 +46,7 @@ def rsync(node, folder, dest=None) -> list:
         "rsync",
         "-av",
         "-e",
-        f"ssh -p {port}",
+        f"ssh -oCheckHostIP=no -oStrictHostKeyChecking=no -p {port}",
         folder,
         f"{user}@{host}:{dest}",
     ]
@@ -72,6 +72,13 @@ def milabench_remote_sync(pack, worker):
     return milabench_remote_setup_plan(pack, setup_for)
 
 
+def should_run_for(worker, setup_for):
+    if setup_for == "worker":
+        return not worker["main"]
+
+    return worker["main"]
+
+
 def milabench_remote_setup_plan(pack, setup_for="worker") -> SequenceExecutor:
     """Copy milabench source files to remote
 
@@ -84,13 +91,10 @@ def milabench_remote_setup_plan(pack, setup_for="worker") -> SequenceExecutor:
     copy = []
     node_packs = []
 
-    def should_run_for(worker):
-        return setup_for == "worker" and (not worker["main"]) or worker["main"]
-
     for node in nodes:
         node_pack = None
 
-        if should_run_for(node):
+        if should_run_for(node, setup_for):
             node_pack = worker_pack(pack, node)
             copy.append(CmdExecutor(node_pack, *rsync(node, INSTALL_FOLDER)))
 
@@ -98,7 +102,7 @@ def milabench_remote_setup_plan(pack, setup_for="worker") -> SequenceExecutor:
 
     install = []
     for i, node in enumerate(nodes):
-        if should_run_for(node):
+        if should_run_for(node, setup_for):
             install.append(pip_install_milabench(node_packs[i], node, INSTALL_FOLDER))
 
     return SequenceExecutor(
@@ -124,7 +128,7 @@ def milabench_remote_command(pack, *command, run_for="worker") -> ListExecutor:
     cmds = []
 
     for worker in nodes:
-        if (run_for == "worker" and not worker["main"]) or (worker["main"]):
+        if should_run_for(worker, run_for):
             host = worker["ip"]
             user = worker["user"]
             port = worker.get("port", 22)

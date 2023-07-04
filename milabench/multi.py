@@ -25,6 +25,10 @@ gpus = get_gpu_info()["gpus"].values()
 planning_methods = {}
 
 
+async def aprint(pack, msg):
+    await pack.send(event="line", data=msg, pipe="stdout")
+
+
 def get_planning_method(name):
     name = name.replace("-", "_")
     return planning_methods[name]
@@ -118,6 +122,8 @@ class MultiPackage:
         remote_task = None
 
         if is_remote(setup):
+            await aprint(setup, "DBG: PREPARE REMOTE")
+
             # We are outside system, setup the main node first
             remote_plan = milabench_remote_install(setup, setup_for="main")
             remote_task = asyncio.create_task(remote_plan.execute())
@@ -127,9 +133,13 @@ class MultiPackage:
             return
 
         elif is_main_local(setup) and is_multinode(setup):
+            await aprint(setup, "DBG: PREPARE MAIN LOCAL")
+
             # We are the main node, setup workers
             remote_plan = milabench_remote_install(setup, setup_for="worker")
             remote_task = asyncio.create_task(remote_plan.execute())
+        else:
+            await aprint(setup, "DBG: PREPARE WORKER")
 
         # do the installation step
         await self.do_phase("install", remote_task, "checked_install")
@@ -138,11 +148,8 @@ class MultiPackage:
         setup = self.setup_pack()
         remote_task = None
 
-        async def aprint(msg):
-            setup.send(event="line", data=msg, pipe="stdout")
-
         if is_remote(setup):
-            await aprint("remote")
+            await aprint(setup, "DBG: remote")
 
             remote_plan = milabench_remote_prepare(setup, run_for="main")
             remote_task = asyncio.create_task(remote_plan.execute())
@@ -151,7 +158,7 @@ class MultiPackage:
             return
 
         elif is_main_local(setup) and is_multinode(setup):
-            await aprint("main")
+            await aprint(setup, "DBG: main")
 
             remote_plan = milabench_remote_prepare(setup, run_for="worker")
             remote_task = asyncio.create_task(remote_plan.execute())
