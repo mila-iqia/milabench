@@ -34,4 +34,6 @@ def machine_metadata():
             __commit__,
             __date__,
         ),
+        # How can we get pytorch version here
+        # "pytorch": 
     }
