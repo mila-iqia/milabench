@@ -93,7 +93,41 @@ For the performance report, it is the same command:
 Multi-node benchmark
 ^^^^^^^^^^^^^^^^^^^^
 
-There are currently two multi-node benchmarks, ``opt-1_3b-multinode`` (data-parallel) and ``opt-6_7b-multinode`` (model-parallel, that model is too large to fit on a single GPU). Here is how to run them:
+There are currently two multi-node benchmarks, ``opt-1_3b-multinode`` (data-parallel) and 
+``opt-6_7b-multinode`` (model-parallel, that model is too large to fit on a single GPU). Here is how to run them:
+
+0. Make sure the machine can ssh between each other without passwords
+  - ``ssh-keygen``
+1. Pull the milabench docker image you would like to run on all machines
+  - ``docker pull``
+2. Create a list of nodes that will participate in the benchmark inside a ``system.yaml`` file (see example below)
+  - ``vi system.yaml``
+3. Call milabench with by specifying the node list we created.
+  - ``docker ...-v <privatekey>:/milabench/id_milabench milabench run ... --system system.yaml``
+
+.. notes::
+
+   The main node is the node that will be in charge of managing the other worker nodes.
+
+.. code-block:: yaml
+
+  docker-image: ghcr.io/mila-iqia/milabench:${system.arch}-nightly
+
+  nodes:
+    - name: node1
+      ip: 192.168.0.25
+      main: true
+      port: 22
+      user: delaunap
+    
+    - name: node2
+      ip: 192.168.0.26
+      main: false
+      port: 22
+      user: <username>
+
+
+
 
 1. Set up two or more machines that can see each other on the network. Suppose there are two and their addresses are:
   * ``manager-node`` ⬅ this is the node you will launch the job on
@@ -129,9 +163,6 @@ Example YAML configuration (``overrides.yaml``):
       # Make sure that this is equal to length(worker_addrs) + 1
       num_machines: 2
 
-      capabilities:
-        # Make sure that this is ALSO equal to length(worker_addrs) + 1
-        nodes: 2
 
     opt-1_3b-multinode:
       # Copy the contents of the opt-6_7b-multinode section without any changes.
@@ -141,8 +172,6 @@ Example YAML configuration (``overrides.yaml``):
       worker_addrs:
         - "worker-node"
       num_machines: 2
-      capabilities:
-        nodes: 2
 
 
 Then, the command should look like this:
@@ -158,26 +187,41 @@ Then, the command should look like this:
       -v $SSH_KEY_FILE:/milabench/id_milabench \
       -v $(pwd)/results:/milabench/envs/runs \
       $MILABENCH_IMAGE \
-      milabench run --override "$(cat overrides.yaml)" \
+      milabench run --system system.yaml \
       --select multinode
 
 The last line (``--select multinode``) specifically selects the multi-node benchmarks. Omit that line to run all benchmarks.
 
-If you need to use more than two nodes, edit or copy ``overrides.yaml`` and simply add the other nodes' addresses in ``worker_addrs`` and adjust ``num_machines`` and ``capabilities.nodes`` accordingly. For example, for 4 nodes:
+If you need to use more than two nodes, edit or copy ``system.yaml`` and simply add the other nodes' addresses in ``nodes``. For example, for 4 nodes:
 
 .. code-block:: yaml
 
-    opt-6_7b-multinode:
-      docker_image: "ghcr.io/mila-iqia/milabench:cuda-nightly"
-      worker_user: "username"
-      manager_addr: "manager-node"
-      worker_addrs:
-        - "worker-node1"
-        - "worker-node2"
-        - "worker-node3"
-      num_machines: 4
-      capabilities:
-        nodes: 4
+    docker-image: ghcr.io/mila-iqia/milabench:${system.arch}-nightly
+
+    nodes:
+      - name: node1
+        ip: 192.168.0.25
+        main: true
+        port: 22
+        user: delaunap
+      
+      - name: node2
+        ip: 192.168.0.26
+        main: false
+        port: 22
+        user: <username>
+      
+      - name: node3
+        ip: 192.168.0.26
+        main: false
+        port: 22
+        user: <username>
+
+      - name: node4
+        ip: 192.168.0.26
+        main: false
+        port: 22
+        user: <username>
 
 .. note::
       The multi-node benchmark is sensitive to network performance. If the mono-node benchmark ``opt-6_7b`` is significantly faster than ``opt-6_7b-multinode`` (e.g. processes more than twice the items per second), this likely indicates that Infiniband is either not present or not used. (It is not abnormal for the multinode benchmark to perform *a bit* worse than the mono-node benchmark since it has not been optimized to minimize the impact of communication costs.)
