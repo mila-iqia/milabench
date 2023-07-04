@@ -122,8 +122,6 @@ class MultiPackage:
         remote_task = None
 
         if is_remote(setup):
-            await aprint(setup, "DBG: PREPARE REMOTE")
-
             # We are outside system, setup the main node first
             remote_plan = milabench_remote_install(setup, setup_for="main")
             remote_task = asyncio.create_task(remote_plan.execute())
@@ -133,13 +131,10 @@ class MultiPackage:
             return
 
         elif is_main_local(setup) and is_multinode(setup):
-            await aprint(setup, "DBG: PREPARE MAIN LOCAL")
 
             # We are the main node, setup workers
             remote_plan = milabench_remote_install(setup, setup_for="worker")
             remote_task = asyncio.create_task(remote_plan.execute())
-        else:
-            await aprint(setup, "DBG: PREPARE WORKER")
 
         # do the installation step
         await self.do_phase("install", remote_task, "checked_install")
@@ -149,8 +144,6 @@ class MultiPackage:
         remote_task = None
 
         if is_remote(setup):
-            await aprint(setup, "DBG: remote")
-
             remote_plan = milabench_remote_prepare(setup, run_for="main")
             remote_task = asyncio.create_task(remote_plan.execute())
             await asyncio.wait([remote_task])
@@ -158,8 +151,6 @@ class MultiPackage:
             return
 
         elif is_main_local(setup) and is_multinode(setup):
-            await aprint(setup, "DBG: main")
-
             remote_plan = milabench_remote_prepare(setup, run_for="worker")
             remote_task = asyncio.create_task(remote_plan.execute())
 
