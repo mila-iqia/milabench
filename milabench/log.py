@@ -76,6 +76,7 @@ class TerminalFormatter(BaseLogger):
     def console(self, tag):
         if tag not in self.consoles:
             self.consoles[tag] = TagConsole(tag, len(self.consoles))
+
         return self.consoles[tag]
 
     def __call__(self, entry):
@@ -83,6 +84,7 @@ class TerminalFormatter(BaseLogger):
         data = entry.data
         pipe = entry.pipe
         tag = entry.tag
+
         console = self.console(tag)
 
         if event == "line":

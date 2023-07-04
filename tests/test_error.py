@@ -21,7 +21,6 @@ def test_error_reporting_short(capsys, args, matcher, config):
     with pytest.raises(SystemExit) as err:
         main(["run", "--config", config("argerror"), *args])
 
-
     captured = capsys.readouterr()
     print("==")
     print(captured.out)
@@ -30,7 +29,7 @@ def test_error_reporting_short(capsys, args, matcher, config):
     print("==")
     print(captured.err)
     print("==")
-    
+
     assert err.type is SystemExit
     assert err.value.code != 0
 
