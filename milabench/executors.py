@@ -653,7 +653,13 @@ class AccelerateLoopExecutor(Executor):
             self.accelerate_exec.argv(rank=0),
             {"setsid": True, "use_stdout": True, **self.kwargs()},
         )
-        for i, node in enumerate(self.pack.config["system"]["nodes"][1:]):
+        
+        rank = 1
+        for i, node in enumerate(self.pack.config["system"]["nodes"]):
+            if node['main']:
+                continue
+            
             self.exec.host = node["ip"]
             run_pack = self.pack.copy({"tag": [*self.pack.config["tag"], node["name"]]})
-            yield run_pack, self.argv(rank=i + 1), self.kwargs()
+            yield run_pack, self.accelerate_exec.argv(rank=rank), self.kwargs()
+            rank += 1

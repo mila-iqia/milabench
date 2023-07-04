@@ -308,6 +308,13 @@ class Package(BasePackage):
             f"MILABENCH_DIR_{name.upper()}": path
             for name, path in self.config["dirs"].items()
         }
+        for k, v in (self.config["system"]).items():
+            print(k, v)
+            
+        # WTF is this coming from
+        self.config["system"].pop("__builtins__", None)
+            
+        # print(self.config["system"])
         env["MILABENCH_CONFIG"] = json.dumps(self.config)
         if self.phase == "prepare" or self.phase == "run":
             # XDG_CACHE_HOME controls basically all caches (pip, torch, huggingface,

@@ -18,7 +18,9 @@ class AccelerateBenchmark(Package):
             "pull",
             self.config["system"].get("docker_image", None)
         )
-        for node in self.config["system"]["nodes"][1:]:
+        for node in self.config["system"]["nodes"]:
+            if node["main"]:
+                continue
             executors.append(
                 SSHExecutor(
                     docker_pull_exec,
