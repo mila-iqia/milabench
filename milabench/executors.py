@@ -8,6 +8,8 @@ import warnings
 from hashlib import md5
 from typing import Dict, Generator, List, Tuple
 
+from voir.instruments.gpu import get_gpu_info
+
 from . import pack
 from .alt_async import destroy
 from .fs import XPath
@@ -332,6 +334,7 @@ class SSHExecutor(WrapperExecutor):
         *ssh_argv,
         user: str = None,
         key: str = None,
+        env: dict = None,
         port: int = 22,
         **kwargs,
     ) -> None:
@@ -348,6 +351,7 @@ class SSHExecutor(WrapperExecutor):
         self.user = user
         self.key = key
         self.port = port
+        self.env = env
 
     def _find_node_config(self) -> Dict:
         for n in self.pack.config["system"]["nodes"]:
@@ -385,6 +389,10 @@ class SSHExecutor(WrapperExecutor):
         if key:
             argv.append(f"-i{key}")
         argv.append(host)
+        
+        # if self.env:
+        #     for k, v in self.env.items():
+        #         argv.append(f"{k}={v}")
 
         return argv
 
@@ -572,14 +580,30 @@ class AccelerateLaunchExecutor(SingleCmdExecutor):
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
 
-    def __init__(self, pack: pack.BasePackage, *accelerate_argv, **kwargs) -> None:
+    def __init__(self, pack: pack.BasePackage, rank, *accelerate_argv, **kwargs) -> None:
         super().__init__(pack, **kwargs)
         self.accelerate_argv = accelerate_argv
+        self.rank = rank
 
-    def _argv(self, rank, **_) -> List:
-        nproc = (
-            len(self.pack.config.get("devices", [])) * self.pack.config["num_machines"]
-        )
+    def _get_main_workers(self):
+        main, workers = None, []
+        for node in self.pack.config["system"]["nodes"]:
+            if node["main"]:
+                main = node
+            else:
+                workers.append(node)
+        
+        return main, workers
+
+    def _argv(self, **_) -> List:
+        manager, nodes = self._get_main_workers()
+        
+        num_machines = max(1, len(nodes) + 1)
+        
+        ngpu = len(get_gpu_info()["gpus"].values())
+        nproc = ngpu * num_machines
+        assert nproc > 0
+        
         deepspeed_argv = (
             [
                 "--use_deepspeed",
@@ -589,15 +613,13 @@ class AccelerateLaunchExecutor(SingleCmdExecutor):
             if self.pack.config["use_deepspeed"]
             else ["--multi_gpu"]
         )
-        manager = self.pack.config["system"]["nodes"][0]
-        nodes = self.pack.config["system"]["nodes"][1:]
-        num_machines = max(1, len(nodes))
+    
         return [
             "accelerate",
             "launch",
             "--mixed_precision=fp16",
             "--dynamo_backend=no",
-            f"--machine_rank={rank}",
+            f"--machine_rank={self.rank}",
             f"--num_machines={num_machines}",
             *deepspeed_argv,
             f"--gradient_accumulation_steps={self.pack.config['gradient_accumulation_steps']}",

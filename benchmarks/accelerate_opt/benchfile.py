@@ -59,16 +59,42 @@ class AccelerateBenchmark(Package):
         return SequenceExecutor(*prepare)
 
     def build_run_plan(self):
-        # XXX: this doesn't participate in the process timeout
-        return AccelerateLoopExecutor(
-            AccelerateLaunchExecutor(self),
-            SSHExecutor(
-                DockerRunExecutor(
-                    AccelerateLoopExecutor.PLACEHOLDER,
-                    self.config["system"].get("docker_image", None)
-                ),
-                None
+        plans = []
+        
+        rank = 1
+        for node in self.config["system"]["nodes"]:
+            host = node["ip"]
+            user = node["user"]
+            
+            assigned_rank = rank
+            if node["main"]:
+                assigned_rank = 0
+            else:
+                rank += 1
+
+            pack = self.copy({"tag": [*self.config["tag"], node["name"]]})
+            worker = SSHExecutor(
+                host=host,
+                user=user,
+                executor=DockerRunExecutor(
+                    AccelerateLaunchExecutor(pack, rank=assigned_rank),
+                    None,
+                )
             )
-        )
+            plans.append(worker)
+        
+        return ListExecutor(*plans)
+        
+        # # XXX: this doesn't participate in the process timeout
+        # return AccelerateLoopExecutor(
+        #     AccelerateLaunchExecutor(self),
+        #     SSHExecutor(
+        #         DockerRunExecutor(
+        #             AccelerateLoopExecutor.PLACEHOLDER,
+        #             self.config["system"].get("docker_image", None)
+        #         ),
+        #         None
+        #     )
+        # )
 
 __pack__ = AccelerateBenchmark
