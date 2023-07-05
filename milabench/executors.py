@@ -389,7 +389,7 @@ class SSHExecutor(WrapperExecutor):
         if key:
             argv.append(f"-i{key}")
         argv.append(host)
-        
+
         # if self.env:
         #     for k, v in self.env.items():
         #         argv.append(f"{k}={v}")
@@ -580,7 +580,9 @@ class AccelerateLaunchExecutor(SingleCmdExecutor):
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
 
-    def __init__(self, pack: pack.BasePackage, rank, *accelerate_argv, **kwargs) -> None:
+    def __init__(
+        self, pack: pack.BasePackage, rank, *accelerate_argv, **kwargs
+    ) -> None:
         super().__init__(pack, **kwargs)
         self.accelerate_argv = accelerate_argv
         self.rank = rank
@@ -592,18 +594,18 @@ class AccelerateLaunchExecutor(SingleCmdExecutor):
                 main = node
             else:
                 workers.append(node)
-        
+
         return main, workers
 
     def _argv(self, **_) -> List:
         manager, nodes = self._get_main_workers()
-        
+
         num_machines = max(1, len(nodes) + 1)
-        
+
         ngpu = len(get_gpu_info()["gpus"].values())
         nproc = ngpu * num_machines
         assert nproc > 0
-        
+
         deepspeed_argv = (
             [
                 "--use_deepspeed",
@@ -613,7 +615,7 @@ class AccelerateLaunchExecutor(SingleCmdExecutor):
             if self.pack.config["use_deepspeed"]
             else ["--multi_gpu"]
         )
-    
+
         return [
             "accelerate",
             "launch",

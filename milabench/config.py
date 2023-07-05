@@ -188,7 +188,7 @@ def build_system_config(config_file, defaults=None):
     # Helpers
     config["main_node"] = find_main_node(config["nodes"])
     config["self"] = self
-    
+
     # assert "__builtins__" not in config
 
     return config

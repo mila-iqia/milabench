@@ -1,5 +1,6 @@
 from copy import deepcopy
 
+
 async def _failure(pack, condition):
     msg = f"Skip {pack.config['name']} because the following capability is not satisfied: {condition}"
     await pack.message(msg)

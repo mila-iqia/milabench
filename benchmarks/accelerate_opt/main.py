@@ -114,7 +114,7 @@ def main():
 
         init_process_group_kwargs = CustomInitProcessGroupKwargs(
             init_method=f"tcp://{MASTER_ADDR}:{MASTER_PORT}",
-            timeout=timedelta(seconds=300),
+            timeout=timedelta(seconds=60),
             rank=int(os.environ["RANK"]),
             world_size=int(os.environ["WORLD_SIZE"]),
         )

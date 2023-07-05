@@ -684,7 +684,12 @@ class Main:
         node_list = expand_node_list(os.getenv("SLURM_JOB_NODELIST", ""))
 
         def make_node(i, ip):
-            return dict(name=ip, ip=ip, port=22, user=getpass.getuser(), main=i == 0)
+            node = {"name": ip, "ip": ip, "user": getpass.getuser(), "main": i == 0}
+
+            if i == 0:
+                node["port"] = 8123
+
+            return node
 
         system = dict(
             arch="cuda", nodes=[make_node(i, ip) for i, ip in enumerate(node_list)]
