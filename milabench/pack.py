@@ -468,5 +468,5 @@ class Package(BasePackage):
 
     def build_run_plan(self) -> "execs.Executor":
         main = self.dirs.code / self.main_script
-        pack = execs.PackExecutor(self, *self.argv)
+        pack = execs.PackExecutor(self, *self.argv, lazy=True)
         return execs.VoirExecutor(pack, cwd=main.parent)

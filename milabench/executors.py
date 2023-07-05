@@ -202,10 +202,11 @@ class PackExecutor(CmdExecutor):
         *script_argv: script's command line arguments list. If the first
                       argument is a file or directory that can be found, the
                       file will be used instead of the `pack`'s main_script
+        lazy: if true calls pack.argv to get the latest updated version of the arguments
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
 
-    def __init__(self, pack: pack.Package, *script_argv, **kwargs) -> None:
+    def __init__(self, pack: pack.Package, *script_argv, lazy=False, **kwargs) -> None:
         script = script_argv[:1]
         if script and XPath(script[0]).exists():
             script = script[0]
@@ -216,6 +217,12 @@ class PackExecutor(CmdExecutor):
         super().__init__(pack, *script_argv, **kwargs)
 
         self.script = script
+        self.lazy = lazy
+
+    def command_arguments(self, **kwargs):
+        if self.lazy:
+            return self.pack.argv
+        return super()._argv(**kwargs)
 
     def _argv(self, **kwargs) -> List:
         script = self.script or self.pack.main_script
@@ -233,7 +240,7 @@ class PackExecutor(CmdExecutor):
             script = ["-m", str(script)]
         else:
             script = [str(abs_main)]
-        return script + super()._argv(**kwargs)
+        return script + self.command_arguments()
 
 
 class VoidExecutor(CmdExecutor):
@@ -557,6 +564,7 @@ class PerGPU(ListExecutor):
                 "env": {gpu["selection_variable"]: str(gid)},
             }
             run = clone_with(executor.pack.config, gcfg)
+
             new_pack = executor.pack.copy(run)
             executors.append(executor.copy(new_pack))
 
