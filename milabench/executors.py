@@ -334,7 +334,6 @@ class SSHExecutor(WrapperExecutor):
         *ssh_argv,
         user: str = None,
         key: str = None,
-        env: dict = None,
         port: int = 22,
         **kwargs,
     ) -> None:
@@ -351,7 +350,6 @@ class SSHExecutor(WrapperExecutor):
         self.user = user
         self.key = key
         self.port = port
-        self.env = env
 
     def _find_node_config(self) -> Dict:
         for n in self.pack.config["system"]["nodes"]:
@@ -389,10 +387,6 @@ class SSHExecutor(WrapperExecutor):
         if key:
             argv.append(f"-i{key}")
         argv.append(host)
-
-        # if self.env:
-        #     for k, v in self.env.items():
-        #         argv.append(f"{k}={v}")
 
         return argv
 

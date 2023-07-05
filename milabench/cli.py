@@ -226,12 +226,9 @@ def _get_multipack(
 
     system_config = build_system_config(
         system_config_path,
-        defaults=base_defaults["_defaults"]["system"]
-        # system_config_path, defaults={"system":base_defaults["_defaults"]["system"]}
+        defaults={"system": base_defaults["_defaults"]["system"]},
     )
-
-    overrides = merge({"*": {"system": system_config}}, overrides)
-    # overrides = merge({"*": system_config}, overrides)
+    overrides = merge({"*": system_config}, overrides)
 
     config = build_config(base_defaults, config_path, overrides)
 
@@ -697,7 +694,7 @@ class Main:
 
         import yaml
 
-        print(yaml.dump(system))
+        print(yaml.dump({"system": system}))
 
     def machine():
         """Display machine metadata.
