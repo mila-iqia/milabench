@@ -117,7 +117,8 @@ class Executor:
                 timeout_task = asyncio.create_task(force_terminate(pack, delay))
         
         results = await asyncio.gather(*coro)
-        timeout_task.cancel()
+        if timeout:
+            timeout_task.cancel()
         return results
 
 
