@@ -169,7 +169,7 @@ def build_system_config(config_file, defaults=None):
     """
 
     if config_file is None:
-        config = {}
+        config = {"system": {}}
     else:
         config_file = XPath(config_file).absolute()
         with open(config_file) as cf:
@@ -178,16 +178,18 @@ def build_system_config(config_file, defaults=None):
     if defaults:
         config = merge(defaults, config)
 
-    if config.get("sshkey") is not None:
+    system = config.get("system", {})
+
+    if system.get("sshkey") is not None:
         config["sshkey"] = str(XPath(config["sshkey"]).resolve())
 
-    check_node_config(config["nodes"])
+    check_node_config(system["nodes"])
 
-    self = resolve_addresses(config["nodes"])
+    self = resolve_addresses(system["nodes"])
 
     # Helpers
-    config["main_node"] = find_main_node(config["nodes"])
-    config["self"] = self
+    system["main_node"] = find_main_node(system["nodes"])
+    system["self"] = self
 
     # assert "__builtins__" not in config
 
