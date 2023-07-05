@@ -118,6 +118,7 @@ def main():
             rank=int(os.environ["RANK"]),
             world_size=int(os.environ["WORLD_SIZE"]),
         )
+        print("GROUP READY")
         accelerator = Accelerator(
             kwargs_handlers=[init_process_group_kwargs]
         )
@@ -169,6 +170,7 @@ def main():
         transformers.utils.logging.set_verbosity_error()
 
     accelerator.wait_for_everyone()
+    print("PRE DATASET SYNC POINT")
 
     validation_split_percentage = config["validation_split_percentage"]
     dataset_name = config["dataset_name"]
@@ -243,6 +245,10 @@ def main():
 
     if is_prepare_phase:
         return
+    
+    
+    accelerator.wait_for_everyone()
+    print("POST DATASET SYNC POINT")
 
     model = AutoModelForCausalLM.from_config(model_config)
 
@@ -261,6 +267,8 @@ def main():
     eval_dataloader = DataLoader(
         eval_dataset, collate_fn=default_data_collator, batch_size=per_gpu_batch_size
     )
+    
+    print("DATALOADER SYNC POINT")
 
     # Optimizer
     # Split weights in two groups, one with weight decay and the other not.
@@ -292,7 +300,7 @@ def main():
         else DummyOptim
     )
     optimizer = optimizer_cls(optimizer_grouped_parameters, lr=5e-5)
-
+    print("OPTIMIZER SYNC POINT")
     # Scheduler and math around the number of training steps.
 
     # Get gradient accumulation steps from deepspeed config if available
@@ -326,6 +334,10 @@ def main():
             total_num_steps=max_train_steps,
             warmup_num_steps=0,
         )
+        
+        
+    accelerator.wait_for_everyone()
+    print("READY TO PREPARE")
 
     # Prepare everything with our `accelerator`.
     (
@@ -337,6 +349,9 @@ def main():
     ) = accelerator.prepare(
         model, optimizer, train_dataloader, eval_dataloader, lr_scheduler
     )
+    
+    accelerator.wait_for_everyone()
+    print("GOOOOOOO")
 
     # We need to recalculate our total training steps as the size of the training dataloader may have changed.
     num_update_steps_per_epoch = math.ceil(
