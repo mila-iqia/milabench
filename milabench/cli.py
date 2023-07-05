@@ -376,8 +376,8 @@ class Main:
             loggers=[
                 TerminalFormatter(),
                 dash_class and dash_class(),
-                # TextReporter("stdout"),
-                # TextReporter("stderr"),
+                TextReporter("stdout"),
+                TextReporter("stderr"),
                 DataReporter(),
                 *validation_layers(*layers, short=not fulltrace),
             ],

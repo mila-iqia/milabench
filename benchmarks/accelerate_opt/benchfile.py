@@ -69,8 +69,14 @@ class AccelerateBenchmark(Package):
                     setsid=True,
                     use_stdout=True,
                 )
+                
+            tags = [*self.config["tag"], node["name"]]
+            if rank != 0:
+                # Workers do not send training data
+                # tag it as such so we validation can ignore this pack
+                tags.append("nolog")
 
-            pack = self.copy({"tag": [*self.config["tag"], node["name"]]})
+            pack = self.copy({"tag": tags})
             worker = SSHExecutor(
                 host=host,
                 user=user,
