@@ -354,6 +354,8 @@ class Main:
 
         # Which type of dashboard to show (short, long, or no)
         dash: Option & str = os.environ.get("MILABENCH_DASH", "long")
+        
+        noterm: Option & bool = os.getenv("MILABENCH_NOTERM", "0") == "1"
 
         validations: Option & str = None
 
@@ -374,7 +376,10 @@ class Main:
         success = run_with_loggers(
             mp.do_run(repeat=repeat),
             loggers=[
-                TerminalFormatter(),
+                # Terminal Formatter slows down the dashboard, 
+                # if lots of info needs to be printed
+                # in particular rwkv
+                TerminalFormatter() if not noterm else None,
                 dash_class and dash_class(),
                 TextReporter("stdout"),
                 TextReporter("stderr"),
