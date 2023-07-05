@@ -9,7 +9,7 @@ from milabench.executors import (
     VoidExecutor,
 )
 from milabench.pack import Package
-from milabench.utils import enumerate_rank
+from milabench.utils import select_nodes
 
 
 class AccelerateBenchmark(Package):
@@ -58,8 +58,11 @@ class AccelerateBenchmark(Package):
 
     def build_run_plan(self):
         plans = []
+        
+        max_num = self.config["num_machines"]
+        nodes = select_nodes(self.config["system"]["nodes"], max_num)
 
-        for rank, node in enumerate_rank(self.config["system"]["nodes"]):
+        for rank, node in enumerate(nodes):
             host = node["ip"]
             user = node["user"]
             options = dict()

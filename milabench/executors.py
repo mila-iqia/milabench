@@ -15,6 +15,7 @@ from .alt_async import destroy
 from .fs import XPath
 from .merge import merge
 from .metadata import machine_metadata
+from .utils import select_nodes
 
 
 def clone_with(cfg, new_cfg):
@@ -589,18 +590,13 @@ class AccelerateLaunchExecutor(SingleCmdExecutor):
         self.accelerate_argv = accelerate_argv
         self.rank = rank
 
-    def _get_main_workers(self):
-        main, workers = None, []
-        for node in self.pack.config["system"]["nodes"]:
-            if node["main"]:
-                main = node
-            else:
-                workers.append(node)
-
-        return main, workers
+    def _get_main_and_workers(self):
+        max_num = self.pack.config["num_machines"]
+        nodes = select_nodes(self.pack.config["system"]["nodes"], max_num)
+        return nodes[0], nodes[1:]
 
     def _argv(self, **_) -> List:
-        manager, nodes = self._get_main_workers()
+        manager, nodes = self._get_main_and_workers()
 
         num_machines = max(1, len(nodes) + 1)
 
