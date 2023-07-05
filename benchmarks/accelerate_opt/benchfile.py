@@ -9,6 +9,7 @@ from milabench.executors import (
     VoidExecutor,
 )
 from milabench.pack import Package
+from milabench.utils import enumerate_rank
 
 
 class AccelerateBenchmark(Package):
@@ -58,28 +59,23 @@ class AccelerateBenchmark(Package):
     def build_run_plan(self):
         plans = []
 
-        rank = 1
-        for node in self.config["system"]["nodes"]:
+        for rank, node in enumerate_rank(self.config["system"]["nodes"]):
             host = node["ip"]
             user = node["user"]
             options = dict()
 
-            assigned_rank = rank
-            if node["main"]:
-                assigned_rank = 0
+            if rank == 0:
                 options = dict(
                     setsid=True,
                     use_stdout=True,
                 )
-            else:
-                rank += 1
 
             pack = self.copy({"tag": [*self.config["tag"], node["name"]]})
             worker = SSHExecutor(
                 host=host,
                 user=user,
                 executor=DockerRunExecutor(
-                    AccelerateLaunchExecutor(pack, rank=assigned_rank),
+                    AccelerateLaunchExecutor(pack, rank=rank),
                     None,
                 ),
                 **options

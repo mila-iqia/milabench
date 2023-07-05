@@ -202,3 +202,13 @@ def multilogger(*logs, **kwargs):
         yield multilog
 
     multilog.report(**kwargs)
+
+
+def enumerate_rank(nodes):
+    rank = 1
+    for node in nodes:
+        if node["main"]:
+            yield 0, node
+        else:
+            yield rank, node
+            rank += 1

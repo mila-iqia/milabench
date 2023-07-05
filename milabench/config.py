@@ -179,5 +179,5 @@ def build_system_config(config_file, defaults=None):
 
     self = resolve_addresses(system["nodes"])
     system["self"] = self
-    
+
     return config
