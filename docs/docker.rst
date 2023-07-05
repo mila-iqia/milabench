@@ -111,20 +111,21 @@ There are currently two multi-node benchmarks, ``opt-1_3b-multinode`` (data-para
 
 .. code-block:: yaml
 
-  docker-image: ghcr.io/mila-iqia/milabench:${system.arch}-nightly
+  system:
+    docker-image: ghcr.io/mila-iqia/milabench:${system.arch}-nightly
 
-  nodes:
-    - name: node1
-      ip: 192.168.0.25
-      main: true
-      port: 22
-      user: delaunap
-    
-    - name: node2
-      ip: 192.168.0.26
-      main: false
-      port: 22
-      user: <username>
+    nodes:
+      - name: node1
+        ip: 192.168.0.25
+        main: true
+        port: 22
+        user: delaunap
+      
+      - name: node2
+        ip: 192.168.0.26
+        main: false
+        port: 22
+        user: <username>
 
 
 
