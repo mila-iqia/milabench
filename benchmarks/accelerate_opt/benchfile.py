@@ -48,17 +48,10 @@ class AccelerateBenchmark(Package):
                 str(self.dirs.cache)
             )
         ]
+        
         docker_image = self.config["system"].get("docker_image", None)
         if docker_image:
             prepare.append(self.build_docker_prepare_remote_plan())
-        # else:
-        #     remote_prepare = []
-        #     for node in self.config["system"]["nodes"][1:]:
-        #         for d in vars(self.dirs):
-        #             remote_prepare.append(
-        #                 SCPExecutor(self, node["ip"], str(d))
-        #             )
-        #     prepare.append(ListExecutor(*remote_prepare))
 
         return SequenceExecutor(*prepare)
 
@@ -94,18 +87,6 @@ class AccelerateBenchmark(Package):
             plans.append(worker)
 
         return ListExecutor(*plans)
-
-        # # XXX: this doesn't participate in the process timeout
-        # return AccelerateLoopExecutor(
-        #     AccelerateLaunchExecutor(self),
-        #     SSHExecutor(
-        #         DockerRunExecutor(
-        #             AccelerateLoopExecutor.PLACEHOLDER,
-        #             self.config["system"].get("docker_image", None)
-        #         ),
-        #         None
-        #     )
-        # )
 
 
 __pack__ = AccelerateBenchmark

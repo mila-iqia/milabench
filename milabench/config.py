@@ -86,14 +86,6 @@ def check_node_config(nodes):
             assert field in node, f"The `{field}` of the node `{name}` is missing"
 
 
-def find_main_node(nodes):
-    for node in nodes:
-        if node.get("main", False):
-            return node
-
-    return nodes[0]
-
-
 def get_remote_ip():
     """Get all the ip of all the network interfaces"""
     addresses = psutil.net_if_addrs()
@@ -186,11 +178,6 @@ def build_system_config(config_file, defaults=None):
     check_node_config(system["nodes"])
 
     self = resolve_addresses(system["nodes"])
-
-    # Helpers
-    system["main_node"] = find_main_node(system["nodes"])
     system["self"] = self
-
-    # assert "__builtins__" not in config
-
+    
     return config
