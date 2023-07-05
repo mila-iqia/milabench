@@ -127,53 +127,6 @@ There are currently two multi-node benchmarks, ``opt-1_3b-multinode`` (data-para
         user: <username>
 
 
-
-
-1. Set up two or more machines that can see each other on the network. Suppose there are two and their addresses are:
-  * ``manager-node`` ⬅ this is the node you will launch the job on
-  * ``worker-node``
-2. ``docker pull`` the image on both nodes.
-3. Prior to running the benchmark, create a SSH key pair on ``manager-node`` and set up public key authentication to the other nodes (in this case, ``worker-node``).
-4. Write an override file that will tell milabench about the network (see below). Note that you will need to copy/paste the same configuration for both multinode tests.
-5. On ``manager-node``, execute ``milabench run`` via Docker.
-  * Mount the private key at ``/milabench/id_milabench`` in the container
-  * Use ``--override "$(cat overrides.yaml)"`` to pass the overrides
-
-Example YAML configuration (``overrides.yaml``):
-
-.. code-block:: yaml
-
-    # Name of the benchmark. You can also override values in other benchmarks.
-    opt-6_7b-multinode:
-
-      # Docker image to use on the worker nodes (should be same as the manager)
-      docker_image: "ghcr.io/mila-iqia/milabench:cuda-nightly"
-
-      # The user on worker-node that public key auth is set up for
-      worker_user: "username"
-
-      # Address of the manager node from the worker nodes
-      manager_addr: "manager-node"
-
-      # Addresses of the worker nodes (do not include the manager node,
-      # although it is also technically a worker node)
-      worker_addrs:
-        - "worker-node"
-
-      # Make sure that this is equal to length(worker_addrs) + 1
-      num_machines: 2
-
-
-    opt-1_3b-multinode:
-      # Copy the contents of the opt-6_7b-multinode section without any changes.
-      docker_image: "ghcr.io/mila-iqia/milabench:cuda-nightly"
-      worker_user: "username"
-      manager_addr: "manager-node"
-      worker_addrs:
-        - "worker-node"
-      num_machines: 2
-
-
 Then, the command should look like this:
 
 .. code-block:: bash
@@ -202,25 +155,22 @@ If you need to use more than two nodes, edit or copy ``system.yaml`` and simply 
       - name: node1
         ip: 192.168.0.25
         main: true
-        port: 22
+        port: 8123
         user: delaunap
       
       - name: node2
         ip: 192.168.0.26
         main: false
-        port: 22
         user: <username>
       
       - name: node3
-        ip: 192.168.0.26
+        ip: 192.168.0.27
         main: false
-        port: 22
         user: <username>
 
       - name: node4
-        ip: 192.168.0.26
+        ip: 192.168.0.28
         main: false
-        port: 22
         user: <username>
 
 .. note::
