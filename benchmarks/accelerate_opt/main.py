@@ -66,13 +66,14 @@ def arguments():
     from argparse import ArgumentParser
     
     parser = ArgumentParser()
-    parser.add_argument("--per_gpu_batch_size")
-    parser.add_argument("--max_train_steps", )
-    parser.add_argument('--cpus_per_gpu')
-    parser.add_argument('--validation_split_percentage')
-    parser.add_argument('--dataset_name')
-    parser.add_argument('--dataset_config_name')
-    parser.add_argument('--model_name')
+    parser.add_argument("--per_gpu_batch_size", required=True, type=int)
+    parser.add_argument("--max_train_steps", required=True, type=int)
+    parser.add_argument('--cpus_per_gpu', required=True, type=int)
+    parser.add_argument('--validation_split_percentage', required=True, type=int)
+    parser.add_argument('--dataset_name', required=True, type=str)
+    parser.add_argument('--dataset_config_name', required=True, type=str)
+    parser.add_argument('--model_name', required=True, type=str)
+    parser.add_argument('--prepare_only', action="store_true", default=False)
     
     #
     #   Is this still needed for docker?
@@ -85,8 +86,12 @@ def arguments():
     
 
 def main():
-    is_prepare_phase = os.environ.get('MILABENCH_PREPARE_ONLY', None) == "1"
+    #
+    #   Is this still needed for docker?
+    #
+    # is_prepare_phase = os.environ.get('MILABENCH_PREPARE_ONLY', None) == "1"
     config = arguments()
+    is_prepare_phase = config["prepare_only"]
     
     per_gpu_batch_size = config["per_gpu_batch_size"]
     max_train_steps = config["max_train_steps"]

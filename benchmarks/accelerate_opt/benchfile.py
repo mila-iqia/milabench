@@ -1,4 +1,4 @@
-from milabench.executors import AccelerateLaunchExecutor, AccelerateLoopExecutor, CmdExecutor, DockerRunExecutor, ListExecutor, SCPExecutor, SSHExecutor, SequenceExecutor, VoidExecutor
+from milabench.executors import AccelerateLaunchExecutor, CmdExecutor, DockerRunExecutor, ListExecutor, SCPExecutor, SSHExecutor, SequenceExecutor, VoidExecutor
 from milabench.pack import Package
 
 
@@ -41,7 +41,8 @@ class AccelerateBenchmark(Package):
                 "--num_processes=1",
                 "--num_cpu_threads_per_process=8",
                 str(self.dirs.code / "main.py"),
-                env={"MILABENCH_PREPARE_ONLY": "1"},
+                *self.argv,
+                "--prepare_only",
             )
         ]
         docker_image = self.config["system"].get("docker_image", None)
@@ -65,10 +66,12 @@ class AccelerateBenchmark(Package):
         for node in self.config["system"]["nodes"]:
             host = node["ip"]
             user = node["user"]
+            options = dict()
             
             assigned_rank = rank
             if node["main"]:
                 assigned_rank = 0
+                options = dict(setsid=True, use_stdout=True,)
             else:
                 rank += 1
 
@@ -79,7 +82,8 @@ class AccelerateBenchmark(Package):
                 executor=DockerRunExecutor(
                     AccelerateLaunchExecutor(pack, rank=assigned_rank),
                     None,
-                )
+                ),
+                **options
             )
             plans.append(worker)
         
