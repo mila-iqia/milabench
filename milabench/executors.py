@@ -114,9 +114,11 @@ class Executor:
 
             if timeout:
                 delay = pack.config.get("max_duration", timeout_delay)
-                asyncio.create_task(force_terminate(pack, delay))
-
-        return await asyncio.gather(*coro)
+                timeout_task = asyncio.create_task(force_terminate(pack, delay))
+        
+        results = await asyncio.gather(*coro)
+        timeout_task.cancel()
+        return results
 
 
 class SingleCmdExecutor(Executor):
