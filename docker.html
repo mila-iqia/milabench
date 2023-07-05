@@ -170,63 +170,54 @@ docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </s
 </section>
 <section id="multi-node-benchmark">
 <h3>Multi-node benchmark<a class="headerlink" href="#multi-node-benchmark" title="Permalink to this heading"></a></h3>
-<p>There are currently two multi-node benchmarks, <code class="docutils literal notranslate"><span class="pre">opt-1_3b-multinode</span></code> (data-parallel) and <code class="docutils literal notranslate"><span class="pre">opt-6_7b-multinode</span></code> (model-parallel, that model is too large to fit on a single GPU). Here is how to run them:</p>
-<ol class="arabic simple">
-<li><p>Set up two or more machines that can see each other on the network. Suppose there are two and their addresses are:</p></li>
+<p>There are currently two multi-node benchmarks, <code class="docutils literal notranslate"><span class="pre">opt-1_3b-multinode</span></code> (data-parallel) and
+<code class="docutils literal notranslate"><span class="pre">opt-6_7b-multinode</span></code> (model-parallel, that model is too large to fit on a single GPU). Here is how to run them:</p>
+<ol class="arabic simple" start="0">
+<li><p>Make sure the machine can ssh between each other without passwords</p></li>
 </ol>
 <blockquote>
 <div><ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">manager-node</span></code> ⬅ this is the node you will launch the job on</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">worker-node</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ssh-keygen</span></code></p></li>
+</ul>
+</div></blockquote>
+<ol class="arabic simple">
+<li><p>Pull the milabench docker image you would like to run on all machines</p></li>
+</ol>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">pull</span></code></p></li>
 </ul>
 </div></blockquote>
 <ol class="arabic simple" start="2">
-<li><p><code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">pull</span></code> the image on both nodes.</p></li>
-<li><p>Prior to running the benchmark, create a SSH key pair on <code class="docutils literal notranslate"><span class="pre">manager-node</span></code> and set up public key authentication to the other nodes (in this case, <code class="docutils literal notranslate"><span class="pre">worker-node</span></code>).</p></li>
-<li><p>Write an override file that will tell milabench about the network (see below). Note that you will need to copy/paste the same configuration for both multinode tests.</p></li>
-<li><p>On <code class="docutils literal notranslate"><span class="pre">manager-node</span></code>, execute <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">run</span></code> via Docker.</p></li>
+<li><p>Create a list of nodes that will participate in the benchmark inside a <code class="docutils literal notranslate"><span class="pre">system.yaml</span></code> file (see example below)</p></li>
 </ol>
 <blockquote>
 <div><ul class="simple">
-<li><p>Mount the private key at <code class="docutils literal notranslate"><span class="pre">/milabench/id_milabench</span></code> in the container</p></li>
-<li><p>Use <code class="docutils literal notranslate"><span class="pre">--override</span> <span class="pre">&quot;$(cat</span> <span class="pre">overrides.yaml)&quot;</span></code> to pass the overrides</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">vi</span> <span class="pre">system.yaml</span></code></p></li>
 </ul>
 </div></blockquote>
-<p>Example YAML configuration (<code class="docutils literal notranslate"><span class="pre">overrides.yaml</span></code>):</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># Name of the benchmark. You can also override values in other benchmarks.</span>
-<span class="nt">opt-6_7b-multinode</span><span class="p">:</span>
+<ol class="arabic simple" start="3">
+<li><p>Call milabench with by specifying the node list we created.</p></li>
+</ol>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">...-v</span> <span class="pre">&lt;privatekey&gt;:/milabench/id_milabench</span> <span class="pre">milabench</span> <span class="pre">run</span> <span class="pre">...</span> <span class="pre">--system</span> <span class="pre">system.yaml</span></code></p></li>
+</ul>
+</div></blockquote>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">system</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">docker-image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ghcr.io/mila-iqia/milabench:${system.arch}-nightly</span>
 
-<span class="w">  </span><span class="c1"># Docker image to use on the worker nodes (should be same as the manager)</span>
-<span class="w">  </span><span class="nt">docker_image</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ghcr.io/mila-iqia/milabench:cuda-nightly&quot;</span>
+<span class="w">  </span><span class="nt">nodes</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">node1</span>
+<span class="w">      </span><span class="nt">ip</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">192.168.0.25</span>
+<span class="w">      </span><span class="nt">main</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">      </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8123</span>
+<span class="w">      </span><span class="nt">user</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;username&gt;</span>
 
-<span class="w">  </span><span class="c1"># The user on worker-node that public key auth is set up for</span>
-<span class="w">  </span><span class="nt">worker_user</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;username&quot;</span>
-
-<span class="w">  </span><span class="c1"># Address of the manager node from the worker nodes</span>
-<span class="w">  </span><span class="nt">manager_addr</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;manager-node&quot;</span>
-
-<span class="w">  </span><span class="c1"># Addresses of the worker nodes (do not include the manager node,</span>
-<span class="w">  </span><span class="c1"># although it is also technically a worker node)</span>
-<span class="w">  </span><span class="nt">worker_addrs</span><span class="p">:</span>
-<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;worker-node&quot;</span>
-
-<span class="w">  </span><span class="c1"># Make sure that this is equal to length(worker_addrs) + 1</span>
-<span class="w">  </span><span class="nt">num_machines</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
-
-<span class="w">  </span><span class="nt">capabilities</span><span class="p">:</span>
-<span class="w">    </span><span class="c1"># Make sure that this is ALSO equal to length(worker_addrs) + 1</span>
-<span class="w">    </span><span class="nt">nodes</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
-
-<span class="nt">opt-1_3b-multinode</span><span class="p">:</span>
-<span class="w">  </span><span class="c1"># Copy the contents of the opt-6_7b-multinode section without any changes.</span>
-<span class="w">  </span><span class="nt">docker_image</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ghcr.io/mila-iqia/milabench:cuda-nightly&quot;</span>
-<span class="w">  </span><span class="nt">worker_user</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;username&quot;</span>
-<span class="w">  </span><span class="nt">manager_addr</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;manager-node&quot;</span>
-<span class="w">  </span><span class="nt">worker_addrs</span><span class="p">:</span>
-<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;worker-node&quot;</span>
-<span class="w">  </span><span class="nt">num_machines</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
-<span class="w">  </span><span class="nt">capabilities</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">nodes</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">node2</span>
+<span class="w">      </span><span class="nt">ip</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">192.168.0.26</span>
+<span class="w">      </span><span class="nt">main</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">      </span><span class="nt">user</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;username&gt;</span>
 </pre></div>
 </div>
 <p>Then, the command should look like this:</p>
@@ -239,23 +230,47 @@ docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </s
 <span class="w">  </span>-v<span class="w"> </span><span class="nv">$SSH_KEY_FILE</span>:/milabench/id_milabench<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/results:/milabench/envs/runs<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span><span class="nv">$MILABENCH_IMAGE</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>milabench<span class="w"> </span>run<span class="w"> </span>--override<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span>overrides.yaml<span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>milabench<span class="w"> </span>run<span class="w"> </span>--system<span class="w"> </span>system.yaml<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--select<span class="w"> </span>multinode
 </pre></div>
 </div>
 <p>The last line (<code class="docutils literal notranslate"><span class="pre">--select</span> <span class="pre">multinode</span></code>) specifically selects the multi-node benchmarks. Omit that line to run all benchmarks.</p>
-<p>If you need to use more than two nodes, edit or copy <code class="docutils literal notranslate"><span class="pre">overrides.yaml</span></code> and simply add the other nodes’ addresses in <code class="docutils literal notranslate"><span class="pre">worker_addrs</span></code> and adjust <code class="docutils literal notranslate"><span class="pre">num_machines</span></code> and <code class="docutils literal notranslate"><span class="pre">capabilities.nodes</span></code> accordingly. For example, for 4 nodes:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">opt-6_7b-multinode</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">docker_image</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ghcr.io/mila-iqia/milabench:cuda-nightly&quot;</span>
-<span class="w">  </span><span class="nt">worker_user</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;username&quot;</span>
-<span class="w">  </span><span class="nt">manager_addr</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;manager-node&quot;</span>
-<span class="w">  </span><span class="nt">worker_addrs</span><span class="p">:</span>
-<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;worker-node1&quot;</span>
-<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;worker-node2&quot;</span>
-<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;worker-node3&quot;</span>
+<p>If you need to use more than two nodes, edit or copy <code class="docutils literal notranslate"><span class="pre">system.yaml</span></code> and simply add the other nodes’ addresses in <code class="docutils literal notranslate"><span class="pre">nodes</span></code>.
+You will also need to update the benchmark definition and increase the max number of nodes by creating a new <code class="docutils literal notranslate"><span class="pre">overrides.yaml</span></code> file.</p>
+<p>For example, for 4 nodes:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># Name of the benchmark. You can also override values in other benchmarks.</span>
+<span class="nt">opt-6_7b-multinode</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">num_machines</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
-<span class="w">  </span><span class="nt">capabilities</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">nodes</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
+</pre></div>
+</div>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">system</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">docker-image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ghcr.io/mila-iqia/milabench:${system.arch}-nightly</span>
+
+<span class="w">  </span><span class="nt">nodes</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">node1</span>
+<span class="w">      </span><span class="nt">ip</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">192.168.0.25</span>
+<span class="w">      </span><span class="nt">main</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">      </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8123</span>
+<span class="w">      </span><span class="nt">user</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">delaunap</span>
+
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">node2</span>
+<span class="w">      </span><span class="nt">ip</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">192.168.0.26</span>
+<span class="w">      </span><span class="nt">main</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">      </span><span class="nt">user</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;username&gt;</span>
+
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">node3</span>
+<span class="w">      </span><span class="nt">ip</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">192.168.0.27</span>
+<span class="w">      </span><span class="nt">main</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">      </span><span class="nt">user</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;username&gt;</span>
+
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">node4</span>
+<span class="w">      </span><span class="nt">ip</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">192.168.0.28</span>
+<span class="w">      </span><span class="nt">main</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">      </span><span class="nt">user</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;username&gt;</span>
+</pre></div>
+</div>
+<p>The command would look like</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>...<span class="w"> </span>milabench<span class="w"> </span>run<span class="w"> </span>...<span class="w"> </span>--system<span class="w"> </span>system.yaml<span class="w"> </span>--overrides<span class="w"> </span>overrides.yaml
 </pre></div>
 </div>
 <div class="admonition note">
