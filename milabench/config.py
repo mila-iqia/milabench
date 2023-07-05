@@ -1,4 +1,3 @@
-import io
 import socket
 
 import yaml
@@ -87,14 +86,6 @@ def check_node_config(nodes):
             assert field in node, f"The `{field}` of the node `{name}` is missing"
 
 
-def find_main_node(nodes):
-    for node in nodes:
-        if node.get("main", False):
-            return node
-
-    return nodes[0]
-
-
 def get_remote_ip():
     """Get all the ip of all the network interfaces"""
     addresses = psutil.net_if_addrs()
@@ -170,7 +161,7 @@ def build_system_config(config_file, defaults=None):
     """
 
     if config_file is None:
-        config = {}
+        config = {"system": {}}
     else:
         config_file = XPath(config_file).absolute()
         with open(config_file) as cf:
@@ -179,15 +170,14 @@ def build_system_config(config_file, defaults=None):
     if defaults:
         config = merge(defaults, config)
 
-    if config["sshkey"] is not None:
-        config["sshkey"] = str(XPath(config["sshkey"]).resolve())
+    system = config.get("system", {})
 
-    check_node_config(config["nodes"])
+    if system.get("sshkey") is not None:
+        system["sshkey"] = str(XPath(system["sshkey"]).resolve())
 
-    self = resolve_addresses(config["nodes"])
+    check_node_config(system["nodes"])
 
-    # Helpers
-    config["main_node"] = find_main_node(config["nodes"])
-    config["self"] = self
+    self = resolve_addresses(system["nodes"])
+    system["self"] = self
 
     return config

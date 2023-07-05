@@ -14,6 +14,7 @@ def aggregate(run_data):
     start = None
     end = None
     early_stop = False
+
     for entry in run_data:
         event = entry["event"]
 
@@ -69,6 +70,10 @@ def aggregate(run_data):
         and not any(isnan(loss) for loss in omnibus.get("loss", []))
         and bool(omnibus.get("train_rate", []))
     )
+
+    if "nolog" in config["tag"]:
+        success = True
+
     omnibus["success"] = [success]
 
     return {

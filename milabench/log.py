@@ -53,7 +53,7 @@ class TagConsole(BaseLogger):
         parts = [
             self.header,
             *parts,
-            obj if isinstance(obj, str) else pprint.pformat(obj),
+            obj if isinstance(obj, str) else pprint.pformat(obj, width=120),
         ]
         return self._ensure_line(" ".join(map(str, parts)))
 

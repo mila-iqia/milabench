@@ -134,7 +134,7 @@ def get_base_defaults(base, arch="none", run_name="none"):
                     {
                         "name": "local",
                         "ip": "127.0.0.1",
-                        "port": None,
+                        "port": 8123,
                         "user": user,
                         "main": True,
                     }
@@ -225,9 +225,10 @@ def _get_multipack(
     base_defaults = get_base_defaults(base=base, arch=deduce_arch(), run_name=run_name)
 
     system_config = build_system_config(
-        system_config_path, defaults=base_defaults["_defaults"]["system"]
+        system_config_path,
+        defaults={"system": base_defaults["_defaults"]["system"]},
     )
-    overrides = merge({"*": {"system": system_config}}, overrides)
+    overrides = merge({"*": system_config}, overrides)
 
     config = build_config(base_defaults, config_path, overrides)
 
@@ -353,6 +354,8 @@ class Main:
 
         # Which type of dashboard to show (short, long, or no)
         dash: Option & str = os.environ.get("MILABENCH_DASH", "long")
+        
+        noterm: Option & bool = os.getenv("MILABENCH_NOTERM", "0") == "1"
 
         validations: Option & str = None
 
@@ -373,7 +376,10 @@ class Main:
         success = run_with_loggers(
             mp.do_run(repeat=repeat),
             loggers=[
-                TerminalFormatter(),
+                # Terminal Formatter slows down the dashboard, 
+                # if lots of info needs to be printed
+                # in particular rwkv
+                TerminalFormatter() if not noterm else None,
                 dash_class and dash_class(),
                 TextReporter("stdout"),
                 TextReporter("stderr"),
@@ -680,7 +686,12 @@ class Main:
         node_list = expand_node_list(os.getenv("SLURM_JOB_NODELIST", ""))
 
         def make_node(i, ip):
-            return dict(name=ip, ip=ip, port=22, user=getpass.getuser(), main=i == 0)
+            node = {"name": ip, "ip": ip, "user": getpass.getuser(), "main": i == 0}
+
+            if i == 0:
+                node["port"] = 8123
+
+            return node
 
         system = dict(
             arch="cuda", nodes=[make_node(i, ip) for i, ip in enumerate(node_list)]
@@ -688,7 +699,7 @@ class Main:
 
         import yaml
 
-        print(yaml.dump(system))
+        print(yaml.dump({"system": system}))
 
     def machine():
         """Display machine metadata.

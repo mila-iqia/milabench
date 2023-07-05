@@ -9,6 +9,7 @@ from .executors import NJobs, PerGPU
 from .fs import XPath
 from .utils import make_constraints_file
 from .pack import Package
+from .capability import is_system_capable
 from .remote import (
     milabench_remote_install,
     milabench_remote_prepare,
@@ -131,7 +132,6 @@ class MultiPackage:
             return
 
         elif is_main_local(setup) and is_multinode(setup):
-
             # We are the main node, setup workers
             remote_plan = milabench_remote_install(setup, setup_for="worker")
             remote_task = asyncio.create_task(remote_plan.execute())
@@ -172,18 +172,7 @@ class MultiPackage:
         for index in range(repeat):
             for pack in self.packs.values():
                 try:
-
-                    def capability_failure():
-                        caps = dict(pack.config["capabilities"])
-                        for condition in pack.config.get("requires_capabilities", []):
-                            if not eval(condition, caps):
-                                return condition
-                        return False
-
-                    if condition_failed := capability_failure():
-                        await pack.message(
-                            f"Skip {pack.config['name']} because the following capability is not satisfied: {condition_failed}"
-                        )
+                    if not await is_system_capable(pack):
                         continue
 
                     exec_plan = make_execution_plan(pack, index, repeat)

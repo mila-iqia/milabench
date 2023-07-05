@@ -18,7 +18,6 @@ def scp(node, folder, dest=None) -> list:
     """Copy a folder from local node to remote node"""
     host = node["ip"]
     user = node["user"]
-    port = node.get("port", 22)
 
     if dest is None:
         dest = folder
@@ -27,7 +26,6 @@ def scp(node, folder, dest=None) -> list:
         "scp",
         "-CBr",
         "-P",
-        str(port),
         folder,
         f"{user}@{host}:{dest}",
     ]
@@ -37,7 +35,6 @@ def rsync(node, folder, dest=None) -> list:
     """Copy a folder from local node to remote node"""
     host = node["ip"]
     user = node["user"]
-    port = node.get("port", 22)
 
     if dest is None:
         dest = os.path.abspath(os.path.join(folder, ".."))
@@ -46,7 +43,7 @@ def rsync(node, folder, dest=None) -> list:
         "rsync",
         "-av",
         "-e",
-        f"ssh -oCheckHostIP=no -oStrictHostKeyChecking=no -p {port}",
+        f"ssh -oCheckHostIP=no -oStrictHostKeyChecking=no",
         folder,
         f"{user}@{host}:{dest}",
     ]
@@ -131,14 +128,12 @@ def milabench_remote_command(pack, *command, run_for="worker") -> ListExecutor:
         if should_run_for(worker, run_for):
             host = worker["ip"]
             user = worker["user"]
-            port = worker.get("port", 22)
 
             cmds.append(
                 SSHExecutor(
                     CmdExecutor(worker_pack(pack, worker), f"milabench", *command),
                     host=host,
                     user=user,
-                    port=port,
                 )
             )
 
