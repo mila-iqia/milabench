@@ -181,7 +181,7 @@ def build_system_config(config_file, defaults=None):
     system = config.get("system", {})
 
     if system.get("sshkey") is not None:
-        config["sshkey"] = str(XPath(config["sshkey"]).resolve())
+        system["sshkey"] = str(XPath(system["sshkey"]).resolve())
 
     check_node_config(system["nodes"])
 
