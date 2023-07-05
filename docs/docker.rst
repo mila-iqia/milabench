@@ -111,20 +111,20 @@ There are currently two multi-node benchmarks, ``opt-1_3b-multinode`` (data-para
 
 .. code-block:: yaml
 
-  system:
-    docker-image: ghcr.io/mila-iqia/milabench:${system.arch}-nightly
+   system:
+     docker-image: ghcr.io/mila-iqia/milabench:${system.arch}-nightly
 
-    nodes:
-      - name: node1
-        ip: 192.168.0.25
-        main: true
-        port: 8123
-        user: <username>
+     nodes:
+       - name: node1
+         ip: 192.168.0.25
+         main: true
+         port: 8123
+         user: <username>
       
-      - name: node2
-        ip: 192.168.0.26
-        main: false
-        user: <username>
+       - name: node2
+         ip: 192.168.0.26
+         main: false
+         user: <username>
 
 
 Then, the command should look like this:
@@ -145,33 +145,53 @@ Then, the command should look like this:
 
 The last line (``--select multinode``) specifically selects the multi-node benchmarks. Omit that line to run all benchmarks.
 
-If you need to use more than two nodes, edit or copy ``system.yaml`` and simply add the other nodes' addresses in ``nodes``. For example, for 4 nodes:
+If you need to use more than two nodes, edit or copy ``system.yaml`` and simply add the other nodes' addresses in ``nodes``. 
+You will also need to update the benchmark definition and increase the max number of nodes by creating a new ``overrides.yaml`` file.
+
+For example, for 4 nodes:
+
 
 .. code-block:: yaml
 
-    docker-image: ghcr.io/mila-iqia/milabench:${system.arch}-nightly
+   # Name of the benchmark. You can also override values in other benchmarks.
+   opt-6_7b-multinode:
+     num_machines: 4
+  
 
-    nodes:
-      - name: node1
-        ip: 192.168.0.25
-        main: true
-        port: 8123
-        user: delaunap
-      
-      - name: node2
-        ip: 192.168.0.26
-        main: false
-        user: <username>
-      
-      - name: node3
-        ip: 192.168.0.27
-        main: false
-        user: <username>
+.. code-block:: yaml
 
-      - name: node4
-        ip: 192.168.0.28
-        main: false
-        user: <username>
+   system:
+     docker-image: ghcr.io/mila-iqia/milabench:${system.arch}-nightly
+
+     nodes:
+       - name: node1
+         ip: 192.168.0.25
+         main: true
+         port: 8123
+         user: delaunap
+      
+       - name: node2
+         ip: 192.168.0.26
+         main: false
+         user: <username>
+      
+       - name: node3
+         ip: 192.168.0.27
+         main: false
+         user: <username>
+
+       - name: node4
+         ip: 192.168.0.28
+         main: false
+         user: <username>
+
+
+The command would look like
+
+.. code-block:: bash
+
+   docker ... milabench run ... --system system.yaml --overrides overrides.yaml
+
 
 .. note::
       The multi-node benchmark is sensitive to network performance. If the mono-node benchmark ``opt-6_7b`` is significantly faster than ``opt-6_7b-multinode`` (e.g. processes more than twice the items per second), this likely indicates that Infiniband is either not present or not used. (It is not abnormal for the multinode benchmark to perform *a bit* worse than the mono-node benchmark since it has not been optimized to minimize the impact of communication costs.)

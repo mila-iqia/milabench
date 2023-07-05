@@ -214,7 +214,7 @@ def select_nodes(nodes, n):
         else:
             ranked.append(node)
     
-    return ranked[:max(1, n)]
+    return ranked[:max(1, min(n, len(ranked)))]
 
 
 def enumerate_rank(nodes):
