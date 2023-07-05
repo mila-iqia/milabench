@@ -27,28 +27,31 @@ https://github.com/microsoft/DeepSpeed/issues/2684
 def arguments():
     from argparse import ArgumentParser
     import os
-    
+
     parser = ArgumentParser()
     parser.add_argument("--per_gpu_batch_size", required=True, type=int)
     parser.add_argument("--max_train_steps", required=True, type=int)
-    parser.add_argument('--cpus_per_gpu', required=True, type=int)
-    parser.add_argument('--validation_split_percentage', required=True, type=int)
-    parser.add_argument('--dataset_name', required=True, type=str)
-    parser.add_argument('--dataset_config_name', required=True, type=str)
-    parser.add_argument('--cache', required=True, type=str)
-    parser.add_argument('--model_name', required=True, type=str)
-    parser.add_argument('--prepare_only', action="store_true", default=False)
-    
+    parser.add_argument("--cpus_per_gpu", required=True, type=int)
+    parser.add_argument("--validation_split_percentage", required=True, type=int)
+    parser.add_argument("--dataset_name", required=True, type=str)
+    parser.add_argument("--dataset_config_name", required=True, type=str)
+    parser.add_argument("--cache", required=True, type=str)
+    parser.add_argument("--model_name", required=True, type=str)
+    parser.add_argument("--prepare_only", action="store_true", default=False)
+
     #
     #   Is this still needed for docker?
     #
     # overrides = os.getenv("MILABENCH_CONFIG")
     # if overrides:
     #     return json.loads(overrides)
-    
+
     args = parser.parse_args()
+
+    # FIXME: we could move this logic to the activator
     os.environ["XDG_CACHE_HOME"] = str(args.cache)
     return vars(args)
+
 
 _ = arguments()
 
@@ -100,7 +103,7 @@ def main():
     # is_prepare_phase = os.environ.get('MILABENCH_PREPARE_ONLY', None) == "1"
     config = arguments()
     is_prepare_phase = config["prepare_only"]
-    
+
     per_gpu_batch_size = config["per_gpu_batch_size"]
     max_train_steps = config["max_train_steps"]
 
@@ -126,10 +129,7 @@ def main():
             rank=int(os.environ["RANK"]),
             world_size=int(os.environ["WORLD_SIZE"]),
         )
-        print("GROUP READY")
-        accelerator = Accelerator(
-            kwargs_handlers=[init_process_group_kwargs]
-        )
+        accelerator = Accelerator(kwargs_handlers=[init_process_group_kwargs])
     else:
         accelerator = Accelerator()
 
@@ -137,6 +137,7 @@ def main():
         # Set up logging for milabench (only in the run phase, for the main process)
 
         data_file = SmuggleWriter(sys.stdout)
+
         def mblog(data):
             if data_file is not None:
                 print(json.dumps(data), file=data_file)
@@ -157,8 +158,10 @@ def main():
         monitor.start()
 
     else:
+
         def mblog(data):
             pass
+
         monitor = None
 
     logging.basicConfig(
@@ -176,9 +179,6 @@ def main():
     else:
         datasets.utils.logging.set_verbosity_error()
         transformers.utils.logging.set_verbosity_error()
-
-    accelerator.wait_for_everyone()
-    print("PRE DATASET SYNC POINT")
 
     validation_split_percentage = config["validation_split_percentage"]
     dataset_name = config["dataset_name"]
@@ -199,7 +199,8 @@ def main():
     model_name = config["model_name"]
     model_config = AutoConfig.from_pretrained(model_name)
     tokenizer = AutoTokenizer.from_pretrained(
-        model_name, use_fast=True,
+        model_name,
+        use_fast=True,
     )
 
     column_names = raw_datasets["train"].column_names
@@ -212,7 +213,7 @@ def main():
         tokenized_datasets = raw_datasets.map(
             tokenize_function,
             batched=True,
-            num_proc=config['cpus_per_gpu'],
+            num_proc=config["cpus_per_gpu"],
             remove_columns=column_names,
             load_from_cache_file=True,
             desc="Running tokenizer on dataset",
@@ -244,7 +245,7 @@ def main():
         lm_datasets = tokenized_datasets.map(
             group_texts,
             batched=True,
-            num_proc=config['cpus_per_gpu'],
+            num_proc=config["cpus_per_gpu"],
             load_from_cache_file=True,
             # TODO: See if this works (i.e. makes things faster and doesn't invalidate the cache)
             # keep_in_memory=True,
@@ -253,10 +254,6 @@ def main():
 
     if is_prepare_phase:
         return
-    
-    
-    accelerator.wait_for_everyone()
-    print("POST DATASET SYNC POINT")
 
     model = AutoModelForCausalLM.from_config(model_config)
 
@@ -275,8 +272,6 @@ def main():
     eval_dataloader = DataLoader(
         eval_dataset, collate_fn=default_data_collator, batch_size=per_gpu_batch_size
     )
-    
-    print("DATALOADER SYNC POINT")
 
     # Optimizer
     # Split weights in two groups, one with weight decay and the other not.
@@ -308,7 +303,6 @@ def main():
         else DummyOptim
     )
     optimizer = optimizer_cls(optimizer_grouped_parameters, lr=5e-5)
-    print("OPTIMIZER SYNC POINT")
     # Scheduler and math around the number of training steps.
 
     # Get gradient accumulation steps from deepspeed config if available
@@ -342,10 +336,6 @@ def main():
             total_num_steps=max_train_steps,
             warmup_num_steps=0,
         )
-        
-        
-    accelerator.wait_for_everyone()
-    print("READY TO PREPARE")
 
     # Prepare everything with our `accelerator`.
     (
@@ -357,9 +347,6 @@ def main():
     ) = accelerator.prepare(
         model, optimizer, train_dataloader, eval_dataloader, lr_scheduler
     )
-    
-    accelerator.wait_for_everyone()
-    print("GOOOOOOO")
 
     # We need to recalculate our total training steps as the size of the training dataloader may have changed.
     num_update_steps_per_epoch = math.ceil(
@@ -372,9 +359,7 @@ def main():
 
     # Train! Choo! Choo!
     total_batch_size = (
-        per_gpu_batch_size *
-        accelerator.num_processes *
-        gradient_accumulation_steps
+        per_gpu_batch_size * accelerator.num_processes * gradient_accumulation_steps
     )
 
     logger.info("***** Running training *****")
@@ -415,10 +400,7 @@ def main():
                     completed_steps += 1
 
                 log_interval = 3
-                if (
-                    accelerator.is_main_process
-                    and completed_steps % log_interval == 0
-                ):
+                if accelerator.is_main_process and completed_steps % log_interval == 0:
                     torch.cuda.synchronize()
                     if completed_steps == 0:
                         last_log_time = time.time()
@@ -431,7 +413,13 @@ def main():
                             n_samples_since_last_log / seconds_since_last_log
                         )
 
-                        mblog({"task": "train", "rate": throughput_samples_per_sec, "units": "items/s"})
+                        mblog(
+                            {
+                                "task": "train",
+                                "rate": throughput_samples_per_sec,
+                                "units": "items/s",
+                            }
+                        )
 
                         last_log_time = time.time()
 

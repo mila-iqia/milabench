@@ -1,4 +1,13 @@
-from milabench.executors import AccelerateLaunchExecutor, CmdExecutor, DockerRunExecutor, ListExecutor, SCPExecutor, SSHExecutor, SequenceExecutor, VoidExecutor
+from milabench.executors import (
+    AccelerateLaunchExecutor,
+    CmdExecutor,
+    DockerRunExecutor,
+    ListExecutor,
+    SCPExecutor,
+    SSHExecutor,
+    SequenceExecutor,
+    VoidExecutor,
+)
 from milabench.pack import Package
 
 
@@ -13,20 +22,12 @@ class AccelerateBenchmark(Package):
     def build_docker_prepare_remote_plan(self):
         executors = []
         docker_pull_exec = CmdExecutor(
-            self,
-            "docker",
-            "pull",
-            self.config["system"].get("docker_image", None)
+            self, "docker", "pull", self.config["system"].get("docker_image", None)
         )
         for node in self.config["system"]["nodes"]:
             if node["main"]:
                 continue
-            executors.append(
-                SSHExecutor(
-                    docker_pull_exec,
-                    node["ip"]
-                )
-            )
+            executors.append(SSHExecutor(docker_pull_exec, node["ip"]))
         return ListExecutor(*executors)
 
     def build_prepare_plan(self):
@@ -43,7 +44,8 @@ class AccelerateBenchmark(Package):
                 str(self.dirs.code / "main.py"),
                 *self.argv,
                 "--prepare_only",
-                "--cache", str(self.dirs.cache)
+                "--cache",
+                str(self.dirs.cache)
             )
         ]
         docker_image = self.config["system"].get("docker_image", None)
@@ -62,17 +64,20 @@ class AccelerateBenchmark(Package):
 
     def build_run_plan(self):
         plans = []
-        
+
         rank = 1
         for node in self.config["system"]["nodes"]:
             host = node["ip"]
             user = node["user"]
             options = dict()
-            
+
             assigned_rank = rank
             if node["main"]:
                 assigned_rank = 0
-                options = dict(setsid=True, use_stdout=True,)
+                options = dict(
+                    setsid=True,
+                    use_stdout=True,
+                )
             else:
                 rank += 1
 
@@ -87,9 +92,9 @@ class AccelerateBenchmark(Package):
                 **options
             )
             plans.append(worker)
-        
+
         return ListExecutor(*plans)
-        
+
         # # XXX: this doesn't participate in the process timeout
         # return AccelerateLoopExecutor(
         #     AccelerateLaunchExecutor(self),
@@ -101,5 +106,6 @@ class AccelerateBenchmark(Package):
         #         None
         #     )
         # )
+
 
 __pack__ = AccelerateBenchmark
