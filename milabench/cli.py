@@ -374,7 +374,8 @@ class Main:
         success = run_with_loggers(
             mp.do_run(repeat=repeat),
             loggers=[
-                TerminalFormatter(),
+                # Printing can slowdown the dash
+                TerminalFormatter() if not os.getenv("MILABENCH_NOTERM") else None,
                 dash_class and dash_class(),
                 TextReporter("stdout"),
                 TextReporter("stderr"),

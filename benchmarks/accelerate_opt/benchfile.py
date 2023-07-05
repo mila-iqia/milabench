@@ -82,7 +82,7 @@ class AccelerateBenchmark(Package):
                 user=user,
                 executor=DockerRunExecutor(
                     AccelerateLaunchExecutor(pack, rank=rank),
-                    None,
+                    self.config["system"].get("docker_image"),
                 ),
                 **options
             )
