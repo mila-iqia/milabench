@@ -43,6 +43,7 @@ class AccelerateBenchmark(Package):
                 str(self.dirs.code / "main.py"),
                 *self.argv,
                 "--prepare_only",
+                "--cache", str(self.dirs.cache)
             )
         ]
         docker_image = self.config["system"].get("docker_image", None)

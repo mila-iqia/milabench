@@ -22,6 +22,37 @@ Old bug (fixed with the solution in the last reply to the thread):
 - Fix bug: fatal error: cusolverDn.h: No such file or directory
 https://github.com/microsoft/DeepSpeed/issues/2684
 """
+
+
+def arguments():
+    from argparse import ArgumentParser
+    import os
+    
+    parser = ArgumentParser()
+    parser.add_argument("--per_gpu_batch_size", required=True, type=int)
+    parser.add_argument("--max_train_steps", required=True, type=int)
+    parser.add_argument('--cpus_per_gpu', required=True, type=int)
+    parser.add_argument('--validation_split_percentage', required=True, type=int)
+    parser.add_argument('--dataset_name', required=True, type=str)
+    parser.add_argument('--dataset_config_name', required=True, type=str)
+    parser.add_argument('--cache', required=True, type=str)
+    parser.add_argument('--model_name', required=True, type=str)
+    parser.add_argument('--prepare_only', action="store_true", default=False)
+    
+    #
+    #   Is this still needed for docker?
+    #
+    # overrides = os.getenv("MILABENCH_CONFIG")
+    # if overrides:
+    #     return json.loads(overrides)
+    
+    args = parser.parse_args()
+    os.environ["XDG_CACHE_HOME"] = str(args.cache)
+    return vars(args)
+
+_ = arguments()
+
+
 # You can also adapt this script on your own causal language modeling task. Pointers for this are left as comments.
 import json
 import logging
@@ -61,29 +92,6 @@ from voir.instruments.utils import Monitor
 
 logger = get_logger(__name__)
 
-
-def arguments():
-    from argparse import ArgumentParser
-    
-    parser = ArgumentParser()
-    parser.add_argument("--per_gpu_batch_size", required=True, type=int)
-    parser.add_argument("--max_train_steps", required=True, type=int)
-    parser.add_argument('--cpus_per_gpu', required=True, type=int)
-    parser.add_argument('--validation_split_percentage', required=True, type=int)
-    parser.add_argument('--dataset_name', required=True, type=str)
-    parser.add_argument('--dataset_config_name', required=True, type=str)
-    parser.add_argument('--model_name', required=True, type=str)
-    parser.add_argument('--prepare_only', action="store_true", default=False)
-    
-    #
-    #   Is this still needed for docker?
-    #
-    # overrides = os.getenv("MILABENCH_CONFIG")
-    # if overrides:
-    #     return json.loads(overrides)
-    
-    return vars(parser.parse_args())
-    
 
 def main():
     #

@@ -611,6 +611,14 @@ class AccelerateLaunchExecutor(SingleCmdExecutor):
         )
 
         return [
+            # -- Run the command in the right venv
+            # This could be inside the SSH Executor
+            # but it would need to be repeated for Docker
+            # could be its own Executor like VenvExecutor that execute code
+            # inside a specifc venv
+            f"{self.pack.dirs.code / 'activator'}",
+            f"{self.pack.dirs.venv}",
+            # --
             "accelerate",
             "launch",
             "--mixed_precision=fp16",
@@ -626,4 +634,6 @@ class AccelerateLaunchExecutor(SingleCmdExecutor):
             *self.accelerate_argv,
             str(self.pack.dirs.code / "main.py"),
             *self.pack.argv,
+            "--cache",
+            str(self.pack.dirs.cache),
         ]
