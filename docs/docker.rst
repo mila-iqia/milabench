@@ -119,7 +119,7 @@ There are currently two multi-node benchmarks, ``opt-1_3b-multinode`` (data-para
         ip: 192.168.0.25
         main: true
         port: 8123
-        user: delaunap
+        user: <username>
       
       - name: node2
         ip: 192.168.0.26
