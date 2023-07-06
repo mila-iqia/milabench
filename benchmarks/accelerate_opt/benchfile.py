@@ -40,7 +40,7 @@ class AccelerateBenchmark(Package):
         max_num = self.config["num_machines"]
         nodes = select_nodes(self.config["system"]["nodes"], max_num)
         key = self.config["system"].get("sshkey")
-    
+
         for rank, node in enumerate(nodes):
             host = node["ip"]
             user = node["user"]

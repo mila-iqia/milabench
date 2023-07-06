@@ -467,16 +467,16 @@ class Main:
             ],
             mp=mp,
         )
-    
+
     def helpme():
         """"""
         # "192.168.0.[25-30,123,126]"
         node_range: Option & str = "node[0,1]"
         arch: Option & str = "cuda"
         version: Option & str = "nightly"
-        
+
         from .utils import command_generator
-        
+
         command_generator(node_range, arch, version)
 
     def pin():

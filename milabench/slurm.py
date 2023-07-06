@@ -61,8 +61,8 @@ def build_system_config(node_range):
 
     def make_node(i, ip):
         node = {
-            "name": ip, 
-            "ip": ip, 
+            "name": ip,
+            "ip": ip,
             "user": getpass.getuser(),
             "main": i == 0,
         }
@@ -73,7 +73,7 @@ def build_system_config(node_range):
         return node
 
     system = dict(
-        arch="cuda", 
+        arch="cuda",
         nodes=[make_node(i, ip) for i, ip in enumerate(node_list)],
     )
     return {"system": system}
