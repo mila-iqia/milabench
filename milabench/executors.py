@@ -114,10 +114,10 @@ class Executor:
         """
         yield self.pack, [], self.kwargs()
 
-    async def execute(self, phase, timeout=False, timeout_delay=600, **kwargs):
+    async def execute(self, phase="run", timeout=False, timeout_delay=600, **kwargs):
         """Execute all the commands and return the aggregated results"""
         coro = []
-        
+
         for pack in self.packs():
             pack.phase = phase
 
@@ -177,7 +177,7 @@ class ListExecutor(Executor):
     def commands(self) -> Generator[Tuple[pack.BasePackage, List, Dict], None, None]:
         for executor in self.executors:
             yield from executor.commands()
-            
+
     def packs(self):
         for exec in self.executors:
             yield from exec.packs()
@@ -311,6 +311,40 @@ class DockerRunExecutor(WrapperExecutor):
         )
         self.image = image
 
+    def as_container_path(self, path):
+        # replace local output path with docker path
+        base = self.pack.dirs.base
+        path = path.replace(str(base), "/milabench/envs")
+
+        # Replace local installation path with docker path
+        install_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        path = path.replace(str(install_path), "/milabench/milabench")
+
+        return path
+
+    def argv(self, **kwargs) -> List:
+        """Return the list of command line's arguments for this `Executor`
+        followed by its embedded `Executor`'s list of command line's arguments
+
+        Arguments:
+            **kwargs: some `Executor` might need an argument to dynamically
+                      generate the list of command line's arguments
+        """
+        script_args = self.exec.argv(**kwargs)
+        docker_args = self._argv(**kwargs)
+
+        # we are already in docker the path are correct
+        if len(docker_args) == 0:
+            return script_args
+
+        # we are outisde docker
+        rewritten = []
+        for arg in script_args:
+            # rewrite path to be inside docker
+            rewritten.append(self.as_container_path(arg))
+
+        return docker_args + rewritten
+
     def _argv(self, **kwargs) -> List:
         if self.image is None or os.environ.get("MILABENCH_DOCKER", None):
             # No-op when there's no docker image to run or inside a docker
@@ -320,16 +354,11 @@ class DockerRunExecutor(WrapperExecutor):
         argv = super()._argv(**kwargs)
 
         env = self.pack.make_env()
-        print(self.pack.phase)
-        print(env)
-        for var in ("MILABENCH_CONFIG", "XDG_CACHE_HOME", "OMP_NUM_THREADS"):
+        for var in ("XDG_CACHE_HOME", "OMP_NUM_THREADS"):
             argv.append("--env")
-            argv.append(f"{var}='{env[var]}'")
+            argv.append(f"{var}='{self.as_container_path(env[var])}'")
 
         argv.append(self.image)
-        argv.append(f"{self.pack.dirs.code / 'activator'}")
-        argv.append(f"{self.pack.dirs.venv}")
-
         return argv
 
 
