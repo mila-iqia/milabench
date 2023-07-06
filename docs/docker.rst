@@ -136,7 +136,7 @@ Then, the command should look like this:
 
     # Change if needed
     export SSH_KEY_FILE=$HOME/.ssh/id_rsa
-
+    export MILABENCH_IMAGE=ghcr.io/mila-iqia/milabench:cuda-nightly
     docker run -it --rm --gpus all --network host --ipc=host --privileged \
       -v $SSH_KEY_FILE:/milabench/id_milabench \
       -v $(pwd)/results:/milabench/envs/runs \

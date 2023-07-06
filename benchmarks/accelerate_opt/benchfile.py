@@ -22,13 +22,23 @@ class AccelerateBenchmark(Package):
 
     def build_docker_prepare_remote_plan(self):
         executors = []
+        key = self.config["system"].get("sshkey")
         docker_pull_exec = CmdExecutor(
             self, "docker", "pull", self.config["system"].get("docker_image", None)
         )
         for node in self.config["system"]["nodes"]:
             if node["main"]:
                 continue
-            executors.append(SSHExecutor(docker_pull_exec, node["ip"]))
+            
+            host = node["ip"]
+            user = node["user"]
+            
+            executors.append(SSHExecutor(docker_pull_exec,                     
+                    host=host,
+                    user=user,
+                    key=key,
+                )
+            )
         return ListExecutor(*executors)
 
     def build_prepare_plan(self):
@@ -61,7 +71,8 @@ class AccelerateBenchmark(Package):
         
         max_num = self.config["num_machines"]
         nodes = select_nodes(self.config["system"]["nodes"], max_num)
-
+        key = self.config["system"].get("sshkey")
+        
         for rank, node in enumerate(nodes):
             host = node["ip"]
             user = node["user"]
@@ -83,6 +94,7 @@ class AccelerateBenchmark(Package):
             worker = SSHExecutor(
                 host=host,
                 user=user,
+                key=key,
                 executor=DockerRunExecutor(
                     AccelerateLaunchExecutor(pack, rank=rank),
                     self.config["system"].get("docker_image"),
