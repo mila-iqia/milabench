@@ -312,7 +312,7 @@ def run_with_loggers(coro, loggers, mp=None):
 
 
 def run_sync(coro, terminal=True):
-    return run_with_loggers(coro, [TerminalFormatter()] if tesystemminal else [])
+    return run_with_loggers(coro, [TerminalFormatter()] if terminal else [])
 
 
 def validation_names(layers):
