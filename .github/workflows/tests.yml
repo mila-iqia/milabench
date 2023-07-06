@@ -43,7 +43,6 @@ jobs:
         
     env:
       MILABENCH_CONFIG: "config/ci.yaml"
-      MILABENCH_CONFIG_SYSTEM: "config/ci-system.yaml"
       MILABENCH_BASE: "output"
       MILABENCH_ARGS: ""
       MILABENCH_GPU_ARCH: "${{ matrix.arch }}"
@@ -84,16 +83,16 @@ jobs:
 
       - name: install benchmarks
         run: |
-          milabench install --exclude "${{ matrix.exclude }}" --system "$MILABENCH_CONFIG_SYSTEM"
+          milabench install --exclude "${{ matrix.exclude }}"
 
       - name: prepare benchmarks
         run: |
-          milabench prepare --exclude "${{ matrix.exclude }}" --system "$MILABENCH_CONFIG_SYSTEM"
+          milabench prepare --exclude "${{ matrix.exclude }}"
 
       - name: run benchmarks
         run: |
           export PATH="/opt/rocm/bin:$PATH"
-          milabench run --validations all --exclude "${{ matrix.exclude }}" --system "$MILABENCH_CONFIG_SYSTEM"
+          milabench run --validations all --exclude "${{ matrix.exclude }}"
 
       - name: Summary
         run: |
