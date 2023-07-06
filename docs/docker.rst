@@ -112,7 +112,8 @@ There are currently two multi-node benchmarks, ``opt-1_3b-multinode`` (data-para
 .. code-block:: yaml
 
    system:
-     docker-image: ghcr.io/mila-iqia/milabench:${system.arch}-nightly
+     arch: cuda
+     docker_image: ghcr.io/mila-iqia/milabench:${system.arch}-nightly
 
      nodes:
        - name: node1
@@ -161,7 +162,8 @@ For example, for 4 nodes:
 .. code-block:: yaml
 
    system:
-     docker-image: ghcr.io/mila-iqia/milabench:${system.arch}-nightly
+     arch: cuda
+     docker_image: ghcr.io/mila-iqia/milabench:${system.arch}-nightly
 
      nodes:
        - name: node1

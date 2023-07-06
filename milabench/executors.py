@@ -83,6 +83,12 @@ class Executor:
 
         return False
 
+    def packs(self):
+        if self.pack:
+            yield self.pack
+        else:
+            yield from self.exec.packs()
+
     def copy(self, pack):
         """Copy the execution plan but use a different pack"""
         copy = deepcopy(self)
@@ -108,24 +114,27 @@ class Executor:
         """
         yield self.pack, [], self.kwargs()
 
-    async def execute(self, timeout=False, timeout_delay=600, **kwargs):
+    async def execute(self, phase, timeout=False, timeout_delay=600, **kwargs):
         """Execute all the commands and return the aggregated results"""
         coro = []
+        
+        for pack in self.packs():
+            pack.phase = phase
 
         for pack, argv, _kwargs in self.commands():
             await pack.send(event="config", data=pack.config)
             await pack.send(event="meta", data=machine_metadata())
 
-            pack.phase = "run"
             fut = pack.execute(*argv, **{**_kwargs, **kwargs})
-
             coro.append(fut)
 
             if timeout:
                 delay = pack.config.get("max_duration", timeout_delay)
-                asyncio.create_task(force_terminate(pack, delay))
+                task = asyncio.create_task(force_terminate(pack, delay))
 
-        return await asyncio.gather(*coro)
+        results = await asyncio.gather(*coro)
+        task.cancel()
+        return results
 
 
 class SingleCmdExecutor(Executor):
@@ -168,6 +177,10 @@ class ListExecutor(Executor):
     def commands(self) -> Generator[Tuple[pack.BasePackage, List, Dict], None, None]:
         for executor in self.executors:
             yield from executor.commands()
+            
+    def packs(self):
+        for exec in self.executors:
+            yield from exec.packs()
 
 
 class CmdExecutor(SingleCmdExecutor):
@@ -307,6 +320,8 @@ class DockerRunExecutor(WrapperExecutor):
         argv = super()._argv(**kwargs)
 
         env = self.pack.make_env()
+        print(self.pack.phase)
+        print(env)
         for var in ("MILABENCH_CONFIG", "XDG_CACHE_HOME", "OMP_NUM_THREADS"):
             argv.append("--env")
             argv.append(f"{var}='{env[var]}'")
