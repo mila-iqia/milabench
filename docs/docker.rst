@@ -97,13 +97,14 @@ There are currently two multi-node benchmarks, ``opt-1_3b-multinode`` (data-para
 ``opt-6_7b-multinode`` (model-parallel, that model is too large to fit on a single GPU). Here is how to run them:
 
 0. Make sure the machine can ssh between each other without passwords
-  - ``ssh-keygen``
 1. Pull the milabench docker image you would like to run on all machines
   - ``docker pull``
-2. Create a list of nodes that will participate in the benchmark inside a ``system.yaml`` file (see example below)
-  - ``vi system.yaml``
+1. Create the output directory
+  - ``mkdir -p results``
+2. Create a list of nodes that will participate in the benchmark inside a ``results/system.yaml`` file (see example below)
+  - ``vi results/system.yaml``
 3. Call milabench with by specifying the node list we created.
-  - ``docker ...-v <privatekey>:/milabench/id_milabench milabench run ... --system system.yaml``
+  - ``docker ... -v $(pwd)/results:/milabench/envs/runs -v <privatekey>:/milabench/id_milabench milabench run ... --system /milabench/envs/runs/system.yaml``
 
 .. notes::
 
@@ -112,6 +113,7 @@ There are currently two multi-node benchmarks, ``opt-1_3b-multinode`` (data-para
 .. code-block:: yaml
 
    system:
+     sshkey: <privatekey>
      arch: cuda
      docker_image: ghcr.io/mila-iqia/milabench:${system.arch}-nightly
 
@@ -141,7 +143,7 @@ Then, the command should look like this:
       -v $SSH_KEY_FILE:/milabench/id_milabench \
       -v $(pwd)/results:/milabench/envs/runs \
       $MILABENCH_IMAGE \
-      milabench run --system system.yaml \
+      milabench run --system /milabench/envs/runs/system.yaml \
       --select multinode
 
 The last line (``--select multinode``) specifically selects the multi-node benchmarks. Omit that line to run all benchmarks.
@@ -170,7 +172,7 @@ For example, for 4 nodes:
          ip: 192.168.0.25
          main: true
          port: 8123
-         user: delaunap
+         user: <username>
       
        - name: node2
          ip: 192.168.0.26
@@ -192,7 +194,7 @@ The command would look like
 
 .. code-block:: bash
 
-   docker ... milabench run ... --system system.yaml --overrides overrides.yaml
+   docker ... milabench run ... --system /milabench/envs/runs/system.yaml --overrides /milabench/envs/runs/overrides.yaml
 
 
 .. note::

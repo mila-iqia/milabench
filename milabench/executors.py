@@ -55,7 +55,8 @@ class Executor:
     def __init__(self, pack_or_exec: Executor | pack.BasePackage, **kwargs) -> None:
         self._pack = None
         self.exec = None
-        self.remote = False
+        # used to know if the command is executed through SSH or locally
+        self.remote = False 
 
         if isinstance(pack_or_exec, Executor):
             self.exec = pack_or_exec
@@ -348,12 +349,14 @@ class DockerRunExecutor(WrapperExecutor):
             rewritten.append(self.as_container_path(arg))
 
         return docker_args + rewritten
-    
+
     def is_inside_docker(self):
         return os.environ.get("MILABENCH_DOCKER", None)
 
     def _argv(self, **kwargs) -> List:
-        if not self.remote and (self.image is None or self.is_inside_docker()):
+        # if the command is executed remotely it does not matter
+        # if we are inside docker or not
+        if (self.image is None) or (self.is_inside_docker() and not self.remote):
             # No-op when there's no docker image to run or inside a docker
             # container
             return []
