@@ -122,6 +122,7 @@ def worker_pack(pack, worker):
 
 def milabench_remote_command(pack, *command, run_for="worker") -> ListExecutor:
     nodes = pack.config["system"]["nodes"]
+    key = pack.config["system"].get("sshkey")
     cmds = []
 
     for worker in nodes:
@@ -134,6 +135,7 @@ def milabench_remote_command(pack, *command, run_for="worker") -> ListExecutor:
                     CmdExecutor(worker_pack(pack, worker), f"milabench", *command),
                     host=host,
                     user=user,
+                    key=key,
                 )
             )
 
