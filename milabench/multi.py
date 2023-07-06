@@ -21,8 +21,6 @@ from .remote import (
 
 here = XPath(__file__).parent
 
-gpus = get_gpu_info()["gpus"].values()
-
 planning_methods = {}
 
 
