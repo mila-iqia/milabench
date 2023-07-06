@@ -8,11 +8,11 @@ import sys
 import tempfile
 import traceback
 from datetime import datetime
-import getpass
 
 from coleo import Option, config as configuration, default, run_cli, tooled
 from omegaconf import OmegaConf
 from voir.instruments.gpu import deduce_backend, select_backend
+import yaml
 
 from milabench.alt_async import proceed
 from milabench.utils import blabla, validation_layers, multilogger, available_layers
@@ -31,7 +31,7 @@ from .log import (
 from .merge import merge
 from .multi import MultiPackage
 from .report import make_report
-from .slurm import expand_node_list
+from .slurm import build_system_config
 from .summary import aggregate, make_summary
 
 
@@ -312,7 +312,7 @@ def run_with_loggers(coro, loggers, mp=None):
 
 
 def run_sync(coro, terminal=True):
-    return run_with_loggers(coro, [TerminalFormatter()] if terminal else [])
+    return run_with_loggers(coro, [TerminalFormatter()] if tesystemminal else [])
 
 
 def validation_names(layers):
@@ -467,6 +467,17 @@ class Main:
             ],
             mp=mp,
         )
+    
+    def helpme():
+        """"""
+        # "192.168.0.[25-30,123,126]"
+        node_range: Option & str = "node[0,1]"
+        arch: Option & str = "cuda"
+        version: Option & str = "nightly"
+        
+        from .utils import command_generator
+        
+        command_generator(node_range, arch, version)
 
     def pin():
         """Pin the benchmarks' dependencies."""
@@ -682,24 +693,8 @@ class Main:
 
     def slurm_system():
         """Generate a system file based of slurm environment variables"""
-
-        node_list = expand_node_list(os.getenv("SLURM_JOB_NODELIST", ""))
-
-        def make_node(i, ip):
-            node = {"name": ip, "ip": ip, "user": getpass.getuser(), "main": i == 0}
-
-            if i == 0:
-                node["port"] = 8123
-
-            return node
-
-        system = dict(
-            arch="cuda", nodes=[make_node(i, ip) for i, ip in enumerate(node_list)]
-        )
-
-        import yaml
-
-        print(yaml.dump({"system": system}))
+        system = build_system_config(os.getenv("SLURM_JOB_NODELIST", ""))
+        print(yaml.dump(system))
 
     def machine():
         """Display machine metadata.

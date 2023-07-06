@@ -10,11 +10,13 @@ import traceback
 from functools import wraps
 from typing import Any
 
+import yaml
 from ovld import ovld
 
 from milabench.fs import XPath
 import milabench.validation
 from milabench.validation.validation import Summary
+from .slurm import build_system_config
 
 
 class Named:
@@ -225,3 +227,76 @@ def enumerate_rank(nodes):
         else:
             yield rank, node
             rank += 1
+
+
+
+def find_private_ssh_key():
+    homessh = os.path.expanduser("~/.ssh/")
+    key_path = None
+    
+    for key in os.listdir(homessh):
+        if key.endswith('.pub'):
+            continue
+        
+        if key.startswith("id_"):
+            key_path = os.path.join(homessh, key)
+            break
+    
+    assert key_path is not None, "No ssh key found"
+    return key_path
+
+
+def command_generator(node_range, arch, version):
+    output = os.path.join(os.getcwd(), "results")
+    system = os.path.join(output, "system.yaml")
+    
+    # Make output folder
+    os.makedirs('results', exist_ok=True)
+    
+    # Find a ssh private key
+    key_path = find_private_ssh_key()
+        
+    # make system file
+    if os.path.exists(system):
+        print("System file already exists, skipping")
+    else:
+        with open(system, 'w') as file:
+            system_conf = build_system_config(node_range)
+            system_conf['system']['sshkey'] = '/milabench/id_milabench'
+            
+            formatted = yaml.dump(system_conf, indent=2)
+            print(formatted)
+            file.write(formatted)
+        
+    # At that point we might as well run it for them ?
+    print()
+    print("Running milabench")
+    print()
+    print(f"    output: {output}")
+    print(f"    system: {system}")
+    print()
+    print("Command:")
+    print()
+    
+    cmd = [
+        (f"  docker run -it --rm --gpus all --network host --ipc=host --privileged"),
+        (f"    -v {key_path}:/milabench/id_milabench                              "),
+        (f"    -v {output}:/milabench/envs/runs                                   "),
+        (f"    ghcr.io/mila-iqia/milabench:{arch}-{version}                        "),
+        (f"    milabench run --system /milabench/envs/runs/system.yaml")
+    ]
+
+    length = 0
+    for line in cmd:
+        line = line.strip()
+        length = max(len(line) + 4, length)
+        
+    formatted = []
+    for i, line in enumerate(cmd):
+        line = line.strip()
+        idt_size = ((i > 0) + 1) * 2
+        idt = ' ' * idt_size
+        
+        formatted.append(f"{idt}{line:<{length - idt_size}}")
+        
+    print("\\\n".join(formatted))

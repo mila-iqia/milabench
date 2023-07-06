@@ -1,3 +1,6 @@
+import getpass
+
+
 def expand_range(s):
     numbers = []
     count = 0
@@ -51,3 +54,26 @@ def expand_node_list(node_list):
             s = next + 1
 
     return nodes
+
+
+def build_system_config(node_range):
+    node_list = expand_node_list(node_range)
+
+    def make_node(i, ip):
+        node = {
+            "name": ip, 
+            "ip": ip, 
+            "user": getpass.getuser(),
+            "main": i == 0,
+        }
+
+        if i == 0:
+            node["port"] = 8123
+
+        return node
+
+    system = dict(
+        arch="cuda", 
+        nodes=[make_node(i, ip) for i, ip in enumerate(node_list)],
+    )
+    return {"system": system}

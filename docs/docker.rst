@@ -100,8 +100,8 @@ There are currently two multi-node benchmarks, ``opt-1_3b-multinode`` (data-para
   - ``ssh-keygen``
 1. Pull the milabench docker image you would like to run on all machines
   - ``docker pull``
-2. Create a list of nodes that will participate in the benchmark inside a ``system.yaml`` file (see example below)
-  - ``vi system.yaml``
+2. Create a list of nodes that will participate in the benchmark inside a ``results/system.yaml`` file (see example below)
+  - ``vi results/system.yaml``
 3. Call milabench with by specifying the node list we created.
   - ``docker ...-v <privatekey>:/milabench/id_milabench milabench run ... --system system.yaml``
 
@@ -113,6 +113,7 @@ There are currently two multi-node benchmarks, ``opt-1_3b-multinode`` (data-para
 
    system:
      arch: cuda
+     sshkey: /milabench/id_milabench
      docker_image: ghcr.io/mila-iqia/milabench:${system.arch}-nightly
 
      nodes:
