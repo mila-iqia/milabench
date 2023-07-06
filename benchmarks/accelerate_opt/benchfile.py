@@ -29,11 +29,13 @@ class AccelerateBenchmark(Package):
         for node in self.config["system"]["nodes"]:
             if node["main"]:
                 continue
-            
+
             host = node["ip"]
             user = node["user"]
-            
-            executors.append(SSHExecutor(docker_pull_exec,                     
+
+            executors.append(
+                SSHExecutor(
+                    docker_pull_exec,
                     host=host,
                     user=user,
                     key=key,
@@ -59,7 +61,7 @@ class AccelerateBenchmark(Package):
                 str(self.dirs.cache)
             )
         ]
-        
+
         docker_image = self.config["system"].get("docker_image", None)
         if docker_image:
             prepare.append(self.build_docker_prepare_remote_plan())
@@ -68,11 +70,11 @@ class AccelerateBenchmark(Package):
 
     def build_run_plan(self):
         plans = []
-        
+
         max_num = self.config["num_machines"]
         nodes = select_nodes(self.config["system"]["nodes"], max_num)
         key = self.config["system"].get("sshkey")
-        
+
         for rank, node in enumerate(nodes):
             host = node["ip"]
             user = node["user"]
@@ -83,7 +85,7 @@ class AccelerateBenchmark(Package):
                     setsid=True,
                     use_stdout=True,
                 )
-                
+
             tags = [*self.config["tag"], node["name"]]
             if rank != 0:
                 # Workers do not send training data
