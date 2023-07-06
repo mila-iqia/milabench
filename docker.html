@@ -174,13 +174,6 @@ docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </s
 <code class="docutils literal notranslate"><span class="pre">opt-6_7b-multinode</span></code> (model-parallel, that model is too large to fit on a single GPU). Here is how to run them:</p>
 <ol class="arabic simple" start="0">
 <li><p>Make sure the machine can ssh between each other without passwords</p></li>
-</ol>
-<blockquote>
-<div><ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">ssh-keygen</span></code></p></li>
-</ul>
-</div></blockquote>
-<ol class="arabic simple">
 <li><p>Pull the milabench docker image you would like to run on all machines</p></li>
 </ol>
 <blockquote>
@@ -188,12 +181,20 @@ docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </s
 <li><p><code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">pull</span></code></p></li>
 </ul>
 </div></blockquote>
-<ol class="arabic simple" start="2">
-<li><p>Create a list of nodes that will participate in the benchmark inside a <code class="docutils literal notranslate"><span class="pre">system.yaml</span></code> file (see example below)</p></li>
+<ol class="arabic simple">
+<li><p>Create the output directory</p></li>
 </ol>
 <blockquote>
 <div><ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">vi</span> <span class="pre">system.yaml</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mkdir</span> <span class="pre">-p</span> <span class="pre">results</span></code></p></li>
+</ul>
+</div></blockquote>
+<ol class="arabic simple" start="2">
+<li><p>Create a list of nodes that will participate in the benchmark inside a <code class="docutils literal notranslate"><span class="pre">results/system.yaml</span></code> file (see example below)</p></li>
+</ol>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">vi</span> <span class="pre">results/system.yaml</span></code></p></li>
 </ul>
 </div></blockquote>
 <ol class="arabic simple" start="3">
@@ -201,11 +202,13 @@ docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </s
 </ol>
 <blockquote>
 <div><ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">...-v</span> <span class="pre">&lt;privatekey&gt;:/milabench/id_milabench</span> <span class="pre">milabench</span> <span class="pre">run</span> <span class="pre">...</span> <span class="pre">--system</span> <span class="pre">system.yaml</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">...</span> <span class="pre">-v</span> <span class="pre">$(pwd)/results:/milabench/envs/runs</span> <span class="pre">-v</span> <span class="pre">&lt;privatekey&gt;:/milabench/id_milabench</span> <span class="pre">milabench</span> <span class="pre">run</span> <span class="pre">...</span> <span class="pre">--system</span> <span class="pre">/milabench/envs/runs/system.yaml</span></code></p></li>
 </ul>
 </div></blockquote>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">system</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">docker-image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ghcr.io/mila-iqia/milabench:${system.arch}-nightly</span>
+<span class="w">  </span><span class="nt">sshkey</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;privatekey&gt;</span>
+<span class="w">  </span><span class="nt">arch</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cuda</span>
+<span class="w">  </span><span class="nt">docker_image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ghcr.io/mila-iqia/milabench:${system.arch}-nightly</span>
 
 <span class="w">  </span><span class="nt">nodes</span><span class="p">:</span>
 <span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">node1</span>
@@ -225,12 +228,12 @@ docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </s
 
 <span class="c1"># Change if needed</span>
 <span class="nb">export</span><span class="w"> </span><span class="nv">SSH_KEY_FILE</span><span class="o">=</span><span class="nv">$HOME</span>/.ssh/id_rsa
-
+<span class="nb">export</span><span class="w"> </span><span class="nv">MILABENCH_IMAGE</span><span class="o">=</span>ghcr.io/mila-iqia/milabench:cuda-nightly
 docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span>--gpus<span class="w"> </span>all<span class="w"> </span>--network<span class="w"> </span>host<span class="w"> </span>--ipc<span class="o">=</span>host<span class="w"> </span>--privileged<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>-v<span class="w"> </span><span class="nv">$SSH_KEY_FILE</span>:/milabench/id_milabench<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/results:/milabench/envs/runs<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span><span class="nv">$MILABENCH_IMAGE</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>milabench<span class="w"> </span>run<span class="w"> </span>--system<span class="w"> </span>system.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>milabench<span class="w"> </span>run<span class="w"> </span>--system<span class="w"> </span>/milabench/envs/runs/system.yaml<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--select<span class="w"> </span>multinode
 </pre></div>
 </div>
@@ -244,14 +247,15 @@ You will also need to update the benchmark definition and increase the max numbe
 </pre></div>
 </div>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">system</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">docker-image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ghcr.io/mila-iqia/milabench:${system.arch}-nightly</span>
+<span class="w">  </span><span class="nt">arch</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cuda</span>
+<span class="w">  </span><span class="nt">docker_image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ghcr.io/mila-iqia/milabench:${system.arch}-nightly</span>
 
 <span class="w">  </span><span class="nt">nodes</span><span class="p">:</span>
 <span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">node1</span>
 <span class="w">      </span><span class="nt">ip</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">192.168.0.25</span>
 <span class="w">      </span><span class="nt">main</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 <span class="w">      </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8123</span>
-<span class="w">      </span><span class="nt">user</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">delaunap</span>
+<span class="w">      </span><span class="nt">user</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;username&gt;</span>
 
 <span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">node2</span>
 <span class="w">      </span><span class="nt">ip</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">192.168.0.26</span>
@@ -270,7 +274,7 @@ You will also need to update the benchmark definition and increase the max numbe
 </pre></div>
 </div>
 <p>The command would look like</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>...<span class="w"> </span>milabench<span class="w"> </span>run<span class="w"> </span>...<span class="w"> </span>--system<span class="w"> </span>system.yaml<span class="w"> </span>--overrides<span class="w"> </span>overrides.yaml
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>...<span class="w"> </span>milabench<span class="w"> </span>run<span class="w"> </span>...<span class="w"> </span>--system<span class="w"> </span>/milabench/envs/runs/system.yaml<span class="w"> </span>--overrides<span class="w"> </span>/milabench/envs/runs/overrides.yaml
 </pre></div>
 </div>
 <div class="admonition note">
