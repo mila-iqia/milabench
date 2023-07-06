@@ -56,7 +56,7 @@ class Executor:
         self._pack = None
         self.exec = None
         # used to know if the command is executed through SSH or locally
-        self.remote = False 
+        self.remote = False
 
         if isinstance(pack_or_exec, Executor):
             self.exec = pack_or_exec
