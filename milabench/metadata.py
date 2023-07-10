@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 import cpuinfo
+import traceback
 
 from voir.instruments.gpu import get_gpu_info
 
@@ -8,11 +9,19 @@ from ._version import __commit__, __tag__, __date__
 from .vcs import retrieve_git_versions
 
 
+def _get_gpu_info():
+    try:
+        return get_gpu_info()
+    except Exception:
+        traceback.print_exc()
+        return {}
+
+
 def machine_metadata():
     """Retrieve machine metadata"""
 
     uname = os.uname()
-    gpus = get_gpu_info()
+    gpus = _get_gpu_info()
     cpu = cpuinfo.get_cpu_info()
 
     return {
