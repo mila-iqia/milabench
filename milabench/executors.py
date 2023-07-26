@@ -123,6 +123,8 @@ class Executor:
         for pack in self.packs():
             pack.phase = phase
 
+
+        timeout_tasks = []
         for pack, argv, _kwargs in self.commands():
             await pack.send(event="config", data=pack.config)
             await pack.send(event="meta", data=machine_metadata())
@@ -133,12 +135,13 @@ class Executor:
             if timeout:
                 delay = pack.config.get("max_duration", timeout_delay)
                 timeout_task = asyncio.create_task(force_terminate(pack, delay))
+                timeout_tasks.append(timeout_task)
 
         results = await asyncio.gather(*coro)
 
         if timeout:
-            timeout_task.cancel()
-
+            for task in timeout_tasks:
+                task.cancel()
         return results
 
 
