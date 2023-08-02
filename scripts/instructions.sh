@@ -1,15 +1,23 @@
 #!/bin/bash
 
 
-# Configure the becchmark
+set -m
+
+#
+#
+#
+
+echo ">> Configure the benchmark"
+echo "=========================="
 
 USERNAME=${USER:-"mila"}
+SSH_KEY_FILE=$HOME/.ssh/id_rsa
 
 VERSION="v0.0.7"
 ARCH="cuda"
 
-WORKER_0="192.168.0.10"
-WORKER_1="192.168.0.10"
+WORKER_0="cn-d003"
+WORKER_1="cn-d004"
 
 IMAGE="ghcr.io/mila-iqia/milabench:$ARCH-$VERSION"
 
@@ -42,21 +50,32 @@ opt-1_3b-multinode:
 
 EOL
 
+echo "<< ======================="
+echo ""
+echo ">> Prepare docker images"
+echo "========================"
 
-# Prepare docker images
 ssh $USERNAME@$WORKER_0 "docker pull $IMAGE"&
 ssh $USERNAME@$WORKER_1 "docker pull $IMAGE"&
 fg
 fg
 
-# Run milabench
+echo "<< ====================="
+echo ""
+
+#
+#
+#
+
+echo ">> Run milabench"
+echo "================"
 
 if [ "$ARCH" = "cuda" ]; then 
     docker run -it --rm --gpus all --network host --ipc=host --privileged           \
         -v $SSH_KEY_FILE:/milabench/id_milabench                                    \
         -v $(pwd)/results:/milabench/envs/runs                                      \
         $IMAGE                                                                      \
-        milabench run --override "$(cat overrides.yaml)" --select multinode 
+        milabench run --override "$(cat overrides.yaml)" 
 
 elif [ "$ARCH" = "rocm" ]; then 
     docker run -it --rm --network host --ipc host --privileged                      \
@@ -68,9 +87,18 @@ elif [ "$ARCH" = "rocm" ]; then
         milabench run --override "$(cat overrides.yaml)"
 fi
 
+echo "<< ============="
+echo ""
 
-# Print report
+#
+#
+#
+
+echo ">> Print report"
+echo "==============="
 docker run -it --rm                                                                 \
     -v $(pwd)/results:/milabench/envs/runs                                          \
     $IMAGE                                                                          \
     milabench report --runs /milabench/envs/runs
+
+echo "<< ============"
