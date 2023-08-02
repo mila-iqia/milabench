@@ -10,15 +10,21 @@ set -m
 echo ">> Configure the benchmark"
 echo "=========================="
 
+
+#
+# Tweak the values to fit your system
+#
+
 USERNAME=${USER:-"mila"}
 SSH_KEY_FILE=$HOME/.ssh/id_rsa
-
-VERSION="v0.0.7"
 ARCH="cuda"
-
 WORKER_0="cn-d003"
 WORKER_1="cn-d004"
 
+
+
+# Derived
+VERSION="v0.0.7"
 IMAGE="ghcr.io/mila-iqia/milabench:$ARCH-$VERSION"
 
 
