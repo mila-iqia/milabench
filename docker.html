@@ -13,9 +13,9 @@
   
         <script src="_static/jquery.js?v=5d32c60e"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=b3ba4146"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
         <script src="_static/doctools.js?v=888ff710"></script>
-        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -90,12 +90,12 @@
            <div itemprop="articleBody">
              
   <section id="docker">
-<h1>Docker<a class="headerlink" href="#docker" title="Permalink to this heading"></a></h1>
+<h1>Docker<a class="headerlink" href="#docker" title="Link to this heading"></a></h1>
 <p><a class="reference external" href="https://github.com/mila-iqia/milabench/pkgs/container/milabench">Docker Images</a> are created for each release. They come with all the benchmarks installed and the necessary datasets. No additional downloads are necessary.</p>
 <section id="cuda">
-<h2>CUDA<a class="headerlink" href="#cuda" title="Permalink to this heading"></a></h2>
+<h2>CUDA<a class="headerlink" href="#cuda" title="Link to this heading"></a></h2>
 <section id="requirements">
-<h3>Requirements<a class="headerlink" href="#requirements" title="Permalink to this heading"></a></h3>
+<h3>Requirements<a class="headerlink" href="#requirements" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>NVIDIA driver</p></li>
 <li><p><a class="reference external" href="https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository">docker-ce</a></p></li>
@@ -103,7 +103,7 @@
 </ul>
 </section>
 <section id="usage">
-<h3>Usage<a class="headerlink" href="#usage" title="Permalink to this heading"></a></h3>
+<h3>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h3>
 <p>The commands below will download the lastest cuda container and run milabench right away,
 storing the results inside the <code class="docutils literal notranslate"><span class="pre">results</span></code> folder on the host machine:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Choose the image you want to use</span>
@@ -131,16 +131,16 @@ docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </s
 </section>
 </section>
 <section id="rocm">
-<h2>ROCM<a class="headerlink" href="#rocm" title="Permalink to this heading"></a></h2>
+<h2>ROCM<a class="headerlink" href="#rocm" title="Link to this heading"></a></h2>
 <section id="id1">
-<h3>Requirements<a class="headerlink" href="#id1" title="Permalink to this heading"></a></h3>
+<h3>Requirements<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>rocm</p></li>
 <li><p>docker</p></li>
 </ul>
 </section>
 <section id="id2">
-<h3>Usage<a class="headerlink" href="#id2" title="Permalink to this heading"></a></h3>
+<h3>Usage<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
 <p>For ROCM the usage is similar to CUDA, but you must use a different image and the Docker options are a bit different:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Choose the image you want to use</span>
 <span class="nb">export</span><span class="w"> </span><span class="nv">MILABENCH_IMAGE</span><span class="o">=</span>ghcr.io/mila-iqia/milabench:rocm-nightly
@@ -169,7 +169,7 @@ docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </s
 </div>
 </section>
 <section id="multi-node-benchmark">
-<h3>Multi-node benchmark<a class="headerlink" href="#multi-node-benchmark" title="Permalink to this heading"></a></h3>
+<h3>Multi-node benchmark<a class="headerlink" href="#multi-node-benchmark" title="Link to this heading"></a></h3>
 <p>There are currently two multi-node benchmarks, <code class="docutils literal notranslate"><span class="pre">opt-1_3b-multinode</span></code> (data-parallel) and
 <code class="docutils literal notranslate"><span class="pre">opt-6_7b-multinode</span></code> (model-parallel, that model is too large to fit on a single GPU). Here is how to run them:</p>
 <ol class="arabic simple" start="0">
@@ -285,7 +285,7 @@ You will also need to update the benchmark definition and increase the max numbe
 </section>
 </section>
 <section id="building-images">
-<h2>Building images<a class="headerlink" href="#building-images" title="Permalink to this heading"></a></h2>
+<h2>Building images<a class="headerlink" href="#building-images" title="Link to this heading"></a></h2>
 <p>Images can be built locally for prototyping and testing.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">docker</span> <span class="n">build</span> <span class="o">-</span><span class="n">f</span> <span class="n">docker</span><span class="o">/</span><span class="n">Dockerfile</span><span class="o">-</span><span class="n">cuda</span> <span class="o">-</span><span class="n">t</span> <span class="n">milabench</span><span class="p">:</span><span class="n">cuda</span><span class="o">-</span><span class="n">nightly</span> <span class="o">--</span><span class="n">build</span><span class="o">-</span><span class="n">arg</span> <span class="n">CONFIG</span><span class="o">=</span><span class="n">standard</span><span class="o">.</span><span class="n">yaml</span> <span class="o">.</span>
 </pre></div>

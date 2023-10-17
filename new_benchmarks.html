@@ -13,9 +13,9 @@
   
         <script src="_static/jquery.js?v=5d32c60e"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=b3ba4146"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
         <script src="_static/doctools.js?v=888ff710"></script>
-        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -88,7 +88,7 @@
            <div itemprop="articleBody">
              
   <section id="creating-a-new-benchmark">
-<h1>Creating a new benchmark<a class="headerlink" href="#creating-a-new-benchmark" title="Permalink to this heading"></a></h1>
+<h1>Creating a new benchmark<a class="headerlink" href="#creating-a-new-benchmark" title="Link to this heading"></a></h1>
 <p>To define a new benchmark (let’s assume it is called <code class="docutils literal notranslate"><span class="pre">ornatebench</span></code>), make a copy of <code class="docutils literal notranslate"><span class="pre">benchmarks/_template</span></code> using <code class="docutils literal notranslate"><span class="pre">cp-template</span></code>:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cp-template<span class="w"> </span>benchmarks/_template/<span class="w"> </span>benchmarks/ornatebench
 </pre></div>
@@ -114,18 +114,18 @@ milabench<span class="w"> </span>run
 </pre></div>
 </div>
 <section id="overview">
-<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this heading"></a></h2>
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
 <section id="benchfile-py">
-<h3>benchfile.py<a class="headerlink" href="#benchfile-py" title="Permalink to this heading"></a></h3>
+<h3>benchfile.py<a class="headerlink" href="#benchfile-py" title="Link to this heading"></a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">benchfile.py</span></code> defines what to do on <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">install/prepare/run</span></code>. It is run from the benchmark directory directly, in the <em>current</em> virtual environment, but it can create <em>new processes</em> in the virtual environment of the benchmark.</p>
 <p>By default it will dispatch to <code class="docutils literal notranslate"><span class="pre">requirements.in</span></code> for install requirements, <code class="docutils literal notranslate"><span class="pre">prepare.py</span></code> for prep work and downloading datasets, and <code class="docutils literal notranslate"><span class="pre">main.py</span></code> for running the actual benchmark. If that is suitable you may not need to change it at all.</p>
 </section>
 <section id="requirements-in">
-<h3>requirements.in<a class="headerlink" href="#requirements-in" title="Permalink to this heading"></a></h3>
+<h3>requirements.in<a class="headerlink" href="#requirements-in" title="Link to this heading"></a></h3>
 <p>Write all of the benchmark’s requirements in this file. Use <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">install</span> <span class="pre">--config</span> <span class="pre">benchmarks/ornatebench/dev.yaml</span></code> to install them during development (add <code class="docutils literal notranslate"><span class="pre">--force</span></code> if you made changes and want to reinstall.)</p>
 </section>
 <section id="prepare-py">
-<h3>prepare.py<a class="headerlink" href="#prepare-py" title="Permalink to this heading"></a></h3>
+<h3>prepare.py<a class="headerlink" href="#prepare-py" title="Link to this heading"></a></h3>
 <p>This script is executed in the venv for the benchmark when you run <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">prepare</span></code>.</p>
 <p>The purpose of <code class="docutils literal notranslate"><span class="pre">prepare.py</span></code> is to download and/or generate everything that is required by the main script, so that the main script does not need to use the network and can start training right away. In particular, it must:</p>
 <ul class="simple">
@@ -139,7 +139,7 @@ milabench<span class="w"> </span>run
 <p>If no preparation is needed, this file should be removed.</p>
 </section>
 <section id="main-py">
-<h3>main.py<a class="headerlink" href="#main-py" title="Permalink to this heading"></a></h3>
+<h3>main.py<a class="headerlink" href="#main-py" title="Link to this heading"></a></h3>
 <p>This is the main script that will be benchmarked when you run <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">run</span></code>. It is run as <code class="docutils literal notranslate"><span class="pre">voir</span> <span class="pre">main.py</span> <span class="pre">ARGV...</span></code></p>
 <p>The template <code class="docutils literal notranslate"><span class="pre">main.py</span></code> demonstrates a simple loop that you can adapt to any script:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
@@ -169,7 +169,7 @@ milabench<span class="w"> </span>run
 <p><code class="docutils literal notranslate"><span class="pre">argv</span></code> can also be an array if you need to pass positional arguments, but I recommend using named parameters only.</p>
 </section>
 <section id="voirfile-py">
-<h3>voirfile.py<a class="headerlink" href="#voirfile-py" title="Permalink to this heading"></a></h3>
+<h3>voirfile.py<a class="headerlink" href="#voirfile-py" title="Link to this heading"></a></h3>
 <p>The voirfile contains instrumentation for the main script. You can usually just leave it as it is. By default, it will:</p>
 <ul class="simple">
 <li><p>Compute the train “rate” (number of samples per second) using events from <code class="docutils literal notranslate"><span class="pre">voir.iterate</span></code>.</p></li>
@@ -179,13 +179,13 @@ milabench<span class="w"> </span>run
 </section>
 </section>
 <section id="development">
-<h2>Development<a class="headerlink" href="#development" title="Permalink to this heading"></a></h2>
+<h2>Development<a class="headerlink" href="#development" title="Link to this heading"></a></h2>
 <p>To develop the benchmark, first run <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">dev</span> <span class="pre">--config</span> <span class="pre">benchmarks/BENCHNAME/dev.yaml</span></code>. This will activate the benchmark’s virtual environment and put you into a shell.</p>
 <p>Then, try and run <code class="docutils literal notranslate"><span class="pre">voir</span> <span class="pre">--dash</span> <span class="pre">main.py</span></code>. This should show you a little dashboard and display losses, train rate calculations and one or more progress bars.</p>
 <p>From there, you can develop as you would any other Python program.</p>
 </section>
 <section id="integrating-in-base-yaml">
-<h2>Integrating in base.yaml<a class="headerlink" href="#integrating-in-base-yaml" title="Permalink to this heading"></a></h2>
+<h2>Integrating in base.yaml<a class="headerlink" href="#integrating-in-base-yaml" title="Link to this heading"></a></h2>
 <p>You can copy-paste the contents of <code class="docutils literal notranslate"><span class="pre">dev.yaml</span></code> into <code class="docutils literal notranslate"><span class="pre">config/base.yaml</span></code>, you will only need to change:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">definition</span></code> should be the relative path to the <code class="docutils literal notranslate"><span class="pre">benchfile.py</span></code>.</p></li>

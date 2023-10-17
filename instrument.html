@@ -13,9 +13,9 @@
   
         <script src="_static/jquery.js?v=5d32c60e"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=b3ba4146"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
         <script src="_static/doctools.js?v=888ff710"></script>
-        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" /> 
@@ -78,7 +78,7 @@
 <p>Outdated information, do not put in toctree.</p>
 </div>
 <section id="instrumenting-code">
-<h1>Instrumenting code<a class="headerlink" href="#instrumenting-code" title="Permalink to this heading"></a></h1>
+<h1>Instrumenting code<a class="headerlink" href="#instrumenting-code" title="Link to this heading"></a></h1>
 <p>Prior to creating a new benchmark, let us see how to instrument existing code in order to extract the desired metrics.</p>
 <p>Suppose you have this simple script in <code class="docutils literal notranslate"><span class="pre">main.py</span></code>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
@@ -117,7 +117,7 @@
 </pre></div>
 </div>
 <section id="probe-example">
-<h2>Probe example<a class="headerlink" href="#probe-example" title="Permalink to this heading"></a></h2>
+<h2>Probe example<a class="headerlink" href="#probe-example" title="Link to this heading"></a></h2>
 <p>To instrument this code, simply create a file named <code class="docutils literal notranslate"><span class="pre">voirfile.py</span></code> in the current directory. In that file, you can write <em>instruments</em> which will be activated by running <code class="docutils literal notranslate"><span class="pre">voir</span> <span class="pre">&lt;VOIR_OPTIONS&gt;</span> <span class="pre">main.py</span> <span class="pre">&lt;SCRIPT_OPTIONS&gt;</span></code>. For example, this instrument will print out the losses as they are calculated:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">instrument_probes</span><span class="p">(</span><span class="n">ov</span><span class="p">):</span>
     <span class="k">yield</span> <span class="n">ov</span><span class="o">.</span><span class="n">phases</span><span class="o">.</span><span class="n">load_script</span>
@@ -148,7 +148,7 @@
 </ul>
 </section>
 <section id="giving-and-using-data-and-metrics">
-<h2>Giving and using data and metrics<a class="headerlink" href="#giving-and-using-data-and-metrics" title="Permalink to this heading"></a></h2>
+<h2>Giving and using data and metrics<a class="headerlink" href="#giving-and-using-data-and-metrics" title="Link to this heading"></a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">ov.given</span></code> is an instance of <a class="reference external" href="https://giving.readthedocs.io/en/latest/ref-gvn.html#giving.gvn.Given">Given</a> and is where various instruments contribute data and read data from other instruments.</p>
 <p><strong>Contributing data</strong></p>
 <ul class="simple">
@@ -174,14 +174,14 @@
 <p>You can run the instruments with <code class="docutils literal notranslate"><span class="pre">voir</span> <span class="pre">main.py</span></code>. In addition to that, <code class="docutils literal notranslate"><span class="pre">voir</span> <span class="pre">--dash</span> <span class="pre">main.py</span></code> will display everything that is given, so you will see the values of <code class="docutils literal notranslate"><span class="pre">loss</span></code> (as well as anything you give) change in real time.</p>
 </section>
 <section id="probing-for-milabench">
-<span id="probingmb"></span><h2>Probing for milabench<a class="headerlink" href="#probing-for-milabench" title="Permalink to this heading"></a></h2>
+<span id="probingmb"></span><h2>Probing for milabench<a class="headerlink" href="#probing-for-milabench" title="Link to this heading"></a></h2>
 <p>Milabench adds a few instruments to <code class="docutils literal notranslate"><span class="pre">voir</span></code> that can be enabled using flags, such as <code class="docutils literal notranslate"><span class="pre">--train-rate</span></code>. To turn them all on and see whether you are instrumenting what needs to be instrumented for a benchmark, run:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">voir</span> <span class="o">--</span><span class="n">verify</span> <span class="n">main</span><span class="o">.</span><span class="n">py</span>
 </pre></div>
 </div>
 <p>You typically don’t need to do much except write a few probes. The various instruments provided by <code class="docutils literal notranslate"><span class="pre">milabench</span></code> will look for data with specific names and types.</p>
 <section id="essential-probes">
-<h3>Essential probes<a class="headerlink" href="#essential-probes" title="Permalink to this heading"></a></h3>
+<h3>Essential probes<a class="headerlink" href="#essential-probes" title="Link to this heading"></a></h3>
 <p>The <strong>essential</strong> probes to provide are those that allow the computation of the training rate.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">loss</span></code>: The current training loss. This is used as a sanity check, to verify that the algorithm is doing something.</p></li>
@@ -195,7 +195,7 @@
 </ul>
 </section>
 <section id="additional-readings">
-<h3>Additional readings<a class="headerlink" href="#additional-readings" title="Permalink to this heading"></a></h3>
+<h3>Additional readings<a class="headerlink" href="#additional-readings" title="Link to this heading"></a></h3>
 <p>These readings can be very useful, but they are not strictly speaking necessary and may not always be available or easy to extract.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">options</span></code>: The parsed command line options. If the script is using the standard argparse module, you can import the already-made instrumenter in the voirfile: <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">milabench.opt</span> <span class="pre">import</span> <span class="pre">instrument_argparse</span></code>. Since the name starts with <code class="docutils literal notranslate"><span class="pre">instrument_</span></code>, it is sufficient to import it to activate it.</p></li>
@@ -205,7 +205,7 @@
 </ul>
 </section>
 <section id="example">
-<h3>Example<a class="headerlink" href="#example" title="Permalink to this heading"></a></h3>
+<h3>Example<a class="headerlink" href="#example" title="Link to this heading"></a></h3>
 <p>This is how you would provide this information for the example <code class="docutils literal notranslate"><span class="pre">main.py</span></code> above:</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
