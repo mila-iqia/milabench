@@ -16,6 +16,39 @@ TERA = 1e12
 EXA = 1e18
 
 
+def modelflops(model: torch.nn.Module, shape, repeat=10, dtype=torch.float32, unit=TERA):
+    # Not sure how much thop is correct in its computation
+    # it says it return MAC but I feel its methods is wrong
+    from thop import profile
+    
+    # MAC: Multiply–accumulate operation
+    batch = torch.randn(*shape, dtype=dtype, device="cuda:0")
+
+    flops, _ = profile(model, inputs=(batch,))
+
+    with torch.no_grad():
+        # Prepare
+        torch.cuda.empty_cache()
+
+        batch = batch.cuda()
+        model = model.to(dtype=dtype, device="cuda:0")
+
+        torch.cuda.synchronize()
+
+        # Start
+        start = time.time()
+
+        for i in range(repeat):
+            _ = model(batch)
+
+        torch.cuda.synchronize()
+        end = time.time()
+        # --
+
+    return (flops * repeat) / (end - start) / unit
+
+
+
 def f(N, m=5000000, n=256, unit=TERA, dtype=torch.float32):
     torch.cuda.empty_cache()
     a = torch.eye(n, dtype=dtype, device="cuda:0")
