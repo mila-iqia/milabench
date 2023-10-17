@@ -202,3 +202,26 @@ def multilogger(*logs, **kwargs):
         yield multilog
 
     multilog.report(**kwargs)
+
+
+def select_nodes(nodes, n):
+    """Select n nodes, main node is always first"""
+    ranked = []
+
+    for node in nodes:
+        if node["main"]:
+            ranked.insert(0, node)
+        else:
+            ranked.append(node)
+
+    return ranked[: max(1, min(n, len(ranked)))]
+
+
+def enumerate_rank(nodes):
+    rank = 1
+    for node in nodes:
+        if node["main"]:
+            yield 0, node
+        else:
+            yield rank, node
+            rank += 1

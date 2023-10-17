@@ -1,5 +1,8 @@
+import uuid
+
 from milabench.executors import TorchRunExecutor
 from milabench.pack import Package
+
 
 BRANCH = "56b90317cd9db1038b42ebdfc5bd81b1a2275cc1"
 

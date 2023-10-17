@@ -308,6 +308,7 @@ class Package(BasePackage):
             f"MILABENCH_DIR_{name.upper()}": path
             for name, path in self.config["dirs"].items()
         }
+
         env["MILABENCH_CONFIG"] = json.dumps(self.config)
         if self.phase == "prepare" or self.phase == "run":
             # XDG_CACHE_HOME controls basically all caches (pip, torch, huggingface,
@@ -467,5 +468,5 @@ class Package(BasePackage):
 
     def build_run_plan(self) -> "execs.Executor":
         main = self.dirs.code / self.main_script
-        pack = execs.PackExecutor(self, *self.argv)
+        pack = execs.PackExecutor(self, *self.argv, lazy=True)
         return execs.VoirExecutor(pack, cwd=main.parent)
