@@ -78,7 +78,9 @@ jobs:
 
       - name: pin
         run: |
-          poetry run milabench pin --config config/standard.yaml 
+          MILABENCH_GPU_ARCH=cuda  poetry run milabench pin -c constraints/cuda.txt --config config/standard.yaml 
+          MILABENCH_GPU_ARCH=rocm  poetry run milabench pin -c constraints/rocm.txt --config config/standard.yaml 
+          git diff --stat
 
       - name: tests
         run: |
