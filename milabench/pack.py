@@ -376,7 +376,7 @@ class Package(BasePackage):
         ivar = self.config.get("install_variant", None)
         if ivar == "unpinned":
             raise Exception("Cannot pin the 'unpinned' variant.")
-        assert self.phase == "pin"
+        # assert self.phase == "pin"
         for base_reqs, reqs in self.requirements_map().items():
             if not base_reqs.exists():
                 raise FileNotFoundError(

@@ -76,6 +76,10 @@ jobs:
           poetry lock --no-update
           poetry install
 
+      - name: pin
+        run: |
+          poetry run milabench pin --config config/standard.yaml 
+
       - name: tests
         run: |
           export PATH="/opt/rocm/bin:$PATH"
