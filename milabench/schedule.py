@@ -83,21 +83,22 @@ class SetupOptions:
     env: str = "./env"
     python: str = "3.9"
     
-    def deduce_remote(self, branch):
+    def deduce_remote(self, current_branch):
         prefix = "refs/heads/"
         
         # Fetch all remotes
-        remotes = shell("get remote").splitlines()
+        remotes = shell("git remote").splitlines()
         possible_remotes = []
         
         # Find remotes that have our branch
         for remote in remotes:
             branches = shell(f"git ls-remote --heads {remote}").splitlines()
             
-            for ref, name in branches.split('\t'):
+            for branch in branches:
+                _, name = branch.split('\t')
                 name = name[len(prefix):]
-                
-                if branch == name:
+
+                if current_branch == name:
                     possible_remotes.append(remote)
         
         if len(possible_remotes) == 1:
@@ -105,7 +106,7 @@ class SetupOptions:
         
         raise RuntimeError(f"Multiple suitable remotes found {possible_remotes}")
         
-    def deduce_from_repository(self, remote="origin"):
+    def deduce_from_repository(self, remote=None):
         self.branch = shell("git rev-parse --abbrev-ref HEAD")
         
         if remote is None:
@@ -129,6 +130,7 @@ def launch_milabench(sbatch_args=None, dry: bool = False, sync: bool = False):
 
     if sbatch_args is None:
         sbatch_args = [
+            "--ntasks=1",
             "--gpus-per-task=1",
             "--cpus-per-task=4",
             "--time=01:00:00",
@@ -140,10 +142,10 @@ def launch_milabench(sbatch_args=None, dry: bool = False, sync: bool = False):
     script_args.deduce_from_repository()
     script_args = script_args.arguments()
 
-    cmd = ["sbatch"] + sbatch_args + [sbatch_script] + script_args
+    cmd = sbatch_args + [sbatch_script] + script_args
     
     if dry:
-        print(' '.join(cmd))
+        print("sbatch " + ' '.join(cmd))
         code = 0
     else:
         code, _ = sbatch(cmd, sync=sync, tags=None)

@@ -75,13 +75,13 @@ conda activate $ENV
 # Fetch the repo
 #
 cd $SLURM_TMPDIR
-git clone --single-branch -d 1 -b $BRANCH $ORIGIN
-python -m pip install milabench
+git clone --single-branch --depth 1 -b $BRANCH $ORIGIN
+python -m pip install ./milabench
 
 SYSTEM="$SLURM_TMPDIR/system.yaml"
 
 milabench slurm_system 
-milabench slurm_system > $SYSTE
+milabench slurm_system > $SYSTEM
 
 milabench install --config $CONFIG --system $SYSTEM --base $BASE $REMAINING_ARGS
 milabench prepare --config $CONFIG --system $SYSTEM --base $BASE $REMAINING_ARGS
