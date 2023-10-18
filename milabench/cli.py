@@ -33,6 +33,7 @@ from .multi import MultiPackage
 from .report import make_report
 from .slurm import expand_node_list
 from .summary import aggregate, make_summary
+from .schedule import launch_milabench
 
 
 def main(argv=None):
@@ -263,14 +264,17 @@ def _read_reports(*runs):
                 pth = XPath(parent) / file
                 with pth.open() as f:
                     lines = f.readlines()
-                    try:
-                        data = [json.loads(line) for line in lines]
-                    except Exception:
-                        import traceback
-
-                        print(f"Could not parse line inside {pth}\n\t- {line}")
-                        traceback.print_exc()
-                    else:
+                    data = []
+                    
+                    for line in lines:
+                        try:
+                            data.append(json.loads(line))
+                        except Exception:
+                            import traceback
+                            print(f"Could not parse line inside {pth}\n\t- {line}")
+                            traceback.print_exc()
+                        
+                    if len(data) == 0:
                         all_data[str(pth)] = data
     return all_data
 
@@ -734,201 +738,17 @@ class Main:
         backend = SQLAlchemy(uri, meta_override=meta)
         publish_archived_run(backend, folder)
 
-    def container():
-        """Build a container image (might not work properly at the moment)."""
-
-        # Configuration file
-        # [positional]
-        config_file: Option & str = None
-
-        config = _get_multipack(config, return_config=True)
-        config_file = XPath(config["defaults"]["config_file"])
-        config_base = XPath(config["defaults"]["config_base"])
-        benchmarks = config["benchmarks"]
-
-        # The container type to create
-        type: Option & str = None
-
-        # Include the dataset in the image
-        include_data: Option & bool = False
-
-        # Optional path to copy build dir to, instead of building the image.
-        # This directory must not exist and will be created.
-        output_dir: Option & str = None
-
-        # File in which to generate the SIF image (Singularity).
-        # Defaults to milabench.sif.
-        # [alias: -o]
-        output_file: Option & str = None
-
-        # Optional python version to use for the image, ignored for
-        # conda-based benchmarks. Can be specified as any of
-        # ('3', '3.9', '3.9.2')
-        python_version: Option & str = "3.9"
-
-        # Milabench source to clone from
-        milabench: Option & str = "v2"
-
-        # The tag for the generated container
-        tag: Option & str = None
-
-        if type not in ["docker", "singularity"]:
-            sys.exit(f"Unsupported type {type}")
-
-        with tempfile.TemporaryDirectory() as base:
-            root = XPath(base)
-
-            common_base = config_base
-
-            # Figure out common base between the benchmark config and all
-            # the benchmarks.
-            for defn in benchmarks.values():
-                pack = XPath(defn["definition"]).expanduser()
-                while not pack.is_relative_to(common_base):
-                    common_base = common_base.parent
-
-            def _transfer(pth):
-                dest = root / pth.relative_to(common_base)
-                shutil.copytree(pth, dest, dirs_exist_ok=True)
-
-            for defn in benchmarks.values():
-                _transfer(XPath(defn["definition"]))
-
-            _transfer(config_base)
-
-            # We check all configs since they may not have all the same setting
-            use_conda = any(
-                defn["venv"]["type"] == "conda" for defn in benchmarks.values()
-            )
-
-            if "//" not in milabench:
-                milabench = (
-                    f"git+https://github.com/mila-iqia/milabench.git@{milabench}"
-                )
-
-            if type == "docker":
-                if output_file is not None:
-                    sys.exit("Error: --output-file only valid with Singularity")
-                tag = tag or "milabench"
-                with (root / "Dockerfile").open("w") as f:
-                    f.write(
-                        dockerfile_template(
-                            milabench_req=milabench,
-                            include_data=include_data,
-                            use_conda=use_conda,
-                            python_version=python_version,
-                            config_file=config_file.relative_to(common_base),
-                        )
-                    )
-                if output_dir:
-                    root.copy(output_dir)
-                else:
-                    subprocess.check_call(["docker", "build", ".", "-t", tag], cwd=root)
-
-            elif type == "singularity":
-                if tag is not None:
-                    sys.exit("Error: --tag only valid with Docker")
-                output_file = output_file or "milabench.sif"
-
-                with (root / "milabench.def").open("w") as f:
-                    f.write(
-                        singularitydef_template(
-                            milabench_req=milabench,
-                            include_data=include_data,
-                            use_conda=use_conda,
-                            python_version=python_version,
-                            config_file=config_file.relative_to(common_base),
-                        )
-                    )
-                if output_dir:
-                    root.copy(output_dir)
-                else:
-                    user = os.environ["USER"]
-                    filename = str(XPath(output_file).absolute())
-                    singularity = subprocess.check_output(
-                        ["which", "singularity"]
-                    ).strip()
-                    subprocess.check_call(
-                        ["sudo", singularity, "build", filename, "milabench.def"],
-                        cwd=root,
-                    )
-                    subprocess.check_call(["sudo", "chown", f"{user}:{user}", filename])
-
-
-def dockerfile_template(
-    milabench_req, include_data, use_conda, python_version, config_file
-):
-    conda_clean = "conda clean -a" if use_conda else "echo"
-    return f"""
-FROM { 'continuumio/miniconda3' if use_conda else f'python:{python_version}-slim' }
-
-RUN apt-get update && apt-get install --no-install-suggests --no-install-recommends -y \
-    git \
-    wget \
-    patch \
- && apt-get clean
-
-RUN mkdir /bench && mkdir /base
-ENV MILABENCH_BASE /base
-# This is to signal to milabench to use that as fallback
-ENV VIRTUAL_ENV /base/venv/_
-ENV MILABENCH_CONFIG /bench/{ config_file }
-ENV HEADLESS 1
-WORKDIR /base
-
-RUN echo '{ milabench_req }' > /version.txt
-
-COPY / /bench
-
-RUN pip install -U pip && \
-    pip install -r /version.txt && \
-    milabench install && \
-    { conda_clean } && \
-    pip cache purge
-
-{ 'RUN milabench prepare' if include_data else '' }
-
-CMD ["milabench", "run"]
-"""
-
-
-def singularitydef_template(
-    milabench_req, include_data, use_conda, python_version, config_file
-):
-    conda_clean = "conda clean -a" if use_conda else "echo"
-    return f"""\
-BootStrap: docker
-From: { 'continuumio/miniconda3' if use_conda else f'python:{python_version}-slim' }
-
-%files
-    . /bench
-
-%environment
-    export MILABENCH_BASE=/base
-    export MILABENCH_CONFIG=/bench/{ config_file }
-    export HEADLESS=1
-
-%post
-    export MILABENCH_BASE=/base
-    export MILABENCH_CONFIG=/bench/{ config_file }
-    export HEADLESS=1
-
-    apt-get update && apt-get install --no-install-suggests --no-install-recommends -y git wget patch
-    apt-get clean
-
-    mkdir /base
-    cd /bench
-
-    echo '{ milabench_req }' > /version.txt
-    pip install -U pip && \
-    pip install -r /version.txt && \
-    milabench install && \
-    { conda_clean } && \
-    pip cache purge
-{ '    milabench prepare' if include_data else '' }
-
-    chmod -R o+rwx /base /bench
-
-%runscript
-    milabench run
-"""
+    def schedule():
+        """Launch a slurm job to run milabench"""
+        
+        # tail -f on the slurm job
+        sync: Option & bool = False
+        
+        # Print the command and return without running it
+        dry: Option & bool = False
+        
+        launch_milabench(
+            None,
+            dry,
+            sync
+        )
