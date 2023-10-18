@@ -131,7 +131,7 @@ def launch_milabench(sbatch_args=None, dry: bool = False, sync: bool = False):
     if sbatch_args is None:
         sbatch_args = [
             "--ntasks=1",
-            "--gpus-per-task=1",
+            "--gpus-per-task=rtx8000:1",
             "--cpus-per-task=4",
             "--time=01:00:00",
             "--ntasks-per-node=1",

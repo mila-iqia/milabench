@@ -660,7 +660,7 @@ class AccelerateLaunchExecutor(SingleCmdExecutor):
 
         ngpu = len(get_gpu_info()["gpus"].values())
         nproc = ngpu * num_machines
-        assert nproc > 0
+        assert nproc > 0, f"nproc: {nproc} num_machines: {num_machines} ngpu: {ngpu}"
 
         deepspeed_argv = (
             [

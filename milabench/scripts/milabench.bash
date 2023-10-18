@@ -71,6 +71,11 @@ if [ ! -d "$ENV" ] && [ "$ENV" != "base" ] && [ ! -d "$CONDA_ENVS/$ENV" ]; then
 fi
 conda activate $ENV
 
+export HF_HOME=$BASE/cache
+export HF_DATASETS_CACHE=$BASE/cache
+export TORCH_HOME=$BASE/cache
+export XDG_CACHE_HOME=$BASE/cache
+
 #
 # Fetch the repo
 #
@@ -80,11 +85,35 @@ python -m pip install ./milabench
 
 SYSTEM="$SLURM_TMPDIR/system.yaml"
 
+echo ""
+echo "System"
+echo "------"
+
 milabench slurm_system 
 milabench slurm_system > $SYSTEM
 
+module load cuda/11.8
+
+echo ""
+echo "Install"
+echo "-------"
 milabench install --config $CONFIG --system $SYSTEM --base $BASE $REMAINING_ARGS
+
+echo ""
+echo "Prepare"
+echo "-------"
 milabench prepare --config $CONFIG --system $SYSTEM --base $BASE $REMAINING_ARGS
+
+echo ""
+echo "Run"
+echo "---"
 milabench run     --config $CONFIG --system $SYSTEM --base $BASE $REMAINING_ARGS
 
+echo ""
+echo "Report"
+echo "------"
 milabench summary $SLURM_TMPDIR/base/runs/
+
+echo "----"
+echo "Done"
+echo ""
