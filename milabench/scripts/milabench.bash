@@ -68,6 +68,7 @@ CONDA_EXEC="$(which conda)"
 CONDA_BASE=$(dirname $CONDA_EXEC)
 source $CONDA_BASE/../etc/profile.d/conda.sh
 
+cd $SLURM_TMPDIR
 #
 #   Create a new environment
 #
@@ -89,12 +90,10 @@ export PYTHONUNBUFFERED=1
 #
 # Fetch the repo
 #
-cd $SLURM_TMPDIR
 git clone --single-branch --depth 1 -b $BRANCH $ORIGIN
 python -m pip install ./milabench
 
 SYSTEM="$SLURM_TMPDIR/system.yaml"
-unset CUDA_VISIBLE_DEVICES
 
 echo ""
 echo "System"

@@ -49,6 +49,7 @@ def _make_row(summary, compare, weights):
     score = (acc if acc > 0 else row["perf"]) * success_ratio
 
     row["score"] = score
+    print(score)
     row["weight"] = weights.get("weight", summary["weight"])
     # ----
 
@@ -224,10 +225,12 @@ def make_report(
         weights = dict()
 
     df = make_dataframe(summary, compare, weights)
-
+    print(df)
+    
     # Reorder columns
     df = df[sorted(df.columns, key=lambda k: columns_order.get(k, 0))]
-
+    print(df)
+    
     out = Outputter(stdout=sys.stdout, html=html)
 
     if sources:

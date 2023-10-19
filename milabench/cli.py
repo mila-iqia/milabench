@@ -741,6 +741,7 @@ class Main:
 
     def schedule():
         """Launch a slurm job to run milabench"""
+        # milabench schedule --sync -- --select resnet50
         
         # tail -f on the slurm job
         sync: Option & bool = False
@@ -748,8 +749,13 @@ class Main:
         # Print the command and return without running it
         dry: Option & bool = False
         
+        # pip arguments
+        # [remainder]
+        args: Option = []
+        
         launch_milabench(
-            None,
-            dry,
-            sync
+            args,
+            sbatch_args=None,
+            dry=dry,
+            sync=sync
         )

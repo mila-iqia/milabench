@@ -125,7 +125,7 @@ class SetupOptions:
         ]
 
 
-def launch_milabench(sbatch_args=None, dry: bool = False, sync: bool = False):
+def launch_milabench(args, sbatch_args=None, dry: bool = False, sync: bool = False):
     sbatch_script = importlib_resources.files(__name__) / "scripts" / "milabench.bash"
     sbatch_script = str(sbatch_script)
 
@@ -143,7 +143,7 @@ def launch_milabench(sbatch_args=None, dry: bool = False, sync: bool = False):
     script_args.deduce_from_repository()
     script_args = script_args.arguments()
 
-    cmd = sbatch_args + [sbatch_script] + script_args
+    cmd = sbatch_args + [sbatch_script] + script_args + args
     
     if dry:
         print("sbatch " + ' '.join(cmd))
