@@ -403,11 +403,14 @@ class Main:
 
             reports = None
             if runs:
+                print(runs)
+                
                 reports = _read_reports(*runs)
-                print(reports)
+                assert len(reports) != 0, "No reports found"
+                
                 summary = make_summary(reports.values())
+                assert len(summary) != 0, "No summaries"
 
-                print(summary)
                 make_report(
                     summary,
                     compare=compare,
