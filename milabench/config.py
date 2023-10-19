@@ -101,8 +101,7 @@ def get_remote_ip():
     return set(result)
 
 
-def _resolve_ip(ip)
-
+def _resolve_ip(ip):
     # Resolve the IP
     try:
         hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(ip)
