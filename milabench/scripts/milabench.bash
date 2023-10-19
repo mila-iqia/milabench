@@ -120,12 +120,14 @@ echo "Run"
 echo "---"
 milabench run     --config $CONFIG --system $SYSTEM --base $BASE $REMAINING_ARGS
 
-ls $BASE
-
-# echo ""
+echo ""
 echo "Report"
 echo "------"
-milabench summary $SLURM_TMPDIR/base/runs/
+
+# json
+# milabench summary $SLURM_TMPDIR/base/runs/
+
+milabench report --config $CONFIG --runs $SLURM_TMPDIR/base/runs/
 
 echo "----"
 echo "Done"
