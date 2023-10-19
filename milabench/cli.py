@@ -254,6 +254,30 @@ def _get_multipack(
         )
 
 
+
+def _parse_report(pth):
+    with pth.open() as f:
+        lines = f.readlines()
+        data = []
+        good_lines = 0
+        bad_lines = 0
+        
+        for line in lines:
+            try:
+                data.append(json.loads(line))
+                good_lines += 1
+            except Exception:
+                import traceback
+                print(f"Could not parse line inside {pth}\n\t- {line}")
+                traceback.print_exc()
+                bad_lines += 1
+
+    if good_lines == 0:
+        raise RuntimeError(f"Unknow format for file {pth}")
+
+    return data
+
+
 def _read_reports(*runs):
     all_data = {}
     for folder in runs:
@@ -262,20 +286,8 @@ def _read_reports(*runs):
                 if not file.endswith(".data"):
                     continue
                 pth = XPath(parent) / file
-                with pth.open() as f:
-                    lines = f.readlines()
-                    data = []
+                all_data[str(pth)] = _parse_report(pth)
                     
-                    for line in lines:
-                        try:
-                            data.append(json.loads(line))
-                        except Exception:
-                            import traceback
-                            print(f"Could not parse line inside {pth}\n\t- {line}")
-                            traceback.print_exc()
-                        
-                    if len(data) == 0:
-                        all_data[str(pth)] = data
     return all_data
 
 
@@ -403,8 +415,6 @@ class Main:
 
             reports = None
             if runs:
-                print(runs)
-                
                 reports = _read_reports(*runs)
                 assert len(reports) != 0, "No reports found"
                 

@@ -91,7 +91,7 @@ export PYTHONUNBUFFERED=1
 # Fetch the repo
 #
 git clone --single-branch --depth 1 -b $BRANCH $ORIGIN
-python -m pip install ./milabench
+python -m pip install -e ./milabench
 
 SYSTEM="$SLURM_TMPDIR/system.yaml"
 
@@ -102,8 +102,6 @@ echo "------"
 milabench slurm_system 
 milabench slurm_system > $SYSTEM
 
-
-nvidia-smi
 module load cuda/11.8
 
 echo ""
@@ -121,6 +119,8 @@ echo ""
 echo "Run"
 echo "---"
 milabench run     --config $CONFIG --system $SYSTEM --base $BASE $REMAINING_ARGS
+
+ls $BASE
 
 # echo ""
 echo "Report"
