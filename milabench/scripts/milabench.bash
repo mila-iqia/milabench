@@ -102,6 +102,7 @@ echo "------"
 milabench slurm_system 
 milabench slurm_system > $SYSTEM
 
+module load gcc/9.3.0 
 module load cuda/11.8
 
 echo ""
@@ -127,8 +128,8 @@ echo "------"
 # json
 # milabench summary $SLURM_TMPDIR/base/runs/
 
-milabench report --config $CONFIG --runs $SLURM_TMPDIR/base/runs/
+milabench report --config $CONFIG --base $BASE --runs $SLURM_TMPDIR/base/runs/
 
 echo "----"
-echo "Done"
+echo "Done after $SECONDS"
 echo ""
