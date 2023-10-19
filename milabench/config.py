@@ -113,7 +113,7 @@ def _resolve_ip(ip):
         # the node IPs/Hostnames are not available until we reach
         # the first node inside the cluster
         #
-        hostname = i[]
+        hostname = ip
         aliaslist = []
         ipaddrlist = []
         lazy_raise = err
