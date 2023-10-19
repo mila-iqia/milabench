@@ -383,8 +383,9 @@ class Main:
                 # Terminal Formatter slows down the dashboard,
                 # if lots of info needs to be printed
                 # in particular rwkv
-                TerminalFormatter() if not noterm else None,
-                dash_class and dash_class(),
+                # TerminalFormatter() if not noterm else None,
+                # dash_class and dash_class(),
+                TerminalFormatter(),
                 TextReporter("stdout"),
                 TextReporter("stderr"),
                 DataReporter(),

@@ -101,6 +101,27 @@ def get_remote_ip():
     return set(result)
 
 
+def _resolve_ip(ip)
+
+    # Resolve the IP
+    try:
+        hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(ip)
+        lazy_raise = None
+    except socket.gaierror as err:
+        # Get Addr Info (GAI) Error
+        #
+        # When we are connecting to a node through a ssh proxy jump
+        # the node IPs/Hostnames are not available until we reach
+        # the first node inside the cluster
+        #
+        hostname = i[]
+        aliaslist = []
+        ipaddrlist = []
+        lazy_raise = err
+        
+    return hostname, aliaslist, ipaddrlist, lazy_raise
+
+
 def resolve_addresses(nodes):
     # Note: it is possible for self to be none
     # if we are running milabench on a node that is not part of the system
@@ -111,26 +132,15 @@ def resolve_addresses(nodes):
     ip_list = get_remote_ip()
 
     for node in nodes:
-        # Resolve the IP
-        try:
-            hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(node["ip"])
-
-        except socket.gaierror as err:
-            # Get Addr Info (GAI) Error
-            #
-            # When we are connecting to a node through a ssh proxy jump
-            # the node IPs/Hostnames are not available until we reach
-            # the first node inside the cluster
-            #
-            hostname = node["ip"]
-            aliaslist = []
-            ipaddrlist = []
-
-            lazy_raise = err
+        hostname, aliaslist, ipaddrlist, lazy_raise = _resolve_ip(node["ip"])
 
         node["hostname"] = hostname
         node["aliaslist"] = aliaslist
         node["ipaddrlist"] = ipaddrlist
+        
+        if hostname.endswith(".server.mila.quebec.server.mila.quebec"):
+            # why is this happening
+            hostname = hostname[:-len(".server.mila.quebec")]
 
         is_local = (
             ("127.0.0.1" in ipaddrlist)
