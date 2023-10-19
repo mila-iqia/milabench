@@ -112,6 +112,7 @@ echo "Install"
 echo "-------"
 milabench install --config $CONFIG --system $SYSTEM --base $BASE $REMAINING_ARGS
 
+
 echo ""
 echo "Prepare"
 echo "-------"

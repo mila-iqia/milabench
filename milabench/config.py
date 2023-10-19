@@ -138,6 +138,11 @@ def resolve_addresses(nodes):
         node["ipaddrlist"] = ipaddrlist
         
         if hostname.endswith(".server.mila.quebec.server.mila.quebec"):
+            print()
+            print("Hostname was extra long for no reason")
+            print(hostname, socket.gethostname())
+            print()
+
             # why is this happening
             hostname = hostname[:-len(".server.mila.quebec")]
 
@@ -146,9 +151,6 @@ def resolve_addresses(nodes):
             or (hostname in ("localhost", socket.gethostname()))
             or len(ip_list.intersection(ipaddrlist)) > 0
         )
-        print()
-        print("HERE", hostname, socket.gethostname())
-        print()
         node["local"] = is_local
 
         if is_local:
