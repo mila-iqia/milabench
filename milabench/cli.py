@@ -404,8 +404,10 @@ class Main:
             reports = None
             if runs:
                 reports = _read_reports(*runs)
+                print(reports)
                 summary = make_summary(reports.values())
 
+                print(summary)
                 make_report(
                     summary,
                     compare=compare,
