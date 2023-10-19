@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import re
 import importlib_resources
 import subprocess
+import requests
 
 
 def popen(cmd, callback=None):
@@ -133,9 +134,9 @@ def launch_milabench(sbatch_args=None, dry: bool = False, sync: bool = False):
             "--ntasks=1",
             "--gpus-per-task=rtx8000:1",
             "--cpus-per-task=4",
-            "--time=01:00:00",
+            "--time=03:00:00",
             "--ntasks-per-node=1",
-            "--mem=32G"
+            "--mem=64G"
         ]
         
     script_args = SetupOptions()
@@ -151,3 +152,38 @@ def launch_milabench(sbatch_args=None, dry: bool = False, sync: bool = False):
         code, _ = sbatch(cmd, sync=sync, tags=None)
     
     return code
+
+
+def post_comment_on_pr(owner, branch, comment, access_token=None):
+    url = "https://api.github.com/repos/mila-iqia/milabench/pulls"
+    
+    response = requests.get(url, params={"head": f"{owner}:{branch}"})
+    
+    if response.status_code != 200:
+        raise RuntimeError(response)
+    
+    pull_requests = response.json()
+
+    if not pull_requests:
+        raise RuntimeError("No matching pull requests found.")
+    
+    pr = pull_requests[0]
+    post_url = pr["_links"]["review_comments"]["href"]
+    
+    data = {
+        "body": comment,
+    }
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+
+    response = requests.post(
+        post_url, 
+        json=data, 
+        headers=headers
+    )
+    
+    if response.status_code != 201:
+        raise RuntimeError(response)

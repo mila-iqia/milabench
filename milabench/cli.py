@@ -357,7 +357,7 @@ class Main:
         report: Option & bool = True
 
         # Which type of dashboard to show (short, long, or no)
-        dash: Option & str = os.environ.get("MILABENCH_DASH", "long")
+        dash: Option & str = os.getenv("MILABENCH_DASH", "long")
 
         noterm: Option & bool = os.getenv("MILABENCH_NOTERM", "0") == "1"
 

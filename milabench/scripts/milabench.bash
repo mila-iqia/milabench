@@ -3,6 +3,7 @@
 function usage() {
   echo "Usage: $0 [-m] [-p]"
   echo "  -h              Display this help message."
+  echo "  -b arch         GPU arch           (default: cuda)"
   echo "  -b BRANCH       Branch to checkout (default: master)"
   echo "  -o ORIGIN       Origin to use      (default: github/mila/milabench)"
   echo "  -c CONFIG       Configuration      (default: milabench/config/standard.yaml)"
@@ -12,6 +13,7 @@ function usage() {
   exit 1
 }
 
+ARCH="cuda"
 PYTHON="3.9"
 BRANCH="master"
 ORIGIN="https://github.com/mila-iqia/milabench.git"
@@ -39,6 +41,9 @@ while getopts ":hm:p:e:b:o:c:" opt; do
         ;;
     e)
         ENV="$OPTARG"
+        ;;
+    a)
+        ARCH="$OPTARG"
         ;;
     :)
         echo "Option -$OPTARG requires an argument." >&2
@@ -75,6 +80,11 @@ export HF_HOME=$BASE/cache
 export HF_DATASETS_CACHE=$BASE/cache
 export TORCH_HOME=$BASE/cache
 export XDG_CACHE_HOME=$BASE/cache
+export MILABENCH_GPU_ARCH=$ARCH
+
+export MILABENCH_DASH=no 
+export MILABENCH_NOTERM=1
+export PYTHONUNBUFFERED=1
 
 #
 # Fetch the repo
@@ -84,6 +94,7 @@ git clone --single-branch --depth 1 -b $BRANCH $ORIGIN
 python -m pip install ./milabench
 
 SYSTEM="$SLURM_TMPDIR/system.yaml"
+unset CUDA_VISIBLE_DEVICES
 
 echo ""
 echo "System"
@@ -92,6 +103,8 @@ echo "------"
 milabench slurm_system 
 milabench slurm_system > $SYSTEM
 
+
+nvidia-smi
 module load cuda/11.8
 
 echo ""
@@ -109,7 +122,7 @@ echo "Run"
 echo "---"
 milabench run     --config $CONFIG --system $SYSTEM --base $BASE $REMAINING_ARGS
 
-echo ""
+# echo ""
 echo "Report"
 echo "------"
 milabench summary $SLURM_TMPDIR/base/runs/

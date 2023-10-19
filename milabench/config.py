@@ -137,6 +137,9 @@ def resolve_addresses(nodes):
             or (hostname in ("localhost", socket.gethostname()))
             or len(ip_list.intersection(ipaddrlist)) > 0
         )
+        print()
+        print("HERE", hostname, socket.gethostname())
+        print()
         node["local"] = is_local
 
         if is_local:
