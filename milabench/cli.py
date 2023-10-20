@@ -815,7 +815,6 @@ def _short_make_report(runs, config):
     make_report(
         summary,
         weights=config,
-        html=html,
         stream=stream,
         sources=runs,
         errdata=reports and _error_report(reports),
