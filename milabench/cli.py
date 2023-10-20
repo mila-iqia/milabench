@@ -782,7 +782,7 @@ class Main:
         branch: str & Option
         
         # Runs directory
-        # [action: append]
+        # [positional: +]
         runs: Option = []
 
         # Configuration file (for weights)

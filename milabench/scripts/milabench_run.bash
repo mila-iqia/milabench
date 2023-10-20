@@ -128,10 +128,10 @@ echo "------"
 # json
 # milabench summary $SLURM_TMPDIR/base/runs/
 
-# milabench report --config $CONFIG --runs $SLURM_TMPDIR/base/runs/
+milabench report --config $CONFIG --runs $SLURM_TMPDIR/base/runs/
 
 milabench write_report_to_pr --remote $ORIGIN --branch $BRANCH\
-                             --config $CONFIG --runs $SLURM_TMPDIR/base/runs/
+                             --config $CONFIG --runs $SLURM_TMPDIR/base/runs/*
 
 echo "----"
 echo "Done after $SECONDS"
