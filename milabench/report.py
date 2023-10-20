@@ -49,7 +49,6 @@ def _make_row(summary, compare, weights):
     score = (acc if acc > 0 else row["perf"]) * success_ratio
 
     row["score"] = score
-    print(score)
     row["weight"] = weights.get("weight", summary["weight"])
     # ----
 
@@ -207,11 +206,6 @@ def make_dataframe(summary, compare=None, weights=None):
             for key in all_keys
         }
     ).transpose()
-
-
-
-
-
 
 
 @error_guard({})

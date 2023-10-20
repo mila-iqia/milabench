@@ -781,14 +781,19 @@ class Main:
         
         branch: str & Option
         
-        # Runs directory
-        # [positional: +]
-        runs: Option = []
-
-        # Configuration file (for weights)
-        config: Option & str = os.environ.get("MILABENCH_CONFIG", None)
+        base: Option & str = os.getenv("MILABENCH_BASE", None)
+        
+        config: Option & str = os.getenv("MILABENCH_CONFIG", None)
 
         token: str & Option = os.getenv("MILABENCH_GITHUB_PAT")
+        
+        assert base is not None
+        
+        runfolder = os.path.join(base, "runs")
+
+        runs = []
+        for folder in osl.listdir(runfolder):
+            runs.append(os.path.join(runfolder, folder))
     
         report = _short_make_report(runs, config)
         
