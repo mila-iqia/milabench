@@ -791,9 +791,16 @@ class Main:
         
         runfolder = os.path.join(base, "runs")
 
+        def filter(folder):
+            for f in ('install', 'prepare'):
+                if f in folder:
+                    return False
+            return True
+
         runs = []
         for folder in os.listdir(runfolder):
-            runs.append(os.path.join(runfolder, folder))
+            if filter(folder):
+                runs.append(os.path.join(runfolder, folder))
     
         report = _short_make_report(runs, config)
         
