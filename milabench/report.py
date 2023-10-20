@@ -53,7 +53,7 @@ def _make_row(summary, compare, weights):
     score = (acc if acc > 0 else row["perf"]) * success_ratio
 
     row["score"] = score
-    row["weight"] = weights.get("weight", summary["weight"])
+    row["weight"] = weights.get("weight", summary.get("weight", 0))
     # ----
 
     return row
