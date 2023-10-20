@@ -414,6 +414,10 @@ class Main:
             html = None
             price = None
 
+            print("HERE")
+            print(runs)
+            print("")
+        
             reports = None
             if runs:
                 reports = _read_reports(*runs)
@@ -802,6 +806,9 @@ class Main:
             if filter(folder):
                 runs.append(os.path.join(runfolder, folder))
     
+        print("HERE")
+        print(runs)
+        print()
         report = _short_make_report(runs, config)
         
         post_comment_on_pr(
