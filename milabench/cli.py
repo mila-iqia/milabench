@@ -818,6 +818,7 @@ def _short_make_report(runs, config):
 
     if runs:
         reports = _read_reports(*runs)
+        print(reports)
         summary = make_summary(reports.values())
 
     if config:
@@ -825,7 +826,6 @@ def _short_make_report(runs, config):
 
     stream = io.StringIO()
     
-    assert len(summary) > 0
     make_report(
         summary,
         weights=config,
