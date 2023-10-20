@@ -802,6 +802,7 @@ class Main:
             if filter(folder):
                 runs.append(os.path.join(runfolder, folder))
 
+        print(runs)
         report = _short_make_report(runs, config)
         
         post_comment_on_pr(
@@ -824,6 +825,7 @@ def _short_make_report(runs, config):
 
     stream = io.StringIO()
     
+    assert len(summary) > 0
     make_report(
         summary,
         weights=config,
