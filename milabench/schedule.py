@@ -4,6 +4,7 @@ import re
 import importlib_resources
 import subprocess
 import requests
+import os
 
 
 def popen(cmd, callback=None):
@@ -126,7 +127,7 @@ class SetupOptions:
 
 
 def launch_milabench(args, sbatch_args=None, dry: bool = False, sync: bool = False):
-    sbatch_script = importlib_resources.files(__name__) / "scripts" / "milabench.bash"
+    sbatch_script = importlib_resources.files(__name__) / "scripts" / "milabench_run.bash"
     sbatch_script = str(sbatch_script)
 
     if sbatch_args is None:
@@ -134,7 +135,7 @@ def launch_milabench(args, sbatch_args=None, dry: bool = False, sync: bool = Fal
             "--ntasks=1",
             "--gpus-per-task=rtx8000:1",
             "--cpus-per-task=4",
-            "--time=03:00:00",
+            "--time=01:30:00",
             "--ntasks-per-node=1",
             "--mem=64G"
         ]
@@ -154,7 +155,27 @@ def launch_milabench(args, sbatch_args=None, dry: bool = False, sync: bool = Fal
     return code
 
 
-def post_comment_on_pr(owner, branch, comment, access_token=None):
+def get_remote_owner(remote):
+    sshremote = re.compile(r"git@[A-Za-z]*\.[A-Za-z]*:(?P<owner>[A-Za-z\-.0-9]*)\/([A-Za-z]*).([A-Za-z]*)")
+    httpsremote = re.compile(r"https:\/\/[A-Za-z]*\.[A-Za-z]*\/(?P<owner>[A-Za-z\-.0-9]*)\/([A-Za-z]*).([A-Za-z]*)")
+    
+    patterns = [sshremote, httpsremote]
+    
+    for pat in patterns:
+        if match := sshremote.match(remote):
+            results = match.groupdict()
+            return results['owner']
+        
+    return None
+    
+
+def post_comment_on_pr(remote, branch, comment, access_token=None):
+    owner = get_remote_owner(remote)
+    assert owner is not None, "Remote owner not found"
+    
+    if access_token is None:
+        access_token = os.getenv("MILABENCH_GITHUB_PAT")
+
     url = "https://api.github.com/repos/mila-iqia/milabench/pulls"
     
     response = requests.get(url, params={"head": f"{owner}:{branch}"})
@@ -167,8 +188,10 @@ def post_comment_on_pr(owner, branch, comment, access_token=None):
     if not pull_requests:
         raise RuntimeError("No matching pull requests found.")
     
+    assert len(pull_requests) == 1, "Multiple PR found"
+    
     pr = pull_requests[0]
-    post_url = pr["_links"]["review_comments"]["href"]
+    post_url = pr["_links"]["comments"]["href"] 
     
     data = {
         "body": comment,
@@ -186,4 +209,4 @@ def post_comment_on_pr(owner, branch, comment, access_token=None):
     )
     
     if response.status_code != 201:
-        raise RuntimeError(response)
+        raise RuntimeError(response, response.json())

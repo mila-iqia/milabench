@@ -84,9 +84,9 @@ export XDG_CACHE_HOME=$BASE/cache
 export MILABENCH_GPU_ARCH=$ARCH
 
 export MILABENCH_DASH=no 
-export MILABENCH_NOTERM=1
 export PYTHONUNBUFFERED=1
-
+export MILABENCH_BASE=$BASE
+export MILABENCH_CONFIG=$CONFIG
 #
 # Fetch the repo
 #
@@ -128,7 +128,10 @@ echo "------"
 # json
 # milabench summary $SLURM_TMPDIR/base/runs/
 
-milabench report --config $CONFIG --base $BASE --runs $SLURM_TMPDIR/base/runs/
+# milabench report --config $CONFIG --runs $SLURM_TMPDIR/base/runs/
+
+milabench write_report_to_pr --remote $ORIGIN --branch $BRANCH\
+                             --config $CONFIG --runs $SLURM_TMPDIR/base/runs/
 
 echo "----"
 echo "Done after $SECONDS"

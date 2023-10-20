@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import io
 import runpy
 import shutil
 import subprocess
@@ -33,7 +34,7 @@ from .multi import MultiPackage
 from .report import make_report
 from .slurm import expand_node_list
 from .summary import aggregate, make_summary
-from .schedule import launch_milabench
+from .schedule import launch_milabench, post_comment_on_pr
 
 
 def main(argv=None):
@@ -774,3 +775,50 @@ class Main:
             dry=dry,
             sync=sync
         )
+        
+    def write_report_to_pr():
+        remote: str & Option
+        
+        branch: str & Option
+        
+        # Runs directory
+        # [action: append]
+        runs: Option = []
+
+        # Configuration file (for weights)
+        config: Option & str = os.environ.get("MILABENCH_CONFIG", None)
+
+        token: str & Option = os.getenv("MILABENCH_GITHUB_PAT")
+    
+        report = _short_make_report(runs, config)
+        
+        post_comment_on_pr(
+            remote, 
+            branch,
+            steam.getvalue(),
+            token    
+        )
+
+
+def _short_make_report(runs, config):
+    reports = None
+
+    if runs:
+        reports = _read_reports(*runs)
+        summary = make_summary(reports.values())
+
+    if config:
+        config = _get_multipack(config, return_config=True)
+
+    stream = io.StringIO()
+    
+    make_report(
+        summary,
+        weights=config,
+        html=html,
+        stream=stream,
+        sources=runs,
+        errdata=reports and _error_report(reports),
+    )
+    
+    return stream.getvalue()
