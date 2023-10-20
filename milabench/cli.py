@@ -413,10 +413,6 @@ class Main:
             compare_gpus = False
             html = None
             price = None
-
-            print("HERE")
-            print(runs)
-            print("")
         
             reports = None
             if runs:
@@ -805,10 +801,7 @@ class Main:
         for folder in os.listdir(runfolder):
             if filter(folder):
                 runs.append(os.path.join(runfolder, folder))
-    
-        print("HERE")
-        print(runs)
-        print()
+
         report = _short_make_report(runs, config)
         
         post_comment_on_pr(
