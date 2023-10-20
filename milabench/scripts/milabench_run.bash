@@ -132,8 +132,7 @@ echo "------"
 ls $BASE/runs
 
 
-milabench write_report_to_pr --remote $ORIGIN --branch $BRANCH\
-                             --config $CONFIG $SLURM_TMPDIR/base/runs/*
+milabench write_report_to_pr --remote $ORIGIN --branch $BRANCH --config $CONFIG
 
 echo "----"
 echo "Done after $SECONDS"

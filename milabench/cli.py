@@ -792,7 +792,7 @@ class Main:
         runfolder = os.path.join(base, "runs")
 
         runs = []
-        for folder in osl.listdir(runfolder):
+        for folder in os.listdir(runfolder):
             runs.append(os.path.join(runfolder, folder))
     
         report = _short_make_report(runs, config)
