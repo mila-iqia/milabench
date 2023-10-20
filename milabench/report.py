@@ -41,9 +41,13 @@ def _make_row(summary, compare, weights):
 
     # Sum of all the GPU performance
     # to get the overall perf of the whole machine
-    acc = 0
-    for _, metrics in summary["per_gpu"].items():
-        acc += metrics[metric]
+    
+    if "per_gpu" in summary:
+        acc = 0
+        for _, metrics in summary["per_gpu"].items():
+            acc += metrics[metric]
+    else:
+        acc = row["perf"]
 
     success_ratio = 1 - row["fail"] / row["n"]
     score = (acc if acc > 0 else row["perf"]) * success_ratio

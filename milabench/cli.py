@@ -801,8 +801,7 @@ class Main:
         for folder in os.listdir(runfolder):
             if filter(folder):
                 runs.append(os.path.join(runfolder, folder))
-
-        print(runs)
+        
         report = _short_make_report(runs, config)
         
         post_comment_on_pr(
@@ -818,7 +817,6 @@ def _short_make_report(runs, config):
 
     if runs:
         reports = _read_reports(*runs)
-        print(reports)
         summary = make_summary(reports.values())
 
     if config:
