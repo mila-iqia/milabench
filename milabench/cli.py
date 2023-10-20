@@ -795,7 +795,7 @@ class Main:
         post_comment_on_pr(
             remote, 
             branch,
-            steam.getvalue(),
+            "```\n" + report + "\n```",
             token    
         )
 
