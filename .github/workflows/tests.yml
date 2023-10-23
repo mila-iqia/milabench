@@ -76,6 +76,12 @@ jobs:
           poetry lock --no-update
           poetry install
 
+      - name: pin
+        run: |
+          MILABENCH_GPU_ARCH=cuda  poetry run milabench pin -c constraints/cuda.txt --config config/standard.yaml 
+          MILABENCH_GPU_ARCH=rocm  poetry run milabench pin -c constraints/rocm.txt --config config/standard.yaml 
+          git diff --stat
+
       - name: tests
         run: |
           export PATH="/opt/rocm/bin:$PATH"

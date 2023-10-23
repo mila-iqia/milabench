@@ -165,7 +165,10 @@ def main():
             if data_directory:
                 args.data = os.path.join(data_directory, "FakeImageNet")
 
-    use_cuda = not args.no_cuda and torch.cuda.is_available()
+    if not args.no_cuda:
+        assert torch.cuda.is_available(), "Why is CUDA not available"
+    
+    use_cuda = not args.no_cuda
 
     torch.manual_seed(args.seed)
     if use_cuda:

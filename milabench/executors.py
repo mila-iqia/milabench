@@ -425,7 +425,7 @@ class SSHExecutor(WrapperExecutor):
 
     def is_local(self):
         localnode = self.pack.config["system"]["self"]
-
+        
         # self is none; the node we are currently
         # on is not part of the system; we are running
         # milabench remotely, sending remote commands to
@@ -660,7 +660,7 @@ class AccelerateLaunchExecutor(SingleCmdExecutor):
 
         ngpu = len(get_gpu_info()["gpus"].values())
         nproc = ngpu * num_machines
-        assert nproc > 0
+        assert nproc > 0, f"nproc: {nproc} num_machines: {num_machines} ngpu: {ngpu}"
 
         deepspeed_argv = (
             [
