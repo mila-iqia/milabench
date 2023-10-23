@@ -5,8 +5,8 @@
 
 
 
-MILABENCH_GPU_ARCH=cuda milabench pin -c constraints/cuda.txt --config config/standard.yaml 
-MILABENCH_GPU_ARCH=rocm milabench pin -c constraints/rocm.txt --config config/standard.yaml 
+MILABENCH_GPU_ARCH=cuda milabench pin --config config/standard.yaml --from-scratch --base /tmp
+MILABENCH_GPU_ARCH=rocm milabench pin --config config/standard.yaml --from-scratch --base /tmp
 
 
 cd $SLURM_TMPDIR/milabench
