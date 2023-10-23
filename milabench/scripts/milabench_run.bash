@@ -68,6 +68,10 @@ CONDA_EXEC="$(which conda)"
 CONDA_BASE=$(dirname $CONDA_EXEC)
 source $CONDA_BASE/../etc/profile.d/conda.sh
 
+if [ -e $HOME/.credentials.env ]; then
+  source $HOME/.credentials.env
+fi
+
 cd $SLURM_TMPDIR
 #
 #   Create a new environment
@@ -124,13 +128,6 @@ milabench run     --config $CONFIG --system $SYSTEM --base $BASE $REMAINING_ARGS
 echo ""
 echo "Report"
 echo "------"
-
-# json
-# milabench summary $SLURM_TMPDIR/base/runs/
-
-
-ls $BASE/runs
-
 
 milabench write_report_to_pr --remote $ORIGIN --branch $BRANCH --config $CONFIG
 
