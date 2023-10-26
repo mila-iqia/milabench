@@ -41,15 +41,19 @@ def _make_row(summary, compare, weights):
 
     # Sum of all the GPU performance
     # to get the overall perf of the whole machine
-    acc = 0
-    for _, metrics in summary["per_gpu"].items():
-        acc += metrics[metric]
+    
+    if "per_gpu" in summary:
+        acc = 0
+        for _, metrics in summary["per_gpu"].items():
+            acc += metrics[metric]
+    else:
+        acc = row["perf"]
 
     success_ratio = 1 - row["fail"] / row["n"]
     score = (acc if acc > 0 else row["perf"]) * success_ratio
 
     row["score"] = score
-    row["weight"] = weights.get("weight", summary["weight"])
+    row["weight"] = weights.get("weight", summary.get("weight", 0))
     # ----
 
     return row
@@ -219,16 +223,17 @@ def make_report(
     sources=None,
     errdata=None,
     weights=None,
+    stream=sys.stdout
 ):
     if weights is None:
         weights = dict()
 
     df = make_dataframe(summary, compare, weights)
-
+    
     # Reorder columns
     df = df[sorted(df.columns, key=lambda k: columns_order.get(k, 0))]
-
-    out = Outputter(stdout=sys.stdout, html=html)
+    
+    out = Outputter(stdout=stream, html=html)
 
     if sources:
         if isinstance(sources, str):
