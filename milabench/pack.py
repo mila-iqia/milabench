@@ -9,6 +9,7 @@ import json
 import os
 from argparse import Namespace as NS
 from sys import version_info as pyv
+import traceback
 from typing import Sequence
 
 from nox.sessions import Session, SessionRunner
@@ -129,7 +130,11 @@ class BasePackage:
         await send(
             BenchLogEntry(
                 event="error",
-                data={"type": type(exc).__name__, "message": str(exc)},
+                data={
+                    "type": type(exc).__name__,
+                    "message": str(exc),
+                    "trace": traceback.format_exc(),
+                },
                 pack=self,
             )
         )
@@ -303,6 +308,7 @@ class Package(BasePackage):
             f"MILABENCH_DIR_{name.upper()}": path
             for name, path in self.config["dirs"].items()
         }
+
         env["MILABENCH_CONFIG"] = json.dumps(self.config)
         if self.phase == "prepare" or self.phase == "run":
             # XDG_CACHE_HOME controls basically all caches (pip, torch, huggingface,
@@ -370,7 +376,7 @@ class Package(BasePackage):
         ivar = self.config.get("install_variant", None)
         if ivar == "unpinned":
             raise Exception("Cannot pin the 'unpinned' variant.")
-        assert self.phase == "pin"
+        # assert self.phase == "pin"
         for base_reqs, reqs in self.requirements_map().items():
             if not base_reqs.exists():
                 raise FileNotFoundError(
@@ -462,5 +468,5 @@ class Package(BasePackage):
 
     def build_run_plan(self) -> "execs.Executor":
         main = self.dirs.code / self.main_script
-        pack = execs.PackExecutor(self, *self.argv)
+        pack = execs.PackExecutor(self, *self.argv, lazy=True)
         return execs.VoirExecutor(pack, cwd=main.parent)

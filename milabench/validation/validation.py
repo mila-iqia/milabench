@@ -8,6 +8,8 @@ from ..structs import BenchLogEntry
 class ValidationLayer:
     """Validation layer interface, captures events, makes report"""
 
+    ignore_tag = "nolog"
+
     def __init__(self, **kwargs) -> None:
         # early stop means voir requested milabench to stop the benchmark
         # this means we can ignore the process return code because it got SIGTERM'ed
@@ -21,6 +23,9 @@ class ValidationLayer:
         return self.on_event(entry)
 
     def on_event(self, entry: BenchLogEntry):
+        if self.ignore_tag in entry.tag:
+            return
+
         method = getattr(self, f"on_{entry.event}", None)
 
         if method is not None:
