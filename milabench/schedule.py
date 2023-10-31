@@ -130,6 +130,8 @@ def launch_milabench(args, sbatch_args=None, dry: bool = False, sync: bool = Fal
     sbatch_script = importlib_resources.files(__name__) / "scripts" / "milabench_run.bash"
     sbatch_script = str(sbatch_script)
 
+    # salloc --gres=gpu:rtx8000:1 --mem=64G --cpus-per-gpu=4
+ 
     if sbatch_args is None:
         sbatch_args = [
             "--ntasks=1",
