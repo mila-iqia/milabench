@@ -12,7 +12,7 @@ class FlopsBenchmarch(Package):
         main = self.dirs.code / self.main_script
         pack = execs.PackExecutor(self, *self.argv, lazy=True)
         # pack = execs.VoirExecutor(pack, cwd=main.parent)
-        pack = execs.ActivatorExecutor(pack)
+        pack = execs.ActivatorExecutor(pack, use_stdout=True)
         return pack
     
 

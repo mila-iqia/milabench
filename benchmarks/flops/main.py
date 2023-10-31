@@ -110,8 +110,8 @@ def f(N, R=30, m=5000000, n=256, unit=TERA, dtype=torch.float32, log=None):
 
 def setupvoir():
     # wtf this do
-    # data_file = SmuggleWriter(sys.stdout)
-    data_file = sys.stdout
+    data_file = SmuggleWriter(sys.stdout)
+    # data_file = sys.stdout
     
     def log(data):
         if data_file is not None:
@@ -130,6 +130,7 @@ def setupvoir():
                 ],
                 "load": gpu["utilization"]["compute"],
                 "temperature": gpu["temperature"],
+                "power": gpu["power"]
             }
             for gpu in get_gpu_info()["gpus"].values()
         }
