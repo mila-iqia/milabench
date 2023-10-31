@@ -49,26 +49,31 @@ def modelflops(model: torch.nn.Module, shape, repeat=10, dtype=torch.float32, un
 
 
 
-def f(N, m=5000000, n=256, unit=TERA, dtype=torch.float32):
+def f(N, R=30, m=5000000, n=256, unit=TERA, dtype=torch.float32):
     torch.cuda.empty_cache()
     a = torch.eye(n, dtype=dtype, device="cuda:0")
     x = torch.randn((m, n), dtype=dtype, device="cuda:0")
     y = torch.zeros_like(x)
 
-    torch.cuda.synchronize()
-    ts = -time.time()
-    
-    for _ in range(N):
-        # No allocation in main loop using dual-out strategy
-        y = torch.mm(x, a, out=y)
-        x = torch.mm(y, a, out=x)
-    
-    torch.cuda.synchronize()
-    ts += time.time()
-    torch.cuda.empty_cache()
     F = N * (2 * m * n * n + 2 * m * n * n)
-    return F / ts / unit
+    results = [0 for  _ in range(R)]
+    
+    for i in range(R): 
+        torch.cuda.synchronize()
+        ts = -time.time()
+        
+        for _ in range(N):
+            # No allocation in main loop using dual-out strategy
+            y = torch.mm(x, a, out=y)
+            x = torch.mm(y, a, out=x)
+        
+        torch.cuda.synchronize()
+        ts += time.time()
+        
+        results[i] = F / ts / unit
 
+    torch.cuda.empty_cache()
+    return results
 
 
 def setupvoir():
@@ -106,6 +111,7 @@ def main():
         
     parser = ArgumentParser()
     parser.add_argument('--repeat', type=int, default=100)
+    parser.add_argument('--number', type=int, default=100)
     parser.add_argument('--m', type=int, default=256)
     parser.add_argument('--n', type=int, default=256)
     parser.add_argument('--dtype', type=str, default='fp32', choices=dtypes.keys())
@@ -120,20 +126,21 @@ def main():
     
     log, monitor = setupvoir()
 
-    flops = f(
-        args.repeat,
-        args.m,
-        args.n,
-        args.unit,
-        dtypes[args.dtype]
-    )
+    for flops in f(
+            args.number,
+            args.repeat,
+            args.m,
+            args.n,
+            args.unit,
+            dtypes[args.dtype]
+        ):
 
-    log({
-        "task": "train",
-        "rate": flops,
-        "units": "Tflops"
-    })
-    
+        log({
+            "task": "train",
+            "rate": flops,
+            "units": "Tflops"
+        })
+        
     monitor.stop()
     
 

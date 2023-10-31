@@ -17,12 +17,10 @@ ARCH="cuda"
 PYTHON="3.9"
 BRANCH="master"
 ORIGIN="https://github.com/mila-iqia/milabench.git"
-LOC="$SLURM_TMPDIR"
-CONFIG="$LOC/milabench/config/standard.yaml"
-BASE="$LOC/base"
+CONFIG="$SLURM_TMPDIR/milabench/config/standard.yaml"
+BASE="$SLURM_TMPDIR/base"
 ENV="./env"
 REMAINING_ARGS=""
-
 
 while getopts ":hm:p:e:b:o:c:" opt; do
   case $opt in
@@ -46,12 +44,6 @@ while getopts ":hm:p:e:b:o:c:" opt; do
         ;;
     a)
         ARCH="$OPTARG"
-        ;;
-    l)
-        # FIX ME
-        LOC="$OPTARG"
-        CONFIG="$LOC/milabench/config/standard.yaml"
-        BASE="$LOC/base"
         ;;
     :)
         echo "Option -$OPTARG requires an argument." >&2
@@ -80,7 +72,7 @@ if [ -e $HOME/.credentials.env ]; then
   source $HOME/.credentials.env
 fi
 
-cd $LOC
+cd $SLURM_TMPDIR
 #
 #   Create a new environment
 #
@@ -99,13 +91,14 @@ export MILABENCH_DASH=no
 export PYTHONUNBUFFERED=1
 export MILABENCH_BASE=$BASE
 export MILABENCH_CONFIG=$CONFIG
+
 #
 # Fetch the repo
 #
 git clone --single-branch --depth 1 -b $BRANCH $ORIGIN
 python -m pip install -e ./milabench
 
-SYSTEM="$LOC/system.yaml"
+SYSTEM="$SLURM_TMPDIR/system.yaml"
 
 echo ""
 echo "System"
@@ -116,29 +109,3 @@ milabench slurm_system > $SYSTEM
 
 module load gcc/9.3.0 
 module load cuda/11.8
-
-echo ""
-echo "Install"
-echo "-------"
-milabench install --config $CONFIG --system $SYSTEM --base $BASE $REMAINING_ARGS
-
-
-echo ""
-echo "Prepare"
-echo "-------"
-milabench prepare --config $CONFIG --system $SYSTEM --base $BASE $REMAINING_ARGS
-
-echo ""
-echo "Run"
-echo "---"
-milabench run     --config $CONFIG --system $SYSTEM --base $BASE $REMAINING_ARGS
-
-echo ""
-echo "Report"
-echo "------"
-
-milabench write_report_to_pr --remote $ORIGIN --branch $BRANCH --config $CONFIG
-
-echo "----"
-echo "Done after $SECONDS"
-echo ""
