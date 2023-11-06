@@ -23,7 +23,7 @@ def popen(cmd, callback=None):
     ) as process:
         def readoutput():
             process.stdout.flush()
-            for line in process.stdout.readline():
+            for line in process.stdout.readlines():
 
                 if callback:
                     callback(line)
@@ -135,7 +135,7 @@ def launch_milabench(args, sbatch_args=None, dry: bool = False, sync: bool = Fal
     if sbatch_args is None:
         sbatch_args = [
             "--ntasks=1",
-            "--gpus-per-task=4g.40gb:1",
+            "--gpus-per-task=rtx8000:1",
             "--cpus-per-task=4",
             "--time=01:30:00",
             "--ntasks-per-node=1",

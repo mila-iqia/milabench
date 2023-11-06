@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 import json
 import os
@@ -92,7 +93,11 @@ class WrappedTokenizer:
 
     def __call__(self, *args, **kwargs):
         input_ids = self.tokenizer(*args, **kwargs)
-        self.count = len(input_ids)
+        
+        self.count = 1
+        for c in input_ids["input_ids"].shape:
+            self.count *= c
+        
         return input_ids
 
     def __getattr__(self, attr):
@@ -101,6 +106,10 @@ class WrappedTokenizer:
             return method
         else:
             raise AttributeError(f"'{type(self.tokenizer).__name__}' object has no attribute '{attr}'")
+
+
+def println(*args, **kwargs):
+    print(*args, *kwargs, file=sys.stderr)
 
 
 def huggingface_main(args, model, config):
@@ -112,11 +121,13 @@ def huggingface_main(args, model, config):
     from datasets import load_dataset
     
     # Dataset here
+    println("Dataset")
     dataset = load_dataset(
         "wikitext", 
         "wikitext-103-v1"
     )
     
+    println("Tokenizer")
     # LLAMA tokenizer official tokenizer is hidden behind a login
     tokenizer = WrappedTokenizer(
         LlamaTokenizerFast.from_pretrained("hf-internal-testing/llama-tokenizer")
@@ -128,14 +139,17 @@ def huggingface_main(args, model, config):
     
     # We do not download LLAMA because it takes too long
     # we just instantiate an untrained one
-    model = LlamaForCausalLM(LlamaConfig.from_dict(config))
-        
+    println("Model")
+    model = LlamaForCausalLM(LlamaConfig.from_dict(config)).cuda()
+    
+    println("Pipeline")
     pipeline = transformers.pipeline(
         "text-generation",
         model=model,
         torch_dtype=torch.float16,
-        device_map="auto",
+        # device_map="cuda",
         tokenizer=tokenizer,
+        device=torch.device("cuda")
     )
     
     in_token_count = 0
@@ -144,15 +158,17 @@ def huggingface_main(args, model, config):
     start = time.time()
     
     log, monitor = setupvoir()
-
+    
+    println("Starting")
+    count = 0
     for entry in dataset["train"]:
         text = entry["text"].strip()
         
         # Titles
-        if text == "" or text.startswith(" = "):
+        if text == "" or text.startswith(" = ") or len(text) < 10:
             continue
         
-        
+        count += 1
         sequences = pipeline(
             text,
             do_sample=True,
@@ -169,9 +185,9 @@ def huggingface_main(args, model, config):
         total = out_token_count + in_token_count
         
         elapsed = time.time() - start
-        print(total / elapsed)
-        
-        if total > 100:
+        println(f"{elapsed =}, {total / elapsed =} {in_token_count =} {out_token_count =}")
+    
+        if total > 30:
             out_token_count = 0
             in_token_count = 0
             start = time.time()
@@ -182,11 +198,16 @@ def huggingface_main(args, model, config):
                     "rate": total / elapsed,
                     "units": "Tok/s"
                 })
+                
+        if count > 40:
+            break
             
 
     monitor.stop()
 
 def main():
+    import torch
+    
     models = available_models()
     
     parser = argparse.ArgumentParser()
@@ -204,7 +225,8 @@ def main():
     with open(os.path.join(root, 'config', config), 'r') as file:
         config = json.load(file)
 
-    return huggingface_main(args, model, config)
+    with torch.no_grad():
+        return huggingface_main(args, model, config)
 
 
 

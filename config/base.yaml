@@ -39,6 +39,26 @@ _flops:
     --number: 10
     --repeat: 90
 
+llama:
+  inherits: _defaults
+  definition: ../benchmarks/llama
+  group: llm
+  install_group: torch
+  max_duration: 800
+
+  voir:
+    options:
+      stop: 30
+      interval: "1s"
+    
+  plan:
+    method: per_gpu
+  
+  tags:
+    - nlp
+    - llm
+
+
 _hf:
   inherits: _defaults
   definition: ../benchmarks/huggingface
