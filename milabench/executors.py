@@ -630,6 +630,17 @@ class PerGPU(ListExecutor):
         super().__init__(*executors, **kwargs)
 
 
+class ActivatorExecutor(SingleCmdExecutor):
+    def __init__(self, pack: pack.BasePackage, **kwargs):
+        super().__init__(pack, **kwargs)
+        
+    def _argv(self, **_) -> List:
+        return [
+            f"{self.pack.dirs.code / 'activator'}",
+            f"{self.pack.dirs.venv}"
+        ]
+                
+
 # Accelerate
 class AccelerateLaunchExecutor(SingleCmdExecutor):
     """Execute a `BasePackage` with Accelerate
