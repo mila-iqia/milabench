@@ -128,7 +128,7 @@ class Executor:
         for pack, argv, _kwargs in self.commands():
             await pack.send(event="config", data=pack.config)
             await pack.send(event="meta", data=machine_metadata())
-
+            
             fut = pack.execute(*argv, **{**_kwargs, **kwargs})
             coro.append(fut)
 
@@ -630,6 +630,11 @@ class PerGPU(ListExecutor):
         super().__init__(*executors, **kwargs)
 
 
+#
+# Check if we need this
+#   I think if we use python script.py it will load
+#   the right env and we do not need the activator
+#
 class ActivatorExecutor(SingleCmdExecutor):
     def __init__(self, pack: pack.BasePackage, **kwargs):
         super().__init__(pack, **kwargs)

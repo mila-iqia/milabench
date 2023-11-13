@@ -203,11 +203,14 @@ class BasePackage:
         args = [str(x) for x in args]
         if cwd is None:
             cwd = self.dirs.code
+            
+        exec_env = self.full_env(env) if not external else {**os.environ, **env}
+
         return await run(
             args,
             **kwargs,
             info={"pack": self},
-            env=self.full_env(env) if not external else {**os.environ, **env},
+            env=exec_env,
             constructor=BenchLogEntry,
             cwd=cwd,
             process_accumulator=self.processes,
