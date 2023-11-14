@@ -113,8 +113,8 @@ There are currently two multi-node benchmarks, ``opt-1_3b-multinode`` (data-para
 .. code-block:: yaml
 
    system:
-     sshkey: <privatekey>
      arch: cuda
+     sshkey: /milabench/id_milabench
      docker_image: ghcr.io/mila-iqia/milabench:${system.arch}-nightly
 
      nodes:

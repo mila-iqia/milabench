@@ -33,12 +33,14 @@ def instrument_main(ov, options: Config):
             ov.require(dash)
 
         ov.require(
-            log("value", "progress", "rate", "units", "loss", "gpudata", context="task"),
+            log(
+                "value", "progress", "rate", "units", "loss", "gpudata", context="task"
+            ),
             rate(
                 interval=options.interval,
                 skip=options.skip,
                 sync=torch.cuda.synchronize if torch.cuda.is_available() else None,
-                batch_size_calc=lambda b: len(b) * args.world_size
+                batch_size_calc=lambda b: len(b) * args.world_size,
             ),
             early_stop(n=options.stop, key="rate", task="train", signal="stop"),
             gpu_monitor(poll_interval=options.gpu_poll),
@@ -46,8 +48,7 @@ def instrument_main(ov, options: Config):
 
         # Loss
         (
-            loss_probe
-            .throttle(1)["loss"]
+            loss_probe.throttle(1)["loss"]
             .map(lambda loss: {"task": "train", "loss": float(loss)})
             .give()
         )
