@@ -123,12 +123,11 @@ class Executor:
         for pack in self.packs():
             pack.phase = phase
 
-
         timeout_tasks = []
         for pack, argv, _kwargs in self.commands():
             await pack.send(event="config", data=pack.config)
             await pack.send(event="meta", data=machine_metadata())
-            
+
             fut = pack.execute(*argv, **{**_kwargs, **kwargs})
             coro.append(fut)
 
@@ -425,7 +424,7 @@ class SSHExecutor(WrapperExecutor):
 
     def is_local(self):
         localnode = self.pack.config["system"]["self"]
-        
+
         # self is none; the node we are currently
         # on is not part of the system; we are running
         # milabench remotely, sending remote commands to
@@ -638,13 +637,10 @@ class PerGPU(ListExecutor):
 class ActivatorExecutor(SingleCmdExecutor):
     def __init__(self, pack: pack.BasePackage, **kwargs):
         super().__init__(pack, **kwargs)
-        
+
     def _argv(self, **_) -> List:
-        return [
-            f"{self.pack.dirs.code / 'activator'}",
-            f"{self.pack.dirs.venv}"
-        ]
-                
+        return [f"{self.pack.dirs.code / 'activator'}", f"{self.pack.dirs.venv}"]
+
 
 # Accelerate
 class AccelerateLaunchExecutor(SingleCmdExecutor):

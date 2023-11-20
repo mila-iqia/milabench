@@ -95,7 +95,10 @@ class BasePackage:
 
     @property
     def argv(self):
-        return assemble_options(self.config.get("argv", []))
+        # Circular import
+        from .sizer import scale_argv
+
+        return scale_argv(self, assemble_options(self.config.get("argv", [])))
 
     @property
     def tag(self):
@@ -203,7 +206,7 @@ class BasePackage:
         args = [str(x) for x in args]
         if cwd is None:
             cwd = self.dirs.code
-            
+
         exec_env = self.full_env(env) if not external else {**os.environ, **env}
 
         return await run(

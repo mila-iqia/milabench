@@ -13,7 +13,7 @@ import getpass
 
 from coleo import Option, config as configuration, default, run_cli, tooled
 from omegaconf import OmegaConf
-from voir.instruments.gpu import deduce_backend, select_backend
+from voir.instruments.gpu import deduce_backend, select_backend, get_gpu_info
 
 from milabench.alt_async import proceed
 from milabench.utils import blabla, validation_layers, multilogger, available_layers
@@ -255,20 +255,20 @@ def _get_multipack(
         )
 
 
-
 def _parse_report(pth):
     with pth.open() as f:
         lines = f.readlines()
         data = []
         good_lines = 0
         bad_lines = 0
-        
+
         for line in lines:
             try:
                 data.append(json.loads(line))
                 good_lines += 1
             except Exception:
                 import traceback
+
                 print(f"Could not parse line inside {pth}\n\t- {line}")
                 traceback.print_exc()
                 bad_lines += 1
@@ -288,7 +288,7 @@ def _read_reports(*runs):
                     continue
                 pth = XPath(parent) / file
                 all_data[str(pth)] = _parse_report(pth)
-                    
+
     return all_data
 
 
@@ -413,12 +413,12 @@ class Main:
             compare_gpus = False
             html = None
             price = None
-        
+
             reports = None
             if runs:
                 reports = _read_reports(*runs)
                 assert len(reports) != 0, "No reports found"
-                
+
                 summary = make_summary(reports.values())
                 assert len(summary) != 0, "No summaries"
 
@@ -707,16 +707,29 @@ class Main:
         node_list = expand_node_list(os.getenv("SLURM_JOB_NODELIST", ""))
 
         def make_node(i, ip):
-            node = {"name": ip, "ip": ip, "user": getpass.getuser(), "main": i == 0}
+            node = {
+                "name": ip,
+                "ip": ip,
+                "user": getpass.getuser(),
+                "main": i == 0,
+            }
 
             if i == 0:
                 node["port"] = 8123
 
             return node
 
-        system = dict(
-            arch="cuda", nodes=[make_node(i, ip) for i, ip in enumerate(node_list)]
-        )
+        capacity = float("+inf")
+
+        for k, v in get_gpu_info("cuda")["gpus"].items():
+            capacity = min(v["memory"]["total"], capacity)
+
+        # nvidia-smi --query-gpu=memory.total --format=csv
+        system = {
+            "arch": "cuda",
+            "gpu": {"capacity": f"{int(capacity)} MiB"},
+            "nodes": [make_node(i, ip) for i, ip in enumerate(node_list)],
+        }
 
         import yaml
 
@@ -758,41 +771,36 @@ class Main:
     def schedule():
         """Launch a slurm job to run milabench"""
         # milabench schedule --sync -- --select resnet50
-        
+
         # tail -f on the slurm job
         sync: Option & bool = False
-        
+
         # Print the command and return without running it
         dry: Option & bool = False
-        
+
         # pip arguments
         # [remainder]
         args: Option = []
-        
-        launch_milabench(
-            args,
-            sbatch_args=None,
-            dry=dry,
-            sync=sync
-        )
-        
+
+        launch_milabench(args, sbatch_args=None, dry=dry, sync=sync)
+
     def write_report_to_pr():
         remote: str & Option
-        
+
         branch: str & Option
-        
+
         base: Option & str = os.getenv("MILABENCH_BASE", None)
-        
+
         config: Option & str = os.getenv("MILABENCH_CONFIG", None)
 
         token: str & Option = os.getenv("MILABENCH_GITHUB_PAT")
-        
+
         assert base is not None
-        
+
         runfolder = os.path.join(base, "runs")
 
         def filter(folder):
-            for f in ('install', 'prepare'):
+            for f in ("install", "prepare"):
                 if f in folder:
                     return False
             return True
@@ -801,15 +809,10 @@ class Main:
         for folder in os.listdir(runfolder):
             if filter(folder):
                 runs.append(os.path.join(runfolder, folder))
-        
+
         report = _short_make_report(runs, config)
-        
-        post_comment_on_pr(
-            remote, 
-            branch,
-            "```\n" + report + "\n```",
-            token    
-        )
+
+        post_comment_on_pr(remote, branch, "```\n" + report + "\n```", token)
 
 
 def _short_make_report(runs, config):
@@ -823,7 +826,7 @@ def _short_make_report(runs, config):
         config = _get_multipack(config, return_config=True)
 
     stream = io.StringIO()
-    
+
     make_report(
         summary,
         weights=config,
@@ -831,5 +834,5 @@ def _short_make_report(runs, config):
         sources=runs,
         errdata=reports and _error_report(reports),
     )
-    
+
     return stream.getvalue()

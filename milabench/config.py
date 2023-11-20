@@ -1,4 +1,5 @@
 import socket
+import contextvars
 
 import yaml
 from omegaconf import OmegaConf
@@ -6,6 +7,11 @@ import psutil
 
 from .fs import XPath
 from .merge import merge
+from voir.instruments.gpu import get_gpu_info
+
+
+system_global = contextvars.ContextVar("system")
+config_global = contextvars.ContextVar("Config")
 
 
 def relative_to(pth, cwd):
@@ -69,10 +75,14 @@ def build_config(*config_files):
     all_configs = {}
     for layer in _config_layers(config_files):
         all_configs = merge(all_configs, layer)
+
     for name, bench_config in all_configs.items():
         all_configs[name] = resolve_inheritance(bench_config, all_configs)
+
     for name, bench_config in all_configs.items():
         all_configs[name] = finalize_config(name, bench_config)
+
+    config_global.set(all_configs)
     return all_configs
 
 
@@ -117,7 +127,7 @@ def _resolve_ip(ip):
         aliaslist = []
         ipaddrlist = []
         lazy_raise = err
-        
+
     return hostname, aliaslist, ipaddrlist, lazy_raise
 
 
@@ -136,7 +146,7 @@ def resolve_addresses(nodes):
         node["hostname"] = hostname
         node["aliaslist"] = aliaslist
         node["ipaddrlist"] = ipaddrlist
-        
+
         if hostname.endswith(".server.mila.quebec.server.mila.quebec"):
             print()
             print("Hostname was extra long for no reason")
@@ -144,7 +154,7 @@ def resolve_addresses(nodes):
             print()
 
             # why is this happening
-            hostname = hostname[:-len(".server.mila.quebec")]
+            hostname = hostname[: -len(".server.mila.quebec")]
 
         is_local = (
             ("127.0.0.1" in ipaddrlist)
@@ -163,6 +173,15 @@ def resolve_addresses(nodes):
         raise RuntimeError("Could not resolve node ip") from lazy_raise
 
     return self
+
+
+def get_gpu_capacity():
+    capacity = float("+inf")
+
+    for k, v in get_gpu_info("cuda")["gpus"].items():
+        capacity = min(v["memory"]["total"], capacity)
+
+    return capacity
 
 
 def build_system_config(config_file, defaults=None):
@@ -186,6 +205,9 @@ def build_system_config(config_file, defaults=None):
 
     system = config.get("system", {})
 
+    if "gpu" not in system:
+        system["gpu"] = {"capacity": f"{int(get_gpu_capacity())} MiB"}
+
     if system.get("sshkey") is not None:
         system["sshkey"] = str(XPath(system["sshkey"]).resolve())
 
@@ -194,4 +216,5 @@ def build_system_config(config_file, defaults=None):
     self = resolve_addresses(system["nodes"])
     system["self"] = self
 
+    system_global.set(system)
     return config
