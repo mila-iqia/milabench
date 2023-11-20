@@ -35,6 +35,7 @@ from .report import make_report
 from .slurm import expand_node_list
 from .summary import aggregate, make_summary
 from .schedule import launch_milabench, post_comment_on_pr
+from .sizer import MemoryUsageExtractor
 
 
 def main(argv=None):
@@ -402,6 +403,7 @@ class Main:
                 TextReporter("stdout"),
                 TextReporter("stderr"),
                 DataReporter(),
+                MemoryUsageExtractor(),
                 *validation_layers(*layers, short=not fulltrace),
             ],
             mp=mp,

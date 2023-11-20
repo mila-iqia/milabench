@@ -1,11 +1,12 @@
 from dataclasses import dataclass
 import os
-import os
+from copy import deepcopy
 import yaml
 import contextvars
 
 import numpy as np
 
+from .validation.validation import ValidationLayer
 from .config import system_global
 
 
@@ -14,13 +15,24 @@ ROOT = os.path.dirname(__file__)
 default_scaling_config = os.path.join(ROOT, "..", "config", "scaling.yaml")
 
 
+def is_autoscale_enabled():
+    return os.getenv("MILABENCH_SIZER_AUTO", False) or os.getenv("MILABENCH_SIZER_MULTIPLE") is not None
+
+
+def getenv(name, type):
+    value = os.getenv(name)
+
+    if value is not None:
+        return type(value)
+    
+    return value
+
 @dataclass
 class SizerOptions:
-    size: int = os.getenv("MILABENCH_SIZER_BATCH_SIZE")
-    autoscale: bool = os.getenv("MILABENCH_SIZER_AUTO", False)
-    enabled: bool = os.getenv("MILABENCH_SIZER_ENABLED", False)
-    multiple: int = os.getenv("MILABENCH_SIZER_MULTIPLE")
-    optimized: bool = os.getenv("MILABENCH_SIZER_OPTIMIZED")
+    size: int = getenv("MILABENCH_SIZER_BATCH_SIZE", int)
+    autoscale: bool = is_autoscale_enabled()
+    multiple: int = getenv("MILABENCH_SIZER_MULTIPLE", int)
+    optimized: bool = getenv("MILABENCH_SIZER_OPTIMIZED", int)
 
 
 metric_prefixes = {
@@ -55,6 +67,7 @@ class Sizer:
 
     def __init__(self, options=SizerOptions(), scaling_config=None):
         self.options = options
+        self.path = scaling_config
 
         if scaling_config is None:
             scaling_config = default_scaling_config
@@ -79,9 +92,10 @@ class Sizer:
             capacity = to_octet(capacity)
 
         config = self.benchscaling(benchmark)
-
-        mem = [to_octet(v) for v in config["model"].values()]
-        size = [float(v) for v in config["model"].keys()]
+        
+        data = list(sorted(config["model"].items(), key=lambda x: x[0]))
+        mem = [to_octet(v[1]) for v in data]
+        size = [float(v[0]) for v in data]
 
         # This does not extrapolate
         # int(np.interp(capacity, mem, size))
@@ -102,6 +116,9 @@ class Sizer:
 
     def size(self, benchmark, capacity):
         config = self.benchscaling(benchmark)
+        
+        if self.options.size is not None:
+            return self.options.size
 
         if self.options.optimized:
             return config["optimized"]
@@ -109,7 +126,7 @@ class Sizer:
         if self.options.autoscale:
             return self.auto_size(benchmark, capacity)
 
-        return self.options.size
+        return None
 
     def argv(self, benchmark, capacity, argv):
         """Find the batch size and override it with a new value"""
@@ -134,17 +151,70 @@ class Sizer:
         return argv
 
 
-sizer_global = contextvars.ContextVar("sizer_global")
-sizer_global.set(Sizer())
+sizer_global = contextvars.ContextVar("sizer_global", default=Sizer())
 
 
 def scale_argv(pack, argv):
     sizer = sizer_global.get()
     system = system_global.get()
 
-    if not sizer.options.enabled:
-        return argv
-
     capacity = system["gpu"]["capacity"]
 
     return sizer.argv(pack, capacity, argv)
+
+
+
+class MemoryUsageExtractor(ValidationLayer):
+    """Extract max memory usage per benchmark to populate the memory model"""
+    
+    def __init__(self):
+        self.memory = deepcopy(sizer_global.get().scaling_config)
+        self.scaling = None
+        self.benchname = None
+        self.batch_size = 0
+        self.max_usage = float('-inf')
+        
+    def on_start(self, entry):
+        argv = entry.data["command"]
+        self.benchname = entry.pack.config["name"]
+        self.batch_size = None
+        
+        config = self.memory.setdefault(self.benchname, dict())
+        scalingarg = config.setdefault("arg", "batch-size")
+
+        found = None
+        for i, arg in enumerate(argv):
+            if arg.endswith(scalingarg):
+                found = i
+                break
+            
+        if found:
+            self.batch_size = int(argv[found + 1]) 
+        
+    def on_data(self, entry):
+        if entry.data is None:
+            return
+
+        gpudata = entry.data.get("gpudata")
+        if gpudata is not None:
+            current_usage = []
+            for device, data in gpudata.items():
+                usage, total = data.get("memory", [0, 1])
+                current_usage.append(usage)
+                
+            self.max_usage = max(*current_usage, self.max_usage)
+            
+    def on_end(self, entry):
+        config = self.memory.setdefault(self.benchname, dict())
+        model = config.setdefault("model", dict())
+        model[self.batch_size] = f"{self.max_usage} MiB"
+        
+        config["model"] = dict(sorted(model.items(), key=lambda x: x[0]))
+        
+    def report(self, *args):
+        with open('new_scaling.yaml', 'w') as file:
+            yaml.dump(self.memory, file)
+    
+    
+    
+
