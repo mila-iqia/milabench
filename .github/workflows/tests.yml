@@ -74,6 +74,13 @@ jobs:
           python -m pip install -U pip
           python -m pip install -U poetry
           poetry lock --no-update
+          # poetry v1.7 has a bug where it can't find pip during the first
+          # install attempt:
+          # Output:
+          # [...]/.venv/bin/python: can't open file
+          # '[...]/lib/python3.9/site-packages/virtualenv/seed/wheels/embed/pip-23.3.1-py3-none-any.whl/pip':
+          # [Errno 2] No such file or directory
+          ! poetry install
           poetry install
 
       - name: pin
