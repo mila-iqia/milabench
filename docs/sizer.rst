@@ -4,6 +4,23 @@ Scaling
 Milabench is able to select a batch size depending on the
 underlying GPU capacity.
 
+The feature is drivent by the ``config/scaling.yaml`` file, 
+which holds information about the memory usage of a given bench
+given the batch size.
+
+
+.. code-block:: yaml
+
+   convnext_large-fp32:
+     arg: --batch-size
+     default: 128
+     model:
+       8: 5824.75 MiB
+       16: 8774.75 MiB
+       32: 14548.75 MiB
+       64: 26274.75 MiB
+       128: 49586.75 MiB
+
 
 Auto Batch size
 ---------------
