@@ -125,9 +125,9 @@ class Sizer:
             newsize_i += 1
 
         if self.options.multiple is not None:
-            return (newsize_i // self.options.multiple) * self.options.multiple
+            newsize_i = (newsize_i // self.options.multiple) * self.options.multiple
 
-        return newsize_i
+        return max(newsize_i, 1)
 
     def size(self, benchmark, capacity):
         config = self.benchscaling(benchmark)
