@@ -4,9 +4,7 @@ from milabench.sizer import Sizer, SizerOptions, sizer_global
 
 
 def test_scaler_use_override(multipack, config):
-    sizer = Sizer(
-        SizerOptions(size=64, autoscale=False), config("scaling")
-    )
+    sizer = Sizer(SizerOptions(size=64, autoscale=False), config("scaling"))
     for k, pack in multipack.packs.items():
         assert sizer.size(pack, "48Go") == 64
 
@@ -38,9 +36,7 @@ _values = [
 
 @pytest.mark.parametrize("capacity,expected", _values)
 def test_scaler_autoscaler_lerp(multipack, config, capacity, expected):
-    sizer = Sizer(
-        SizerOptions(size=None, autoscale=True), config("scaling")
-    )
+    sizer = Sizer(SizerOptions(size=None, autoscale=True), config("scaling"))
     for k, pack in multipack.packs.items():
         assert sizer.size(pack, capacity) == expected
 

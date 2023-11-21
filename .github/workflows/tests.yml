@@ -47,6 +47,7 @@ jobs:
       MILABENCH_ARGS: ""
       MILABENCH_GPU_ARCH: "${{ matrix.arch }}"
       MILABENCH_DASH: "no"
+      MILABENCH_EXCLUDE: "${{ matrix.exclude }}"
     
     steps:
       - uses: actions/checkout@v3
@@ -60,7 +61,7 @@ jobs:
 
       - name: Pytorch Sanity
         run: |
-          if [[ "${{ matrix.arch }}" == "rocm" ]]; then
+          if [[ "${MILABENCH_GPU_ARCH}" == "rocm" ]]; then
             groups
             /opt/rocm/bin/rocminfo
           fi
@@ -96,16 +97,16 @@ jobs:
 
       - name: install benchmarks
         run: |
-          milabench install --exclude "${{ matrix.exclude }}"
+          milabench install --exclude "${MILABENCH_EXCLUDE}"
 
       - name: prepare benchmarks
         run: |
-          milabench prepare --exclude "${{ matrix.exclude }}"
+          milabench prepare --exclude "${MILABENCH_EXCLUDE}"
 
       - name: run benchmarks
         run: |
           export PATH="/opt/rocm/bin:$PATH"
-          milabench run --validations all --exclude "${{ matrix.exclude }}"
+          milabench run --validations all --exclude "${MILABENCH_EXCLUDE}"
 
       - name: Summary
         run: |

@@ -296,7 +296,7 @@ def make_report(
                     H.div["collapsible"](lines),
                 )
             )
-    
+
     out.finalize()
 
 

@@ -9,11 +9,11 @@ def test_report(runs_folder, capsys, file_regression, config):
     except SystemExit as exc:
         assert not exc.code
         assert exc.code is None
-    
+
     all = capsys.readouterr()
     stdout = all.out
     assert stdout != ""
-    
+
     stdout = stdout.replace(str(folder), "XXX")
     file_regression.check(stdout)
 

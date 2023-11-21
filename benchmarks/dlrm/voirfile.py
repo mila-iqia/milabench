@@ -47,12 +47,7 @@ def instrument_main(ov, options: Config):
     yield ov.phases.load_script
 
     # Loss
-    (
-        ov.probe("//run > L")
-        .throttle(1)["L"]
-        .map(float)
-        .give("loss")
-    )
+    (ov.probe("//run > L").throttle(1)["L"].map(float).give("loss"))
 
     # Compute Start & End + Batch
     ov.probe(
