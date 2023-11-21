@@ -12,7 +12,7 @@ def replay_validation_scenario(folder, *validation, filename=None):
 
     path = folder / filename
     file = str(path) + ".txt"
-    
+
     if os.path.isdir(path):
         files = [path / f for f in os.scandir(path)]
         gen = interleave(*files)
@@ -30,11 +30,10 @@ def replay_validation_scenario(folder, *validation, filename=None):
 def replay_scenario(folder, name, filename=None):
     """Replay events from a data file or folder"""
     return replay_validation_scenario(
-        folder, 
-        *validation_layers(name), 
-        filename=filename or name
+        folder, *validation_layers(name), filename=filename or name
     )
-  
+
+
 def test_error_layer(replayfolder):
     log = replay_scenario(replayfolder, "error")
     assert log.result() != 0
@@ -103,12 +102,17 @@ def test_planning_layer_per_gpu_bad(replayfolder, monkeypatch):
 
     log = replay_scenario(replayfolder, "planning", "planning_per_gpu_bad")
     assert log.result() != 0
-    
-    
+
+
 def test_memory_tracking(replayfolder, config):
     import contextvars
     from milabench.sizer import (
-        MemoryUsageExtractor, Sizer, SizerOptions, sizer_global, system_global)
+        MemoryUsageExtractor,
+        Sizer,
+        SizerOptions,
+        sizer_global,
+        system_global,
+    )
 
     ctx = contextvars.copy_context()
 
@@ -122,18 +126,9 @@ def test_memory_tracking(replayfolder, config):
             config("scaling"),
         )
         sizer_global.set(sizer)
-        system = system_global.set({
-            "gpu": {
-                "capacity": "41920 MiB"
-            }
-        })
-        
+        system = system_global.set({"gpu": {"capacity": "41920 MiB"}})
+
     ctx.run(update_ctx)
     layer = MemoryUsageExtractor()
 
-    ctx.run(lambda: replay_validation_scenario(
-        replayfolder,
-        layer,
-        filename="usage"
-    ))
-    
+    ctx.run(lambda: replay_validation_scenario(replayfolder, layer, filename="usage"))

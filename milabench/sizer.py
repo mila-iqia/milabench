@@ -16,7 +16,10 @@ default_scaling_config = os.path.join(ROOT, "..", "config", "scaling.yaml")
 
 
 def is_autoscale_enabled():
-    return os.getenv("MILABENCH_SIZER_AUTO", False) or os.getenv("MILABENCH_SIZER_MULTIPLE") is not None
+    return (
+        os.getenv("MILABENCH_SIZER_AUTO", False)
+        or os.getenv("MILABENCH_SIZER_MULTIPLE") is not None
+    )
 
 
 def getenv(name, type):
@@ -24,8 +27,9 @@ def getenv(name, type):
 
     if value is not None:
         return type(value)
-    
+
     return value
+
 
 @dataclass
 class SizerOptions:
@@ -62,7 +66,7 @@ def to_octet(value: str) -> float:
 
     if "io" in value:
         return float(value.replace("io", ""))
-    
+
     if "o" in value:
         return float(value.replace("o", ""))
 
@@ -97,17 +101,17 @@ class Sizer:
     def get_capacity(self, capacity):
         if self.options.capacity is not None:
             capacity = self.options.capacity
-            
+
         if isinstance(capacity, str):
             capacity = to_octet(capacity)
-            
+
         return capacity
 
     def auto_size(self, benchmark, capacity):
         capacity = self.get_capacity(capacity)
 
-        config = self.benchscaling(benchmark)    
-        
+        config = self.benchscaling(benchmark)
+
         data = list(sorted(config["model"].items(), key=lambda x: x[0]))
         mem = [to_octet(v[1]) for v in data]
         size = [float(v[0]) for v in data]
@@ -131,7 +135,7 @@ class Sizer:
 
     def size(self, benchmark, capacity):
         config = self.benchscaling(benchmark)
-        
+
         if self.options.size is not None:
             return self.options.size
 
@@ -145,11 +149,11 @@ class Sizer:
 
     def argv(self, benchmark, capacity, argv):
         """Find the batch size and override it with a new value"""
-        
+
         config = self.benchscaling(benchmark)
         if config is None:
             return argv
-        
+
         newsize = self.size(benchmark, capacity)
 
         if newsize is None:
@@ -160,7 +164,7 @@ class Sizer:
         argname = config.get("arg")
         if argname is None:
             return argv
-    
+
         for i, arg in enumerate(argv):
             if arg.endswith(argname):
                 break
@@ -184,32 +188,31 @@ def scale_argv(pack, argv):
     return sizer.argv(pack, capacity, argv)
 
 
-
 class MemoryUsageExtractor(ValidationLayer):
     """Extract max memory usage per benchmark to populate the memory model"""
-    
+
     def __init__(self):
         self.filepath = getenv("MILABENCH_SIZER_SAVE", str)
-        
+
         self.memory = deepcopy(sizer_global.get().scaling_config)
         self.scaling = None
         self.benchname = None
         self.batch_size = 0
-        self.max_usage = float('-inf')
+        self.max_usage = float("-inf")
         self.early_stopped = False
-        
+
     def on_start(self, entry):
         if self.filepath is None:
             return
-    
+
         argv = entry.data["command"]
         self.benchname = entry.pack.config["name"]
         self.batch_size = None
-        self.max_usage = float('-inf')
-        
+        self.max_usage = float("-inf")
+
         config = self.memory.get(self.benchname, dict())
         scalingarg = config.get("arg", None)
-        
+
         if scalingarg is None:
             self.benchname = None
             return
@@ -219,14 +222,14 @@ class MemoryUsageExtractor(ValidationLayer):
             if arg.endswith(scalingarg):
                 found = i
                 break
-            
+
         if found:
-            self.batch_size = int(argv[found + 1]) 
-        
+            self.batch_size = int(argv[found + 1])
+
     def on_data(self, entry):
         if self.filepath is None:
             return
-        
+
         if entry.data is None:
             return
 
@@ -236,21 +239,23 @@ class MemoryUsageExtractor(ValidationLayer):
             for device, data in gpudata.items():
                 usage, total = data.get("memory", [0, 1])
                 current_usage.append(usage)
-                
+
             self.max_usage = max(*current_usage, self.max_usage)
-            
+
     def on_stop(self, entry):
         self.early_stopped = True
 
     def on_end(self, entry):
         if self.filepath is None:
             return
-            
-        if (self.benchname is None or 
-           self.batch_size is None or 
-           self.max_usage ==  float('-inf')):
+
+        if (
+            self.benchname is None
+            or self.batch_size is None
+            or self.max_usage == float("-inf")
+        ):
             return
-        
+
         # Only update is successful
         rc = entry.data["return_code"]
         if rc == 0 or self.early_stopped:
@@ -258,16 +263,12 @@ class MemoryUsageExtractor(ValidationLayer):
             model = config.setdefault("model", dict())
             model[self.batch_size] = f"{self.max_usage} MiB"
             config["model"] = dict(sorted(model.items(), key=lambda x: x[0]))
-            
+
         self.benchname = None
         self.batch_size = None
-        self.max_usage = float('-inf')
-        
+        self.max_usage = float("-inf")
+
     def report(self, *args):
         if self.filepath is not None:
-            with open(self.filepath, 'w') as file:
+            with open(self.filepath, "w") as file:
                 yaml.dump(self.memory, file)
-    
-    
-    
-

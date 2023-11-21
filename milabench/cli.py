@@ -690,7 +690,7 @@ class Main:
             title=None,
             sources=runs,
             errdata=reports and _error_report(reports),
-            stream=sys.stdout
+            stream=sys.stdout,
         )
 
     def pip():

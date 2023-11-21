@@ -11,12 +11,12 @@ class LLAMA(Package):
     def make_env(self):
         return {
             **super().make_env(),
-            "OMP_NUM_THREADS": str(self.config.get("cpus_per_gpu", 8))
+            "OMP_NUM_THREADS": str(self.config.get("cpus_per_gpu", 8)),
         }
-    
+
     async def install(self):
         await super().install()
-        
+
     def build_prepare_plan(self):
         return CmdExecutor(
             self,
@@ -36,7 +36,8 @@ class LLAMA(Package):
             *self.argv,
             "--cache",
             str(self.dirs.cache),
-            use_stdout=True
+            use_stdout=True,
         )
+
 
 __pack__ = LLAMA
