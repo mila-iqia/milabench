@@ -33,6 +33,7 @@ class SizerOptions:
     autoscale: bool = is_autoscale_enabled()
     multiple: int = getenv("MILABENCH_SIZER_MULTIPLE", int)
     optimized: bool = getenv("MILABENCH_SIZER_OPTIMIZED", int)
+    capacity: str = getenv("MILABENCH_SIZER_CAPACITY", str)
 
 
 metric_prefixes = {
@@ -59,7 +60,13 @@ def to_octet(value: str) -> float:
         if f"{p}B" in value or f"{p}o" in value:
             return float(value[: -(len(p) + 1)]) * 10**vm
 
-    return float(value[:-1])
+    if "io" in value:
+        return float(value.replace("io", ""))
+    
+    if "o" in value:
+        return float(value.replace("o", ""))
+
+    return float(value)
 
 
 class Sizer:
@@ -87,9 +94,17 @@ class Sizer:
         # pack
         return self.scaling_config.get(benchmark.config["name"])
 
-    def auto_size(self, benchmark, capacity):
+    def get_capacity(self, capacity):
+        if self.options.capacity is not None:
+            capacity = self.options.capacity
+            
         if isinstance(capacity, str):
             capacity = to_octet(capacity)
+            
+        return capacity
+
+    def auto_size(self, benchmark, capacity):
+        capacity = self.get_capacity(capacity)
 
         config = self.benchscaling(benchmark)    
         
