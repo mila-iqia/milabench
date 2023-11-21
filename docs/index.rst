@@ -11,7 +11,7 @@ Welcome to milabench's documentation!
    dev-usage.rst
    new_benchmarks.rst
    reference.rst
-
+   sizer.rst
 
 Indices and tables
 ==================

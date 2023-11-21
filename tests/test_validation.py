@@ -117,7 +117,6 @@ def test_memory_tracking(replayfolder, config):
             SizerOptions(
                 size=None,
                 autoscale=True,
-                enabled=True,
                 multiple=8,
             ),
             config("scaling"),

@@ -139,13 +139,19 @@ class Sizer:
         # <param> <value>
         argv = list(argv)
         config = self.benchscaling(benchmark)
-
+        if config is None:
+            return argv
+        
+        argname = config.get("arg")
+        if argname is None:
+            return argv
+    
         for i, arg in enumerate(argv):
-            if arg == config["arg"]:
+            if arg.endswith(argname):
                 break
         else:
             # add the new argument
-            return argv + [config["arg"], str(newsize)]
+            return argv + [argname, str(newsize)]
 
         argv[i + 1] = str(newsize)
         return argv
@@ -168,19 +174,30 @@ class MemoryUsageExtractor(ValidationLayer):
     """Extract max memory usage per benchmark to populate the memory model"""
     
     def __init__(self):
+        self.filepath = getenv("MILABENCH_SIZER_SAVE", str)
+        
         self.memory = deepcopy(sizer_global.get().scaling_config)
         self.scaling = None
         self.benchname = None
         self.batch_size = 0
         self.max_usage = float('-inf')
+        self.early_stopped = False
         
     def on_start(self, entry):
+        if self.filepath is None:
+            return
+    
         argv = entry.data["command"]
         self.benchname = entry.pack.config["name"]
         self.batch_size = None
+        self.max_usage = float('-inf')
         
-        config = self.memory.setdefault(self.benchname, dict())
-        scalingarg = config.setdefault("arg", "batch-size")
+        config = self.memory.get(self.benchname, dict())
+        scalingarg = config.get("arg", None)
+        
+        if scalingarg is None:
+            self.benchname = None
+            return
 
         found = None
         for i, arg in enumerate(argv):
@@ -192,6 +209,9 @@ class MemoryUsageExtractor(ValidationLayer):
             self.batch_size = int(argv[found + 1]) 
         
     def on_data(self, entry):
+        if self.filepath is None:
+            return
+        
         if entry.data is None:
             return
 
@@ -204,16 +224,34 @@ class MemoryUsageExtractor(ValidationLayer):
                 
             self.max_usage = max(*current_usage, self.max_usage)
             
+    def on_stop(self, entry):
+        self.early_stopped = True
+
     def on_end(self, entry):
-        config = self.memory.setdefault(self.benchname, dict())
-        model = config.setdefault("model", dict())
-        model[self.batch_size] = f"{self.max_usage} MiB"
+        if self.filepath is None:
+            return
+            
+        if (self.benchname is None or 
+           self.batch_size is None or 
+           self.max_usage ==  float('-inf')):
+            return
         
-        config["model"] = dict(sorted(model.items(), key=lambda x: x[0]))
+        # Only update is successful
+        rc = entry.data["return_code"]
+        if rc == 0 or self.early_stopped:
+            config = self.memory.setdefault(self.benchname, dict())
+            model = config.setdefault("model", dict())
+            model[self.batch_size] = f"{self.max_usage} MiB"
+            config["model"] = dict(sorted(model.items(), key=lambda x: x[0]))
+            
+        self.benchname = None
+        self.batch_size = None
+        self.max_usage = float('-inf')
         
     def report(self, *args):
-        with open('new_scaling.yaml', 'w') as file:
-            yaml.dump(self.memory, file)
+        if self.filepath is not None:
+            with open(self.filepath, 'w') as file:
+                yaml.dump(self.memory, file)
     
     
     

@@ -41,3 +41,21 @@ The batch size can be globally overriden
 .. code-block:: bash
 
    MILABENCH_SIZER_BATCH_SIZE=64 milabench run
+
+
+Memory Usage Extractor
+----------------------
+
+To automate batch size ``<=>`` memory usage data gathering
+a validation layer that retrieve the batch size and the memory usage
+can be enabled.
+
+In the example below, once milabench has finished running it will
+generate a new scaling configuration with the data extracted from the run.
+
+
+.. code-block:: bash
+
+   export MILABENCH_SIZER_SAVE="newscaling.yaml"
+   MILABENCH_SIZER_BATCH_SIZE=64 milabench run
+
