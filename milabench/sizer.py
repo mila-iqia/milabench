@@ -91,7 +91,7 @@ class Sizer:
         if isinstance(capacity, str):
             capacity = to_octet(capacity)
 
-        config = self.benchscaling(benchmark)
+        config = self.benchscaling(benchmark)    
         
         data = list(sorted(config["model"].items(), key=lambda x: x[0]))
         mem = [to_octet(v[1]) for v in data]
@@ -130,7 +130,11 @@ class Sizer:
 
     def argv(self, benchmark, capacity, argv):
         """Find the batch size and override it with a new value"""
-
+        
+        config = self.benchscaling(benchmark)
+        if config is None:
+            return argv
+        
         newsize = self.size(benchmark, capacity)
 
         if newsize is None:
@@ -138,10 +142,6 @@ class Sizer:
 
         # <param> <value>
         argv = list(argv)
-        config = self.benchscaling(benchmark)
-        if config is None:
-            return argv
-        
         argname = config.get("arg")
         if argname is None:
             return argv
