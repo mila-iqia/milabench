@@ -6,13 +6,13 @@ from milabench.utils import validation_layers, multilogger
 from milabench.testing import interleave, replay
 
 
-def replay_scenario(folder, name, filename=None):
+def replay_validation_scenario(folder, *validation, filename=None):
     """Replay events from a data file or folder"""
     gen = None
 
-    path = folder / f"{filename or name}"
+    path = folder / filename
     file = str(path) + ".txt"
-
+    
     if os.path.isdir(path):
         files = [path / f for f in os.scandir(path)]
         gen = interleave(*files)
@@ -20,13 +20,21 @@ def replay_scenario(folder, name, filename=None):
     if os.path.isfile(file):
         gen = replay(file)
 
-    with multilogger(*validation_layers(name)) as log:
+    with multilogger(*validation) as log:
         for entry in gen:
             log(entry)
 
     return log
 
 
+def replay_scenario(folder, name, filename=None):
+    """Replay events from a data file or folder"""
+    return replay_validation_scenario(
+        folder, 
+        *validation_layers(name), 
+        filename=filename or name
+    )
+  
 def test_error_layer(replayfolder):
     log = replay_scenario(replayfolder, "error")
     assert log.result() != 0
@@ -95,3 +103,37 @@ def test_planning_layer_per_gpu_bad(replayfolder, monkeypatch):
 
     log = replay_scenario(replayfolder, "planning", "planning_per_gpu_bad")
     assert log.result() != 0
+    
+    
+def test_memory_tracking(replayfolder, config):
+    import contextvars
+    from milabench.sizer import (
+        MemoryUsageExtractor, Sizer, SizerOptions, sizer_global, system_global)
+
+    ctx = contextvars.copy_context()
+
+    def update_ctx():
+        sizer = Sizer(
+            SizerOptions(
+                size=None,
+                autoscale=True,
+                multiple=8,
+            ),
+            config("scaling"),
+        )
+        sizer_global.set(sizer)
+        system = system_global.set({
+            "gpu": {
+                "capacity": "41920 MiB"
+            }
+        })
+        
+    ctx.run(update_ctx)
+    layer = MemoryUsageExtractor()
+
+    ctx.run(lambda: replay_validation_scenario(
+        replayfolder,
+        layer,
+        filename="usage"
+    ))
+    

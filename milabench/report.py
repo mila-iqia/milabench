@@ -41,7 +41,7 @@ def _make_row(summary, compare, weights):
 
     # Sum of all the GPU performance
     # to get the overall perf of the whole machine
-    
+
     if "per_gpu" in summary:
         acc = 0
         for _, metrics in summary["per_gpu"].items():
@@ -223,16 +223,16 @@ def make_report(
     sources=None,
     errdata=None,
     weights=None,
-    stream=sys.stdout
+    stream=sys.stdout,
 ):
     if weights is None:
         weights = dict()
 
     df = make_dataframe(summary, compare, weights)
-    
+
     # Reorder columns
     df = df[sorted(df.columns, key=lambda k: columns_order.get(k, 0))]
-    
+
     out = Outputter(stdout=stream, html=html)
 
     if sources:
@@ -296,7 +296,7 @@ def make_report(
                     H.div["collapsible"](lines),
                 )
             )
-
+    
     out.finalize()
 
 
