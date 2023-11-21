@@ -205,7 +205,7 @@ def _get_multipack(
     if base is None:
         base = os.environ.get("MILABENCH_BASE", None)
 
-    if not base:
+    if not return_config and not base:
         sys.exit("Error: Neither --base nor $MILABENCH_BASE are set.")
 
     base = base and os.path.abspath(os.path.expanduser(base))
@@ -275,7 +275,7 @@ def _parse_report(pth):
                 bad_lines += 1
 
     if good_lines == 0:
-        raise RuntimeError(f"Unknow format for file {pth}")
+        print(f"Unknow format for file {pth}")
 
     return data
 
@@ -690,6 +690,7 @@ class Main:
             title=None,
             sources=runs,
             errdata=reports and _error_report(reports),
+            stream=sys.stdout
         )
 
     def pip():

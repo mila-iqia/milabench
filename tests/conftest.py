@@ -28,6 +28,14 @@ def replayfolder():
     return here / "replays"
 
 
+@pytest.fixture(scope="session", autouse=True)
+def set_env():
+    os.environ["MILABENCH_CONFIG"] = "config/ci.yaml"
+    os.environ["MILABENCH_BASE"] = "output"
+    os.environ["MILABENCH_GPU_ARCH"] = "cuda"
+    os.environ["MILABENCH_DASH"] = "no"
+
+
 @pytest.fixture
 def multipack(config, tmp_path):
     from milabench.cli import _get_multipack
