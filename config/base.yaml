@@ -10,6 +10,16 @@ _defaults:
       gpu_load_threshold: 0.5
       gpu_mem_threshold: 0.5
 
+
+mlperf:
+  inherits: _defaults
+  definition: ../benchmarks/mlperf
+  group: mlperf
+  install_group: torch
+  plan:
+    method: per_gpu
+
+
 _torchvision:
   inherits: _defaults
   definition: ../benchmarks/torchvision
@@ -170,7 +180,9 @@ resnet50:
   
   argv:
     --model: resnet50
-    --batch-size: 64
+    --batch-size: 256
+    --synthetic-data: true
+    --precision: 'fp16'
 
 efficientnet_b4:
   inherits: _torchvision
@@ -250,7 +262,7 @@ _bert-base:
     - precision-showcase
   argv:
     --model: "Bert"
-    --batch-size: 32
+    --batch-size: 48
   voir:
     options:
       stop: 30
