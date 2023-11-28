@@ -5,13 +5,17 @@ from milabench.cli import main
 def test_report(runs_folder, capsys, file_regression, config):
     folder = runs_folder / "rijubigo.2023-03-24_13:45:27.512446"
     try:
-        main(["report", "--runs", folder, "--config", config("benchio")])
+        main(["report", "--runs", str(folder), "--config", config("benchio")])
     except SystemExit as exc:
         assert not exc.code
+        assert exc.code is None
 
-    output = capsys.readouterr().out
-    output = output.replace(str(folder), "XXX")
-    file_regression.check(output)
+    all = capsys.readouterr()
+    stdout = all.out
+    assert stdout != ""
+
+    stdout = stdout.replace(str(folder), "XXX")
+    file_regression.check(stdout)
 
 
 def test_summary(file_regression):
@@ -63,9 +67,9 @@ def test_empty_summary():
     assert output.strip() == ""
 
 
-def test_report_folder_does_average(runs_folder, capsys, file_regression):
+def test_report_folder_does_average(runs_folder, capsys, config, file_regression):
     try:
-        main(["report", "--runs", runs_folder])
+        main(["report", "--runs", runs_folder, "--config", config("benchio")])
     except SystemExit as exc:
         assert not exc.code
 

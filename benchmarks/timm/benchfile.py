@@ -14,17 +14,21 @@ class TimmBenchmarkPack(Package):
     def make_env(self):
         return {
             **super().make_env(),
-            "OMP_NUM_THREADS": str(self.config.get("cpus_per_gpu", 8))
+            "OMP_NUM_THREADS": str(self.config.get("cpus_per_gpu", 8)),
         }
 
     @property
     def argv(self):
         return [
             *super().argv,
-            "--data-dir", self.dirs.data,
-            "--dataset", "FakeImageNet",
-            "--output", self.dirs.extra / self.logdir.name / self.tag,
-            "--checkpoint-hist", 1,
+            "--data-dir",
+            self.dirs.data,
+            "--dataset",
+            "FakeImageNet",
+            "--output",
+            self.dirs.extra / self.logdir.name / self.tag,
+            "--checkpoint-hist",
+            1,
         ]
 
     async def install(self):
@@ -32,7 +36,9 @@ class TimmBenchmarkPack(Package):
 
         timm = self.dirs.code / "pytorch-image-models"
         if not timm.exists():
-            timm.clone_subtree("https://github.com/huggingface/pytorch-image-models", BRANCH)
+            timm.clone_subtree(
+                "https://github.com/huggingface/pytorch-image-models", BRANCH
+            )
 
     def build_run_plan(self):
         # self.config is not the right config for this

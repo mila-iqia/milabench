@@ -24,9 +24,7 @@ if __name__ == "__main__":
     print("This will compile the appropriate torch extensions.")
     print("=" * 80)
     result = subprocess.run(
-        ["voir",
-         "--no-dash", "--interval", "1", "--stop", "1",
-         "train.py", *argv]
+        ["voir", "--no-dash", "--interval", "1", "--stop", "1", "train.py", *argv]
     )
     print("=" * 80)
     print("Done")

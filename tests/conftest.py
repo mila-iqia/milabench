@@ -26,3 +26,37 @@ def config():
 @pytest.fixture
 def replayfolder():
     return here / "replays"
+
+
+@pytest.fixture(scope="session", autouse=True)
+def set_env():
+    os.environ["MILABENCH_CONFIG"] = "config/ci.yaml"
+    os.environ["MILABENCH_BASE"] = "output"
+    os.environ["MILABENCH_GPU_ARCH"] = "cuda"
+    os.environ["MILABENCH_DASH"] = "no"
+
+
+@pytest.fixture
+def multipack(config, tmp_path):
+    from milabench.cli import _get_multipack
+
+    bench_config = config("benchio")
+    system_path = config("system")
+    base = tmp_path
+
+    use_current_env = True
+    select = None
+    exclude = None
+    run_name = "test"
+    overrides = {}
+
+    return _get_multipack(
+        bench_config,
+        system_path,
+        base,
+        use_current_env,
+        select,
+        exclude,
+        run_name=run_name,
+        overrides=overrides,
+    )

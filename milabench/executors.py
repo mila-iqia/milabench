@@ -123,7 +123,6 @@ class Executor:
         for pack in self.packs():
             pack.phase = phase
 
-
         timeout_tasks = []
         for pack, argv, _kwargs in self.commands():
             await pack.send(event="config", data=pack.config)
@@ -630,6 +629,19 @@ class PerGPU(ListExecutor):
         super().__init__(*executors, **kwargs)
 
 
+#
+# Check if we need this
+#   I think if we use python script.py it will load
+#   the right env and we do not need the activator
+#
+class ActivatorExecutor(SingleCmdExecutor):
+    def __init__(self, pack: pack.BasePackage, **kwargs):
+        super().__init__(pack, **kwargs)
+
+    def _argv(self, **_) -> List:
+        return [f"{self.pack.dirs.code / 'activator'}", f"{self.pack.dirs.venv}"]
+
+
 # Accelerate
 class AccelerateLaunchExecutor(SingleCmdExecutor):
     """Execute a `BasePackage` with Accelerate
@@ -660,7 +672,7 @@ class AccelerateLaunchExecutor(SingleCmdExecutor):
 
         ngpu = len(get_gpu_info()["gpus"].values())
         nproc = ngpu * num_machines
-        assert nproc > 0
+        assert nproc > 0, f"nproc: {nproc} num_machines: {num_machines} ngpu: {ngpu}"
 
         deepspeed_argv = (
             [

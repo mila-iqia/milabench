@@ -1,4 +1,5 @@
 import socket
+import contextvars
 
 import yaml
 from omegaconf import OmegaConf
@@ -6,6 +7,11 @@ import psutil
 
 from .fs import XPath
 from .merge import merge
+from voir.instruments.gpu import get_gpu_info
+
+
+system_global = contextvars.ContextVar("system")
+config_global = contextvars.ContextVar("Config")
 
 
 def relative_to(pth, cwd):
@@ -69,10 +75,14 @@ def build_config(*config_files):
     all_configs = {}
     for layer in _config_layers(config_files):
         all_configs = merge(all_configs, layer)
+
     for name, bench_config in all_configs.items():
         all_configs[name] = resolve_inheritance(bench_config, all_configs)
+
     for name, bench_config in all_configs.items():
         all_configs[name] = finalize_config(name, bench_config)
+
+    config_global.set(all_configs)
     return all_configs
 
 
@@ -101,6 +111,26 @@ def get_remote_ip():
     return set(result)
 
 
+def _resolve_ip(ip):
+    # Resolve the IP
+    try:
+        hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(ip)
+        lazy_raise = None
+    except socket.gaierror as err:
+        # Get Addr Info (GAI) Error
+        #
+        # When we are connecting to a node through a ssh proxy jump
+        # the node IPs/Hostnames are not available until we reach
+        # the first node inside the cluster
+        #
+        hostname = ip
+        aliaslist = []
+        ipaddrlist = []
+        lazy_raise = err
+
+    return hostname, aliaslist, ipaddrlist, lazy_raise
+
+
 def resolve_addresses(nodes):
     # Note: it is possible for self to be none
     # if we are running milabench on a node that is not part of the system
@@ -111,26 +141,20 @@ def resolve_addresses(nodes):
     ip_list = get_remote_ip()
 
     for node in nodes:
-        # Resolve the IP
-        try:
-            hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(node["ip"])
-
-        except socket.gaierror as err:
-            # Get Addr Info (GAI) Error
-            #
-            # When we are connecting to a node through a ssh proxy jump
-            # the node IPs/Hostnames are not available until we reach
-            # the first node inside the cluster
-            #
-            hostname = node["ip"]
-            aliaslist = []
-            ipaddrlist = []
-
-            lazy_raise = err
+        hostname, aliaslist, ipaddrlist, lazy_raise = _resolve_ip(node["ip"])
 
         node["hostname"] = hostname
         node["aliaslist"] = aliaslist
         node["ipaddrlist"] = ipaddrlist
+
+        if hostname.endswith(".server.mila.quebec.server.mila.quebec"):
+            print()
+            print("Hostname was extra long for no reason")
+            print(hostname, socket.gethostname())
+            print()
+
+            # why is this happening
+            hostname = hostname[: -len(".server.mila.quebec")]
 
         is_local = (
             ("127.0.0.1" in ipaddrlist)
@@ -149,6 +173,15 @@ def resolve_addresses(nodes):
         raise RuntimeError("Could not resolve node ip") from lazy_raise
 
     return self
+
+
+def get_gpu_capacity():
+    capacity = float("+inf")
+
+    for k, v in get_gpu_info("cuda")["gpus"].items():
+        capacity = min(v["memory"]["total"], capacity)
+
+    return capacity
 
 
 def build_system_config(config_file, defaults=None):
@@ -172,6 +205,9 @@ def build_system_config(config_file, defaults=None):
 
     system = config.get("system", {})
 
+    if "gpu" not in system:
+        system["gpu"] = {"capacity": f"{int(get_gpu_capacity())} MiB"}
+
     if system.get("sshkey") is not None:
         system["sshkey"] = str(XPath(system["sshkey"]).resolve())
 
@@ -180,4 +216,5 @@ def build_system_config(config_file, defaults=None):
     self = resolve_addresses(system["nodes"])
     system["self"] = self
 
+    system_global.set(system)
     return config
