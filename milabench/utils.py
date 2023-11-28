@@ -7,14 +7,29 @@ import tempfile
 import importlib
 import pkgutil
 import traceback
+import functools
 from functools import wraps
 from typing import Any
+import warnings
 
 from ovld import ovld
 
 from milabench.fs import XPath
 import milabench.validation
 from milabench.validation.validation import Summary
+
+
+def deprecated(func):
+    @functools.wraps(func)
+    def new_func(*args, **kwargs):
+        warnings.warn(
+            "Call to deprecated function {}.".format(func.__name__),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return func(*args, **kwargs)
+
+    return new_func
 
 
 class Named:

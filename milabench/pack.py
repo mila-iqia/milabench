@@ -19,7 +19,7 @@ from .alt_async import run, send
 from .fs import XPath
 from .merge import merge
 from .structs import BenchLogEntry
-from .utils import assemble_options, make_constraints_file, relativize
+from .utils import assemble_options, make_constraints_file, relativize, deprecated
 
 
 class PackageCore:
@@ -193,6 +193,7 @@ class BasePackage:
         args = [str(x) for x in args]
         return self._nox_session.conda_install(*args, **kwargs, silent=False)
 
+    @deprecated
     async def execute(self, *args, cwd=None, env={}, external=False, **kwargs):
         """Run a command in the virtual environment.
 
@@ -203,21 +204,9 @@ class BasePackage:
             args: The arguments to the command
             cwd: The cwd to use (defaults to ``self.dirs.code``)
         """
-        args = [str(x) for x in args]
-        if cwd is None:
-            cwd = self.dirs.code
+        from .executors import execute
 
-        exec_env = self.full_env(env) if not external else {**os.environ, **env}
-
-        return await run(
-            args,
-            **kwargs,
-            info={"pack": self},
-            env=exec_env,
-            constructor=BenchLogEntry,
-            cwd=cwd,
-            process_accumulator=self.processes,
-        )
+        return execute(pack, *args, cwd=cwd, env=env, external=external, **kwargs)
 
     async def python(self, *args, **kwargs):
         """Run a Python script.

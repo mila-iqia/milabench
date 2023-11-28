@@ -1,12 +1,15 @@
 import os
 from datetime import datetime
 import cpuinfo
+import subprocess
 import traceback
+import json
 
 from voir.instruments.gpu import get_gpu_info
 
 from ._version import __commit__, __tag__, __date__
-from .vcs import retrieve_git_versions
+from .scripts.vcs import retrieve_git_versions
+import milabench.scripts.torchversion as torchversion
 
 
 def _get_gpu_info():
@@ -17,12 +20,31 @@ def _get_gpu_info():
         return {}
 
 
-def machine_metadata():
+def fetch_torch_version(pack):
+    cwd = pack.dirs.code
+    exec_env = pack.full_env(dict())
+
+    result = subprocess.run(
+        [str(x) for x in ["python", torchversion.__file__]],
+        env=exec_env,
+        cwd=cwd,
+        capture_output=True,
+    )
+
+    return json.loads(result.stdout)
+
+
+def machine_metadata(pack=None):
     """Retrieve machine metadata"""
 
     uname = os.uname()
     gpus = _get_gpu_info()
     cpu = cpuinfo.get_cpu_info()
+
+    if pack is None:
+        torchv = torchversion.get_pytorch_version()
+    else:
+        torchv = fetch_torch_version(pack)
 
     return {
         "cpu": {
@@ -43,4 +65,5 @@ def machine_metadata():
             __commit__,
             __date__,
         ),
+        "pytorch": torchv,
     }

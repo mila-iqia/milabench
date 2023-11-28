@@ -11,10 +11,11 @@ from typing import Dict, Generator, List, Tuple
 from voir.instruments.gpu import get_gpu_info
 
 from . import pack
-from .alt_async import destroy
+from .alt_async import destroy, run
 from .fs import XPath
 from .merge import merge
 from .metadata import machine_metadata
+from .structs import BenchLogEntry
 from .utils import select_nodes
 
 
@@ -33,6 +34,34 @@ async def force_terminate(pack, delay):
             destroy(proc)
 
 
+async def execute(pack, *args, cwd=None, env={}, external=False, **kwargs):
+    """Run a command in the virtual environment.
+
+    Unless specified otherwise, the command is run with
+    ``self.dirs.code`` as the cwd.
+
+    Arguments:
+        args: The arguments to the command
+        cwd: The cwd to use (defaults to ``self.dirs.code``)
+    """
+    args = [str(x) for x in args]
+    if cwd is None:
+        cwd = pack.dirs.code
+
+    exec_env = pack.full_env(env) if not external else {**os.environ, **env}
+
+    return await run(
+        args,
+        **kwargs,
+        info={"pack": pack},
+        env=exec_env,
+        constructor=BenchLogEntry,
+        cwd=cwd,
+        process_accumulator=pack.processes,
+    )
+
+
+# TODO Move this to command
 class Executor:
     """Base class for an execution plan
 
@@ -126,9 +155,9 @@ class Executor:
         timeout_tasks = []
         for pack, argv, _kwargs in self.commands():
             await pack.send(event="config", data=pack.config)
-            await pack.send(event="meta", data=machine_metadata())
+            await pack.send(event="meta", data=machine_metadata(pack))
 
-            fut = pack.execute(*argv, **{**_kwargs, **kwargs})
+            fut = execute(pack, *argv, **{**_kwargs, **kwargs})
             coro.append(fut)
 
             if timeout:
