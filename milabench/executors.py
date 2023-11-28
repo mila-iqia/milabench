@@ -126,7 +126,7 @@ class Executor:
         timeout_tasks = []
         for pack, argv, _kwargs in self.commands():
             await pack.send(event="config", data=pack.config)
-            await pack.send(event="meta", data=machine_metadata())
+            await pack.send(event="meta", data=machine_metadata(pack))
 
             fut = pack.execute(*argv, **{**_kwargs, **kwargs})
             coro.append(fut)

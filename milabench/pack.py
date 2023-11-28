@@ -193,6 +193,17 @@ class BasePackage:
         args = [str(x) for x in args]
         return self._nox_session.conda_install(*args, **kwargs, silent=False)
 
+    def execute_sync(self, *args, env=dict(), cwd=None):
+        args = [str(x) for x in args]
+        if cwd is None:
+            cwd = self.dirs.code
+
+        exec_env = self.full_env(env)
+
+        import subprocess
+
+        return subprocess.run(args, env=exec_env, cwd=cwd, capture_output=True)
+
     async def execute(self, *args, cwd=None, env={}, external=False, **kwargs):
         """Run a command in the virtual environment.
 
