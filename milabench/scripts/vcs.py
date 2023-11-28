@@ -4,7 +4,7 @@ import os
 import subprocess
 import warnings
 
-ROOT = os.path.join(os.path.dirname(__file__), "..")
+ROOT = os.path.join(os.path.dirname(__file__), "..", "..")
 
 
 def _exec(cmd, default):
