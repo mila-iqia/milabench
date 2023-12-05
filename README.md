@@ -6,16 +6,20 @@
 Benchmarking framework for Machine learning and Artificial Intelligence, geared toward
 evaluating current and future hardware in a research environment.
 
-* Simple
+* Simple / Hands-off
 * Wide selection of models on diverse applications
   * Multi GPUs
   * Multi node
+  * nlp / transformer / llm / rl / rnn
+  * vision / classification / convnet / resnet / transformer
+  * audio
 * Docker Container
 * Works on slurm
 * Automatic batch resize
 * Focussed on training
 * Ease of use
 * Pytorch focused
+* ROCm & NVIDIA
 
 
 ## Getting Started
