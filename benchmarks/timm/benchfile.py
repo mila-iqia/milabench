@@ -1,5 +1,5 @@
 
-from milabench.executors import TorchRunCommand
+from milabench.commands import TorchRunCommand
 from milabench.pack import Package
 
 

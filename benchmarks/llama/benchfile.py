@@ -1,5 +1,5 @@
 
-from milabench.executors import CmdCommand
+from milabench.commands import CmdCommand
 from milabench.pack import Package
 
 

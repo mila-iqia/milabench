@@ -1,4 +1,4 @@
-from milabench.executors import (
+from milabench.commands import (
     AccelerateLaunchCommand,
     CmdCommand,
     DockerRunCommand,
