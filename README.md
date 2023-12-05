@@ -20,7 +20,7 @@ evaluating current and future hardware in a research environment.
 * Ease of use
 * Pytorch focused
 * ROCm & NVIDIA
-
+* Independant 
 
 ## Getting Started
 
