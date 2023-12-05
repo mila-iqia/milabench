@@ -139,7 +139,7 @@ class Outputter:
     def section(self, title):
         self.text("")
         self.text(title)
-        self.text(f"-" * len(title))
+        self.text("-" * len(title))
         self.html(H.h2(title))
 
     def title(self, title):
@@ -276,7 +276,7 @@ def make_report(
             out.print(df)
 
     if errdata:
-        out.section(f"Errors")
+        out.section("Errors")
         out._text(f"{len(errdata)} errors, details in HTML report.")
         boxid = 0
         for filename, err in sorted(list(errdata.items())):

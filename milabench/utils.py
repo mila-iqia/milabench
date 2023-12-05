@@ -3,7 +3,6 @@ import os
 from contextlib import contextmanager, ExitStack
 import random
 import sys
-import tempfile
 import importlib
 import pkgutil
 import traceback

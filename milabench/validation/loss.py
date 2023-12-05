@@ -1,5 +1,5 @@
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import math
 
 
@@ -69,7 +69,7 @@ class Layer(ValidationLayer):
                 loss_count = warnings.loss_count
 
                 if loss_count == 0:
-                    summary.add(f"* No loss was found")
+                    summary.add("* No loss was found")
 
                 if nan_counts > 0:
                     summary.add(f"* Loss was Nan {nan_counts} times")

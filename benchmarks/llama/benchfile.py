@@ -1,6 +1,5 @@
-import uuid
 
-from milabench.executors import CmdExecutor
+from milabench.executors import CmdCommand
 from milabench.pack import Package
 
 
@@ -18,7 +17,7 @@ class LLAMA(Package):
         await super().install()
 
     def build_prepare_plan(self):
-        return CmdExecutor(
+        return CmdCommand(
             self,
             "python",
             str(self.dirs.code / "main.py"),
@@ -29,7 +28,7 @@ class LLAMA(Package):
         )
 
     def build_run_plan(self):
-        return CmdExecutor(
+        return CmdCommand(
             self,
             "python",
             str(self.dirs.code / "main.py"),

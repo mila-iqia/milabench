@@ -1,13 +1,13 @@
 import os
 import sys
 
-from .executors import (
-    CmdExecutor,
-    SSHExecutor,
-    ListExecutor,
-    SequenceExecutor,
-    VoidExecutor,
-    Executor,
+from .commands import (
+    CmdCommand,
+    SSHCommand,
+    ListCommand,
+    SequenceCommand,
+    VoidCommand,
+    Command,
 )
 
 
@@ -43,19 +43,19 @@ def rsync(node, folder, dest=None) -> list:
         "rsync",
         "-av",
         "-e",
-        f"ssh -oCheckHostIP=no -oStrictHostKeyChecking=no",
+        "ssh -oCheckHostIP=no -oStrictHostKeyChecking=no",
         folder,
         f"{user}@{host}:{dest}",
     ]
 
 
-def pip_install_milabench(pack, node, folder) -> SSHExecutor:
+def pip_install_milabench(pack, node, folder) -> SSHCommand:
     host = node["ip"]
     user = node["user"]
 
     cmd = ["pip", "install", "-e", folder]
-    plan = CmdExecutor(pack, *cmd)
-    return SSHExecutor(plan, host=host, user=user)
+    plan = CmdCommand(pack, *cmd)
+    return SSHCommand(plan, host=host, user=user)
 
 
 def milabench_remote_sync(pack, worker):
@@ -76,7 +76,7 @@ def should_run_for(worker, setup_for):
     return worker["main"]
 
 
-def milabench_remote_setup_plan(pack, setup_for="worker") -> SequenceExecutor:
+def milabench_remote_setup_plan(pack, setup_for="worker") -> SequenceCommand:
     """Copy milabench source files to remote
 
     Notes
@@ -93,7 +93,7 @@ def milabench_remote_setup_plan(pack, setup_for="worker") -> SequenceExecutor:
 
         if should_run_for(node, setup_for):
             node_pack = worker_pack(pack, node)
-            copy.append(CmdExecutor(node_pack, *rsync(node, INSTALL_FOLDER)))
+            copy.append(CmdCommand(node_pack, *rsync(node, INSTALL_FOLDER)))
 
         node_packs.append(node_pack)
 
@@ -102,9 +102,9 @@ def milabench_remote_setup_plan(pack, setup_for="worker") -> SequenceExecutor:
         if should_run_for(node, setup_for):
             install.append(pip_install_milabench(node_packs[i], node, INSTALL_FOLDER))
 
-    return SequenceExecutor(
-        ListExecutor(*copy),
-        ListExecutor(*install),
+    return SequenceCommand(
+        ListCommand(*copy),
+        ListCommand(*install),
     )
 
 
@@ -120,7 +120,7 @@ def worker_pack(pack, worker):
     )
 
 
-def milabench_remote_command(pack, *command, run_for="worker") -> ListExecutor:
+def milabench_remote_command(pack, *command, run_for="worker") -> ListCommand:
     nodes = pack.config["system"]["nodes"]
     key = pack.config["system"].get("sshkey")
     cmds = []
@@ -131,15 +131,15 @@ def milabench_remote_command(pack, *command, run_for="worker") -> ListExecutor:
             user = worker["user"]
 
             cmds.append(
-                SSHExecutor(
-                    CmdExecutor(worker_pack(pack, worker), f"milabench", *command),
+                SSHCommand(
+                    CmdCommand(worker_pack(pack, worker), "milabench", *command),
                     host=host,
                     user=user,
                     key=key,
                 )
             )
 
-    return ListExecutor(*cmds)
+    return ListCommand(*cmds)
 
 
 def is_multinode(pack):
@@ -176,39 +176,39 @@ def _sanity(pack, setup_for):
         assert is_remote(pack), "Only a remote node can setup the main node"
 
 
-def milabench_remote_install(pack, setup_for="worker") -> SequenceExecutor:
+def milabench_remote_install(pack, setup_for="worker") -> SequenceCommand:
     """Copy milabench code, install milabench, execute milabench install"""
     _sanity(pack, setup_for)
 
     if is_worker(pack):
-        return VoidExecutor(pack)
+        return VoidCommand(pack)
 
     argv = sys.argv[2:]
 
-    return SequenceExecutor(
+    return SequenceCommand(
         milabench_remote_setup_plan(pack, setup_for),
         milabench_remote_command(pack, "install", *argv, run_for=setup_for),
     )
 
 
-def milabench_remote_prepare(pack, run_for="worker") -> Executor:
+def milabench_remote_prepare(pack, run_for="worker") -> Command:
     """Execute milabench prepare"""
     _sanity(pack, run_for)
 
     if is_worker(pack):
-        return VoidExecutor(pack)
+        return VoidCommand(pack)
 
     argv = sys.argv[2:]
     return milabench_remote_command(pack, "prepare", *argv, run_for=run_for)
 
 
-def milabench_remote_run(pack) -> Executor:
+def milabench_remote_run(pack) -> Command:
     """Execute milabench run"""
 
     # already on the main node, the regular flow
     # will be executed
     if is_main_local(pack):
-        return VoidExecutor(pack)
+        return VoidCommand(pack)
 
     argv = sys.argv[2:]
     return milabench_remote_command(pack, "run", *argv)

@@ -1,6 +1,5 @@
-import uuid
 
-from milabench.executors import TorchRunExecutor
+from milabench.executors import TorchRunCommand
 from milabench.pack import Package
 
 
@@ -43,7 +42,7 @@ class TimmBenchmarkPack(Package):
     def build_run_plan(self):
         # self.config is not the right config for this
         plan = super().build_run_plan()
-        return TorchRunExecutor(plan, use_stdout=True)
+        return TorchRunCommand(plan, use_stdout=True)
 
 
 __pack__ = TimmBenchmarkPack

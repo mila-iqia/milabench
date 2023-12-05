@@ -2,7 +2,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import List
 
-from .validation import ValidationLayer, BenchLogEntry
+from .validation import ValidationLayer
 
 
 @dataclass
@@ -102,7 +102,7 @@ class Layer(ValidationLayer):
                         for line in tracebacks[1:]:
                             summary.add("  " + line)
                 else:
-                    summary.add(f"* No traceback info about the error")
+                    summary.add("* No traceback info about the error")
 
         self.set_error_code(failures)
         return failures

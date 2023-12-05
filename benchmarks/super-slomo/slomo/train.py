@@ -4,12 +4,10 @@
 import argparse
 import torch
 import torchvision
-import torchvision.transforms as transforms
 import torch.optim as optim
 import torch.nn as nn
 import torch.nn.functional as F
 import model
-import dataloader
 from giving import give
 import voir
 from synth import SyntheticData

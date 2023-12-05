@@ -4,90 +4,49 @@ import asyncio
 import os
 import json
 from copy import deepcopy
-import warnings
 from hashlib import md5
 from typing import Dict, Generator, List, Tuple
 
 from voir.instruments.gpu import get_gpu_info
 
-from . import pack
-from .alt_async import destroy, run
-from .fs import XPath
-from .merge import merge
-from .metadata import machine_metadata
-from .structs import BenchLogEntry
-from .utils import select_nodes
-
+from .. import pack
+from ..alt_async import destroy
+from ..fs import XPath
+from ..merge import merge
+from ..metadata import machine_metadata
+from ..utils import select_nodes
+from .executors import execute_command
 
 def clone_with(cfg, new_cfg):
     return merge(deepcopy(cfg), new_cfg)
 
 
-async def force_terminate(pack, delay):
-    await asyncio.sleep(delay)
-    for proc in pack.processes:
-        ret = proc.poll()
-        if ret is None:
-            await pack.message(
-                f"Terminating process because it ran for longer than {delay} seconds."
-            )
-            destroy(proc)
-
-
-async def execute(pack, *args, cwd=None, env={}, external=False, **kwargs):
-    """Run a command in the virtual environment.
-
-    Unless specified otherwise, the command is run with
-    ``self.dirs.code`` as the cwd.
-
-    Arguments:
-        args: The arguments to the command
-        cwd: The cwd to use (defaults to ``self.dirs.code``)
-    """
-    args = [str(x) for x in args]
-    if cwd is None:
-        cwd = pack.dirs.code
-
-    exec_env = pack.full_env(env) if not external else {**os.environ, **env}
-
-    return await run(
-        args,
-        **kwargs,
-        info={"pack": pack},
-        env=exec_env,
-        constructor=BenchLogEntry,
-        cwd=cwd,
-        process_accumulator=pack.processes,
-    )
-
-
-# TODO Move this to command
-class Executor:
+class Command:
     """Base class for an execution plan
 
-    Will recursively go through its embedded `Executor` to build a command
-    line's arguments list to be passed to the leaf `Executor`'s
-    `BasePackage.execute()`
+    Will recursively go through its embedded `Command` to build a command
+    line's arguments list to be passed to the leaf `Command`'s
+    `pack.BasePackage.execute()`
 
     Arguments:
-        pack_or_exec: `Executor` or `BasePackage`. If a `BasePackage`, the
+        pack_or_exec: `Command` or `pack.BasePackage`. If a `pack.BasePackage`, the
                       instance's `execute()` will be used to perform the
                       commands calls
         **kwargs: kwargs to be passed to the `pack_or_exec.execute()`, if a
-                  `BasePackage`
+                  `pack.BasePackage`
 
     Notes:
         All dynamic operations need to happen inside the argv/_argv methods.
         Those methods are guaranteed to be called with the final configuration.
     """
 
-    def __init__(self, pack_or_exec: Executor | pack.BasePackage, **kwargs) -> None:
+    def __init__(self, pack_or_exec: Command | pack.BasePackage, **kwargs) -> None:
         self._pack = None
         self.exec = None
         # used to know if the command is executed through SSH or locally
         self.remote = False
 
-        if isinstance(pack_or_exec, Executor):
+        if isinstance(pack_or_exec, Command):
             self.exec = pack_or_exec
             self._pack = None
         elif isinstance(pack_or_exec, pack.BasePackage):
@@ -127,10 +86,10 @@ class Executor:
         return copy
 
     def kwargs(self) -> Dict:
-        """Return the `Executor`'s kwargs to send to `BasePackage.execute()`
-        merged with the embeded `Executor`, if any
+        """Return the `Command`'s kwargs to send to `pack.BasePackage.execute()`
+        merged with the embeded `Command`, if any
 
-        The `Executor`'s kwargs will take priority over the embeded `Executor`'s
+        The `Command`'s kwargs will take priority over the embeded `Command`'s
         kwargs
         """
         kwargs = self._kwargs
@@ -139,47 +98,24 @@ class Executor:
         return kwargs
 
     def commands(self) -> Generator[Tuple[pack.BasePackage, List, Dict], None, None]:
-        """Return a tuple of the leaf's `BasePackage`, the `Executor`'s list of
-        command line's arguments and the `Executor`'s kwargs to send to
-        `BasePackage.execute()`
+        """Return a tuple of the leaf's `pack.BasePackage`, the `Command`'s list of
+        command line's arguments and the `Command`'s kwargs to send to
+        `pack.BasePackage.execute()`
         """
         yield self.pack, [], self.kwargs()
 
     async def execute(self, phase="run", timeout=False, timeout_delay=600, **kwargs):
         """Execute all the commands and return the aggregated results"""
-        coro = []
-
-        for pack in self.packs():
-            pack.phase = phase
-
-        timeout_tasks = []
-        for pack, argv, _kwargs in self.commands():
-            await pack.send(event="config", data=pack.config)
-            await pack.send(event="meta", data=machine_metadata(pack))
-
-            fut = execute(pack, *argv, **{**_kwargs, **kwargs})
-            coro.append(fut)
-
-            if timeout:
-                delay = pack.config.get("max_duration", timeout_delay)
-                timeout_task = asyncio.create_task(force_terminate(pack, delay))
-                timeout_tasks.append(timeout_task)
-
-        results = await asyncio.gather(*coro)
-
-        if timeout:
-            for task in timeout_tasks:
-                task.cancel()
-        return results
+        return await execute_command(self, phase, timeout, timeout_delay, **kwargs)
 
 
-class SingleCmdExecutor(Executor):
+class SingleCmdCommand(Command):
     def argv(self, **kwargs) -> List:
-        """Return the list of command line's arguments for this `Executor`
-        followed by its embedded `Executor`'s list of command line's arguments
+        """Return the list of command line's arguments for this `Command`
+        followed by its embedded `Command`'s list of command line's arguments
 
         Arguments:
-            **kwargs: some `Executor` might need an argument to dynamically
+            **kwargs: some `Command` might need an argument to dynamically
                       generate the list of command line's arguments
         """
         if self.exec:
@@ -194,15 +130,15 @@ class SingleCmdExecutor(Executor):
         return []
 
 
-class ListExecutor(Executor):
-    """Execute a list of `Executor`s in parallel
+class ListCommand(Command):
+    """Execute a list of `Command`s in parallel
 
     Arguments:
-        executors: `Executor`s to be executed
+        executors: `Command`s to be executed
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
 
-    def __init__(self, *executors: Tuple[Executor], **kwargs) -> None:
+    def __init__(self, *executors: Tuple[Command], **kwargs) -> None:
         super().__init__(None, **kwargs)
         self.executors = executors
 
@@ -219,21 +155,21 @@ class ListExecutor(Executor):
             yield from exec.packs()
 
 
-class CmdExecutor(SingleCmdExecutor):
+class CmdCommand(SingleCmdCommand):
     """Execute a command
 
     Arguments:
-        pack: `BasePackage`'s instance from which `execute()` will be used to
+        pack: `pack.BasePackage`'s instance from which `execute()` will be used to
               perform the command
         *cmd_argv: command line arguments list to execute
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
 
     def __init__(self, pack: pack.BasePackage, *cmd_argv, **kwargs) -> None:
-        if isinstance(pack, Executor):
+        if isinstance(pack, Command):
             raise TypeError(
                 f"{self.__class__.__name__} does not accept nested"
-                f" {Executor.__name__}"
+                f" {Command.__name__}"
             )
         super().__init__(pack, **kwargs)
         self.cmd_argv = cmd_argv
@@ -242,7 +178,7 @@ class CmdExecutor(SingleCmdExecutor):
         return [*self.cmd_argv]
 
 
-class PackExecutor(CmdExecutor):
+class PackCommand(CmdCommand):
     """Execute a `Package`'s script. If not specified, the `Package`'s
     main_script will be used
 
@@ -293,23 +229,23 @@ class PackExecutor(CmdExecutor):
         return script + self.command_arguments()
 
 
-class VoidExecutor(CmdExecutor):
+class VoidCommand(CmdCommand):
     """Execute nothing"""
 
     def __init__(self, pack: pack.BasePackage, *argv, **kwargs) -> None:
         super().__init__(pack, "true", *argv, **kwargs)
 
 
-class WrapperExecutor(SingleCmdExecutor):
-    """Wrap an `Executor` with any command
+class WrapperCommand(SingleCmdCommand):
+    """Wrap an `Command` with any command
 
     Arguments:
-        executor: `Executor` to be executed
+        executor: `Command` to be executed
         *wrapper_argv: command line arguments list
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
 
-    def __init__(self, executor: SingleCmdExecutor, *wrapper_argv, **kwargs) -> None:
+    def __init__(self, executor: SingleCmdCommand, *wrapper_argv, **kwargs) -> None:
         super().__init__(executor, **kwargs)
         self.wrapper_argv = wrapper_argv
 
@@ -318,18 +254,18 @@ class WrapperExecutor(SingleCmdExecutor):
         return [*self.wrapper_argv]
 
 
-class DockerRunExecutor(WrapperExecutor):
-    """Execute an `Executor` through Docker
+class DockerRunCommand(WrapperCommand):
+    """Execute an `Command` through Docker
 
     Arguments:
-        executor: `Executor` to be executed through Docker
+        executor: `Command` to be executed through Docker
         image: the Docker image to use
         *docker_argv: Docker command line arguments list
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
 
     def __init__(
-        self, executor: SingleCmdExecutor, image: str, *docker_argv, **kwargs
+        self, executor: SingleCmdCommand, image: str, *docker_argv, **kwargs
     ) -> None:
         super().__init__(
             executor,
@@ -359,11 +295,11 @@ class DockerRunExecutor(WrapperExecutor):
         return path
 
     def argv(self, **kwargs) -> List:
-        """Return the list of command line's arguments for this `Executor`
-        followed by its embedded `Executor`'s list of command line's arguments
+        """Return the list of command line's arguments for this `Command`
+        followed by its embedded `Command`'s list of command line's arguments
 
         Arguments:
-            **kwargs: some `Executor` might need an argument to dynamically
+            **kwargs: some `Command` might need an argument to dynamically
                       generate the list of command line's arguments
         """
         script_args = self.exec.argv(**kwargs)
@@ -403,11 +339,11 @@ class DockerRunExecutor(WrapperExecutor):
         return argv
 
 
-class SSHExecutor(WrapperExecutor):
-    """Execute an `Executor` through ssh
+class SSHCommand(WrapperCommand):
+    """Execute an `Command` through ssh
 
     Arguments:
-        executor: `Executor` to be executed through ssh
+        executor: `Command` to be executed through ssh
         host: host's address
         *ssh_argv: ssh command line arguments list
         user: username to use to connect to the host. By default, `pack.config`
@@ -422,7 +358,7 @@ class SSHExecutor(WrapperExecutor):
 
     def __init__(
         self,
-        executor: SingleCmdExecutor,
+        executor: SingleCmdCommand,
         host: str,
         *ssh_argv,
         user: str = None,
@@ -485,7 +421,7 @@ class SSHExecutor(WrapperExecutor):
         return argv
 
 
-class SCPExecutor(SSHExecutor, CmdExecutor):
+class SCPCommand(SSHCommand, CmdCommand):
     _BIN = "scp"
 
     def __init__(
@@ -511,8 +447,8 @@ class SCPExecutor(SSHExecutor, CmdExecutor):
         return argv
 
 
-class TorchRunExecutor(WrapperExecutor):
-    def __init__(self, executor: SingleCmdExecutor, *torchrun_argv, **kwargs) -> None:
+class TorchRunCommand(WrapperCommand):
+    def __init__(self, executor: SingleCmdCommand, *torchrun_argv, **kwargs) -> None:
         super().__init__(executor, "torchrun", *torchrun_argv, **kwargs)
 
     def _argv(self, **kwargs):
@@ -529,16 +465,16 @@ class TorchRunExecutor(WrapperExecutor):
         return []
 
 
-class VoirExecutor(WrapperExecutor):
-    """Execute an `Executor` through voir
+class VoirCommand(WrapperCommand):
+    """Execute an `Command` through voir
 
     Arguments:
-        executor: `Executor` to be executed
+        executor: `Command` to be executed
         *voir_argv: voir command line arguments list
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
 
-    def __init__(self, executor: SingleCmdExecutor, *voir_argv, **kwargs) -> None:
+    def __init__(self, executor: SingleCmdCommand, *voir_argv, **kwargs) -> None:
         super().__init__(executor, "voir", **{"setsid": True, **kwargs})
         self.voir_argv = voir_argv
 
@@ -564,16 +500,16 @@ class VoirExecutor(WrapperExecutor):
         ]
 
 
-class NJobs(ListExecutor):
-    """Execute n instances of the same `Executor` in parallel
+class NJobs(ListCommand):
+    """Execute n instances of the same `Command` in parallel
 
     Arguments:
-        executor: `Executor` to be executed
+        executor: `Command` to be executed
         n: number of times `executor` should be executed
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
 
-    def __init__(self, executor: Executor, n: int, gpus: list = None, **kwargs) -> None:
+    def __init__(self, executor: Command, n: int, gpus: list = None, **kwargs) -> None:
         self.n = n
         if gpus is None:
             gpus = []
@@ -594,10 +530,10 @@ class NJobs(ListExecutor):
         super().__init__(*executors, **kwargs)
 
 
-class SequenceExecutor(ListExecutor):
-    """Execute a list of `Executor`s in sequence
+class SequenceCommand(ListCommand):
+    """Execute a list of `Command`s in sequence
     Arguments:
-        executors: `Executor`s to be executed
+        executors: `Command`s to be executed
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
 
@@ -626,15 +562,15 @@ class SequenceExecutor(ListExecutor):
         return error_count
 
 
-class PerGPU(ListExecutor):
-    """Execute one instance of an `Executor` on each gpu
+class PerGPU(ListCommand):
+    """Execute one instance of an `Command` on each gpu
 
     Arguments:
-        executor: `Executor` to be executed
+        executor: `Command` to be executed
         **kwargs: kwargs to be passed to the `pack.execute()`
     """
 
-    def __init__(self, executor: Executor, gpus: list = None, **kwargs) -> None:
+    def __init__(self, executor: Command, gpus: list = None, **kwargs) -> None:
         if gpus is None:
             gpus = [{"device": 0, "selection_variable": "CPU_VISIBLE_DEVICE"}]
 
@@ -663,7 +599,7 @@ class PerGPU(ListExecutor):
 #   I think if we use python script.py it will load
 #   the right env and we do not need the activator
 #
-class ActivatorExecutor(SingleCmdExecutor):
+class ActivatorCommand(SingleCmdCommand):
     def __init__(self, pack: pack.BasePackage, **kwargs):
         super().__init__(pack, **kwargs)
 
@@ -672,11 +608,11 @@ class ActivatorExecutor(SingleCmdExecutor):
 
 
 # Accelerate
-class AccelerateLaunchExecutor(SingleCmdExecutor):
-    """Execute a `BasePackage` with Accelerate
+class AccelerateLaunchCommand(SingleCmdCommand):
+    """Execute a `pack.BasePackage` with Accelerate
 
     Arguments:
-        pack: `BasePackage`'s instance from which `execute()` will be used to
+        pack: `pack.BasePackage`'s instance from which `execute()` will be used to
               perform the command
         *accelerate_argv: Accelerate's command line arguments list
         **kwargs: kwargs to be passed to the `pack.execute()`
@@ -715,9 +651,9 @@ class AccelerateLaunchExecutor(SingleCmdExecutor):
 
         return [
             # -- Run the command in the right venv
-            # This could be inside the SSH Executor
+            # This could be inside the SSH Command
             # but it would need to be repeated for Docker
-            # could be its own Executor like VenvExecutor that execute code
+            # could be its own Command like VenvCommand that execute code
             # inside a specifc venv
             f"{self.pack.dirs.code / 'activator'}",
             f"{self.pack.dirs.venv}",

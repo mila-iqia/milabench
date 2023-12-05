@@ -66,20 +66,18 @@ import time
 from dataclasses import dataclass
 from datetime import timedelta
 from itertools import chain
-from pathlib import Path
 from typing import Optional
 
 import datasets
 import rich.logging
 import torch
 import transformers
-from accelerate import Accelerator, DistributedType
+from accelerate import Accelerator
 from accelerate.logging import get_logger
 from accelerate.utils import DummyOptim, DummyScheduler
 from accelerate.utils.dataclasses import InitProcessGroupKwargs
 from datasets import load_dataset
 from torch.utils.data import DataLoader
-from tqdm.auto import tqdm
 from transformers import (
     AutoConfig,
     AutoModelForCausalLM,
@@ -88,7 +86,6 @@ from transformers import (
     default_data_collator,
     get_scheduler,
 )
-from transformers.utils import get_full_repo_name
 from voir.smuggle import SmuggleWriter
 from voir.instruments.gpu import get_gpu_info
 from voir.instruments.utils import Monitor

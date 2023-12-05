@@ -5,7 +5,7 @@ import traceback
 
 from voir.instruments.gpu import get_gpu_info
 
-from .executors import NJobs, PerGPU
+from .commands import NJobs, PerGPU
 from .fs import XPath
 from .utils import make_constraints_file
 from .pack import Package
