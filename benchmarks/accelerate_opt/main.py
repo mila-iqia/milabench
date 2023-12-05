@@ -371,7 +371,6 @@ def main():
 
     completed_steps = 0
     starting_epoch = 0
-    best_metric = None
     last_log_time = time.time()
 
     for epoch in range(starting_epoch, num_train_epochs):

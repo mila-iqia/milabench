@@ -10,10 +10,8 @@ from typing import Dict, Generator, List, Tuple
 from voir.instruments.gpu import get_gpu_info
 
 from .. import pack
-from ..alt_async import destroy
 from ..fs import XPath
 from ..merge import merge
-from ..metadata import machine_metadata
 from ..utils import select_nodes
 from .executors import execute_command
 

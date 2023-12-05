@@ -170,15 +170,15 @@ def test_njobs_gpus_executor():
     """Two GPUs so torch run IS used"""
     devices = mock_gpu_list()
 
-    try:
-        import torch
-    except ImportError:
+    from importlib.util import find_spec
+    
+    if find_spec("torch") is None:
         pytest.skip("Pytorch is not installed")
 
     executor = PackCommand(benchio(), "--start", "2", "--end", "20")
     voir = VoirCommand(executor)
-    torch = TorchRunCommand(voir, use_stdout=True)
-    njobs = NJobs(torch, 1, devices)
+    torchcmd = TorchRunCommand(voir, use_stdout=True)
+    njobs = NJobs(torchcmd, 1, devices)
 
     acc = 0
     for r in proceed(njobs.execute()):

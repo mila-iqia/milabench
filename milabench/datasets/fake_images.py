@@ -26,7 +26,6 @@ def write(args):
 
 def generate(image_size, n, outdir):
     p_count = min(multiprocessing.cpu_count(), 8)
-    count = n // p_count
     pool = multiprocessing.Pool(p_count)
     for _ in tqdm(
         pool.imap_unordered(write, ((image_size, i, n, outdir) for i in range(n))),

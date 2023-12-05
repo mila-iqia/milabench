@@ -3,7 +3,7 @@ import asyncio
 import os
 
 
-from ..alt_async import run
+from ..alt_async import run, destroy
 from ..structs import BenchLogEntry
 from ..metadata import machine_metadata
 

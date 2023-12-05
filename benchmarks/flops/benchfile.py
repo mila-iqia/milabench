@@ -6,13 +6,12 @@ class FlopsBenchmarch(Package):
     prepare_script = "prepare.py"
     main_script = "main.py"
 
-    def build_run_plan(self) -> "execs.Command":
-        import milabench.executors as execs
+    def build_run_plan(self) -> "Command":
+        import milabench.commands as cmd
 
-        main = self.dirs.code / self.main_script
-        pack = execs.PackCommand(self, *self.argv, lazy=True)
-        # pack = execs.VoirCommand(pack, cwd=main.parent)
-        pack = execs.ActivatorCommand(pack, use_stdout=True)
+        pack = cmd.PackCommand(self, *self.argv, lazy=True)
+        # pack = cmd.VoirCommand(pack, cwd=main.parent)
+        pack = cmd.ActivatorCommand(pack, use_stdout=True)
         return pack
 
 
