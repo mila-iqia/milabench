@@ -4,10 +4,9 @@
 
 import types
 import torch
-import math, os, gc
+import os, gc
 from torch.nn import functional as F
 import torch.nn as nn
-from typing import List, Dict
 
 MyModule = nn.Module
 

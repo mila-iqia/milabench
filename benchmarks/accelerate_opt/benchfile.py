@@ -1,9 +1,9 @@
-from milabench.executors import (
-    AccelerateLaunchExecutor,
-    CmdExecutor,
-    DockerRunExecutor,
-    ListExecutor,
-    SSHExecutor,
+from milabench.commands import (
+    AccelerateLaunchCommand,
+    CmdCommand,
+    DockerRunCommand,
+    ListCommand,
+    SSHCommand,
 )
 from milabench.pack import Package
 from milabench.utils import select_nodes
@@ -18,7 +18,7 @@ class AccelerateBenchmark(Package):
         return env
 
     def build_prepare_plan(self):
-        return CmdExecutor(
+        return CmdCommand(
             self,
             "accelerate",
             "launch",
@@ -59,19 +59,19 @@ class AccelerateBenchmark(Package):
                 tags.append("nolog")
 
             pack = self.copy({"tag": tags})
-            worker = SSHExecutor(
+            worker = SSHCommand(
                 host=host,
                 user=user,
                 key=key,
-                executor=DockerRunExecutor(
-                    AccelerateLaunchExecutor(pack, rank=rank),
+                executor=DockerRunCommand(
+                    AccelerateLaunchCommand(pack, rank=rank),
                     self.config["system"].get("docker_image"),
                 ),
                 **options
             )
             plans.append(worker)
 
-        return ListExecutor(*plans)
+        return ListCommand(*plans)
 
 
 __pack__ = AccelerateBenchmark

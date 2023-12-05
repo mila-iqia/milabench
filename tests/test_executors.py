@@ -3,19 +3,19 @@ import os
 
 import pytest
 
-from milabench.executors import (
+from milabench.commands import (
     PerGPU,
-    PackExecutor,
-    SingleCmdExecutor,
-    VoirExecutor,
+    PackCommand,
+    SingleCmdCommand,
+    VoirCommand,
     NJobs,
-    TorchRunExecutor,
+    TorchRunCommand,
 )
 from milabench.cli import _get_multipack
 from milabench.alt_async import proceed
 
 
-class ExecMock1(SingleCmdExecutor):
+class ExecMock1(SingleCmdCommand):
     def __init__(self, pack_or_exec, *exec_argv, **kwargs) -> None:
         super().__init__(pack_or_exec, **kwargs)
         self.exec_argv = exec_argv
@@ -119,7 +119,7 @@ def test_executor_execute():
 
 def test_pack_executor():
     # voir is not setup so we are not receiving anything
-    executor = PackExecutor(benchio(), "--start", "2", "--end", "20")
+    executor = PackCommand(benchio(), "--start", "2", "--end", "20")
 
     acc = 0
     for r in proceed(executor.execute()):
@@ -130,8 +130,8 @@ def test_pack_executor():
 
 
 def test_voir_executor():
-    executor = PackExecutor(benchio(), "--start", "2", "--end", "20")
-    voir = VoirExecutor(executor)
+    executor = PackCommand(benchio(), "--start", "2", "--end", "20")
+    voir = VoirCommand(executor)
 
     acc = 0
     for r in proceed(voir.execute()):
@@ -142,8 +142,8 @@ def test_voir_executor():
 
 
 def test_timeout():
-    executor = PackExecutor(benchio(), "--start", "2", "--end", "20", "--sleep", 20)
-    voir = VoirExecutor(executor)
+    executor = PackCommand(benchio(), "--start", "2", "--end", "20", "--sleep", 20)
+    voir = VoirCommand(executor)
 
     acc = 0
     for r in proceed(voir.execute(timeout=True, timeout_delay=1)):
@@ -154,8 +154,8 @@ def test_timeout():
 
 
 def test_njobs_executor():
-    executor = PackExecutor(benchio(), "--start", "2", "--end", "20")
-    voir = VoirExecutor(executor)
+    executor = PackCommand(benchio(), "--start", "2", "--end", "20")
+    voir = VoirCommand(executor)
     njobs = NJobs(voir, 5)
 
     acc = 0
@@ -170,15 +170,15 @@ def test_njobs_gpus_executor():
     """Two GPUs so torch run IS used"""
     devices = mock_gpu_list()
 
-    try:
-        import torch
-    except ImportError:
+    from importlib.util import find_spec
+    
+    if find_spec("torch") is None:
         pytest.skip("Pytorch is not installed")
 
-    executor = PackExecutor(benchio(), "--start", "2", "--end", "20")
-    voir = VoirExecutor(executor)
-    torch = TorchRunExecutor(voir, use_stdout=True)
-    njobs = NJobs(torch, 1, devices)
+    executor = PackCommand(benchio(), "--start", "2", "--end", "20")
+    voir = VoirCommand(executor)
+    torchcmd = TorchRunCommand(voir, use_stdout=True)
+    njobs = NJobs(torchcmd, 1, devices)
 
     acc = 0
     for r in proceed(njobs.execute()):
@@ -194,9 +194,9 @@ def test_njobs_gpu_executor():
     """One GPU, so torch run is not used"""
     devices = [mock_gpu_list()[0]]
 
-    executor = PackExecutor(benchio(), "--start", "2", "--end", "20")
-    voir = VoirExecutor(executor)
-    torch = TorchRunExecutor(voir, use_stdout=True)
+    executor = PackCommand(benchio(), "--start", "2", "--end", "20")
+    voir = VoirCommand(executor)
+    torch = TorchRunCommand(voir, use_stdout=True)
     njobs = NJobs(torch, 1, devices)
 
     acc = 0
@@ -212,7 +212,7 @@ def test_njobs_gpu_executor():
 
 
 def test_njobs_novoir_executor():
-    executor = PackExecutor(benchio(), "--start", "2", "--end", "20")
+    executor = PackCommand(benchio(), "--start", "2", "--end", "20")
     njobs = NJobs(executor, 5)
 
     acc = 0
@@ -233,8 +233,8 @@ def mock_gpu_list():
 def test_per_gpu_executor():
     devices = mock_gpu_list()
 
-    executor = PackExecutor(benchio(), "--start", "2", "--end", "20")
-    voir = VoirExecutor(executor)
+    executor = PackCommand(benchio(), "--start", "2", "--end", "20")
+    voir = VoirCommand(executor)
     plan = PerGPU(voir, devices)
 
     acc = 0
@@ -246,9 +246,9 @@ def test_per_gpu_executor():
 
 
 def test_void_executor():
-    from milabench.executors import VoidExecutor
+    from milabench.commands import VoidCommand
 
-    plan = VoirExecutor(VoidExecutor(benchio()))
+    plan = VoirCommand(VoidCommand(benchio()))
 
     for _ in proceed(plan.execute()):
         pass

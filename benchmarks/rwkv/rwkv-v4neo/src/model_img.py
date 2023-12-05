@@ -3,15 +3,13 @@
 ########################################################################################################
 
 import numpy as np
-import os, math, gc
+import os, gc
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision as vision
 import pytorch_lightning as pl
-from pytorch_lightning.utilities import rank_zero_info, rank_zero_only
 from pytorch_lightning.strategies import DeepSpeedStrategy
-import deepspeed
 from deepspeed.ops.adam import DeepSpeedCPUAdam, FusedAdam
 
 # from pytorch_msssim import MS_SSIM
@@ -425,7 +423,7 @@ class RWKV_IMG(pl.LightningModule):
 
     def generate_init_weight(self):
         print(
-            f"""
+            """
 ############################################################################
 #
 # Init model weight (slow for large models)...

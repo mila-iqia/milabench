@@ -2,7 +2,7 @@
 # The RWKV Language Model - https://github.com/BlinkDL/RWKV-LM
 ########################################################################################################
 
-import torch, types, os
+import torch, types
 import numpy as np
 from PIL import Image
 import torch.nn as nn
@@ -11,7 +11,7 @@ import torchvision as vision
 import torchvision.transforms as transforms
 
 np.set_printoptions(precision=4, suppress=True, linewidth=200)
-print(f"loading...")
+print("loading...")
 
 ########################################################################################################
 
@@ -138,7 +138,7 @@ class R_DECODER(nn.Module):
 
 ########################################################################################################
 
-print(f"building model...")
+print("building model...")
 args = types.SimpleNamespace()
 args.my_img_bit = 13
 encoder = R_ENCODER(args).eval().cuda()
@@ -151,7 +151,7 @@ decoder.load_state_dict(torch.load(f"{model_prefix}-D.pth"))
 
 ########################################################################################################
 
-print(f"test image...")
+print("test image...")
 img_transform = transforms.Compose(
     [
         transforms.PILToTensor(),

@@ -45,13 +45,7 @@ def test_summary(file_regression):
 
 
 def test_empty_summary():
-    points = [
-        "1. Errors stuff happened",
-        "2. Errors stuff happened",
-        "3. Errors stuff happened",
-    ]
     report = Summary()
-
     with report.section("Errors"):
         with report.section("Bench"):
             pass

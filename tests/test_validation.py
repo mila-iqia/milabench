@@ -126,7 +126,7 @@ def test_memory_tracking(replayfolder, config):
             config("scaling"),
         )
         sizer_global.set(sizer)
-        system = system_global.set({"gpu": {"capacity": "41920 MiB"}})
+        system_global.set({"gpu": {"capacity": "41920 MiB"}})
 
     ctx.run(update_ctx)
     layer = MemoryUsageExtractor()

@@ -188,7 +188,7 @@ def load_all_stat(srv, name):
 ########################################################################################################
 
 # Run inference
-print(f"\nRun prompt...")
+print("\nRun prompt...")
 
 out = run_rnn(tokenizer.tokenizer.encode(init_prompt))
 gc.collect()

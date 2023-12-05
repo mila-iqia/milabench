@@ -3,7 +3,7 @@
 ########################################################################################################
 
 import numpy as np
-import math, os, sys, types, time, gc
+import os, sys, types, time, gc
 import torch
 from src.utils import TOKENIZER
 
@@ -137,7 +137,7 @@ from src.model_run import RWKV_RNN
 
 model = RWKV_RNN(args)
 
-print(f"\nOptimizing speed...")
+print("\nOptimizing speed...")
 out, _ = model.forward([187], None)
 # print(out)
 gc.collect()

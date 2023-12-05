@@ -3,10 +3,8 @@ import os
 import re
 import io
 import runpy
-import shutil
 import subprocess
 import sys
-import tempfile
 import traceback
 from datetime import datetime
 import getpass

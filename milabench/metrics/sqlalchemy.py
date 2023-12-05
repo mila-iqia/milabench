@@ -6,7 +6,6 @@ import numbers
 import time
 
 from ..structs import BenchLogEntry
-from ..metadata import machine_metadata
 
 from bson.json_util import dumps as to_json
 from bson.json_util import loads as from_json
@@ -140,7 +139,7 @@ def create_database(uri):
 
     try:
         Base.metadata.create_all(engine)
-    except DBAPIError as err:
+    except DBAPIError:
         print("could not create database schema because of {err}")
 
 

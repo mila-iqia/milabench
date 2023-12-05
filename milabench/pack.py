@@ -14,7 +14,7 @@ from typing import Sequence
 
 from nox.sessions import Session, SessionRunner
 
-from . import executors as execs
+from . import commands as cmd
 from .alt_async import run, send
 from .fs import XPath
 from .merge import merge
@@ -206,7 +206,7 @@ class BasePackage:
         """
         from .executors import execute
 
-        return execute(pack, *args, cwd=cwd, env=env, external=external, **kwargs)
+        return execute(self, *args, cwd=cwd, env=env, external=external, **kwargs)
 
     async def python(self, *args, **kwargs):
         """Run a Python script.
@@ -241,15 +241,17 @@ class BasePackage:
         Returns:
             A subprocess.Popen instance representing the running process.
         """
+        from . import commands as cmd
+        
         if isinstance(script, list):
-            executor = execs.CmdExecutor(self, *script, *args)
+            executor = cmd.CmdCommand(self, *script, *args)
         else:
             if not XPath(script).is_absolute():
                 script = str(self.dirs.code / script)
-            executor = execs.PackExecutor(self, script, *args)
+            executor = cmd.PackCommand(self, script, *args)
 
-        voir = execs.VoirExecutor(executor, cwd=cwd, **kwargs)
-        wrapper = execs.WrapperExecutor(voir, *wrapper)
+        voir = cmd.VoirCommand(executor, cwd=cwd, **kwargs)
+        wrapper = cmd.WrapperCommand(voir, *wrapper)
         return await wrapper.execute()
 
 
@@ -398,7 +400,9 @@ class Package(BasePackage):
         self, requirements_file: XPath, input_files: XPath, argv=[]
     ):
         input_files = [relativize(inp) for inp in input_files]
-        return await execs.CmdExecutor(
+        from . import commands as cmd
+        
+        return await cmd.CmdCommand(
             self,
             "python3",
             "-m",
@@ -429,14 +433,14 @@ class Package(BasePackage):
         assert self.phase == "prepare"
         return await self.build_prepare_plan().execute()
 
-    def build_prepare_plan(self) -> "execs.Executor":
+    def build_prepare_plan(self) -> "cmd.Command":
         if self.prepare_script is not None:
             prep = self.dirs.code / self.prepare_script
             if prep.exists():
-                return execs.PackExecutor(
+                return cmd.PackCommand(
                     self, prep, *self.argv, env=self.make_env(), cwd=prep.parent
                 )
-        return execs.VoidExecutor(self)
+        return cmd.VoidCommand(self)
 
     async def run(self):
         """Start the benchmark and return the running process.
@@ -461,7 +465,7 @@ class Package(BasePackage):
         assert self.phase == "run"
         return await self.build_run_plan().execute()
 
-    def build_run_plan(self) -> "execs.Executor":
+    def build_run_plan(self) -> "cmd.Command":
         main = self.dirs.code / self.main_script
-        pack = execs.PackExecutor(self, *self.argv, lazy=True)
-        return execs.VoirExecutor(pack, cwd=main.parent)
+        pack = cmd.PackCommand(self, *self.argv, lazy=True)
+        return cmd.VoirCommand(pack, cwd=main.parent)

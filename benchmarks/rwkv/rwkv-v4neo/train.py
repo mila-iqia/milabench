@@ -7,7 +7,7 @@ if __name__ == "__main__":
     import os
     from argparse import ArgumentParser
     from pytorch_lightning import Trainer
-    from pytorch_lightning.utilities import rank_zero_info, rank_zero_only
+    from pytorch_lightning.utilities import rank_zero_info
 
     rank_zero_info("########## work in progress ##########")
 
@@ -152,7 +152,7 @@ if __name__ == "__main__":
 
     ########################################################################################################
 
-    import os, warnings, math, datetime, sys, time, importlib
+    import os, warnings, datetime, importlib
     import numpy as np
     import torch
     from torch.utils.data import DataLoader

@@ -10,7 +10,6 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 import pytorch_lightning as pl
-from pytorch_lightning.utilities import rank_zero_info, rank_zero_only
 from pytorch_lightning.strategies import DeepSpeedStrategy
 
 if importlib.util.find_spec("deepspeed"):
@@ -713,7 +712,7 @@ class RWKV(pl.LightningModule):
 
     def generate_init_weight(self):
         print(
-            f"""
+            """
 ############################################################################
 #
 # Init model weight (slow for large models)...
