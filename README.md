@@ -43,6 +43,8 @@ It will include all of the necessary data
     =================
     Benchmark results
     =================
+    perf: items/sec, (sum batchsize) / (elapsed time), higher is better.
+    
                              fail   n       perf   sem%   std% peak_memory          score weight
     bert-fp16                   0   1      49.82   0.0%   0.2%       23952      49.815508   0.00
     bert-fp32                   0   1      20.78   0.0%   0.2%       30922      20.783989   0.00
