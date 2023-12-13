@@ -785,6 +785,12 @@ class Main:
 
         launch_milabench(args, sbatch_args=None, dry=dry, sync=sync)
 
+    def sqlsetup():
+        from .metrics.sqlalchemy import generate_database_sql_setup
+        
+        generate_database_sql_setup()
+
+
     def write_report_to_pr():
         remote: str & Option
 

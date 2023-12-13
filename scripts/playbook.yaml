@@ -1,0 +1,66 @@
+#
+# ansible-galaxy role install Delaunay.postgresql
+#
+
+- name: Setup Postgresql for milabench
+  hosts: database
+  become: yes
+
+  vars_files:
+   - config.yaml
+  
+  roles:
+   - Delaunay.postgresql
+
+  tasks:
+    - name: Create Database
+      become_user: postgres
+      become: yes
+      community.postgresql.postgresql_db:
+        name: milabench
+
+    - name: Create Tables
+      become_user: postgres
+      become: yes
+      community.postgresql.postgresql_query:
+        db: milabench
+        autocommit: true
+        query: "{{ lookup('ansible.builtin.file', '{{ playbook_dir }}/vars/milabench_tables.sql') }}"
+  
+    - name: Create Write User
+      become_user: postgres
+      become: yes
+      community.postgresql.postgresql_user:
+        db: milabench
+        name: milabench_write
+        password: 1234
+        
+    - name: Create Read User
+      become_user: postgres
+      become: yes
+      community.postgresql.postgresql_user:
+        db: milabench
+        name: milabench_read
+        password: 1234
+
+    - name: Set Read User Priv
+      become_user: postgres
+      become: yes
+      community.postgresql.postgresql_privs:
+        database: milabench
+        role: milabench_write,milabench_read
+        privs: SELECT
+        grant_option: true
+        state: present
+        objs: metrics,packs,execs
+    
+    - name: Set Write User Priv
+      become_user: postgres
+      become: yes
+      community.postgresql.postgresql_privs:
+        role: milabench_write
+        database: milabench
+        privs: INSERT,UPDATE
+        grant_option: true
+        state: present
+        objs: metrics,packs,execs

@@ -118,6 +118,7 @@ def generate_database_sql_setup(uri=None):
         def metadata_dump(sql, *multiparams, **params):
             sql = str(sql.compile(dialect=postgresql.dialect()))
             sql = sql.replace("CREATE TABLE", "CREATE TABLE IF NOT EXISTS")
+            sql = sql.replace("CREATE INDEX", "CREATE INDEX IF NOT EXISTS")
 
             file.write(f"{sql};")
             file.write("-- \n")
