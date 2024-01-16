@@ -8,10 +8,22 @@
 
   vars_files:
    - config.yaml
-  
-  roles:
-   - Delaunay.postgresql
 
+  roles:
+   - role: Delaunay.postgresql
+     postgresql_global_config_options:
+       - option: listen_addresses
+         value: '*'
+       - option: log_directory
+         value: 'log'
+
+     postgresql_hba_entries:
+       - {type: local, database: all, user: postgres, auth_method: peer}
+       - {type: local, database: all, user: all, auth_method: peer}
+       - {type: host, database: all, user: all, address: '127.0.0.1/32', auth_method: "{{ postgresql_auth_method }}"}
+       - {type: host, database: all, user: all, address: '::1/128', auth_method: "{{ postgresql_auth_method }}"}
+       - {type: host, database: all, user: all, address: '192.168.0.0/16', auth_method: "{{ postgresql_auth_method }}"}
+  
   tasks:
     - name: Create Database
       become_user: postgres
@@ -25,7 +37,7 @@
       community.postgresql.postgresql_query:
         db: milabench
         autocommit: true
-        query: "{{ lookup('ansible.builtin.file', '{{ playbook_dir }}/vars/milabench_tables.sql') }}"
+        query: "{{ lookup('ansible.builtin.file', '{{ playbook_dir }}/tables.sql') }}"
   
     - name: Create Write User
       become_user: postgres

@@ -790,7 +790,6 @@ class Main:
         
         generate_database_sql_setup()
 
-
     def write_report_to_pr():
         remote: str & Option
 
