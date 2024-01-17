@@ -1,8 +1,28 @@
 #
-# ansible-galaxy role install Delaunay.postgresql
+# ansible-galaxy role install geerlingguy.postgresql
 #
 
-- name: Setup Postgresql for milabench
+- name: Add PostgreSQL Repo
+  hosts: database
+  become: yes
+  tasks:
+    - name: Repo Key
+      ansible.builtin.get_url:
+        url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+        dest: /etc/apt/keyrings/PostgreSQL.asc
+
+    - name: Add Repo
+      ansible.builtin.apt_repository:
+        repo: deb [arch=amd64 signed-by=/etc/apt/keyrings/PostgreSQL.asc] https://apt.postgresql.org/pub/repos/apt {{ ansible_distribution_release }}-pgdg main
+        state: present
+    
+    - name: Update apt packages
+      become: true
+      apt:
+        update_cache: yes
+        cache_valid_time: 8640
+
+- name: Install PostgreSQL database
   hosts: database
   become: yes
 
@@ -10,7 +30,7 @@
    - config.yaml
 
   roles:
-   - role: Delaunay.postgresql
+   - role: geerlingguy.postgresql
      postgresql_global_config_options:
        - option: listen_addresses
          value: '*'
@@ -24,6 +44,9 @@
        - {type: host, database: all, user: all, address: '::1/128', auth_method: "{{ postgresql_auth_method }}"}
        - {type: host, database: all, user: all, address: '192.168.0.0/16', auth_method: "{{ postgresql_auth_method }}"}
   
+- name: Initialize PostgreSQL Database
+  hosts: database
+  become: yes
   tasks:
     - name: Create Database
       become_user: postgres
