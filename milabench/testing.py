@@ -1,11 +1,11 @@
-from copy import deepcopy
-from collections import defaultdict
 import json
 import os
+from collections import defaultdict
+from copy import deepcopy
 from pathlib import Path
 
-from milabench.structs import BenchLogEntry
 from milabench.pack import BasePackage
+from milabench.structs import BenchLogEntry
 
 
 class ReplayPackage(BasePackage):

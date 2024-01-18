@@ -1,4 +1,4 @@
-from .validation import ValidationLayer, BenchLogEntry
+from .validation import BenchLogEntry, ValidationLayer
 
 
 class Layer(ValidationLayer):

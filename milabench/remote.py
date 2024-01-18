@@ -3,13 +3,12 @@ import sys
 
 from .commands import (
     CmdCommand,
-    SSHCommand,
+    Command,
     ListCommand,
     SequenceCommand,
+    SSHCommand,
     VoidCommand,
-    Command,
 )
-
 
 INSTALL_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 

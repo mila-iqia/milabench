@@ -1,28 +1,27 @@
-from collections import defaultdict
-from copy import deepcopy
-from datetime import datetime
-from dataclasses import dataclass
 import numbers
 import time
+from collections import defaultdict
+from copy import deepcopy
+from dataclasses import dataclass
+from datetime import datetime
 
-from ..structs import BenchLogEntry
-
-from bson.json_util import dumps as to_json
-from bson.json_util import loads as from_json
 import sqlalchemy
-from sqlalchemy.dialects import postgresql
+from bson.json_util import dumps as to_json, loads as from_json
 from sqlalchemy import (
     JSON,
-    Float,
     Column,
     DateTime,
+    Float,
     ForeignKey,
+    Index,
     Integer,
     String,
-    Index,
 )
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session, declarative_base
+
+from ..structs import BenchLogEntry
 
 Base = declarative_base()
 

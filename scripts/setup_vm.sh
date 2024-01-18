@@ -10,7 +10,7 @@ pg_isready -d milabench -h 192.168.2.20 -U milabench_read
 
 # pip install psycopg2
 # import psycopg2
-# conn = psycopg2.connect(host="192.168.2.20", database="milabench", user="milabench_read", password="1234")
+# conn = psycopg2.connect(host="localhost", database="milabench", user="milabench_read", password="1234")
 
 
 
@@ -51,3 +51,21 @@ pg_isready -d milabench -h 192.168.2.20 -U milabench_read
 #     channel, and a connection is made to either host port
 #     hostport, or the Unix socket remote_socket, from the
 #     remote machine.
+
+
+
+# stop local service to test connectivity
+sudo service postgresql stop
+
+pg_isready -d milabench -h 192.168.2.20 -U milabench_write   
+# localhost:5432 - no response
+
+# forward localhost to milabenchdb:localhost
+ssh milabenchdb -CNL localhost:5432:localhost:5432
+
+
+pg_isready -d milabench -h localhost -U milabench_write
+# localhost:5432 - accepting connection
+
+pg_isready -d milabench -h localhost -U milabench_read    
+# localhost:5432 - accepting connection 

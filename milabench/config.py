@@ -1,14 +1,13 @@
-import socket
 import contextvars
+import socket
 
+import psutil
 import yaml
 from omegaconf import OmegaConf
-import psutil
+from voir.instruments.gpu import get_gpu_info
 
 from .fs import XPath
 from .merge import merge
-from voir.instruments.gpu import get_gpu_info
-
 
 system_global = contextvars.ContextVar("system")
 config_global = contextvars.ContextVar("Config")

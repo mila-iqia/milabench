@@ -1,14 +1,13 @@
-from dataclasses import dataclass
+import contextvars
 import os
 from copy import deepcopy
-import yaml
-import contextvars
+from dataclasses import dataclass
 
 import numpy as np
+import yaml
 
-from .validation.validation import ValidationLayer
 from .config import system_global
-
+from .validation.validation import ValidationLayer
 
 ROOT = os.path.dirname(__file__)
 

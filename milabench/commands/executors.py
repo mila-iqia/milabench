@@ -2,10 +2,9 @@
 import asyncio
 import os
 
-
-from ..alt_async import run, destroy
-from ..structs import BenchLogEntry
+from ..alt_async import destroy, run
 from ..metadata import machine_metadata
+from ..structs import BenchLogEntry
 
 
 async def execute(pack, *args, cwd=None, env={}, external=False, **kwargs):

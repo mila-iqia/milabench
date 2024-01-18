@@ -1,23 +1,23 @@
 import asyncio
+import traceback
 from collections import defaultdict
 from copy import deepcopy
-import traceback
 
 from voir.instruments.gpu import get_gpu_info
 
+from .capability import is_system_capable
 from .commands import NJobs, PerGPU
 from .fs import XPath
-from .utils import make_constraints_file
 from .pack import Package
-from .capability import is_system_capable
 from .remote import (
+    is_main_local,
+    is_multinode,
+    is_remote,
     milabench_remote_install,
     milabench_remote_prepare,
     milabench_remote_run,
-    is_main_local,
-    is_remote,
-    is_multinode,
 )
+from .utils import make_constraints_file
 
 here = XPath(__file__).parent
 

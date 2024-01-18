@@ -1,15 +1,16 @@
+import json
 import os
-from datetime import datetime
-import cpuinfo
 import subprocess
 import traceback
-import json
+from datetime import datetime
 
+import cpuinfo
 from voir.instruments.gpu import get_gpu_info
 
-from ._version import __commit__, __tag__, __date__
-from .scripts.vcs import retrieve_git_versions
 import milabench.scripts.torchversion as torchversion
+
+from ._version import __commit__, __date__, __tag__
+from .scripts.vcs import retrieve_git_versions
 
 
 def _get_gpu_info():

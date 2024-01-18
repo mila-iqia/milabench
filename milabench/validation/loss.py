@@ -1,7 +1,6 @@
+import math
 from collections import defaultdict
 from dataclasses import dataclass
-import math
-
 
 from .validation import ValidationLayer
 
