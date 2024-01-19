@@ -20,9 +20,9 @@ class Arguments:
 
 @tooled
 def arguments():
-    remote: str & Option
+    remote: str & Option = None
 
-    branch: str & Option
+    branch: str & Option = None
 
     base: Option & str = os.getenv("MILABENCH_BASE", None)
 

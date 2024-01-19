@@ -259,7 +259,7 @@ class SQLAlchemy:
     def on_start(self, entry):
         if entry.tag not in self.states:
             # We have not received the meta tag
-            self.on_meta(BenchLogEntry(entry.pack))
+            self.on_meta(BenchLogEntry(entry.pack, event="meta", data={}))
 
         state = self.pack_state(entry)
 
