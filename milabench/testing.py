@@ -55,8 +55,15 @@ def interleave(*filenames):
 def replay_run(folder):
     """Replay a run folder"""
     folder = Path(folder)
+    files = []
+    
+    for file in os.scandir(folder):
+        if file.name.endswith(".data"):
+            files.append(folder / file)
+        else:
+            print(f"Skiping {file.name}")
 
-    files = sorted([folder / f for f in os.scandir(folder)])
+    files = sorted(files)
     benches = defaultdict(list)
 
     for file in files:

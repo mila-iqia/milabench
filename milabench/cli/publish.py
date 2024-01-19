@@ -13,15 +13,6 @@ import os
 from coleo import Option, tooled
 
 
-# fmt: off
-@dataclass
-class Arguments:
-    uri: str
-    folder: str
-    meta: str = None
-# fmt: on
-
-
 SLEEP = 0.01
 _INIT = 0
 _READY = 1
@@ -214,6 +205,16 @@ def reverse_proxy(uri, enabled):
     p.join()
 
 
+# fmt: off
+@dataclass
+class Arguments:
+    uri: str
+    folder: str
+    meta: str = None
+    testing: bool = True
+# fmt: on
+
+
 @tooled
 def arguments():
     # URI to the database
@@ -228,8 +229,10 @@ def arguments():
 
     # Json string of file to append to the meta dictionary
     meta: Option & str = None
+    
+    testing: Option & bool = True
 
-    return Arguments(uri, folder, meta)
+    return Arguments(uri, folder, meta, testing)
 
 
 @tooled
@@ -245,6 +248,6 @@ def cli_publish():
         with open(args.meta, "r") as file:
             args.meta = json.load(file)
 
-    with reverse_proxy(args.uri, True) as uri:
+    with reverse_proxy(args.uri, enabled=args.testing) as uri:
         backend = SQLAlchemy(uri, meta_override=args.meta)
         publish_archived_run(backend, args.folder)
