@@ -185,10 +185,10 @@ def _get_multipack(
     overrides={},
     return_config=False,
 ):
-    if args.config_path is None:
-        args.config_path = os.environ.get("MILABENCH_CONFIG", None)
+    if args.config is None:
+        args.config = os.environ.get("MILABENCH_CONFIG", None)
 
-    if args.config_path is None:
+    if args.config is None:
         sys.exit("Error: CONFIG argument not provided and no $MILABENCH_CONFIG")
 
     if args.select:
@@ -223,12 +223,12 @@ def _get_multipack(
     base_defaults = get_base_defaults(base=args.base, arch=deduce_arch(), run_name=run_name)
 
     system_config = build_system_config(
-        args.system_config_path,
+        args.system,
         defaults={"system": base_defaults["_defaults"]["system"]},
     )
     overrides = merge({"*": system_config}, overrides)
 
-    config = build_config(base_defaults, args.config_path, overrides)
+    config = build_config(base_defaults, args.config, overrides)
 
     def is_selected(defn):
         if defn["name"] == "*":
