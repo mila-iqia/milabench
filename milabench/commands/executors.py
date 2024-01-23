@@ -1,4 +1,3 @@
-
 import asyncio
 import os
 
@@ -32,7 +31,7 @@ async def execute(pack, *args, cwd=None, env={}, external=False, **kwargs):
         cwd=cwd,
         process_accumulator=pack.processes,
     )
-    
+
 
 async def force_terminate(pack, delay):
     await asyncio.sleep(delay)
@@ -45,7 +44,9 @@ async def force_terminate(pack, delay):
             destroy(proc)
 
 
-async def execute_command(command, phase="run", timeout=False, timeout_delay=600, **kwargs):
+async def execute_command(
+    command, phase="run", timeout=False, timeout_delay=600, **kwargs
+):
     """Execute all the commands and return the aggregated results"""
     coro = []
 

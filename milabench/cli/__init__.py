@@ -28,7 +28,7 @@ class Main:
     def prepare():
         """Prepare a benchmark: download datasets, weights etc."""
         cli_prepare()
-    
+
     def install():
         """Install the benchmarks' dependencies."""
         cli_install()
@@ -56,7 +56,7 @@ class Main:
     def pip():
         """Run pip on every pack"""
         cli_pip()
-        
+
     def slurm_system():
         """Generate a system file based of slurm environment variables"""
         cli_slurm_system()
@@ -71,7 +71,6 @@ class Main:
     def publish():
         """Publish an archived run to a database"""
         cli_publish()
-        
 
     def schedule():
         """Launch a slurm job to run milabench"""
@@ -82,8 +81,8 @@ class Main:
 
     def write_report_to_pr():
         cli_write_report_to_pr()
-        
-        
+
+
 def main(argv=None):
     sys.path.insert(0, os.path.abspath(os.curdir))
     if argv is None:

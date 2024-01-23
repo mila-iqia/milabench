@@ -85,25 +85,49 @@
         name: milabench_read
         password: 1234
 
-    - name: Set Read User privilege 
-      community.postgresql.postgresql_privs:
-        database: milabench
-        role: milabench_write,milabench_read
-        privs: SELECT
-        grant_option: true
-        state: present
-        objs: metrics,packs,execs
+    - name: Setup Privileges
+      community.postgresql.postgresql_query:
+        db: milabench
+        query:
+          - GRANT usage ON SCHEMA public TO milabench_write, milabench_read
+          - GRANT select ON metrics,packs,execs TO milabench_write, milabench_read
+          - GRANT insert,update ON metrics,packs,execs TO milabench_write
+          - GRANT usage ON ALL sequences IN SCHEMA public TO milabench_write;
+
+    # - name: GRANT USAGE ON SCHEMA publics
+    #   community.postgresql.postgresql_privs:
+    #     type: schema
+    #     objs: public
+    #     db: milabench
+    #     state: present
+    #     privs: usage
+    #     role: milabench_write,milabench_read
+
+    # - name: GRANT SELECT ON DATABSE milabench to reader,writer
+    #   community.postgresql.postgresql_privs:
+    #     database: milabench
+    #     role: milabench_write,milabench_read
+    #     privs: SELECT
+    #     grant_option: true
+    #     state: present
+    #     objs: metrics,packs,execs
+    #     schema: public
     
-    - name: Set Write User privilege 
-      community.postgresql.postgresql_privs:
-        role: milabench_write
-        database: milabench
-        privs: INSERT,UPDATE
-        grant_option: true
-        state: present
-        objs: metrics,packs,execs
+    # - name: GRANT INSERT,UPDATE ON DATABSE milabench to writer
+    #   community.postgresql.postgresql_privs:
+    #     role: milabench_write
+    #     database: milabench
+    #     privs: INSERT,UPDATE
+    #     grant_option: true
+    #     state: present
+    #     objs: metrics,packs,execs
+    #     schema: public
 
-
-# I need those too; WHY
-# grant usage on all sequences in schema public to milabench_write;
-# grant usage on schema public to milabench_write;
+    # - name: GRANT USAGE ON ALL SEQUENCES IN SCHEMA public to writer
+    #   community.postgresql.postgresql_privs:
+    #     role: milabench_write
+    #     database: milabench
+    #     privs: ALL
+    #     state: present
+    #     objs: SEQUENCES
+    #     schema: public

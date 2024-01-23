@@ -30,8 +30,10 @@ def arguments():
 
 
 @tooled
-def cli_schedule(args=arguments()):
+def cli_schedule(args=None):
     """Launch a slurm job to run milabench"""
     # milabench schedule --sync -- --select resnet50
+    if args is None:
+        args = arguments()
 
     launch_milabench(args.args, sbatch_args=None, dry=args.dry, sync=args.sync)

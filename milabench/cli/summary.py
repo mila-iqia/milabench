@@ -17,7 +17,6 @@ class Arguments:
 
 @tooled
 def arguments():
-
     # Directory(ies) containing the run data
     # [positional: +]
     runs: Option = []
@@ -29,8 +28,10 @@ def arguments():
 
 
 @tooled
-def cli_summary(args=arguments()):
+def cli_summary(args=None):
     """Produce a JSON summary of a previous run."""
+    if args is None:
+        args = arguments()
 
     all_data = _read_reports(*args.runs)
     summary = make_summary(all_data.values())

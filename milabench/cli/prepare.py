@@ -19,13 +19,15 @@ class Arguments:
 def arguments():
     # On error show full stacktrace
     shortrace: Option & bool = False
-    
+
     return Arguments(shortrace)
 
 
 @tooled
-def cli_prepare(args = arguments()):
+def cli_prepare(args=None):
     """Prepare a benchmark: download datasets, weights etc."""
+    if args is None:
+        args = arguments()
 
     mp = get_multipack(run_name="prepare.{time}")
 

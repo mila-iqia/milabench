@@ -247,7 +247,7 @@ class BasePackage:
             A subprocess.Popen instance representing the running process.
         """
         from . import commands as cmd
-        
+
         if isinstance(script, list):
             executor = cmd.CmdCommand(self, *script, *args)
         else:
@@ -406,7 +406,7 @@ class Package(BasePackage):
     ):
         input_files = [relativize(inp) for inp in input_files]
         from . import commands as cmd
-        
+
         return await cmd.CmdCommand(
             self,
             "python3",

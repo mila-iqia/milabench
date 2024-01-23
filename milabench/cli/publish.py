@@ -1,7 +1,7 @@
 import re
 import json
 import subprocess
-from contextlib  import contextmanager
+from contextlib import contextmanager
 import multiprocessing
 from dataclasses import dataclass
 from urllib.parse import urlparse, ParseResult
@@ -9,6 +9,7 @@ import time
 import threading
 import signal
 import os
+import sys
 
 from coleo import Option, tooled
 
@@ -22,29 +23,32 @@ _STOP = 2
 def _process_kill(process):
     process.terminate()
     process.kill()
-    
+
 
 AUTHENTICATION = re.compile(r"Authenticated to (.*) \(via proxy\) using \"publickey\"")
-LOCAL_FORWARDING = re.compile(r"debug1: Local forwarding listening on 127\.0\.0\.1 port \d{4,}")
-   
- 
+LOCAL_FORWARDING = re.compile(
+    r"debug1: Local forwarding listening on 127\.0\.0\.1 port \d{4,}"
+)
+
+
 class _WaitForGo:
     def __init__(self) -> None:
         self.authenticated = False
         self.forwarded = False
-        
+
     @property
     def ready(self):
         return self.authenticated and self.forwarded
-    
+
     def match(self, line):
         if AUTHENTICATION.match(line):
             self.authenticated = True
             print("SSH", line, end="")
-        
+
         if LOCAL_FORWARDING.match(line):
             self.forwarded = True
             print("SSH", line, end="")
+
 
 def _mp_worker(cmd, status, states, timeout=60):
     shell = True
@@ -111,7 +115,9 @@ class ReverseProxyProcess:
         self.states = manager.dict()
         self.states["status"] = "None"
         self.close = close
-        self.proc = multiprocessing.Process(target=_mp_worker, args=(cmd, self.status, self.states))
+        self.proc = multiprocessing.Process(
+            target=_mp_worker, args=(cmd, self.status, self.states)
+        )
         self.proc.start()
 
     def wait(self):
@@ -135,7 +141,6 @@ class ReverseProxyProcess:
         pid = self.states["pid"]
         start = time.time()
         self.status.value = _STOP
-        
 
         while self.proc.is_alive() and self.states["status"] == "running":
             try:
@@ -149,7 +154,10 @@ class ReverseProxyProcess:
                 raise RuntimeError("Could not shutdown ssh")
 
         while self.proc.is_alive():
-            time.sleep(0)
+            time.sleep(SLEEP)
+
+            if time.time() - start > 30:
+                raise RuntimeError("Could not shutdown ssh")
 
         print(f"Shutdown after {time.time() - start}")
 
@@ -159,8 +167,9 @@ class ReverseProxyProcess:
 
 def get_open_port():
     import socket
+
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind(("",0))
+    s.bind(("", 0))
     s.listen(1)
     port = s.getsockname()[1]
     s.close()
@@ -168,25 +177,25 @@ def get_open_port():
 
 
 @contextmanager
-def reverse_proxy(uri, enabled):    
+def reverse_proxy(uri, enabled):
     if not enabled:
         yield uri
-    
+
     localport = get_open_port()
     localhost = "localhost"
-    
+
     parsed: ParseResult = urlparse(uri)
     hostname = parsed.hostname
-    port = parsed.port or 5432 # default port
-    
+    port = parsed.port or 5432  # default port
+
     if parsed.port is None:
         newuri = uri.replace(hostname, f"{localhost}:{localport}")
     else:
         newuri = uri.replace(hostname, localhost).replace(str(port), str(localport))
-    
+
     local = f"{localhost}:{localport}"
     remote = f"localhost:{port}"
-    
+
     command = [
         "ssh",
         hostname,
@@ -197,12 +206,11 @@ def reverse_proxy(uri, enabled):
     p = ReverseProxyProcess(" ".join(command), multiprocessing.Manager(), lambda: None)
     p.wait()
     print("Reverse proxy ready")
-    
+
     yield newuri
-    
+
     print("Stopping")
     p.stop()
-    p.join()
 
 
 # fmt: off
@@ -229,20 +237,21 @@ def arguments():
 
     # Json string of file to append to the meta dictionary
     meta: Option & str = None
-    
+
     testing: Option & bool = True
 
     return Arguments(uri, folder, meta, testing)
 
 
 @tooled
-def cli_publish():
+def cli_publish(args=None):
     """Publish an archived run to a database"""
 
     from ..metrics.archive import publish_archived_run
     from ..metrics.sqlalchemy import SQLAlchemy
-    
-    args = arguments()
+
+    if args is None:
+        args = arguments()
 
     if args.meta is not None:
         with open(args.meta, "r") as file:
@@ -251,3 +260,5 @@ def cli_publish():
     with reverse_proxy(args.uri, enabled=args.testing) as uri:
         backend = SQLAlchemy(uri, meta_override=args.meta)
         publish_archived_run(backend, args.folder)
+
+    sys.exit(0)

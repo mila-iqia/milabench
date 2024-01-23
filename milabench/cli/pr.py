@@ -34,7 +34,10 @@ def arguments():
 
 
 @tooled
-def cli_write_report_to_pr(args = arguments()):
+def cli_write_report_to_pr(args=None):
+    if args is None:
+        args = arguments()
+
     assert args.base is not None
 
     runfolder = os.path.join(args.base, "runs")

@@ -60,13 +60,15 @@ def arguments():
     noterm: Option & bool = os.getenv("MILABENCH_NOTERM", "0") == "1"
 
     validations: Option & str = None
-    
+
     return Arguments(run_name, repeat, fulltrace, report, dash, noterm, validations)
 
 
 @tooled
-def cli_run(args = arguments()):
+def cli_run(args=None):
     """Run the benchmarks."""
+    if args is None:
+        args = arguments()
 
     layers = validation_names(args.validations)
 

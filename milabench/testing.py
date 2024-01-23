@@ -56,7 +56,7 @@ def replay_run(folder):
     """Replay a run folder"""
     folder = Path(folder)
     files = []
-    
+
     for file in os.scandir(folder):
         if file.name.endswith(".data"):
             files.append(folder / file)

@@ -33,8 +33,10 @@ def arguments():
 
 
 @tooled
-def cli_compare(args = arguments()):
+def cli_compare(args=None):
     """Compare all runs with each other."""
+    if args is None:
+        args = arguments()
 
     # Parameters
     # ----------

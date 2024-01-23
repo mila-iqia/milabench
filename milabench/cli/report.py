@@ -46,8 +46,10 @@ def arguments():
 
 
 @tooled
-def cli_report(args = arguments()):
+def cli_report(args=None):
     """Generate a report aggregating all runs together into a final report."""
+    if args is None:
+        args = arguments()
 
     # Examples
     # --------
@@ -65,7 +67,6 @@ def cli_report(args = arguments()):
     # Errors
     # ------
     # 1 errors, details in HTML report.
-
 
     reports = None
     if args.runs:

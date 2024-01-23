@@ -17,13 +17,15 @@ def arguments():
     # pip arguments
     # [remainder]
     args: Option = []
-    
+
     return Arguments(args)
 
 
 @tooled
-def cli_pip(args = arguments()):
+def cli_pip(args=None):
     """Run pip on every pack"""
+    if args is None:
+        args = arguments()
     mp = get_multipack(run_name="pip")
 
     for pack in mp.packs.values():

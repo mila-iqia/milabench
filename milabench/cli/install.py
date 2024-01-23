@@ -32,8 +32,10 @@ def arguments():
 
 
 @tooled
-def cli_install(args = arguments()):
+def cli_install(args=None):
     """Install the benchmarks' dependencies."""
+    if args is None:
+        args = arguments()
 
     overrides = {"*": {"install_variant": args.variant}} if args.variant else {}
 

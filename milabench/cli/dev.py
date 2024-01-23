@@ -24,7 +24,10 @@ def arguments():
 
 
 @tooled
-def cli_dev(args = arguments()):
+def cli_dev(args=None):
+    if args is None:
+        args = arguments()
+
     mp = get_multipack(run_name="dev")
 
     for pack in mp.packs.values():

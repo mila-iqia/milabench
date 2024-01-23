@@ -35,21 +35,20 @@ def arguments():
 
     # Do not use previous pins if they exist
     from_scratch: Option & bool = False
-    
+
     return Arguments(pip_compile, constraints, variant, from_scratch)
 
 
 @tooled
-def cli_pin(args = arguments()):
+def cli_pin(args=None):
     """Pin the benchmarks' dependencies."""
-
+    if args is None:
+        args = arguments()
     overrides = {"*": {"install_variant": args.variant}} if args.variant else {}
 
     if "-h" in args.pip_compile or "--help" in args.pip_compile:
         out = (
-            subprocess.check_output(
-                ["python3", "-m", "piptools", "compile", "--help"]
-            )
+            subprocess.check_output(["python3", "-m", "piptools", "compile", "--help"])
             .decode("utf-8")
             .split("\n")
         )
