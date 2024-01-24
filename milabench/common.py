@@ -88,7 +88,10 @@ def arguments():
     )
 
 @tooled
-def get_multipack(args = arguments(), run_name=None, overrides={}):
+def get_multipack(args = None, run_name=None, overrides={}):
+    if args is None:
+        args = arguments()
+        
     override = [
         o if re.match(pattern=r"[.\w]+=", string=o) else f"={o}" for o in args.override
     ]

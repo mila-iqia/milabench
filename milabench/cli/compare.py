@@ -64,9 +64,9 @@ def cli_compare(args=None):
         base = os.environ.get("MILABENCH_BASE", None)
 
         if base is not None:
-            folder = os.path.join(base, "runs")
+            args.folder = os.path.join(base, "runs")
 
-    runs = fetch_runs(folder)
+    runs = fetch_runs(args.folder)
 
     for run in runs:
         all_data = _read_reports(run.path)

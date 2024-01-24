@@ -73,13 +73,13 @@ def cli_report(args=None):
         reports = _read_reports(*args.runs)
         summary = make_summary(reports.values())
 
-    if config:
-        config = _get_multipack(config, return_config=True)
+    if args.config:
+        args.config = _get_multipack(return_config=True)
 
     make_report(
         summary,
         compare=args.compare,
-        weights=config,
+        weights=args.config,
         html=args.html,
         compare_gpus=args.compare_gpus,
         price=args.price,

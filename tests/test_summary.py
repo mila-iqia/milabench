@@ -84,7 +84,7 @@ def test_compare(runs_folder, capsys, file_regression):
 
 
 def test_summary_full(runs_folder):
-    from milabench.cli import _read_reports, make_summary, make_report
+    from milabench.common import _read_reports, make_summary, make_report
 
     run = runs_folder / "rijubigo.2023-03-24_13:45:27.512446"
 

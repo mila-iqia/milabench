@@ -11,8 +11,9 @@ from milabench.commands import (
     NJobs,
     TorchRunCommand,
 )
-from milabench.cli import _get_multipack
+from milabench.common import _get_multipack, arguments
 from milabench.alt_async import proceed
+
 
 
 class ExecMock1(SingleCmdCommand):
@@ -37,11 +38,12 @@ TEST_FOLDER = os.path.dirname(__file__)
 
 
 def benchio():
-    packs = _get_multipack(
-        os.path.join(TEST_FOLDER, "config", "benchio.yaml"),
-        base="/tmp",
-        use_current_env=True,
-    )
+    args = arguments()
+    args.config = os.path.join(TEST_FOLDER, "config", "benchio.yaml")
+    args.base='/tmp'
+    args.use_current_env =True
+    
+    packs = _get_multipack(args)
 
     _, pack = packs.packs.popitem()
     return pack

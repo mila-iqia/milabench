@@ -38,25 +38,20 @@ def set_env():
 
 @pytest.fixture
 def multipack(config, tmp_path):
-    from milabench.cli import _get_multipack
+    from milabench.common import _get_multipack, arguments
 
-    bench_config = config("benchio")
-    system_path = config("system")
-    base = tmp_path
-
-    use_current_env = True
-    select = None
-    exclude = None
+    args = arguments()
+    args.config = config("benchio")
+    args.system = config("system")
+    args.base = tmp_path
+    args.use_current_env = True
+    args.select = None
+    args.exclude = None
     run_name = "test"
     overrides = {}
 
     return _get_multipack(
-        bench_config,
-        system_path,
-        base,
-        use_current_env,
-        select,
-        exclude,
+        args=args,
         run_name=run_name,
         overrides=overrides,
     )
