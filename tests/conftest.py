@@ -79,17 +79,24 @@ class MockDeviceSMI:
 
 @pytest.fixture(scope="session", autouse=True)
 def set_env():
+    backend = voirgpu.deduce_backend()
+    if backend == "cpu":
+        backend = "mock"
+
     os.environ["MILABENCH_CONFIG"] = "config/ci.yaml"
     os.environ["MILABENCH_BASE"] = "output"
-    os.environ["MILABENCH_GPU_ARCH"] = "mock"
     os.environ["MILABENCH_DASH"] = "no"
+    os.environ["MILABENCH_GPU_ARCH"] = backend
 
-    oldsmi = voirgpu.DEVICESMI
-    voirgpu.DEVICESMI = MockDeviceSMI()
+    if backend == "mock":
+        oldsmi = voirgpu.DEVICESMI
+        voirgpu.DEVICESMI = MockDeviceSMI()
 
     yield
 
-    voirgpu.DEVICESMI = oldsmi
+    if backend == "mock":
+        voirgpu.DEVICESMI = oldsmi
+
     # --
     # --
 

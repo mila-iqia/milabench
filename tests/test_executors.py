@@ -13,6 +13,7 @@ from milabench.commands import (
 )
 from milabench.common import _get_multipack, arguments
 from milabench.alt_async import proceed
+import milabench.commands.executors
 
 
 class ExecMock1(SingleCmdCommand):
@@ -46,6 +47,14 @@ def benchio():
 
     _, pack = packs.packs.popitem()
     return pack
+
+
+@pytest.fixture
+def noexecute(monkeypatch):
+    async def execute(pack, *args, **kwargs):
+        return [*args, *[f"{k}:{v}" for k, v in kwargs.items()]]
+
+    monkeypatch.setattr(milabench.commands.executors, "execute", execute)
 
 
 def mock_pack(pack):
@@ -97,11 +106,12 @@ def test_executor_kwargs():
     assert sorted(wrapmock.kwargs().values()) == ["sv1'", "sv2", "sv3"]
 
 
-def test_executor_execute():
+def test_executor_execute(noexecute):
     submock = ExecMock1(mock_pack(benchio()), "a1", selfk1="sv1")
     wrapmock = ExecMock2(submock, "a2", selfk2="sv2")
 
-    assert asyncio.run(wrapmock.execute(k3="v3")) == [
+    result = asyncio.run(wrapmock.execute(k3="v3"))
+    expected = [
         [
             "cmdExecMock2",
             "a2",
@@ -116,6 +126,9 @@ def test_executor_execute():
             "k3:v3",
         ]
     ]
+    print(result)
+    print(expected)
+    assert result == expected
 
 
 def test_pack_executor():
