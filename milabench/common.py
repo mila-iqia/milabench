@@ -223,8 +223,12 @@ def _get_multipack(
     now = str(datetime.today()).replace(" ", "_")
     run_name = run_name.format(time=now)
 
-    base_defaults = get_base_defaults(base=args.base, arch=deduce_arch(), run_name=run_name)
-
+    arch = deduce_arch()
+    base_defaults = get_base_defaults(
+        base=args.base, 
+        arch=arch, 
+        run_name=run_name
+    )
     system_config = build_system_config(
         args.system,
         defaults={"system": base_defaults["_defaults"]["system"]},

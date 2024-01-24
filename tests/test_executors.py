@@ -15,7 +15,6 @@ from milabench.common import _get_multipack, arguments
 from milabench.alt_async import proceed
 
 
-
 class ExecMock1(SingleCmdCommand):
     def __init__(self, pack_or_exec, *exec_argv, **kwargs) -> None:
         super().__init__(pack_or_exec, **kwargs)
@@ -40,9 +39,9 @@ TEST_FOLDER = os.path.dirname(__file__)
 def benchio():
     args = arguments()
     args.config = os.path.join(TEST_FOLDER, "config", "benchio.yaml")
-    args.base='/tmp'
-    args.use_current_env =True
-    
+    args.base = "/tmp"
+    args.use_current_env = True
+
     packs = _get_multipack(args)
 
     _, pack = packs.packs.popitem()
@@ -173,7 +172,7 @@ def test_njobs_gpus_executor():
     devices = mock_gpu_list()
 
     from importlib.util import find_spec
-    
+
     if find_spec("torch") is None:
         pytest.skip("Pytorch is not installed")
 

@@ -74,7 +74,12 @@ def cli_report(args=None):
         summary = make_summary(reports.values())
 
     if args.config:
-        args.config = _get_multipack(return_config=True)
+        from milabench.common import arguments as multipack_args
+
+        margs = multipack_args()
+        margs.config = args.config
+
+        args.config = _get_multipack(margs, return_config=True)
 
     make_report(
         summary,

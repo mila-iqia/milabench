@@ -177,7 +177,7 @@ def resolve_addresses(nodes):
 def get_gpu_capacity():
     capacity = float("+inf")
 
-    for k, v in get_gpu_info("cuda")["gpus"].items():
+    for k, v in get_gpu_info()["gpus"].items():
         capacity = min(v["memory"]["total"], capacity)
 
     return capacity

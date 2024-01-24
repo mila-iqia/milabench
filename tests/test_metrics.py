@@ -1,4 +1,3 @@
-
 from milabench.utils import multilogger
 from milabench.testing import replay_run, show_diff
 from milabench.metrics.sqlalchemy import SQLAlchemy

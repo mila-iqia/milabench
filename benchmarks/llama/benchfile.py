@@ -1,4 +1,3 @@
-
 from milabench.commands import CmdCommand
 from milabench.pack import Package
 
