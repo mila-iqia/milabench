@@ -145,17 +145,19 @@ def main():
     validation_split_percentage = config["validation_split_percentage"]
     dataset_name = config["dataset_name"]
     dataset_config_name = config["dataset_config_name"]
-    raw_datasets = load_dataset(dataset_name, dataset_config_name)
+    raw_datasets = load_dataset(dataset_name, dataset_config_name, ignore_verifications=True)
     if "validation" not in raw_datasets.keys():
         raw_datasets["validation"] = load_dataset(
             dataset_name,
             dataset_config_name,
             split=f"train[:{validation_split_percentage}%]",
+            ignore_verifications=True,
         )
         raw_datasets["train"] = load_dataset(
             dataset_name,
             dataset_config_name,
             split=f"train[{validation_split_percentage}%:]",
+            ignore_verifications=True,
         )
 
     model_name = config["model_name"]
