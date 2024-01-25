@@ -1,28 +1,27 @@
-from collections import defaultdict
-from copy import deepcopy
-from datetime import datetime
-from dataclasses import dataclass
 import numbers
 import time
+from collections import defaultdict
+from copy import deepcopy
+from dataclasses import dataclass
+from datetime import datetime
 
-from ..structs import BenchLogEntry
-
-from bson.json_util import dumps as to_json
-from bson.json_util import loads as from_json
 import sqlalchemy
-from sqlalchemy.dialects import postgresql
+from bson.json_util import dumps as to_json, loads as from_json
 from sqlalchemy import (
     JSON,
-    Float,
     Column,
     DateTime,
+    Float,
     ForeignKey,
+    Index,
     Integer,
     String,
-    Index,
 )
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session, declarative_base
+
+from ..structs import BenchLogEntry
 
 Base = declarative_base()
 
@@ -118,6 +117,7 @@ def generate_database_sql_setup(uri=None):
         def metadata_dump(sql, *multiparams, **params):
             sql = str(sql.compile(dialect=postgresql.dialect()))
             sql = sql.replace("CREATE TABLE", "CREATE TABLE IF NOT EXISTS")
+            sql = sql.replace("CREATE INDEX", "CREATE INDEX IF NOT EXISTS")
 
             file.write(f"{sql};")
             file.write("-- \n")
@@ -259,7 +259,7 @@ class SQLAlchemy:
     def on_start(self, entry):
         if entry.tag not in self.states:
             # We have not received the meta tag
-            self.on_meta(BenchLogEntry(entry.pack))
+            self.on_meta(BenchLogEntry(entry.pack, event="meta", data={}))
 
         state = self.pack_state(entry)
 

@@ -1,11 +1,11 @@
-from copy import deepcopy
-from collections import defaultdict
 import json
 import os
+from collections import defaultdict
+from copy import deepcopy
 from pathlib import Path
 
-from milabench.structs import BenchLogEntry
 from milabench.pack import BasePackage
+from milabench.structs import BenchLogEntry
 
 
 class ReplayPackage(BasePackage):
@@ -55,8 +55,15 @@ def interleave(*filenames):
 def replay_run(folder):
     """Replay a run folder"""
     folder = Path(folder)
+    files = []
 
-    files = sorted([folder / f for f in os.scandir(folder)])
+    for file in os.scandir(folder):
+        if file.name.endswith(".data"):
+            files.append(folder / file)
+        else:
+            print(f"Skiping {file.name}")
+
+    files = sorted(files)
     benches = defaultdict(list)
 
     for file in files:

@@ -1,14 +1,13 @@
-import socket
 import contextvars
+import socket
 
+import psutil
 import yaml
 from omegaconf import OmegaConf
-import psutil
+from voir.instruments.gpu import get_gpu_info
 
 from .fs import XPath
 from .merge import merge
-from voir.instruments.gpu import get_gpu_info
-
 
 system_global = contextvars.ContextVar("system")
 config_global = contextvars.ContextVar("Config")
@@ -178,7 +177,7 @@ def resolve_addresses(nodes):
 def get_gpu_capacity():
     capacity = float("+inf")
 
-    for k, v in get_gpu_info("cuda")["gpus"].items():
+    for k, v in get_gpu_info()["gpus"].items():
         capacity = min(v["memory"]["total"], capacity)
 
     return capacity

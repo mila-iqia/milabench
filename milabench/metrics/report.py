@@ -1,9 +1,9 @@
-from milabench.metrics.sqlalchemy import Pack, Exec, Metric
-
 import numpy as np
 import pandas as pd
 import sqlalchemy
 from sqlalchemy.orm import Session
+
+from milabench.metrics.sqlalchemy import Exec, Metric, Pack
 
 
 def fetch_data(client, run_name):

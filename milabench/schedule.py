@@ -1,9 +1,10 @@
-from dataclasses import dataclass
-import re
-import importlib_resources
-import subprocess
-import requests
 import os
+import re
+import subprocess
+from dataclasses import dataclass
+
+import importlib_resources
+import requests
 
 
 def popen(cmd, callback=None):

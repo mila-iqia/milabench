@@ -4,12 +4,11 @@ import signal
 import sys
 import threading
 import time
+import warnings
 from asyncio import events, futures, tasks
 from asyncio.base_events import _run_until_complete_cb
 from collections import deque
 from functools import wraps
-import warnings
-
 
 from voir.proc import run as voir_run
 

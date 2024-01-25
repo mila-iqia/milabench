@@ -1,8 +1,9 @@
 from collections import defaultdict
 from dataclasses import dataclass, field
 
-from .validation import ValidationLayer
 import voir.instruments.gpu
+
+from .validation import ValidationLayer
 
 
 @dataclass

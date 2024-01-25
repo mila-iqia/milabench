@@ -11,8 +11,9 @@ from milabench.commands import (
     NJobs,
     TorchRunCommand,
 )
-from milabench.cli import _get_multipack
+from milabench.common import _get_multipack, arguments
 from milabench.alt_async import proceed
+import milabench.commands.executors
 
 
 class ExecMock1(SingleCmdCommand):
@@ -37,14 +38,23 @@ TEST_FOLDER = os.path.dirname(__file__)
 
 
 def benchio():
-    packs = _get_multipack(
-        os.path.join(TEST_FOLDER, "config", "benchio.yaml"),
-        base="/tmp",
-        use_current_env=True,
-    )
+    args = arguments()
+    args.config = os.path.join(TEST_FOLDER, "config", "benchio.yaml")
+    args.base = "/tmp"
+    args.use_current_env = True
+
+    packs = _get_multipack(args)
 
     _, pack = packs.packs.popitem()
     return pack
+
+
+@pytest.fixture
+def noexecute(monkeypatch):
+    async def execute(pack, *args, **kwargs):
+        return [*args, *[f"{k}:{v}" for k, v in kwargs.items()]]
+
+    monkeypatch.setattr(milabench.commands.executors, "execute", execute)
 
 
 def mock_pack(pack):
@@ -96,11 +106,12 @@ def test_executor_kwargs():
     assert sorted(wrapmock.kwargs().values()) == ["sv1'", "sv2", "sv3"]
 
 
-def test_executor_execute():
+def test_executor_execute(noexecute):
     submock = ExecMock1(mock_pack(benchio()), "a1", selfk1="sv1")
     wrapmock = ExecMock2(submock, "a2", selfk2="sv2")
 
-    assert asyncio.run(wrapmock.execute(k3="v3")) == [
+    result = asyncio.run(wrapmock.execute(k3="v3"))
+    expected = [
         [
             "cmdExecMock2",
             "a2",
@@ -115,6 +126,9 @@ def test_executor_execute():
             "k3:v3",
         ]
     ]
+    print(result)
+    print(expected)
+    assert result == expected
 
 
 def test_pack_executor():
@@ -171,7 +185,7 @@ def test_njobs_gpus_executor():
     devices = mock_gpu_list()
 
     from importlib.util import find_spec
-    
+
     if find_spec("torch") is None:
         pytest.skip("Pytorch is not installed")
 

@@ -1,5 +1,5 @@
-from milabench.utils import multilogger
 from milabench.testing import replay_run
+from milabench.utils import multilogger
 
 
 def publish_archived_run(backend, folder):

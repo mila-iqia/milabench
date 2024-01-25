@@ -1,11 +1,9 @@
-
 import asyncio
 import os
 
-
-from ..alt_async import run, destroy
-from ..structs import BenchLogEntry
+from ..alt_async import destroy, run
 from ..metadata import machine_metadata
+from ..structs import BenchLogEntry
 
 
 async def execute(pack, *args, cwd=None, env={}, external=False, **kwargs):
@@ -33,7 +31,7 @@ async def execute(pack, *args, cwd=None, env={}, external=False, **kwargs):
         cwd=cwd,
         process_accumulator=pack.processes,
     )
-    
+
 
 async def force_terminate(pack, delay):
     await asyncio.sleep(delay)
@@ -46,7 +44,9 @@ async def force_terminate(pack, delay):
             destroy(proc)
 
 
-async def execute_command(command, phase="run", timeout=False, timeout_delay=600, **kwargs):
+async def execute_command(
+    command, phase="run", timeout=False, timeout_delay=600, **kwargs
+):
     """Execute all the commands and return the aggregated results"""
     coro = []
 

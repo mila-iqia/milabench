@@ -7,9 +7,9 @@ class defines good default behavior.
 
 import json
 import os
+import traceback
 from argparse import Namespace as NS
 from sys import version_info as pyv
-import traceback
 from typing import Sequence
 
 from nox.sessions import Session, SessionRunner
@@ -19,7 +19,12 @@ from .alt_async import run, send
 from .fs import XPath
 from .merge import merge
 from .structs import BenchLogEntry
-from .utils import assemble_options, make_constraints_file, relativize, deprecated
+from .utils import (
+    assemble_options,
+    deprecated,
+    make_constraints_file,
+    relativize,
+)
 
 
 class PackageCore:
@@ -242,7 +247,7 @@ class BasePackage:
             A subprocess.Popen instance representing the running process.
         """
         from . import commands as cmd
-        
+
         if isinstance(script, list):
             executor = cmd.CmdCommand(self, *script, *args)
         else:
@@ -401,7 +406,7 @@ class Package(BasePackage):
     ):
         input_files = [relativize(inp) for inp in input_files]
         from . import commands as cmd
-        
+
         return await cmd.CmdCommand(
             self,
             "python3",
