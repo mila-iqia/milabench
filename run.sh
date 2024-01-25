@@ -11,6 +11,6 @@ sbatch  --ntasks=1\
         -o $OUTPUT\
         slurm.sh\
         -a cuda\
-        -b stable
+        -b stable_update
 
 tail -f $OUTPUT
