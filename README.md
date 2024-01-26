@@ -1,7 +1,7 @@
 
 # Milabench
 
-[Documentation](https://mila-iqia.github.io/milabench)
+[Documentation](https://milabench.readthedocs.io/en/stable/)
 
 Benchmarking framework for Machine learning and Artificial Intelligence, geared toward
 evaluating current and future hardware in a research environment.
