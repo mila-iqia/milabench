@@ -44,6 +44,7 @@ class AccelerateBenchmark(Package):
         for rank, node in enumerate(nodes):
             host = node["ip"]
             user = node["user"]
+            port = node["port"]
             options = dict()
 
             if rank == 0:
@@ -63,6 +64,7 @@ class AccelerateBenchmark(Package):
                 host=host,
                 user=user,
                 key=key,
+                port=port,
                 executor=DockerRunCommand(
                     AccelerateLaunchCommand(pack, rank=rank),
                     self.config["system"].get("docker_image"),
