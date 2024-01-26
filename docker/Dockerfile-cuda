@@ -39,18 +39,34 @@ COPY . /milabench/milabench/
 # Use ofed_info -s to get your local version
 ARG MOFED_VERSION=5.4-3.4.0.0
 
+
+ENV NVARCH=x86_64
+ENV NV_CUDA_CUDART_VERSION=11.8.89-1
+ENV NV_CUDA_COMPAT_PACKAGE=cuda-compat-11-8
+ENV CUDA_VERSION=11.8.0
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
+
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update -y &&\
-    apt-get install -y git build-essential curl python3 python-is-python3 python3-pip &&\
+    apt-get install -y --no-install-recommends git build-essential gnupg2 curl ca-certificates python3 python-is-python3 python3-pip &&\
     curl -o /etc/apt/trusted.gpg.d/mellanox.asc https://content.mellanox.com/ofed/RPM-GPG-KEY-Mellanox &&\
     curl -o /etc/apt/sources.list.d/mellanox.list https://linux.mellanox.com/public/repo/mlnx_ofed/${MOFED_VERSION}/ubuntu22.04/mellanox_mlnx_ofed.list &&\
-    curl -o cuda-keyring_1.1-1_all.deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb &&\
+    curl -o cuda-keyring_1.1-1_all.deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/{NVARCH}/cuda-keyring_1.1-1_all.deb &&\
     dpkg -i cuda-keyring_1.1-1_all.deb &&\
     apt-get update -y &&\
-    apt-get install -y libibverbs1 nvidia-compute-utils-535 nvidia-utils-535 cuda-11-8 &&\
+    apt-get install -y --no-install-recommends cuda-cudart-11-8=${NV_CUDA_CUDART_VERSION} ${NV_CUDA_COMPAT_PACKAGE} cuda-libraries-11-8=${NV_CUDA_LIB_VERSION} &&\
+    apt-get install -y --no-install-recommends cuda-command-line-tools-11-8=${NV_CUDA_LIB_VERSION} cuda-minimal-build-11-8=${NV_CUDA_LIB_VERSION} cuda-nvml-dev-11-8=${NV_NVML_DEV_VERSION} &&\
+    apt-get install -y --no-install-recommends libibverbs1 nvidia-compute-utils-535 nvidia-utils-535 cuda-11-8 &&\
     apt-get clean &&\
     rm -rf /var/lib/apt/lists/* &&\
-    rm cuda-keyring_1.1-1_all.deb
+    rm cuda-keyring_1.1-1_all.deb &&\
+    /bin/sh -c echo "/usr/local/nvidia/lib" >> /etc/ld.so.conf.d/nvidia.conf &&\
+    echo "/usr/local/nvidia/lib64" >> /etc/ld.so.conf.d/nvidia.conf # buildkit
+
+ENV PATH=/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ENV LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64
 
 # Install Rust
 
