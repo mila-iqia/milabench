@@ -35,6 +35,7 @@ def arguments():
     parser.add_argument("--validation_split_percentage", required=True, type=int)
     parser.add_argument("--dataset_name", required=True, type=str)
     parser.add_argument("--dataset_config_name", required=True, type=str)
+    parser.add_argument("--dataset_rev", required=True, type=str)
     parser.add_argument("--cache", required=True, type=str)
     parser.add_argument("--model_name", required=True, type=str)
     parser.add_argument("--prepare_only", action="store_true", default=False)
@@ -180,17 +181,19 @@ def main():
     validation_split_percentage = config["validation_split_percentage"]
     dataset_name = config["dataset_name"]
     dataset_config_name = config["dataset_config_name"]
-    raw_datasets = load_dataset(dataset_name, dataset_config_name)
+    raw_datasets = load_dataset(dataset_name, dataset_config_name, revision=config["dataset_rev"])
     if "validation" not in raw_datasets.keys():
         raw_datasets["validation"] = load_dataset(
             dataset_name,
             dataset_config_name,
-            split=f"train[:{validation_split_percentage}%]",
+            split=f"train[:{validation_split_percentage}%]", 
+            revision=config["dataset_rev"]
         )
         raw_datasets["train"] = load_dataset(
             dataset_name,
             dataset_config_name,
-            split=f"train[{validation_split_percentage}%:]",
+            split=f"train[{validation_split_percentage}%:]", 
+            revision=config["dataset_rev"]
         )
 
     model_name = config["model_name"]
