@@ -1,19 +1,31 @@
 import asyncio
+import traceback
 from collections import defaultdict
 from copy import deepcopy
 
 from voir.instruments.gpu import get_gpu_info
 
-from .alt_async import destroy
+from .capability import is_system_capable
+from .commands import NJobs, PerGPU
 from .fs import XPath
-from .merge import merge
+from .pack import Package
+from .remote import (
+    is_main_local,
+    is_multinode,
+    is_remote,
+    milabench_remote_install,
+    milabench_remote_prepare,
+    milabench_remote_run,
+)
 from .utils import make_constraints_file
 
 here = XPath(__file__).parent
 
-gpus = get_gpu_info()["gpus"].values()
-
 planning_methods = {}
+
+
+async def aprint(pack, msg):
+    await pack.send(event="line", data=msg, pipe="stdout")
 
 
 def get_planning_method(name):
@@ -25,110 +37,154 @@ def planning_method(f):
     planning_methods[f.__name__] = f
 
 
-def clone_with(cfg, new_cfg):
-    return merge(deepcopy(cfg), new_cfg)
+def make_execution_plan(pack, step=0, repeat=1):
+    cfg = deepcopy(pack.config)
+    plan = deepcopy(cfg["plan"])
 
+    if repeat > 1:
+        cfg["tag"].append(f"R{step}")
 
-@planning_method
-def per_gpu(cfg):
-    ngpus = len(gpus)
-    devices = gpus or [{"device": 0, "selection_variable": "CPU_VISIBLE_DEVICE"}]
+    run_pack = pack.copy(cfg)
+    method = plan.pop("method").replace("-", "_")
 
-    for gpu in devices:
-        gid = gpu["device"]
-        gcfg = {
-            "tag": [*cfg["tag"], f"D{gid}"],
-            "device": gid,
-            "devices": [gid] if ngpus else [],
-            "env": {gpu["selection_variable"]: str(gid)},
-        }
-        yield clone_with(cfg, gcfg)
+    # This is wrong because it does not know yet
+    # own many GPUs will be used for the GPU
+    exec_plan = run_pack.build_run_plan()
+    devices = get_gpu_info()["gpus"].values()
 
+    if method == "per_gpu":
+        exec_plan = PerGPU(exec_plan, devices)
 
-@planning_method
-def njobs(cfg, n):
-    for i in range(n):
-        gcfg = {
-            "tag": [*cfg["tag"], f"{i}"],
-            "job-number": i,
-            "devices": [gpu["device"] for gpu in gpus],
-        }
-        yield clone_with(cfg, gcfg)
+    elif method == "njobs":
+        n = plan.pop("n")
+        exec_plan = NJobs(exec_plan, n, devices)
+
+    else:
+        raise RuntimeError("Execution plan not specified")
+
+    return exec_plan
 
 
 class MultiPackage:
     def __init__(self, packs):
         self.packs = packs
 
-    async def do_install(self):
+    def setup_pack(self) -> Package:
+        pack = list(self.packs.values())[0]
+        name = "setup"
+        if is_remote(pack):
+            name = "remote"
+
+        return Package(
+            {
+                "name": name,
+                "tag": [name],
+                "definition": ".",
+                "run_name": pack.config["run_name"],
+                "dirs": pack.config["dirs"],
+                "config_base": pack.config["config_base"],
+                "config_file": pack.config["config_file"],
+                "system": pack.config["system"],
+            }
+        )
+
+    async def do_phase(self, phase_name, remote_task, method):
+        """Run a phase on all the nodes"""
+
+        pending = []
+        if remote_task:
+            pending = [remote_task]
+
         for pack in self.packs.values():
-            pack.phase = "install"
+            pack.phase = phase_name
             try:
-                await pack.checked_install()
+                phase_task = asyncio.create_task(getattr(pack, method)())
+
+                coro = [phase_task, *pending]
+                done = []
+
+                while phase_task not in done:
+                    done, pending = await asyncio.wait(
+                        coro, return_when=asyncio.FIRST_COMPLETED
+                    )
+                    coro = pending
+
             except Exception as exc:
+                traceback.print_exc()
                 await pack.message_error(exc)
+
+        if pending:
+            await asyncio.wait(pending)
+
+    async def do_install(self):
+        setup = self.setup_pack()
+        remote_task = None
+
+        if is_remote(setup):
+            # We are outside system, setup the main node first
+            remote_plan = milabench_remote_install(setup, setup_for="main")
+            remote_task = asyncio.create_task(remote_plan.execute())
+            await asyncio.wait([remote_task])
+
+            # We do not install benchmarks on that node
+            return
+
+        elif is_main_local(setup) and is_multinode(setup):
+            # We are the main node, setup workers
+            remote_plan = milabench_remote_install(setup, setup_for="worker")
+            remote_task = asyncio.create_task(remote_plan.execute())
+
+        # do the installation step
+        await self.do_phase("install", remote_task, "checked_install")
 
     async def do_prepare(self):
-        for pack in self.packs.values():
-            pack.phase = "prepare"
-            try:
-                await pack.prepare()
-            except Exception as exc:
-                await pack.message_error(exc)
+        setup = self.setup_pack()
+        remote_task = None
+
+        if is_remote(setup):
+            remote_plan = milabench_remote_prepare(setup, run_for="main")
+            remote_task = asyncio.create_task(remote_plan.execute())
+            await asyncio.wait([remote_task])
+
+            return
+
+        elif is_main_local(setup) and is_multinode(setup):
+            remote_plan = milabench_remote_prepare(setup, run_for="worker")
+            remote_task = asyncio.create_task(remote_plan.execute())
+
+        await self.do_phase("prepare", remote_task, "prepare")
 
     async def do_run(self, repeat=1):
-        async def force_terminate(pack, delay):
-            await asyncio.sleep(delay)
-            for proc in pack.processes:
-                ret = proc.poll()
-                if ret is None:
-                    await pack.message(
-                        f"Terminating process because it ran for longer than {delay} seconds."
-                    )
-                    destroy(proc)
+        setup = self.setup_pack()
+
+        if is_remote(setup):
+            # if we are not on the main node right now
+            # ssh to the main node and launch milabench
+            remote_plan = milabench_remote_run(setup)
+            remote_task = asyncio.create_task(remote_plan.execute())
+            await asyncio.wait([remote_task])
+            return
+
+        assert is_main_local(setup), "Running benchmarks only works on the main node"
 
         for index in range(repeat):
             for pack in self.packs.values():
                 try:
-
-                    def capability_failure():
-                        caps = dict(pack.config["capabilities"])
-                        for condition in pack.config.get("requires_capabilities", []):
-                            if not eval(condition, caps):
-                                return condition
-                        return False
-
-                    if condition_failed := capability_failure():
-                        await pack.message(
-                            f"Skip {pack.config['name']} because the following capability is not satisfied: {condition_failed}"
-                        )
+                    if not await is_system_capable(pack):
                         continue
 
-                    cfg = pack.config
-                    plan = deepcopy(cfg["plan"])
-                    method = get_planning_method(plan.pop("method"))
-                    coroutines = []
-
-                    for run in method(cfg, **plan):
-                        if repeat > 1:
-                            run["tag"].append(f"R{index}")
-                        run_pack = pack.copy(run)
-                        await run_pack.send(event="config", data=run)
-                        run_pack.phase = "run"
-                        coroutines.append(run_pack.run())
-
-                        asyncio.create_task(
-                            force_terminate(
-                                run_pack, run_pack.config.get("max_duration", 600)
-                            )
-                        )
-
-                    await asyncio.gather(*coroutines)
+                    exec_plan = make_execution_plan(pack, index, repeat)
+                    await exec_plan.execute("run", timeout=True, timeout_delay=600)
 
                 except Exception as exc:
+                    import traceback
+
+                    traceback.print_exc()
                     await pack.message_error(exc)
 
-    async def do_pin(self, pip_compile_args, constraints: list = tuple()):
+    async def do_pin(
+        self, pip_compile_args, constraints: list = tuple(), from_scratch=False
+    ):
         groups = defaultdict(dict)
         for pack in self.packs.values():
             pack.phase = "pin"
@@ -167,12 +223,15 @@ class MultiPackage:
                 )
             else:
                 pack0 = packs[0]
+                ivar = pack0.config["install_variant"]
 
-                constraint_path = XPath(".pin-constraints-TMP.txt")
+                pindir = XPath(".pin")
+
+                constraint_path = pindir / "tmp-constraints.txt"
                 constraint_files = make_constraints_file(constraint_path, constraints)
 
-                ig_constraint_path = XPath(f".pin-constraints-{ig}.txt")
-                if ig_constraint_path.exists():
+                ig_constraint_path = pindir / f"constraints-{ivar}-{ig}.txt"
+                if ig_constraint_path.exists() and from_scratch:
                     ig_constraint_path.rm()
 
                 # Create master requirements

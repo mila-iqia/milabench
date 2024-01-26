@@ -22,6 +22,41 @@ Old bug (fixed with the solution in the last reply to the thread):
 - Fix bug: fatal error: cusolverDn.h: No such file or directory
 https://github.com/microsoft/DeepSpeed/issues/2684
 """
+
+
+def arguments():
+    from argparse import ArgumentParser
+    import os
+
+    parser = ArgumentParser()
+    parser.add_argument("--per_gpu_batch_size", required=True, type=int)
+    parser.add_argument("--max_train_steps", required=True, type=int)
+    parser.add_argument("--cpus_per_gpu", required=True, type=int)
+    parser.add_argument("--validation_split_percentage", required=True, type=int)
+    parser.add_argument("--dataset_name", required=True, type=str)
+    parser.add_argument("--dataset_config_name", required=True, type=str)
+    parser.add_argument("--dataset_rev", required=True, type=str)
+    parser.add_argument("--cache", required=True, type=str)
+    parser.add_argument("--model_name", required=True, type=str)
+    parser.add_argument("--prepare_only", action="store_true", default=False)
+
+    #
+    #   Is this still needed for docker?
+    #
+    # overrides = os.getenv("MILABENCH_CONFIG")
+    # if overrides:
+    #     return json.loads(overrides)
+
+    args = parser.parse_args()
+
+    # FIXME: we could move this logic to the activator
+    os.environ["XDG_CACHE_HOME"] = str(args.cache)
+    return vars(args)
+
+
+_ = arguments()
+
+
 # You can also adapt this script on your own causal language modeling task. Pointers for this are left as comments.
 import json
 import logging
@@ -32,20 +67,18 @@ import time
 from dataclasses import dataclass
 from datetime import timedelta
 from itertools import chain
-from pathlib import Path
 from typing import Optional
 
 import datasets
 import rich.logging
 import torch
 import transformers
-from accelerate import Accelerator, DistributedType
+from accelerate import Accelerator
 from accelerate.logging import get_logger
 from accelerate.utils import DummyOptim, DummyScheduler
 from accelerate.utils.dataclasses import InitProcessGroupKwargs
 from datasets import load_dataset
 from torch.utils.data import DataLoader
-from tqdm.auto import tqdm
 from transformers import (
     AutoConfig,
     AutoModelForCausalLM,
@@ -54,7 +87,6 @@ from transformers import (
     default_data_collator,
     get_scheduler,
 )
-from transformers.utils import get_full_repo_name
 from voir.smuggle import SmuggleWriter
 from voir.instruments.gpu import get_gpu_info
 from voir.instruments.utils import Monitor
@@ -63,8 +95,13 @@ logger = get_logger(__name__)
 
 
 def main():
-    is_prepare_phase = os.environ.get('MILABENCH_PREPARE_ONLY', None) == "1"
-    config = json.loads(os.environ["MILABENCH_CONFIG"])
+    #
+    #   Is this still needed for docker?
+    #
+    # is_prepare_phase = os.environ.get('MILABENCH_PREPARE_ONLY', None) == "1"
+    config = arguments()
+    is_prepare_phase = config["prepare_only"]
+
     per_gpu_batch_size = config["per_gpu_batch_size"]
     max_train_steps = config["max_train_steps"]
 
@@ -86,13 +123,11 @@ def main():
 
         init_process_group_kwargs = CustomInitProcessGroupKwargs(
             init_method=f"tcp://{MASTER_ADDR}:{MASTER_PORT}",
-            timeout=timedelta(seconds=300),
+            timeout=timedelta(seconds=60),
             rank=int(os.environ["RANK"]),
             world_size=int(os.environ["WORLD_SIZE"]),
         )
-        accelerator = Accelerator(
-            kwargs_handlers=[init_process_group_kwargs]
-        )
+        accelerator = Accelerator(kwargs_handlers=[init_process_group_kwargs])
     else:
         accelerator = Accelerator()
 
@@ -100,6 +135,7 @@ def main():
         # Set up logging for milabench (only in the run phase, for the main process)
 
         data_file = SmuggleWriter(sys.stdout)
+
         def mblog(data):
             if data_file is not None:
                 print(json.dumps(data), file=data_file)
@@ -120,8 +156,10 @@ def main():
         monitor.start()
 
     else:
+
         def mblog(data):
             pass
+
         monitor = None
 
     logging.basicConfig(
@@ -140,28 +178,29 @@ def main():
         datasets.utils.logging.set_verbosity_error()
         transformers.utils.logging.set_verbosity_error()
 
-    accelerator.wait_for_everyone()
-
     validation_split_percentage = config["validation_split_percentage"]
     dataset_name = config["dataset_name"]
     dataset_config_name = config["dataset_config_name"]
-    raw_datasets = load_dataset(dataset_name, dataset_config_name)
+    raw_datasets = load_dataset(dataset_name, dataset_config_name, revision=config["dataset_rev"])
     if "validation" not in raw_datasets.keys():
         raw_datasets["validation"] = load_dataset(
             dataset_name,
             dataset_config_name,
-            split=f"train[:{validation_split_percentage}%]",
+            split=f"train[:{validation_split_percentage}%]", 
+            revision=config["dataset_rev"]
         )
         raw_datasets["train"] = load_dataset(
             dataset_name,
             dataset_config_name,
-            split=f"train[{validation_split_percentage}%:]",
+            split=f"train[{validation_split_percentage}%:]", 
+            revision=config["dataset_rev"]
         )
 
     model_name = config["model_name"]
     model_config = AutoConfig.from_pretrained(model_name)
     tokenizer = AutoTokenizer.from_pretrained(
-        model_name, use_fast=True,
+        model_name,
+        use_fast=True,
     )
 
     column_names = raw_datasets["train"].column_names
@@ -174,7 +213,7 @@ def main():
         tokenized_datasets = raw_datasets.map(
             tokenize_function,
             batched=True,
-            num_proc=config['cpus_per_gpu'],
+            num_proc=config["cpus_per_gpu"],
             remove_columns=column_names,
             load_from_cache_file=True,
             desc="Running tokenizer on dataset",
@@ -206,7 +245,7 @@ def main():
         lm_datasets = tokenized_datasets.map(
             group_texts,
             batched=True,
-            num_proc=config['cpus_per_gpu'],
+            num_proc=config["cpus_per_gpu"],
             load_from_cache_file=True,
             # TODO: See if this works (i.e. makes things faster and doesn't invalidate the cache)
             # keep_in_memory=True,
@@ -264,7 +303,6 @@ def main():
         else DummyOptim
     )
     optimizer = optimizer_cls(optimizer_grouped_parameters, lr=5e-5)
-
     # Scheduler and math around the number of training steps.
 
     # Get gradient accumulation steps from deepspeed config if available
@@ -321,9 +359,7 @@ def main():
 
     # Train! Choo! Choo!
     total_batch_size = (
-        per_gpu_batch_size *
-        accelerator.num_processes *
-        gradient_accumulation_steps
+        per_gpu_batch_size * accelerator.num_processes * gradient_accumulation_steps
     )
 
     logger.info("***** Running training *****")
@@ -338,7 +374,6 @@ def main():
 
     completed_steps = 0
     starting_epoch = 0
-    best_metric = None
     last_log_time = time.time()
 
     for epoch in range(starting_epoch, num_train_epochs):
@@ -364,10 +399,7 @@ def main():
                     completed_steps += 1
 
                 log_interval = 3
-                if (
-                    accelerator.is_main_process
-                    and completed_steps % log_interval == 0
-                ):
+                if accelerator.is_main_process and completed_steps % log_interval == 0:
                     torch.cuda.synchronize()
                     if completed_steps == 0:
                         last_log_time = time.time()
@@ -380,7 +412,13 @@ def main():
                             n_samples_since_last_log / seconds_since_last_log
                         )
 
-                        mblog({"task": "train", "rate": throughput_samples_per_sec, "units": "items/s"})
+                        mblog(
+                            {
+                                "task": "train",
+                                "rate": throughput_samples_per_sec,
+                                "units": "items/s",
+                            }
+                        )
 
                         last_log_time = time.time()
 

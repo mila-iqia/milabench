@@ -1,0 +1,77 @@
+name: integration
+
+on:
+  # Runs every sunday
+  schedule:
+      - cron: '0 0 * * SUN'
+
+  # Runs for pull requests
+  pull_request:
+    branches:
+      - master
+
+  # Runs on publish
+  release:
+    types:
+      [published]
+
+  # Allow manual triggers
+  workflow_dispatch:
+
+jobs:
+  # Label of the container job
+  postgresql:
+    runs-on: ubuntu-latest
+
+    concurrency:
+      group: "${{ github.ref }}"
+      cancel-in-progress: true
+  
+    services:
+      # The hostname of the PostgreSQL service is the label
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: password
+          POSTGRES_USER: username
+          POSTGRES_DB: milabench
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
+
+    steps:
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9' 
+
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: dependencies
+        run: |
+          if [[ ! -d "~/.cargo/bin" ]]; then
+            wget --no-check-certificate --secure-protocol=TLSv1_2 -qO- https://sh.rustup.rs | sh -s -- -y 
+          fi
+          export PATH="~/.cargo/bin:${PATH}"
+          python -m pip install -U pip
+          python -m pip install -U poetry
+
+      - name: install
+        run: |
+          pip install pytest
+          poetry lock --no-update
+          pip install -e .
+
+      - name: tests
+        env:
+          POSTGRES_USER: username
+          POSTGRES_PSWD: password
+          POSTGRES_DB: milabench
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+        run: pytest tests/integration

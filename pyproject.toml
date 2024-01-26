@@ -6,7 +6,8 @@ authors = ["Olivier Breuleux <breuleux@gmail.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.11"
+voir =  {git = "https://github.com/breuleux/voir", branch = "master"}
+python = ">=3.8,<4.0"
 giving = "^0.4.0"
 ptera = "^1.2.0"
 coleo = "^0.3.0"
@@ -19,7 +20,6 @@ hrepr = "^0.4.0"
 blessed = "^1.19.1"
 pathspec = "^0.9.0"
 cp-template = "^0.3.0"
-voir = "^0.2.9"
 pandas = "^1.4.2"
 numpy = ">=1.23.0"
 pynvml = "^11.4.1"
@@ -27,6 +27,13 @@ tqdm = "^4.64.1"
 pip-tools = "^6.12.3"
 rich = "^13.3.2"
 omegaconf = "^2.3.0"
+sqlalchemy = "^2.0.15"
+pymongo =  "^4.3.3"
+psycopg2-binary = {version = "^2.9.6", optional = true}
+py-cpuinfo = "^9.0.0"
+psutil = "^5.9.5"
+importlib-resources = "^6.1.0"
+
 
 [tool.poetry.dev-dependencies]
 black = ">=21.10b0"
@@ -42,6 +49,10 @@ pytest-regressions = "^2.4.2"
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
+[tool.poetry.build]
+generate-setup-file = false
+script = "milabench/scripts/vcs.py"
+
 [tool.poetry.scripts]
 milabench = "milabench.cli:main"
 
@@ -49,3 +60,6 @@ milabench = "milabench.cli:main"
 multi_line_output = 3
 include_trailing_comma = true
 combine_as_imports = true
+
+[tool.poetry-git-version-plugin]
+alpha_version_format = '{version}a{distance}+{commit_hash}'

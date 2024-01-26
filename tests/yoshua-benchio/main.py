@@ -1,4 +1,6 @@
+#!/usr/bin/env python
 import argparse
+import time
 
 import voir
 from giving import give
@@ -16,8 +18,16 @@ def main():
         type=int,
         default=10,
     )
+    parser.add_argument(
+        "--sleep",
+        type=int,
+        default=None,
+    )
 
     args = parser.parse_args()
+
+    if args.sleep is not None:
+        time.sleep(args.sleep)
 
     data = [[[i]] for i in range(args.start, args.end)]
 

@@ -7,18 +7,24 @@ class defines good default behavior.
 
 import json
 import os
+import traceback
 from argparse import Namespace as NS
-from hashlib import md5
 from sys import version_info as pyv
 from typing import Sequence
 
 from nox.sessions import Session, SessionRunner
 
+from . import commands as cmd
 from .alt_async import run, send
 from .fs import XPath
 from .merge import merge
 from .structs import BenchLogEntry
-from .utils import assemble_options, make_constraints_file, relativize
+from .utils import (
+    assemble_options,
+    deprecated,
+    make_constraints_file,
+    relativize,
+)
 
 
 class PackageCore:
@@ -94,7 +100,10 @@ class BasePackage:
 
     @property
     def argv(self):
-        return assemble_options(self.config.get("argv", []))
+        # Circular import
+        from .sizer import scale_argv
+
+        return scale_argv(self, assemble_options(self.config.get("argv", [])))
 
     @property
     def tag(self):
@@ -129,7 +138,11 @@ class BasePackage:
         await send(
             BenchLogEntry(
                 event="error",
-                data={"type": type(exc).__name__, "message": str(exc)},
+                data={
+                    "type": type(exc).__name__,
+                    "message": str(exc),
+                    "trace": traceback.format_exc(),
+                },
                 pack=self,
             )
         )
@@ -185,6 +198,7 @@ class BasePackage:
         args = [str(x) for x in args]
         return self._nox_session.conda_install(*args, **kwargs, silent=False)
 
+    @deprecated
     async def execute(self, *args, cwd=None, env={}, external=False, **kwargs):
         """Run a command in the virtual environment.
 
@@ -195,18 +209,9 @@ class BasePackage:
             args: The arguments to the command
             cwd: The cwd to use (defaults to ``self.dirs.code``)
         """
-        args = [str(x) for x in args]
-        if cwd is None:
-            cwd = self.dirs.code
-        return await run(
-            args,
-            **kwargs,
-            info={"pack": self},
-            env=self.full_env(env) if not external else {**os.environ, **env},
-            constructor=BenchLogEntry,
-            cwd=cwd,
-            process_accumulator=self.processes,
-        )
+        from .executors import execute
+
+        return execute(self, *args, cwd=cwd, env=env, external=external, **kwargs)
 
     async def python(self, *args, **kwargs):
         """Run a Python script.
@@ -241,32 +246,18 @@ class BasePackage:
         Returns:
             A subprocess.Popen instance representing the running process.
         """
+        from . import commands as cmd
 
         if isinstance(script, list):
-            script_args = script
+            executor = cmd.CmdCommand(self, *script, *args)
         else:
             if not XPath(script).is_absolute():
                 script = str(self.dirs.code / script)
-            script_args = [script]
+            executor = cmd.PackCommand(self, script, *args)
 
-        if voirconf := self.config.get("voir", None):
-            hsh = md5(str(voirconf).encode("utf8"))
-            voirconf_file = (
-                self.dirs.extra / f"voirconf-{self.tag}-{hsh.hexdigest()}.json"
-            )
-            with open(voirconf_file, "w") as f:
-                json.dump(fp=f, obj=voirconf, indent=4)
-            voirargs = ("--config", voirconf_file)
-        else:
-            voirargs = ()
-
-        command = [*wrapper, "voir", *voirargs, *script_args, *args]
-        return await self.execute(
-            *command,
-            setsid=True,
-            cwd=cwd,
-            **kwargs,
-        )
+        voir = cmd.VoirCommand(executor, cwd=cwd, **kwargs)
+        wrapper = cmd.WrapperCommand(voir, *wrapper)
+        return await wrapper.execute()
 
 
 class Package(BasePackage):
@@ -319,6 +310,7 @@ class Package(BasePackage):
             f"MILABENCH_DIR_{name.upper()}": path
             for name, path in self.config["dirs"].items()
         }
+
         env["MILABENCH_CONFIG"] = json.dumps(self.config)
         if self.phase == "prepare" or self.phase == "run":
             # XDG_CACHE_HOME controls basically all caches (pip, torch, huggingface,
@@ -383,9 +375,10 @@ class Package(BasePackage):
             input_files: A list of inputs to piptools compile
             constraint: The constraint file
         """
-        if self.config.get("install_variant", None) == "unpinned":
+        ivar = self.config.get("install_variant", None)
+        if ivar == "unpinned":
             raise Exception("Cannot pin the 'unpinned' variant.")
-        assert self.phase == "pin"
+        # assert self.phase == "pin"
         for base_reqs, reqs in self.requirements_map().items():
             if not base_reqs.exists():
                 raise FileNotFoundError(
@@ -397,7 +390,7 @@ class Package(BasePackage):
                 reqs.rm()
 
             grp = self.config["group"]
-            constraint_path = f".pin-constraints-{grp}.txt"
+            constraint_path = XPath(".pin") / f"tmp-constraints-{ivar}-{grp}.txt"
             constraint_files = make_constraints_file(constraint_path, constraints)
             current_input_files = constraint_files + (base_reqs, *input_files)
 
@@ -412,7 +405,10 @@ class Package(BasePackage):
         self, requirements_file: XPath, input_files: XPath, argv=[]
     ):
         input_files = [relativize(inp) for inp in input_files]
-        return await self.execute(
+        from . import commands as cmd
+
+        return await cmd.CmdCommand(
+            self,
             "python3",
             "-m",
             "piptools",
@@ -425,7 +421,7 @@ class Package(BasePackage):
             *input_files,
             cwd=XPath(".").absolute(),
             external=True,
-        )
+        ).execute()
 
     async def prepare(self):
         """Prepare the benchmark.
@@ -440,12 +436,16 @@ class Package(BasePackage):
         The default value of ``self.prepare_script`` is ``"prepare.py"``.
         """
         assert self.phase == "prepare"
+        return await self.build_prepare_plan().execute()
+
+    def build_prepare_plan(self) -> "cmd.Command":
         if self.prepare_script is not None:
             prep = self.dirs.code / self.prepare_script
             if prep.exists():
-                await self.execute(
-                    prep, *self.argv, env=self.make_env(), cwd=prep.parent
+                return cmd.PackCommand(
+                    self, prep, *self.argv, env=self.make_env(), cwd=prep.parent
                 )
+        return cmd.VoidCommand(self)
 
     async def run(self):
         """Start the benchmark and return the running process.
@@ -468,15 +468,9 @@ class Package(BasePackage):
             env: Environment variables to set for the process.
         """
         assert self.phase == "run"
-        main = self.dirs.code / self.main_script
-        if not main.exists():
-            raise FileNotFoundError(
-                f"Cannot run main script because it does not exist: {main}"
-            )
+        return await self.build_run_plan().execute()
 
-        if main.is_dir():
-            return await self.voir(
-                ["-m", self.main_script], args=self.argv, cwd=main.parent
-            )
-        else:
-            return await self.voir(self.main_script, args=self.argv, cwd=main.parent)
+    def build_run_plan(self) -> "cmd.Command":
+        main = self.dirs.code / self.main_script
+        pack = cmd.PackCommand(self, *self.argv, lazy=True)
+        return cmd.VoirCommand(pack, cwd=main.parent)

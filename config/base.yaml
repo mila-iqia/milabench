@@ -5,6 +5,11 @@ _defaults:
       stop: 60
       interval: "1s"
 
+  validation:
+    usage:
+      gpu_load_threshold: 0.5
+      gpu_mem_threshold: 0.5
+
 _torchvision:
   inherits: _defaults
   definition: ../benchmarks/torchvision
@@ -17,6 +22,42 @@ _torchvision:
     --lr: 0.01
     --no-stdout: true
     --epochs: 50
+
+_flops:
+  inherits: _defaults
+  definition: ../benchmarks/flops
+  group: flops
+  install_group: torch
+  plan:
+    method: per_gpu
+  
+  tags:
+    - diagnostic
+    - flops
+  
+  argv:
+    --number: 10
+    --repeat: 90
+
+llama:
+  inherits: _defaults
+  definition: ../benchmarks/llama
+  group: llm
+  install_group: torch
+  max_duration: 800
+
+  voir:
+    options:
+      stop: 30
+      interval: "1s"
+    
+  plan:
+    method: per_gpu
+  
+  tags:
+    - nlp
+    - llm
+
 
 _hf:
   inherits: _defaults
@@ -62,20 +103,63 @@ _accelerate_opt:
   plan:
     method: njobs
     n: 1
-  manager_addr: "override-me"
-  manager_port: 10000
-  cpus_per_gpu: 8
-  # model_name: "facebook/opt-2.7b"
-  # model_name: "facebook/opt-1.3b"
-  # model_name: "facebook/opt-350m"
-  # model_name: "facebook/opt-125m"
+  
+  # Script Args
+  argv:
+    --max_train_steps: 100
+    --dataset_name: "wikitext"
+    --dataset_config_name: "wikitext-103-v1"
+    --dataset_rev: "b08601e"
+    --validation_split_percentage: 5
+    --per_gpu_batch_size: 1
+    --cpus_per_gpu: 8
+    # --model_name: "facebook/opt-2.7b"
+    # --model_name: "facebook/opt-1.3b"
+    # --model_name: "facebook/opt-350m"
+    # --model_name: "facebook/opt-125m"
+
+  # Accelerate Args
   gradient_accumulation_steps: 1
-  max_train_steps: 100
-  dataset_name: "wikitext"
-  dataset_config_name: "wikitext-103-v1"
-  validation_split_percentage: 5
   use_deepspeed: true
   num_machines: 1
+
+
+fp16:
+  inherits: _flops
+
+  argv:
+    --number: 30
+    --repeat: 90
+    --m: 8192
+    --n: 8192
+    --dtype: fp16
+
+
+bf16:
+  inherits: _flops
+ 
+  argv:
+    --m: 8192
+    --n: 8192
+    --dtype: bf16
+
+tf32:
+  inherits: _flops
+ 
+  argv:
+    --m: 8192
+    --n: 8192
+    --dtype: fp32
+    --tf32: true
+
+fp32:
+  inherits: _flops
+ 
+  argv:
+    --m: 8192
+    --n: 8192
+    --dtype: fp32
+  
 
 resnet50:
   inherits: _torchvision
@@ -91,7 +175,7 @@ resnet50:
 
 efficientnet_b4:
   inherits: _torchvision
-  tags:
+
   tags:
     - vision
     - classification
@@ -295,37 +379,45 @@ opt-1_3b:
   inherits: _accelerate_opt
   tags:
     - multigpu
-  model_name: "facebook/opt-1.3b"
+  
+  argv:
+    --model_name: "facebook/opt-1.3b"
+    --per_gpu_batch_size: 1
+
   use_deepspeed: false
-  per_gpu_batch_size: 1
   num_machines: 1
 
 opt-1_3b-multinode:
   inherits: opt-1_3b
+
   tags:
     - multinode
   requires_capabilities:
-    - "nodes >= ${num_machines}"
+    - "len(nodes) >= ${num_machines}"
+
   docker_image: "ghcr.io/mila-iqia/milabench:cuda-nightly"
-  per_gpu_batch_size: 1
   num_machines: 2
 
 opt-6_7b:
   inherits: _accelerate_opt
   tags:
     - multigpu
-  model_name: "facebook/opt-6.7b"
-  per_gpu_batch_size: 1
+
+  argv:
+    --model_name: "facebook/opt-6.7b"
+    --per_gpu_batch_size: 1
+
   num_machines: 1
 
 opt-6_7b-multinode:
   inherits: opt-6_7b
   tags:
     - multinode
+
   requires_capabilities:
-    - "nodes >= ${num_machines}"
+    - "len(nodes) >= ${num_machines}"
+
   docker_image: "ghcr.io/mila-iqia/milabench:cuda-nightly"
-  per_gpu_batch_size: 1
   num_machines: 2
 
 stargan:
@@ -417,8 +509,44 @@ dlrm:
     --arch-interaction-op: "dot"
     --numpy-rand-seed: "727"
     --print-freq: 999999
-    --enable-profiling: true
     --mini-batch-size: 16384
     --test-mini-batch-size: 16384
     --test-num-workers: 0
     --use-gpu: true
+
+rwkv:
+  inherits: _defaults
+  definition: ../benchmarks/rwkv
+  group: rwkv
+  install_group: torch
+  tags:
+    - llm
+    - rnn
+    - no-rocm
+  plan:
+    method: per_gpu
+  argv:
+    --data_type: "dummy"
+    --ctx_len: 128
+    --epoch_steps: 1000
+    --epoch_count: 20
+    --epoch_begin: 0
+    --epoch_save: 0
+    --micro_bsz: 16
+    --n_layer: 12
+    --n_embd: 768
+    --pre_ffn: 0
+    --head_qk: 0
+    --lr_init: 6e-4
+    --lr_final: 1e-5
+    --warmup_steps: 0
+    --beta1: 0.9
+    --beta2: 0.99
+    --adam_eps: 1e-8
+    --accelerator: "gpu"
+    --devices: 1
+    --precision: "tf32"
+    --strategy: "ddp_find_unused_parameters_false"
+    --grad_cp: 0
+    --random_seed: 1234
+    --enable_progress_bar: "False"

@@ -4,6 +4,7 @@ import signal
 import sys
 import threading
 import time
+import warnings
 from asyncio import events, futures, tasks
 from asyncio.base_events import _run_until_complete_cb
 from collections import deque
@@ -26,6 +27,7 @@ class FeedbackEventLoop(type(asyncio.get_event_loop())):
         self._yieldable_messages = deque()
         self._yieldable_generators = []
         self._multiplexers = []
+        self._callbacks = []
 
     def queue_message(self, message):
         self._yieldable_messages.append(message)
@@ -106,9 +108,14 @@ class FeedbackEventLoop(type(asyncio.get_event_loop())):
         """
 
         while self._yieldable_messages:
-            yield self._yieldable_messages.popleft()
+            yield self._callback(self._yieldable_messages.popleft())
 
         super()._run_once()
+
+    def _callback(self, msg):
+        for callback in self._callbacks:
+            callback(msg)
+        return msg
 
     def proceed(self, coro):
         try:
@@ -116,23 +123,27 @@ class FeedbackEventLoop(type(asyncio.get_event_loop())):
         except BaseException as exc:
             for mx in self._multiplexers:
                 for proc, (streams, argv, info) in mx.processes.items():
-                    yield mx.constructor(
-                        event="error",
-                        data={
-                            "type": type(exc).__name__,
-                            "message": str(exc),
-                        },
-                        **info,
+                    yield self._callback(
+                        mx.constructor(
+                            event="error",
+                            data={
+                                "type": type(exc).__name__,
+                                "message": str(exc),
+                            },
+                            **info,
+                        )
                     )
                     destroy(proc)
-                    yield mx.constructor(
-                        event="end",
-                        data={
-                            "command": argv,
-                            "time": time.time(),
-                            "return_code": "ERROR",
-                        },
-                        **info,
+                    yield self._callback(
+                        mx.constructor(
+                            event="end",
+                            data={
+                                "command": argv,
+                                "time": time.time(),
+                                "return_code": "ERROR",
+                            },
+                            **info,
+                        )
                     )
             raise
 
@@ -189,4 +200,7 @@ def proceed(coro):
 
 async def send(message):
     loop = asyncio.get_running_loop()
-    await loop.send(message)
+    if isinstance(loop, FeedbackEventLoop):
+        await loop.send(message)
+    else:
+        warnings.warn("Could not send message, wrong event loop used")

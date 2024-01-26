@@ -1,6 +1,3 @@
-import torch
-
-
 class SyntheticData:
     def __init__(self, generators, n, repeat):
         self.n = n

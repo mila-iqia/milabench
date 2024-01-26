@@ -20,7 +20,22 @@ T = Terminal()
 color_wheel = [T.cyan, T.magenta, T.yellow, T.red, T.green, T.blue]
 
 
-class TagConsole:
+class BaseLogger:
+    def start(self):
+        pass
+
+    def end(self):
+        pass
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        self.end()
+
+
+class TagConsole(BaseLogger):
     def __init__(self, tag, i):
         self.header = color_wheel[i % len(color_wheel)](T.bold(tag))
 
@@ -38,7 +53,7 @@ class TagConsole:
         parts = [
             self.header,
             *parts,
-            obj if isinstance(obj, str) else pprint.pformat(obj),
+            obj if isinstance(obj, str) else pprint.pformat(obj, width=120),
         ]
         return self._ensure_line(" ".join(map(str, parts)))
 
@@ -52,7 +67,7 @@ class TagConsole:
         pass
 
 
-class TerminalFormatter:
+class TerminalFormatter(BaseLogger):
     def __init__(self):
         self.consoles = {}
         self.error_happened = set()
@@ -61,6 +76,7 @@ class TerminalFormatter:
     def console(self, tag):
         if tag not in self.consoles:
             self.consoles[tag] = TagConsole(tag, len(self.consoles))
+
         return self.consoles[tag]
 
     def __call__(self, entry):
@@ -68,6 +84,7 @@ class TerminalFormatter:
         data = entry.data
         pipe = entry.pipe
         tag = entry.tag
+
         console = self.console(tag)
 
         if event == "line":
@@ -145,7 +162,7 @@ class TerminalFormatter:
             console.pretty(T.bold(f"[{event}]"), data)
 
 
-class BaseReporter:
+class BaseReporter(BaseLogger):
     def __init__(self, pipe):
         self.pipe = pipe
         self.files = {}
@@ -196,7 +213,7 @@ class DataReporter(BaseReporter):
         self.file(entry).write(f"{j}\n")
 
 
-class DashFormatter:
+class DashFormatter(BaseLogger):
     def __init__(self):
         self.panel = Panel("")
         self.console = Console()
