@@ -44,7 +44,7 @@ class AccelerateBenchmark(Package):
         for rank, node in enumerate(nodes):
             host = node["ip"]
             user = node["user"]
-            port = node["port"]
+            port = node.get("port", 22)
             options = dict()
 
             if rank == 0:
