@@ -1,11 +1,11 @@
 import os
+import shlex
 from contextlib import contextmanager
 from dataclasses import dataclass
-import shlex
 
 import voir.instruments.gpu as voirgpu
 import yaml
-from coleo import tooled
+from coleo import Option, tooled
 
 from ..common import get_multipack
 from ..multi import make_execution_plan
@@ -132,11 +132,11 @@ class Arguments:
 
 @tooled
 def arguments():
-    ngpu = 8
-    capacity = 80000
-    nnodes = 2
-    withenv = True
-    usevoir = False
+    ngpu: Option & int = 8
+    capacity: Option & int = 80000
+    nnodes: Option & int = 2
+    withenv: Option & bool = True
+    usevoir: Option & bool = True
     return Arguments(nnodes, ngpu, capacity, withenv, usevoir)
 
 
@@ -147,16 +147,16 @@ def multipack_args(conf: Arguments):
     args = multiargs()
     args.system = "system_tmp.yaml"
 
-    system = {"system": 
-        {
+    system = {
+        "system": {
             "arch": "cuda",
             "nodes": [
                 {
-                    "name": str(i), 
-                    "ip": f"192.168.0.{i + 10}" if i != 0 else "127.0.0.1", 
-                    "user": "username", 
+                    "name": str(i),
+                    "ip": f"192.168.0.{i + 10}" if i != 0 else "127.0.0.1",
+                    "user": "username",
                     "main": i == 0,
-                    "port": 22,    
+                    "port": 22,
                 }
                 for i in range(conf.nnodes)
             ],
@@ -166,22 +166,22 @@ def multipack_args(conf: Arguments):
     with open("system_tmp.yaml", "w") as file:
         system = yaml.dump(system)
         file.write(system)
-    
+
     return args
 
 
 @tooled
 def cli_dry(args=None):
     """Generate dry commands to execute the bench standalone"""
-    from ..config import set_offline
     from ..commands import set_voir
-    
+    from ..config import set_offline
+
     if args is None:
         args = arguments()
 
     set_offline(True)
     set_voir(args.usevoir)
-    
+
     with assume_gpu(args.ngpu, args.capacity, enabled=True):
         repeat = 1
         mp = get_multipack(multipack_args(args), run_name="dev")

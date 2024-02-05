@@ -466,6 +466,7 @@ class TorchRunCommand(WrapperCommand):
 
 use_voir = True
 
+
 def set_voir(val):
     global use_voir
     use_voir = val
@@ -486,7 +487,7 @@ class VoirCommand(WrapperCommand):
 
     def _argv(self, **kwargs) -> List:
         argv = super()._argv(**kwargs)
-        
+
         if not use_voir:
             return []
 

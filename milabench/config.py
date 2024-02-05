@@ -115,13 +115,13 @@ def _resolve_ip(ip):
     try:
         hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(ip)
         lazy_raise = None
-        
+
     except socket.herror as err:
         hostname = ip
         aliaslist = []
         ipaddrlist = []
         lazy_raise = err
-        
+
     except socket.gaierror as err:
         # Get Addr Info (GAI) Error
         #
@@ -140,6 +140,7 @@ def _resolve_ip(ip):
 # If true that means we cannot resolve the ip addresses
 # so we ignore errors
 offline = False
+
 
 def set_offline(value):
     global offline
@@ -161,7 +162,7 @@ def resolve_addresses(nodes):
 
         if lazy_raise is not None:
             bad_ips.append((node["ip"], lazy_raise))
-        
+
         node["hostname"] = hostname
         node["aliaslist"] = aliaslist
         node["ipaddrlist"] = ipaddrlist
@@ -185,7 +186,7 @@ def resolve_addresses(nodes):
         if is_local:
             if self is not None:
                 print("multiple local node!!")
-            
+
             self = node
             node["ipaddrlist"] = list(ip_list)
 
