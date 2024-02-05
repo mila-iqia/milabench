@@ -135,7 +135,11 @@ def arguments():
     ngpu: Option & int = 8
     capacity: Option & int = 80000
     nnodes: Option & int = 2
+    
+    # [negate]
     withenv: Option & bool = True
+    
+    # [negate]
     usevoir: Option & bool = True
     return Arguments(nnodes, ngpu, capacity, withenv, usevoir)
 
