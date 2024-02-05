@@ -5,6 +5,7 @@ from coleo import run_cli
 
 from .compare import cli_compare
 from .dev import cli_dev
+from .dry import cli_dry
 from .install import cli_install
 from .machine import cli_machine
 from .pin import cli_pin
@@ -18,7 +19,6 @@ from .schedule import cli_schedule
 from .slurm import cli_slurm_system
 from .sql import cli_sqlsetup
 from .summary import cli_summary
-from .dry import cli_dry
 
 
 class Main:

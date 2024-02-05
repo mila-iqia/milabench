@@ -1,26 +1,13 @@
-from dataclasses import dataclass, field
-from contextlib import contextmanager
-
-from coleo import Option, tooled
-import voir.instruments.gpu as voirgpu
 import os
+from contextlib import contextmanager
+from dataclasses import dataclass
+
+import voir.instruments.gpu as voirgpu
+import yaml
+from coleo import tooled
 
 from ..common import get_multipack
 from ..multi import make_execution_plan
-
-# fmt: off
-@dataclass
-class Arguments:
-    ngpu: int = 8
-    capacity: int = 80000
-# fmt: on
-
-
-@tooled
-def arguments():
-    ngpu = 8
-    capacity = 80000
-    return Arguments(ngpu, capacity)
 
 
 class MockDeviceSMI:
@@ -89,12 +76,18 @@ class BashGenerator:
         print("  " * self.indent, end="")
         print(*args, **kwargs)
 
+    def section(self, title):
+        self.comment("---")
+        self.comment(title)
+        self.comment("=" * len(title))
+
     def comment(self, cmt):
         self.print(f"# {cmt}")
 
     def env(self, env):
         for k, v in env.items():
             self.print(f'export {k}="{v}"')
+        self.print()
 
     @contextmanager
     def subshell(self):
@@ -125,6 +118,45 @@ class BashGenerator:
         self.print(prefix, " ".join(str(a) for a in args), sufix)
 
 
+# fmt: off
+@dataclass
+class Arguments:
+    nnodes: int = 2
+    ngpu: int = 8
+    capacity: int = 80000
+    withenv: bool = True
+# fmt: on
+
+
+@tooled
+def arguments():
+    ngpu = 8
+    capacity = 80000
+    nnodes = 2
+    withenv = True
+    return Arguments(nnodes, ngpu, capacity, withenv)
+
+
+@tooled
+def multipack_args(conf: Arguments):
+    from ..common import arguments as multiargs
+
+    args = multiargs()
+    args.system = "system_tmp.yaml"
+
+    system = {
+        "arch": "cuda",
+        "nodes": [
+            {"name": str(i), "ip": f"192.168.0.{i}", "user": "username", "main": i == 0}
+            for i in range(conf.nnodes)
+        ],
+    }
+
+    with open("system_tmp.yaml", "w") as file:
+        file.write(yaml.dump(system))
+    return args
+
+
 @tooled
 def cli_dry(args=None):
     """Generate dry commands to execute the bench standalone"""
@@ -134,26 +166,31 @@ def cli_dry(args=None):
 
     with assume_gpu(args.ngpu, args.capacity, enabled=True):
         repeat = 1
-        mp = get_multipack(run_name="dev")
+        mp = get_multipack(multipack_args(args), run_name="dev")
         gen = BashGenerator()
 
         first_pack = True
         for index in range(repeat):
             for pack in mp.packs.values():
-                if first_pack:
+                if first_pack and args.withenv:
                     first_pack = False
-                    gen.comment("Virtual Env")
+                    gen.section("Virtual Env")
                     gen.env(pack.core._nox_session.env)
-                    gen.comment("Milabench")
+                    gen.section("Milabench")
                     gen.env(pack.make_env())
 
                 exec_plan = make_execution_plan(pack, index, repeat)
 
+                gen.section(pack.config["name"])
                 with gen.subshell():
-                    gen.comment("Benchmark")
                     with gen.background():
                         for pack, argv, _ in exec_plan.commands():
                             # gen.env(pack.config.get("env", {}))
                             gen.command(*argv, env=pack.config.get("env", {}))
 
                 print()
+
+    try:
+        os.remove("system_tmp.yaml")
+    except:
+        pass
