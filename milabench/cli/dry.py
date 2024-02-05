@@ -72,6 +72,8 @@ class BashGenerator:
     def __init__(self) -> None:
         self.indent = 0
         self.background_mode = False
+        self.print("#!/bin/sh")
+        self.print("")
 
     def print(self, *args, **kwargs):
         print("  " * self.indent, end="")
@@ -115,8 +117,10 @@ class BashGenerator:
         sufix = ""
         if True:
             sufix = "&"
-
-        self.print(prefix, " ".join(str(a) for a in args), sufix)
+            
+        frags = [prefix] + [str(a) for a in args] + [sufix]
+        
+        self.print(" ".join(filter(lambda x: x != "", frags)))
 
 
 # fmt: off
