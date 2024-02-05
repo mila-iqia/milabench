@@ -464,6 +464,13 @@ class TorchRunCommand(WrapperCommand):
         return []
 
 
+use_voir = True
+
+def set_voir(val):
+    global use_voir
+    use_voir = val
+
+
 class VoirCommand(WrapperCommand):
     """Execute an `Command` through voir
 
@@ -479,6 +486,9 @@ class VoirCommand(WrapperCommand):
 
     def _argv(self, **kwargs) -> List:
         argv = super()._argv(**kwargs)
+        
+        if not use_voir:
+            return []
 
         if voirconf := self.pack.config.get("voir", None):
             hsh = md5(str(voirconf).encode("utf8"))

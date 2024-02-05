@@ -141,7 +141,7 @@ def _resolve_ip(ip):
 # so we ignore errors
 offline = False
 
-def set_offiline(value):
+def set_offline(value):
     global offline
     offline = value
 

@@ -126,6 +126,7 @@ class Arguments:
     ngpu: int = 8
     capacity: int = 80000
     withenv: bool = True
+    usevoir: bool = False
 # fmt: on
 
 
@@ -135,13 +136,14 @@ def arguments():
     capacity = 80000
     nnodes = 2
     withenv = True
-    return Arguments(nnodes, ngpu, capacity, withenv)
+    usevoir = False
+    return Arguments(nnodes, ngpu, capacity, withenv, usevoir)
 
 
 @tooled
 def multipack_args(conf: Arguments):
     from ..common import arguments as multiargs
-    
+
     args = multiargs()
     args.system = "system_tmp.yaml"
 
@@ -171,12 +173,15 @@ def multipack_args(conf: Arguments):
 @tooled
 def cli_dry(args=None):
     """Generate dry commands to execute the bench standalone"""
-    from ..config import set_offiline
-    set_offiline(True)
+    from ..config import set_offline
+    from ..commands import set_voir
     
     if args is None:
         args = arguments()
 
+    set_offline(True)
+    set_voir(args.usevoir)
+    
     with assume_gpu(args.ngpu, args.capacity, enabled=True):
         repeat = 1
         mp = get_multipack(multipack_args(args), run_name="dev")
