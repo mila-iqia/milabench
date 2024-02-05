@@ -18,6 +18,7 @@ from .schedule import cli_schedule
 from .slurm import cli_slurm_system
 from .sql import cli_sqlsetup
 from .summary import cli_summary
+from .dry import cli_dry
 
 
 class Main:
@@ -81,6 +82,9 @@ class Main:
 
     def write_report_to_pr():
         cli_write_report_to_pr()
+
+    def dry():
+        cli_dry()
 
 
 def main(argv=None):

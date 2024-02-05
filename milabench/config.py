@@ -175,10 +175,15 @@ def resolve_addresses(nodes):
 
 
 def get_gpu_capacity():
+    import math
+
     capacity = float("+inf")
 
     for k, v in get_gpu_info()["gpus"].items():
         capacity = min(v["memory"]["total"], capacity)
+
+    if math.isinf(capacity):
+        return 0
 
     return capacity
 
