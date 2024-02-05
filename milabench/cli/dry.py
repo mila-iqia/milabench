@@ -87,7 +87,7 @@ class BashGenerator:
 
     def env(self, env):
         for k, v in env.items():
-            self.print(f'export {k}="{shlex.quote(v)}"')
+            self.print(f'export {k}={shlex.quote(v)}')
         self.print()
 
     @contextmanager
