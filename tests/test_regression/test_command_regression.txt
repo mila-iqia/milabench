@@ -1,3 +1,5 @@
+#!/bin/sh
+
 # ---
 # llama
 # =====
@@ -287,7 +289,7 @@
 # resnet152-multi
 # ===============
 (
-   torchrun --nproc_per_node=8 -- -m voir --config $MILABENCH_BASE/extra/timm/voirconf-resnet152-multi.0-0efae956f1553a76c1e03985181900f5.json $MILABENCH_SRC/benchmarks/timm/pytorch-image-models/train.py --amp --model resnet152 --batch-size 256 --data-dir $MILABENCH_BASE/data --dataset FakeImageNet --output $MILABENCH_BASE/extra/timm/dev/resnet152-multi.0 --checkpoint-hist 1 &
+  torchrun --nproc_per_node=8 --no-python -- voir --config $MILABENCH_BASE/extra/timm/voirconf-resnet152-multi.0-0efae956f1553a76c1e03985181900f5.json $MILABENCH_SRC/benchmarks/timm/pytorch-image-models/train.py --amp --model resnet152 --batch-size 256 --data-dir $MILABENCH_BASE/data --dataset FakeImageNet --output $MILABENCH_BASE/extra/timm/dev/resnet152-multi.0 --checkpoint-hist 1 &
   wait
 )
 
@@ -310,7 +312,7 @@
 # davit_large-multi
 # =================
 (
-   torchrun --nproc_per_node=8 -- -m voir --config $MILABENCH_BASE/extra/timm/voirconf-davit_large-multi.0-0efae956f1553a76c1e03985181900f5.json $MILABENCH_SRC/benchmarks/timm/pytorch-image-models/train.py --amp --model davit_large --batch-size 128 --lr-base 0.01 --data-dir $MILABENCH_BASE/data --dataset FakeImageNet --output $MILABENCH_BASE/extra/timm/dev/davit_large-multi.0 --checkpoint-hist 1 &
+  torchrun --nproc_per_node=8 --no-python -- voir --config $MILABENCH_BASE/extra/timm/voirconf-davit_large-multi.0-0efae956f1553a76c1e03985181900f5.json $MILABENCH_SRC/benchmarks/timm/pytorch-image-models/train.py --amp --model davit_large --batch-size 128 --lr-base 0.01 --data-dir $MILABENCH_BASE/data --dataset FakeImageNet --output $MILABENCH_BASE/extra/timm/dev/davit_large-multi.0 --checkpoint-hist 1 &
   wait
 )
 
@@ -333,7 +335,7 @@
 # opt-1_3b
 # ========
 (
-   $MILABENCH_SRC/benchmarks/accelerate_opt/activator $MILABENCH_BASE/venv/torch accelerate launch --mixed_precision=fp16 --dynamo_backend=no --machine_rank=0 --num_machines=1 --multi_gpu --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=8 $MILABENCH_SRC/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --model_name facebook/opt-1.3b --cache $MILABENCH_BASE/cache &
+  $MILABENCH_SRC/benchmarks/accelerate_opt/activator $MILABENCH_BASE/venv/torch accelerate launch --mixed_precision=fp16 --dynamo_backend=no --machine_rank=0 --num_machines=1 --multi_gpu --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=8 $MILABENCH_SRC/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --model_name facebook/opt-1.3b --cache $MILABENCH_BASE/cache &
   wait
 )
 
@@ -341,8 +343,8 @@
 # opt-1_3b-multinode
 # ==================
 (
-   $MILABENCH_SRC/benchmarks/accelerate_opt/activator $MILABENCH_BASE/venv/torch accelerate launch --mixed_precision=fp16 --dynamo_backend=no --machine_rank=0 --num_machines=2 --multi_gpu --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=16 $MILABENCH_SRC/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --model_name facebook/opt-1.3b --cache $MILABENCH_BASE/cache &
-   ssh -oCheckHostIP=no -oStrictHostKeyChecking=no -oPasswordAuthentication=no -oPasswordAuthentication=no -p 22 username@192.168.0.11 $MILABENCH_SRC/benchmarks/accelerate_opt/activator $MILABENCH_BASE/venv/torch accelerate launch --mixed_precision=fp16 --dynamo_backend=no --machine_rank=1 --num_machines=2 --multi_gpu --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=16 $MILABENCH_SRC/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --model_name facebook/opt-1.3b --cache $MILABENCH_BASE/cache &
+  $MILABENCH_SRC/benchmarks/accelerate_opt/activator $MILABENCH_BASE/venv/torch accelerate launch --mixed_precision=fp16 --dynamo_backend=no --machine_rank=0 --num_machines=2 --multi_gpu --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=16 $MILABENCH_SRC/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --model_name facebook/opt-1.3b --cache $MILABENCH_BASE/cache &
+  ssh -oCheckHostIP=no -oStrictHostKeyChecking=no -oPasswordAuthentication=no -oPasswordAuthentication=no -p 22 username@192.168.0.11 $MILABENCH_SRC/benchmarks/accelerate_opt/activator $MILABENCH_BASE/venv/torch accelerate launch --mixed_precision=fp16 --dynamo_backend=no --machine_rank=1 --num_machines=2 --multi_gpu --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=16 $MILABENCH_SRC/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --model_name facebook/opt-1.3b --cache $MILABENCH_BASE/cache &
   wait
 )
 
@@ -350,7 +352,7 @@
 # opt-6_7b
 # ========
 (
-   $MILABENCH_SRC/benchmarks/accelerate_opt/activator $MILABENCH_BASE/venv/torch accelerate launch --mixed_precision=fp16 --dynamo_backend=no --machine_rank=0 --num_machines=1 --use_deepspeed --deepspeed_multinode_launcher=standard --zero_stage=2 --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=8 $MILABENCH_SRC/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --model_name facebook/opt-6.7b --cache $MILABENCH_BASE/cache &
+  $MILABENCH_SRC/benchmarks/accelerate_opt/activator $MILABENCH_BASE/venv/torch accelerate launch --mixed_precision=fp16 --dynamo_backend=no --machine_rank=0 --num_machines=1 --use_deepspeed --deepspeed_multinode_launcher=standard --zero_stage=2 --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=8 $MILABENCH_SRC/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --model_name facebook/opt-6.7b --cache $MILABENCH_BASE/cache &
   wait
 )
 
@@ -358,8 +360,8 @@
 # opt-6_7b-multinode
 # ==================
 (
-   $MILABENCH_SRC/benchmarks/accelerate_opt/activator $MILABENCH_BASE/venv/torch accelerate launch --mixed_precision=fp16 --dynamo_backend=no --machine_rank=0 --num_machines=2 --use_deepspeed --deepspeed_multinode_launcher=standard --zero_stage=2 --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=16 $MILABENCH_SRC/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --model_name facebook/opt-6.7b --cache $MILABENCH_BASE/cache &
-   ssh -oCheckHostIP=no -oStrictHostKeyChecking=no -oPasswordAuthentication=no -oPasswordAuthentication=no -p 22 username@192.168.0.11 $MILABENCH_SRC/benchmarks/accelerate_opt/activator $MILABENCH_BASE/venv/torch accelerate launch --mixed_precision=fp16 --dynamo_backend=no --machine_rank=1 --num_machines=2 --use_deepspeed --deepspeed_multinode_launcher=standard --zero_stage=2 --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=16 $MILABENCH_SRC/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --model_name facebook/opt-6.7b --cache $MILABENCH_BASE/cache &
+  $MILABENCH_SRC/benchmarks/accelerate_opt/activator $MILABENCH_BASE/venv/torch accelerate launch --mixed_precision=fp16 --dynamo_backend=no --machine_rank=0 --num_machines=2 --use_deepspeed --deepspeed_multinode_launcher=standard --zero_stage=2 --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=16 $MILABENCH_SRC/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --model_name facebook/opt-6.7b --cache $MILABENCH_BASE/cache &
+  ssh -oCheckHostIP=no -oStrictHostKeyChecking=no -oPasswordAuthentication=no -oPasswordAuthentication=no -p 22 username@192.168.0.11 $MILABENCH_SRC/benchmarks/accelerate_opt/activator $MILABENCH_BASE/venv/torch accelerate launch --mixed_precision=fp16 --dynamo_backend=no --machine_rank=1 --num_machines=2 --use_deepspeed --deepspeed_multinode_launcher=standard --zero_stage=2 --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=16 $MILABENCH_SRC/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --model_name facebook/opt-6.7b --cache $MILABENCH_BASE/cache &
   wait
 )
 
@@ -397,7 +399,7 @@
 # dlrm
 # ====
 (
-   voir --config $MILABENCH_BASE/extra/dlrm/voirconf-dlrm.0-0efae956f1553a76c1e03985181900f5.json $MILABENCH_SRC/benchmarks/dlrm/dlrm/dlrm_s_pytorch.py --num-batches 1000 --data-generation random --arch-mlp-bot 512-512-64 --arch-mlp-top 1024-1024-1024-1 --arch-sparse-feature-size 64 --arch-embedding-size 1000000-1000000-1000000-1000000-1000000-1000000-1000000-1000000 --num-indices-per-lookup 100 --arch-interaction-op dot --numpy-rand-seed 727 --print-freq 999999 --mini-batch-size 16384 --test-mini-batch-size 16384 --test-num-workers 0 --use-gpu &
+  voir --config $MILABENCH_BASE/extra/dlrm/voirconf-dlrm.0-0efae956f1553a76c1e03985181900f5.json $MILABENCH_SRC/benchmarks/dlrm/dlrm/dlrm_s_pytorch.py --num-batches 1000 --data-generation random --arch-mlp-bot 512-512-64 --arch-mlp-top 1024-1024-1024-1 --arch-sparse-feature-size 64 --arch-embedding-size 1000000-1000000-1000000-1000000-1000000-1000000-1000000-1000000 --num-indices-per-lookup 100 --arch-interaction-op dot --numpy-rand-seed 727 --print-freq 999999 --mini-batch-size 16384 --test-mini-batch-size 16384 --test-num-workers 0 --use-gpu &
   wait
 )
 
