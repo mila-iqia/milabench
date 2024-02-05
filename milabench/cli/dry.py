@@ -1,6 +1,7 @@
 import os
 from contextlib import contextmanager
 from dataclasses import dataclass
+import shlex
 
 import voir.instruments.gpu as voirgpu
 import yaml
@@ -86,7 +87,7 @@ class BashGenerator:
 
     def env(self, env):
         for k, v in env.items():
-            self.print(f'export {k}="{v}"')
+            self.print(f'export {k}="{shlex.quote(v)}"')
         self.print()
 
     @contextmanager
@@ -140,27 +141,39 @@ def arguments():
 @tooled
 def multipack_args(conf: Arguments):
     from ..common import arguments as multiargs
-
+    
     args = multiargs()
     args.system = "system_tmp.yaml"
 
-    system = {
-        "arch": "cuda",
-        "nodes": [
-            {"name": str(i), "ip": f"192.168.0.{i}", "user": "username", "main": i == 0}
-            for i in range(conf.nnodes)
-        ],
+    system = {"system": 
+        {
+            "arch": "cuda",
+            "nodes": [
+                {
+                    "name": str(i), 
+                    "ip": f"192.168.0.{i + 10}" if i != 0 else "127.0.0.1", 
+                    "user": "username", 
+                    "main": i == 0,
+                    "port": 22,    
+                }
+                for i in range(conf.nnodes)
+            ],
+        }
     }
 
     with open("system_tmp.yaml", "w") as file:
-        file.write(yaml.dump(system))
+        system = yaml.dump(system)
+        file.write(system)
+    
     return args
 
 
 @tooled
 def cli_dry(args=None):
     """Generate dry commands to execute the bench standalone"""
-
+    from ..config import set_offiline
+    set_offiline(True)
+    
     if args is None:
         args = arguments()
 

@@ -15,6 +15,7 @@ def test_command_regression(capsys, file_regression):
     
     old = os.getenv("MILABENCH_BASE")
     os.environ["MILABENCH_BASE"] = milabench_base
+    os.environ["MILABENCH_CONFIG"] = os.path.join(milabench_src, "config", "standard.yaml")
     
     args = arguments()
     args.withenv = False
