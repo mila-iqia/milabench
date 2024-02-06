@@ -24,7 +24,7 @@ WORKER_1="cn-d004"
 
 
 # Derived
-VERSION="v0.0.7"
+VERSION="v0.0.8"
 IMAGE="ghcr.io/mila-iqia/milabench:$ARCH-$VERSION"
 
 
