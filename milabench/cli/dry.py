@@ -97,7 +97,7 @@ class BashGenerator:
 
     @contextmanager
     def subshell(self):
-        self.print("(")
+        self.print("time (")
         self.indent += 1
         yield
         self.indent -= 1
