@@ -80,9 +80,12 @@ class BashGenerator:
         print(*args, **kwargs)
 
     def section(self, title):
-        self.comment("---")
-        self.comment(title)
-        self.comment("=" * len(title))
+        self.echo("---")
+        self.echo(title)
+        self.echo("=" * len(title))
+        
+    def echo(self, msg):
+        self.print(f"echo \"{msg}\"")
 
     def comment(self, cmt):
         self.print(f"# {cmt}")
