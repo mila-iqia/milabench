@@ -11,6 +11,7 @@ import torchvision.models as tvmodels
 import torchvision.transforms as transforms
 import voir
 from giving import give, given
+from cantilever.core.timer import timeit
 
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
@@ -59,30 +60,38 @@ def scaling(enable):
         yield
 
 
-def train_epoch(model, criterion, optimizer, loader, device, scaler=None):
+def train_epoch(model, criterion, optimizer, loader, device, scaler=None, timer=None):
     global stats
     
     stats.newepoch()
     model.train()
-    for inp, target in voir.iterate("train", loader, True):
-        inp = inp.to(device)
-        target = target.to(device)
-        optimizer.zero_grad()
-        
-        with scaling(scaler is not None):
-            output = model(inp)
-            loss = criterion(output, target)
-            give(loss=loss.item())
 
-        if scaler:
-            scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
-        else:
-            loss.backward()
-            optimizer.step()
+    s = time.time()
+    p = time.time()
+    
+    # this is what computes the batch size
+    for inp, target in voir.iterate("train", loader, True):
         
-        stats.newbatch(inp)
+        with timer.timeit("batch"):
+            inp = inp.to(device)
+            target = target.to(device)
+            optimizer.zero_grad()
+            
+            with scaling(scaler is not None):
+                output = model(inp)
+                loss = criterion(output, target)
+                # this force sync
+                # give(loss=loss.item())
+
+            if scaler:
+                scaler.scale(loss).backward()
+                scaler.step(optimizer)
+                scaler.update()
+            else:
+                loss.backward()
+                optimizer.step()
+            
+            torch.cuda.synchronize()
 
 
 class SyntheticData:
@@ -232,25 +241,25 @@ def main():
     else:
         scaler = None
 
-    s = time.time()
-    with given() as gv:
-        if not args.no_stdout:
-            gv.where("loss").display()
-
-        for epoch in voir.iterate("main", range(args.epochs)):
-            es = time.time()
-            
+    with timeit("train") as train_timer:
+        with given() as gv:
             if not args.no_stdout:
-                print(f"Begin training epoch {epoch}/{args.epochs}")
-            train_epoch(
-                model, criterion, optimizer, train_loader, device, scaler=scaler
-            )
-            
-            ee = time.time()
-            print(f"  Epoch: {stats.epoch_count / (ee - es)}")
-            
-    e = time.time()
-    print(f"Train speed: {stats.count / (e - s)}")
+                gv.where("loss").display()
+
+            for epoch in voir.iterate("main", range(args.epochs)):
+                
+                with train_timer.timeit("epoch") as epoch_timer:
+                    model.train()
+                    es = time.time()
+                    
+                    if not args.no_stdout:
+                        print(f"Begin training epoch {epoch}/{args.epochs}")
+                    
+                    train_epoch(
+                        model, criterion, optimizer, train_loader, device, scaler=scaler, timer=epoch_timer
+                    )
+                        
+    train_timer.show()
 
 if __name__ == "__main__":
     main()

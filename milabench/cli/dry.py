@@ -197,7 +197,11 @@ def cli_dry(args=None):
                 if first_pack and args.withenv:
                     first_pack = False
                     gen.section("Virtual Env")
-                    gen.env(pack.core._nox_session.env)
+                    
+                    venv = pack.core._nox_session.env["VIRTUAL_ENV"]
+                    gen.env(VIRTUAL_ENV=VIRTUAL_ENV)
+                    gen.print("source $VIRTUAL_ENV/bin/activate")
+                    
                     gen.section("Milabench")
                     gen.env(pack.make_env())
 

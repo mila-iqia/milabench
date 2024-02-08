@@ -21,7 +21,6 @@ source $VIRTUAL_ENV/bin/activate
 # resnet50
 # ========
 (
-  CUDA_VISIBLE_DEVICES=0 voir --config /Tmp/slurm.4123709.0/base/extra/torchvision/voirconf-resnet50.D0-0efae956f1553a76c1e03985181900f5.json /home/mila/d/delaunap/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --model resnet50 --batch-size 64 &
-  wait
+  python /home/mila/d/delaunap/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 10 --model resnet50 --batch-size 64
 )
 
