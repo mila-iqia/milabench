@@ -69,8 +69,21 @@ def train_epoch(model, criterion, optimizer, loader, device, scaler=None, timer=
     s = time.time()
     p = time.time()
     
+    def iterator(loader, timer):
+        with timer.timeit("loader"):
+            iterator = iter(loader)
+        
+        while True:
+            with timer.timeit("next"):
+                try:
+                    batch = next(iterator)
+                except StopIteration:
+                    return
+            
+            yield batch
+    
     # this is what computes the batch size
-    for inp, target in voir.iterate("train", loader, True):
+    for inp, target in voir.iterate("train", iterator(loader, timer), True):
         
         with timer.timeit("batch"):
             inp = inp.to(device)
