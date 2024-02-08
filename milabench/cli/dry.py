@@ -72,27 +72,32 @@ class BashGenerator:
     def __init__(self) -> None:
         self.indent = 0
         self.background_mode = False
+        self.print("#!/bin/sh")
+        self.print("")
 
     def print(self, *args, **kwargs):
         print("  " * self.indent, end="")
         print(*args, **kwargs)
 
     def section(self, title):
-        self.comment("---")
-        self.comment(title)
-        self.comment("=" * len(title))
+        self.echo("---")
+        self.echo(title)
+        self.echo("=" * len(title))
+        
+    def echo(self, msg):
+        self.print(f"echo \"{msg}\"")
 
     def comment(self, cmt):
         self.print(f"# {cmt}")
 
     def env(self, env):
         for k, v in env.items():
-            self.print(f'export {k}="{shlex.quote(v)}"')
+            self.print(f'export {k}={shlex.quote(v)}')
         self.print()
 
     @contextmanager
     def subshell(self):
-        self.print("(")
+        self.print("time (")
         self.indent += 1
         yield
         self.indent -= 1
@@ -115,8 +120,10 @@ class BashGenerator:
         sufix = ""
         if True:
             sufix = "&"
-
-        self.print(prefix, " ".join(str(a) for a in args), sufix)
+            
+        frags = [prefix] + [str(a) for a in args] + [sufix]
+        
+        self.print(" ".join(filter(lambda x: x != "", frags)))
 
 
 # fmt: off

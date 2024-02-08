@@ -19,8 +19,12 @@ def test_command_regression(capsys, file_regression):
     
     args = arguments()
     args.withenv = False
-    cli_dry(args)
-    
+
+    try:
+        cli_dry(args)
+    except FileNotFoundError:
+        pytest.skip("Milabench not installed")
+
     all = capsys.readouterr()
     stdout = all.out
     assert stdout != ""
