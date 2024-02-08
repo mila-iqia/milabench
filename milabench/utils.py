@@ -17,6 +17,14 @@ import milabench.validation
 from milabench.fs import XPath
 from milabench.validation.validation import Summary
 
+here = XPath(__file__).parent
+
+
+def pin_dir():
+    pin = (here.parent / ".pin").absolute()
+    print(str(pin))
+    return pin
+
 
 def deprecated(func):
     @functools.wraps(func)
@@ -108,8 +116,9 @@ def assemble_options(options: dict):
 
 def relativize(pth):
     pth = XPath(pth)
+
     if pth.is_absolute():
-        return pth.relative_to(XPath(".").absolute())
+       return pth.relative_to(XPath(here.parent).absolute())
     else:
         return pth
 

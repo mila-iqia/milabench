@@ -1,6 +1,7 @@
 import argparse
 import contextlib
 import os
+import time
 
 import torch
 import torch.cuda.amp
@@ -12,6 +13,23 @@ import voir
 from giving import give, given
 
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+
+
+class Stats:
+    def __init__(self):
+        self.count = 0
+        self.epoch_count = 0
+        
+    def newbatch(self, bs):
+        self.count += bs.shape[0]
+        self.epoch_count += bs.shape[0]
+        
+    def newepoch(self):
+        self.epoch_count = 0
+        
+
+
+stats = Stats()
 
 
 def is_tf32_allowed(args):
@@ -42,11 +60,15 @@ def scaling(enable):
 
 
 def train_epoch(model, criterion, optimizer, loader, device, scaler=None):
+    global stats
+    
+    stats.newepoch()
     model.train()
     for inp, target in voir.iterate("train", loader, True):
         inp = inp.to(device)
         target = target.to(device)
         optimizer.zero_grad()
+        
         with scaling(scaler is not None):
             output = model(inp)
             loss = criterion(output, target)
@@ -59,6 +81,8 @@ def train_epoch(model, criterion, optimizer, loader, device, scaler=None):
         else:
             loss.backward()
             optimizer.step()
+        
+        stats.newbatch(inp)
 
 
 class SyntheticData:
@@ -208,17 +232,25 @@ def main():
     else:
         scaler = None
 
+    s = time.time()
     with given() as gv:
         if not args.no_stdout:
             gv.where("loss").display()
 
         for epoch in voir.iterate("main", range(args.epochs)):
+            es = time.time()
+            
             if not args.no_stdout:
                 print(f"Begin training epoch {epoch}/{args.epochs}")
             train_epoch(
                 model, criterion, optimizer, train_loader, device, scaler=scaler
             )
-
+            
+            ee = time.time()
+            print(f"  Epoch: {stats.epoch_count / (ee - es)}")
+            
+    e = time.time()
+    print(f"Train speed: {stats.count / (e - s)}")
 
 if __name__ == "__main__":
     main()

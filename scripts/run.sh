@@ -1,5 +1,5 @@
 
-OUTPUT="barebone.out"
+OUTPUT="barebone_voir.out"
 
 rm -rf $OUTPUT
 touch $OUTPUT
