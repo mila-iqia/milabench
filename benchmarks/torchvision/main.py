@@ -11,7 +11,7 @@ import torchvision.models as tvmodels
 import torchvision.transforms as transforms
 import voir
 from giving import give, given
-from cantilever.core.timer import timeit
+from cantilever.core.timer import timeit, timeiterator, show_timings
 
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
@@ -43,20 +43,20 @@ def scaling(enable):
         yield
 
 
-def train_epoch(model, criterion, optimizer, loader, device, scaler=None, timer=None):
+def train_epoch(model, criterion, optimizer, loader, device, scaler=None):
     model.train()
 
     s = time.time()
     p = time.time()
     
-    def toiterator(loader, timer):
-        with timer.timeit("loader"):
+    def toiterator(loader):
+        with timeit("loader"):
             return iter(loader)
     
     # this is what computes the batch size
-    for inp, target in timer.iterator(voir.iterate("train", toiterator(loader, timer), True)):
+    for inp, target in timeiterator(voir.iterate("train", toiterator(loader), True)):
         
-        with timer.timeit("batch"):
+        with timeit("batch"):
             inp = inp.to(device)
             target = target.to(device)
             optimizer.zero_grad()
@@ -101,15 +101,12 @@ def main():
     from voir.phase import StopProgram
     
     try:
-        with timeit("main") as main_timer:
-            _main(main_timer)
-
-        main_timer.show()
+        _main()
     except StopProgram:
-        main_timer.show()
+        show_timings(True)
         raise
     
-def _main(main_timer):
+def _main():
     parser = argparse.ArgumentParser(description="Torchvision models")
     parser.add_argument(
         "--batch-size",
@@ -240,14 +237,14 @@ def _main(main_timer):
     else:
         scaler = None
 
-    with main_timer.timeit("train") as train_timer:
+    with timeit("train") as train_timer:
         with given() as gv:
             if not args.no_stdout:
                 gv.where("loss").display()
 
             for epoch in voir.iterate("main", range(args.epochs)):
                 
-                with train_timer.timeit("epoch") as epoch_timer:
+                with timeit("epoch") as epoch_timer:
                     model.train()
                     es = time.time()
                     
@@ -255,7 +252,7 @@ def _main(main_timer):
                         print(f"Begin training epoch {epoch}/{args.epochs}")
                     
                     train_epoch(
-                        model, criterion, optimizer, train_loader, device, scaler=scaler, timer=epoch_timer
+                        model, criterion, optimizer, train_loader, device, scaler=scaler
                     )
                         
                 break
