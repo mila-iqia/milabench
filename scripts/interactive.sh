@@ -7,6 +7,7 @@ export ENV="$SLURM_TMPDIR/env"
 export MILABENCH_SOURCE="$HOME/milabench"
 export BASE="$SLURM_TMPDIR/base"
 export ARCH="cuda"
+export PYTHON=3.9
 
 if [ ! -d "$ENV" ] && [ "$ENV" != "base" ] && [ ! -d "$CONDA_ENVS/$ENV" ]; then
      conda create --prefix $ENV python=$PYTHON -y

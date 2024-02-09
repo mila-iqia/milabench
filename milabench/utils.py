@@ -118,7 +118,7 @@ def relativize(pth):
     pth = XPath(pth)
 
     if pth.is_absolute():
-       return pth.relative_to(XPath(here.parent).absolute())
+        return pth.relative_to(XPath(here.parent).absolute())
     else:
         return pth
 

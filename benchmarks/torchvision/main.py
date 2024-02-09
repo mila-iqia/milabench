@@ -16,23 +16,6 @@ from cantilever.core.timer import timeit
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
 
-class Stats:
-    def __init__(self):
-        self.count = 0
-        self.epoch_count = 0
-        
-    def newbatch(self, bs):
-        self.count += bs.shape[0]
-        self.epoch_count += bs.shape[0]
-        
-    def newepoch(self):
-        self.epoch_count = 0
-        
-
-
-stats = Stats()
-
-
 def is_tf32_allowed(args):
     return "tf32" in args.precision
 
@@ -61,29 +44,17 @@ def scaling(enable):
 
 
 def train_epoch(model, criterion, optimizer, loader, device, scaler=None, timer=None):
-    global stats
-    
-    stats.newepoch()
     model.train()
 
     s = time.time()
     p = time.time()
     
-    def iterator(loader, timer):
+    def toiterator(loader, timer):
         with timer.timeit("loader"):
-            iterator = iter(loader)
-        
-        while True:
-            with timer.timeit("next"):
-                try:
-                    batch = next(iterator)
-                except StopIteration:
-                    return
-            
-            yield batch
+            return iter(loader)
     
     # this is what computes the batch size
-    for inp, target in voir.iterate("train", iterator(loader, timer), True):
+    for inp, target in timer.iterator(voir.iterate("train", toiterator(loader, timer), True)):
         
         with timer.timeit("batch"):
             inp = inp.to(device)
@@ -127,6 +98,18 @@ class SyntheticData:
 
 
 def main():
+    from voir.phase import StopProgram
+    
+    try:
+        with timeit("main") as main_timer:
+            _main(main_timer)
+
+        main_timer.show()
+    except StopProgram:
+        main_timer.show()
+        raise
+    
+def _main(main_timer):
     parser = argparse.ArgumentParser(description="Torchvision models")
     parser.add_argument(
         "--batch-size",
@@ -237,8 +220,11 @@ def main():
         train_loader = torch.utils.data.DataLoader(
             train,
             batch_size=args.batch_size,
-            shuffle=True,
             num_workers=args.num_workers,
+            sampler=torch.utils.data.RandomSampler(
+                train, 
+                replacement=True, 
+                num_samples=len(train) * args.epochs)
         )
     else:
         train_loader = SyntheticData(
@@ -254,7 +240,7 @@ def main():
     else:
         scaler = None
 
-    with timeit("train") as train_timer:
+    with main_timer.timeit("train") as train_timer:
         with given() as gv:
             if not args.no_stdout:
                 gv.where("loss").display()
@@ -272,7 +258,7 @@ def main():
                         model, criterion, optimizer, train_loader, device, scaler=scaler, timer=epoch_timer
                     )
                         
-    train_timer.show()
+                break
 
 if __name__ == "__main__":
     main()

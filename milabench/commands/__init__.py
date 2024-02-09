@@ -453,18 +453,18 @@ class TorchRunCommand(WrapperCommand):
     def _argv(self, **kwargs):
         devices = self.pack.config.get("devices", [])
         nproc = len(devices)
-        
+
         if nproc > 1:
             argv = [*super()._argv(**kwargs), f"--nproc_per_node={nproc}"]
-            
+
             # Check if the sub-executor targets a module or not
             cmd = next(iter(self.exec.argv()), None)
-            
+
             if cmd:
                 # python or voir; tell it to not prepend python since we are doing it
                 if cmd in ("python", "voir"):
                     argv.append("--no-python")
-                
+
                 # if the command exists and it is not a path assume it is a module
                 # script is not a file, maybe it is a module
                 elif not XPath(cmd).exists():

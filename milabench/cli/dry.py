@@ -83,16 +83,16 @@ class BashGenerator:
         self.echo("---")
         self.echo(title)
         self.echo("=" * len(title))
-        
+
     def echo(self, msg):
-        self.print(f"echo \"{msg}\"")
+        self.print(f'echo "{msg}"')
 
     def comment(self, cmt):
         self.print(f"# {cmt}")
 
     def env(self, env):
         for k, v in env.items():
-            self.print(f'export {k}={shlex.quote(v)}')
+            self.print(f"export {k}={shlex.quote(v)}")
         self.print()
 
     @contextmanager
@@ -120,9 +120,9 @@ class BashGenerator:
         sufix = ""
         if True:
             sufix = "&"
-            
+
         frags = [prefix] + [str(a) for a in args] + [sufix]
-        
+
         self.print(" ".join(filter(lambda x: x != "", frags)))
 
 
@@ -142,10 +142,10 @@ def arguments():
     ngpu: Option & int = 8
     capacity: Option & int = 80000
     nnodes: Option & int = 2
-    
+
     # [negate]
     withenv: Option & bool = True
-    
+
     # [negate]
     usevoir: Option & bool = True
     return Arguments(nnodes, ngpu, capacity, withenv, usevoir)
@@ -204,11 +204,11 @@ def cli_dry(args=None):
                 if first_pack and args.withenv:
                     first_pack = False
                     gen.section("Virtual Env")
-                    
+
                     venv = pack.core._nox_session.env["VIRTUAL_ENV"]
-                    gen.env(VIRTUAL_ENV=VIRTUAL_ENV)
+                    gen.env({"VIRTUAL_ENV": venv})
                     gen.print("source $VIRTUAL_ENV/bin/activate")
-                    
+
                     gen.section("Milabench")
                     gen.env(pack.make_env())
 
