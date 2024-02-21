@@ -115,6 +115,13 @@ def _resolve_ip(ip):
     try:
         hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(ip)
         lazy_raise = None
+
+    except socket.herror as err:
+        hostname = ip
+        aliaslist = []
+        ipaddrlist = []
+        lazy_raise = err
+
     except socket.gaierror as err:
         # Get Addr Info (GAI) Error
         #
@@ -130,6 +137,16 @@ def _resolve_ip(ip):
     return hostname, aliaslist, ipaddrlist, lazy_raise
 
 
+# If true that means we cannot resolve the ip addresses
+# so we ignore errors
+offline = False
+
+
+def set_offline(value):
+    global offline
+    offline = value
+
+
 def resolve_addresses(nodes):
     # Note: it is possible for self to be none
     # if we are running milabench on a node that is not part of the system
@@ -138,9 +155,13 @@ def resolve_addresses(nodes):
     self = None
     lazy_raise = None
     ip_list = get_remote_ip()
+    bad_ips = []
 
     for node in nodes:
         hostname, aliaslist, ipaddrlist, lazy_raise = _resolve_ip(node["ip"])
+
+        if lazy_raise is not None:
+            bad_ips.append((node["ip"], lazy_raise))
 
         node["hostname"] = hostname
         node["aliaslist"] = aliaslist
@@ -163,22 +184,31 @@ def resolve_addresses(nodes):
         node["local"] = is_local
 
         if is_local:
+            if self is not None:
+                print("multiple local node!!")
+
             self = node
             node["ipaddrlist"] = list(ip_list)
 
     # if self is node we might be outisde the cluster
     # which explains why we could not resolve the IP of the nodes
-    if self is not None and lazy_raise:
-        raise RuntimeError("Could not resolve node ip") from lazy_raise
+    if not offline:
+        if self is not None and lazy_raise:
+            raise RuntimeError(f"Could not resolve node ip {bad_ips}") from lazy_raise
 
     return self
 
 
 def get_gpu_capacity():
+    import math
+
     capacity = float("+inf")
 
     for k, v in get_gpu_info()["gpus"].items():
         capacity = min(v["memory"]["total"], capacity)
+
+    if math.isinf(capacity):
+        return 0
 
     return capacity
 

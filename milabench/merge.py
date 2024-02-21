@@ -1,6 +1,5 @@
 """Utilities to merge dictionaries and other data structures."""
 
-
 from collections import deque
 from functools import reduce
 from typing import Union

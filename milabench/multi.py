@@ -17,7 +17,7 @@ from .remote import (
     milabench_remote_prepare,
     milabench_remote_run,
 )
-from .utils import make_constraints_file
+from .utils import make_constraints_file, pin_dir
 
 here = XPath(__file__).parent
 
@@ -225,8 +225,8 @@ class MultiPackage:
                 pack0 = packs[0]
                 ivar = pack0.config["install_variant"]
 
-                pindir = XPath(".pin")
-
+                #
+                pindir = pin_dir()
                 constraint_path = pindir / "tmp-constraints.txt"
                 constraint_files = make_constraints_file(constraint_path, constraints)
 

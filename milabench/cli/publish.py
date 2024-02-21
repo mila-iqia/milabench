@@ -1,18 +1,17 @@
-import re
 import json
-import subprocess
-from contextlib import contextmanager
 import multiprocessing
-from dataclasses import dataclass
-from urllib.parse import urlparse, ParseResult
-import time
-import threading
-import signal
 import os
+import re
+import signal
+import subprocess
 import sys
+import threading
+import time
+from contextlib import contextmanager
+from dataclasses import dataclass
+from urllib.parse import ParseResult, urlparse
 
 from coleo import Option, tooled
-
 
 SLEEP = 0.01
 _INIT = 0

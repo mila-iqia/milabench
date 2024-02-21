@@ -453,15 +453,35 @@ class TorchRunCommand(WrapperCommand):
     def _argv(self, **kwargs):
         devices = self.pack.config.get("devices", [])
         nproc = len(devices)
+
         if nproc > 1:
-            argv = [*super()._argv(**kwargs), f"--nproc_per_node={nproc}", "--"]
+            argv = [*super()._argv(**kwargs), f"--nproc_per_node={nproc}"]
+
             # Check if the sub-executor targets a module or not
             cmd = next(iter(self.exec.argv()), None)
-            # if the command exists and it is not a path assume it is a module
-            if cmd and not XPath(cmd).exists():
-                argv.append("-m")
+
+            if cmd:
+                # python or voir; tell it to not prepend python since we are doing it
+                if cmd in ("python", "voir"):
+                    argv.append("--no-python")
+
+                # if the command exists and it is not a path assume it is a module
+                # script is not a file, maybe it is a module
+                elif not XPath(cmd).exists():
+                    argv.append("-m")
+
+            # everything after torchrun args are script args
+            argv.append("--")
             return argv
         return []
+
+
+use_voir = True
+
+
+def set_voir(val):
+    global use_voir
+    use_voir = val
 
 
 class VoirCommand(WrapperCommand):
@@ -479,6 +499,10 @@ class VoirCommand(WrapperCommand):
 
     def _argv(self, **kwargs) -> List:
         argv = super()._argv(**kwargs)
+
+        if not use_voir:
+            # voir replace python
+            return ["python"]
 
         if voirconf := self.pack.config.get("voir", None):
             hsh = md5(str(voirconf).encode("utf8"))

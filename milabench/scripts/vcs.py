@@ -1,5 +1,6 @@
 """Use to retrieve GIT version info, this file cannot import milabench modules
 as it is executed as part of the installation process"""
+
 import os
 import subprocess
 import warnings

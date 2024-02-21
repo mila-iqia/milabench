@@ -1,6 +1,7 @@
 import argparse
 import contextlib
 import os
+import time
 
 import torch
 import torch.cuda.amp
@@ -10,6 +11,7 @@ import torchvision.models as tvmodels
 import torchvision.transforms as transforms
 import voir
 from giving import give, given
+from cantilever.core.timer import timeit, timeiterator, show_timings
 
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
@@ -43,22 +45,37 @@ def scaling(enable):
 
 def train_epoch(model, criterion, optimizer, loader, device, scaler=None):
     model.train()
-    for inp, target in voir.iterate("train", loader, True):
-        inp = inp.to(device)
-        target = target.to(device)
-        optimizer.zero_grad()
-        with scaling(scaler is not None):
-            output = model(inp)
-            loss = criterion(output, target)
-            give(loss=loss.item())
 
-        if scaler:
-            scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
-        else:
-            loss.backward()
-            optimizer.step()
+    s = time.time()
+    p = time.time()
+    
+    def toiterator(loader):
+        with timeit("loader"):
+            return iter(loader)
+    
+    # this is what computes the batch size
+    for inp, target in timeiterator(voir.iterate("train", toiterator(loader), True)):
+        
+        with timeit("batch"):
+            inp = inp.to(device)
+            target = target.to(device)
+            optimizer.zero_grad()
+            
+            with scaling(scaler is not None):
+                output = model(inp)
+                loss = criterion(output, target)
+                # this force sync
+                # give(loss=loss.item())
+
+            if scaler:
+                scaler.scale(loss).backward()
+                scaler.step(optimizer)
+                scaler.update()
+            else:
+                loss.backward()
+                optimizer.step()
+            
+            torch.cuda.synchronize()
 
 
 class SyntheticData:
@@ -81,6 +98,15 @@ class SyntheticData:
 
 
 def main():
+    from voir.phase import StopProgram
+    
+    try:
+        _main()
+    except StopProgram:
+        show_timings(True)
+        raise
+    
+def _main():
     parser = argparse.ArgumentParser(description="Torchvision models")
     parser.add_argument(
         "--batch-size",
@@ -191,8 +217,11 @@ def main():
         train_loader = torch.utils.data.DataLoader(
             train,
             batch_size=args.batch_size,
-            shuffle=True,
             num_workers=args.num_workers,
+            sampler=torch.utils.data.RandomSampler(
+                train, 
+                replacement=True, 
+                num_samples=len(train) * args.epochs)
         )
     else:
         train_loader = SyntheticData(
@@ -208,17 +237,25 @@ def main():
     else:
         scaler = None
 
-    with given() as gv:
-        if not args.no_stdout:
-            gv.where("loss").display()
-
-        for epoch in voir.iterate("main", range(args.epochs)):
+    with timeit("train") as train_timer:
+        with given() as gv:
             if not args.no_stdout:
-                print(f"Begin training epoch {epoch}/{args.epochs}")
-            train_epoch(
-                model, criterion, optimizer, train_loader, device, scaler=scaler
-            )
+                gv.where("loss").display()
 
+            for epoch in voir.iterate("main", range(args.epochs)):
+                
+                with timeit("epoch") as epoch_timer:
+                    model.train()
+                    es = time.time()
+                    
+                    if not args.no_stdout:
+                        print(f"Begin training epoch {epoch}/{args.epochs}")
+                    
+                    train_epoch(
+                        model, criterion, optimizer, train_loader, device, scaler=scaler
+                    )
+                        
+                break
 
 if __name__ == "__main__":
     main()

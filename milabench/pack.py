@@ -24,6 +24,7 @@ from .utils import (
     deprecated,
     make_constraints_file,
     relativize,
+    pin_dir,
 )
 
 
@@ -390,7 +391,7 @@ class Package(BasePackage):
                 reqs.rm()
 
             grp = self.config["group"]
-            constraint_path = XPath(".pin") / f"tmp-constraints-{ivar}-{grp}.txt"
+            constraint_path = pin_dir() / f"tmp-constraints-{ivar}-{grp}.txt"
             constraint_files = make_constraints_file(constraint_path, constraints)
             current_input_files = constraint_files + (base_reqs, *input_files)
 

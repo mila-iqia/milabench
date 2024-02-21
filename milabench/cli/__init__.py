@@ -5,6 +5,7 @@ from coleo import run_cli
 
 from .compare import cli_compare
 from .dev import cli_dev
+from .dry import cli_dry
 from .install import cli_install
 from .machine import cli_machine
 from .pin import cli_pin
@@ -81,6 +82,9 @@ class Main:
 
     def write_report_to_pr():
         cli_write_report_to_pr()
+
+    def dry():
+        cli_dry()
 
 
 def main(argv=None):
