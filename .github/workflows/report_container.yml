@@ -4,17 +4,9 @@ on:
   # Allow manual runs
   workflow_dispatch:
 
-  # Only run for push on the main branch or for tagged version
-  push:
-    branches:
-      - master
-    tags:
-      - v*.*.*
-
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-
 
 permissions:
   packages: write
@@ -54,7 +46,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=report-${{ env.IMAGE_TAG }}
+            type=raw,value=report
 
       - name: Build and push the image
         uses: docker/build-push-action@v3
