@@ -6,6 +6,7 @@ from hrepr import HTML, hrepr
 from pandas import DataFrame
 
 from milabench.utils import error_guard
+from milabench.summary import Summary
 
 nan = math.nan
 
@@ -13,35 +14,43 @@ H = HTML()
 
 
 @error_guard({})
-def _make_row(summary, compare, weights):
+def _make_row(summary, compare, config):
     mkey = "train_rate"
     metric = "mean"
-    row = {}
+    row = {
+        "n": nan,
+        "fail": nan,
+        "perf": nan,
+        "std%": nan,
+        "sem%": nan,
+        "peak_memory": nan,
+        "score": nan,
+        "weight": config.get("weight", summary.get("weight", 0)),
+        "enabled": config.get("enabled", summary.get("enabled", 0)),
+    }
 
-    row["n"] = summary["n"] if summary else nan
-    row["fail"] = summary["failures"] if summary else nan
-    row["perf"] = summary[mkey][metric] if summary else nan
+    if not summary:
+        return row
+
+    #
+    row["n"] = summary["n"]
+    row["fail"] = summary["failures"] + row["n"] > 0
+    row["perf"] = summary[mkey][metric]
 
     if compare:
         row["perf_base"] = compare[mkey][metric]
         row["perf_ratio"] = row["perf_adj"] / row["perf_base"]
 
-    row["std%"] = summary[mkey]["std"] / summary[mkey][metric] if summary else nan
-    row["sem%"] = summary[mkey]["sem"] / summary[mkey][metric] if summary else nan
+    row["std%"] = summary[mkey]["std"] / summary[mkey][metric]
+    row["sem%"] = summary[mkey]["sem"] / summary[mkey][metric]
     # row["iqr%"] = (summary[mkey]["q3"] - summary[mkey]["q1"]) / summary[mkey]["median"] if summary else nan
-    row["peak_memory"] = (
-        max(
-            (data["memory"]["max"] for data in summary["gpu_load"].values())
-            if summary["gpu_load"]
-            else [-1]
-        )
-        if summary
-        else nan
-    )
+
+    if summary["gpu_load"]:
+        memory = [data["memory"]["max"] for data in summary["gpu_load"].values()]
+        row["peak_memory"] = max(memory)
 
     # Sum of all the GPU performance
     # to get the overall perf of the whole machine
-
     if "per_gpu" in summary:
         acc = 0
         for _, metrics in summary["per_gpu"].items():
@@ -51,10 +60,7 @@ def _make_row(summary, compare, weights):
 
     success_ratio = 1 - row["fail"] / row["n"]
     score = (acc if acc > 0 else row["perf"]) * success_ratio
-
     row["score"] = score
-    row["weight"] = weights.get("weight", summary.get("weight", 0))
-    # ----
 
     return row
 
@@ -187,6 +193,15 @@ columns_order = {
 
 
 def make_dataframe(summary, compare=None, weights=None):
+    if weights is not None:
+        # We overriden the config
+        required = weights.keys()
+
+        for key in required:
+            if key not in summary:
+                print(f"Missing benchmark {key}")
+                summary[key] = {"name": key, "n": 0, "successes": 0, "failures": 0}
+
     if weights is None:
         weights = dict()
 
@@ -214,7 +229,7 @@ def make_dataframe(summary, compare=None, weights=None):
 
 @error_guard({})
 def make_report(
-    summary,
+    summary: dict[str, Summary],
     compare=None,
     html=None,
     compare_gpus=False,
@@ -248,7 +263,7 @@ def make_report(
     def _score(column):
         # This computes a weighted geometric mean
         perf = df[column]
-        weights = df["weight"]
+        weights = df["weight"] * df["enabled"].astype(int)
         logscore = np.sum(np.log(perf) * weights) / np.sum(weights)
         return np.exp(logscore)
 
