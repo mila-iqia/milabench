@@ -399,6 +399,11 @@ class SSHCommand(WrapperCommand):
             == localnode["hostname"]  # The hostname is the local node
         )
 
+    def _load_env(self, node):
+        if node.get("env", None):
+            return node["env"]
+        return []
+
     def _argv(self, **kwargs) -> List:
         # No-op when executing on a local node
         if self.is_local():
@@ -410,12 +415,13 @@ class SSHCommand(WrapperCommand):
         host = f"{user}@{self.host}" if user else self.host
 
         argv = super()._argv(**kwargs)
-        argv.extend(["-oPasswordAuthentication=no"])
-        argv.extend(["-p", str(self.port)])
-
         if key:
-            argv.append(f"-i{key}")
+            # scp apparently needs `-i` to be first
+            argv.insert(1, f"-i{key}")
+        argv.append(f"-p{self.port}")
         argv.append(host)
+
+        argv.extend(self._load_env(node))
 
         return argv
 
@@ -427,21 +433,27 @@ class SCPCommand(SSHCommand, CmdCommand):
         self,
         pack: pack.BasePackage,
         host: str,
-        directory: str,
+        src: str,
         *scp_argv,
+        dest: str = None,
         user: str = None,
         key: str = None,
         **kwargs,
     ) -> None:
         super().__init__(pack, host, "-r", *scp_argv, user=user, key=key, **kwargs)
-        self.dir = directory
+        self.src = src
+        self.dest = dest if dest is not None else self.src
+
+    def _load_env(self, node):
+        del node
+        return []
 
     def _argv(self, **kwargs) -> List:
         argv = super()._argv(**kwargs)
 
         host = argv.pop()
-        argv.append(self.dir)
-        argv.append(f"{host}:{self.dir}")
+        argv.append(self.src)
+        argv.append(f"{host}:{self.dest}")
 
         return argv
 

@@ -1,16 +1,21 @@
+from copy import deepcopy
 import io
 import json
 import os
 import re
 import runpy
+import subprocess
 import sys
 import traceback
 from dataclasses import dataclass, field
 from datetime import datetime
 
 from coleo import Option, default, tooled
+import git
 from omegaconf import OmegaConf
 from voir.instruments.gpu import deduce_backend, select_backend
+import yaml
+from milabench import ROOT_FOLDER
 
 from milabench.alt_async import proceed
 from milabench.utils import available_layers, blabla, multilogger
@@ -194,6 +199,13 @@ def _get_multipack(
     if args.config is None:
         sys.exit("Error: CONFIG argument not provided and no $MILABENCH_CONFIG")
 
+    if args.system is None:
+        args.system = os.environ.get("MILABENCH_SYSTEM", None)
+
+    if args.system is None:
+        if XPath(f"{args.config}.system").exists():
+            args.system = f"{args.config}.system"
+
     if args.select:
         args.select = set(args.select.split(","))
 
@@ -255,7 +267,7 @@ def _get_multipack(
         return selected_config
     else:
         return MultiPackage(
-            {name: get_pack(defn) for name, defn in selected_config.items()}
+            {name: get_pack(deepcopy(defn)) for name, defn in selected_config.items()}
         )
 
 
@@ -294,6 +306,160 @@ def _read_reports(*runs):
                 all_data[str(pth)] = _parse_report(pth)
 
     return all_data
+
+
+def _find_metas(reports):
+    local_meta = next(iter(e for _r in reports for e in _r if e["event"] == "meta"), None)
+    if local_meta:
+        local_meta = local_meta["data"]
+    remote_metas = []
+    for _r in reports:
+        meta_lines = []
+        for event in _r:
+            _, event_type, line = None, "", []
+
+            try:
+                _, event_type, *line = event["data"].split(" ")
+            except (AttributeError, ValueError):
+                pass
+
+            if event_type[:1] + event_type[-1:] != "[]":
+                event_type = None
+                line = event["data"]
+            else:
+                line = " ".join(line)
+
+            if event_type == "[meta]":
+                meta_lines.append(line)
+            elif event_type is None and meta_lines:
+                meta_lines.append(line)
+            elif meta_lines:
+                remote_metas.append(yaml.safe_load("".join(meta_lines)))
+                meta_lines = []
+
+    return local_meta, remote_metas
+
+
+def _filter_reports(*reports):
+    all_reports = []
+
+    for report in reports:
+        config = next(iter(e for e in report if e["event"] == "config"), None)
+        if config is None:
+            continue
+
+        if config["data"]["name"] != "remote":
+            all_reports.append(report)
+
+    return all_reports
+
+
+def _push_reports(reports_repo, runs, packs:dict=None):
+    _SVG_COLORS = {
+        "pass": "blue",
+        "partial": "yellow",
+        "failure": "red",
+    }
+    import milabench.cli.badges as badges
+
+    _repo = git.repo.base.Repo(ROOT_FOLDER)
+    try:
+        reports_repo = git.repo.base.Repo(str(reports_repo))
+    except (git.exc.InvalidGitRepositoryError, git.exc.NoSuchPathError):
+        repo_url = next(iter(_r.url for _r in _repo.remotes if _r.name == "origin"), None)
+        reports_repo = git.repo.base.Repo.clone_from(repo_url, str(reports_repo), branch="reports")
+
+    reports_url = ([
+        _r.url for _r in _repo.remotes if "mila-iqia" in _r.url
+    ] or [
+        _r.url for _r in _repo.remotes if _r.name == "origin"
+    ])[0]
+    reports_url = XPath("github.com".join(reports_url.split("github.com")[1:])[1:])
+    reports_url = XPath("https://github.com") / f"{reports_url.with_suffix('')}/tree/{reports_repo.active_branch.name}"
+
+    device_reports = {}
+    for run in runs:
+        reports = list(_read_reports(run).values())
+        reports = _filter_reports(*reports)
+
+        if not reports:
+            continue
+
+        meta = [e["data"] for _r in reports for e in _r if e["event"] == "meta"]
+
+        for _meta in meta:
+            for gpu in _meta["accelerators"]["gpus"].values():
+                device = gpu["product"].replace(" ", "_")
+                break
+        else:
+            for _meta in meta:
+                device = _meta["cpu"]["brand"].replace(" ", "_")
+                break
+
+        tag = ([
+            t.name
+            for t in _repo.tags
+            if meta[0]["milabench"]["tag"].startswith(t.name)
+        ] or [meta[0]["milabench"]["tag"]])[0]
+        reports_dir = XPath(reports_repo.working_tree_dir) / tag
+
+        run = XPath(run)
+        try:
+            run.copy(reports_dir / device / run.name)
+        except FileExistsError:
+            pass
+
+        device_reports.setdefault((device, tag), set())
+        device_reports[(device, tag)].update(
+            (reports_dir / device).glob("*/")
+        )
+
+    for (device, tag), reports in device_reports.items():
+        reports_dir = XPath(reports_repo.working_tree_dir) / tag
+        reports = _read_reports(*reports)
+        reports = _filter_reports(*reports.values())
+        summary = make_summary(reports)
+
+        successes = [s["successes"] for s in summary.values()]
+        failures = [s["failures"] for s in summary.values()]
+
+        if sum(successes) == 0:
+            text = "failure"
+        elif any(failures):
+            text = "partial"
+        else:
+            text = "pass"
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m", badges.__name__,
+                "--left-text", device,
+                "--right-text", text,
+                "--right-color", _SVG_COLORS[text],
+                "--whole-link", str(reports_url / tag / device)
+            ],
+            capture_output=True
+        )
+        if result.returncode == 0:
+            (reports_dir / device / "badge.svg").write_text(result.stdout.decode("utf8"))
+
+        with open(str(reports_dir / device / "README.md"), "wt") as _f:
+            _f.write("```\n")
+            make_report(summary, stream=_f)
+            _f.write("```\n")
+
+        for cmd, _kwargs in (
+            (["git", "pull"], {"check": True}),
+            (["git", "add", tag], {"check": True}),
+            (["git", "commit", "-m", tag], {"check": False}),
+            (["git", "push"], {"check": True})
+        ):
+            subprocess.run(
+                cmd,
+                cwd=reports_repo.working_tree_dir,
+                **_kwargs
+            )
 
 
 def _error_report(reports):

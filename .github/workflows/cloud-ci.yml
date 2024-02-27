@@ -1,0 +1,109 @@
+name: tests
+
+on:
+  # Runs for pull requests
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  tests:
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - arch: cuda
+            exclude: "no-cuda"
+            run_on: ec2
+          # - arch: rocm
+          #   exclude : "no-rocm"
+
+    runs-on: ubuntu-latest
+    environment: test-cloud-ci
+
+    # Cancel previous jobs if a new version was pushed
+    concurrency:
+      group: "${{ github.ref }}-${{ matrix.arch }}-${{ matrix.run_on }}"
+      cancel-in-progress: true
+
+    defaults:
+      run:
+        shell: bash -el {0}
+
+    env:
+      MILABENCH_CONFIG: "config/test.yaml"
+      MILABENCH_SYSTEM: "config/examples/${{ matrix.run_on }}-system.yaml"
+      MILABENCH_BASE: "output"
+      MILABENCH_ARGS: ""
+      MILABENCH_GPU_ARCH: "${{ matrix.arch }}"
+      MILABENCH_DASH: "no"
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.REPORTS_PAT }}
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: dependencies
+        run: |
+          python -m pip install -U pip
+          python -m pip install -U poetry
+          poetry lock --no-update
+          poetry install
+
+      - name: setup cloud credentials
+        run: |
+          mkdir -p ~/.aws
+          mkdir -p ~/.ssh/covalent
+          echo "${{ secrets.COVALENT_EC2_EXECUTOR_KEYPAIR }}" >~/.ssh/covalent/covalent-ec2-executor-keypair.pem
+          echo "[default]" >~/.aws/credentials
+          echo "aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID }}" >>~/.aws/credentials
+          echo "aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >>~/.aws/credentials
+          chmod -R a-rwx,u+rwX ~/.aws ~/.ssh
+
+      - name: setup cloud
+        run: |
+          _system=$(
+          poetry run milabench cloud \
+            --setup \
+            --run-on ${{ matrix.run_on }}
+          )
+          { read _hash ; }< <(
+          echo -n "$_system" | while read l
+          do
+              if [[ "$l" == "# hash::>"* ]]
+              then
+                  echo -n "${l#*::>}"
+              fi
+          done
+          echo
+          )
+          if [[ -z "${_hash}" ]]
+          then
+            >&2 echo "Failed to fetch system config hash"
+            exit 1
+          fi
+          echo -n "$_system" >$MILABENCH_SYSTEM.$_hash
+          echo "MILABENCH_SYSTEM=$MILABENCH_SYSTEM.$_hash" >>$GITHUB_ENV
+
+      - name: install benchmarks
+        run: |
+          poetry run milabench install
+
+      - name: prepare benchmarks
+        run: |
+          poetry run milabench prepare
+
+      - name: run benchmarks
+        run: |
+          poetry run milabench run
+
+      - name: Summary
+        run: |
+          git remote set-url origin "https://${{ vars.REPORTS_USERNAME }}:${{ secrets.REPORTS_PAT }}@$(git remote get-url origin | cut -d'/' -f3-)"
+          git config --global user.email "github-ci@example.com"
+          git config --global user.name "GitHub CI"
+          poetry run milabench report --push

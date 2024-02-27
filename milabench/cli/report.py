@@ -1,10 +1,12 @@
+import glob
 import os
 import sys
 from dataclasses import dataclass, field
 
 from coleo import Option, config as configuration, tooled
 
-from ..common import Option, _error_report, _get_multipack, _read_reports
+from ..common import Option, _error_report, _get_multipack, _push_reports, _read_reports
+from ..fs import XPath
 from ..report import make_report
 from ..summary import make_summary
 
@@ -12,12 +14,13 @@ from ..summary import make_summary
 # fmt: off
 @dataclass
 class Arguments:
-    runs:        list = field(default_factory=list)
+    runs        : list = field(default_factory=list)
     config      : str = os.environ.get("MILABENCH_CONFIG", None)
     compare     : str = None
     compare_gpus: bool = False
     html        : str = None
     price       : int = None
+    push        : bool = False
 # fmt: on
 
 
@@ -42,7 +45,10 @@ def arguments():
     # Price per unit
     price: Option & int = None
 
-    return Arguments(runs, config, compare, compare_gpus, html, price)
+    # Push reports to repo
+    push: Option & bool = False
+
+    return Arguments(runs, config, compare, compare_gpus, html, price, push)
 
 
 @tooled
@@ -68,11 +74,6 @@ def cli_report(args=None):
     # ------
     # 1 errors, details in HTML report.
 
-    reports = None
-    if args.runs:
-        reports = _read_reports(*args.runs)
-        summary = make_summary(reports.values())
-
     if args.config:
         from milabench.common import arguments as multipack_args
 
@@ -80,6 +81,25 @@ def cli_report(args=None):
         margs.config = args.config
 
         args.config = _get_multipack(margs, return_config=True)
+
+    assert args.config if args.push else None
+
+    if not args.runs and args.config:
+        run_dirs = {XPath(pack_config["dirs"]["runs"]) for pack_config in args.config.values()}
+        filter = lambda _p: not any([XPath(_p).name.startswith(f"{prefix}.") for prefix in ("install", "prepare")])
+        args.runs = sorted(
+            {_r
+             for _rd in run_dirs
+             for _r in glob.glob(str(_rd / "*.*.*/"))
+             if filter(_r)
+            },
+            key=lambda _p: XPath(_p).name.split(".")[-2:]
+        )
+
+    reports = None
+    if args.runs:
+        reports = _read_reports(*args.runs)
+        summary = make_summary(reports.values())
 
     make_report(
         summary,
@@ -93,3 +113,10 @@ def cli_report(args=None):
         errdata=reports and _error_report(reports),
         stream=sys.stdout,
     )
+
+    if len(reports) and args.push:
+        reports_repo = next(iter(
+            XPath(pack_config["dirs"]["base"]) / "reports"
+            for pack_config in args.config.values()
+        ))
+        _push_reports(reports_repo, args.runs, summary)
