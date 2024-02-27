@@ -17,6 +17,7 @@ from .remote import (
     is_main_local,
     is_multinode,
     is_remote,
+    milabench_remote_config,
     milabench_remote_install,
     milabench_remote_prepare,
     milabench_remote_run,
@@ -103,7 +104,10 @@ class MultiPackage:
                 "dirs": pack.config["dirs"],
                 "config_base": pack.config["config_base"],
                 "config_file": pack.config["config_file"],
+                "plan": pack.config["plan"],
                 "system": pack.config["system"],
+                "hash": pack.config["hash"],
+                "install_variant": pack.config["install_variant"],
             }
         )
 
@@ -140,6 +144,13 @@ class MultiPackage:
         remote_task = None
 
         if is_remote(setup):
+            await asyncio.wait(
+                [
+                    asyncio.create_task(t.execute())
+                    for t in milabench_remote_config(setup, self.packs)
+                ]
+            )
+
             # We are outside system, setup the main node first
             remote_plan = milabench_remote_install(setup, setup_for="main")
             remote_task = asyncio.create_task(remote_plan.execute())
@@ -162,6 +173,13 @@ class MultiPackage:
         remote_task = None
 
         if is_remote(setup):
+            await asyncio.wait(
+                [
+                    asyncio.create_task(t.execute())
+                    for t in milabench_remote_config(setup, self.packs)
+                ]
+            )
+
             remote_plan = milabench_remote_prepare(setup, run_for="main")
             remote_task = asyncio.create_task(remote_plan.execute())
             await asyncio.wait([remote_task])
@@ -179,6 +197,13 @@ class MultiPackage:
         setup = self.setup_pack()
 
         if is_remote(setup):
+            await asyncio.wait(
+                [
+                    asyncio.create_task(t.execute())
+                    for t in milabench_remote_config(setup, self.packs)
+                ]
+            )
+
             # if we are not on the main node right now
             # ssh to the main node and launch milabench
             remote_plan = milabench_remote_run(setup)
