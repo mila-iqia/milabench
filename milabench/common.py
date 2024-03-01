@@ -75,7 +75,7 @@ def arguments():
 
     # Define capabilities
     capabilities: Option = ""
-    
+
     return CommonArguments(
         config,
         system,
@@ -91,7 +91,7 @@ def arguments():
 def get_multipack(args = None, run_name=None, overrides={}):
     if args is None:
         args = arguments()
-        
+
     override = [
         o if re.match(pattern=r"[.\w]+=", string=o) else f"={o}" for o in args.override
     ]
@@ -225,13 +225,14 @@ def _get_multipack(
 
     arch = deduce_arch()
     base_defaults = get_base_defaults(
-        base=args.base, 
-        arch=arch, 
+        base=args.base,
+        arch=arch,
         run_name=run_name
     )
     system_config = build_system_config(
         args.system,
         defaults={"system": base_defaults["_defaults"]["system"]},
+        gpu=True
     )
     overrides = merge({"*": system_config}, overrides)
 

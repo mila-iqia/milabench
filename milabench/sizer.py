@@ -6,19 +6,12 @@ from dataclasses import dataclass
 import numpy as np
 import yaml
 
-from .config import system_global
+from .config import is_autoscale_enabled, system_global
 from .validation.validation import ValidationLayer
 
 ROOT = os.path.dirname(__file__)
 
 default_scaling_config = os.path.join(ROOT, "..", "config", "scaling.yaml")
-
-
-def is_autoscale_enabled():
-    return (
-        os.getenv("MILABENCH_SIZER_AUTO", False)
-        or os.getenv("MILABENCH_SIZER_MULTIPLE") is not None
-    )
 
 
 def getenv(name, type):
@@ -109,6 +102,9 @@ class Sizer:
     def auto_size(self, benchmark, capacity):
         capacity = self.get_capacity(capacity)
 
+        if capacity is None:
+            return None
+
         config = self.benchscaling(benchmark)
 
         data = list(sorted(config["model"].items(), key=lambda x: x[0]))
@@ -182,7 +178,7 @@ def scale_argv(pack, argv):
     sizer = sizer_global.get()
     system = system_global.get()
 
-    capacity = system["gpu"]["capacity"]
+    capacity = system.get("gpu", dict()).get("capacity")
 
     return sizer.argv(pack, capacity, argv)
 
