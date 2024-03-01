@@ -189,7 +189,6 @@ def get_gpu_capacity(strict=False):
             raise
         return 0
 
-
 def is_autoscale_enabled():
     return (
         os.getenv("MILABENCH_SIZER_AUTO", False)
