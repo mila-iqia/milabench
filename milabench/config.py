@@ -1,4 +1,5 @@
 import contextvars
+import os
 import socket
 
 import psutil
@@ -174,16 +175,29 @@ def resolve_addresses(nodes):
     return self
 
 
-def get_gpu_capacity():
-    capacity = float("+inf")
+def get_gpu_capacity(strict=False):
+    try:
+        capacity = 0
 
-    for k, v in get_gpu_info()["gpus"].items():
-        capacity = min(v["memory"]["total"], capacity)
+        for k, v in get_gpu_info()["gpus"].items():
+            capacity = min(v["memory"]["total"], capacity)
 
-    return capacity
+        return capacity
+    except:
+        print("GPU not available, defaulting to 0 MiB")
+        if strict:
+            raise
+        return 0
 
 
-def build_system_config(config_file, defaults=None):
+def is_autoscale_enabled():
+    return (
+        os.getenv("MILABENCH_SIZER_AUTO", False)
+        or os.getenv("MILABENCH_SIZER_MULTIPLE") is not None
+    )
+
+
+def build_system_config(config_file, defaults=None, gpu=True):
     """Load the system configuration, verify its validity and resolve ip addresses
 
     Notes
@@ -204,7 +218,8 @@ def build_system_config(config_file, defaults=None):
 
     system = config.get("system", {})
 
-    if "gpu" not in system:
+    # capacity is only required if batch resizer is enabled
+    if (gpu or is_autoscale_enabled()) and not "gpu" not in system:
         system["gpu"] = {"capacity": f"{int(get_gpu_capacity())} MiB"}
 
     if system.get("sshkey") is not None:
