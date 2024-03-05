@@ -223,7 +223,7 @@ def _get_multipack(
     if run_name is None:
         run_name = blabla() + ".{time}"
 
-    now = str(datetime.today()).replace(" ", "_")
+    now = str(datetime.today()).replace(" ", "_").replace(":", ";")
     run_name = run_name.format(time=now)
 
     arch = deduce_arch()

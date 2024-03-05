@@ -6,7 +6,7 @@ from milabench.common import _read_reports, make_summary
 
 
 def test_sqlalchemy_sqlite(runs_folder):
-    run_dir = runs_folder / "sedumoje.2023-03-24_13:57:35.089747"
+    run_dir = runs_folder / "sedumoje.2023-03-24_13_57_35.089747"
     run_name = "sedumoje"
 
     with SQLAlchemy() as logger:

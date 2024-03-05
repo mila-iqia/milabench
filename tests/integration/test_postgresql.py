@@ -27,7 +27,7 @@ create_database(TEST_INSTANCE)
 
 
 def test_sqlalchemy_postgresql(runs_folder):
-    run_dir = runs_folder / "sedumoje.2023-03-24_13:57:35.089747"
+    run_dir = runs_folder / "sedumoje.2023-03-24_13_57_35.089747"
 
     with SQLAlchemy(TEST_INSTANCE) as logger:
         with multilogger(logger) as log:

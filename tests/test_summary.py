@@ -3,7 +3,7 @@ from milabench.cli import main
 
 
 def test_report(runs_folder, capsys, file_regression, config):
-    folder = runs_folder / "rijubigo.2023-03-24_13:45:27.512446"
+    folder = runs_folder / "rijubigo.2023-03-24_13_45_27.512446"
     try:
         main(["report", "--runs", str(folder), "--config", config("benchio")])
     except SystemExit as exc:
@@ -86,7 +86,7 @@ def test_compare(runs_folder, capsys, file_regression):
 def test_summary_full(runs_folder):
     from milabench.common import _read_reports, make_summary, make_report
 
-    run = runs_folder / "rijubigo.2023-03-24_13:45:27.512446"
+    run = runs_folder / "rijubigo.2023-03-24_13_45_27.512446"
 
     runs = [run]
     reports = _read_reports(*runs)
