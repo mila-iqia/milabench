@@ -108,20 +108,23 @@ python -m pip install -e ./milabench
 module load gcc/9.3.0 
 module load cuda/11.8
 
+EXCLUDE="--exclude multinode,convnext_large-fp32,convnext_large-fp16,convnext_large-tf32,convnext_large-tf32-fp16"
+SELECT="--select resnet50"
+
 echo ""
 echo "Install"
 echo "-------"
-milabench install --config $CONFIG --base $BASE $REMAINING_ARGS
+milabench install --config $CONFIG --base $BASE $SELECT
 
 echo ""
 echo "Prepare"
 echo "-------"
-milabench prepare --config $CONFIG --base $BASE $REMAINING_ARGS
+milabench prepare --config $CONFIG --base $BASE $SELECT
 
 #
 # Generate bash commands to execute
 #
-milabench dry --config $CONFIG --base $BASE --no-usevoir --ngpu 2 --nnodes 1 --exclude multinode > commands.sh
+milabench dry --config $CONFIG --base $BASE --ngpu 2 --nnodes 1 $SELECT > commands.sh
 
 # Run the commands
 bash commands.sh

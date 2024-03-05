@@ -5,6 +5,7 @@ import shlex
 import time
 from collections import defaultdict
 from datetime import datetime
+from io import StringIO
 
 from blessed import Terminal
 from rich.console import Console
@@ -167,21 +168,42 @@ class BaseReporter(BaseLogger):
         self.pipe = pipe
         self.files = {}
 
+    def _buffer_open(self, entry):
+        self.files[entry.tag] = StringIO()
+
+    def _file_open(self, entry):
+        file = entry.pack.logfile(self.pipe)
+        os.makedirs(XPath(file).parent, exist_ok=True)
+        self.files[entry.tag] = open(file, "w").__enter__()
+
     def file(self, entry):
         if entry.tag not in self.files:
-            file = entry.pack.logfile(self.pipe)
-            os.makedirs(XPath(file).parent, exist_ok=True)
-            self.files[entry.tag] = open(file, "w").__enter__()
+            self._file_open(entry)
+
         return self.files[entry.tag]
 
     def log(self, entry):
         pass
 
+    def _buffer_cleanup(self, entry):
+        buffer = self.files[entry.tag]
+
+        file = entry.pack.logfile(self.pipe)
+        os.makedirs(XPath(file).parent, exist_ok=True)
+
+        with open(file, "w") as fp:
+            fp.write(buffer.getvalue())
+
+        del self.files[entry.tag]
+
+    def _file_cleanup(self, entry):
+        self.files[entry.tag].__exit__(None, None, None)
+        del self.files[entry.tag]
+
     def cleanup(self, entry):
         if entry.event == "end":
             if entry.tag in self.files:
-                self.files[entry.tag].__exit__(None, None, None)
-                del self.files[entry.tag]
+                self._file_cleanup(entry)
 
     def __call__(self, entry):
         self.log(entry)
@@ -300,9 +322,9 @@ class ShortDashFormatter(DashFormatter):
                 load = int(data.get("load", 0) * 100)
                 currm, totalm = data.get("memory", [0, 0])
                 temp = int(data.get("temperature", 0))
-                row[
-                    f"gpu:{gpuid}"
-                ] = f"{load}% load | {currm:.0f}/{totalm:.0f} MB | {temp}C"
+                row[f"gpu:{gpuid}"] = (
+                    f"{load}% load | {currm:.0f}/{totalm:.0f} MB | {temp}C"
+                )
                 row["gpu_load"] = f"{load}%"
                 row["gpu_mem"] = f"{currm:.0f}/{totalm:.0f} MB"
                 row["gpu_temp"] = f"{temp}C"
@@ -376,9 +398,9 @@ class LongDashFormatter(DashFormatter):
                 load = int(data.get("load", 0) * 100)
                 currm, totalm = data.get("memory", [0, 0])
                 temp = int(data.get("temperature", 0))
-                row[
-                    f"gpu:{gpuid}"
-                ] = f"{load}% load | {currm:.0f}/{totalm:.0f} MB | {temp}C"
+                row[f"gpu:{gpuid}"] = (
+                    f"{load}% load | {currm:.0f}/{totalm:.0f} MB | {temp}C"
+                )
         else:
             task = data.pop("task", "")
             units = data.pop("units", "")

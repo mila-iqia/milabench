@@ -34,7 +34,7 @@ def instrument_main(ov, options: Config):
         ov.require(dash)
 
     ov.require(
-        log("value", "progress", "rate", "units", "loss", "gpudata", context="task"),
+        log("value", "progress", "rate", "units", "loss", "gpudata", "time", context="task"),
         rate(
             interval=options.interval,
             skip=options.skip,

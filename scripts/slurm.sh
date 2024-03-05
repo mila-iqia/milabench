@@ -89,6 +89,7 @@ if [ ! -d "$ENV" ] && [ "$ENV" != "base" ] && [ ! -d "$CONDA_ENVS/$ENV" ]; then
 fi
 conda activate $ENV
 
+
 export HF_HOME=$BASE/cache
 export HF_DATASETS_CACHE=$BASE/cache
 export TORCH_HOME=$BASE/cache
