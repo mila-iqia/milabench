@@ -81,12 +81,13 @@ It will include all of the necessary data
 
 The benchmark suite has been validated on the following configurations:
 
-| Python version |          GPU           |   Configuration file |
-|       -        |        -               |           -          |
-| 3.9.12 (conda) | 4x NVIDIA A100 80GB    | config/standard.yaml |
-| 3.9.12 (conda) | 4x NVIDIA RTX8000 48GB | config/standard.yaml |
-| 3.9.16 (conda) | 2x NVIDIA K80          | config/ci.yaml       |
-| 3.9.16 (conda) | 2x AMD MI100           | config/ci.yaml       |
+| Python version |          GPU                   |   Configuration file |
+|       -        |        -                       |           -          |
+| 3.9.12 (conda) | 2 node x 8xNVIDIA A100 80GB    | config/standard.yaml |
+| 3.9.12 (conda) | 8x NVIDIA RTX8000 48GB         | config/standard.yaml |
+| 3.9.16 (conda) | 2x NVIDIA K80                  | config/ci.yaml       |
+| 3.9.16 (conda) | 2x AMD MI100                   | config/ci.yaml       |
+| 3.9.16 (conda) | 4x AMD MI250                   | config/standard.yaml |
 
 We are working on validating it on more configurations and will update the above table as we do.
 
