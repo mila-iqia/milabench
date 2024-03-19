@@ -308,38 +308,6 @@ def _read_reports(*runs):
     return all_data
 
 
-def _find_metas(reports):
-    local_meta = next(iter(e for _r in reports for e in _r if e["event"] == "meta"), None)
-    if local_meta:
-        local_meta = local_meta["data"]
-    remote_metas = []
-    for _r in reports:
-        meta_lines = []
-        for event in _r:
-            _, event_type, line = None, "", []
-
-            try:
-                _, event_type, *line = event["data"].split(" ")
-            except (AttributeError, ValueError):
-                pass
-
-            if event_type[:1] + event_type[-1:] != "[]":
-                event_type = None
-                line = event["data"]
-            else:
-                line = " ".join(line)
-
-            if event_type == "[meta]":
-                meta_lines.append(line)
-            elif event_type is None and meta_lines:
-                meta_lines.append(line)
-            elif meta_lines:
-                remote_metas.append(yaml.safe_load("".join(meta_lines)))
-                meta_lines = []
-
-    return local_meta, remote_metas
-
-
 def _filter_reports(*reports):
     all_reports = []
 
