@@ -249,7 +249,7 @@ def milabench_remote_config(pack, packs):
                     pack,
                     "(", "mkdir", "-p", str(ROOT_FOLDER.parent), pack.config["dirs"]["base"], ")",
                     "||", "(", "sudo", "mkdir", "-p", str(ROOT_FOLDER.parent), pack.config["dirs"]["base"],
-                               "&&", "sudo", "chmod", "-R", "a+rwX", str(ROOT_FOLDER.parent), pack.config["dirs"]["base"], ")",
+                               "&&", "sudo", "chown", "-R", "$USER:$USER", str(ROOT_FOLDER.parent), pack.config["dirs"]["base"], ")",
                 ),
                 n["ip"],
             ),

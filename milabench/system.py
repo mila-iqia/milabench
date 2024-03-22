@@ -258,7 +258,7 @@ def _resolve_ip(ip):
     if not offline:
         # Resolve the IP
         try:
-            hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(ip)
+            hostname, aliaslist, ipaddrlist = socket.gethostbyname_ex(ip)
             lazy_raise = None
         
         except socket.herror as err:
