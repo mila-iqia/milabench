@@ -6,7 +6,6 @@ import sys
 from coleo import Option, tooled
 import yaml
 
-# import milabench as mb
 from ..common import get_multipack
 
 
@@ -62,10 +61,14 @@ def manage_cloud(pack, packs, run_on, action="setup"):
             "-m", cv.__name__,
             run_on,
             f"--{action}",
-            *[
-                f"--{k.replace('_', '-')}={v}"
-                for k, v in plan_params.items()
-            ],
+            *list(
+                sum(
+                    (
+                        (f"--{k.replace('_', '-')}", v)
+                        for k, v in plan_params.items()
+                    ), ()
+                )
+            )
         ]
         p = subprocess.Popen(
             cmd,

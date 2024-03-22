@@ -128,7 +128,7 @@ def get_remote_ip():
 def _resolve_ip(ip):
     # Resolve the IP
     try:
-        hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(ip)
+        hostname, aliaslist, ipaddrlist = socket.gethostbyname_ex(ip)
         lazy_raise = None
     except socket.gaierror as err:
         # Get Addr Info (GAI) Error

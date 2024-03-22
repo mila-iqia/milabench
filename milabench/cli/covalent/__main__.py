@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import json
 import os
 import pathlib
 import subprocess
@@ -7,9 +8,21 @@ import sys
 import tempfile
 
 
+def _load_venv(venv:pathlib.Path) -> dict:
+    activate = venv / "bin/activate"
+    if not activate.exists():
+        raise FileNotFoundError(str(activate))
+    env = subprocess.run(
+        f". '{activate}' && python3 -c 'import os ; import json ; print(json.dumps(dict(os.environ)))'",
+        shell=True,
+        capture_output=True
+    ).stdout
+    return json.loads(env)
+
+
 def serve(*argv):
     return subprocess.run([
-        str(pathlib.Path(sys.executable).with_name("covalent")),
+        "covalent",
         *argv
     ]).returncode
 
@@ -141,7 +154,7 @@ def executor(executor_cls, args, *argv):
             print(f"hostname::>{_executor.hostname}")
             print(f"username::>{_executor.username}")
             print(f"ssh_key_file::>{_executor.ssh_key_file}")
-            print(f"env::>~/.condaenvrc")
+            print(f"env::>{_executor.env}")
     finally:
         result = ct.get_result(dispatch_id=dispatch_id, wait=False) if dispatch_id else None
         results_dir = result.results_dir if result else ""
@@ -171,12 +184,11 @@ def main(argv=None):
 
     try:
         import covalent as ct
-        ct.get_config(f"executors.ec2")
     except (KeyError, ImportError):
         module = pathlib.Path(__file__).resolve().parent
         cache_dir = pathlib.Path(f"/tmp/milabench/{module.name}_venv")
         python3 = str(cache_dir / "bin/python3")
-        check_module = "import covalent ; from covalent.executor import EC2Executor"
+        check_module = "import covalent"
         try:
             subprocess.run([python3, "-c", check_module], check=True)
         except (FileNotFoundError, subprocess.CalledProcessError):
@@ -190,17 +202,18 @@ def main(argv=None):
                 "install",
                 "-r",
                 str(module / "requirements.txt")
-            ], check=True)
+            ], stdout=sys.stderr, check=True)
             subprocess.run([python3, "-c", check_module], check=True)
         return subprocess.call(
             [python3, __file__, *argv],
+            env=_load_venv(cache_dir)
         )
 
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers()
     subparser = subparsers.add_parser("serve")
     subparser.add_argument(f"argv", nargs=argparse.REMAINDER)
-    for p in ("ec2",):
+    for p in ("azure","ec2"):
         try:
             config = ct.get_config(f"executors.{p}")
         except KeyError:
@@ -223,10 +236,14 @@ def main(argv=None):
     if cv_argv[0] == "serve":
         assert not argv
         return serve(*args.argv)
+    elif cv_argv[0] == "azure":
+        executor_cls = ct.executor.AzureExecutor
     elif cv_argv[0] == "ec2":
-        return executor(ct.executor.EC2Executor, args, *argv)
+        executor_cls = ct.executor.EC2Executor
     else:
         raise
+
+    return executor(executor_cls, args, *argv)
 
 
 if __name__ == "__main__":

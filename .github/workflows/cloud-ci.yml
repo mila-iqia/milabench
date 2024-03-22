@@ -6,6 +6,9 @@ on:
     branches:
       - master
 
+permissions:
+  id-token: write
+
 jobs:
   cloud-tests:
     strategy:
@@ -14,7 +17,7 @@ jobs:
         include:
           - arch: cuda
             exclude: "no-cuda"
-            run_on: ec2
+            run_on: azure
           # - arch: rocm
           #   exclude : "no-rocm"
 
@@ -32,11 +35,14 @@ jobs:
 
     env:
       MILABENCH_CONFIG: "config/test.yaml"
-      MILABENCH_SYSTEM: "config/examples/${{ matrix.run_on }}-system.yaml"
+      MILABENCH_SYSTEM: "config/examples/cloud-system.yaml"
       MILABENCH_BASE: "output"
       MILABENCH_ARGS: ""
       MILABENCH_GPU_ARCH: "${{ matrix.arch }}"
       MILABENCH_DASH: "no"
+      ARM_TENANT_ID: "${{ secrets.ARM_TENANT_ID }}"
+      ARM_SUBSCRIPTION_ID: "${{ secrets.ARM_SUBSCRIPTION_ID }}"
+      AZURE_CORE_OUTPUT: none
 
     steps:
       - uses: actions/checkout@v3
@@ -46,6 +52,17 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: 3.9
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: |
+            {
+              "clientSecret": "${{ secrets.ARM_CLIENT_SECRET }}",
+              "subscriptionId": "${{ secrets.ARM_SUBSCRIPTION_ID }}",
+              "tenantId": "${{ secrets.ARM_TENANT_ID }}",
+              "clientId": "${{ secrets.ARM_CLIENT_ID }}"
+            }
 
       - name: dependencies
         run: |
@@ -107,3 +124,14 @@ jobs:
           git config --global user.email "github-ci@example.com"
           git config --global user.name "GitHub CI"
           poetry run milabench report --push
+
+      - name: teardown cloud
+        if: always()
+        run: |
+          if [[ -f "${MILABENCH_SYSTEM%.*}" ]]
+          then
+            export MILABENCH_SYSTEM=${MILABENCH_SYSTEM%.*}
+          fi
+          poetry run milabench cloud \
+            --teardown \
+            --run-on ${{ matrix.run_on }}
