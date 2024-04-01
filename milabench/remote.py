@@ -1,3 +1,4 @@
+from copy import deepcopy
 import os
 import sys
 
@@ -78,7 +79,7 @@ def pip_install_milabench(pack, node, folder) -> SSHCommand:
     host = node["ip"]
     user = node["user"]
 
-    cmd = ["pip", "install", "-e", folder]
+    cmd = ["python3", "-m", "pip", "install", "-e", folder]
     plan = CmdCommand(pack, *cmd)
     return SSHCommand(plan, host=host, user=user)
 
@@ -184,8 +185,9 @@ def milabench_remote_command(pack, *command, run_for="worker") -> ListCommand:
                     CmdCommand(
                         worker_pack(pack, worker),
                         "cd", f"{INSTALL_FOLDER}", "&&",
-                        f"MILABENCH_CONFIG={pack.config['config_file']}",
                         f"MILABENCH_BASE={os.environ.get('MILABENCH_BASE', '')}",
+                        f"MILABENCH_CONFIG={os.environ.get('MILABENCH_CONFIG', '')}",
+                        f"MILABENCH_SYSTEM={os.environ.get('MILABENCH_SYSTEM', '')}",
                         "milabench", *command
                     ),
                     host=host,
@@ -232,16 +234,6 @@ def _sanity(pack, setup_for):
 
 
 def milabench_remote_config(pack, packs):
-    config = {}
-    config_hash = pack.config["hash"]
-    config_file = XPath(pack.config["config_file"])
-    config_file = config_file.with_name(f"{config_file.name}.{config_hash}")
-    pack.config["config_file"] = str(config_file)
-    for p in packs.values():
-        config[p.config["name"]] = p.config
-        p.config["config_file"] = str(config_file)
-    config_file.write_text(yaml.dump(config))
-
     for n in pack.config["system"]["nodes"]:
         _cmds = [
             SSHCommand(
@@ -252,18 +244,6 @@ def milabench_remote_config(pack, packs):
                                "&&", "sudo", "chown", "-R", "$USER:$USER", str(ROOT_FOLDER.parent), pack.config["dirs"]["base"], ")",
                 ),
                 n["ip"],
-            ),
-            SSHCommand(
-                CmdCommand(
-                    pack,
-                    "mkdir", "-p", str(config_file.parent),
-                ),
-                n["ip"],
-            ),
-            SCPCommand(
-                pack,
-                n["ip"],
-                str(config_file),
             ),
         ]
 
@@ -280,7 +260,6 @@ def milabench_remote_install(pack, setup_for="worker") -> SequenceCommand:
     argv = sys.argv[2:]
     return SequenceCommand(
         milabench_remote_setup_plan(pack, setup_for),
-        milabench_remote_command(pack, "pin", *argv, run_for=setup_for),
         milabench_remote_command(pack, "install", *argv, run_for=setup_for),
     )
 
