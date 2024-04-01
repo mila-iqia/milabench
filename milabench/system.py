@@ -326,6 +326,10 @@ def resolve_addresses(nodes):
             ("127.0.0.1" in ipaddrlist)
             or (hostname in ("localhost", socket.gethostname(), "127.0.0.1"))
             or (socket.gethostname().startswith(hostname))
+            # Tmp workaround until networking on azure allows to associate the
+            # local hostname (`hostname.split(".")[0]`) with the public fqdn
+            # (hostname.split(".")[0].*.cloudapp.azure.com)
+            or (hostname.split(".")[0] == socket.gethostname())
             or len(ip_list.intersection(ipaddrlist)) > 0
         )
         # cn-g005 cn-g005.server.mila.quebec
@@ -377,9 +381,9 @@ def build_system_config(config_file, defaults=None, gpu=True):
             config = yaml.safe_load(cf)
 
     if defaults:
-        config = merge(defaults, config)
+        config["system"] = merge(defaults["system"], config["system"])
 
-    system = config.get("system", {})
+    system = config["system"]
     system_global.set(system)
 
     # capacity is only required if batch resizer is enabled

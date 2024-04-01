@@ -4,6 +4,7 @@ import subprocess
 import sys
 
 from coleo import Option, tooled
+from omegaconf import OmegaConf
 import yaml
 
 from ..common import get_multipack
@@ -15,7 +16,16 @@ _LIST = "list"
 _ACTIONS = (_SETUP, _TEARDOWN, _LIST)
 
 
-def manage_cloud(pack, packs, run_on, action="setup"):
+def _flatten_cli_args(**kwargs):
+    return sum(
+        (
+            (f"--{k.replace('_', '-')}", *([v] if v else []))
+            for k, v in kwargs.items()
+        ), ()
+    )
+
+
+def manage_cloud(pack, run_on, action="setup"):
     assert run_on in pack.config["system"]["cloud_profiles"]
 
     key_map = {
@@ -28,11 +38,6 @@ def manage_cloud(pack, packs, run_on, action="setup"):
 
     nodes = iter(enumerate(pack.config["system"]["nodes"]))
 
-    state_prefix = []
-    for p in packs.values():
-        state_prefix.append(p.config["name"])
-        state_prefix.append(p.config["install_variant"])
-
     while True:
         try:
             i, n = next(nodes)
@@ -41,8 +46,10 @@ def manage_cloud(pack, packs, run_on, action="setup"):
         except StopIteration:
             break
 
-        plan_params["state_prefix"] = plan_params.get("state_prefix", None) or "-".join([str(i), *state_prefix])
+        plan_params["state_prefix"] = plan_params.get("state_prefix", None) or "-".join([str(i), run_on])
         plan_params["state_id"] = plan_params.get("state_id", None) or pack.config["hash"]
+        if i > 0:
+            plan_params["reuse_resource_group"] = None
 
         import milabench.cli.covalent as cv
 
@@ -59,16 +66,9 @@ def manage_cloud(pack, packs, run_on, action="setup"):
         cmd = [
             sys.executable,
             "-m", cv.__name__,
-            run_on,
+            run_on.split("__")[0],
             f"--{action}",
-            *list(
-                sum(
-                    (
-                        (f"--{k.replace('_', '-')}", v)
-                        for k, v in plan_params.items()
-                    ), ()
-                )
-            )
+            *_flatten_cli_args(**plan_params)
         ]
         p = subprocess.Popen(
             cmd,
@@ -121,7 +121,8 @@ def _setup():
 
     mp = get_multipack()
     setup_pack = mp.setup_pack()
-    system_config = manage_cloud(setup_pack, mp.packs, run_on, action=_SETUP)
+    system_config = manage_cloud(setup_pack, run_on, action=_SETUP)
+    del system_config["arch"]
 
     print(f"# hash::>{setup_pack.config['hash']}")
     print(yaml.dump({"system": system_config}))
@@ -131,12 +132,24 @@ def _setup():
 def _teardown():
     """Teardown a cloud infrastructure"""
 
-    # Setup cloud on target infra
+    # Teardown cloud instance on target infra
     run_on: Option & str
 
-    mp = get_multipack()
+    # Teardown all cloud instances
+    all: Option & bool = False
+
+    overrides = {}
+    if all:
+        overrides = {
+            "*": OmegaConf.to_object(OmegaConf.from_dotlist([
+                f"system.cloud_profiles.{run_on}.state_prefix='*'",
+                f"system.cloud_profiles.{run_on}.state_id='*'",
+            ]))
+        }
+
+    mp = get_multipack(overrides=overrides)
     setup_pack = mp.setup_pack()
-    manage_cloud(setup_pack, mp.packs, run_on, action=_TEARDOWN)
+    manage_cloud(setup_pack, run_on, action=_TEARDOWN)
 
 
 @tooled

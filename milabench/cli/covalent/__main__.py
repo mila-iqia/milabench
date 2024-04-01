@@ -1,23 +1,10 @@
 import argparse
 import asyncio
-import json
 import os
 import pathlib
 import subprocess
 import sys
 import tempfile
-
-
-def _load_venv(venv:pathlib.Path) -> dict:
-    activate = venv / "bin/activate"
-    if not activate.exists():
-        raise FileNotFoundError(str(activate))
-    env = subprocess.run(
-        f". '{activate}' && python3 -c 'import os ; import json ; print(json.dumps(dict(os.environ)))'",
-        shell=True,
-        capture_output=True
-    ).stdout
-    return json.loads(env)
 
 
 def serve(*argv):
@@ -119,21 +106,9 @@ def executor(executor_cls, args, *argv):
         deps_bash = None
 
         if not argv and args.setup:
-            conda_prefix = "eval \"$(conda shell.bash hook)\""
-            conda_activate = "conda activate milabench"
-            deps_bash = []
-            for _cmd in (
-                f"{conda_activate} || conda create -n milabench -y",
-                f"{conda_activate}"
-                f" && conda install python={sys.version_info.major}.{sys.version_info.minor} virtualenv pip -y"
-                f" || >&2 echo First attempt to install python in milabench env failed",
-                f"{conda_activate}"
-                f" && conda install python={sys.version_info.major}.{sys.version_info.minor} virtualenv pip -y"
-                f" || conda remove -n milabench --all -y",
-            ):
-                deps_bash.append(f"{conda_prefix} && ({_cmd})")
-            deps_bash = ct.DepsBash(deps_bash)
-            argv = ["conda", "env", "list"]
+            deps_bash = ct.DepsBash([])
+            # Make sure pip is installed
+            argv = ["python3", "-m", "pip", "freeze"]
 
         if argv:
             dispatch_id = ct.dispatch(lattice, disable_run=False)(argv, deps_bash=deps_bash)
@@ -141,7 +116,6 @@ def executor(executor_cls, args, *argv):
             return_code, stdout, _ = result.result if result.result is not None else (1, "", "")
 
         if return_code == 0 and args.setup:
-            assert any([l for l in stdout.split("\n") if l.startswith("milabench ")])
             _executor:ct.executor.BaseExecutor = executor_cls(
                 **{
                     **_get_executor_kwargs(args),
@@ -154,7 +128,6 @@ def executor(executor_cls, args, *argv):
             print(f"hostname::>{_executor.hostname}")
             print(f"username::>{_executor.username}")
             print(f"ssh_key_file::>{_executor.ssh_key_file}")
-            print(f"env::>{_executor.env}")
     finally:
         result = ct.get_result(dispatch_id=dispatch_id, wait=False) if dispatch_id else None
         results_dir = result.results_dir if result else ""
@@ -185,29 +158,9 @@ def main(argv=None):
     try:
         import covalent as ct
     except (KeyError, ImportError):
-        module = pathlib.Path(__file__).resolve().parent
-        cache_dir = pathlib.Path(f"/tmp/milabench/{module.name}_venv")
-        python3 = str(cache_dir / "bin/python3")
-        check_module = "import covalent"
-        try:
-            subprocess.run([python3, "-c", check_module], check=True)
-        except (FileNotFoundError, subprocess.CalledProcessError):
-            cache_dir.mkdir(parents=True, exist_ok=True)
-            subprocess.run([sys.executable, "-m", "virtualenv", str(cache_dir)], check=True)
-            subprocess.run([python3, "-m", "pip", "install", "-U", "pip"], check=True)
-            subprocess.run([
-                python3,
-                "-m",
-                "pip",
-                "install",
-                "-r",
-                str(module / "requirements.txt")
-            ], stdout=sys.stderr, check=True)
-            subprocess.run([python3, "-c", check_module], check=True)
-        return subprocess.call(
-            [python3, __file__, *argv],
-            env=_load_venv(cache_dir)
-        )
+        from ..utils import run_in_module_venv
+        check_if_module = "import covalent"
+        return run_in_module_venv(__file__, check_if_module, argv)
 
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers()
