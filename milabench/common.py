@@ -322,7 +322,7 @@ def _filter_reports(*reports):
     return all_reports
 
 
-def _push_reports(reports_repo, runs, packs:dict=None):
+def _push_reports(reports_repo, runs):
     _SVG_COLORS = {
         "pass": "blue",
         "partial": "yellow",
@@ -355,10 +355,9 @@ def _push_reports(reports_repo, runs, packs:dict=None):
 
         meta = [e["data"] for _r in reports for e in _r if e["event"] == "meta"]
 
-        for _meta in meta:
-            for gpu in _meta["accelerators"]["gpus"].values():
-                device = gpu["product"].replace(" ", "_")
-                break
+        for gpu in (_ for _meta in meta for _ in _meta["accelerators"]["gpus"].values()):
+            device = gpu["product"].replace(" ", "_")
+            break
         else:
             for _meta in meta:
                 device = _meta["cpu"]["brand"].replace(" ", "_")

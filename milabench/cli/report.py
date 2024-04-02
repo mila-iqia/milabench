@@ -119,4 +119,4 @@ def cli_report(args=None):
             XPath(pack_config["dirs"]["base"]) / "reports"
             for pack_config in args.config.values()
         ))
-        _push_reports(reports_repo, args.runs, summary)
+        _push_reports(reports_repo, args.runs)
