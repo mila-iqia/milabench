@@ -124,10 +124,11 @@ def executor(executor_cls, args, *argv):
             )
             asyncio.run(_executor.setup({}))
 
-            assert _executor.hostname
-            print(f"hostname::>{_executor.hostname}")
-            print(f"username::>{_executor.username}")
-            print(f"ssh_key_file::>{_executor.ssh_key_file}")
+            assert _executor.hostnames
+            for hostname in _executor.hostnames:
+                print(f"hostname::>{hostname}")
+                print(f"username::>{_executor.username}")
+                print(f"ssh_key_file::>{_executor.ssh_key_file}")
     finally:
         result = ct.get_result(dispatch_id=dispatch_id, wait=False) if dispatch_id else None
         results_dir = result.results_dir if result else ""

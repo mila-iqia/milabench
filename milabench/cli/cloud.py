@@ -19,7 +19,7 @@ _ACTIONS = (_SETUP, _TEARDOWN, _LIST)
 def _flatten_cli_args(**kwargs):
     return sum(
         (
-            (f"--{k.replace('_', '-')}", *([v] if v else []))
+            (f"--{str(k).replace('_', '-')}", *([str(v)] if str(v) else []))
             for k, v in kwargs.items()
         ), ()
     )
@@ -35,21 +35,17 @@ def manage_cloud(pack, run_on, action="setup"):
         "env":(lambda v: ("env",[".", v, ";", "conda", "activate", "milabench", "&&"])),
     }
     plan_params = deepcopy(pack.config["system"]["cloud_profiles"][run_on])
+    run_on, *profile = run_on.split("__")
+    profile = profile[0] if profile else ""
 
     nodes = iter(enumerate(pack.config["system"]["nodes"]))
+    for i, n in nodes:
+        if n["ip"] != "1.1.1.1":
+            continue
 
-    while True:
-        try:
-            i, n = next(nodes)
-            if n["ip"] != "1.1.1.1":
-                continue
-        except StopIteration:
-            break
-
-        plan_params["state_prefix"] = plan_params.get("state_prefix", None) or "-".join([str(i), run_on])
+        plan_params["state_prefix"] = plan_params.get("state_prefix", None) or profile or run_on
         plan_params["state_id"] = plan_params.get("state_id", None) or pack.config["hash"]
-        if i > 0:
-            plan_params["reuse_resource_group"] = None
+        plan_params["cluster_size"] = max(len(pack.config["system"]["nodes"]), i + 1)
 
         import milabench.cli.covalent as cv
 
@@ -66,7 +62,7 @@ def manage_cloud(pack, run_on, action="setup"):
         cmd = [
             sys.executable,
             "-m", cv.__name__,
-            run_on.split("__")[0],
+            run_on,
             f"--{action}",
             *_flatten_cli_args(**plan_params)
         ]
