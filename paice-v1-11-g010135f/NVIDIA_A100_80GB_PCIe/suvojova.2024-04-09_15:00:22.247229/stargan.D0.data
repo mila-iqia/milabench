@@ -1,0 +1,683 @@
+{"event": "config", "data": {"system": {"arch": "cuda", "sshkey": null, "nodes": [{"aliaslist": [], "hostname": "realbird.eastus2.cloudapp.azure.com", "ip": "realbird.eastus2.cloudapp.azure.com", "ipaddrlist": ["10.0.1.5", "00:00:00:00:00:00", "fe80::6245:bdff:fe7a:73fc%eth0", "127.0.0.1", "::1", "60:45:bd:7a:73:fc"], "key": "/Users/satyaortiz-gagne/.ssh/covalent-azure-task-a100-bb56eeb281e608548ee46dd1607660a7/id_rsa.covalent.realbird.pem", "local": true, "main": true, "name": "manager", "user": "ubuntu"}, {"aliaslist": [], "hostname": "majorpossum.eastus2.cloudapp.azure.com", "ip": "majorpossum.eastus2.cloudapp.azure.com", "ipaddrlist": ["40.70.216.57"], "key": "/Users/satyaortiz-gagne/.ssh/covalent-azure-task-a100-bb56eeb281e608548ee46dd1607660a7/id_rsa.covalent.realbird.pem", "local": false, "main": false, "name": "node1", "user": "ubuntu"}], "cloud_profiles": {"azure__a100": {"location": "eastus2", "size": "Standard_NC24ads_A100_v4", "username": "ubuntu"}, "azure__a100_x2": {"location": "eastus2", "size": "Standard_NC48ads_A100_v4", "username": "ubuntu"}, "azure__a10_x2": {"location": "eastus2", "size": "Standard_NV72ads_A10_v5", "username": "ubuntu"}}, "self": {"aliaslist": [], "hostname": "realbird.eastus2.cloudapp.azure.com", "ip": "realbird.eastus2.cloudapp.azure.com", "ipaddrlist": ["10.0.1.5", "00:00:00:00:00:00", "fe80::6245:bdff:fe7a:73fc%eth0", "127.0.0.1", "::1", "60:45:bd:7a:73:fc"], "key": "/Users/satyaortiz-gagne/.ssh/covalent-azure-task-a100-bb56eeb281e608548ee46dd1607660a7/id_rsa.covalent.realbird.pem", "local": true, "main": true, "name": "manager", "user": "ubuntu"}}, "dirs": {"base": "/Users/satyaortiz-gagne/travail/mila/milabench", "venv": "/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch", "data": "/Users/satyaortiz-gagne/travail/mila/milabench/data", "runs": "/Users/satyaortiz-gagne/travail/mila/milabench/runs", "extra": "/Users/satyaortiz-gagne/travail/mila/milabench/extra/stargan", "cache": "/Users/satyaortiz-gagne/travail/mila/milabench/cache"}, "group": "stargan", "install_group": "torch", "install_variant": "cuda", "run_name": "suvojova.2024-04-09_15:00:22.247229", "enabled": true, "capabilities": {"nodes": 1}, "max_duration": 600, "voir": {"options": {"stop": 60, "interval": "1s"}}, "validation": {"usage": {"gpu_load_threshold": 0.5, "gpu_mem_threshold": 0.5}}, "config_base": "/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/config", "config_file": "/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/config/standard.yaml", "hash": "f837b72a6bbb71a07eed38e1458b35b0", "tags": ["gan", "resnet", "vision"], "definition": "/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/stargan", "plan": {"method": "per_gpu"}, "argv": {"--image_size": 512, "--c_dim": 5, "--batch_size": 16}, "weight": 1.0, "name": "stargan", "tag": ["stargan", "D0"], "device": "0", "devices": ["0"], "env": {"CUDA_VISIBLE_DEVICES": "0"}}, "pipe": null}
+{"event": "meta", "data": {"cpu": {"count": 24, "brand": "AMD EPYC 7V13 64-Core Processor"}, "os": {"sysname": "Linux", "nodename": "realbird", "release": "6.5.0-1017-azure", "version": "#17~22.04.1-Ubuntu SMP Sat Mar  9 04:50:38 UTC 2024", "machine": "x86_64"}, "accelerators": {"arch": "cuda", "gpus": {"GPU-e5df2666-9a32-cf33-2409-1971e6e097bd": {"device": "0", "product": "NVIDIA A100 80GB PCIe", "memory": {"used": 882.4375, "total": 81920.0}, "utilization": {"compute": 0.46, "memory": 0.010771942138671876}, "temperature": 66, "power": 88.855, "selection_variable": "CUDA_VISIBLE_DEVICES"}}}, "date": 1712676776.24434, "milabench": {"tag": "paice-v1-11-g010135f", "commit": "010135f53e9664ae61b596149e569230d8b45f44", "date": "2024-04-03 00:41:57 -0400"}, "pytorch": {"torch": "2.1.0+cu118", "compiler": "GCC 9.3", "cpp": "C++ Version: 201703", "intel": "Intel(R) oneAPI Math Kernel Library Version 2022.2-Product Build 20220804 for Intel(R) 64 architecture applications", "mkl": "OpenMP 201511 (a.k.a. OpenMP 4.5)", "openmp": "OpenMP 201511 (a.k.a. OpenMP 4.5)", "lapack": "LAPACK is enabled (usually provided by MKL)", "nnpack": "NNPACK is enabled", "cpu": "CPU capability usage: AVX2", "build_settings": {"BLAS_INFO": "mkl", "BUILD_TYPE": "Release", "CUDA_VERSION": "11.8", "CUDNN_VERSION": "8.7.0", "CXX_COMPILER": "/opt/rh/devtoolset-9/root/usr/bin/c++", "CXX_FLAGS": "-D_GLIBCXX_USE_CXX11_ABI=0 -fabi-version=11 -fvisibility-inlines-hidden -DUSE_PTHREADPOOL -DNDEBUG -DUSE_KINETO -DLIBKINETO_NOROCTRACER -DUSE_FBGEMM -DUSE_QNNPACK -DUSE_PYTORCH_QNNPACK -DUSE_XNNPACK -DSYMBOLICATE_MOBILE_DEBUG_HANDLE -O2 -fPIC -Wall -Wextra -Werror=return-type -Werror=non-virtual-dtor -Werror=bool-operation -Wnarrowing -Wno-missing-field-initializers -Wno-type-limits -Wno-array-bounds -Wno-unknown-pragmas -Wno-unused-parameter -Wno-unused-function -Wno-unused-result -Wno-strict-overflow -Wno-strict-aliasing -Wno-stringop-overflow -Wno-psabi -Wno-error=pedantic -Wno-error=old-style-cast -Wno-invalid-partial-specialization -Wno-unused-private-field -Wno-aligned-allocation-unavailable -Wno-missing-braces -fdiagnostics-color=always -faligned-new -Wno-unused-but-set-variable -Wno-maybe-uninitialized -fno-math-errno -fno-trapping-math -Werror=format -Werror=cast-function-type -Wno-stringop-overflow", "LAPACK_INFO": "mkl", "PERF_WITH_AVX": "1", "PERF_WITH_AVX2": "1", "PERF_WITH_AVX512": "1", "TORCH_DISABLE_GPU_ASSERTS": "ON", "TORCH_VERSION": "2.1.0", "USE_CUDA": "ON", "USE_CUDNN": "ON", "USE_EXCEPTION_PTR": "1", "USE_GFLAGS": "OFF", "USE_GLOG": "OFF", "USE_MKL": "ON", "USE_MKLDNN": "ON", "USE_MPI": "OFF", "USE_NCCL": "1", "USE_NNPACK": "ON", "USE_OPENMP": "ON", "USE_ROCM": "OFF"}}}, "pipe": null}
+{"event": "start", "data": {"command": ["voir", "--config", "/Users/satyaortiz-gagne/travail/mila/milabench/extra/stargan/voirconf-stargan.D0-0efae956f1553a76c1e03985181900f5.json", "/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/stargan/stargan/main.py", "--image_size", "512", "--c_dim", "5", "--batch_size", "16"], "time": 1712676776.2599926}, "pipe": null}
+{"event": "phase", "data": {"name": "init"}, "pipe": "data"}
+{"event": "phase", "data": {"name": "parse_args"}, "pipe": "data"}
+{"event": "phase", "data": {"name": "load_script"}, "pipe": "data"}
+{"event": "phase", "data": {"name": "run_script"}, "pipe": "data"}
+{"event": "line", "data": "Namespace(c_dim=5, c2_dim=8, celeba_crop_size=178, rafd_crop_size=256, image_size=512, g_conv_dim=64, d_conv_dim=64, g_repeat_num=6, d_repeat_num=6, lambda_cls=1, lambda_rec=10, lambda_gp=10, dataset='synth', batch_size=16, num_iters=200000, num_iters_decay=100000, g_lr=0.0001, d_lr=0.0001, n_critic=5, beta1=0.5, beta2=0.999, resume_iters=None, selected_attrs=['Black_Hair', 'Blond_Hair', 'Brown_Hair', 'Male', 'Young'], test_iters=200000, num_workers=1, mode='train', use_tensorboard=False, celeba_image_dir='data/celeba/images', attr_path='data/celeba/list_attr_celeba.txt', rafd_image_dir='data/RaFD/train', log_dir='/Users/satyaortiz-gagne/travail/mila/milabench/extra/stargan/logs', model_save_dir='/Users/satyaortiz-gagne/travail/mila/milabench/extra/stargan/models', sample_dir='/Users/satyaortiz-gagne/travail/mila/milabench/extra/stargan/samples', result_dir='/Users/satyaortiz-gagne/travail/mila/milabench/extra/stargan/results', log_step=10, sample_step=1000, model_save_step=10000, lr_update_step=1000)\n", "pipe": "stdout"}
+{"event": "line", "data": "Generator(\n", "pipe": "stdout"}
+{"event": "line", "data": "  (main): Sequential(\n", "pipe": "stdout"}
+{"event": "line", "data": "    (0): Conv2d(8, 64, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (1): InstanceNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (2): ReLU(inplace=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (3): Conv2d(64, 128, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (4): InstanceNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (5): ReLU(inplace=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (6): Conv2d(128, 256, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (7): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (8): ReLU(inplace=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (9): ResidualBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (main): Sequential(\n", "pipe": "stdout"}
+{"event": "line", "data": "        (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (1): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (2): ReLU(inplace=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (3): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (4): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      )\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (10): ResidualBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (main): Sequential(\n", "pipe": "stdout"}
+{"event": "line", "data": "        (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (1): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (2): ReLU(inplace=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (3): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (4): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      )\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (11): ResidualBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (main): Sequential(\n", "pipe": "stdout"}
+{"event": "line", "data": "        (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (1): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (2): ReLU(inplace=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (3): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (4): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      )\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (12): ResidualBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (main): Sequential(\n", "pipe": "stdout"}
+{"event": "line", "data": "        (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (1): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (2): ReLU(inplace=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (3): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (4): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      )\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (13): ResidualBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (main): Sequential(\n", "pipe": "stdout"}
+{"event": "line", "data": "        (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (1): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (2): ReLU(inplace=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (3): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (4): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      )\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (14): ResidualBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (main): Sequential(\n", "pipe": "stdout"}
+{"event": "line", "data": "        (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (1): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (2): ReLU(inplace=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (3): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (4): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      )\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (15): ConvTranspose2d(256, 128, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (16): InstanceNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (17): ReLU(inplace=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (18): ConvTranspose2d(128, 64, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (19): InstanceNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (20): ReLU(inplace=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (21): Conv2d(64, 3, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (22): Tanh()\n", "pipe": "stdout"}
+{"event": "line", "data": "  )\n", "pipe": "stdout"}
+{"event": "line", "data": ")\n", "pipe": "stdout"}
+{"event": "line", "data": "G\n", "pipe": "stdout"}
+{"event": "line", "data": "The number of parameters: 8430528\n", "pipe": "stdout"}
+{"event": "line", "data": "Discriminator(\n", "pipe": "stdout"}
+{"event": "line", "data": "  (main): Sequential(\n", "pipe": "stdout"}
+{"event": "line", "data": "    (0): Conv2d(3, 64, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))\n", "pipe": "stdout"}
+{"event": "line", "data": "    (1): LeakyReLU(negative_slope=0.01)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (2): Conv2d(64, 128, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))\n", "pipe": "stdout"}
+{"event": "line", "data": "    (3): LeakyReLU(negative_slope=0.01)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (4): Conv2d(128, 256, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))\n", "pipe": "stdout"}
+{"event": "line", "data": "    (5): LeakyReLU(negative_slope=0.01)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (6): Conv2d(256, 512, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))\n", "pipe": "stdout"}
+{"event": "line", "data": "    (7): LeakyReLU(negative_slope=0.01)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (8): Conv2d(512, 1024, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))\n", "pipe": "stdout"}
+{"event": "line", "data": "    (9): LeakyReLU(negative_slope=0.01)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (10): Conv2d(1024, 2048, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))\n", "pipe": "stdout"}
+{"event": "line", "data": "    (11): LeakyReLU(negative_slope=0.01)\n", "pipe": "stdout"}
+{"event": "line", "data": "  )\n", "pipe": "stdout"}
+{"event": "line", "data": "  (conv1): Conv2d(2048, 1, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "  (conv2): Conv2d(2048, 5, kernel_size=(8, 8), stride=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": ")\n", "pipe": "stdout"}
+{"event": "line", "data": "D\n", "pipe": "stdout"}
+{"event": "line", "data": "The number of parameters: 45376448\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "train", "progress": [0, 10000]}, "pipe": "data"}
+{"event": "line", "data": "Start training...\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "train", "progress": [1, 10000]}, "pipe": "data"}
+{"event": "line", "data": "/mnt/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/nn/_reduction.py:42: UserWarning: size_average and reduce args will be deprecated, please use reduction='sum' instead.\n", "pipe": "stderr"}
+{"event": "line", "data": "  warnings.warn(warning.format(ret))\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "loss": 13.09135627746582}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [53428.375, 81920.0], "load": 1.0, "temperature": 63, "power": 84.638}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [19484.375, 81920.0], "load": 1.0, "temperature": 64, "power": 112.303}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [2, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 12.30767822265625}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [3, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 10.737151145935059}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [4, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 7.804368019104004}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 8.1632510051618, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [1, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [5, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 4.472871780395508}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 63.78447252248442, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [2, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [29784.375, 81920.0], "load": 1.0, "temperature": 68, "power": 268.172}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [6, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 4.446054935455322}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [7, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.2718138694763184}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 6.460121921844693, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [3, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [31678.375, 81920.0], "load": 1.0, "temperature": 67, "power": 353.479}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [8, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 4.4201836585998535}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [9, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.216507911682129}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [10, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.969565749168396}, "pipe": "data"}
+{"event": "line", "data": "Elapsed [0:00:12], Iteration [10/200000], D/loss_real: -1.9712, D/loss_fake: -0.0702, D/loss_cls: 3.9647, D/loss_gp: 0.0046, G/loss_fake: 0.1715, G/loss_rec: 0.5520, G/loss_cls: 3.9818\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "train", "rate": 43.7098809938662, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [4, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [11, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 6.4251532554626465}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [12, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 4.116135120391846}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [13, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.1205484867095947}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [14, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 6.494114398956299}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [15, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 4.4104485511779785}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 45.25422334091819, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [5, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [36418.375, 81920.0], "load": 1.0, "temperature": 67, "power": 306.999}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [16, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 4.7500081062316895}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [17, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 4.529216766357422}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 26.7632677001104, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [6, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [18, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.3130154609680176}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [19, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.5506622791290283}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [20, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.562422275543213}, "pipe": "data"}
+{"event": "line", "data": "Elapsed [0:00:16], Iteration [20/200000], D/loss_real: -0.8785, D/loss_fake: -0.1888, D/loss_cls: 4.0190, D/loss_gp: 0.0611, G/loss_fake: -0.1104, G/loss_rec: 0.5343, G/loss_cls: 3.3822\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "train", "rate": 44.28081547405864, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [7, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [21, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.540276288986206}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [22, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.5708091259002686}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [23, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.1140185594558716}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [24, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.0282247066497803}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [25, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.9975810050964355}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 45.26363442611106, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [8, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [36418.375, 81920.0], "load": 0.92, "temperature": 69, "power": 302.133}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [26, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.5007104873657227}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [27, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.818920135498047}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 26.949342769618756, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [9, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [28, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 0.9071820974349976}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [29, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 5.035526752471924}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [30, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.477890729904175}, "pipe": "data"}
+{"event": "line", "data": "Elapsed [0:00:19], Iteration [30/200000], D/loss_real: -1.3056, D/loss_fake: 0.0260, D/loss_cls: 3.4161, D/loss_gp: 0.0341, G/loss_fake: 0.2541, G/loss_rec: 0.5301, G/loss_cls: 3.5516\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "train", "rate": 43.708852344121816, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [10, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [31, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.8169243335723877}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [32, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.6322102546691895}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [33, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.4694974422454834}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [36418.375, 81920.0], "load": 0.92, "temperature": 69, "power": 344.187}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [34, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.2115354537963867}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [35, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.3500218391418457}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 45.06426198402073, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [11, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [36, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.8179333209991455}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [37, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.616603374481201}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 28.90974125638834, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [12, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [38, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.0832951068878174}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [39, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.1923515796661377}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [40, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.8228189945220947}, "pipe": "data"}
+{"event": "line", "data": "Elapsed [0:00:23], Iteration [40/200000], D/loss_real: -6.9929, D/loss_fake: 2.5865, D/loss_cls: 4.1406, D/loss_gp: 0.3089, G/loss_fake: -0.9326, G/loss_rec: 0.5177, G/loss_cls: 3.7892\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "train", "rate": 40.278624937723684, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [13, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [41, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 4.584784984588623}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [37442.375, 81920.0], "load": 1.0, "temperature": 70, "power": 286.526}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [42, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 4.519535541534424}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [43, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.6647734642028809}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [44, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.6680421829223633}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [45, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.7387125492095947}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 45.198412139328966, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [14, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [46, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.9076906442642212}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [47, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.4922038316726685}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 28.085480152914485, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [15, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [48, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.2508779764175415}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [49, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.0354152917861938}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [50, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 0.7795575261116028}, "pipe": "data"}
+{"event": "line", "data": "Elapsed [0:00:26], Iteration [50/200000], D/loss_real: -5.1997, D/loss_fake: 2.4312, D/loss_cls: 3.3287, D/loss_gp: 0.0219, G/loss_fake: -2.4973, G/loss_rec: 0.5122, G/loss_cls: 3.3806\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [37442.375, 81920.0], "load": 0.93, "temperature": 70, "power": 362.707}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 41.49289356398541, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [16, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [51, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.344868540763855}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [52, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.0880271196365356}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [53, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 0.5831774473190308}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [54, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 0.35530561208724976}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [55, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 0.19174674153327942}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 45.32946826484833, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [17, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [56, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 0.45236653089523315}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [57, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 0.42395657300949097}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 28.850689412062145, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [18, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [58, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 0.3194011151790619}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [59, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 0.3704109787940979}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [37442.375, 81920.0], "load": 0.92, "temperature": 69, "power": 243.308}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [60, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 0.185400128364563}, "pipe": "data"}
+{"event": "line", "data": "Elapsed [0:00:30], Iteration [60/200000], D/loss_real: -5.9533, D/loss_fake: 2.2073, D/loss_cls: 3.3921, D/loss_gp: 0.0539, G/loss_fake: -1.8192, G/loss_rec: 0.5213, G/loss_cls: 3.4179\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "train", "rate": 40.31975667026849, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [19, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [61, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 0.9736377596855164}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [62, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 0.9071493148803711}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [63, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 0.7974754571914673}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [64, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 0.8348018527030945}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [65, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 0.8199213147163391}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 45.18646338429798, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [20, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [66, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.5882846117019653}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [37442.375, 81920.0], "load": 0.93, "temperature": 70, "power": 271.702}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [67, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.2743475437164307}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 28.857986886782857, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [21, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [68, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.1959108114242554}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [69, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.281416893005371}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [70, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.4402904510498047}, "pipe": "data"}
+{"event": "line", "data": "Elapsed [0:00:33], Iteration [70/200000], D/loss_real: -5.7772, D/loss_fake: 3.2971, D/loss_cls: 3.8472, D/loss_gp: 0.0073, G/loss_fake: -3.1162, G/loss_rec: 0.5139, G/loss_cls: 3.5212\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "train", "rate": 39.88718696937655, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [22, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [71, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.743876338005066}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [72, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.4190081357955933}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [73, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.3311082124710083}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [74, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.8415721654891968}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [75, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.0974764823913574}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 45.25820187449798, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [23, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [37442.375, 81920.0], "load": 1.0, "temperature": 72, "power": 191.813}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [76, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.4530152082443237}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [77, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.3708733320236206}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 28.857532324325202, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [24, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [78, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.1673988103866577}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [79, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.1851694583892822}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [80, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.1520086526870728}, "pipe": "data"}
+{"event": "line", "data": "Elapsed [0:00:37], Iteration [80/200000], D/loss_real: -6.5147, D/loss_fake: 3.8857, D/loss_cls: 3.3454, D/loss_gp: 0.0436, G/loss_fake: -2.9044, G/loss_rec: 0.5207, G/loss_cls: 3.4491\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "train", "rate": 40.10311071207625, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [25, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [81, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.8016101121902466}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [82, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.6080504655838013}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [83, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.5227274894714355}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [84, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.460348129272461}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [85, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.413737177848816}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [37442.375, 81920.0], "load": 0.92, "temperature": 70, "power": 140.184}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 45.28230094694642, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [26, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [86, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.1281251907348633}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [87, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.0212392807006836}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 28.84127238280682, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [27, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [88, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.907827615737915}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [89, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.7979817390441895}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [90, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 1.7232437133789062}, "pipe": "data"}
+{"event": "line", "data": "Elapsed [0:00:40], Iteration [90/200000], D/loss_real: -5.6525, D/loss_fake: 4.0682, D/loss_cls: 3.2199, D/loss_gp: 0.0088, G/loss_fake: -3.7273, G/loss_rec: 0.5324, G/loss_cls: 3.3752\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "train", "rate": 40.47570191880807, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [28, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [91, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.5169217586517334}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [92, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.6483209133148193}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [37442.375, 81920.0], "load": 0.92, "temperature": 73, "power": 354.153}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [93, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.0749967098236084}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [94, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 4.560365676879883}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [95, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.358938694000244}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 45.232556966512675, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [29, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [96, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 6.468632698059082}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [97, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 7.572534084320068}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 28.905067428485737, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [30, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [98, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 8.15188217163086}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [99, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 6.032367706298828}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [100, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.5272278785705566}, "pipe": "data"}
+{"event": "line", "data": "Elapsed [0:00:44], Iteration [100/200000], D/loss_real: -4.9930, D/loss_fake: 4.1957, D/loss_cls: 3.3223, D/loss_gp: 0.0002, G/loss_fake: -6.4818, G/loss_rec: 0.5857, G/loss_cls: 3.9515", "pipe": "stdout"}
+{"event": "line", "data": "\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "train", "rate": 40.44815957456909, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [31, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [101, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 7.798272132873535}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [37442.375, 81920.0], "load": 1.0, "temperature": 73, "power": 312.856}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [102, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 7.342226028442383}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [103, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 8.410581588745117}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [104, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 7.419046878814697}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [105, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 5.239133834838867}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 45.13238800718356, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [32, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [106, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.922548294067383}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [107, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.9156606197357178}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 28.234572425367293, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [33, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [108, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.242363452911377}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [109, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.8708302974700928}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [110, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.55665922164917}, "pipe": "data"}
+{"event": "line", "data": "Elapsed [0:00:47], Iteration [110/200000], D/loss_real: -1.8823, D/loss_fake: 0.8729, D/loss_cls: 3.3375, D/loss_gp: 0.0229, G/loss_fake: -0.1700, G/loss_rec: 0.5995, G/loss_cls: 3.4261\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [37442.375, 81920.0], "load": 0.93, "temperature": 72, "power": 345.27}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 41.28534830879524, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [34, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [111, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.067499876022339}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [112, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.8391854763031006}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [113, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.815575361251831}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [114, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.909585952758789}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [115, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.385455369949341}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 45.070959222419226, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [35, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [116, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 8.637715339660645}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [117, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.732038736343384}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 27.9056872256242, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [36, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [118, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 7.60103702545166}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [119, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 4.718660831451416}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [37442.375, 81920.0], "load": 0.93, "temperature": 72, "power": 277.906}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [120, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 5.803324222564697}, "pipe": "data"}
+{"event": "line", "data": "Elapsed [0:00:51], Iteration [120/200000], D/loss_real: -1.1665, D/loss_fake: 0.9156, D/loss_cls: 3.3276, D/loss_gp: 0.2727, G/loss_fake: -1.7524, G/loss_rec: 0.5582, G/loss_cls: 3.3954\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "train", "rate": 41.59489060287702, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [37, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [121, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 4.131701469421387}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [122, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.4407215118408203}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [123, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.925509452819824}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [124, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.2475171089172363}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [125, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.2481677532196045}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.907955444812266, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [38, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [126, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.2094621658325195}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [37442.375, 81920.0], "load": 0.93, "temperature": 73, "power": 296.603}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [127, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.0216121673583984}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 28.792464180021877, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [39, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [128, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.5084896087646484}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [129, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.515705108642578}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [130, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.1535003185272217}, "pipe": "data"}
+{"event": "line", "data": "Elapsed [0:00:54], Iteration [130/200000], D/loss_real: -2.1625, D/loss_fake: 1.0159, D/loss_cls: 3.2356, D/loss_gp: 0.0064, G/loss_fake: -0.8837, G/loss_rec: 0.5280, G/loss_cls: 3.3766\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "train", "rate": 40.475841719392974, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [40, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [131, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.8968610763549805}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [132, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.8204174041748047}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [133, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.690340280532837}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [134, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.663285732269287}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [135, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.546361207962036}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 45.003209114149826, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [41, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [37442.375, 81920.0], "load": 1.0, "temperature": 73, "power": 214.897}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [136, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.7007572650909424}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [137, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.2588911056518555}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 28.82595418002522, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [42, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [138, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.000091314315796}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [139, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.060607671737671}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [140, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.6705269813537598}, "pipe": "data"}
+{"event": "line", "data": "Elapsed [0:00:58], Iteration [140/200000], D/loss_real: -0.1581, D/loss_fake: -0.3575, D/loss_cls: 3.1675, D/loss_gp: 0.0019, G/loss_fake: 0.2745, G/loss_rec: 0.5210, G/loss_cls: 3.6738\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "train", "rate": 40.28028343751798, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [43, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [141, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.979808807373047}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [142, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.6155827045440674}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [143, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.2278246879577637}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [144, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 4.971007347106934}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [145, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 4.542792320251465}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [37442.375, 81920.0], "load": 0.93, "temperature": 73, "power": 290.475}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 45.19449267166019, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [44, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [146, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.457787036895752}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [147, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.6227059364318848}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 27.676440251549852, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [45, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [148, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.8770456314086914}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [149, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 5.926919460296631}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [150, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 4.374927520751953}, "pipe": "data"}
+{"event": "line", "data": "Elapsed [0:01:02], Iteration [150/200000], D/loss_real: -0.1277, D/loss_fake: -0.0097, D/loss_cls: 3.2584, D/loss_gp: 0.1254, G/loss_fake: -0.1068, G/loss_rec: 0.5090, G/loss_cls: 3.3887\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "train", "rate": 42.4199819904906, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [46, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [151, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.305234432220459}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [152, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.883572578430176}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [37442.375, 81920.0], "load": 0.93, "temperature": 74, "power": 360.786}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [153, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.829576253890991}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [154, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.753861427307129}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [155, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.3896124362945557}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.88174488851092, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [47, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [156, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.9929075241088867}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [157, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.811655044555664}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 28.848302602611373, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [48, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [158, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.742161750793457}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [159, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.0841004848480225}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [160, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.430011034011841}, "pipe": "data"}
+{"event": "line", "data": "Elapsed [0:01:05], Iteration [160/200000], D/loss_real: -1.1459, D/loss_fake: 0.6399, D/loss_cls: 2.9349, D/loss_gp: 0.0001, G/loss_fake: -0.8026, G/loss_rec: 0.5000, G/loss_cls: 3.3621\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "train", "rate": 40.19780347544447, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [49, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [161, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.7502481937408447}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [37442.375, 81920.0], "load": 1.0, "temperature": 73, "power": 330.573}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [162, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.6191232204437256}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [163, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.495950937271118}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [164, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.35919451713562}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [165, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.296478271484375}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.98131601799165, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [50, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [166, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.134523868560791}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [167, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 4.916684150695801}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 28.85763386901017, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [51, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [168, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.2937400341033936}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [169, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 6.448493480682373}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [170, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 8.991422653198242}, "pipe": "data"}
+{"event": "line", "data": "Elapsed [0:01:09], Iteration [170/200000], D/loss_real: 0.0432, D/loss_fake: -0.1306, D/loss_cls: 3.2986, D/loss_gp: 0.5780, G/loss_fake: 0.4074, G/loss_rec: 0.5053, G/loss_cls: 3.5514\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "train", "rate": 40.41092856246805, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [52, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [171, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 8.383971214294434}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [37442.375, 81920.0], "load": 0.93, "temperature": 74, "power": 297.339}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [172, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 4.57904052734375}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [173, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 7.520970821380615}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [174, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 10.216291427612305}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [175, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 9.756345748901367}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 45.00384868413562, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [53, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [176, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 8.687509536743164}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [177, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 6.9703216552734375}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 28.744496412537735, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [54, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [178, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 4.612659454345703}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [179, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.1105234622955322}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [180, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.4925484657287598}, "pipe": "data"}
+{"event": "line", "data": "Elapsed [0:01:12], Iteration [180/200000], D/loss_real: -0.5100, D/loss_fake: 0.2233, D/loss_cls: 3.2673, D/loss_gp: 0.0512, G/loss_fake: -0.2488, G/loss_rec: 0.5033, G/loss_cls: 3.3796", "pipe": "stdout"}
+{"event": "line", "data": "\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "train", "rate": 39.83863063870064, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [55, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [181, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.4892184734344482}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [37442.375, 81920.0], "load": 1.0, "temperature": 75, "power": 284.746}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [182, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.051115036010742}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [183, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.9084584712982178}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [184, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.826239585876465}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [185, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.7394564151763916}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.85476011573647, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [56, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [186, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.890897274017334}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [187, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.233086109161377}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 28.779653656888087, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [57, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [188, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 5.191074371337891}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [189, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.7607486248016357}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [190, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.5501227378845215}, "pipe": "data"}
+{"event": "line", "data": "Elapsed [0:01:16], Iteration [190/200000], D/loss_real: -1.2542, D/loss_fake: 0.4814, D/loss_cls: 3.1874, D/loss_gp: 0.0136, G/loss_fake: -0.0654, G/loss_rec: 0.4965, G/loss_cls: 3.4382", "pipe": "stdout"}
+{"event": "line", "data": "\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "train", "rate": 40.07104365631764, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [58, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [191, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.9499905109405518}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [37442.375, 81920.0], "load": 1.0, "temperature": 75, "power": 339.611}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [192, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.8428449630737305}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [193, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.8010976314544678}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [194, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.728675127029419}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [195, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 2.683522939682007}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 45.11215460762741, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [59, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [196, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.424790620803833}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [197, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.3125107288360596}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 28.785313473997743, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [60, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [198, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.2594218254089355}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [199, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.158982276916504}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [200, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "loss": 3.099994421005249}, "pipe": "data"}
+{"event": "line", "data": "Elapsed [0:01:19], Iteration [200/200000], D/loss_real: -1.1347, D/loss_fake: 1.2281, D/loss_cls: 3.0020, D/loss_gp: 0.0005, G/loss_fake: -1.1583, G/loss_rec: 0.4951, G/loss_cls: 3.3663\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "train", "rate": 39.603171208093215, "units": "items/s"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [61, 60]}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [37442.375, 81920.0], "load": 0.99, "temperature": 74, "power": 307.957}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [37442.375, 81920.0], "load": 1.0, "temperature": 75, "power": 307.957}}}, "pipe": "data"}
+{"event": "phase", "data": {"name": "finalize"}, "pipe": "data"}
+{"event": "end", "data": {"command": ["voir", "--config", "/Users/satyaortiz-gagne/travail/mila/milabench/extra/stargan/voirconf-stargan.D0-0efae956f1553a76c1e03985181900f5.json", "/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/stargan/stargan/main.py", "--image_size", "512", "--c_dim", "5", "--batch_size", "16"], "time": 1712676859.9005494, "return_code": 0}, "pipe": null}

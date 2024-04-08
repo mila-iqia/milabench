@@ -1,0 +1,171 @@
+{"event": "config", "data": {"system": {"arch": "cuda", "sshkey": null, "nodes": [{"aliaslist": [], "hostname": "delicatemastodon.eastus2.cloudapp.azure.com", "ip": "delicatemastodon.eastus2.cloudapp.azure.com", "ipaddrlist": ["00:00:00:00:00:00", "fe80::6245:bdff:feb3:312b%eth0", "60:45:bd:b3:31:2b", "10.0.1.4", "127.0.0.1", "::1"], "key": "/Users/satyaortiz-gagne/.ssh/covalent-azure-task-a10_x2-4db6f1500e0007c61a4cf0533daca445/id_rsa.covalent.delicatemastodon.pem", "local": true, "main": true, "name": "manager", "user": "ubuntu"}], "cloud_profiles": {"azure__a100": {"location": "eastus2", "size": "Standard_NC24ads_A100_v4", "username": "ubuntu"}, "azure__a100_x2": {"location": "eastus2", "size": "Standard_NC48ads_A100_v4", "username": "ubuntu"}, "azure__a10_x2": {"location": "eastus2", "size": "Standard_NV72ads_A10_v5", "username": "ubuntu"}}, "self": {"aliaslist": [], "hostname": "delicatemastodon.eastus2.cloudapp.azure.com", "ip": "delicatemastodon.eastus2.cloudapp.azure.com", "ipaddrlist": ["00:00:00:00:00:00", "fe80::6245:bdff:feb3:312b%eth0", "60:45:bd:b3:31:2b", "10.0.1.4", "127.0.0.1", "::1"], "key": "/Users/satyaortiz-gagne/.ssh/covalent-azure-task-a10_x2-4db6f1500e0007c61a4cf0533daca445/id_rsa.covalent.delicatemastodon.pem", "local": true, "main": true, "name": "manager", "user": "ubuntu"}}, "dirs": {"base": "/Users/satyaortiz-gagne/travail/mila/milabench", "venv": "/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch", "data": "/Users/satyaortiz-gagne/travail/mila/milabench/data", "runs": "/Users/satyaortiz-gagne/travail/mila/milabench/runs", "extra": "/Users/satyaortiz-gagne/travail/mila/milabench/extra/stargan", "cache": "/Users/satyaortiz-gagne/travail/mila/milabench/cache"}, "group": "stargan", "install_group": "torch", "install_variant": "cuda", "run_name": "vodofeze.2024-04-09_00:35:28.669482", "enabled": true, "capabilities": {"nodes": 1}, "max_duration": 600, "voir": {"options": {"stop": 60, "interval": "1s"}}, "validation": {"usage": {"gpu_load_threshold": 0.5, "gpu_mem_threshold": 0.5}}, "config_base": "/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/config", "config_file": "/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/config/standard.yaml", "hash": "f8568b3c26182a7cfabab1ca058f33bf", "tags": ["gan", "resnet", "vision"], "definition": "/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/stargan", "plan": {"method": "per_gpu"}, "argv": {"--image_size": 512, "--c_dim": 5, "--batch_size": 16}, "weight": 1.0, "name": "stargan", "tag": ["stargan", "D1"], "device": "1", "devices": ["1"], "env": {"CUDA_VISIBLE_DEVICES": "1"}}, "pipe": null}
+{"event": "meta", "data": {"cpu": {"count": 72, "brand": "AMD EPYC 74F3 24-Core Processor"}, "os": {"sysname": "Linux", "nodename": "delicatemastodon", "release": "6.5.0-1017-azure", "version": "#17~22.04.1-Ubuntu SMP Sat Mar  9 04:50:38 UTC 2024", "machine": "x86_64"}, "accelerators": {"arch": "cuda", "gpus": {"GPU-5701be00-f607-11ee-a28f-e97901091b3e": {"device": "0", "product": "NVIDIA A10-24Q", "memory": {"used": 2390.25, "total": 24512.0}, "utilization": {"compute": 0, "memory": 0.09751346279373369}, "temperature": null, "power": null, "selection_variable": "CUDA_VISIBLE_DEVICES"}, "GPU-5701be00-f607-11ee-a28f-f106fd37d291": {"device": "1", "product": "NVIDIA A10-24Q", "memory": {"used": 2390.25, "total": 24512.0}, "utilization": {"compute": 0, "memory": 0.09751346279373369}, "temperature": null, "power": null, "selection_variable": "CUDA_VISIBLE_DEVICES"}}}, "date": 1712623660.326328, "milabench": {"tag": "paice-v1-11-g010135f", "commit": "010135f53e9664ae61b596149e569230d8b45f44", "date": "2024-04-03 00:41:57 -0400"}, "pytorch": {"torch": "2.1.0+cu118", "compiler": "GCC 9.3", "cpp": "C++ Version: 201703", "intel": "Intel(R) oneAPI Math Kernel Library Version 2022.2-Product Build 20220804 for Intel(R) 64 architecture applications", "mkl": "OpenMP 201511 (a.k.a. OpenMP 4.5)", "openmp": "OpenMP 201511 (a.k.a. OpenMP 4.5)", "lapack": "LAPACK is enabled (usually provided by MKL)", "nnpack": "NNPACK is enabled", "cpu": "CPU capability usage: AVX2", "build_settings": {"BLAS_INFO": "mkl", "BUILD_TYPE": "Release", "CUDA_VERSION": "11.8", "CUDNN_VERSION": "8.7.0", "CXX_COMPILER": "/opt/rh/devtoolset-9/root/usr/bin/c++", "CXX_FLAGS": "-D_GLIBCXX_USE_CXX11_ABI=0 -fabi-version=11 -fvisibility-inlines-hidden -DUSE_PTHREADPOOL -DNDEBUG -DUSE_KINETO -DLIBKINETO_NOROCTRACER -DUSE_FBGEMM -DUSE_QNNPACK -DUSE_PYTORCH_QNNPACK -DUSE_XNNPACK -DSYMBOLICATE_MOBILE_DEBUG_HANDLE -O2 -fPIC -Wall -Wextra -Werror=return-type -Werror=non-virtual-dtor -Werror=bool-operation -Wnarrowing -Wno-missing-field-initializers -Wno-type-limits -Wno-array-bounds -Wno-unknown-pragmas -Wno-unused-parameter -Wno-unused-function -Wno-unused-result -Wno-strict-overflow -Wno-strict-aliasing -Wno-stringop-overflow -Wno-psabi -Wno-error=pedantic -Wno-error=old-style-cast -Wno-invalid-partial-specialization -Wno-unused-private-field -Wno-aligned-allocation-unavailable -Wno-missing-braces -fdiagnostics-color=always -faligned-new -Wno-unused-but-set-variable -Wno-maybe-uninitialized -fno-math-errno -fno-trapping-math -Werror=format -Werror=cast-function-type -Wno-stringop-overflow", "LAPACK_INFO": "mkl", "PERF_WITH_AVX": "1", "PERF_WITH_AVX2": "1", "PERF_WITH_AVX512": "1", "TORCH_DISABLE_GPU_ASSERTS": "ON", "TORCH_VERSION": "2.1.0", "USE_CUDA": "ON", "USE_CUDNN": "ON", "USE_EXCEPTION_PTR": "1", "USE_GFLAGS": "OFF", "USE_GLOG": "OFF", "USE_MKL": "ON", "USE_MKLDNN": "ON", "USE_MPI": "OFF", "USE_NCCL": "1", "USE_NNPACK": "ON", "USE_OPENMP": "ON", "USE_ROCM": "OFF"}}}, "pipe": null}
+{"event": "start", "data": {"command": ["voir", "--config", "/Users/satyaortiz-gagne/travail/mila/milabench/extra/stargan/voirconf-stargan.D1-0efae956f1553a76c1e03985181900f5.json", "/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/stargan/stargan/main.py", "--image_size", "512", "--c_dim", "5", "--batch_size", "16"], "time": 1712623660.3523586}, "pipe": null}
+{"event": "phase", "data": {"name": "init"}, "pipe": "data"}
+{"event": "phase", "data": {"name": "parse_args"}, "pipe": "data"}
+{"event": "phase", "data": {"name": "load_script"}, "pipe": "data"}
+{"event": "phase", "data": {"name": "run_script"}, "pipe": "data"}
+{"event": "line", "data": "Namespace(c_dim=5, c2_dim=8, celeba_crop_size=178, rafd_crop_size=256, image_size=512, g_conv_dim=64, d_conv_dim=64, g_repeat_num=6, d_repeat_num=6, lambda_cls=1, lambda_rec=10, lambda_gp=10, dataset='synth', batch_size=16, num_iters=200000, num_iters_decay=100000, g_lr=0.0001, d_lr=0.0001, n_critic=5, beta1=0.5, beta2=0.999, resume_iters=None, selected_attrs=['Black_Hair', 'Blond_Hair', 'Brown_Hair', 'Male', 'Young'], test_iters=200000, num_workers=1, mode='train', use_tensorboard=False, celeba_image_dir='data/celeba/images', attr_path='data/celeba/list_attr_celeba.txt', rafd_image_dir='data/RaFD/train', log_dir='/Users/satyaortiz-gagne/travail/mila/milabench/extra/stargan/logs', model_save_dir='/Users/satyaortiz-gagne/travail/mila/milabench/extra/stargan/models', sample_dir='/Users/satyaortiz-gagne/travail/mila/milabench/extra/stargan/samples', result_dir='/Users/satyaortiz-gagne/travail/mila/milabench/extra/stargan/results', log_step=10, sample_step=1000, model_save_step=10000, lr_update_step=1000)\n", "pipe": "stdout"}
+{"event": "line", "data": "Generator(\n", "pipe": "stdout"}
+{"event": "line", "data": "  (main): Sequential(\n", "pipe": "stdout"}
+{"event": "line", "data": "    (0): Conv2d(8, 64, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (1): InstanceNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (2): ReLU(inplace=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (3): Conv2d(64, 128, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (4): InstanceNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (5): ReLU(inplace=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (6): Conv2d(128, 256, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (7): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (8): ReLU(inplace=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (9): ResidualBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (main): Sequential(\n", "pipe": "stdout"}
+{"event": "line", "data": "        (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (1): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (2): ReLU(inplace=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (3): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (4): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      )\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (10): ResidualBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (main): Sequential(\n", "pipe": "stdout"}
+{"event": "line", "data": "        (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (1): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (2): ReLU(inplace=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (3): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (4): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      )\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (11): ResidualBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (main): Sequential(\n", "pipe": "stdout"}
+{"event": "line", "data": "        (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (1): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (2): ReLU(inplace=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (3): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (4): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      )\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (12): ResidualBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (main): Sequential(\n", "pipe": "stdout"}
+{"event": "line", "data": "        (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (1): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (2): ReLU(inplace=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (3): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (4): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      )\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (13): ResidualBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (main): Sequential(\n", "pipe": "stdout"}
+{"event": "line", "data": "        (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (1): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (2): ReLU(inplace=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (3): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (4): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      )\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (14): ResidualBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (main): Sequential(\n", "pipe": "stdout"}
+{"event": "line", "data": "        (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (1): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (2): ReLU(inplace=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (3): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (4): InstanceNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      )\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (15): ConvTranspose2d(256, 128, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (16): InstanceNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (17): ReLU(inplace=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (18): ConvTranspose2d(128, 64, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (19): InstanceNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (20): ReLU(inplace=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (21): Conv2d(64, 3, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (22): Tanh()\n", "pipe": "stdout"}
+{"event": "line", "data": "  )\n", "pipe": "stdout"}
+{"event": "line", "data": ")\n", "pipe": "stdout"}
+{"event": "line", "data": "G\n", "pipe": "stdout"}
+{"event": "line", "data": "The number of parameters: 8430528\n", "pipe": "stdout"}
+{"event": "line", "data": "Discriminator(\n", "pipe": "stdout"}
+{"event": "line", "data": "  (main): Sequential(\n", "pipe": "stdout"}
+{"event": "line", "data": "    (0): Conv2d(3, 64, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))\n", "pipe": "stdout"}
+{"event": "line", "data": "    (1): LeakyReLU(negative_slope=0.01)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (2): Conv2d(64, 128, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))\n", "pipe": "stdout"}
+{"event": "line", "data": "    (3): LeakyReLU(negative_slope=0.01)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (4): Conv2d(128, 256, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))\n", "pipe": "stdout"}
+{"event": "line", "data": "    (5): LeakyReLU(negative_slope=0.01)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (6): Conv2d(256, 512, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))\n", "pipe": "stdout"}
+{"event": "line", "data": "    (7): LeakyReLU(negative_slope=0.01)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (8): Conv2d(512, 1024, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))\n", "pipe": "stdout"}
+{"event": "line", "data": "    (9): LeakyReLU(negative_slope=0.01)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (10): Conv2d(1024, 2048, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))\n", "pipe": "stdout"}
+{"event": "line", "data": "    (11): LeakyReLU(negative_slope=0.01)\n", "pipe": "stdout"}
+{"event": "line", "data": "  )\n", "pipe": "stdout"}
+{"event": "line", "data": "  (conv1): Conv2d(2048, 1, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "  (conv2): Conv2d(2048, 5, kernel_size=(8, 8), stride=(1, 1), bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": ")\n", "pipe": "stdout"}
+{"event": "line", "data": "D\n", "pipe": "stdout"}
+{"event": "line", "data": "The number of parameters: 45376448\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "train", "progress": [0, 10000]}, "pipe": "data"}
+{"event": "line", "data": "Start training...\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "train", "progress": [1, 10000]}, "pipe": "data"}
+{"event": "line", "data": "/mnt/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/nn/modules/conv.py:456: UserWarning: Applied workaround for CuDNN issue, install nvrtc.so (Triggered internally at ../aten/src/ATen/native/cudnn/Conv_v8.cpp:80.)\n", "pipe": "stderr"}
+{"event": "line", "data": "  return F.conv2d(input, weight, bias, self.stride,\n", "pipe": "stderr"}
+{"event": "line", "data": "/mnt/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/nn/_reduction.py:42: UserWarning: size_average and reduce args will be deprecated, please use reduction='sum' instead.\n", "pipe": "stderr"}
+{"event": "line", "data": "  warnings.warn(warning.format(ret))\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "loss": 13.121368408203125}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"1": {"memory": [18876.375, 24512.0], "load": 0.69, "temperature": null, "power": null}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"1": {"memory": [20402.375, 24512.0], "load": 0.93, "temperature": null, "power": null}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"1": {"memory": [19756.375, 24512.0], "load": 0.98, "temperature": null, "power": null}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "progress": [2, 10000]}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"1": {"memory": [24384.375, 24512.0], "load": 0.98, "temperature": null, "power": null}}}, "pipe": "data"}
+{"event": "error", "data": {"type": "OutOfMemoryError", "message": "CUDA out of memory. Tried to allocate 256.00 MiB. GPU 0 has a total capacty of 23.73 GiB of which 127.62 MiB is free. Including non-PyTorch memory, this process has 21.48 GiB memory in use. Of the allocated memory 20.76 GiB is allocated by PyTorch, and 433.74 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF"}, "pipe": "data"}
+{"event": "phase", "data": {"name": "finalize"}, "pipe": "data"}
+{"event": "line", "data": "Traceback (most recent call last):\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/bin/voir\", line 8, in <module>\n", "pipe": "stderr"}
+{"event": "line", "data": "    sys.exit(main())\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/mnt/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/voir/cli.py\", line 124, in main\n", "pipe": "stderr"}
+{"event": "line", "data": "    ov(sys.argv[1:] if argv is None else argv)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/mnt/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/voir/phase.py\", line 334, in __call__\n", "pipe": "stderr"}
+{"event": "line", "data": "    self._run(*args, **kwargs)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/mnt/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/voir/overseer.py\", line 242, in _run\n", "pipe": "stderr"}
+{"event": "line", "data": "    set_value(func())\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/mnt/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/voir/scriptutils.py\", line 37, in <lambda>\n", "pipe": "stderr"}
+{"event": "line", "data": "    return lambda: exec(mainsection, glb, glb)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/stargan/stargan/main.py\", line 222, in <module>\n", "pipe": "stderr"}
+{"event": "line", "data": "    main(config)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/stargan/stargan/main.py\", line 77, in main\n", "pipe": "stderr"}
+{"event": "line", "data": "    solver.train()\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/stargan/stargan/solver.py\", line 282, in train\n", "pipe": "stderr"}
+{"event": "line", "data": "    x_fake = self.G(x_real, c_trg)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/mnt/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/nn/modules/module.py\", line 1518, in _wrapped_call_impl\n", "pipe": "stderr"}
+{"event": "line", "data": "    return self._call_impl(*args, **kwargs)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/mnt/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/nn/modules/module.py\", line 1527, in _call_impl\n", "pipe": "stderr"}
+{"event": "line", "data": "    return forward_call(*args, **kwargs)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/stargan/stargan/model.py\", line 94, in forward\n", "pipe": "stderr"}
+{"event": "line", "data": "    return self.main(x)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/mnt/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/nn/modules/module.py\", line 1518, in _wrapped_call_impl\n", "pipe": "stderr"}
+{"event": "line", "data": "    return self._call_impl(*args, **kwargs)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/mnt/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/nn/modules/module.py\", line 1527, in _call_impl\n", "pipe": "stderr"}
+{"event": "line", "data": "    return forward_call(*args, **kwargs)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/mnt/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/nn/modules/container.py\", line 215, in forward\n", "pipe": "stderr"}
+{"event": "line", "data": "    input = module(input)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/mnt/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/nn/modules/module.py\", line 1518, in _wrapped_call_impl\n", "pipe": "stderr"}
+{"event": "line", "data": "    return self._call_impl(*args, **kwargs)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/mnt/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/nn/modules/module.py\", line 1527, in _call_impl\n", "pipe": "stderr"}
+{"event": "line", "data": "    return forward_call(*args, **kwargs)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/stargan/stargan/model.py\", line 20, in forward\n", "pipe": "stderr"}
+{"event": "line", "data": "    return x + self.main(x)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/mnt/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/nn/modules/module.py\", line 1518, in _wrapped_call_impl\n", "pipe": "stderr"}
+{"event": "line", "data": "    return self._call_impl(*args, **kwargs)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/mnt/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/nn/modules/module.py\", line 1527, in _call_impl\n", "pipe": "stderr"}
+{"event": "line", "data": "    return forward_call(*args, **kwargs)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/mnt/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/nn/modules/container.py\", line 215, in forward\n", "pipe": "stderr"}
+{"event": "line", "data": "    input = module(input)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/mnt/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/nn/modules/module.py\", line 1518, in _wrapped_call_impl\n", "pipe": "stderr"}
+{"event": "line", "data": "    return self._call_impl(*args, **kwargs)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/mnt/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/nn/modules/module.py\", line 1527, in _call_impl\n", "pipe": "stderr"}
+{"event": "line", "data": "    return forward_call(*args, **kwargs)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/mnt/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/nn/modules/conv.py\", line 460, in forward\n", "pipe": "stderr"}
+{"event": "line", "data": "    return self._conv_forward(input, self.weight, self.bias)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/mnt/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/nn/modules/conv.py\", line 456, in _conv_forward\n", "pipe": "stderr"}
+{"event": "line", "data": "    return F.conv2d(input, weight, bias, self.stride,\n", "pipe": "stderr"}
+{"event": "line", "data": "torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate 256.00 MiB. GPU 0 has a total capacty of 23.73 GiB of which 127.62 MiB is free. Including non-PyTorch memory, this process has 21.48 GiB memory in use. Of the allocated memory 20.76 GiB is allocated by PyTorch, and 433.74 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF\n", "pipe": "stderr"}
+{"event": "end", "data": {"command": ["voir", "--config", "/Users/satyaortiz-gagne/travail/mila/milabench/extra/stargan/voirconf-stargan.D1-0efae956f1553a76c1e03985181900f5.json", "/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/stargan/stargan/main.py", "--image_size", "512", "--c_dim", "5", "--batch_size", "16"], "time": 1712623672.1867037, "return_code": 1}, "pipe": null}

@@ -1,0 +1,183 @@
+{"event": "config", "data": {"system": {"arch": "cuda", "sshkey": null, "nodes": [{"aliaslist": [], "hostname": "delicatemastodon.eastus2.cloudapp.azure.com", "ip": "delicatemastodon.eastus2.cloudapp.azure.com", "ipaddrlist": ["00:00:00:00:00:00", "fe80::6245:bdff:feb3:312b%eth0", "60:45:bd:b3:31:2b", "10.0.1.4", "127.0.0.1", "::1"], "key": "/Users/satyaortiz-gagne/.ssh/covalent-azure-task-a10_x2-4db6f1500e0007c61a4cf0533daca445/id_rsa.covalent.delicatemastodon.pem", "local": true, "main": true, "name": "manager", "user": "ubuntu"}], "cloud_profiles": {"azure__a100": {"location": "eastus2", "size": "Standard_NC24ads_A100_v4", "username": "ubuntu"}, "azure__a100_x2": {"location": "eastus2", "size": "Standard_NC48ads_A100_v4", "username": "ubuntu"}, "azure__a10_x2": {"location": "eastus2", "size": "Standard_NV72ads_A10_v5", "username": "ubuntu"}}, "self": {"aliaslist": [], "hostname": "delicatemastodon.eastus2.cloudapp.azure.com", "ip": "delicatemastodon.eastus2.cloudapp.azure.com", "ipaddrlist": ["00:00:00:00:00:00", "fe80::6245:bdff:feb3:312b%eth0", "60:45:bd:b3:31:2b", "10.0.1.4", "127.0.0.1", "::1"], "key": "/Users/satyaortiz-gagne/.ssh/covalent-azure-task-a10_x2-4db6f1500e0007c61a4cf0533daca445/id_rsa.covalent.delicatemastodon.pem", "local": true, "main": true, "name": "manager", "user": "ubuntu"}}, "dirs": {"base": "/Users/satyaortiz-gagne/travail/mila/milabench", "venv": "/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch", "data": "/Users/satyaortiz-gagne/travail/mila/milabench/data", "runs": "/Users/satyaortiz-gagne/travail/mila/milabench/runs", "extra": "/Users/satyaortiz-gagne/travail/mila/milabench/extra/flops", "cache": "/Users/satyaortiz-gagne/travail/mila/milabench/cache"}, "group": "flops", "install_group": "torch", "install_variant": "cuda", "run_name": "vodofeze.2024-04-09_00:35:28.669482", "enabled": true, "capabilities": {"nodes": 1}, "max_duration": 600, "voir": {"options": {"stop": 60, "interval": "1s"}}, "validation": {"usage": {"gpu_load_threshold": 0.5, "gpu_mem_threshold": 0.5}}, "config_base": "/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/config", "config_file": "/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/config/standard.yaml", "hash": "f8568b3c26182a7cfabab1ca058f33bf", "definition": "/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/flops", "plan": {"method": "per_gpu"}, "tags": ["diagnostic", "flops"], "argv": {"--number": 10, "--repeat": 90, "--m": 8192, "--n": 8192, "--dtype": "fp32", "--tf32": true}, "weight": 0.0, "name": "tf32", "tag": ["tf32", "D0"], "device": "0", "devices": ["0"], "env": {"CUDA_VISIBLE_DEVICES": "0"}}, "pipe": null}
+{"event": "meta", "data": {"cpu": {"count": 72, "brand": "AMD EPYC 74F3 24-Core Processor"}, "os": {"sysname": "Linux", "nodename": "delicatemastodon", "release": "6.5.0-1017-azure", "version": "#17~22.04.1-Ubuntu SMP Sat Mar  9 04:50:38 UTC 2024", "machine": "x86_64"}, "accelerators": {"arch": "cuda", "gpus": {"GPU-5701be00-f607-11ee-a28f-e97901091b3e": {"device": "0", "product": "NVIDIA A10-24Q", "memory": {"used": 2390.25, "total": 24512.0}, "utilization": {"compute": 0, "memory": 0.09751346279373369}, "temperature": null, "power": null, "selection_variable": "CUDA_VISIBLE_DEVICES"}, "GPU-5701be00-f607-11ee-a28f-f106fd37d291": {"device": "1", "product": "NVIDIA A10-24Q", "memory": {"used": 2390.25, "total": 24512.0}, "utilization": {"compute": 0, "memory": 0.09751346279373369}, "temperature": null, "power": null, "selection_variable": "CUDA_VISIBLE_DEVICES"}}}, "date": 1712623091.8331, "milabench": {"tag": "paice-v1-11-g010135f", "commit": "010135f53e9664ae61b596149e569230d8b45f44", "date": "2024-04-03 00:41:57 -0400"}, "pytorch": {"torch": "2.1.0+cu118", "compiler": "GCC 9.3", "cpp": "C++ Version: 201703", "intel": "Intel(R) oneAPI Math Kernel Library Version 2022.2-Product Build 20220804 for Intel(R) 64 architecture applications", "mkl": "OpenMP 201511 (a.k.a. OpenMP 4.5)", "openmp": "OpenMP 201511 (a.k.a. OpenMP 4.5)", "lapack": "LAPACK is enabled (usually provided by MKL)", "nnpack": "NNPACK is enabled", "cpu": "CPU capability usage: AVX2", "build_settings": {"BLAS_INFO": "mkl", "BUILD_TYPE": "Release", "CUDA_VERSION": "11.8", "CUDNN_VERSION": "8.7.0", "CXX_COMPILER": "/opt/rh/devtoolset-9/root/usr/bin/c++", "CXX_FLAGS": "-D_GLIBCXX_USE_CXX11_ABI=0 -fabi-version=11 -fvisibility-inlines-hidden -DUSE_PTHREADPOOL -DNDEBUG -DUSE_KINETO -DLIBKINETO_NOROCTRACER -DUSE_FBGEMM -DUSE_QNNPACK -DUSE_PYTORCH_QNNPACK -DUSE_XNNPACK -DSYMBOLICATE_MOBILE_DEBUG_HANDLE -O2 -fPIC -Wall -Wextra -Werror=return-type -Werror=non-virtual-dtor -Werror=bool-operation -Wnarrowing -Wno-missing-field-initializers -Wno-type-limits -Wno-array-bounds -Wno-unknown-pragmas -Wno-unused-parameter -Wno-unused-function -Wno-unused-result -Wno-strict-overflow -Wno-strict-aliasing -Wno-stringop-overflow -Wno-psabi -Wno-error=pedantic -Wno-error=old-style-cast -Wno-invalid-partial-specialization -Wno-unused-private-field -Wno-aligned-allocation-unavailable -Wno-missing-braces -fdiagnostics-color=always -faligned-new -Wno-unused-but-set-variable -Wno-maybe-uninitialized -fno-math-errno -fno-trapping-math -Werror=format -Werror=cast-function-type -Wno-stringop-overflow", "LAPACK_INFO": "mkl", "PERF_WITH_AVX": "1", "PERF_WITH_AVX2": "1", "PERF_WITH_AVX512": "1", "TORCH_DISABLE_GPU_ASSERTS": "ON", "TORCH_VERSION": "2.1.0", "USE_CUDA": "ON", "USE_CUDNN": "ON", "USE_EXCEPTION_PTR": "1", "USE_GFLAGS": "OFF", "USE_GLOG": "OFF", "USE_MKL": "ON", "USE_MKLDNN": "ON", "USE_MPI": "OFF", "USE_NCCL": "1", "USE_NNPACK": "ON", "USE_OPENMP": "ON", "USE_ROCM": "OFF"}}}, "pipe": null}
+{"event": "start", "data": {"command": ["/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/flops/activator", "/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch", "/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/flops/main.py", "--number", "10", "--repeat", "90", "--m", "8192", "--n", "8192", "--dtype", "fp32", "--tf32"], "time": 1712623094.2285924}, "pipe": null}
+{"event": "data", "data": {"task": "train", "rate": 43.8435710265474, "units": "Tflops", "t": 1712623096.0294204}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [2393.125, 24512.0], "load": 0, "temperature": null, "power": null}}, "t": 1712623095.4086173}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.06, "temperature": null, "power": null}}, "t": 1712623095.9150257}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.471589267725115, "units": "Tflops", "t": 1712623096.524578}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.25, "temperature": null, "power": null}}, "t": 1712623096.4205604}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 45.359358890797566, "units": "Tflops", "t": 1712623097.0095093}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.45, "temperature": null, "power": null}}, "t": 1712623096.9260511}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.01994795353335, "units": "Tflops", "t": 1712623097.5091982}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.58, "temperature": null, "power": null}}, "t": 1712623097.431647}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 45.15483639488094, "units": "Tflops", "t": 1712623097.9967682}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.78, "temperature": null, "power": null}}, "t": 1712623097.9371946}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.371336189899424, "units": "Tflops", "t": 1712623098.492664}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.91, "temperature": null, "power": null}}, "t": 1712623098.442748}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.53841862809422, "units": "Tflops", "t": 1712623098.9865313}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623098.9483185}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.534891759203454, "units": "Tflops", "t": 1712623099.4804626}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623099.4538426}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.87950966310718, "units": "Tflops", "t": 1712623099.9708643}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623099.9593818}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.63869445605604, "units": "Tflops", "t": 1712623100.4641762}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.775759037463295, "units": "Tflops", "t": 1712623100.95546}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623100.4648595}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.70724087934804, "units": "Tflops", "t": 1712623101.4475007}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623100.9703112}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.31407498570542, "units": "Tflops", "t": 1712623101.9439554}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623101.4758046}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.24532709354406, "units": "Tflops", "t": 1712623102.4411163}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623101.9812956}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.582336173192594, "units": "Tflops", "t": 1712623102.9347699}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623102.486918}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.533859610557016, "units": "Tflops", "t": 1712623103.4287744}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623102.9928212}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.73189365875823, "units": "Tflops", "t": 1712623103.920504}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623103.4982536}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.44962155420787, "units": "Tflops", "t": 1712623104.4153507}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623104.003749}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.6805156477458, "units": "Tflops", "t": 1712623104.907686}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623104.5092206}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.46580054426478, "units": "Tflops", "t": 1712623105.4026744}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623105.015092}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.17861194251971, "units": "Tflops", "t": 1712623105.9005663}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623105.5206554}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.49752838022492, "units": "Tflops", "t": 1712623106.3951027}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623106.026228}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.552854503360656, "units": "Tflops", "t": 1712623106.8889887}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623106.5317614}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.21919349541802, "units": "Tflops", "t": 1712623107.3866274}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623107.037369}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.9911588931869, "units": "Tflops", "t": 1712623107.875701}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623107.5428312}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.75668223287567, "units": "Tflops", "t": 1712623108.3673098}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623108.0484407}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 43.81239397954099, "units": "Tflops", "t": 1712623108.8695068}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623108.553901}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.82652855968339, "units": "Tflops", "t": 1712623109.360327}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623109.0593958}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.47343339984925, "units": "Tflops", "t": 1712623109.8549066}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623109.564936}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.55758961450895, "units": "Tflops", "t": 1712623110.3485708}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623110.0703964}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.75577008241259, "units": "Tflops", "t": 1712623110.8400342}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623110.5758479}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.75409790312376, "units": "Tflops", "t": 1712623111.331513}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623111.0813398}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.357444333507466, "units": "Tflops", "t": 1712623111.8273902}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623111.5869372}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.638845684245666, "units": "Tflops", "t": 1712623112.3202424}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623112.0924084}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.20177411880263, "units": "Tflops", "t": 1712623112.817862}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623112.5978737}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.34991521230061, "units": "Tflops", "t": 1712623113.3139157}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623113.1034243}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.49606863616717, "units": "Tflops", "t": 1712623113.8082895}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623113.6089637}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.68962982148018, "units": "Tflops", "t": 1712623114.3007636}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623114.114521}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.12784184112692, "units": "Tflops", "t": 1712623114.799414}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623114.620103}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.759983659624204, "units": "Tflops", "t": 1712623115.290931}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623115.1256626}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 43.89751173474453, "units": "Tflops", "t": 1712623115.7920356}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623115.6310794}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.89126141086514, "units": "Tflops", "t": 1712623116.2820249}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623116.136676}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.19150269893531, "units": "Tflops", "t": 1712623116.7797778}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623116.6422555}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.39747901448011, "units": "Tflops", "t": 1712623117.2752066}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623117.1478684}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.273807969226915, "units": "Tflops", "t": 1712623117.7721224}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623117.653514}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.790436206455894, "units": "Tflops", "t": 1712623118.263283}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623118.1591587}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.54667884823142, "units": "Tflops", "t": 1712623118.7570596}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623118.664685}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.1924978647532, "units": "Tflops", "t": 1712623119.2547846}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623119.1702466}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.20099035771395, "units": "Tflops", "t": 1712623119.7524133}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623119.675777}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.14304793874101, "units": "Tflops", "t": 1712623120.2506862}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623120.1814673}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.077061913061236, "units": "Tflops", "t": 1712623120.7497108}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623120.686945}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 43.944570217020996, "units": "Tflops", "t": 1712623121.250237}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623121.1923978}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 43.92383114296778, "units": "Tflops", "t": 1712623121.7510133}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623121.6981134}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.34072589736604, "units": "Tflops", "t": 1712623122.247069}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623122.2036312}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.57496748403367, "units": "Tflops", "t": 1712623122.7405236}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623122.7090547}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.232553409048414, "units": "Tflops", "t": 1712623123.23779}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623123.2145367}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.66759764488671, "units": "Tflops", "t": 1712623123.7302427}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623123.7200105}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.524378983365345, "units": "Tflops", "t": 1712623124.2242577}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 43.866320542025534, "units": "Tflops", "t": 1712623124.7256444}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623124.2255557}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.49568224935959, "units": "Tflops", "t": 1712623125.2203665}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623124.7312415}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 43.47405089343643, "units": "Tflops", "t": 1712623125.7264655}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623125.236843}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 43.878820923091595, "units": "Tflops", "t": 1712623126.2278664}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623125.74243}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.26507503524926, "units": "Tflops", "t": 1712623126.725049}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623126.2478912}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.32378575532784, "units": "Tflops", "t": 1712623127.2215304}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623126.7533865}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.01744800182675, "units": "Tflops", "t": 1712623127.7214098}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623127.2590888}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.32730056933882, "units": "Tflops", "t": 1712623128.2176178}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623127.764734}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.0058343039614, "units": "Tflops", "t": 1712623128.7176442}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623128.2702048}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.248001589154356, "units": "Tflops", "t": 1712623129.2148857}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623128.7757044}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 43.68022438717206, "units": "Tflops", "t": 1712623129.7187438}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623129.2814033}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.13580261595541, "units": "Tflops", "t": 1712623130.2173321}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623129.7868505}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.625951761861835, "units": "Tflops", "t": 1712623130.710333}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623130.292292}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.164650153537075, "units": "Tflops", "t": 1712623131.2083778}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623130.7978234}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.39279923671712, "units": "Tflops", "t": 1712623131.703878}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623131.303362}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 43.34959541158024, "units": "Tflops", "t": 1712623132.2113159}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623131.8087897}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.63249498239682, "units": "Tflops", "t": 1712623132.704337}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623132.3143435}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.20084208171567, "units": "Tflops", "t": 1712623133.2019727}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623132.8199859}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.34025693935622, "units": "Tflops", "t": 1712623133.6981366}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623133.325479}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.2284173351081, "units": "Tflops", "t": 1712623134.1954625}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623133.830965}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 43.571088618473695, "units": "Tflops", "t": 1712623134.7002895}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623134.3366957}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.326405836522156, "units": "Tflops", "t": 1712623135.1965156}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623134.8422031}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.089809163095964, "units": "Tflops", "t": 1712623135.6954353}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623135.3476462}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 43.851909080277544, "units": "Tflops", "t": 1712623136.1970305}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623135.853093}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.30592207821016, "units": "Tflops", "t": 1712623136.6934912}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623136.358571}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 43.84855263232728, "units": "Tflops", "t": 1712623137.1951172}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623136.8640428}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 43.865173117791414, "units": "Tflops", "t": 1712623137.6966076}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623137.369588}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.414774970468116, "units": "Tflops", "t": 1712623138.1918411}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623137.8751435}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.03175828649601, "units": "Tflops", "t": 1712623138.6913884}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623138.3808029}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 43.832548818853724, "units": "Tflops", "t": 1712623139.193241}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623138.8862462}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 44.24095520180687, "units": "Tflops", "t": 1712623139.690435}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623139.391826}, "pipe": "data"}
+{"event": "data", "data": {"task": "train", "rate": 43.665128705171554, "units": "Tflops", "t": 1712623140.1941767}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [3456.375, 24512.0], "load": 0.99, "temperature": null, "power": null}}, "t": 1712623139.8972795}, "pipe": "data"}
+{"event": "end", "data": {"command": ["/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/flops/activator", "/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch", "/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/flops/main.py", "--number", "10", "--repeat", "90", "--m", "8192", "--n", "8192", "--dtype", "fp32", "--tf32"], "time": 1712623140.805768, "return_code": 0}, "pipe": null}
