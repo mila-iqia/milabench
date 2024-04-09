@@ -7,8 +7,9 @@ from coleo import Option, tooled
 from omegaconf import OmegaConf
 import yaml
 
-from ..common import get_multipack
+from milabench.fs import XPath
 
+from ..common import get_multipack
 
 _SETUP = "setup"
 _TEARDOWN = "teardown"
@@ -25,8 +26,12 @@ def _flatten_cli_args(**kwargs):
     )
 
 
+def _or_sudo(cmd:str):
+    return f"( {cmd} || sudo {cmd} )"
+
+
 def manage_cloud(pack, run_on, action="setup"):
-    assert run_on in pack.config["system"]["cloud_profiles"]
+    assert run_on in pack.config["system"]["cloud_profiles"], f"{run_on} cloud profile not found in {list(pack.config['system']['cloud_profiles'].keys())}"
 
     key_map = {
         "hostname":(lambda v: ("ip",v)),
@@ -37,6 +42,9 @@ def manage_cloud(pack, run_on, action="setup"):
     plan_params = deepcopy(pack.config["system"]["cloud_profiles"][run_on])
     run_on, *profile = run_on.split("__")
     profile = profile[0] if profile else ""
+
+    remote_base = XPath("/data") / pack.dirs.base.name
+    local_base = pack.dirs.base.absolute().parent
 
     nodes = iter(enumerate(pack.config["system"]["nodes"]))
     for i, n in nodes:
@@ -66,6 +74,15 @@ def manage_cloud(pack, run_on, action="setup"):
             f"--{action}",
             *_flatten_cli_args(**plan_params)
         ]
+        if action == _SETUP:
+            cmd += [
+                "--",
+                "bash", "-c",
+                _or_sudo(f"mkdir -p '{local_base.parent}'") +
+                " && " + _or_sudo(f"chmod a+rwX '{local_base.parent}'") +
+                f" && mkdir -p '{remote_base}'"
+                f" && ln -sfT '{remote_base}' '{local_base}'"
+            ]
         p = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,

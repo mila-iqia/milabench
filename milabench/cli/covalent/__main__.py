@@ -113,7 +113,7 @@ def executor(executor_cls, args, *argv):
         if argv:
             dispatch_id = ct.dispatch(lattice, disable_run=False)(argv, deps_bash=deps_bash)
             result = ct.get_result(dispatch_id=dispatch_id, wait=True)
-            return_code, stdout, _ = result.result if result.result is not None else (1, "", "")
+            return_code, _, _ = result.result if result.result is not None else (1, "", "")
 
         if return_code == 0 and args.setup:
             _executor:ct.executor.BaseExecutor = executor_cls(

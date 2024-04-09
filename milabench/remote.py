@@ -20,6 +20,14 @@ from .commands import (
 INSTALL_FOLDER = str(ROOT_FOLDER)
 
 
+def milabench_env() -> list:
+    return [
+        f"{envvar}={os.environ[envvar]}"
+        for envvar in os.environ
+        if envvar.split("_")[0] == "MILABENCH" and os.environ[envvar]
+    ]
+
+
 def scp(node, folder, dest=None) -> list:
     """Copy a folder from local node to remote node"""
     host = node["ip"]
@@ -185,9 +193,7 @@ def milabench_remote_command(pack, *command, run_for="worker") -> ListCommand:
                     CmdCommand(
                         worker_pack(pack, worker),
                         "cd", f"{INSTALL_FOLDER}", "&&",
-                        f"MILABENCH_BASE={os.environ.get('MILABENCH_BASE', '')}",
-                        f"MILABENCH_CONFIG={os.environ.get('MILABENCH_CONFIG', '')}",
-                        f"MILABENCH_SYSTEM={os.environ.get('MILABENCH_SYSTEM', '')}",
+                        *milabench_env(),
                         "milabench", *command
                     ),
                     host=host,
