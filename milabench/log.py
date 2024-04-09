@@ -333,6 +333,16 @@ class ShortDashFormatter(DashFormatter):
         self.refresh()
 
 
+_NO_DEFAULT_FLAG=("__NO_DEFAULT__",)
+def _parse_int(value, default=_NO_DEFAULT_FLAG):
+    try:
+        return int(value)
+    except TypeError:
+        if default is not _NO_DEFAULT_FLAG:
+            return default
+        raise
+
+
 class LongDashFormatter(DashFormatter):
     def make_table(self):
         table = Table.grid(padding=(0, 3, 0, 0))
@@ -375,7 +385,8 @@ class LongDashFormatter(DashFormatter):
             for gpuid, data in gpudata.items():
                 load = int(data.get("load", 0) * 100)
                 currm, totalm = data.get("memory", [0, 0])
-                temp = int(data.get("temperature", 0))
+                # "temperature" is sometimes reported as None for some GPUs? A10?
+                temp = _parse_int(data.get("temperature", 0), 0)
                 row[f"gpu:{gpuid}"] = (
                     f"{load}% load | {currm:.0f}/{totalm:.0f} MB | {temp}C"
                 )

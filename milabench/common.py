@@ -363,12 +363,8 @@ def _push_reports(reports_repo, runs):
                 device = _meta["cpu"]["brand"].replace(" ", "_")
                 break
 
-        tag = ([
-            t.name
-            for t in _repo.tags
-            if meta[0]["milabench"]["tag"].startswith(t.name)
-        ] or [meta[0]["milabench"]["tag"]])[0]
-        reports_dir = XPath(reports_repo.working_tree_dir) / tag
+        build = "-".join([_repo.active_branch.name.replace(os.path.sep, "_"), next(_repo.iter_commits()).hexsha])
+        reports_dir = XPath(reports_repo.working_tree_dir) / build
 
         run = XPath(run)
         try:
@@ -376,13 +372,16 @@ def _push_reports(reports_repo, runs):
         except FileExistsError:
             pass
 
-        device_reports.setdefault((device, tag), set())
-        device_reports[(device, tag)].update(
+        for _f in (reports_dir / device / run.name).glob("*.stderr"):
+            _f.unlink()
+
+        device_reports.setdefault((device, build), set())
+        device_reports[(device, build)].update(
             (reports_dir / device).glob("*/")
         )
 
-    for (device, tag), reports in device_reports.items():
-        reports_dir = XPath(reports_repo.working_tree_dir) / tag
+    for (device, build), reports in device_reports.items():
+        reports_dir = XPath(reports_repo.working_tree_dir) / build
         reports = _read_reports(*reports)
         reports = _filter_reports(*reports.values())
         summary = make_summary(reports)
@@ -404,9 +403,10 @@ def _push_reports(reports_repo, runs):
                 "--left-text", device,
                 "--right-text", text,
                 "--right-color", _SVG_COLORS[text],
-                "--whole-link", str(reports_url / tag / device)
+                "--whole-link", str(reports_url / build / device)
             ],
-            capture_output=True
+            capture_output=True,
+            check=True
         )
         if result.returncode == 0:
             (reports_dir / device / "badge.svg").write_text(result.stdout.decode("utf8"))
@@ -418,8 +418,8 @@ def _push_reports(reports_repo, runs):
 
         for cmd, _kwargs in (
             (["git", "pull"], {"check": True}),
-            (["git", "add", tag], {"check": True}),
-            (["git", "commit", "-m", tag], {"check": False}),
+            (["git", "add", build], {"check": True}),
+            (["git", "commit", "-m", build], {"check": False}),
             (["git", "push"], {"check": True})
         ):
             subprocess.run(
