@@ -150,3 +150,10 @@ Run milabench on the cloud
 
 2. | Prepare, install and run milabench
    | ``milabench [prepare|install|run] --system {{SYSTEM_CLOUD_CONFIG.YAML}}``
+
+3. | Destroy the cloud instances
+   | ``milabench teardown --system {{SYSTEM_CLOUD_CONFIG.YAML}} --run-on {{PROFILE}}``
+   | or
+   | ``milabench teardown --system {{SYSTEM_CLOUD_CONFIG.YAML}} --run-on {{PLATFORM}} --all``
+   | to destroy not just a single cloud instance but all instances on a
+   specified platform that were instanced from the current local machine
