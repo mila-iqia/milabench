@@ -1,5 +1,6 @@
 from copy import deepcopy
 import os
+import socket
 import subprocess
 import sys
 
@@ -8,6 +9,7 @@ from omegaconf import OmegaConf
 import yaml
 
 from milabench.fs import XPath
+from milabench.utils import blabla
 
 from ..common import get_multipack
 
@@ -42,6 +44,8 @@ def manage_cloud(pack, run_on, action="setup"):
     plan_params = deepcopy(pack.config["system"]["cloud_profiles"][run_on])
     run_on, *profile = run_on.split("__")
     profile = profile[0] if profile else ""
+    default_state_prefix = profile or run_on
+    default_state_id = "_".join((pack.config["hash"][:6], blabla()))
 
     remote_base = XPath("/data") / pack.dirs.base.name
     local_base = pack.dirs.base.absolute().parent
@@ -51,8 +55,8 @@ def manage_cloud(pack, run_on, action="setup"):
         if n["ip"] != "1.1.1.1":
             continue
 
-        plan_params["state_prefix"] = plan_params.get("state_prefix", None) or profile or run_on
-        plan_params["state_id"] = plan_params.get("state_id", None) or pack.config["hash"]
+        plan_params["state_prefix"] = plan_params.get("state_prefix", default_state_prefix)
+        plan_params["state_id"] = plan_params.get("state_id", default_state_id)
         plan_params["cluster_size"] = max(len(pack.config["system"]["nodes"]), i + 1)
 
         import milabench.cli.covalent as cv
