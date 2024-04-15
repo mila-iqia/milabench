@@ -140,6 +140,10 @@ supported cloud profiles.
         username: ubuntu
         size: Standard_B2ats_v2
         location: eastus2
+        # state_prefix and state_id can be set to force a specific cloud
+        # instance id
+        # state_prefix: cloud-ci
+        # state_id: 849897_bivunaku
 
 
 Run milabench on the cloud

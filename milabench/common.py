@@ -338,9 +338,9 @@ def _push_reports(reports_repo, runs):
         reports_repo = git.repo.base.Repo.clone_from(repo_url, str(reports_repo), branch="reports")
 
     reports_url = ([
-        _r.url for _r in _repo.remotes if "mila-iqia" in _r.url
+        url for _r in _repo.remotes for url in _r.urls if "mila-iqia" in url
     ] or [
-        _r.url for _r in _repo.remotes if _r.name == "origin"
+        url for _r in _repo.remotes for url in _r.urls if _r.name == "origin"
     ])[0]
     reports_url = XPath("github.com".join(reports_url.split("github.com")[1:])[1:])
     reports_url = XPath("https://github.com") / f"{reports_url.with_suffix('')}/tree/{reports_repo.active_branch.name}"
@@ -363,7 +363,7 @@ def _push_reports(reports_repo, runs):
                 device = _meta["cpu"]["brand"].replace(" ", "_")
                 break
 
-        build = "-".join([_repo.active_branch.name.replace(os.path.sep, "_"), next(_repo.iter_commits()).hexsha])
+        build = meta[0]["milabench"]["tag"]
         reports_dir = XPath(reports_repo.working_tree_dir) / build
 
         run = XPath(run)
