@@ -66,7 +66,7 @@ def _make_row(summary, compare, config):
     else:
         acc = row["perf"]
 
-    success_ratio = 1 - row["fail"] / row["n"]
+    success_ratio = 1 - row["fail"] / max(row["n"], 1)
     score = (acc if acc > 0 else row["perf"]) * success_ratio
     row["score"] = score
 
@@ -291,7 +291,7 @@ def make_report(
             return 0
 
     score = _score("score")
-    failure_rate = df["fail"].sum() / df["n"].sum()
+    failure_rate = df["fail"].sum() / max(df["n"].sum(), 1)
     scores = {
         "Failure rate": PassFail(failure_rate, failure_rate <= 0.01),
         "Score": WithClass(f"{score:10.2f}", "score"),
