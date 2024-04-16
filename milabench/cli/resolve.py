@@ -9,15 +9,17 @@ from milabench.config import _config_layers, merge
 @dataclass
 class Arguments:
     config  : str
+    lean: bool = False
 # fmt: on
 
 
 @tooled
 def arguments():
     # The name of the benchmark to develop
-    config: str
+    config: Option & str
+    lean: Option & bool = False
 
-    return Arguments(config)
+    return Arguments(config, lean)
 
 
 @tooled
@@ -42,12 +44,18 @@ def cli_resolve(args=None):
     #
     for benchname, benchconfig in config.items():
         is_enabled = benchconfig.get("enabled", False)
+        is_weighted = benchconfig.get("weight", 0)
+
         parent = benchconfig.get("inherits", None)
 
         if parent:
             parents.append(parent)
 
-        if is_enabled:
+        condition = is_enabled
+        if args.lean:
+            condition = is_enabled and is_weighted
+
+        if condition:
             wip_config[benchname] = benchconfig
 
     #
