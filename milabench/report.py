@@ -17,6 +17,10 @@ H = HTML()
 def _make_row(summary, compare, config):
     mkey = "train_rate"
     metric = "mean"
+
+    weight = config.get("weight", summary.get("weight", 0))
+    is_enabled = config.get("enabled", summary.get("enabled", 0))
+
     row = {
         "n": nan,
         "fail": nan,
@@ -25,16 +29,20 @@ def _make_row(summary, compare, config):
         "sem%": nan,
         "peak_memory": nan,
         "score": nan,
-        "weight": config.get("weight", summary.get("weight", 0)),
-        "enabled": config.get("enabled", summary.get("enabled", 0)),
+        "weight": weight,
+        "enabled": is_enabled,
     }
 
     if not summary:
         return row
 
-    #
+    # Count not running an enabled benchmark as a failure
+    failures = summary["failures"]
+    if is_enabled and row["n"] <= 0:
+        failures += 1
+
     row["n"] = summary["n"]
-    row["fail"] = summary["failures"]
+    row["fail"] = failures
     row["perf"] = summary[mkey][metric]
 
     if compare:
