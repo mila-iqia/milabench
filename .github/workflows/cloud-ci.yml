@@ -9,7 +9,6 @@ on:
 permissions:
   id-token: write
 
-# 
 jobs:
   cloud-tests:
     strategy:
@@ -124,7 +123,7 @@ jobs:
 
       - name: Summary
         run: |
-          git remote set-url origin "https://${{ vars.REPORTS_USERNAME }}:${{ secrets.REPORTS_PAT }}@$(git remote get-url origin | cut -d'/' -f3-)"
+          # git remote set-url origin "https://${{ vars.REPORTS_USERNAME }}:${{ secrets.REPORTS_PAT }}@$(git remote get-url origin | cut -d'/' -f3-)"
           git config --global user.email "github-ci@example.com"
           git config --global user.name "GitHub CI"
           poetry run milabench report --push
