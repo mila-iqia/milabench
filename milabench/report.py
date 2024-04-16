@@ -34,7 +34,7 @@ def _make_row(summary, compare, config):
 
     #
     row["n"] = summary["n"]
-    row["fail"] = summary["failures"] + row["n"] > 0
+    row["fail"] = summary["failures"]
     row["perf"] = summary[mkey][metric]
 
     if compare:
@@ -227,6 +227,14 @@ def make_dataframe(summary, compare=None, weights=None):
     ).transpose()
 
 
+def normalize_dataframe(df):
+    columns = filter(lambda k: k in columns_order, df.columns)
+    columns = sorted(columns, key=lambda k: columns_order.get(k, 0))
+    for col in columns:
+        df[col] = df[col].astype(float)
+    return df[columns]
+
+
 @error_guard({})
 def make_report(
     summary: dict[str, Summary],
@@ -244,10 +252,6 @@ def make_report(
         weights = dict()
 
     df = make_dataframe(summary, compare, weights)
-
-    # Reorder columns
-    df = df[sorted(df.columns, key=lambda k: columns_order.get(k, 0))]
-
     out = Outputter(stdout=stream, html=html)
 
     if sources:
@@ -255,17 +259,28 @@ def make_report(
             sources = [sources]
         for source in sources:
             out.print(f"Source: {source}")
+
     out.title(title or "Benchmark results")
-    out.print(df)
+
+    # Reorder columns
+    out.print(normalize_dataframe(df))
 
     out.section("Scores")
 
     def _score(column):
-        # This computes a weighted geometric mean
-        perf = df[column]
-        weights = df["weight"] * df["enabled"].astype(int)
-        logscore = np.sum(np.log(perf) * weights) / np.sum(weights)
-        return np.exp(logscore)
+        try:
+            # This computes a weighted geometric mean
+
+            # perf can be object np.float64 !?
+            perf = df[column].astype(float)
+
+            weights = df["weight"] * df["enabled"].astype(int)
+            weight_total = np.sum(weights)
+
+            logscore = np.sum(np.log(perf) * weights) / weight_total
+            return np.exp(logscore)
+        except ZeroDivisionError:
+            return 0
 
     score = _score("score")
     failure_rate = df["fail"].sum() / df["n"].sum()
@@ -331,6 +346,7 @@ _formatters = {
     "iqr%": "{:6.1%}".format,
     "weight": "{:4.2f}".format,
     "peak_memory": "{:.0f}".format,
+    "score": "{:10.2f}".format,
     0: "{:.0%}".format,
     1: "{:.0%}".format,
     2: "{:.0%}".format,
