@@ -7,6 +7,7 @@ import sys
 import multiprocessing
 
 import torch
+import intel_extension_for_pytorch as ipex
 
 from voir.smuggle import SmuggleWriter
 from voir.instruments.gpu import get_gpu_info
@@ -17,6 +18,40 @@ MEGA = 1e6
 GIGA = 1e9
 TERA = 1e12
 EXA = 1e18
+
+
+device = "cpu"
+
+if torch.cuda.is_available():
+    # Nvidia & AMD
+    device = "cuda"
+
+if torch.xpu.is_available():
+    # Intel GPU Max
+    device = "xpu"
+
+try:
+    # Intel Gaudi
+    import habana_frameworks.torch.core as htcore
+    device = "hpu"
+except ImportError:
+    pass
+
+
+def empty_cache():
+    if device == "cuda":
+        torch.cuda.empty_cache()
+
+    if device == "xpu":
+        torch.xpu.empty_cache()
+
+
+def synchronize():
+    if device == "cuda":
+        torch.cuda.synchronize()
+    
+    if device == "xpu":
+        torch.xpu.synchronize()
 
 
 def _worker(state, queue, func, delay):
@@ -54,18 +89,18 @@ def modelflops(
     from thop import profile
 
     # MAC: Multiply–accumulate operation
-    batch = torch.randn(*shape, dtype=dtype, device="cuda:0")
+    batch = torch.randn(*shape, dtype=dtype, device=f"{device}:0")
 
     flops, _ = profile(model, inputs=(batch,))
 
     with torch.no_grad():
         # Prepare
-        torch.cuda.empty_cache()
+        empty_cache()
 
-        batch = batch.cuda()
-        model = model.to(dtype=dtype, device="cuda:0")
+        batch = batch.to(f"{device}:0")
+        model = model.to(dtype=dtype, device=f"{device}:0")
 
-        torch.cuda.synchronize()
+        synchronize()
 
         # Start
         start = time.time()
@@ -73,7 +108,7 @@ def modelflops(
         for i in range(repeat):
             _ = model(batch)
 
-        torch.cuda.synchronize()
+        synchronize()
         end = time.time()
         # --
 
@@ -81,15 +116,15 @@ def modelflops(
 
 
 def f(N, R=30, m=5000000, n=256, unit=TERA, dtype=torch.float32, log=None):
-    torch.cuda.empty_cache()
-    a = torch.eye(n, dtype=dtype, device="cuda:0")
-    x = torch.randn((m, n), dtype=dtype, device="cuda:0")
+    empty_cache()
+    a = torch.eye(n, dtype=dtype, device=f"{device}:0")
+    x = torch.randn((m, n), dtype=dtype, device=f"{device}:0")
     y = torch.zeros_like(x)
 
     F = N * (2 * m * n * n + 2 * m * n * n)
 
     for i in range(R):
-        torch.cuda.synchronize()
+        synchronize()
         ts = -time.time()
 
         for _ in range(N):
@@ -97,19 +132,19 @@ def f(N, R=30, m=5000000, n=256, unit=TERA, dtype=torch.float32, log=None):
             y = torch.mm(x, a, out=y)
             x = torch.mm(y, a, out=x)
 
-        torch.cuda.synchronize()
+        synchronize()
         ts += time.time()
 
         if log is not None:
             log({"task": "train", "rate": F / ts / unit, "units": "Tflops"})
 
-    torch.cuda.empty_cache()
+    empty_cache()
 
 
 def setupvoir():
     # wtf this do
-    data_file = SmuggleWriter(sys.stdout)
-    # data_file = sys.stdout
+    # data_file = SmuggleWriter(sys.stdout)
+    data_file = sys.stdout
 
     def log(data):
         if data_file is not None:
@@ -169,3 +204,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    print("done")
