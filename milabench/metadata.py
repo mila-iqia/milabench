@@ -32,8 +32,10 @@ def fetch_torch_version(pack):
         capture_output=True,
     )
 
-    return json.loads(result.stdout)
-
+    try:
+        return json.loads(result.stdout)
+    except:
+        return dict()
 
 def machine_metadata(pack=None):
     """Retrieve machine metadata"""
