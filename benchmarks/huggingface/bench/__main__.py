@@ -17,23 +17,75 @@ def is_tf32_allowed(args):
 
 
 def is_fp16_allowed(args):
-    return "fp16" in args.precision
+    return "fp16" in args.precision or "bf16" in args.precision
 
+
+def has_xpu():
+    try:
+        import intel_extension_for_pytorch as ipex
+        return torch.xpu.is_available()
+    except ImportError as err:
+        return True
+    
+
+
+device_interface = None
+backend_optimizer = lambda x, y: (x, y)
+device = "cpu"
+if has_xpu():
+    device = "xpu"
+    device_interface = torch.xpu
+    backend_optimizer = device_interface.optimize
+
+if torch.cuda.is_available():
+    device = "cuda"
+    device_interface = torch.cuda
+
+
+def float_dtype(precision):
+    if "fp16" in precision:
+        if torch.cuda.is_available():
+            return torch.float16
+        else:
+            return torch.bfloat16
+        
+    if "bf16" in precision:
+        return torch.bfloat16
+        
+    return torch.float
+
+class NoScale:
+    def scale(self, loss):
+        return loss
+    def step(self, optimizer):
+        optimizer.step()
+    def update(self):
+        pass
 
 class Runner:
     def __init__(self, args):
-        use_cuda = not args.no_cuda and torch.cuda.is_available()
-        if use_cuda:
+        if torch.cuda.is_available():
             if is_tf32_allowed(args):
                 torch.backends.cuda.matmul.allow_tf32 = True
                 torch.backends.cudnn.allow_tf32 = True
-            torch.cuda.manual_seed(args.seed)
-            transformers.set_seed(args.seed)
-        self.device = torch.device("cuda" if use_cuda else "cpu")
+
+        if torch.xpu.is_available():
+            import intel_extension_for_pytorch as ipex
+            if is_tf32_allowed(args):
+                ipex.set_fp32_math_mode(device="xpu", mode=ipex.FP32MathMode.TF32)
+            else:
+                ipex.set_fp32_math_mode(device="xpu", mode=ipex.FP32MathMode.FP32)
+
+        device_interface.manual_seed(args.seed)
+        transformers.set_seed(args.seed)
+
+        self.device = torch.device(device)
         self.batch_size = args.batch_size
         info = models[args.model]()
         self.model = info.model.to(self.device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=args.lr)
+
+        self.model, self.optimizer = backend_optimizer(self.model, optimizer=self.optimizer, dtype=float_dtype(args.precision))
 
         self.data = SyntheticData(
             n=args.batch_size,
@@ -44,9 +96,12 @@ class Runner:
             self.data, batch_size=args.batch_size, num_workers=args.num_workers
         )
 
-        self.amp_scaler = torch.cuda.amp.GradScaler(enabled=is_fp16_allowed(args))
+        self.amp_scaler = NoScale()
+        if torch.cuda.is_available():
+            self.amp_scaler = device_interface.amp.GradScaler(enabled=is_fp16_allowed(args))
+
         if is_fp16_allowed(args):
-            self.amp_context = lambda: torch.cuda.amp.autocast(dtype=torch.float16)
+            self.amp_context = lambda: device_interface.amp.autocast(dtype=float_dtype(args.precision))
         else:
             self.amp_context = nullcontext
 
@@ -128,7 +183,7 @@ def parser():
     parser.add_argument(
         "--precision",
         type=str,
-        choices=["fp16", "fp32", "tf32", "tf32-fp16"],
+        choices=["fp16", "fp32", "tf32", "tf32-fp16", "bf16"],
         default="fp32",
         help="Precision configuration",
     )
