@@ -13,6 +13,12 @@ from giving import give, given
 
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
+HAS_XPU = False
+try:
+    import intel_extension_for_pytorch as ipex
+    HAS_XPU = True
+except ImportError:
+    pass
 
 def is_tf32_allowed(args):
     return "tf32" in args.precision

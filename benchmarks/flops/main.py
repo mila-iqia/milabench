@@ -7,7 +7,12 @@ import sys
 import multiprocessing
 
 import torch
-import intel_extension_for_pytorch as ipex
+HAS_XPU = False
+try:
+    import intel_extension_for_pytorch as ipex
+    HAS_XPU = True
+except ImportError:
+    pass
 
 from voir.smuggle import SmuggleWriter
 from voir.instruments.gpu import get_gpu_info
@@ -26,7 +31,7 @@ if torch.cuda.is_available():
     # Nvidia & AMD
     device = "cuda"
 
-if torch.xpu.is_available():
+if HAS_XPU and torch.xpu.is_available():
     # Intel GPU Max
     device = "xpu"
 
@@ -143,8 +148,8 @@ def f(N, R=30, m=5000000, n=256, unit=TERA, dtype=torch.float32, log=None):
 
 def setupvoir():
     # wtf this do
-    # data_file = SmuggleWriter(sys.stdout)
-    data_file = sys.stdout
+    data_file = SmuggleWriter(sys.stdout)
+    # data_file = sys.stdout
 
     def log(data):
         if data_file is not None:
