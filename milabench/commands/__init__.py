@@ -474,7 +474,7 @@ class VoirCommand(WrapperCommand):
     """
 
     def __init__(self, executor: SingleCmdCommand, *voir_argv, **kwargs) -> None:
-        super().__init__(executor, "voir", **{"setsid": True, **kwargs})
+        super().__init__(executor, "/home/sdp/results/venv/torch/bin/voir", **{"setsid": True, **kwargs})
         self.voir_argv = voir_argv
 
     def _argv(self, **kwargs) -> List:

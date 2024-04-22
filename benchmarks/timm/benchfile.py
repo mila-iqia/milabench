@@ -2,7 +2,7 @@ from milabench.commands import TorchRunCommand
 from milabench.pack import Package
 
 
-BRANCH = "56b90317cd9db1038b42ebdfc5bd81b1a2275cc1"
+BRANCH = "v0.9.16"
 
 
 class TimmBenchmarkPack(Package):

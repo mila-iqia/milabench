@@ -13,6 +13,28 @@ import voir
 from synth import SyntheticData
 
 
+def has_xpu():
+    try:
+        import intel_extension_for_pytorch as ipex
+        return torch.xpu.is_available()
+    except ImportError as err:
+        return True
+    
+
+device_interface = None
+backend_optimizer = lambda x, y: (x, y)
+device_name = "cpu"
+if has_xpu():
+    device_name = "xpu"
+    device_interface = torch.xpu
+    backend_optimizer = device_interface.optimize
+
+if torch.cuda.is_available():
+    device_name = "cuda"
+    device_interface = torch.cuda
+
+
+
 def main():
     # For parsing commandline arguments
     parser = argparse.ArgumentParser()
@@ -77,12 +99,21 @@ def main():
     args = parser.parse_args()
 
     if args.allow_tf32:
-        torch.backends.cuda.matmul.allow_tf32 = True
-        torch.backends.cudnn.allow_tf32 = True
+        if torch.cuda.is_available():
+            torch.backends.cuda.matmul.allow_tf32 = True
+            torch.backends.cudnn.allow_tf32 = True
+
+    if torch.xpu.is_available():
+        import intel_extension_for_pytorch as ipex
+        if args.allow_tf32:
+            ipex.set_fp32_math_mode(device="xpu", mode=ipex.FP32MathMode.TF32)
+        else:
+            ipex.set_fp32_math_mode(device="xpu", mode=ipex.FP32MathMode.FP32)
+
 
     ###Initialize flow computation and arbitrary-time flow interpolation CNNs.
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device(f"{device_name}:0")
     flowComp = model.UNet(6, 4)
     flowComp.to(device)
     ArbTimeFlowIntrp = model.UNet(20, 5)
@@ -137,7 +168,11 @@ def main():
 
     params = list(ArbTimeFlowIntrp.parameters()) + list(flowComp.parameters())
 
-    optimizer = optim.Adam(params, lr=args.init_learning_rate)
+    optimizer = optim.Adam(params, lr=args.init_learning_rate, dtype=torch.float)
+
+    model, optimizer = backend_optimizer(model, optimizer=optimizer)
+
+
     # scheduler to decrease learning rate by a factor of 10 at milestones.
     scheduler = optim.lr_scheduler.MultiStepLR(
         optimizer, milestones=args.milestones, gamma=0.1
