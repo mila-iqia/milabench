@@ -11,8 +11,8 @@ HAS_XPU = False
 try:
     import intel_extension_for_pytorch as ipex
     HAS_XPU = True
-except ImportError:
-    pass
+except ImportError as err:
+    raise
 
 from voir.smuggle import SmuggleWriter
 from voir.instruments.gpu import get_gpu_info
@@ -24,6 +24,26 @@ GIGA = 1e9
 TERA = 1e12
 EXA = 1e18
 
+def has_xpu():
+    try:
+        import intel_extension_for_pytorch as ipex
+        return torch.xpu.is_available()
+    except ImportError as err:
+        return True
+    
+def has_gaudi():
+    try:
+        # Intel Gaudi
+        import habana_frameworks.torch.core as htcore
+        return True
+    except ImportError:
+        return False
+
+def has_cuda():
+    return torch.cuda.is_available()
+    
+
+devices = [has_xpu, has_gaudi, has_cuda]
 
 device = "cpu"
 
@@ -35,13 +55,11 @@ if HAS_XPU and torch.xpu.is_available():
     # Intel GPU Max
     device = "xpu"
 
-try:
-    # Intel Gaudi
-    import habana_frameworks.torch.core as htcore
-    device = "hpu"
-except ImportError:
-    pass
 
+print(HAS_XPU, torch.xpu.is_available())
+
+
+print(f"Deduced, {device}")
 
 def empty_cache():
     if device == "cuda":

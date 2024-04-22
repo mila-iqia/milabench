@@ -24,10 +24,28 @@ class Config:
     gpu_poll: int = 3
 
 
+def get_sync():
+    import torch
+
+    def has_xpu():
+        try:
+            import intel_extension_for_pytorch as ipex
+            return torch.xpu.is_available()
+        except ImportError as err:
+            return True
+
+    synchronize = None    
+    if has_xpu():
+        synchronize = torch.xpu.synchronize
+    elif torch.cuda.is_available():
+        synchronize = torch.cuda.synchronize
+
+    return synchronize
+
 @configurable
 def instrument_main(ov, options: Config):
     def setup(args):
-        import torch
+        sync = get_sync()
 
         if options.dash:
             ov.require(dash)
@@ -39,7 +57,7 @@ def instrument_main(ov, options: Config):
             rate(
                 interval=options.interval,
                 skip=options.skip,
-                sync=torch.cuda.synchronize if torch.cuda.is_available() else None,
+                sync=sync,
                 batch_size_calc=lambda b: len(b) * args.world_size,
             ),
             early_stop(n=options.stop, key="rate", task="train", signal="stop"),
