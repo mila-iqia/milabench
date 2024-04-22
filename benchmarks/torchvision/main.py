@@ -13,19 +13,56 @@ from giving import give, given
 
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
-HAS_XPU = False
-try:
-    import intel_extension_for_pytorch as ipex
-    HAS_XPU = True
-except ImportError:
-    pass
-
 def is_tf32_allowed(args):
     return "tf32" in args.precision
 
 
 def is_fp16_allowed(args):
-    return "fp16" in args.precision
+    return "fp16" in args.precision or "bf16" in args.precision
+
+
+def has_xpu():
+    try:
+        import intel_extension_for_pytorch as ipex
+        return torch.xpu.is_available()
+    except ImportError as err:
+        return True
+    
+
+
+device_interface = None
+backend_optimizer = lambda x, y: (x, y)
+device_name = "cpu"
+if has_xpu():
+    device_name = "xpu"
+    device_interface = torch.xpu
+    backend_optimizer = device_interface.optimize
+
+if torch.cuda.is_available():
+    device_name = "cuda"
+    device_interface = torch.cuda
+
+
+def float_dtype(precision):
+    if "fp16" in precision:
+        if torch.cuda.is_available():
+            return torch.float16
+        else:
+            return torch.bfloat16
+        
+    if "bf16" in precision:
+        return torch.bfloat16
+        
+    return torch.float
+
+
+class NoScale:
+    def scale(self, loss):
+        return loss
+    def step(self, optimizer):
+        optimizer.step()
+    def update(self):
+        pass
 
 
 data_transforms = transforms.Compose(
@@ -39,21 +76,25 @@ data_transforms = transforms.Compose(
 
 
 @contextlib.contextmanager
-def scaling(enable):
+def scaling(enable, dtype):
     if enable:
-        with torch.cuda.amp.autocast():
-            yield
+        if torch.cuda.is_available():
+            with torch.cuda.amp.autocast():
+                yield
+        if torch.xpu.is_available():
+            with torch.xpu.amp.autocast(dtype=dtype):
+                yield
     else:
         yield
 
 
-def train_epoch(model, criterion, optimizer, loader, device, scaler=None):
+def train_epoch(model, criterion, optimizer, loader, device, dtype, scaler=None):
     model.train()
     for inp, target in voir.iterate("train", loader, True):
-        inp = inp.to(device)
+        inp = inp.to(device, dtype=dtype)
         target = target.to(device)
         optimizer.zero_grad()
-        with scaling(scaler is not None):
+        with scaling(scaler is not None, dtype):
             output = model(inp)
             loss = criterion(output, target)
             give(loss=loss.item())
@@ -171,26 +212,28 @@ def main():
             if data_directory:
                 args.data = os.path.join(data_directory, "FakeImageNet")
 
-    if not args.no_cuda:
-        assert torch.cuda.is_available(), "Why is CUDA not available"
-
-    use_cuda = not args.no_cuda
-
     torch.manual_seed(args.seed)
-    if use_cuda:
+    if torch.cuda.is_available():
         if is_tf32_allowed(args):
             torch.backends.cuda.matmul.allow_tf32 = True
             torch.backends.cudnn.allow_tf32 = True
-        torch.cuda.manual_seed(args.seed)
 
-    device = torch.device("cuda" if use_cuda else "cpu")
+    if torch.xpu.is_available():
+        import intel_extension_for_pytorch as ipex
+        if is_tf32_allowed(args):
+            ipex.set_fp32_math_mode(device="xpu", mode=ipex.FP32MathMode.TF32)
+        else:
+            ipex.set_fp32_math_mode(device="xpu", mode=ipex.FP32MathMode.FP32)
 
+    device = torch.device(device_name)
     model = getattr(tvmodels, args.model)()
     model.to(device)
 
     criterion = nn.CrossEntropyLoss().to(device)
 
     optimizer = torch.optim.SGD(model.parameters(), args.lr)
+
+    model, optimizer = backend_optimizer(model, optimizer=optimizer, dtype=float_dtype(args.precision))
 
     if args.data:
         train = datasets.ImageFolder(os.path.join(args.data, "train"), data_transforms)
@@ -209,10 +252,9 @@ def main():
             fixed_batch=args.fixed_batch,
         )
 
-    if is_fp16_allowed(args):
-        scaler = torch.cuda.amp.GradScaler()
-    else:
-        scaler = None
+    scaler = NoScale()
+    if torch.cuda.is_available():
+        scaler = device_interface.amp.GradScaler(enabled=is_fp16_allowed(args))
 
     with given() as gv:
         if not args.no_stdout:
@@ -222,7 +264,7 @@ def main():
             if not args.no_stdout:
                 print(f"Begin training epoch {epoch}/{args.epochs}")
             train_epoch(
-                model, criterion, optimizer, train_loader, device, scaler=scaler
+                model, criterion, optimizer, train_loader, device, scaler=scaler, dtype=float_dtype(args.precision)
             )
 
 
