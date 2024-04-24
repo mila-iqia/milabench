@@ -46,7 +46,6 @@ def has_cuda():
 devices = [has_xpu, has_gaudi, has_cuda]
 
 device = "cpu"
-
 if torch.cuda.is_available():
     # Nvidia & AMD
     device = "cuda"
