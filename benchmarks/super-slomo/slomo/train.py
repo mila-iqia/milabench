@@ -22,7 +22,7 @@ def has_xpu():
     
 
 device_interface = None
-backend_optimizer = lambda x, y: (x, y)
+backend_optimizer = lambda x, y, **kwargs: (x, y)
 device_name = "cpu"
 if has_xpu():
     device_name = "xpu"
@@ -168,10 +168,7 @@ def main():
 
     params = list(ArbTimeFlowIntrp.parameters()) + list(flowComp.parameters())
 
-    optimizer = optim.Adam(params, lr=args.init_learning_rate, dtype=torch.float)
-
-    model, optimizer = backend_optimizer(model, optimizer=optimizer)
-
+    optimizer = optim.Adam(params, lr=args.init_learning_rate)
 
     # scheduler to decrease learning rate by a factor of 10 at milestones.
     scheduler = optim.lr_scheduler.MultiStepLR(
@@ -183,8 +180,16 @@ def main():
     vgg16 = torchvision.models.vgg16(pretrained=True)
     vgg16_conv_4_3 = nn.Sequential(*list(vgg16.children())[0][:22])
     vgg16_conv_4_3.to(device)
+    vgg16_conv_4_3.eval()
     for param in vgg16_conv_4_3.parameters():
         param.requires_grad = False
+
+
+    ArbTimeFlowIntrp, optimizer = backend_optimizer(ArbTimeFlowIntrp, optimizer=optimizer, dtype=torch.float)
+
+    flowComp, optimizer = backend_optimizer(flowComp, optimizer=optimizer, dtype=torch.float)
+
+    vgg16 = backend_optimizer(vgg16_conv_4_3, optimizer=None, dtype=torch.float)
 
     ### Initialization
 

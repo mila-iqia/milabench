@@ -85,7 +85,9 @@ class Runner:
         self.model = info.model.to(self.device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=args.lr)
 
-        self.model, self.optimizer = backend_optimizer(self.model, optimizer=self.optimizer, dtype=float_dtype(args.precision))
+        # this cause the bench to fail for one model (reformer)
+        # dtype=float_dtype(args.precision)
+        self.model, self.optimizer = backend_optimizer(self.model, optimizer=self.optimizer)
 
         self.data = SyntheticData(
             n=args.batch_size,

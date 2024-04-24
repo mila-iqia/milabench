@@ -15,6 +15,27 @@ from voir.instruments.gpu import get_gpu_info
 root = os.path.dirname(__file__)
 
 
+def has_xpu():
+    try:
+        import intel_extension_for_pytorch as ipex
+        return torch.xpu.is_available()
+    except ImportError as err:
+        return True
+    
+
+device_interface = None
+backend_optimizer = lambda x, y, **kwargs: (x, y)
+device_name = "cpu"
+if has_xpu():
+    device_name = "xpu"
+    device_interface = torch.xpu
+    backend_optimizer = device_interface.optimize
+
+if torch.cuda.is_available():
+    device_name = "cuda"
+    device_interface = torch.cuda
+
+
 def available_models():
     models = dict()
 
@@ -140,7 +161,9 @@ def huggingface_main(args, model, config):
     # We do not download LLAMA because it takes too long
     # we just instantiate an untrained one
     println("Model")
-    model = LlamaForCausalLM(LlamaConfig.from_dict(config)).cuda()
+    device = torch.device(f"{device_name}:0")
+
+    model = LlamaForCausalLM(LlamaConfig.from_dict(config)).to(device=device)
 
     println("Pipeline")
     pipeline = transformers.pipeline(
@@ -149,7 +172,7 @@ def huggingface_main(args, model, config):
         torch_dtype=torch.float16,
         # device_map="cuda",
         tokenizer=tokenizer,
-        device=torch.device("cuda"),
+        device=device,
     )
 
     in_token_count = 0

@@ -11,6 +11,27 @@ from giving import give
 import voir
 
 
+def has_xpu():
+    try:
+        import intel_extension_for_pytorch as ipex
+        return torch.xpu.is_available()
+    except ImportError as err:
+        return True
+    
+
+device_interface = None
+backend_optimizer = lambda x, y, **kwargs: (x, y)
+device_name = "cpu"
+if has_xpu():
+    device_name = "xpu"
+    device_interface = torch.xpu
+    backend_optimizer = device_interface.optimize
+
+if torch.cuda.is_available():
+    device_name = "cuda"
+    device_interface = torch.cuda
+
+
 class Solver(object):
     """Solver for training and testing StarGAN."""
 
@@ -52,7 +73,7 @@ class Solver(object):
 
         # Miscellaneous.
         self.use_tensorboard = config.use_tensorboard
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device(device_name)
 
         # Directories.
         self.log_dir = config.log_dir
@@ -89,17 +110,21 @@ class Solver(object):
                 self.d_repeat_num,
             )
 
+        self.print_network(self.G, "G")
+        self.print_network(self.D, "D")
+
+        self.G.to(self.device)
+        self.D.to(self.device)
+
         self.g_optimizer = torch.optim.Adam(
             self.G.parameters(), self.g_lr, [self.beta1, self.beta2]
         )
         self.d_optimizer = torch.optim.Adam(
             self.D.parameters(), self.d_lr, [self.beta1, self.beta2]
         )
-        self.print_network(self.G, "G")
-        self.print_network(self.D, "D")
 
-        self.G.to(self.device)
-        self.D.to(self.device)
+        self.G, self.g_optimizer = backend_optimizer(self.G, optimizer=self.g_optimizer, dtype=torch.float)
+        self.D, self.d_optimizer = backend_optimizer(self.D, optimizer=self.d_optimizer, dtype=torch.float)
 
     def print_network(self, model, name):
         """Print out the network information."""
@@ -157,7 +182,7 @@ class Solver(object):
             only_inputs=True,
         )[0]
 
-        dydx = dydx.view(dydx.size(0), -1)
+        dydx = dydx.reshape(dydx.size(0), -1)
         dydx_l2norm = torch.sqrt(torch.sum(dydx**2, dim=1))
         return torch.mean((dydx_l2norm - 1) ** 2)
 

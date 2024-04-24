@@ -92,7 +92,6 @@ def cli_run(args=None):
             # in particular rwkv
             TerminalFormatter() if not args.noterm else None,
             dash_class and dash_class(),
-            TerminalFormatter(),
             TextReporter("stdout"),
             TextReporter("stderr"),
             DataReporter(),
