@@ -26,22 +26,8 @@ class Config:
 
 def get_sync():
     import torch
-
-    def has_xpu():
-        try:
-            import intel_extension_for_pytorch as ipex
-            return torch.xpu.is_available()
-        except ImportError as err:
-            return True
-
-    synchronize = None    
-    if has_xpu():
-        synchronize = torch.xpu.synchronize
-    elif torch.cuda.is_available():
-        synchronize = torch.cuda.synchronize
-
-    return synchronize
-
+    import torchcompat.core as accelerator
+    return accelerator.synchronize
 
 @configurable
 def instrument_main(ov, options: Config):

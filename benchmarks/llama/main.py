@@ -16,14 +16,6 @@ import torchcompat.core as accelerator
 root = os.path.dirname(__file__)
 
 
-def has_xpu():
-    try:
-        import intel_extension_for_pytorch as ipex
-        return torch.xpu.is_available()
-    except ImportError as err:
-        return True
-    
-
 def available_models():
     models = dict()
 

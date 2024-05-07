@@ -6,21 +6,9 @@ from voir.instruments import dash, early_stop, gpu_monitor, log, rate
 
 def get_sync():
     import torch
+    import torchcompat.core as accelerator
 
-    def has_xpu():
-        try:
-            import intel_extension_for_pytorch as ipex
-            return torch.xpu.is_available()
-        except ImportError as err:
-            return True
-
-    synchronize = None    
-    if has_xpu():
-        synchronize = torch.xpu.synchronize
-    elif torch.cuda.is_available():
-        synchronize = torch.cuda.synchronize
-
-    return synchronize
+    return accelerator.synchronize
 
 @dataclass
 class Config:

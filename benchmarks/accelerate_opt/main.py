@@ -79,6 +79,7 @@ from accelerate.utils import DummyOptim, DummyScheduler
 from accelerate.utils.dataclasses import InitProcessGroupKwargs
 from datasets import load_dataset
 from torch.utils.data import DataLoader
+import torchcompat.core as accelerator
 from transformers import (
     AutoConfig,
     AutoModelForCausalLM,
@@ -93,16 +94,6 @@ from voir.instruments.utils import Monitor
 
 logger = get_logger(__name__)
 
-synchronize = torch.cuda.synchronize
-def has_xpu():
-    try:
-        import intel_extension_for_pytorch as ipex
-        return torch.xpu.is_available()
-    except ImportError as err:
-        return True
-    
-if has_xpu():
-    synchronize = torch.xpu.synchronize
 
 def main():
     #
@@ -410,7 +401,7 @@ def main():
 
                 log_interval = 3
                 if accelerator.is_main_process and completed_steps % log_interval == 0:
-                    synchronize()
+                    accelerator.synchronize()
 
                     if completed_steps == 0:
                         last_log_time = time.time()
