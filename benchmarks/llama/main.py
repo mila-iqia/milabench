@@ -11,6 +11,7 @@ import torch
 
 from voir.smuggle import SmuggleWriter
 from voir.instruments.gpu import get_gpu_info
+import torchcompat.core as accelerator
 
 root = os.path.dirname(__file__)
 
@@ -22,19 +23,6 @@ def has_xpu():
     except ImportError as err:
         return True
     
-
-device_interface = None
-backend_optimizer = lambda x, y, **kwargs: (x, y)
-device_name = "cpu"
-if has_xpu():
-    device_name = "xpu"
-    device_interface = torch.xpu
-    backend_optimizer = device_interface.optimize
-
-if torch.cuda.is_available():
-    device_name = "cuda"
-    device_interface = torch.cuda
-
 
 def available_models():
     models = dict()
@@ -161,7 +149,7 @@ def huggingface_main(args, model, config):
     # We do not download LLAMA because it takes too long
     # we just instantiate an untrained one
     println("Model")
-    device = torch.device(f"{device_name}:0")
+    device = accelerator.fetch_device(0)
 
     model = LlamaForCausalLM(LlamaConfig.from_dict(config)).to(device=device)
 

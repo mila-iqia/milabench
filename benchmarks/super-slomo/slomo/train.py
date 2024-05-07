@@ -7,32 +7,12 @@ import torchvision
 import torch.optim as optim
 import torch.nn as nn
 import torch.nn.functional as F
+import torchcompat.core as accelerator
+
 import model
 from giving import give
 import voir
 from synth import SyntheticData
-
-
-def has_xpu():
-    try:
-        import intel_extension_for_pytorch as ipex
-        return torch.xpu.is_available()
-    except ImportError as err:
-        return True
-    
-
-device_interface = None
-backend_optimizer = lambda x, y, **kwargs: (x, y)
-device_name = "cpu"
-if has_xpu():
-    device_name = "xpu"
-    device_interface = torch.xpu
-    backend_optimizer = device_interface.optimize
-
-if torch.cuda.is_available():
-    device_name = "cuda"
-    device_interface = torch.cuda
-
 
 
 def main():
@@ -98,22 +78,11 @@ def main():
 
     args = parser.parse_args()
 
-    if args.allow_tf32:
-        if torch.cuda.is_available():
-            torch.backends.cuda.matmul.allow_tf32 = True
-            torch.backends.cudnn.allow_tf32 = True
-
-    if torch.xpu.is_available():
-        import intel_extension_for_pytorch as ipex
-        if args.allow_tf32:
-            ipex.set_fp32_math_mode(device="xpu", mode=ipex.FP32MathMode.TF32)
-        else:
-            ipex.set_fp32_math_mode(device="xpu", mode=ipex.FP32MathMode.FP32)
-
+    accelerator.set_enable_tf32(args.allow_tf32)
 
     ###Initialize flow computation and arbitrary-time flow interpolation CNNs.
 
-    device = torch.device(f"{device_name}:0")
+    device = accelerator.fetch_device(0)
     flowComp = model.UNet(6, 4)
     flowComp.to(device)
     ArbTimeFlowIntrp = model.UNet(20, 5)
@@ -185,11 +154,11 @@ def main():
         param.requires_grad = False
 
 
-    ArbTimeFlowIntrp, optimizer = backend_optimizer(ArbTimeFlowIntrp, optimizer=optimizer, dtype=torch.float)
+    ArbTimeFlowIntrp, optimizer = accelerator.optimize(ArbTimeFlowIntrp, optimizer=optimizer, dtype=torch.float)
 
-    flowComp, optimizer = backend_optimizer(flowComp, optimizer=optimizer, dtype=torch.float)
+    flowComp, optimizer = accelerator.optimize(flowComp, optimizer=optimizer, dtype=torch.float)
 
-    vgg16 = backend_optimizer(vgg16_conv_4_3, optimizer=None, dtype=torch.float)
+    vgg16 = accelerator.optimize(vgg16_conv_4_3, optimizer=None, dtype=torch.float)
 
     ### Initialization
 

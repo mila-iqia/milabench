@@ -1,35 +1,17 @@
 from model import Generator
 from model import Discriminator
-from torchvision.utils import save_image
+
 import torch
 import torch.nn.functional as F
+import torchcompat.core as accelerator
+from torchvision.utils import save_image
+
 import numpy as np
 import os
 import time
 import datetime
 from giving import give
 import voir
-
-
-def has_xpu():
-    try:
-        import intel_extension_for_pytorch as ipex
-        return torch.xpu.is_available()
-    except ImportError as err:
-        return True
-    
-
-device_interface = None
-backend_optimizer = lambda x, y, **kwargs: (x, y)
-device_name = "cpu"
-if has_xpu():
-    device_name = "xpu"
-    device_interface = torch.xpu
-    backend_optimizer = device_interface.optimize
-
-if torch.cuda.is_available():
-    device_name = "cuda"
-    device_interface = torch.cuda
 
 
 class Solver(object):
@@ -73,7 +55,7 @@ class Solver(object):
 
         # Miscellaneous.
         self.use_tensorboard = config.use_tensorboard
-        self.device = torch.device(device_name)
+        self.device = accelerator.fetch_device(0)
 
         # Directories.
         self.log_dir = config.log_dir
@@ -123,8 +105,8 @@ class Solver(object):
             self.D.parameters(), self.d_lr, [self.beta1, self.beta2]
         )
 
-        self.G, self.g_optimizer = backend_optimizer(self.G, optimizer=self.g_optimizer, dtype=torch.float)
-        self.D, self.d_optimizer = backend_optimizer(self.D, optimizer=self.d_optimizer, dtype=torch.float)
+        self.G, self.g_optimizer = accelerator.optimize(self.G, optimizer=self.g_optimizer, dtype=torch.float)
+        self.D, self.d_optimizer = accelerator.optimize(self.D, optimizer=self.d_optimizer, dtype=torch.float)
 
     def print_network(self, model, name):
         """Print out the network information."""

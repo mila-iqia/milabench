@@ -2,11 +2,13 @@ import argparse
 from contextlib import nullcontext
 
 import torch
+from torch import optim
+from torch.utils.data import DataLoader
+import torchcompat.core as accelerator
+
 import transformers
 import voir
 from giving import give
-from torch import optim
-from torch.utils.data import DataLoader
 
 from .models import models
 from .synth import SyntheticData, generators
@@ -18,28 +20,6 @@ def is_tf32_allowed(args):
 
 def is_fp16_allowed(args):
     return "fp16" in args.precision or "bf16" in args.precision
-
-
-def has_xpu():
-    try:
-        import intel_extension_for_pytorch as ipex
-        return torch.xpu.is_available()
-    except ImportError as err:
-        return True
-    
-
-
-device_interface = None
-backend_optimizer = lambda x, y: (x, y)
-device = "cpu"
-if has_xpu():
-    device = "xpu"
-    device_interface = torch.xpu
-    backend_optimizer = device_interface.optimize
-
-if torch.cuda.is_available():
-    device = "cuda"
-    device_interface = torch.cuda
 
 
 def float_dtype(precision):
@@ -64,22 +44,12 @@ class NoScale:
 
 class Runner:
     def __init__(self, args):
-        if torch.cuda.is_available():
-            if is_tf32_allowed(args):
-                torch.backends.cuda.matmul.allow_tf32 = True
-                torch.backends.cudnn.allow_tf32 = True
+        accelerator.set_enable_tf32(is_tf32_allowed(args))
 
-        if torch.xpu.is_available():
-            import intel_extension_for_pytorch as ipex
-            if is_tf32_allowed(args):
-                ipex.set_fp32_math_mode(device="xpu", mode=ipex.FP32MathMode.TF32)
-            else:
-                ipex.set_fp32_math_mode(device="xpu", mode=ipex.FP32MathMode.FP32)
-
-        device_interface.manual_seed(args.seed)
+        accelerator.manual_seed(args.seed)
         transformers.set_seed(args.seed)
 
-        self.device = torch.device(device)
+        self.device = accelerator.fetch_device(0)
         self.batch_size = args.batch_size
         info = models[args.model]()
         self.model = info.model.to(self.device)
@@ -87,7 +57,7 @@ class Runner:
 
         # this cause the bench to fail for one model (reformer)
         # dtype=float_dtype(args.precision)
-        self.model, self.optimizer = backend_optimizer(self.model, optimizer=self.optimizer)
+        self.model, self.optimizer = accelerator.optimize(self.model, optimizer=self.optimizer)
 
         self.data = SyntheticData(
             n=args.batch_size,
@@ -100,10 +70,10 @@ class Runner:
 
         self.amp_scaler = NoScale()
         if torch.cuda.is_available():
-            self.amp_scaler = device_interface.amp.GradScaler(enabled=is_fp16_allowed(args))
+            self.amp_scaler = accelerator.amp.GradScaler(enabled=is_fp16_allowed(args))
 
         if is_fp16_allowed(args):
-            self.amp_context = lambda: device_interface.amp.autocast(dtype=float_dtype(args.precision))
+            self.amp_context = lambda: accelerator.amp.autocast(dtype=float_dtype(args.precision))
         else:
             self.amp_context = nullcontext
 
