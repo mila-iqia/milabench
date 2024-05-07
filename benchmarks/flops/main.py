@@ -46,8 +46,7 @@ class Monitor:
         self.state["running"] = True
         self.results = multiprocessing.Queue()
         self.process = multiprocessing.Process(
-            target=_worker,
-            args=(self.state, self.results, func, delay),
+            target=_worker, args=(self.state, self.results, func, delay),
         )
 
     def start(self):
@@ -96,7 +95,7 @@ def modelflops(
 
 def f(N, R=30, m=5000000, n=256, unit=TERA, dtype=torch.float32, log=None):
     device = accelerator.fetch_device(0)
-    
+
     empty_cache()
 
     a = torch.eye(n, dtype=dtype, device=device)
@@ -139,10 +138,7 @@ def setupvoir():
     def monitor_fn():
         data = {
             gpu["device"]: {
-                "memory": [
-                    gpu["memory"]["used"],
-                    gpu["memory"]["total"],
-                ],
+                "memory": [gpu["memory"]["used"], gpu["memory"]["total"],],
                 "load": gpu["utilization"]["compute"],
                 "temperature": gpu["temperature"],
                 "power": gpu["power"],
@@ -173,9 +169,7 @@ def main():
 
     args = parser.parse_args()
 
-    torch.backends.cuda.matmul.allow_tf32 = False
-    if args.tf32:
-        torch.backends.cuda.matmul.allow_tf32 = True
+    accelerator.set_enable_tf32(args.tf32)
 
     log, monitor = setupvoir()
 

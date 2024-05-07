@@ -8,6 +8,8 @@ import torch.nn as nn
 import torchvision.datasets as datasets
 import torchvision.models as tvmodels
 import torchvision.transforms as transforms
+import torchcompat.core as accelerator
+
 import voir
 from giving import give, given
 
@@ -21,31 +23,9 @@ def is_fp16_allowed(args):
     return "fp16" in args.precision or "bf16" in args.precision
 
 
-def has_xpu():
-    try:
-        import intel_extension_for_pytorch as ipex
-        return torch.xpu.is_available()
-    except ImportError as err:
-        return True
-    
-
-
-device_interface = None
-backend_optimizer = lambda x, y: (x, y)
-device_name = "cpu"
-if has_xpu():
-    device_name = "xpu"
-    device_interface = torch.xpu
-    backend_optimizer = device_interface.optimize
-
-if torch.cuda.is_available():
-    device_name = "cuda"
-    device_interface = torch.cuda
-
-
 def float_dtype(precision):
     if "fp16" in precision:
-        if torch.cuda.is_available():
+        if accelerator.device_type == "cuda":
             return torch.float16
         else:
             return torch.bfloat16
@@ -78,12 +58,8 @@ data_transforms = transforms.Compose(
 @contextlib.contextmanager
 def scaling(enable, dtype):
     if enable:
-        if torch.cuda.is_available():
-            with torch.cuda.amp.autocast():
-                yield
-        if torch.xpu.is_available():
-            with torch.xpu.amp.autocast(dtype=dtype):
-                yield
+        with accelerator.amp.autocast(dtype=dtype):
+            yield
     else:
         yield
 
@@ -213,19 +189,10 @@ def main():
                 args.data = os.path.join(data_directory, "FakeImageNet")
 
     torch.manual_seed(args.seed)
-    if torch.cuda.is_available():
-        if is_tf32_allowed(args):
-            torch.backends.cuda.matmul.allow_tf32 = True
-            torch.backends.cudnn.allow_tf32 = True
 
-    if torch.xpu.is_available():
-        import intel_extension_for_pytorch as ipex
-        if is_tf32_allowed(args):
-            ipex.set_fp32_math_mode(device="xpu", mode=ipex.FP32MathMode.TF32)
-        else:
-            ipex.set_fp32_math_mode(device="xpu", mode=ipex.FP32MathMode.FP32)
+    accelerator.set_enable_tf32(is_tf32_allowed(args))
+    device = accelerator.fetch_device(0)
 
-    device = torch.device(device_name)
     model = getattr(tvmodels, args.model)()
     model.to(device)
 
@@ -233,7 +200,7 @@ def main():
 
     optimizer = torch.optim.SGD(model.parameters(), args.lr)
 
-    model, optimizer = backend_optimizer(model, optimizer=optimizer, dtype=float_dtype(args.precision))
+    model, optimizer = accelerator.optimizer(model, optimizer=optimizer, dtype=float_dtype(args.precision))
 
     if args.data:
         train = datasets.ImageFolder(os.path.join(args.data, "train"), data_transforms)
@@ -254,7 +221,7 @@ def main():
 
     scaler = NoScale()
     if torch.cuda.is_available():
-        scaler = device_interface.amp.GradScaler(enabled=is_fp16_allowed(args))
+        scaler = accelerator.amp.GradScaler(enabled=is_fp16_allowed(args))
 
     with given() as gv:
         if not args.no_stdout:
