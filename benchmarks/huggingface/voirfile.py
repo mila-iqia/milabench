@@ -24,15 +24,9 @@ class Config:
     gpu_poll: int = 3
 
 
-def get_sync():
-    import torch
-    import torchcompat.core as accelerator
-    return accelerator.synchronize
-
-
 @configurable
 def instrument_main(ov, options: Config):
-    sync = get_sync()
+    import torchcompat.core as accelerator
 
     yield ov.phases.init
 
@@ -44,7 +38,7 @@ def instrument_main(ov, options: Config):
         rate(
             interval=options.interval,
             skip=options.skip,
-            sync=sync,
+            sync=accelerator.synchronize,
         ),
         early_stop(n=options.stop, key="rate", task="train"),
         gpu_monitor(poll_interval=options.gpu_poll),

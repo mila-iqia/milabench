@@ -24,16 +24,10 @@ class Config:
     gpu_poll: int = 3
 
 
-def get_sync():
-    import torch
-    import torchcompat.core as accelerator
-    return accelerator.synchronize
-
-
 @configurable
 def instrument_main(ov, options: Config):
     def setup(args):
-        sync = get_sync()
+        import torchcompat.core as accelerator
 
         if options.dash:
             ov.require(dash)
@@ -45,7 +39,7 @@ def instrument_main(ov, options: Config):
             rate(
                 interval=options.interval,
                 skip=options.skip,
-                sync=sync,
+                sync=accelerator.synchronize,
                 batch_size_calc=lambda b: len(b) * args.world_size,
             ),
             early_stop(n=options.stop, key="rate", task="train", signal="stop"),

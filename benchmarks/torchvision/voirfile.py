@@ -4,12 +4,6 @@ from voir import configurable
 from voir.instruments import dash, early_stop, gpu_monitor, log, rate
 
 
-def get_sync():
-    import torch
-    import torchcompat.core as accelerator
-
-    return accelerator.synchronize
-
 @dataclass
 class Config:
     """voir configuration"""
@@ -32,7 +26,7 @@ class Config:
 
 @configurable
 def instrument_main(ov, options: Config):
-    sync = get_sync()
+    import torchcompat.core as accelerator
 
     yield ov.phases.init
 
@@ -44,7 +38,7 @@ def instrument_main(ov, options: Config):
         rate(
             interval=options.interval,
             skip=options.skip,
-            sync=sync,
+            sync=accelerator.synchronize,
         ),
         early_stop(n=options.stop, key="rate", task="train"),
         gpu_monitor(poll_interval=options.gpu_poll),
