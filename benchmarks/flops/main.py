@@ -7,12 +7,7 @@ import sys
 import multiprocessing
 
 import torch
-HAS_XPU = False
-try:
-    import intel_extension_for_pytorch as ipex
-    HAS_XPU = True
-except ImportError as err:
-    raise
+import torchcompat.core as accelerator
 
 from voir.smuggle import SmuggleWriter
 from voir.instruments.gpu import get_gpu_info
@@ -24,56 +19,16 @@ GIGA = 1e9
 TERA = 1e12
 EXA = 1e18
 
-def has_xpu():
-    try:
-        import intel_extension_for_pytorch as ipex
-        return torch.xpu.is_available()
-    except ImportError as err:
-        return True
-    
-def has_gaudi():
-    try:
-        # Intel Gaudi
-        import habana_frameworks.torch.core as htcore
-        return True
-    except ImportError:
-        return False
 
-def has_cuda():
-    return torch.cuda.is_available()
-    
+print(f"Using, {accelerator.device_type}")
 
-devices = [has_xpu, has_gaudi, has_cuda]
-
-device = "cpu"
-if torch.cuda.is_available():
-    # Nvidia & AMD
-    device = "cuda"
-
-if HAS_XPU and torch.xpu.is_available():
-    # Intel GPU Max
-    device = "xpu"
-
-
-print(HAS_XPU, torch.xpu.is_available())
-
-
-print(f"Deduced, {device}")
 
 def empty_cache():
-    if device == "cuda":
-        torch.cuda.empty_cache()
-
-    if device == "xpu":
-        torch.xpu.empty_cache()
+    accelerator.empty_cache()
 
 
 def synchronize():
-    if device == "cuda":
-        torch.cuda.synchronize()
-    
-    if device == "xpu":
-        torch.xpu.synchronize()
+    accelerator.synchronize()
 
 
 def _worker(state, queue, func, delay):
@@ -110,8 +65,10 @@ def modelflops(
     # it says it return MAC but I feel its methods is wrong
     from thop import profile
 
+    device = accelerator.fetch_device(0)
+
     # MAC: Multiply–accumulate operation
-    batch = torch.randn(*shape, dtype=dtype, device=f"{device}:0")
+    batch = torch.randn(*shape, dtype=dtype, device=device)
 
     flops, _ = profile(model, inputs=(batch,))
 
@@ -119,8 +76,8 @@ def modelflops(
         # Prepare
         empty_cache()
 
-        batch = batch.to(f"{device}:0")
-        model = model.to(dtype=dtype, device=f"{device}:0")
+        batch = batch.to(device)
+        model = model.to(dtype=dtype, device=device)
 
         synchronize()
 
@@ -138,9 +95,12 @@ def modelflops(
 
 
 def f(N, R=30, m=5000000, n=256, unit=TERA, dtype=torch.float32, log=None):
+    device = accelerator.fetch_device(0)
+    
     empty_cache()
-    a = torch.eye(n, dtype=dtype, device=f"{device}:0")
-    x = torch.randn((m, n), dtype=dtype, device=f"{device}:0")
+
+    a = torch.eye(n, dtype=dtype, device=device)
+    x = torch.randn((m, n), dtype=dtype, device=device)
     y = torch.zeros_like(x)
 
     F = N * (2 * m * n * n + 2 * m * n * n)
