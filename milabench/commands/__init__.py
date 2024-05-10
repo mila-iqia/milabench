@@ -643,6 +643,7 @@ class AccelerateLaunchCommand(SingleCmdCommand):
                 "--use_deepspeed",
                 "--deepspeed_multinode_launcher=standard",
                 "--zero_stage=2",
+               
             ]
             if self.pack.config["use_deepspeed"]
             else ["--multi_gpu"]

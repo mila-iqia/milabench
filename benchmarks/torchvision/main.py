@@ -12,6 +12,7 @@ import torchcompat.core as accelerator
 
 import voir
 from giving import give, given
+from cantilever.core.timer import timeit, timeiterator, show_timings
 
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
@@ -66,22 +67,36 @@ def scaling(enable, dtype):
 
 def train_epoch(model, criterion, optimizer, loader, device, dtype, scaler=None):
     model.train()
-    for inp, target in voir.iterate("train", loader, True):
-        inp = inp.to(device, dtype=dtype)
-        target = target.to(device)
-        optimizer.zero_grad()
-        with scaling(scaler is not None, dtype):
-            output = model(inp)
-            loss = criterion(output, target)
-            give(loss=loss.item())
 
-        if scaler:
-            scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
-        else:
-            loss.backward()
-            optimizer.step()
+    def toiterator(loader):
+        with timeit("loader"):
+            return iter(loader)
+            
+    for inp, target in timeiterator(voir.iterate("train", toiterator(loader), True)):
+        
+        with timeit("batch"):
+            inp = inp.to(device, dtype=dtype)
+            target = target.to(device)
+            optimizer.zero_grad()
+
+            with scaling(scaler is not None, dtype):
+                output = model(inp)
+                loss = criterion(output, target)
+                give(loss=loss.item())
+
+            if scaler:
+                scaler.scale(loss).backward()
+                accelerator.mark_step()
+
+                scaler.step(optimizer)
+                scaler.update()
+            else:
+                loss.backward()
+                accelerator.mark_step()
+                optimizer.step()
+
+            accelerator.mark_step()
+            accelerator.synchronize()
 
 
 class SyntheticData:
@@ -103,7 +118,55 @@ class SyntheticData:
         return self.n
 
 
+
+def dataloader(args):
+    train = datasets.ImageFolder(os.path.join(args.data, "train"), data_transforms)
+    train_loader = torch.utils.data.DataLoader(
+        train,
+        batch_size=args.batch_size,
+        num_workers=args.num_workers,
+        sampler=torch.utils.data.RandomSampler(
+            train, 
+            replacement=True, 
+            num_samples=len(train) * args.epochs
+        )
+    )
+    return train_loader
+
+
+def iobench(args):
+    data_directory = os.environ.get("MILABENCH_DIR_DATA", None)
+    if args.data is None and data_directory:
+        args.data = os.path.join(data_directory, "FakeImageNet")
+        
+    loader = dataloader(args)
+    device = accelerator.fetch_device(0)
+    dtype = float_dtype(args.precision)
+
+    def toiterator(loader):
+        with timeit("loader"):
+            return iter(loader)
+
+    for epoch in voir.iterate("main", range(args.epochs)):
+        with timeit("epoch"):
+            for inp, target in timeiterator(voir.iterate("train", toiterator(loader), True)):
+                with timeit("batch"):
+                    inp = inp.to(device, dtype=dtype)
+                    target = target.to(device)
+
+            accelerator.synchronize()
+
+
 def main():
+    from voir.phase import StopProgram
+
+    try:
+        _main()
+    except StopProgram:
+        show_timings(True)
+        raise
+
+def _main():
     parser = argparse.ArgumentParser(description="Torchvision models")
     parser.add_argument(
         "--batch-size",
@@ -175,8 +238,21 @@ def main():
         default="fp32",
         help="Precision configuration",
     )
+    parser.add_argument(
+        "--iobench",
+        action="store_true",
+        default=False,
+        help="Precision configuration",
+    )
 
     args = parser.parse_args()
+
+    if args.iobench:
+        iobench(args)
+    else:
+        trainbench()
+
+def trainbench(args):
     if args.fixed_batch:
         args.synthetic_data = True
 
@@ -203,13 +279,7 @@ def main():
     model, optimizer = accelerator.optimizer(model, optimizer=optimizer, dtype=float_dtype(args.precision))
 
     if args.data:
-        train = datasets.ImageFolder(os.path.join(args.data, "train"), data_transforms)
-        train_loader = torch.utils.data.DataLoader(
-            train,
-            batch_size=args.batch_size,
-            shuffle=True,
-            num_workers=args.num_workers,
-        )
+        train_loader = dataloader(args)
     else:
         train_loader = SyntheticData(
             model=model,
@@ -228,11 +298,12 @@ def main():
             gv.where("loss").display()
 
         for epoch in voir.iterate("main", range(args.epochs)):
-            if not args.no_stdout:
-                print(f"Begin training epoch {epoch}/{args.epochs}")
-            train_epoch(
-                model, criterion, optimizer, train_loader, device, scaler=scaler, dtype=float_dtype(args.precision)
-            )
+            with timeit("epoch"):
+                if not args.no_stdout:
+                    print(f"Begin training epoch {epoch}/{args.epochs}")
+                train_epoch(
+                    model, criterion, optimizer, train_loader, device, scaler=scaler, dtype=float_dtype(args.precision)
+                )
 
 
 if __name__ == "__main__":

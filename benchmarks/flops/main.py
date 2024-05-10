@@ -112,6 +112,7 @@ def f(N, R=30, m=5000000, n=256, unit=TERA, dtype=torch.float32, log=None):
             # No allocation in main loop using dual-out strategy
             y = torch.mm(x, a, out=y)
             x = torch.mm(y, a, out=x)
+            accelerator.mark_step()
 
         synchronize()
         ts += time.time()

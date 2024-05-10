@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from voir import configurable
 from voir.instruments import dash, early_stop, gpu_monitor, log, rate
 
+import torchcompat.core as accelerator
 
 @dataclass
 class Config:
@@ -27,7 +28,6 @@ class Config:
 @configurable
 def instrument_main(ov, options: Config):
     def setup(args):
-        import torchcompat.core as accelerator
 
         if options.dash:
             ov.require(dash)

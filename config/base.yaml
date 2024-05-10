@@ -83,7 +83,7 @@ _timm:
     --amp: true
     --amp-dtype: bfloat16
     ## FIXME
-    --device: xpu
+    --device: hpu
 
 _sb3:
   inherits: _defaults
@@ -178,6 +178,21 @@ resnet50:
     --batch-size: 64
     --num-workers: 8
 
+resnet50-noio:
+  inherits: _torchvision
+  tags:
+    - vision
+    - classification
+    - convnet
+    - resnet
+  
+  argv:
+    --model: resnet50
+    --batch-size: 64
+    --num-workers: 8
+    --synthetic-data: true
+
+
 efficientnet_b4:
   inherits: _torchvision
 
@@ -240,7 +255,6 @@ regnet_y_128gf:
     - vision
     - classification
     - convnet
-    - resnet
     - lstm
   argv:
     --model: regnet_y_128gf

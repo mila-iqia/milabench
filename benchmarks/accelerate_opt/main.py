@@ -79,7 +79,7 @@ from accelerate.utils import DummyOptim, DummyScheduler
 from accelerate.utils.dataclasses import InitProcessGroupKwargs
 from datasets import load_dataset
 from torch.utils.data import DataLoader
-import torchcompat.core as accelerator
+import torchcompat.core as acc
 from transformers import (
     AutoConfig,
     AutoModelForCausalLM,
@@ -111,6 +111,7 @@ def main():
         # IDEA: `InitProcessGroupKwargs` only has `init_method` and `timeout` entries. I'd add `store` too.
         init_method: Optional[str] = None
         timeout: timedelta = timedelta(seconds=1800)
+        backend: str = acc.ccl
 
         # store: Optional[Store] = None
 
@@ -401,7 +402,7 @@ def main():
 
                 log_interval = 3
                 if accelerator.is_main_process and completed_steps % log_interval == 0:
-                    accelerator.synchronize()
+                    acc.synchronize()
 
                     if completed_steps == 0:
                         last_log_time = time.time()
