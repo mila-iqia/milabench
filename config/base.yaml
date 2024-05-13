@@ -24,6 +24,19 @@ _torchvision:
     --epochs: 50
     --num-workers: 8
 
+
+_torchvision_ddp:
+  inherits: _defaults
+  definition: ../benchmarks/torchvision_ddp
+  group: torchvision
+  install_group: torch
+  plan:
+    method: njobs
+    n: 1
+  argv:
+    --epochs: 10
+    --num-workers: 8
+
 _flops:
   inherits: _defaults
   definition: ../benchmarks/flops
@@ -192,6 +205,19 @@ resnet50-noio:
     --num-workers: 8
     --synthetic-data: true
 
+
+resnet152-ddp:
+  inherits: _torchvision_ddp
+  tags:
+    - vision
+    - classification
+    - convnet
+    - resnet
+  
+  argv:
+    --model: resnet152
+    --batch-size: 256
+    --num-workers: 8
 
 efficientnet_b4:
   inherits: _torchvision
