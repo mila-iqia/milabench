@@ -147,14 +147,15 @@ def iobench(args):
         with timeit("loader"):
             return iter(loader)
 
-    for epoch in voir.iterate("main", range(args.epochs)):
-        with timeit("epoch"):
-            for inp, target in timeiterator(voir.iterate("train", toiterator(loader), True)):
-                with timeit("batch"):
-                    inp = inp.to(device, dtype=dtype)
-                    target = target.to(device)
+    with given() as gv:
+        for epoch in voir.iterate("main", range(args.epochs)):
+            with timeit("epoch"):
+                for inp, target in timeiterator(voir.iterate("train", toiterator(loader), True)):
+                    with timeit("batch"):
+                        inp = inp.to(device, dtype=dtype)
+                        target = target.to(device)
 
-            accelerator.synchronize()
+                accelerator.synchronize()
 
 
 def main():

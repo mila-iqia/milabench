@@ -3,8 +3,6 @@
 import multiprocessing
 import os
 from pathlib import Path
-import warnings
-warnings.filterwarnings('ignore')
 
 from tqdm import tqdm
 
@@ -57,15 +55,5 @@ if __name__ == "__main__":
     data_directory = os.environ["MILABENCH_DIR_DATA"]
     dest = os.path.join(data_directory, "FakeImageNet")
     print(f"Generating fake data into {dest}...")
-
-    batch_size = 1024
-    observation_required = 60
-    total_images = batch_size * observation_required
-    size_spec = {
-        "train": total_images, 
-        "val": int(total_images * 0.1), 
-        "test": int(total_images * 0.1)
-    }
-
-    generate_sets(dest, size_spec, (3, 384, 384))
+    generate_sets(dest, {"train": 4096, "val": 16, "test": 16}, (3, 384, 384))
     print("Done!")

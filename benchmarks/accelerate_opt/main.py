@@ -137,7 +137,6 @@ def main():
         # Set up logging for milabench (only in the run phase, for the main process)
 
         data_file = SmuggleWriter(sys.stdout)
-
         def mblog(data):
             if data_file is not None:
                 print(json.dumps(data), file=data_file)
