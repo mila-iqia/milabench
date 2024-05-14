@@ -71,8 +71,10 @@ def train_epoch(model, criterion, optimizer, loader, device, dtype, scaler=None)
     def toiterator(loader):
         with timeit("loader"):
             return iter(loader)
-            
-    for inp, target in timeiterator(voir.iterate("train", toiterator(loader), True)):
+    
+    iterator = timeiterator(voir.iterate("train", toiterator(loader), True))
+
+    for inp, target in iterator:
         
         with timeit("batch"):
             inp = inp.to(device, dtype=dtype)
@@ -150,7 +152,10 @@ def iobench(args):
     with given() as gv:
         for epoch in voir.iterate("main", range(args.epochs)):
             with timeit("epoch"):
-                for inp, target in timeiterator(voir.iterate("train", toiterator(loader), True)):
+
+                iterator = timeiterator(voir.iterate("train", toiterator(loader), True))
+
+                for inp, target in iterator:
                     with timeit("batch"):
                         inp = inp.to(device, dtype=dtype)
                         target = target.to(device)
@@ -251,7 +256,7 @@ def _main():
     if args.iobench:
         iobench(args)
     else:
-        trainbench()
+        trainbench(args)
 
 def trainbench(args):
     if args.fixed_batch:
@@ -277,7 +282,7 @@ def trainbench(args):
 
     optimizer = torch.optim.SGD(model.parameters(), args.lr)
 
-    model, optimizer = accelerator.optimizer(model, optimizer=optimizer, dtype=float_dtype(args.precision))
+    model, optimizer = accelerator.optimize(model, optimizer=optimizer, dtype=float_dtype(args.precision))
 
     if args.data:
         train_loader = dataloader(args)

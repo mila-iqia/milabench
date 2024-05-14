@@ -231,4 +231,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as err:
+        # Habana likes to eat exceptions
+        print(err)

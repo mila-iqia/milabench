@@ -167,13 +167,16 @@ def image_transforms():
     return data_transforms
 
 def prepare_dataloader(dataset: Dataset, args):
+    dsampler = DistributedSampler(dataset)
+    # next(iter(dsampler))
+
     return DataLoader(
         dataset,
         batch_size=args.batch_size,
         num_workers=args.num_workers if not args.noio else 0,
         pin_memory=not args.noio,
         shuffle=False,
-        sampler=DistributedSampler(dataset)
+        sampler=dsampler
     )
 
 class FakeDataset:
