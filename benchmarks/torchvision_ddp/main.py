@@ -25,6 +25,7 @@ import torchvision.models as torchvision_models
 import torchvision.datasets as datasets
 
 import voir
+from voir.asynctimer import DataloaderWrapper, DataloaderWrapperSmuggle, StopProgram
 from voir.smuggle import SmuggleWriter
 from giving import give, given
 from cantilever.core.timer import timeit, timeiterator, show_timings
@@ -56,12 +57,17 @@ class Trainer:
         self.rank = gpu_id
         self.device = accelerator.fetch_device(gpu_id)
         self.model = model.to(self.device)
-        self.train_data = train_data
+        self.train_data = DataloaderWrapperSmuggle(
+            train_data, 
+            accelerator.Event,
+            rank=self.rank,
+            device=self.device,
+            earlystop=60
+        )
         self.optimizer = optimizer
         # self.model = FSDP(model, device_id=self.device)
         self.model = DDP(model, device_ids=[self.device])
         self.world_size = world_size
-        self.data_file = SmuggleWriter(sys.stdout)
 
     def print(self, *args, **kwargs):
         if self.rank == 0:
@@ -69,7 +75,6 @@ class Trainer:
 
     def _run_batch(self, source, targets):
         with accelerator.amp.autocast(dtype=torch.bfloat16):
-
             self.optimizer.zero_grad()
             output = self.model(source)
             loss = F.cross_entropy(output, targets)
@@ -83,75 +88,20 @@ class Trainer:
             return loss.detach()
 
     def _run_epoch(self, epoch):
-        def toiterator(loader):
-            with timeit("loader"):
-                return iter(loader)
-
-        sample_count = 0
-        losses = []
-        events = []
-
         self.train_data.sampler.set_epoch(epoch)
-        loader = timeiterator(voir.iterate("train", toiterator(self.train_data), True))
-
-        start_event = accelerator.Event(enable_timing=True)
-        start_event.record()
-
-        for source, targets in loader:
-            end_event = accelerator.Event(enable_timing=True)
-
+        for source, targets in self.train_data:
             with timeit("batch"):
                 source = source.to(self.device)
                 targets = targets.to(self.device)
 
-                n = len(source)
-                sample_count += n
-
                 loss = self._run_batch(source, targets)
-                losses.append(loss)
-        
-            end_event.record()
-            events.append((start_event, end_event, n))
-            start_event = end_event
-            
-        for start, end, n in events:
-            end.synchronize()
-            elapsed = start.elapsed_time(end) / 1000
-            rate = (n * self.world_size) / elapsed
-            self.log({
-                "task": "train",
-                "rate": rate,
-                "units": "items/s",
-            })
-
-        total_count = torch.tensor([sample_count], dtype=torch.int64, device=self.device)
-        dist.reduce(total_count, dst=0)
-
-        loss = sum([l.item() for l in losses]) / len(losses)
-        return total_count.item(), loss
+                self.train_data.add_loss(loss)
 
     def train(self, max_epochs: int):
         with given() as gv:
             for epoch in range(max_epochs):
                 with timeit("epoch") as timer:
-                    total_count, loss = self._run_epoch(epoch)
-
-                self.perf(loss, total_count, timer)
-    
-    def log(self, data):
-        if self.rank == 0 and self.data_file is not None:
-            msg = json.dumps(data)
-            print(msg, file=self.data_file)
-            print(msg)
-
-    def perf(self, loss, total_count, timer):
-        if self.rank == 0:
-            self.log({"task": "train", "loss": loss})
-            # self.log({
-            #     "task": "train",
-            #     "rate": total_count / (timer.end - timer.start),
-            #     "units": "items/s",
-            # })
+                    self._run_epoch(epoch)
 
 
 def image_transforms():
@@ -168,7 +118,6 @@ def image_transforms():
 
 def prepare_dataloader(dataset: Dataset, args):
     dsampler = DistributedSampler(dataset)
-    # next(iter(dsampler))
 
     return DataLoader(
         dataset,
@@ -231,11 +180,10 @@ def worker_main(rank: int, world_size: int, args):
         destroy_process_group()
 
         print(f"<<< rank: {rank}")
+    except StopProgram:
+        print("Early stopping")
     except Exception as err:
         print(err)
-    finally:
-        if rank == 0:
-            show_timings(True)
 
 
 def main():
