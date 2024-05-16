@@ -11,7 +11,7 @@ import torchvision.transforms as transforms
 import torchcompat.core as accelerator
 
 import voir
-from voir.asynctimer import DataloaderWrapper, DataloaderWrapperGiver, DataloaderWrapperSmuggle, StopProgram
+from voir.wrapper import DataloaderWrapper, DataloaderWrapperGiver, DataloaderWrapperSmuggle, StopProgram
 from giving import give, given
 from cantilever.core.timer import timeit, timeiterator, show_timings
 

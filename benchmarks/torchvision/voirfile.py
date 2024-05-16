@@ -33,8 +33,10 @@ def instrument_main(ov, options: Config):
     if options.dash:
         ov.require(dash)
 
+    overhead_metrics = [] # "__iter__", "overhead", "process_time"
+
     ov.require(
-        log("value", "progress", "rate", "units", "loss", "gpudata", context="task"),
+        log("value", "progress", "rate", "units", "loss", "gpudata", *overhead_metrics, context="task"),
         rate(
             interval=options.interval,
             skip=options.skip,
