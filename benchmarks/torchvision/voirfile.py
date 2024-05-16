@@ -37,11 +37,6 @@ def instrument_main(ov, options: Config):
 
     ov.require(
         log("value", "progress", "rate", "units", "loss", "gpudata", *overhead_metrics, context="task"),
-        rate(
-            interval=options.interval,
-            skip=options.skip,
-            sync=accelerator.synchronize,
-        ),
         early_stop(n=options.stop, key="rate", task="train"),
         gpu_monitor(poll_interval=options.gpu_poll),
     )
