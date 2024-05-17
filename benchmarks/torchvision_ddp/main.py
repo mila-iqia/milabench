@@ -25,7 +25,7 @@ import torchvision.models as torchvision_models
 import torchvision.datasets as datasets
 
 import voir
-from voir.asynctimer import DataloaderWrapper, DataloaderWrapperSmuggle, StopProgram
+from voir.wrapper import DataloaderWrapper, StopProgram
 from voir.smuggle import SmuggleWriter
 from giving import give, given
 from cantilever.core.timer import timeit, timeiterator, show_timings
@@ -57,12 +57,13 @@ class Trainer:
         self.rank = gpu_id
         self.device = accelerator.fetch_device(gpu_id)
         self.model = model.to(self.device)
-        self.train_data = DataloaderWrapperSmuggle(
+        self.train_data = DataloaderWrapper.with_sumggler(
             train_data, 
             accelerator.Event,
             rank=self.rank,
             device=self.device,
-            earlystop=60
+            earlystop=60,
+            raise_stop_program=True,
         )
         self.optimizer = optimizer
         # self.model = FSDP(model, device_id=self.device)
@@ -222,6 +223,10 @@ def main():
     args = parser.parse_args()
     
     world_size = accelerator.device_count()
+
+    #
+    # This is not voir friendly as it does not allow voir to hook itself
+    # to the process
     mp.spawn(
         worker_main,
         args=(
