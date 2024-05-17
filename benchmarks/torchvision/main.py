@@ -11,9 +11,8 @@ import torchvision.transforms as transforms
 import torchcompat.core as accelerator
 
 import voir
-from voir.wrapper import DataloaderWrapper, DataloaderWrapperGiver, DataloaderWrapperSmuggle, StopProgram
+from voir.wrapper import DataloaderWrapper, StopProgram
 from giving import give, given
-from cantilever.core.timer import timeit, timeiterator, show_timings
 
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
@@ -77,7 +76,7 @@ def train_epoch(model, criterion, optimizer, loader, device, dtype, scaler=None)
         with scaling(scaler is not None, dtype):
             output = model(inp)
             loss = criterion(output, target)
-            loader.add_loss(loss)
+            # loader.add_loss(loss)
 
         if scaler:
             scaler.scale(loss).backward()
@@ -112,25 +111,43 @@ class SyntheticData:
         return self.n
 
 
-
 def dataloader(args):
-    train = datasets.ImageFolder(os.path.join(args.data, "train"), data_transforms)
-    train_loader = DataloaderWrapperGiver(
-        torch.utils.data.DataLoader(
+    if args.fixed_batch:
+        args.synthetic_data = True
+
+    if args.synthetic_data:
+        args.data = None
+    else:
+        if not args.data:
+            data_directory = os.environ.get("MILABENCH_DIR_DATA", None)
+            if data_directory:
+                args.data = os.path.join(data_directory, "FakeImageNet")
+
+    if args.data:
+        train = datasets.ImageFolder(os.path.join(args.data, "train"), data_transforms)
+        return torch.utils.data.DataLoader(
             train,
             batch_size=args.batch_size,
             num_workers=args.num_workers,
-            sampler=torch.utils.data.RandomSampler(
-                train, 
-                replacement=True, 
-                num_samples=len(train) * args.epochs
-            )
-        ),
-        accelerator.Event,
-        earlystop=60
+            pin_memory=True,
+            shuffle=True,
+            # The dataloader needs a warmup sometimes
+            # by avoiding to go through too many epochs
+            # we reduce the standard deviation
+            # sampler=torch.utils.data.RandomSampler(
+            #     train, 
+            #     replacement=True, 
+            #     num_samples=len(train) * args.epochs
+            # )
+        )
+    
+    return SyntheticData(
+        model=model,
+        device=device,
+        batch_size=args.batch_size,
+        n=1000,
+        fixed_batch=args.fixed_batch,
     )
-    return train_loader
-
 
 def iobench(args):
     data_directory = os.environ.get("MILABENCH_DIR_DATA", None)
@@ -154,7 +171,6 @@ def main():
     try:
         _main()
     except StopProgram:
-        show_timings(True)
         raise
 
 def _main():
@@ -244,17 +260,6 @@ def _main():
         trainbench(args)
 
 def trainbench(args):
-    if args.fixed_batch:
-        args.synthetic_data = True
-
-    if args.synthetic_data:
-        args.data = None
-    else:
-        if not args.data:
-            data_directory = os.environ.get("MILABENCH_DIR_DATA", None)
-            if data_directory:
-                args.data = os.path.join(data_directory, "FakeImageNet")
-
     torch.manual_seed(args.seed)
 
     accelerator.set_enable_tf32(is_tf32_allowed(args))
@@ -269,19 +274,7 @@ def trainbench(args):
 
     model, optimizer = accelerator.optimize(model, optimizer=optimizer, dtype=float_dtype(args.precision))
 
-    if args.data:
-        train_loader = dataloader(args)
-    else:
-        train_loader = DataloaderWrapperGiver(SyntheticData(
-                model=model,
-                device=device,
-                batch_size=args.batch_size,
-                n=1000,
-                fixed_batch=args.fixed_batch,
-            ),
-            accelerator.Event,
-            earlystop=60
-        )
+    train_loader = dataloader(args)
 
     scaler = NoScale()
     if torch.cuda.is_available():

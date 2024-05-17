@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from voir import configurable
 from voir.instruments import dash, early_stop, gpu_monitor, log, rate
+from voir.wrapper import DataloaderWrapper, Wrapper
 
 
 @dataclass
@@ -33,6 +34,7 @@ def instrument_main(ov, options: Config):
     if options.dash:
         ov.require(dash)
 
+
     overhead_metrics = [] # "__iter__", "overhead", "process_time"
 
     ov.require(
@@ -40,3 +42,20 @@ def instrument_main(ov, options: Config):
         early_stop(n=options.stop, key="rate", task="train"),
         gpu_monitor(poll_interval=options.gpu_poll),
     )
+
+    yield ov.phases.load_script
+
+    # Note: the wrapper can also do early stopping, if raise_stop_program=True
+    wrapper = Wrapper(
+        accelerator.Event, 
+        earlystop=options.stop + 1
+    )
+
+    probe = ov.probe("//dataloader() as loader", overridable=True)
+    probe['loader'].override(wrapper.loader)
+
+    probe = ov.probe("//train_epoch > criterion", overridable=True)
+    probe['criterion'].override(wrapper.criterion)
+    
+
+
