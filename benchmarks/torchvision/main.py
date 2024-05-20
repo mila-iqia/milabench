@@ -111,7 +111,7 @@ class SyntheticData:
         return self.n
 
 
-def dataloader(args):
+def dataloader(args, model):
     if args.fixed_batch:
         args.synthetic_data = True
 
@@ -143,7 +143,7 @@ def dataloader(args):
     
     return SyntheticData(
         model=model,
-        device=device,
+        device=accelerator.fetch_device(0),
         batch_size=args.batch_size,
         n=1000,
         fixed_batch=args.fixed_batch,
@@ -274,7 +274,7 @@ def trainbench(args):
 
     model, optimizer = accelerator.optimize(model, optimizer=optimizer, dtype=float_dtype(args.precision))
 
-    train_loader = dataloader(args)
+    train_loader = dataloader(args, model)
 
     scaler = NoScale()
     if torch.cuda.is_available():
