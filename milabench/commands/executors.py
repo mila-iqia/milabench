@@ -16,14 +16,20 @@ async def execute(pack, *args, cwd=None, env={}, external=False, **kwargs):
         args: The arguments to the command
         cwd: The cwd to use (defaults to ``self.dirs.code``)
     """
-    args = [str(x) for x in args]
+    from ..sizer import resolve_argv, scale_argv
+
     if cwd is None:
         cwd = pack.dirs.code
 
     exec_env = pack.full_env(env) if not external else {**os.environ, **env}
 
+    # Final argument transformation,
+    # everything is resolved right now
+    sized_args = scale_argv(pack, args)
+    final_args = resolve_argv(pack, sized_args)
+
     return await run(
-        args,
+        final_args,
         **kwargs,
         info={"pack": pack},
         env=exec_env,

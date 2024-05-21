@@ -90,14 +90,15 @@ _timm:
   definition: ../benchmarks/timm
   group: timm
   install_group: torch
+  tags:
+    - timm
   plan:
     method: per_gpu
   argv:
     --amp: true
     --amp-dtype: bfloat16
-    ## FIXME
-    --device: hpu
-    --dist-backend: hccl
+    --device: '{arch}'
+    --dist-backend: '{ccl}'
 
 _sb3:
   inherits: _defaults
@@ -190,7 +191,7 @@ resnet50:
   argv:
     --model: resnet50
     --batch-size: 64
-    --num-workers: 8
+    --num-workers: "{cpu_per_gpu}"
 
 resnet50-noio:
   inherits: _torchvision

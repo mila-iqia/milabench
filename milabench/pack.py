@@ -100,10 +100,7 @@ class BasePackage:
 
     @property
     def argv(self):
-        # Circular import
-        from .sizer import scale_argv
-
-        return scale_argv(self, assemble_options(self.config.get("argv", [])))
+        return assemble_options(self.config.get("argv", []))
 
     @property
     def tag(self):
