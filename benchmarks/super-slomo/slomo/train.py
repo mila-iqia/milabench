@@ -11,7 +11,7 @@ import torchcompat.core as accelerator
 
 import model
 from giving import give
-import voir
+import voir.wrapper
 from synth import SyntheticData
 
 
@@ -121,7 +121,9 @@ def main():
         n=args.train_batch_size, repeat=10000, generators=[igen, ogen]
     )
     trainloader = torch.utils.data.DataLoader(
-        trainset, batch_size=args.train_batch_size, num_workers=2
+        trainset, 
+        batch_size=args.train_batch_size,
+        num_workers=8
     )
 
     ###Utils
@@ -175,6 +177,15 @@ def main():
     valLoss = dict1["valLoss"]
     valPSNR = dict1["valPSNR"]
 
+
+    print(device)
+    wrapper = voir.wrapper.Wrapper(
+        event_fn=accelerator.Event, 
+        earlystop=60, 
+        batch_size_fn=lambda batch: batch[1].shape[0]
+    )
+    loader = wrapper.loader(trainloader)
+
     ### Main training loop
     for epoch in range(dict1["epoch"] + 1, args.epochs):
         print("Epoch: ", epoch)
@@ -189,15 +200,7 @@ def main():
         scheduler.step()
 
         # for trainIndex, (trainData, trainFrameIndex) in enumerate(trainloader, 0):
-        for trainIndex, (trainData, trainFrameIndex) in enumerate(
-            voir.iterate(
-                "train",
-                trainloader,
-                report_batch=True,
-                batch_size=lambda batch: batch[1].shape[0],
-            ),
-            0,
-        ):
+        for trainIndex, (trainData, trainFrameIndex) in enumerate(loader, 0):
             ## Getting the input and the target from the training set
             frame0, frameT, frame1 = trainData
 
@@ -272,11 +275,14 @@ def main():
             # since the loss in paper is calculated for input pixels in range 0-255
             # and the input to our network is in range 0-1
             loss = 204 * recnLoss + 102 * warpLoss + 0.005 * prcpLoss + loss_smooth
-            give(loss=loss.item())
+            loader.add_loss(loss)
+
             # Backpropagate
             loss.backward()
+            accelerator.mark_step()
+
             optimizer.step()
-            iLoss += loss.item()
+            accelerator.mark_step()
 
 
 if __name__ == "__main__":

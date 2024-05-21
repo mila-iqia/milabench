@@ -48,7 +48,7 @@ def instrument_main(ov, options: Config):
     # Note: the wrapper can also do early stopping, if raise_stop_program=True
     wrapper = Wrapper(
         accelerator.Event, 
-        earlystop=options.stop + 1
+        earlystop=options.stop + options.skip
     )
 
     probe = ov.probe("//dataloader() as loader", overridable=True)

@@ -199,6 +199,7 @@ resnet50-noio:
     - classification
     - convnet
     - resnet
+    - noio
   
   argv:
     --model: resnet50
@@ -295,6 +296,7 @@ _bert-base:
     - transformer
     - huggingface
     - precision-showcase
+    - noio
   argv:
     --model: "Bert"
     --batch-size: 32
@@ -329,6 +331,7 @@ t5:
     - language-modeling
     - transformer
     - huggingface
+    - noio
   argv:
     --model: "T5"
     --batch-size: 16
@@ -340,6 +343,7 @@ reformer:
     - language-modeling
     - transformer
     - huggingface
+    - noio
   argv:
     --model: "Reformer"
     --batch-size: 64
@@ -349,6 +353,7 @@ whisper:
   tags:
     - audio
     - huggingface
+    - noio
   argv:
     --model: "Whisper"
     --batch-size: 64
@@ -472,6 +477,7 @@ stargan:
     - vision
     - gan
     - resnet
+    - noio
   definition: ../benchmarks/stargan
   group: stargan
   install_group: torch
@@ -481,6 +487,7 @@ stargan:
     --image_size: 512
     --c_dim: 5
     --batch_size: 16
+    --dataset: "synth"
 
 super-slomo:
   inherits: _defaults
@@ -489,6 +496,7 @@ super-slomo:
     - video-interpolation
     - unet
     - convnet
+    - noio
   definition: ../benchmarks/super-slomo
   group: super-slomo
   install_group: torch

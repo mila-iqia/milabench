@@ -13,16 +13,7 @@ def str2bool(v):
     return v.lower() in ("true")
 
 
-def main(config):
-    # For fast training.
-    cudnn.benchmark = True
-
-    # Create directories if not exist.
-    os.makedirs(config.log_dir, exist_ok=True)
-    os.makedirs(config.model_save_dir, exist_ok=True)
-    os.makedirs(config.sample_dir, exist_ok=True)
-    os.makedirs(config.result_dir, exist_ok=True)
-
+def dataloader(config):
     # Data loader.
     celeba_loader = None
     rafd_loader = None
@@ -68,6 +59,21 @@ def main(config):
         synth_loader = DataLoader(
             synth_dataset, batch_size=config.batch_size, num_workers=config.num_workers
         )
+    
+    return celeba_loader, rafd_loader, synth_loader
+
+
+def main(config):
+    # For fast training.
+    cudnn.benchmark = True
+
+    # Create directories if not exist.
+    os.makedirs(config.log_dir, exist_ok=True)
+    os.makedirs(config.model_save_dir, exist_ok=True)
+    os.makedirs(config.sample_dir, exist_ok=True)
+    os.makedirs(config.result_dir, exist_ok=True)
+
+    celeba_loader, rafd_loader, synth_loader = dataloader(config)
 
     # Solver for training and testing StarGAN.
     solver = Solver(celeba_loader, rafd_loader, synth_loader, config)

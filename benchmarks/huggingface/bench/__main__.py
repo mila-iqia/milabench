@@ -7,8 +7,7 @@ from torch.utils.data import DataLoader
 import torchcompat.core as accelerator
 
 import transformers
-import voir
-from giving import give
+from voir.wrapper import Wrapper
 
 from .models import models
 from .synth import SyntheticData, generators
@@ -84,17 +83,23 @@ class Runner:
         loss = outputs.loss
 
         self.amp_scaler.scale(loss).backward()
-        self.amp_scaler.step(self.optimizer)
-        self.amp_scaler.update()
+        accelerator.mark_step()
 
-        give(loss=loss.item())
+        self.amp_scaler.step(self.optimizer)
+        accelerator.mark_step()
+
+        self.amp_scaler.update()
+        return loss
 
     def train(self):
-        for data in voir.iterate(
-            "train", self.loader, report_batch=True, batch_size=self.batch_size
-        ):
+        wrapper = Wrapper(event_fn=accelerator.Event, batch_size_fn=lambda batch: batch["input_ids"].shape[0])
+        loader = wrapper.loader(self.loader)
+    
+        for data in loader:
             data = {k: v.to(self.device) for k, v in data.items()}
-            self.step(data)
+            loss = self.step(data)
+
+            loader.add_loss(loss)
 
 
 def parser():

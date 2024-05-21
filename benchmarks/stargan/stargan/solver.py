@@ -11,7 +11,7 @@ import os
 import time
 import datetime
 from giving import give
-import voir
+import voir.wrapper
 
 
 class Solver(object):
@@ -227,7 +227,10 @@ class Solver(object):
             data_loader = self.synth_loader
 
         # Fetch fixed inputs for debugging.
-        data_iter = voir.iterate("train", data_loader, report_batch=True)
+        wrapper = voir.wrapper.Wrapper(event_fn=accelerator.Event)
+        loader = wrapper.loader(data_loader)
+
+        data_iter = iter(loader)
         x_fixed, c_org = next(data_iter)
         x_fixed = x_fixed.to(self.device)
         c_fixed_list = self.create_labels(
@@ -256,7 +259,7 @@ class Solver(object):
             try:
                 x_real, label_org = next(data_iter)
             except StopIteration:
-                data_iter = voir.iterate("train", data_loader, report_batch=True)
+                data_iter = iter(loader)
                 x_real, label_org = next(data_iter)
 
             # Generate target domain labels randomly.
@@ -309,17 +312,22 @@ class Solver(object):
                 + self.lambda_cls * d_loss_cls
                 + self.lambda_gp * d_loss_gp
             )
-            give(task="train", loss=d_loss.item())
+            # give(task="train", loss=d_loss.item())
+            loader.add_loss(d_loss)
             self.reset_grad()
+
             d_loss.backward()
+            accelerator.mark_step()
+
             self.d_optimizer.step()
+            accelerator.mark_step()
 
             # Logging.
             loss = {}
-            loss["D/loss_real"] = d_loss_real.item()
-            loss["D/loss_fake"] = d_loss_fake.item()
-            loss["D/loss_cls"] = d_loss_cls.item()
-            loss["D/loss_gp"] = d_loss_gp.item()
+            loss["D/loss_real"] = 0 # d_loss_real.item()
+            loss["D/loss_fake"] = 0 # d_loss_fake.item()
+            loss["D/loss_cls"] = 0 # d_loss_cls.item()
+            loss["D/loss_gp"] = 0 # d_loss_gp.item()
 
             # =================================================================================== #
             #                               3. Train the generator                                #
@@ -344,12 +352,15 @@ class Solver(object):
                 )
                 self.reset_grad()
                 g_loss.backward()
+                accelerator.mark_step()
+
                 self.g_optimizer.step()
+                accelerator.mark_step()
 
                 # Logging.
-                loss["G/loss_fake"] = g_loss_fake.item()
-                loss["G/loss_rec"] = g_loss_rec.item()
-                loss["G/loss_cls"] = g_loss_cls.item()
+                loss["G/loss_fake"] = 0 # g_loss_fake.item()
+                loss["G/loss_rec"] = 0 # g_loss_rec.item()
+                loss["G/loss_cls"] = 0 # g_loss_cls.item()
 
             # =================================================================================== #
             #                                 4. Miscellaneous                                    #

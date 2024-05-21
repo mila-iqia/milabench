@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import os
 
 from voir import configurable
 from voir.instruments import dash, early_stop, gpu_monitor, log, rate
@@ -27,6 +28,7 @@ class Config:
 @configurable
 def instrument_main(ov, options: Config):
     import torchcompat.core as accelerator
+    from voir.wrapper import earlystop_count
 
     yield ov.phases.init
 
@@ -35,11 +37,9 @@ def instrument_main(ov, options: Config):
 
     ov.require(
         log("value", "progress", "rate", "units", "loss", "gpudata", context="task"),
-        rate(
-            interval=options.interval,
-            skip=options.skip,
-            sync=accelerator.synchronize,
-        ),
         early_stop(n=options.stop, key="rate", task="train"),
         gpu_monitor(poll_interval=options.gpu_poll),
     )
+
+    os.environ["VOIR_EARLYSTOP_COUNT"] = str(option.stop)
+    os.environ["VOIR_EARLYSTOP_SKIP"] = str(option.skip)

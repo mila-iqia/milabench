@@ -39,7 +39,7 @@ def instrument_main(ov, options: Config):
 
     wrapper = Wrapper(
         accelerator.Event, 
-        earlystop=options.stop + 20,
+        earlystop=options.stop + options.skip,
         rank=int(os.getenv("RANK", 0)),
         device=accelerator.fetch_device(int(os.getenv("RANK", 0))),
         backward_callback=accelerator.mark_step,

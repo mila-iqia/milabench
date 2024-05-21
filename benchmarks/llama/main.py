@@ -121,7 +121,7 @@ def huggingface_main(args, model, config):
     import transformers
     from transformers import LlamaForCausalLM, LlamaTokenizerFast
     from transformers.models.llama.configuration_llama import LlamaConfig
-
+    from voir.wrapper import DataloaderWrapper, Wrapper
     from datasets import load_dataset
 
     # Dataset here
@@ -162,9 +162,12 @@ def huggingface_main(args, model, config):
 
     log, monitor = setupvoir()
 
+    # loader = Wrapper(dataset["train"], accelerator.Event, earlystop=60)
+    loader = dataset["train"]
+
     println("Starting")
     count = 0
-    for entry in dataset["train"]:
+    for entry in loader:
         text = entry["text"].strip()
 
         # Titles
