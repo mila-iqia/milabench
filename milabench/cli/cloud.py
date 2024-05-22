@@ -1,8 +1,8 @@
 from copy import deepcopy
 import os
-import socket
 import subprocess
 import sys
+import warnings
 
 from coleo import Option, tooled
 from omegaconf import OmegaConf
@@ -22,7 +22,7 @@ _ACTIONS = (_SETUP, _TEARDOWN, _LIST)
 def _flatten_cli_args(**kwargs):
     return sum(
         (
-            (f"--{str(k).replace('_', '-')}", *([str(v)] if str(v) else []))
+            (f"--{str(k).replace('_', '-')}", *([str(v)] if v is not None else []))
             for k, v in kwargs.items()
         ), ()
     )
@@ -39,7 +39,7 @@ def manage_cloud(pack, run_on, action="setup"):
         "hostname":(lambda v: ("ip",v)),
         "username":(lambda v: ("user",v)),
         "ssh_key_file":(lambda v: ("key",v)),
-        "env":(lambda v: ("env",[".", v, ";", "conda", "activate", "milabench", "&&"])),
+        # "env":(lambda v: ("env",[".", v, ";", "conda", "activate", "milabench", "&&"])),
     }
     plan_params = deepcopy(pack.config["system"]["cloud_profiles"][run_on])
     run_on, *profile = run_on.split("__")
@@ -58,8 +58,9 @@ def manage_cloud(pack, run_on, action="setup"):
         plan_params["state_prefix"] = plan_params.get("state_prefix", default_state_prefix)
         plan_params["state_id"] = plan_params.get("state_id", default_state_id)
         plan_params["cluster_size"] = max(len(pack.config["system"]["nodes"]), i + 1)
+        plan_params["keep_alive"] = None
 
-        import milabench.cli.covalent as cv
+        import milabench.scripts.covalent as cv
 
         subprocess.run(
             [
@@ -106,12 +107,16 @@ def manage_cloud(pack, run_on, action="setup"):
                 continue
             try:
                 k, v = line_str.split("::>")
-                k, v = key_map[k](v)
-                if k == "ip" and n[k] != "1.1.1.1":
-                    i, n = next(nodes)
-                n[k] = v
             except ValueError:
-                pass
+                continue
+            try:
+                k, v = key_map[k](v)
+            except KeyError:
+                warnings.warn(f"Ignoring invalid key received: {k}:{v}")
+                continue
+            if k == "ip" and n[k] != "1.1.1.1":
+                i, n = next(nodes)
+            n[k] = v
 
         _, stderr = p.communicate()
         stderr = stderr.decode("utf-8").strip()

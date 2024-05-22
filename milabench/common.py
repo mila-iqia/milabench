@@ -328,7 +328,7 @@ def _push_reports(reports_repo, runs):
         "partial": "yellow",
         "failure": "red",
     }
-    import milabench.cli.badges as badges
+    import milabench.scripts.badges as badges
 
     _repo = git.repo.base.Repo(ROOT_FOLDER)
     try:
