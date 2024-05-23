@@ -92,7 +92,17 @@ class Runner:
         return loss
 
     def train(self):
-        wrapper = Wrapper(event_fn=accelerator.Event, batch_size_fn=lambda batch: batch["input_ids"].shape[0])
+        def batch_size(bs):
+            # whisper: ['input_features', 'labels']
+            # bert   : ['input_ids', 'labels']
+            input_ids = bs.get("labels")
+            if input_ids is not None:
+                return input_ids.shape[0]
+
+            print(list(bs.keys()))
+            raise RuntimeError("Batch size unknown")
+        
+        wrapper = Wrapper(event_fn=accelerator.Event, batch_size_fn=batch_size)
         loader = wrapper.loader(self.loader)
     
         for data in loader:

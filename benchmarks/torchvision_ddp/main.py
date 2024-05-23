@@ -28,7 +28,6 @@ import voir
 from voir.wrapper import DataloaderWrapper, StopProgram
 from voir.smuggle import SmuggleWriter
 from giving import give, given
-from cantilever.core.timer import timeit, timeiterator, show_timings
 import torchcompat.core as accelerator
 
 
@@ -91,18 +90,16 @@ class Trainer:
     def _run_epoch(self, epoch):
         self.train_data.sampler.set_epoch(epoch)
         for source, targets in self.train_data:
-            with timeit("batch"):
-                source = source.to(self.device)
-                targets = targets.to(self.device)
+            source = source.to(self.device)
+            targets = targets.to(self.device)
 
-                loss = self._run_batch(source, targets)
-                self.train_data.add_loss(loss)
+            loss = self._run_batch(source, targets)
+            self.train_data.add_loss(loss)
 
     def train(self, max_epochs: int):
         with given() as gv:
             for epoch in range(max_epochs):
-                with timeit("epoch") as timer:
-                    self._run_epoch(epoch)
+                self._run_epoch(epoch)
 
 
 def image_transforms():
@@ -154,15 +151,13 @@ def dataset(args):
 
 
 def load_train_objs(args):
+    train = dataset(args)
 
-    with timeit("loading"):
-        train = dataset(args)
+    model = getattr(torchvision_models, args.model)()
 
-        model = getattr(torchvision_models, args.model)()
+    optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
 
-        optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
-
-        return train, model, optimizer
+    return train, model, optimizer
 
 
 def worker_main(rank: int, world_size: int, args):
