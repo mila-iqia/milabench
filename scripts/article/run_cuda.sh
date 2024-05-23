@@ -61,7 +61,6 @@ fi
 
 cd $MILABENCH_WORDIR
 
-
 #
 #   Run the benchmakrs
 milabench run 
