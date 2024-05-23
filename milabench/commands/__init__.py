@@ -448,7 +448,11 @@ class SCPCommand(SSHCommand, CmdCommand):
 
 class TorchRunCommand(WrapperCommand):
     def __init__(self, executor: SingleCmdCommand, *torchrun_argv, **kwargs) -> None:
-        super().__init__(executor, "torchrun", *torchrun_argv, **kwargs)
+        # Some vendors force us to have weird venv that can resolve weirdly
+        # use absolute paths to avoid issues
+
+        binfolder = executor.pack.config['dirs']['venv']
+        super().__init__(executor, f"{binfolder}/bin/torchrun", *torchrun_argv, **kwargs)
 
     def _argv(self, **kwargs):
         devices = self.pack.config.get("devices", [])
@@ -474,7 +478,10 @@ class VoirCommand(WrapperCommand):
     """
 
     def __init__(self, executor: SingleCmdCommand, *voir_argv, **kwargs) -> None:
-        super().__init__(executor, "voir", **{"setsid": True, **kwargs})
+        # Some vendors force us to have weird venv that can resolve weirdly
+        # use absolute paths to avoid issues
+        binfolder = executor.pack.config['dirs']['venv']
+        super().__init__(executor, f"{binfolder}/bin/voir", **{"setsid": True, **kwargs})
         self.voir_argv = voir_argv
 
     def _argv(self, **kwargs) -> List:
