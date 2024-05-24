@@ -1,5 +1,4 @@
 import argparse
-import asyncio
 import os
 import pathlib
 import subprocess
@@ -17,16 +16,11 @@ def serve(*argv):
 def _get_executor_kwargs(args):
     return {
         **{k:v for k,v in vars(args).items() if k not in ("setup", "teardown")},
-        **{"action":k for k,v in vars(args).items() if k in ("setup", "teardown") and v},
     }
 
 
 def executor(executor_cls, args, *argv):
     import covalent as ct
-
-    executor:ct.executor.BaseExecutor = executor_cls(
-        **_get_executor_kwargs(args),
-    )
 
     def _popen(cmd, *args, _env=None, **kwargs):
         _env = _env if _env is not None else {}
@@ -89,65 +83,43 @@ def executor(executor_cls, args, *argv):
             )
         return p.returncode, stdout, stderr
 
-    @ct.lattice
-    def lattice(argv=(), deps_bash = None):
-        return ct.electron(
-            _popen,
-            executor=executor,
-            deps_bash=deps_bash,
-        )(
-            argv,
-        )
-
+    executor:ct.executor.BaseExecutor = executor_cls(
+        **_get_executor_kwargs(args),
+    )
     return_code = 0
     try:
-        dispatch_id = None
-        result = None
-        deps_bash = None
+        if args.setup:
+            dispatch_id = ct.dispatch(
+                ct.lattice(executor.get_connection_attributes), disable_run=False
+            )()
 
-        if not argv and args.setup:
-            deps_bash = ct.DepsBash([])
-            # Make sure pip is installed
-            argv = ["python3", "-m", "pip", "freeze"]
+            result = ct.get_result(dispatch_id=dispatch_id, wait=True).result
+
+            assert result and result[0]
+
+            all_connection_attributes, _ = result
+            for hostname, connection_attributes in all_connection_attributes.items():
+                print(f"hostname::>{hostname}")
+                for attribute,value in connection_attributes.items():
+                    if attribute == "hostname":
+                        continue
+                    print(f"{attribute}::>{value}")
 
         if argv:
-            dispatch_id = ct.dispatch(lattice, disable_run=False)(argv, deps_bash=deps_bash)
-            result = ct.get_result(dispatch_id=dispatch_id, wait=True)
-            return_code, _, _ = result.result if result.result is not None else (1, "", "")
+            dispatch_id = ct.dispatch(
+                ct.lattice(
+                    lambda:ct.electron(_popen, executor=executor)(argv)
+                ),
+                disable_run=False
+            )()
 
-        if return_code == 0 and args.setup:
-            _executor:ct.executor.BaseExecutor = executor_cls(
-                **{
-                    **_get_executor_kwargs(args),
-                    **{"action": "teardown"},
-                }
-            )
-            asyncio.run(_executor.setup({}))
+            result = ct.get_result(dispatch_id=dispatch_id, wait=True).result
 
-            assert _executor.hostnames
-            for hostname in _executor.hostnames:
-                print(f"hostname::>{hostname}")
-                print(f"username::>{_executor.username}")
-                print(f"ssh_key_file::>{_executor.ssh_key_file}")
+            return_code, _, _ = result if result is not None else (1, "", "")
     finally:
-        result = ct.get_result(dispatch_id=dispatch_id, wait=False) if dispatch_id else None
-        results_dir = result.results_dir if result else ""
         if args.teardown:
-            try:
-                _executor:ct.executor.BaseExecutor = executor_cls(
-                    **{
-                        **_get_executor_kwargs(args),
-                        **{"action": "teardown"},
-                    }
-                )
-                asyncio.run(_executor.setup({}))
-                asyncio.run(
-                    _executor.teardown(
-                        {"dispatch_id": dispatch_id, "node_id": 0, "results_dir": results_dir}
-                    )
-                )
-            except FileNotFoundError:
-                pass
+            result = executor.stop_cloud_instance().result
+            assert result is not None
 
     return return_code
 
@@ -176,9 +148,14 @@ def main(argv=None):
         subparser.add_argument(f"--setup", action="store_true")
         subparser.add_argument(f"--teardown", action="store_true")
         for param, default in config.items():
-            if param == "action":
+            if param.startswith("_"):
                 continue
-            subparser.add_argument(f"--{param.replace('_', '-')}", default=default)
+            add_argument_kwargs = {}
+            if isinstance(default, bool):
+                add_argument_kwargs["action"] = "store_false" if default else "store_true"
+            else:
+                add_argument_kwargs["default"] = default
+            subparser.add_argument(f"--{param.replace('_', '-')}", **add_argument_kwargs)
 
     try:
         cv_argv, argv = argv[:argv.index("--")], argv[argv.index("--")+1:]
