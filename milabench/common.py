@@ -14,7 +14,6 @@ from coleo import Option, default, tooled
 import git
 from omegaconf import OmegaConf
 from voir.instruments.gpu import deduce_backend, select_backend
-import yaml
 from milabench import ROOT_FOLDER
 
 from milabench.alt_async import proceed
@@ -330,20 +329,23 @@ def _push_reports(reports_repo, runs):
     }
     import milabench.scripts.badges as badges
 
-    _repo = git.repo.base.Repo(ROOT_FOLDER)
     try:
-        reports_repo = git.repo.base.Repo(str(reports_repo))
+        reports_repo = git.Repo(str(reports_repo))
     except (git.exc.InvalidGitRepositoryError, git.exc.NoSuchPathError):
+        _repo = git.Repo(ROOT_FOLDER)
         repo_url = next(iter(_r.url for _r in _repo.remotes if _r.name == "origin"), None)
-        reports_repo = git.repo.base.Repo.clone_from(repo_url, str(reports_repo), branch="reports")
-
-    reports_url = ([
-        url for _r in _repo.remotes for url in _r.urls if "mila-iqia" in url
-    ] or [
-        url for _r in _repo.remotes for url in _r.urls if _r.name == "origin"
-    ])[0]
-    reports_url = XPath("github.com".join(reports_url.split("github.com")[1:])[1:])
-    reports_url = XPath("https://github.com") / f"{reports_url.with_suffix('')}/tree/{reports_repo.active_branch.name}"
+        reports_repo = git.Repo.clone_from(repo_url, str(reports_repo), branch="reports")
+        config_reader = _repo.config_reader()
+        config_writer = reports_repo.config_writer()
+        for section in config_reader.sections():
+            if not section.startswith("credential"):
+                continue
+            for option in config_reader.options(section):
+                if not option.strip("_") == option:
+                    continue
+                for value in config_reader.get_values(section, option):
+                    config_writer.add_value(section, option, value)
+                config_writer.write()
 
     device_reports = {}
     for run in runs:
@@ -403,7 +405,6 @@ def _push_reports(reports_repo, runs):
                 "--left-text", device,
                 "--right-text", text,
                 "--right-color", _SVG_COLORS[text],
-                "--whole-link", str(reports_url / build / device)
             ],
             capture_output=True,
             check=True
