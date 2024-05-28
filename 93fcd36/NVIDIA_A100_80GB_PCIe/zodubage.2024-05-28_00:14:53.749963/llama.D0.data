@@ -1,0 +1,633 @@
+{"event": "config", "data": {"system": {"arch": "cuda", "sshkey": null, "nodes": [{"aliaslist": [], "hostname": "openlamprey.eastus2.cloudapp.azure.com", "ip": "openlamprey.eastus2.cloudapp.azure.com", "ipaddrlist": ["00:00:00:00:00:00", "127.0.0.1", "00:0d:3a:e5:da:36", "::1", "fe80::20d:3aff:fee5:da36%eth0", "10.0.1.4"], "key": "/home/runner/.ssh/covalent-azure-task-a100-4db6f1_zoriveki/id_rsa.covalent.openlamprey.pem", "local": true, "main": true, "name": "manager", "user": "ubuntu"}], "cloud_profiles": {"azure__a100": {"location": "eastus2", "size": "Standard_NC24ads_A100_v4", "username": "ubuntu"}, "azure__a100_x2": {"location": "eastus2", "size": "Standard_NC48ads_A100_v4", "username": "ubuntu"}, "azure__a10_x2": {"location": "eastus2", "size": "Standard_NV72ads_A10_v5", "username": "ubuntu"}}, "self": {"aliaslist": [], "hostname": "openlamprey.eastus2.cloudapp.azure.com", "ip": "openlamprey.eastus2.cloudapp.azure.com", "ipaddrlist": ["00:00:00:00:00:00", "127.0.0.1", "00:0d:3a:e5:da:36", "::1", "fe80::20d:3aff:fee5:da36%eth0", "10.0.1.4"], "key": "/home/runner/.ssh/covalent-azure-task-a100-4db6f1_zoriveki/id_rsa.covalent.openlamprey.pem", "local": true, "main": true, "name": "manager", "user": "ubuntu"}}, "dirs": {"base": "/home/runner/work/milabench/milabench/output", "venv": "/home/runner/work/milabench/milabench/output/venv/torch", "data": "/home/runner/work/milabench/milabench/output/data", "runs": "/home/runner/work/milabench/milabench/output/runs", "extra": "/home/runner/work/milabench/milabench/output/extra/llm", "cache": "/home/runner/work/milabench/milabench/output/cache"}, "group": "llm", "install_group": "torch", "install_variant": "cuda", "run_name": "zodubage.2024-05-28_00:14:53.749963", "enabled": true, "capabilities": {"nodes": 1}, "max_duration": 800, "voir": {"options": {"stop": 30, "interval": "1s"}}, "validation": {"usage": {"gpu_load_threshold": 0.5, "gpu_mem_threshold": 0.5}}, "config_base": "/home/runner/work/milabench/milabench/config", "config_file": "/home/runner/work/milabench/milabench/config/standard.yaml", "hash": "5bfcffe728af7e2443a338927ccf110c", "definition": "/home/runner/work/milabench/milabench/benchmarks/llama", "plan": {"method": "per_gpu"}, "tags": ["llm", "nlp"], "weight": 1.0, "name": "llama", "tag": ["llama", "D0"], "device": "0", "devices": ["0"], "env": {"CUDA_VISIBLE_DEVICES": "0"}}, "pipe": null}
+{"event": "meta", "data": {"cpu": {"count": 24, "brand": "AMD EPYC 7V13 64-Core Processor"}, "os": {"sysname": "Linux", "nodename": "openlamprey", "release": "6.5.0-1021-azure", "version": "#22~22.04.1-Ubuntu SMP Tue Apr 30 16:08:18 UTC 2024", "machine": "x86_64"}, "accelerators": {"arch": "cuda", "gpus": {"GPU-a7d4753e-4786-d016-b22d-d2420e0ec4ae": {"device": "0", "product": "NVIDIA A100 80GB PCIe", "memory": {"used": 762.4375, "total": 81920.0}, "utilization": {"compute": 0, "memory": 0.009307098388671876}, "temperature": 37, "power": 44.788, "selection_variable": "CUDA_VISIBLE_DEVICES"}}}, "date": 1716855296.982966, "milabench": {"tag": "93fcd36", "commit": "93fcd36f542611039267eb9a52e3f1906dcbe45a", "date": "2024-05-27 23:50:11 +0000"}, "pytorch": {"torch": "2.1.0+cu118", "compiler": "GCC 9.3", "cpp": "C++ Version: 201703", "intel": "Intel(R) oneAPI Math Kernel Library Version 2022.2-Product Build 20220804 for Intel(R) 64 architecture applications", "mkl": "OpenMP 201511 (a.k.a. OpenMP 4.5)", "openmp": "OpenMP 201511 (a.k.a. OpenMP 4.5)", "lapack": "LAPACK is enabled (usually provided by MKL)", "nnpack": "NNPACK is enabled", "cpu": "CPU capability usage: AVX2", "build_settings": {"BLAS_INFO": "mkl", "BUILD_TYPE": "Release", "CUDA_VERSION": "11.8", "CUDNN_VERSION": "8.7.0", "CXX_COMPILER": "/opt/rh/devtoolset-9/root/usr/bin/c++", "CXX_FLAGS": "-D_GLIBCXX_USE_CXX11_ABI=0 -fabi-version=11 -fvisibility-inlines-hidden -DUSE_PTHREADPOOL -DNDEBUG -DUSE_KINETO -DLIBKINETO_NOROCTRACER -DUSE_FBGEMM -DUSE_QNNPACK -DUSE_PYTORCH_QNNPACK -DUSE_XNNPACK -DSYMBOLICATE_MOBILE_DEBUG_HANDLE -O2 -fPIC -Wall -Wextra -Werror=return-type -Werror=non-virtual-dtor -Werror=bool-operation -Wnarrowing -Wno-missing-field-initializers -Wno-type-limits -Wno-array-bounds -Wno-unknown-pragmas -Wno-unused-parameter -Wno-unused-function -Wno-unused-result -Wno-strict-overflow -Wno-strict-aliasing -Wno-stringop-overflow -Wno-psabi -Wno-error=pedantic -Wno-error=old-style-cast -Wno-invalid-partial-specialization -Wno-unused-private-field -Wno-aligned-allocation-unavailable -Wno-missing-braces -fdiagnostics-color=always -faligned-new -Wno-unused-but-set-variable -Wno-maybe-uninitialized -fno-math-errno -fno-trapping-math -Werror=format -Werror=cast-function-type -Wno-stringop-overflow", "LAPACK_INFO": "mkl", "PERF_WITH_AVX": "1", "PERF_WITH_AVX2": "1", "PERF_WITH_AVX512": "1", "TORCH_DISABLE_GPU_ASSERTS": "ON", "TORCH_VERSION": "2.1.0", "USE_CUDA": "ON", "USE_CUDNN": "ON", "USE_EXCEPTION_PTR": "1", "USE_GFLAGS": "OFF", "USE_GLOG": "OFF", "USE_MKL": "ON", "USE_MKLDNN": "ON", "USE_MPI": "OFF", "USE_NCCL": "1", "USE_NNPACK": "ON", "USE_OPENMP": "ON", "USE_ROCM": "OFF"}}}, "pipe": null}
+{"event": "start", "data": {"command": ["python", "/home/runner/work/milabench/milabench/benchmarks/llama/main.py", "--cache", "/home/runner/work/milabench/milabench/output/cache"], "time": 1716855296.9922109}, "pipe": null}
+{"event": "line", "data": "Dataset\n", "pipe": "stderr"}
+{"event": "line", "data": "/home/runner/work/milabench/milabench/output/venv/torch/lib/python3.10/site-packages/datasets/table.py:1421: FutureWarning: promote has been superseded by mode='default'.\n", "pipe": "stderr"}
+{"event": "line", "data": "  table = cls._concat_blocks(blocks, axis=0)\n", "pipe": "stderr"}
+{"event": "line", "data": "Tokenizer\n", "pipe": "stderr"}
+{"event": "line", "data": "Model\n", "pipe": "stderr"}
+{"event": "line", "data": "Pipeline\n", "pipe": "stderr"}
+{"event": "line", "data": "Starting", "pipe": "stderr"}
+{"event": "line", "data": "\n", "pipe": "stderr"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =10.228719472885132, total / elapsed =199.53621813662974 in_token_count =9 out_token_count =2032\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 199.53621813662974, "units": "Tok/s", "t": 1716855373.677799}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [27110.375, 81920.0], "load": 0, "temperature": 37, "power": 63.194}}, "t": 1716855363.5347402}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [27132.375, 81920.0], "load": 0.03, "temperature": 37, "power": 63.267}}, "t": 1716855364.0411766}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [27156.375, 81920.0], "load": 0, "temperature": 39, "power": 228.563}}, "t": 1716855364.5532277}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [27208.375, 81920.0], "load": 0.94, "temperature": 40, "power": 228.548}}, "t": 1716855365.0614934}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [27254.375, 81920.0], "load": 0.92, "temperature": 41, "power": 221.393}}, "t": 1716855365.6076643}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [27434.375, 81920.0], "load": 0.96, "temperature": 41, "power": 228.62}}, "t": 1716855366.1185064}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [27494.375, 81920.0], "load": 0.96, "temperature": 42, "power": 231.122}}, "t": 1716855366.6301062}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [27554.375, 81920.0], "load": 0.97, "temperature": 42, "power": 226.78}}, "t": 1716855367.2137346}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [27594.375, 81920.0], "load": 0.95, "temperature": 42, "power": 232.958}}, "t": 1716855367.7256253}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [27634.375, 81920.0], "load": 0.96, "temperature": 43, "power": 233.305}}, "t": 1716855368.2363493}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [27694.375, 81920.0], "load": 0.96, "temperature": 43, "power": 236.759}}, "t": 1716855368.7476327}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [27774.375, 81920.0], "load": 0.96, "temperature": 43, "power": 226.932}}, "t": 1716855369.257594}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [27794.375, 81920.0], "load": 0.97, "temperature": 43, "power": 229.03}}, "t": 1716855369.7675369}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [27894.375, 81920.0], "load": 0.96, "temperature": 44, "power": 229.922}}, "t": 1716855370.2777452}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [27914.375, 81920.0], "load": 0.96, "temperature": 44, "power": 225.623}}, "t": 1716855370.7881017}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [27914.375, 81920.0], "load": 0.96, "temperature": 44, "power": 224.952}}, "t": 1716855371.2972722}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28034.375, 81920.0], "load": 0.96, "temperature": 44, "power": 226.179}}, "t": 1716855371.8042867}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28134.375, 81920.0], "load": 0.96, "temperature": 45, "power": 235.715}}, "t": 1716855372.3167489}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28134.375, 81920.0], "load": 0.96, "temperature": 45, "power": 236.135}}, "t": 1716855372.8285737}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28134.375, 81920.0], "load": 0.97, "temperature": 45, "power": 231.959}}, "t": 1716855373.3407192}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =5.322752475738525, total / elapsed =364.84882752894686 in_token_count =185 out_token_count =1757\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 364.84882752894686, "units": "Tok/s", "t": 1716855379.0005696}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 48, "power": 272.142}}, "t": 1716855373.8482604}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 46, "power": 238.399}}, "t": 1716855374.3568685}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 46, "power": 238.773}}, "t": 1716855374.8678298}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 46, "power": 241.559}}, "t": 1716855375.3774626}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 46, "power": 242.321}}, "t": 1716855375.8890617}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.97, "temperature": 47, "power": 241.83}}, "t": 1716855376.3983033}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 47, "power": 237.17}}, "t": 1716855376.9087555}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 47, "power": 240.864}}, "t": 1716855377.4203935}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 47, "power": 238.681}}, "t": 1716855377.9287992}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 47, "power": 235.279}}, "t": 1716855378.4418817}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 48, "power": 243.232}}, "t": 1716855378.9502754}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =6.784186124801636, total / elapsed =298.4882729848762 in_token_count =121 out_token_count =1904\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 298.4882729848762, "units": "Tok/s", "t": 1716855385.7847729}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.95, "temperature": 48, "power": 233.613}}, "t": 1716855379.4622157}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.97, "temperature": 48, "power": 232.931}}, "t": 1716855379.9738567}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 48, "power": 239.775}}, "t": 1716855380.4894917}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 49, "power": 240.189}}, "t": 1716855380.998111}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 49, "power": 242.056}}, "t": 1716855381.508778}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 49, "power": 243.634}}, "t": 1716855382.019213}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 49, "power": 243.521}}, "t": 1716855382.5286787}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 49, "power": 242.68}}, "t": 1716855383.0392938}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 50, "power": 242.443}}, "t": 1716855383.5496511}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 50, "power": 238.442}}, "t": 1716855384.059604}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 50, "power": 238.071}}, "t": 1716855384.569205}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.97, "temperature": 50, "power": 235.656}}, "t": 1716855385.0777736}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 50, "power": 245.477}}, "t": 1716855385.589017}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =6.634186506271362, total / elapsed =312.773841681792 in_token_count =127 out_token_count =1948\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 312.773841681792, "units": "Tok/s", "t": 1716855392.4189777}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.95, "temperature": 51, "power": 240.217}}, "t": 1716855386.098689}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 51, "power": 242.464}}, "t": 1716855386.6107213}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 51, "power": 231.546}}, "t": 1716855387.1227207}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.97, "temperature": 51, "power": 240.481}}, "t": 1716855387.6342735}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 51, "power": 240.573}}, "t": 1716855388.1464388}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 51, "power": 240.596}}, "t": 1716855388.661221}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 52, "power": 242.964}}, "t": 1716855389.174756}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 52, "power": 244.608}}, "t": 1716855389.6858237}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.97, "temperature": 52, "power": 244.224}}, "t": 1716855390.1959238}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 52, "power": 240.786}}, "t": 1716855390.7047791}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 52, "power": 240.539}}, "t": 1716855391.2139513}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 52, "power": 238.784}}, "t": 1716855391.7231257}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.97, "temperature": 53, "power": 234.813}}, "t": 1716855392.2323463}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =9.39484167098999, total / elapsed =216.28890311952176 in_token_count =6 out_token_count =2026\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 216.28890311952176, "units": "Tok/s", "t": 1716855401.8138442}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.95, "temperature": 53, "power": 237.855}}, "t": 1716855392.7421143}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.95, "temperature": 53, "power": 240.977}}, "t": 1716855393.2522311}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 53, "power": 238.303}}, "t": 1716855393.7642493}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 53, "power": 241.862}}, "t": 1716855394.272885}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 53, "power": 237.349}}, "t": 1716855394.7844055}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 54, "power": 236.289}}, "t": 1716855395.2949696}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 54, "power": 244.906}}, "t": 1716855395.8075693}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 54, "power": 236.872}}, "t": 1716855396.3194802}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 54, "power": 243.402}}, "t": 1716855396.828647}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 54, "power": 245.948}}, "t": 1716855397.3384933}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 54, "power": 244.504}}, "t": 1716855397.8502252}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 55, "power": 236.087}}, "t": 1716855398.375626}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 55, "power": 245.677}}, "t": 1716855398.8895054}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 55, "power": 247.344}}, "t": 1716855399.4024537}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 55, "power": 243.732}}, "t": 1716855399.9130933}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.96, "temperature": 55, "power": 245.018}}, "t": 1716855400.4237108}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.97, "temperature": 55, "power": 243.528}}, "t": 1716855400.9345412}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28158.375, 81920.0], "load": 0.97, "temperature": 56, "power": 235.684}}, "t": 1716855401.4438164}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =3.679396390914917, total / elapsed =590.3142171262258 in_token_count =256 out_token_count =1916\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 590.3142171262258, "units": "Tok/s", "t": 1716855405.4932587}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28190.375, 81920.0], "load": 0.97, "temperature": 59, "power": 330.33}}, "t": 1716855401.9912856}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28190.375, 81920.0], "load": 0.96, "temperature": 56, "power": 248.608}}, "t": 1716855402.5015376}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28190.375, 81920.0], "load": 0.96, "temperature": 56, "power": 246.793}}, "t": 1716855403.01381}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28190.375, 81920.0], "load": 0.96, "temperature": 56, "power": 246.355}}, "t": 1716855403.5230124}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28190.375, 81920.0], "load": 0.97, "temperature": 56, "power": 242.15}}, "t": 1716855404.0338013}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28190.375, 81920.0], "load": 0.97, "temperature": 57, "power": 244.879}}, "t": 1716855404.5431902}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28190.375, 81920.0], "load": 0.97, "temperature": 57, "power": 251.86}}, "t": 1716855405.0523405}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =1.7559223175048828, total / elapsed =1284.2253768972496 in_token_count =340 out_token_count =1915\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 1284.2253768972496, "units": "Tok/s", "t": 1716855407.249199}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28190.375, 81920.0], "load": 0.96, "temperature": 57, "power": 250.009}}, "t": 1716855405.5600789}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.97, "temperature": 58, "power": 253.342}}, "t": 1716855406.070744}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 57, "power": 251.075}}, "t": 1716855406.5827978}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.97, "temperature": 57, "power": 248.784}}, "t": 1716855407.0933292}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =7.376217842102051, total / elapsed =285.10546258496805 in_token_count =95 out_token_count =2008\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 285.10546258496805, "units": "Tok/s", "t": 1716855414.625434}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 58, "power": 250.178}}, "t": 1716855407.6052597}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 58, "power": 250.178}}, "t": 1716855408.1143703}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 58, "power": 252.081}}, "t": 1716855408.6266556}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 58, "power": 251.716}}, "t": 1716855409.1404967}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 58, "power": 251.604}}, "t": 1716855409.6494575}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 58, "power": 251.608}}, "t": 1716855410.160106}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 58, "power": 252.678}}, "t": 1716855410.6722605}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 58, "power": 245.691}}, "t": 1716855411.1806023}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.97, "temperature": 59, "power": 242.247}}, "t": 1716855411.6910179}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.97, "temperature": 59, "power": 241.69}}, "t": 1716855412.2012362}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.97, "temperature": 59, "power": 247.058}}, "t": 1716855412.710377}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 59, "power": 253.24}}, "t": 1716855413.220262}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.97, "temperature": 59, "power": 253.748}}, "t": 1716855413.7299755}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.97, "temperature": 59, "power": 253.519}}, "t": 1716855414.2386656}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =9.415279388427734, total / elapsed =214.75730210249827 in_token_count =5 out_token_count =2017\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 214.75730210249827, "units": "Tok/s", "t": 1716855424.0407326}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.97, "temperature": 60, "power": 252.772}}, "t": 1716855414.7476108}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 59, "power": 242.307}}, "t": 1716855415.2597985}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 60, "power": 252.46}}, "t": 1716855415.772876}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 60, "power": 253.15}}, "t": 1716855416.2821386}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 60, "power": 248.904}}, "t": 1716855416.7942748}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.95, "temperature": 60, "power": 251.81}}, "t": 1716855417.3063397}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.97, "temperature": 60, "power": 250.751}}, "t": 1716855417.8161175}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 60, "power": 254.64}}, "t": 1716855418.3267944}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 60, "power": 256.876}}, "t": 1716855418.8359816}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.95, "temperature": 60, "power": 258.696}}, "t": 1716855419.345173}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 61, "power": 248.016}}, "t": 1716855419.8552432}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.97, "temperature": 61, "power": 245.288}}, "t": 1716855420.3669019}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.97, "temperature": 61, "power": 252.361}}, "t": 1716855420.875684}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 61, "power": 250.145}}, "t": 1716855421.3840714}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 61, "power": 245.309}}, "t": 1716855421.8980176}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 61, "power": 256.775}}, "t": 1716855422.4092433}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 61, "power": 256.276}}, "t": 1716855422.923115}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.97, "temperature": 61, "power": 252.548}}, "t": 1716855423.4330175}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.97, "temperature": 62, "power": 246.332}}, "t": 1716855423.9434319}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =3.746978282928467, total / elapsed =535.3647255281667 in_token_count =253 out_token_count =1753\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 535.3647255281667, "units": "Tok/s", "t": 1716855427.787727}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.98, "temperature": 62, "power": 248.654}}, "t": 1716855424.4526951}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 62, "power": 259.241}}, "t": 1716855424.9624808}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 62, "power": 258.74}}, "t": 1716855425.4748707}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.97, "temperature": 62, "power": 258.857}}, "t": 1716855425.985359}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.97, "temperature": 62, "power": 257.745}}, "t": 1716855426.49755}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.97, "temperature": 62, "power": 259.337}}, "t": 1716855427.0067303}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.97, "temperature": 63, "power": 250.946}}, "t": 1716855427.518213}, "pipe": "data"}
+{"event": "line", "data": "/home/runner/work/milabench/milabench/output/venv/torch/lib/python3.10/site-packages/transformers/pipelines/base.py:1101: UserWarning: You seem to be using the pipelines sequentially on GPU. In order to maximize efficiency please use a dataset\n", "pipe": "stderr"}
+{"event": "line", "data": "  warnings.warn(\n", "pipe": "stderr"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =3.1170084476470947, total / elapsed =669.8730642119843 in_token_count =282 out_token_count =1806\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 669.8730642119843, "units": "Tok/s", "t": 1716855430.9047527}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.97, "temperature": 65, "power": 291.588}}, "t": 1716855428.026931}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.97, "temperature": 63, "power": 260.503}}, "t": 1716855428.5352974}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 63, "power": 259.705}}, "t": 1716855429.0442338}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 63, "power": 256.582}}, "t": 1716855429.5549245}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 63, "power": 255.808}}, "t": 1716855430.0665703}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 63, "power": 256.168}}, "t": 1716855430.575794}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =3.683340072631836, total / elapsed =565.2478345591262 in_token_count =256 out_token_count =1826\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 565.2478345591262, "units": "Tok/s", "t": 1716855434.5881107}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 66, "power": 293.368}}, "t": 1716855431.0842576}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 64, "power": 255.873}}, "t": 1716855431.595738}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 64, "power": 262.275}}, "t": 1716855432.1048386}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 64, "power": 263.473}}, "t": 1716855432.6157813}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 64, "power": 263.839}}, "t": 1716855433.1278417}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 64, "power": 260.225}}, "t": 1716855433.6378553}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 64, "power": 256.982}}, "t": 1716855434.149253}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =9.457544803619385, total / elapsed =222.67935745797766 in_token_count =5 out_token_count =2101\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 222.67935745797766, "units": "Tok/s", "t": 1716855444.0456767}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 64, "power": 247.285}}, "t": 1716855434.6630638}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.94, "temperature": 64, "power": 253.169}}, "t": 1716855435.172343}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.95, "temperature": 64, "power": 257.314}}, "t": 1716855435.6831737}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 64, "power": 265.225}}, "t": 1716855436.1933103}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 65, "power": 257.765}}, "t": 1716855436.7039587}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.95, "temperature": 65, "power": 263.267}}, "t": 1716855437.2147098}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 65, "power": 267.931}}, "t": 1716855437.7243483}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.95, "temperature": 65, "power": 250.836}}, "t": 1716855438.2346616}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 65, "power": 255.825}}, "t": 1716855438.743384}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.95, "temperature": 65, "power": 257.517}}, "t": 1716855439.2566578}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 65, "power": 255.929}}, "t": 1716855439.7687283}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 65, "power": 258.225}}, "t": 1716855440.278734}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 65, "power": 260.282}}, "t": 1716855440.7908032}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 66, "power": 257.464}}, "t": 1716855441.301876}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.97, "temperature": 66, "power": 257.844}}, "t": 1716855441.8153818}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 66, "power": 264.728}}, "t": 1716855442.3260677}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 66, "power": 262.773}}, "t": 1716855442.8360794}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 66, "power": 261.98}}, "t": 1716855443.344475}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28232.375, 81920.0], "load": 0.96, "temperature": 66, "power": 259.882}}, "t": 1716855443.8558626}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =1.5447614192962646, total / elapsed =1364.6120194795683 in_token_count =349 out_token_count =1759\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 1364.6120194795683, "units": "Tok/s", "t": 1716855445.590454}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28276.375, 81920.0], "load": 0.95, "temperature": 70, "power": 300.772}}, "t": 1716855444.4124532}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28276.375, 81920.0], "load": 0.96, "temperature": 66, "power": 259.913}}, "t": 1716855444.9214904}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28276.375, 81920.0], "load": 0.96, "temperature": 66, "power": 263.157}}, "t": 1716855445.4311872}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =2.9984006881713867, total / elapsed =766.7420865628452 in_token_count =287 out_token_count =2012\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 766.7420865628452, "units": "Tok/s", "t": 1716855448.588873}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28276.375, 81920.0], "load": 0.97, "temperature": 70, "power": 253.043}}, "t": 1716855445.9404101}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28276.375, 81920.0], "load": 0.96, "temperature": 67, "power": 265.707}}, "t": 1716855446.4530048}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28276.375, 81920.0], "load": 0.96, "temperature": 67, "power": 263.786}}, "t": 1716855446.9621704}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28276.375, 81920.0], "load": 0.97, "temperature": 67, "power": 260.063}}, "t": 1716855447.4736202}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28276.375, 81920.0], "load": 0.96, "temperature": 67, "power": 257.86}}, "t": 1716855447.9846292}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28276.375, 81920.0], "load": 0.96, "temperature": 67, "power": 266.8}}, "t": 1716855448.496758}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =9.417949438095093, total / elapsed =212.46663226987224 in_token_count =7 out_token_count =1994\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 212.46663226987224, "units": "Tok/s", "t": 1716855458.0068429}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28276.375, 81920.0], "load": 0.92, "temperature": 67, "power": 264.528}}, "t": 1716855449.0067396}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28276.375, 81920.0], "load": 0.95, "temperature": 67, "power": 258.549}}, "t": 1716855449.5167801}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28276.375, 81920.0], "load": 0.96, "temperature": 67, "power": 261.606}}, "t": 1716855450.0250013}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28276.375, 81920.0], "load": 0.95, "temperature": 67, "power": 262.855}}, "t": 1716855450.5360866}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28276.375, 81920.0], "load": 0.95, "temperature": 68, "power": 261.66}}, "t": 1716855451.0478623}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28276.375, 81920.0], "load": 0.96, "temperature": 68, "power": 262.79}}, "t": 1716855451.5571816}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28276.375, 81920.0], "load": 0.96, "temperature": 68, "power": 268.556}}, "t": 1716855452.0674944}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28276.375, 81920.0], "load": 0.96, "temperature": 68, "power": 265.638}}, "t": 1716855452.5779407}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28276.375, 81920.0], "load": 0.95, "temperature": 68, "power": 267.95}}, "t": 1716855453.0863118}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28276.375, 81920.0], "load": 0.96, "temperature": 68, "power": 268.464}}, "t": 1716855453.59615}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28276.375, 81920.0], "load": 0.95, "temperature": 68, "power": 265.418}}, "t": 1716855454.1081548}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28276.375, 81920.0], "load": 0.96, "temperature": 68, "power": 269.14}}, "t": 1716855454.6231503}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28276.375, 81920.0], "load": 0.96, "temperature": 68, "power": 267.68}}, "t": 1716855455.1353033}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28276.375, 81920.0], "load": 0.96, "temperature": 68, "power": 270.029}}, "t": 1716855455.6499157}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28276.375, 81920.0], "load": 0.96, "temperature": 69, "power": 265.59}}, "t": 1716855456.158484}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28276.375, 81920.0], "load": 0.96, "temperature": 69, "power": 264.23}}, "t": 1716855456.6684372}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28276.375, 81920.0], "load": 0.96, "temperature": 69, "power": 271.094}}, "t": 1716855457.1781175}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28276.375, 81920.0], "load": 0.96, "temperature": 69, "power": 269.907}}, "t": 1716855457.6889307}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =1.206864595413208, total / elapsed =1813.7908828542004 in_token_count =363 out_token_count =1826\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 1813.7908828542004, "units": "Tok/s", "t": 1716855459.213723}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.94, "temperature": 72, "power": 316.063}}, "t": 1716855458.196384}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.98, "temperature": 69, "power": 270.212}}, "t": 1716855458.718725}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =9.3995201587677, total / elapsed =210.32988563313955 in_token_count =7 out_token_count =1970\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 210.32988563313955, "units": "Tok/s", "t": 1716855468.613263}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 69, "power": 266.24}}, "t": 1716855459.2310681}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 69, "power": 262.273}}, "t": 1716855459.7446074}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.94, "temperature": 69, "power": 253.091}}, "t": 1716855460.2551837}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.94, "temperature": 69, "power": 269.635}}, "t": 1716855460.7657707}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 70, "power": 269.244}}, "t": 1716855461.274958}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 70, "power": 259.178}}, "t": 1716855461.7834883}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 70, "power": 267.071}}, "t": 1716855462.2927248}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 70, "power": 270.237}}, "t": 1716855462.801261}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 70, "power": 269.044}}, "t": 1716855463.3115942}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 70, "power": 261.899}}, "t": 1716855463.8201797}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 70, "power": 259.972}}, "t": 1716855464.3307345}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 70, "power": 266.004}}, "t": 1716855464.839994}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 70, "power": 265.611}}, "t": 1716855465.3529866}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 70, "power": 261.417}}, "t": 1716855465.8673873}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 70, "power": 270.524}}, "t": 1716855466.3781781}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 70, "power": 270.323}}, "t": 1716855466.8888447}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 70, "power": 271.003}}, "t": 1716855467.3974824}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 71, "power": 268.623}}, "t": 1716855467.9074295}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 71, "power": 265.474}}, "t": 1716855468.4188247}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =1.6662108898162842, total / elapsed =1223.1344858301275 in_token_count =344 out_token_count =1694\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 1223.1344858301275, "units": "Tok/s", "t": 1716855470.2794905}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 1.0, "temperature": 74, "power": 296.403}}, "t": 1716855468.927188}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 71, "power": 273.365}}, "t": 1716855469.4371715}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 71, "power": 272.471}}, "t": 1716855469.9487524}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =6.759538650512695, total / elapsed =295.1384855013269 in_token_count =122 out_token_count =1873\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 295.1384855013269, "units": "Tok/s", "t": 1716855477.0390468}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.94, "temperature": 73, "power": 313.618}}, "t": 1716855470.4579153}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 71, "power": 272.062}}, "t": 1716855470.9676409}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 71, "power": 268.726}}, "t": 1716855471.4801044}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 71, "power": 264.817}}, "t": 1716855471.9886518}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 71, "power": 267.891}}, "t": 1716855472.500848}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 71, "power": 267.856}}, "t": 1716855473.013783}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 71, "power": 270.221}}, "t": 1716855473.522889}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 71, "power": 266.018}}, "t": 1716855474.0336154}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 71, "power": 268.767}}, "t": 1716855474.5451214}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 72, "power": 268.457}}, "t": 1716855475.0536575}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 72, "power": 268.279}}, "t": 1716855475.5635924}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 72, "power": 274.629}}, "t": 1716855476.075291}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 72, "power": 273.239}}, "t": 1716855476.5844579}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =9.42267107963562, total / elapsed =213.95207186601274 in_token_count =6 out_token_count =2010\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 213.95207186601274, "units": "Tok/s", "t": 1716855486.461739}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 72, "power": 268.341}}, "t": 1716855477.0947194}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.94, "temperature": 72, "power": 270.717}}, "t": 1716855477.60475}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 72, "power": 267.683}}, "t": 1716855478.1153195}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 72, "power": 274.517}}, "t": 1716855478.6245332}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.94, "temperature": 72, "power": 266.02}}, "t": 1716855479.1358926}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 72, "power": 265.825}}, "t": 1716855479.6511197}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 72, "power": 269.529}}, "t": 1716855480.163336}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 72, "power": 272.954}}, "t": 1716855480.673191}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 72, "power": 275.299}}, "t": 1716855481.183001}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 72, "power": 276.506}}, "t": 1716855481.6933563}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 72, "power": 270.369}}, "t": 1716855482.2042158}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 72, "power": 269.654}}, "t": 1716855482.7158434}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 73, "power": 265.813}}, "t": 1716855483.226041}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 73, "power": 275.805}}, "t": 1716855483.736196}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 73, "power": 276.084}}, "t": 1716855484.2476223}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 73, "power": 275.237}}, "t": 1716855484.7568545}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 73, "power": 275.208}}, "t": 1716855485.2673135}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 73, "power": 271.386}}, "t": 1716855485.7793481}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 73, "power": 265.239}}, "t": 1716855486.2885559}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =7.470844745635986, total / elapsed =267.57348975397923 in_token_count =91 out_token_count =1908\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 267.57348975397923, "units": "Tok/s", "t": 1716855493.9326017}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 73, "power": 270.324}}, "t": 1716855486.7977767}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 73, "power": 273.57}}, "t": 1716855487.307425}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 73, "power": 272.281}}, "t": 1716855487.81724}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 73, "power": 275.52}}, "t": 1716855488.3273246}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 73, "power": 280.492}}, "t": 1716855488.8399189}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 73, "power": 278.47}}, "t": 1716855489.3490627}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 73, "power": 280.784}}, "t": 1716855489.860328}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 73, "power": 280.401}}, "t": 1716855490.3724487}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 73, "power": 280.69}}, "t": 1716855490.8816917}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 73, "power": 281.984}}, "t": 1716855491.3915417}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 74, "power": 279.991}}, "t": 1716855491.9011664}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 74, "power": 277.675}}, "t": 1716855492.4120302}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 74, "power": 277.265}}, "t": 1716855492.9216423}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 74, "power": 274.035}}, "t": 1716855493.4322727}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =5.866283178329468, total / elapsed =350.81838660677363 in_token_count =162 out_token_count =1896\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 350.81838660677363, "units": "Tok/s", "t": 1716855499.798903}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 74, "power": 281.052}}, "t": 1716855493.9390435}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.98, "temperature": 74, "power": 273.755}}, "t": 1716855494.447464}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 74, "power": 280.399}}, "t": 1716855494.9611335}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 74, "power": 282.081}}, "t": 1716855495.474423}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 74, "power": 281.461}}, "t": 1716855495.985596}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 74, "power": 280.977}}, "t": 1716855496.495606}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 74, "power": 280.783}}, "t": 1716855497.0079672}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 74, "power": 280.789}}, "t": 1716855497.5170708}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 74, "power": 280.519}}, "t": 1716855498.0277681}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 74, "power": 280.385}}, "t": 1716855498.539148}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 74, "power": 278.921}}, "t": 1716855499.047665}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 74, "power": 272.377}}, "t": 1716855499.5576537}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =5.301434516906738, total / elapsed =393.10114901050684 in_token_count =186 out_token_count =1898\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 393.10114901050684, "units": "Tok/s", "t": 1716855505.100357}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.99, "temperature": 77, "power": 255.029}}, "t": 1716855500.0690858}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 74, "power": 278.635}}, "t": 1716855500.5776289}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 74, "power": 279.925}}, "t": 1716855501.0886433}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 74, "power": 279.837}}, "t": 1716855501.6006687}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 74, "power": 278.751}}, "t": 1716855502.1090605}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 74, "power": 280.89}}, "t": 1716855502.621279}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 75, "power": 280.02}}, "t": 1716855503.134902}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 75, "power": 277.962}}, "t": 1716855503.643765}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 75, "power": 273.535}}, "t": 1716855504.1537256}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 75, "power": 282.017}}, "t": 1716855504.6637814}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =6.884530305862427, total / elapsed =298.78581524267383 in_token_count =117 out_token_count =1940\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 298.78581524267383, "units": "Tok/s", "t": 1716855511.9849057}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 77, "power": 297.229}}, "t": 1716855505.1746678}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 75, "power": 281.644}}, "t": 1716855505.6853607}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 75, "power": 279.813}}, "t": 1716855506.1952634}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 75, "power": 281.865}}, "t": 1716855506.706766}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 75, "power": 275.499}}, "t": 1716855507.2159283}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 75, "power": 276.693}}, "t": 1716855507.7262378}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 75, "power": 279.248}}, "t": 1716855508.2354295}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 75, "power": 275.045}}, "t": 1716855508.7446592}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 75, "power": 280.296}}, "t": 1716855509.2559168}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 75, "power": 278.275}}, "t": 1716855509.769511}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 75, "power": 271.486}}, "t": 1716855510.281729}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 75, "power": 282.247}}, "t": 1716855510.7923446}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 75, "power": 280.067}}, "t": 1716855511.3042812}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 75, "power": 278.523}}, "t": 1716855511.8129354}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =9.399741888046265, total / elapsed =218.72941028462 in_token_count =6 out_token_count =2050\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 218.72941028462, "units": "Tok/s", "t": 1716855521.3846672}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.94, "temperature": 75, "power": 280.883}}, "t": 1716855512.323339}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 75, "power": 274.504}}, "t": 1716855512.835837}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 75, "power": 272.381}}, "t": 1716855513.3453717}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 75, "power": 279.933}}, "t": 1716855513.8573146}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 75, "power": 278.914}}, "t": 1716855514.3688102}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 75, "power": 277.29}}, "t": 1716855514.8771815}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 75, "power": 280.605}}, "t": 1716855515.3875806}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 75, "power": 275.531}}, "t": 1716855515.8996656}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 75, "power": 279.62}}, "t": 1716855516.4088473}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 75, "power": 281.203}}, "t": 1716855516.9210384}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 75, "power": 282.55}}, "t": 1716855517.4347603}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 75, "power": 280.206}}, "t": 1716855517.9439306}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 75, "power": 283.643}}, "t": 1716855518.4546683}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 75, "power": 281.875}}, "t": 1716855518.9638572}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 75, "power": 279.917}}, "t": 1716855519.4750257}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 75, "power": 279.925}}, "t": 1716855519.9844105}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 75, "power": 277.554}}, "t": 1716855520.4945638}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 75, "power": 285.18}}, "t": 1716855521.0068822}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =7.462900400161743, total / elapsed =265.312397838927 in_token_count =91 out_token_count =1889\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 265.312397838927, "units": "Tok/s", "t": 1716855528.8475888}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 78, "power": 319.683}}, "t": 1716855521.5168912}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 284.292}}, "t": 1716855522.0267181}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 75, "power": 281.074}}, "t": 1716855522.5393016}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 75, "power": 283.044}}, "t": 1716855523.0498078}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 284.121}}, "t": 1716855523.5621932}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 277.481}}, "t": 1716855524.0731776}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 76, "power": 287.914}}, "t": 1716855524.5820625}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 275.452}}, "t": 1716855525.0927763}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 275.775}}, "t": 1716855525.6051507}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 76, "power": 278.351}}, "t": 1716855526.1136649}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 272.713}}, "t": 1716855526.623742}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 76, "power": 274.345}}, "t": 1716855527.1353977}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 284.685}}, "t": 1716855527.6446383}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 283.393}}, "t": 1716855528.15507}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 278.908}}, "t": 1716855528.6653888}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =9.360640048980713, total / elapsed =207.4644457898438 in_token_count =9 out_token_count =1933\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 207.4644457898438, "units": "Tok/s", "t": 1716855538.2082503}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.93, "temperature": 76, "power": 280.486}}, "t": 1716855529.1739254}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.94, "temperature": 76, "power": 286.046}}, "t": 1716855529.6844556}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.94, "temperature": 76, "power": 278.818}}, "t": 1716855530.1962647}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 76, "power": 277.053}}, "t": 1716855530.7060592}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 280.5}}, "t": 1716855531.218664}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 76, "power": 281.571}}, "t": 1716855531.728442}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 76, "power": 285.761}}, "t": 1716855532.2395802}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 76, "power": 274.418}}, "t": 1716855532.7487216}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 274.813}}, "t": 1716855533.2587523}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 276.885}}, "t": 1716855533.7703876}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 280.291}}, "t": 1716855534.2790735}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 277.062}}, "t": 1716855534.7894776}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 280.979}}, "t": 1716855535.2987034}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 277.078}}, "t": 1716855535.8077922}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 278.244}}, "t": 1716855536.322597}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 288.56}}, "t": 1716855536.835362}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 285.84}}, "t": 1716855537.3444974}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 280.979}}, "t": 1716855537.8565204}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =3.332141876220703, total / elapsed =584.3088536819076 in_token_count =273 out_token_count =1674\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 584.3088536819076, "units": "Tok/s", "t": 1716855541.5404081}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 78, "power": 302.013}}, "t": 1716855538.373795}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 275.333}}, "t": 1716855538.8833163}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 76, "power": 278.611}}, "t": 1716855539.393146}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 286.364}}, "t": 1716855539.9036386}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 76, "power": 285.868}}, "t": 1716855540.4129264}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 283.507}}, "t": 1716855540.9262128}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 280.067}}, "t": 1716855541.4383862}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =3.4327142238616943, total / elapsed =600.9821574017282 in_token_count =269 out_token_count =1794\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 600.9821574017282, "units": "Tok/s", "t": 1716855544.9731414}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 262.303}}, "t": 1716855541.9504707}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 275.128}}, "t": 1716855542.4619315}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 272.4}}, "t": 1716855542.975531}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 284.598}}, "t": 1716855543.4877481}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 283.149}}, "t": 1716855544.001666}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 279.207}}, "t": 1716855544.5101326}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =4.712865352630615, total / elapsed =377.68955122098794 in_token_count =213 out_token_count =1567\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 377.68955122098794, "units": "Tok/s", "t": 1716855549.6860263}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 78, "power": 273.623}}, "t": 1716855545.0191686}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 76, "power": 277.759}}, "t": 1716855545.531946}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 278.315}}, "t": 1716855546.0411005}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 279.891}}, "t": 1716855546.551061}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 76, "power": 278.265}}, "t": 1716855547.0612526}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 278.053}}, "t": 1716855547.5702927}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 275.118}}, "t": 1716855548.0812004}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 278.528}}, "t": 1716855548.5918677}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 76, "power": 284.768}}, "t": 1716855549.100807}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 76, "power": 283.601}}, "t": 1716855549.6113653}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =9.324902534484863, total / elapsed =212.6563781944716 in_token_count =11 out_token_count =1972\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 212.6563781944716, "units": "Tok/s", "t": 1716855559.0109532}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.94, "temperature": 76, "power": 281.692}}, "t": 1716855550.1233678}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 76, "power": 273.824}}, "t": 1716855550.6337395}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 76, "power": 275.595}}, "t": 1716855551.1459367}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.94, "temperature": 76, "power": 276.574}}, "t": 1716855551.655939}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 76, "power": 280.879}}, "t": 1716855552.1653066}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 77, "power": 285.953}}, "t": 1716855552.6737676}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 279.516}}, "t": 1716855553.1844351}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 283.096}}, "t": 1716855553.6959887}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 277.78}}, "t": 1716855554.2051437}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 280.675}}, "t": 1716855554.714798}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 77, "power": 274.36}}, "t": 1716855555.2244768}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 273.683}}, "t": 1716855555.7344098}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 273.87}}, "t": 1716855556.2452204}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 77, "power": 280.3}}, "t": 1716855556.75687}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 287.211}}, "t": 1716855557.2654324}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 77, "power": 285.079}}, "t": 1716855557.7768795}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 281.582}}, "t": 1716855558.28693}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 276.956}}, "t": 1716855558.7959008}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =6.187765836715698, total / elapsed =306.7342963655858 in_token_count =148 out_token_count =1750\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 306.7342963655858, "units": "Tok/s", "t": 1716855565.1987398}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 232.199}}, "t": 1716855559.3083494}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 279.899}}, "t": 1716855559.8181148}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 282.556}}, "t": 1716855560.3276534}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 279.914}}, "t": 1716855560.8381832}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 282.75}}, "t": 1716855561.3483832}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 284.8}}, "t": 1716855561.858939}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 285.077}}, "t": 1716855562.3686924}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 283.437}}, "t": 1716855562.8783116}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 77, "power": 282.562}}, "t": 1716855563.3903491}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 77, "power": 280.596}}, "t": 1716855563.8994515}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 274.847}}, "t": 1716855564.4117234}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 77, "power": 287.206}}, "t": 1716855564.9242167}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =7.0449378490448, total / elapsed =292.1246495139822 in_token_count =110 out_token_count =1948\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 292.1246495139822, "units": "Tok/s", "t": 1716855572.2436981}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 275.824}}, "t": 1716855565.4427962}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 77, "power": 286.646}}, "t": 1716855565.9550753}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 286.348}}, "t": 1716855566.4634144}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 280.483}}, "t": 1716855566.9739866}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 278.138}}, "t": 1716855567.4853826}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 77, "power": 283.24}}, "t": 1716855567.9946344}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 284.484}}, "t": 1716855568.5044367}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 286.921}}, "t": 1716855569.016208}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 284.593}}, "t": 1716855569.5253966}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 283.538}}, "t": 1716855570.035712}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 280.337}}, "t": 1716855570.5453277}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 77, "power": 279.592}}, "t": 1716855571.0539346}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 286.528}}, "t": 1716855571.5624435}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 286.445}}, "t": 1716855572.0783634}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =9.393495798110962, total / elapsed =207.69690453178757 in_token_count =6 out_token_count =1945\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 207.69690453178757, "units": "Tok/s", "t": 1716855581.6372128}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.92, "temperature": 77, "power": 287.314}}, "t": 1716855572.5916517}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 279.049}}, "t": 1716855573.1007886}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 77, "power": 279.615}}, "t": 1716855573.6119192}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 284.899}}, "t": 1716855574.12335}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 284.104}}, "t": 1716855574.6318233}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 287.025}}, "t": 1716855575.14236}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 282.534}}, "t": 1716855575.653824}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 77, "power": 283.697}}, "t": 1716855576.1629338}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 285.679}}, "t": 1716855576.672581}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 287.53}}, "t": 1716855577.1830451}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 286.948}}, "t": 1716855577.6916616}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 281.185}}, "t": 1716855578.2011178}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 77, "power": 280.119}}, "t": 1716855578.7146676}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 275.631}}, "t": 1716855579.2274516}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 287.629}}, "t": 1716855579.7367244}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 287.225}}, "t": 1716855580.247437}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 284.026}}, "t": 1716855580.760081}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 77, "power": 280.317}}, "t": 1716855581.2707386}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =3.215240478515625, total / elapsed =624.8366221513521 in_token_count =278 out_token_count =1731\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 624.8366221513521, "units": "Tok/s", "t": 1716855584.852469}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.94, "temperature": 80, "power": 281.276}}, "t": 1716855581.7794333}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 77, "power": 288.511}}, "t": 1716855582.2898302}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 286.272}}, "t": 1716855582.798242}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 77, "power": 285.303}}, "t": 1716855583.3079953}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 77, "power": 284.211}}, "t": 1716855583.819645}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 77, "power": 279.037}}, "t": 1716855584.3287582}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 288.396}}, "t": 1716855584.839524}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =9.414043664932251, total / elapsed =205.54397970427573 in_token_count =6 out_token_count =1929\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 205.54397970427573, "units": "Tok/s", "t": 1716855594.2665312}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.93, "temperature": 77, "power": 274.767}}, "t": 1716855585.3513806}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 77, "power": 283.815}}, "t": 1716855585.8628323}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 77, "power": 276.813}}, "t": 1716855586.3750763}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 279.725}}, "t": 1716855586.8857636}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 77, "power": 286.558}}, "t": 1716855587.3963282}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 281.962}}, "t": 1716855587.9071474}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 77, "power": 279.339}}, "t": 1716855588.4155066}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 282.477}}, "t": 1716855588.9263217}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 288.108}}, "t": 1716855589.4346914}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 288.594}}, "t": 1716855589.944897}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 288.887}}, "t": 1716855590.4555094}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 287.736}}, "t": 1716855590.9645884}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 288.21}}, "t": 1716855591.4750428}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 287.262}}, "t": 1716855591.9842162}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 287.42}}, "t": 1716855592.496489}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 284.981}}, "t": 1716855593.0100052}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 77, "power": 279.791}}, "t": 1716855593.5203283}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 77, "power": 285.769}}, "t": 1716855594.030816}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =1.670426607131958, total / elapsed =1318.8247784094178 in_token_count =344 out_token_count =1859\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 1318.8247784094178, "units": "Tok/s", "t": 1716855595.9369743}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 80, "power": 298.937}}, "t": 1716855594.5972319}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 78, "power": 295.336}}, "t": 1716855595.1077483}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 78, "power": 293.583}}, "t": 1716855595.6168852}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =7.163668394088745, total / elapsed =293.98345709829493 in_token_count =105 out_token_count =2001\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 293.98345709829493, "units": "Tok/s", "t": 1716855603.100661}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 78, "power": 318.69}}, "t": 1716855596.1274202}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 78, "power": 289.572}}, "t": 1716855596.6384737}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 78, "power": 292.984}}, "t": 1716855597.148317}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 78, "power": 286.625}}, "t": 1716855597.6584253}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 78, "power": 286.093}}, "t": 1716855598.1676402}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 78, "power": 290.265}}, "t": 1716855598.6768606}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 78, "power": 291.843}}, "t": 1716855599.1873467}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 78, "power": 290.933}}, "t": 1716855599.6986842}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 78, "power": 290.451}}, "t": 1716855600.2078583}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 78, "power": 291.235}}, "t": 1716855600.7201657}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 78, "power": 288.504}}, "t": 1716855601.2330148}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 78, "power": 284.03}}, "t": 1716855601.7414732}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 78, "power": 293.16}}, "t": 1716855602.251439}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 78, "power": 293.859}}, "t": 1716855602.7629526}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =9.191612243652344, total / elapsed =219.65678560845578 in_token_count =17 out_token_count =2002\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 219.65678560845578, "units": "Tok/s", "t": 1716855612.2922947}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 78, "power": 304.169}}, "t": 1716855603.271311}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 78, "power": 293.85}}, "t": 1716855603.7813475}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 78, "power": 286.84}}, "t": 1716855604.2914722}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 77, "power": 286.555}}, "t": 1716855604.7999887}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 289.669}}, "t": 1716855605.309106}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 77, "power": 292.492}}, "t": 1716855605.8195992}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 77, "power": 293.483}}, "t": 1716855606.3336816}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 293.085}}, "t": 1716855606.8433392}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 77, "power": 293.978}}, "t": 1716855607.3547668}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 77, "power": 281.202}}, "t": 1716855607.8685226}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 77, "power": 295.901}}, "t": 1716855608.3773894}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 293.846}}, "t": 1716855608.8876536}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 295.029}}, "t": 1716855609.3972757}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 292.391}}, "t": 1716855609.9087126}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 293.388}}, "t": 1716855610.4204874}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 289.583}}, "t": 1716855610.9313717}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 284.195}}, "t": 1716855611.4400187}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 77, "power": 295.021}}, "t": 1716855611.950022}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =4.64708399772644, total / elapsed =451.25072002699875 in_token_count =216 out_token_count =1881\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 451.25072002699875, "units": "Tok/s", "t": 1716855616.9393976}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 79, "power": 288.222}}, "t": 1716855612.4599702}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 290.173}}, "t": 1716855612.9691372}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 294.452}}, "t": 1716855613.4782228}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.96, "temperature": 77, "power": 293.881}}, "t": 1716855613.9886334}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 77, "power": 293.787}}, "t": 1716855614.501803}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 77, "power": 293.106}}, "t": 1716855615.0129592}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 77, "power": 292.627}}, "t": 1716855615.5240393}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.97, "temperature": 77, "power": 288.141}}, "t": 1716855616.0332737}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [28322.375, 81920.0], "load": 0.95, "temperature": 77, "power": 289.014}}, "t": 1716855616.5430791}, "pipe": "data"}
+{"event": "end", "data": {"command": ["python", "/home/runner/work/milabench/milabench/benchmarks/llama/main.py", "--cache", "/home/runner/work/milabench/milabench/output/cache"], "time": 1716855617.874328, "return_code": 0}, "pipe": null}
