@@ -43,7 +43,8 @@ def instrument_main(ov, options: Config):
         rank=int(os.getenv("RANK", 0)),
         device=accelerator.fetch_device(int(os.getenv("RANK", 0))),
         backward_callback=accelerator.mark_step,
-        step_callback=accelerator.mark_step
+        step_callback=accelerator.mark_step,
+        batch_size_fn=lambda x: len(x[0])
     )
 
     probe = ov.probe("/timm.data.loader/create_loader() as loader", overridable=True)

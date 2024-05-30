@@ -227,7 +227,10 @@ class Solver(object):
             data_loader = self.synth_loader
 
         # Fetch fixed inputs for debugging.
-        wrapper = voir.wrapper.Wrapper(event_fn=accelerator.Event)
+        wrapper = voir.wrapper.Wrapper(
+            event_fn=accelerator.Event, 
+            batch_size_fn=lambda x: len(x[0])
+        )
         loader = wrapper.loader(data_loader)
 
         data_iter = iter(loader)
