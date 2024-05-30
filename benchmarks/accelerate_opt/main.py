@@ -397,7 +397,7 @@ def main():
         rank=int(os.environ["RANK"]), 
         device=acc.fetch_device(int(os.environ["RANK"])),
         stdout=True,
-        batch_size_fn=lambda batch: batch["labels"].shape[0] * gradient_accumulation_steps
+        batch_size_fn=lambda batch: batch["labels"].shape[0]
     )
     loader = wrapper.loader(train_dataloader)
 
