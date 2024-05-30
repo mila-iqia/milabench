@@ -374,6 +374,7 @@ def main():
     total_batch_size = (
         per_gpu_batch_size * accelerator.num_processes * gradient_accumulation_steps
     )
+    print("HERE", per_gpu_batch_size, total_batch_size)
 
     logger.info("***** Running training *****")
     logger.info(f"  Num examples = {len(train_dataset)}")
@@ -396,6 +397,7 @@ def main():
         rank=int(os.environ["RANK"]), 
         device=acc.fetch_device(int(os.environ["RANK"])),
         stdout=True,
+        batch_size_fn=lambda batch: batch["labels"].shape[0]
     )
     loader = wrapper.loader(train_dataloader)
 
