@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import os
 
 from voir import configurable
 from voir.instruments import dash, early_stop, gpu_monitor, log, rate
@@ -39,5 +40,5 @@ def instrument_main(ov, options: Config):
         gpu_monitor(poll_interval=options.gpu_poll),
     )
 
-    os.environ["VOIR_EARLYSTOP_COUNT"] = str(option.stop)
-    os.environ["VOIR_EARLYSTOP_SKIP"] = str(option.skip)
+    os.environ["VOIR_EARLYSTOP_COUNT"] = str(options.stop)
+    os.environ["VOIR_EARLYSTOP_SKIP"] = str(options.skip)
