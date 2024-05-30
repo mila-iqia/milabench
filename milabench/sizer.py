@@ -287,7 +287,9 @@ def resolve_argv(pack, argv):
     context["arch"] = arch
     context["ccl"] = ccl.get(arch, "gloo")
     context["cpu_count"] = multiprocessing.cpu_count()
-    context["cpu_per_gpu"] = (multiprocessing.cpu_count() - 1) // device_count
+
+    max_cpu_per_gpu = 16
+    context["cpu_per_gpu"] = min((multiprocessing.cpu_count() - 1) // device_count, max_cpu_per_gpu)
 
     argv = list(argv)
     for i, arg in enumerate(argv):

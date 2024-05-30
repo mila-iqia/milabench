@@ -102,7 +102,10 @@ class Runner:
             print(list(bs.keys()))
             raise RuntimeError("Batch size unknown")
         
-        wrapper = Wrapper(event_fn=accelerator.Event, batch_size_fn=batch_size)
+        wrapper = Wrapper(
+            event_fn=accelerator.Event, 
+            batch_size_fn=batch_size
+        )
         loader = wrapper.loader(self.loader)
     
         for data in loader:
