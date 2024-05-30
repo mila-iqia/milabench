@@ -2,7 +2,7 @@
 
 set -ex
 
-export MILABENCH_GPU_ARCH=rocm
+export MILABENCH_GPU_ARCH=cuda
 export MILABENCH_WORDIR="$(pwd)/$MILABENCH_GPU_ARCH"
 
 export MILABENCH_BASE="$MILABENCH_WORDIR/results"
@@ -17,9 +17,8 @@ install_prepare() {
 
     virtualenv $MILABENCH_WORDIR/env
 
-    git clone https://github.com/mila-iqia/milabench.git -b intel
-    git clone https://github.com/Delaunay/voir.git -b async_timer
-    git clone https://github.com/Delaunay/torchcompat.git
+    git clone https://github.com/mila-iqia/milabench.git -b master
+    git clone https://github.com/Delaunay/voir.git
 
     . $MILABENCH_WORDIR/env/bin/activate
     pip install -e $MILABENCH_WORDIR/milabench
@@ -31,14 +30,12 @@ install_prepare() {
 
     which pip
     pip install -e $MILABENCH_WORDIR/voir
-    pip install -e $MILABENCH_WORDIR/torchcompat
 
     (
         . $BENCHMARK_VENV/bin/activate
         which pip
         pip install -e $MILABENCH_WORDIR/voir
-        pip install -e $MILABENCH_WORDIR/torchcompat
-        pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.0
+        pip install torch torchvision torchaudio
 
         (
             cd $MILABENCH_WORDIR/milabench/benchmarks/timm/pytorch-image-models; 

@@ -69,7 +69,7 @@ cd $MILABENCH_WORDIR
 
 #
 #   Run the benchmakrs
-milabench run 
+milabench run "$@"
 
 #
 #   Display report

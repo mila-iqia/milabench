@@ -17,9 +17,11 @@ install_prepare() {
 
     virtualenv $MILABENCH_WORDIR/env
 
-    git clone https://github.com/mila-iqia/milabench.git -b intel
-    git clone https://github.com/Delaunay/voir.git -b async_timer
-    git clone https://github.com/Delaunay/torchcompat.git
+    if [ ! -d "$MILABENCH_WORDIR/milabench" ]; then
+        git clone https://github.com/mila-iqia/milabench.git -b intel
+        git clone https://github.com/Delaunay/voir.git -b async_timer
+        git clone https://github.com/Delaunay/torchcompat.git
+    fi
 
     . $MILABENCH_WORDIR/env/bin/activate
     pip install -e $MILABENCH_WORDIR/milabench
@@ -27,7 +29,7 @@ install_prepare() {
     #
     # Install milabench's benchmarks in their venv
     #
-    milabench install
+    milabench install "$@"
 
     which pip
     pip install -e $MILABENCH_WORDIR/voir
@@ -49,7 +51,7 @@ install_prepare() {
 
     #
     #   Generate/download datasets, download models etc...
-    milabench prepare
+    milabench prepare "$@"
 }
 
 if [ ! -d "$MILABENCH_WORDIR" ]; then
@@ -63,7 +65,7 @@ cd $MILABENCH_WORDIR
 
 #
 #   Run the benchmakrs
-milabench run 
+milabench run "$@"
 
 #
 #   Display report
