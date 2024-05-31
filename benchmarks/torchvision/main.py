@@ -313,8 +313,11 @@ def iobench(args):
     if args.data is None and data_directory:
         args.data = os.path.join(data_directory, "FakeImageNet")
         
-    loader = dataloader(args)
     device = accelerator.fetch_device(0)
+    model = getattr(tvmodels, args.model)()
+    model.to(device)
+
+    loader = dataloader(args, model)
     dtype = float_dtype(args.precision)
 
     for _ in range(args.epochs):
