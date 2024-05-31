@@ -63,6 +63,7 @@ class Trainer:
             device=self.device,
             earlystop=60,
             raise_stop_program=True,
+            batch_size_fn=lambda x: len(x[0])
         )
         self.optimizer = optimizer
         # self.model = FSDP(model, device_id=self.device)
@@ -97,9 +98,8 @@ class Trainer:
             self.train_data.add_loss(loss)
 
     def train(self, max_epochs: int):
-        with given() as gv:
-            for epoch in range(max_epochs):
-                self._run_epoch(epoch)
+        for epoch in range(max_epochs):
+            self._run_epoch(epoch)
 
 
 def image_transforms():
