@@ -18,7 +18,7 @@ import torch.distributed as dist
 from torch.utils.data.distributed import DistributedSampler
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
-from torch.distributed import init_process_group, destroy_process_group
+from torch.distributed import destroy_process_group
 
 import torchvision.transforms as transforms
 import torchvision.models as torchvision_models

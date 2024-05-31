@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
 import argparse
+from collection import defaultdict
 import multiprocessing
 import os
 from pathlib import Path
+import json
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -30,11 +32,11 @@ def write(args):
     img.save(image_path)
 
 
-def generate(image_size, n, outdir):
+def generate(image_size, n, outdir, start = 0):
     work_items = []
     for i in range(n):
         work_items.append([
-            i,
+            start + i,
             outdir,
             image_size,
         ])
@@ -45,19 +47,34 @@ def generate(image_size, n, outdir):
             pass
 
 
+def count_images(path):
+    count = defaultdict(0)
+    for root, _, files in tqdm(os.walk(path)):
+        try: 
+            _, split, _ = root.split('/')
+            count[split] += len(files)
+        except:
+            pass
+
+    return count
+
+
 def generate_sets(root, sets, shape):
+    """When experimenting we want that prepare check that the generated dataset is of the right size"""
     root = Path(root)
     sentinel = root / "done"
-    if sentinel.exists():
-        print(f"{root} was already generated")
-        return
-    if root.exists():
-        print(f"{root} exists but is not marked complete; deleting")
-        root.rm()
-    for name, n in sets.items():
-        print(f"Generating {name}")
-        generate(shape, n, os.path.join(root, name))
-    sentinel.touch()
+
+    total_images = count_images(root)
+
+    for split, count in sets.items():
+        current_count = total_images.get(split, 0)
+
+        if current_count < count:
+            print(f"Generating {split} (current {current_count}) (target: {count})")
+            generate(shape, count, os.path.join(root, split), start=current_count)
+
+    with open(sentinel, "w") as fp:
+        json.dump(sets, fp)
 
 
 def main():
