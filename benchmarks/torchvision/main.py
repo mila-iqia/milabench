@@ -95,9 +95,12 @@ def train_epoch(model, criterion, optimizer, loader, device, dtype, scaler=None)
 class SyntheticData:
     def __init__(self, model, device, batch_size, n, fixed_batch):
         self.n = n
-        self.inp = torch.randn((batch_size, 3, 224, 224)).to(device)
+        self.inp = torch.randn((batch_size, 3, 224, 224))
         self.out = torch.rand_like(model(self.inp))
         self.fixed_batch = fixed_batch
+
+        self.inp.to(device)
+        self.out.to(device)
 
     def __iter__(self):
         inp, out = self.inp, self.out
@@ -154,7 +157,8 @@ def iobench(args):
     if args.data is None and data_directory:
         args.data = os.path.join(data_directory, "FakeImageNet")
         
-    loader = dataloader(args)
+    model = getattr(tvmodels, args.model)()
+    loader = dataloader(args, model)
     device = accelerator.fetch_device(0)
     dtype = float_dtype(args.precision)
 
