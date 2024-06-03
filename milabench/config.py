@@ -108,6 +108,10 @@ def build_matrix_bench(all_configs):
 
     for name, bench_config in all_configs.items():
         for k, v in expand_matrix(name, bench_config):
+
+            if k in expanded_config:
+                raise ValueError("Bench name is not unique")
+
             expanded_config[k] = v
 
     return expanded_config

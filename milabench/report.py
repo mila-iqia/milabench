@@ -128,7 +128,7 @@ class Outputter:
         if not self.stdout:
             return
         if isinstance(x, DataFrame):
-            self._text(x.to_string(formatters=_formatters))
+            self._text(pandas_to_string(x, formatters=_formatters))
         else:
             self._text(str(x))
 
@@ -300,9 +300,39 @@ def make_report(
     out.finalize()
 
 
+def pandas_to_string(df, formatters):
+    """Default stdout printer does not insert a column sep which makes it hard to retranscribe results elsewhere.
+    to_csv does not align the output.
+    """
+    from collections import defaultdict
+    columns = df.columns.tolist()
+
+    sep = " | "
+    lines = []
+    col_size = defaultdict(int)
+
+    for index, row in df.iterrows():
+        line = [f'{index:<30}']
+        for col, val in zip(columns, row):
+            fmt = formatters.get(col)
+            val = fmt(val)
+            col_size[col] = max(col_size[col], len(val))
+            line.append(val)
+
+        lines.append(sep.join(line))
+
+    def fmtcol(col):
+        size = col_size[col]
+        return f"{col:>{size}}"
+
+    header = sep.join([f"{'bench':<30}"] + [fmtcol(col) for col in columns])
+
+    return "\n".join([header] + lines)
+
+
 _formatters = {
+    "fail": "{:4.0f}".format,
     "n": "{:.0f}".format,
-    "fail": "{:.0f}".format,
     "std": "{:10.2f}".format,
     "iqr": "{:10.2f}".format,
     "perf": "{:10.2f}".format,
@@ -314,8 +344,9 @@ _formatters = {
     "std%": "{:6.1%}".format,
     "sem%": "{:6.1%}".format,
     "iqr%": "{:6.1%}".format,
-    "weight": "{:4.2f}".format,
-    "peak_memory": "{:.0f}".format,
+    "score": "{:10.2f}".format,
+    "weight": "{:5.2f}".format,
+    "peak_memory": "{:11.0f}".format,
     0: "{:.0%}".format,
     1: "{:.0%}".format,
     2: "{:.0%}".format,
