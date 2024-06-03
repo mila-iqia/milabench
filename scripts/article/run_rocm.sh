@@ -39,12 +39,6 @@ install_prepare() {
         pip install -e $MILABENCH_WORDIR/voir
         pip install -e $MILABENCH_WORDIR/torchcompat
         pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.0
-
-        (
-            cd $MILABENCH_WORDIR/milabench/benchmarks/timm/pytorch-image-models; 
-            git fetch origin; 
-            git checkout cb0e439
-        )
     )
 
     #

@@ -50,10 +50,6 @@ install_prepare() {
         pip install -e $MILABENCH_WORDIR/optimum-habana
 
         (
-            cd $MILABENCH_WORDIR/milabench/benchmarks/timm/pytorch-image-models; 
-            git fetch origin; 
-            git checkout cb0e439
-
             cd $MILABENCH_WORDIR/milabench/benchmarks/dlrm/dlrm; 
             git remote add me https://github.com/Delaunay/dlrm.git
             git fetch me

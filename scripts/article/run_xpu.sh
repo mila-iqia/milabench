@@ -45,12 +45,6 @@ install_prepare() {
 
         # Override dependencies for XPU
         pip install torch, torchvision torchaudio intel-extension-for-pytorch --extra-index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/
-    
-        (
-            cd $MILABENCH_WORDIR/milabench/benchmarks/timm/pytorch-image-models; 
-            git fetch origin; 
-            git checkout cb0e439
-        )
     )
 
     #
