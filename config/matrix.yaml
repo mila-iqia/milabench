@@ -1,0 +1,22 @@
+include:
+  - standard.yaml
+
+_resnet50:
+  inherits: resnet50
+  enabled: true
+  argv:
+    --iobench: false
+
+resnet-batch:
+  matrix:
+    worker: [2, 4, 8, 16, 24, 32, 64]
+    batch-size: [32, 64, 128, 256, 512, 1024]
+
+  job:
+    name: 'resnet50-w{worker}-bs{batch-size}'
+    inherits: _resnet50
+    argv:
+      --batch-size: '{batch-size}'
+      --num-workers: '{worker}'
+
+

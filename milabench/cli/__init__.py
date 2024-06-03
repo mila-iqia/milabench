@@ -18,6 +18,7 @@ from .schedule import cli_schedule
 from .slurm import cli_slurm_system
 from .sql import cli_sqlsetup
 from .summary import cli_summary
+from .matrix import cli_matrix_run
 
 
 class Main:
@@ -81,6 +82,9 @@ class Main:
 
     def write_report_to_pr():
         cli_write_report_to_pr()
+
+    def matrix():
+        cli_matrix_run()
 
 
 def main(argv=None):

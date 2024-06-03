@@ -182,6 +182,18 @@ def init_arch(arch=None):
     return select_backend(arch)
 
 
+def is_selected(defn, args):
+    if defn["name"] == "*":
+        return False
+    keys = selection_keys(defn)
+    return (
+        defn["enabled"]
+        and not defn["name"].startswith("_")
+        and defn.get("definition", None)
+        and (not args.select or (keys & args.select))
+        and (not args.exclude or not (keys & args.exclude))
+    )
+
 def _get_multipack(
     args: CommonArguments = arguments(),
     run_name=None,
@@ -238,19 +250,7 @@ def _get_multipack(
 
     config = build_config(base_defaults, args.config, overrides)
 
-    def is_selected(defn):
-        if defn["name"] == "*":
-            return False
-        keys = selection_keys(defn)
-        return (
-            defn["enabled"]
-            and not defn["name"].startswith("_")
-            and defn.get("definition", None)
-            and (not args.select or (keys & args.select))
-            and (not args.exclude or not (keys & args.exclude))
-        )
-
-    selected_config = {name: defn for name, defn in config.items() if is_selected(defn)}
+    selected_config = {name: defn for name, defn in config.items() if is_selected(defn, args)}
     if return_config:
         return selected_config
     else:

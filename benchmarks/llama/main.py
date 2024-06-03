@@ -123,7 +123,8 @@ def huggingface_main(args, model, config):
     from transformers.models.llama.configuration_llama import LlamaConfig
     from voir.wrapper import DataloaderWrapper, Wrapper
     from datasets import load_dataset
-
+    import optimum.habana
+    
     # Dataset here
     println("Dataset")
     dataset = load_dataset("wikitext", "wikitext-103-v1")
