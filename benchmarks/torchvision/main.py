@@ -100,6 +100,7 @@ def dali(args, images_dir):
             random_shuffle=True, 
             name="Reader",
         )
+        
         # decode data on the GPU
         images = fn.decoders.image_random_crop(
             images, 
@@ -124,31 +125,37 @@ def dali(args, images_dir):
         reader_name='Reader'
     )
 
-    def iter():
-        for _ in range(args.epochs):
-            for data in train_data:
+    class Adapter:
+        def __init__(self, iter):
+            self.iter = iter
+
+        def __len__(self):
+            return len(self.iter)
+        
+        def __iter__(self):
+            for data in self.iter:
                 x, y = data[0]['data'], data[0]['label']
                 yield x, torch.squeeze(y, dim=1).type(torch.LongTensor)
 
-    yield from iter()
+    return Adapter(train_data)
 
 
 def dataloader(args, model):
-    if args.loader == "dali":
-        return dali(args, args.data)
+    if not args.data:
+        data_directory = os.environ.get("MILABENCH_DIR_DATA", None)
+        if data_directory:
+            args.data = os.path.join(data_directory, "FakeImageNet")
 
     if args.fixed_batch:
         args.synthetic_data = True
 
     if args.synthetic_data:
         args.data = None
-    else:
-        if not args.data:
-            data_directory = os.environ.get("MILABENCH_DIR_DATA", None)
-            if data_directory:
-                args.data = os.path.join(data_directory, "FakeImageNet")
 
     if args.data:
+        if args.loader == "dali":
+            return dali(args, os.path.join(args.data, "train"))
+
         train = datasets.ImageFolder(os.path.join(args.data, "train"), data_transforms)
         return torch.utils.data.DataLoader(
             train,

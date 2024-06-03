@@ -39,3 +39,14 @@ resnet-batch:
       --batch-size: '{batch-size}'
       --num-workers: '{worker}'
       --loader: '{loader}'
+
+resnet-batch-noio:
+  matrix:
+    batch-size: [32, 64, 128, 256, 512, 1024]
+
+  job:
+    name: 'resnet50-noio-bs{batch-size}'
+    inherits: _resnet50
+    argv:
+      --batch-size: '{batch-size}'
+      --synthetic-data: true
