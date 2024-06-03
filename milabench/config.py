@@ -96,8 +96,12 @@ def expand_matrix(name, bench_config):
         name = newbench.pop('name').format(**matrix_args)
 
         for karg, varg in template['argv'].items():
-            newbench['argv'][karg] = varg.format(**matrix_args)
-
+            try:
+                varg = varg.format(**matrix_args)
+            except:
+                pass
+            newbench['argv'][karg] = varg
+            
         newbenches.append((name, newbench))
 
     return newbenches
