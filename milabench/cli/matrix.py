@@ -81,4 +81,8 @@ def cli_matrix_run(args=None):
 
     clean_config(config, args)
 
-    yaml.dump(config, sys.stdout)
+
+    for k in config:
+        print(k)
+
+    # yaml.dump(config, sys.stdout)
