@@ -1,0 +1,69 @@
+include:
+  - standard.yaml
+
+resnet152:
+  enabled: false
+
+regnet_y_128gf:
+  enabled: false
+
+resnet152-ddp:
+  enabled: false
+
+resnet152-multi:
+  enabled: false
+
+stargan:
+  enabled: false
+
+resnet50:
+  enabled: false
+
+resnet50-noio:
+  enabled: false
+
+_resnet50:
+  inherits: resnet50
+  enabled: true
+
+# resnet-matrix:
+#   matrix:
+#     worker: [2, 4, 8, 16, 24, 32, 64]
+#     batch-size: [32, 64, 128, 256, 512, 1024]
+#     loader: ['pytorch', 'dali']
+
+#   job:
+#     name: 'resnet50-w{worker}-bs{batch-size}-{loader}'
+#     inherits: _resnet50
+#     argv:
+#       --batch-size: '{batch-size}'
+#       --num-workers: '{worker}'
+#       --loader: '{loader}'
+
+resnet-matrix-noio:
+  matrix:
+    batch-size: [32, 64, 128, 256, 512, 1024]
+
+  job:
+    name: 'resnet50-noio-bs{batch-size}'
+    inherits: _resnet50
+    argv:
+      --batch-size: '{batch-size}'
+      --synthetic-data: true
+      --fixed-batch: true
+
+resnet-optim:
+  matrix:
+    worker: [8]
+    batch-size: [256]
+    loader: ['dali']
+    optim: ["trace", "inductor", "script", "channel_last", "set_grad_none"]
+
+  job:
+    name: 'resnet50-w{worker}-bs{batch-size}-{loader}-{optim}'
+    inherits: _resnet50
+    argv:
+      --batch-size: '{batch-size}'
+      --num-workers: '{worker}'
+      --loader: '{loader}'
+      --optim: '{optim}'

@@ -235,7 +235,7 @@ def _main():
         type=str, 
         default="",
         nargs="+",
-        choices=["trace", "inductor", "script", "channel_last", "set_grad_none"],
+        choices=["trace", "inductor", "script", "channel_last"],
         help="Optimization to enable",
     )
     parser.add_argument(
@@ -334,9 +334,8 @@ def iobench(args):
 
 
 def train_epoch(args, model, criterion, optimizer, loader, device, dtype, scaler=None):
-    model.train()
-
-    set_to_none = "set_grad_none" in args.optim
+    if hasattr(model, 'train'):
+        model.train()
 
     transform = dict(device=device, dtype=dtype)
     if "channel_last" in args.optim:
@@ -345,7 +344,7 @@ def train_epoch(args, model, criterion, optimizer, loader, device, dtype, scaler
     for inp, target in loader:
         inp = inp.to(**transform)
         target = target.to(device)
-        optimizer.zero_grad(set_to_none=set_to_none)
+        optimizer.zero_grad()
 
         with scaling(scaler is not None, dtype):
             output = model(inp)

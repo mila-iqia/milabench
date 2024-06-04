@@ -3,7 +3,7 @@
 
 export MILABENCH_GPU_ARCH=cuda
 export MILABENCH_WORDIR="$(pwd)/$MILABENCH_GPU_ARCH"
-export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/matrix.yaml"
+export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/resnet50.yaml"
 
 CUDA_VISIBLE_DEVICES=0 bash $MILABENCH_WORDIR/milabench/scripts/article/run_cuda.sh --config $MILABENCH_CONFIG --select resnet
 
