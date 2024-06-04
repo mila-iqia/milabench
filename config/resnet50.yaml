@@ -67,3 +67,19 @@ resnet-optim:
       --num-workers: '{worker}'
       --loader: '{loader}'
       --optim: '{optim}'
+
+
+image-loading:
+  matrix:
+    worker: [2, 4, 8, 16, 24, 32, 64]
+    batch-size: [32, 64, 128, 256, 512, 1024]
+    loader: ['pytorch', 'dali']
+
+  job:
+    name: 'imageloading-w{worker}-bs{batch-size}-{loader}'
+    inherits: _resnet50
+    argv:
+      --batch-size: '{batch-size}'
+      --num-workers: '{worker}'
+      --loader: '{loader}'
+      --iobench: true
