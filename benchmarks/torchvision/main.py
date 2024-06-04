@@ -69,7 +69,7 @@ class SyntheticData:
     def __init__(self, model, device, batch_size, n, fixed_batch):
         self.n = n
         model = model.to(device)
-        
+
         self.inp = torch.randn((batch_size, 3, 224, 224), device=device)
         self.out = torch.rand_like(model(self.inp))
         self.fixed_batch = fixed_batch
@@ -184,7 +184,8 @@ def dataloader(args, model):
     )
 
 def model_optimizer(args, model, device):
-    model.train()
+    if hasattr(model, "train"):
+        model.train()
 
     if "channel_last" in args.optim:
         model = model.to(memory_format=torch.channels_last)
@@ -336,7 +337,8 @@ def iobench(args):
 
 
 def train_epoch(args, model, criterion, optimizer, loader, device, dtype, scaler=None):
-    model.train()
+    if hasattr(model, "train"):
+        model.train()
 
     set_to_none = "set_grad_none" in args.optim
 

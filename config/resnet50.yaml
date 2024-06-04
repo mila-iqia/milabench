@@ -53,20 +53,20 @@ resnet-matrix-noio:
       --fixed-batch: true
 
 
-resnet18-matrix:
-  matrix:
-    worker: [8]
-    batch-size: [256, 512, 1024]
-    loader: ['pytorch', 'dali']
+# resnet18-matrix:
+#   matrix:
+#     worker: [8]
+#     batch-size: [256, 512, 1024]
+#     loader: ['pytorch', 'dali']
 
-  job:
-    name: 'resnet18-w{worker}-bs{batch-size}-{loader}'
-    inherits: _resnet50
-    argv:
-      --model: resnet18
-      --batch-size: '{batch-size}'
-      --num-workers: '{worker}'
-      --loader: '{loader}'
+#   job:
+#     name: 'resnet18-w{worker}-bs{batch-size}-{loader}'
+#     inherits: _resnet50
+#     argv:
+#       --model: resnet18
+#       --batch-size: '{batch-size}'
+#       --num-workers: '{worker}'
+#       --loader: '{loader}'
 
 resnet-optim:
   matrix:
@@ -83,3 +83,19 @@ resnet-optim:
       --num-workers: '{worker}'
       --loader: '{loader}'
       --optim: '{optim}'
+
+
+image-loading:
+  matrix:
+    worker: [2, 4, 8, 16, 24, 32, 64]
+    batch-size: [32, 64, 128, 256, 512, 1024]
+    loader: ['pytorch', 'dali']
+
+  job:
+    name: 'imageloading-w{worker}-bs{batch-size}-{loader}'
+    inherits: _resnet50
+    argv:
+      --batch-size: '{batch-size}'
+      --num-workers: '{worker}'
+      --loader: '{loader}'
+      --iobench: true
