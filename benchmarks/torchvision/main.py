@@ -68,7 +68,9 @@ def scaling(enable, dtype):
 class SyntheticData:
     def __init__(self, model, device, batch_size, n, fixed_batch):
         self.n = n
-        self.inp = torch.randn((batch_size, 3, 224, 224))
+        model = model.to(device)
+        
+        self.inp = torch.randn((batch_size, 3, 224, 224), device=device)
         self.out = torch.rand_like(model(self.inp))
         self.fixed_batch = fixed_batch
 
