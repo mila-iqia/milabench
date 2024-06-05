@@ -1,0 +1,291 @@
+{"event": "config", "data": {"argv": {"--cpus_per_gpu": 8, "--dataset_config_name": "wikitext-103-v1", "--dataset_name": "wikitext", "--dataset_rev": "b08601e", "--max_train_steps": 100, "--model_name": "facebook/opt-6.7b", "--per_gpu_batch_size": 1, "--validation_split_percentage": 5}, "capabilities": {"nodes": 1}, "config_base": "/Users/satyaortiz-gagne/travail/mila/CODE/milabench/config", "config_file": "/Users/satyaortiz-gagne/travail/mila/CODE/milabench/config/standard.yaml", "definition": "/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/accelerate_opt", "dirs": {"base": "/Users/satyaortiz-gagne/travail/mila/milabench", "cache": "/Users/satyaortiz-gagne/travail/mila/milabench/cache", "data": "/Users/satyaortiz-gagne/travail/mila/milabench/data", "extra": "/Users/satyaortiz-gagne/travail/mila/milabench/extra/opt", "runs": "/Users/satyaortiz-gagne/travail/mila/milabench/runs", "venv": "/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch"}, "enabled": true, "gradient_accumulation_steps": 1, "group": "opt", "hash": "6b20148b6ef891f7800e687f0e01e031", "install_group": "torch", "max_duration": 600, "name": "opt-6_7b", "num_machines": 1, "plan": {"method": "njobs", "n": 1}, "run_name": "jofevozu.2024-04-01_14:01:06.047754", "system": {"cloud_profiles": {"azure__a100": {"location": "eastus2", "size": "Standard_NC24ads_A100_v4", "username": "ubuntu"}}, "nodes": [{"name": "local", "ip": "127.0.0.1", "port": 8123, "user": "ubuntu", "main": true, "hostname": "127.0.0.1", "aliaslist": [], "ipaddrlist": ["10.0.1.4", "fe80::6245:bdff:fe79:6a4b%eth0", "127.0.0.1", "00:00:00:00:00:00", "::1", "60:45:bd:79:6a:4b"], "local": true}], "self": {"name": "local", "ip": "127.0.0.1", "port": 8123, "user": "ubuntu", "main": true, "hostname": "127.0.0.1", "aliaslist": [], "ipaddrlist": ["10.0.1.4", "fe80::6245:bdff:fe79:6a4b%eth0", "127.0.0.1", "00:00:00:00:00:00", "::1", "60:45:bd:79:6a:4b"], "local": true}, "sshkey": null, "arch": "cuda"}, "tag": ["opt-6_7b", "local"], "tags": ["huggingface", "language-modeling", "llm", "multigpu", "nlp", "transformer"], "use_deepspeed": true, "validation": {"usage": {"gpu_load_threshold": 0.5, "gpu_mem_threshold": 0.5}}, "voir": {"options": {"interval": "1s", "stop": 60}}, "weight": 5.0}, "pipe": null}
+{"event": "meta", "data": {"cpu": {"count": 24, "brand": "AMD EPYC 7V13 64-Core Processor"}, "os": {"sysname": "Linux", "nodename": "vm", "release": "6.5.0-1017-azure", "version": "#17~22.04.1-Ubuntu SMP Sat Mar  9 04:50:38 UTC 2024", "machine": "x86_64"}, "accelerators": {"arch": "cuda", "gpus": {"GPU-5695a3a6-ca9e-87a2-4cc7-d8ddc448256b": {"device": "0", "product": "NVIDIA A100 80GB PCIe", "memory": {"used": 882.4375, "total": 81920.0}, "utilization": {"compute": 0, "memory": 0.010771942138671876}, "temperature": 67, "power": 54.174, "selection_variable": "CUDA_VISIBLE_DEVICES"}}}, "date": 1711996009.148776, "milabench": {"tag": "paice-v1-9-g03d3434", "commit": "03d343430e749135f99d19e9c89ed0d4414b83f6", "date": "2024-03-27 13:40:33 -0400"}, "pytorch": {"torch": "2.1.0+cu118", "compiler": "GCC 9.3", "cpp": "C++ Version: 201703", "intel": "Intel(R) oneAPI Math Kernel Library Version 2022.2-Product Build 20220804 for Intel(R) 64 architecture applications", "mkl": "OpenMP 201511 (a.k.a. OpenMP 4.5)", "openmp": "OpenMP 201511 (a.k.a. OpenMP 4.5)", "lapack": "LAPACK is enabled (usually provided by MKL)", "nnpack": "NNPACK is enabled", "cpu": "CPU capability usage: AVX2", "build_settings": {"BLAS_INFO": "mkl", "BUILD_TYPE": "Release", "CUDA_VERSION": "11.8", "CUDNN_VERSION": "8.7.0", "CXX_COMPILER": "/opt/rh/devtoolset-9/root/usr/bin/c++", "CXX_FLAGS": "-D_GLIBCXX_USE_CXX11_ABI=0 -fabi-version=11 -fvisibility-inlines-hidden -DUSE_PTHREADPOOL -DNDEBUG -DUSE_KINETO -DLIBKINETO_NOROCTRACER -DUSE_FBGEMM -DUSE_QNNPACK -DUSE_PYTORCH_QNNPACK -DUSE_XNNPACK -DSYMBOLICATE_MOBILE_DEBUG_HANDLE -O2 -fPIC -Wall -Wextra -Werror=return-type -Werror=non-virtual-dtor -Werror=bool-operation -Wnarrowing -Wno-missing-field-initializers -Wno-type-limits -Wno-array-bounds -Wno-unknown-pragmas -Wno-unused-parameter -Wno-unused-function -Wno-unused-result -Wno-strict-overflow -Wno-strict-aliasing -Wno-stringop-overflow -Wno-psabi -Wno-error=pedantic -Wno-error=old-style-cast -Wno-invalid-partial-specialization -Wno-unused-private-field -Wno-aligned-allocation-unavailable -Wno-missing-braces -fdiagnostics-color=always -faligned-new -Wno-unused-but-set-variable -Wno-maybe-uninitialized -fno-math-errno -fno-trapping-math -Werror=format -Werror=cast-function-type -Wno-stringop-overflow", "LAPACK_INFO": "mkl", "PERF_WITH_AVX": "1", "PERF_WITH_AVX2": "1", "PERF_WITH_AVX512": "1", "TORCH_DISABLE_GPU_ASSERTS": "ON", "TORCH_VERSION": "2.1.0", "USE_CUDA": "ON", "USE_CUDNN": "ON", "USE_EXCEPTION_PTR": "1", "USE_GFLAGS": "OFF", "USE_GLOG": "OFF", "USE_MKL": "ON", "USE_MKLDNN": "ON", "USE_MPI": "OFF", "USE_NCCL": "1", "USE_NNPACK": "ON", "USE_OPENMP": "ON", "USE_ROCM": "OFF"}}}, "pipe": null}
+{"event": "start", "data": {"command": ["/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/accelerate_opt/activator", "/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch", "accelerate", "launch", "--mixed_precision=fp16", "--dynamo_backend=no", "--machine_rank=0", "--num_machines=1", "--use_deepspeed", "--deepspeed_multinode_launcher=standard", "--zero_stage=2", "--gradient_accumulation_steps=1", "--num_cpu_threads_per_process=8", "--main_process_ip=127.0.0.1", "--main_process_port=8123", "--num_processes=1", "/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/accelerate_opt/main.py", "--cpus_per_gpu", "8", "--dataset_config_name", "wikitext-103-v1", "--dataset_name", "wikitext", "--dataset_rev", "b08601e", "--max_train_steps", "100", "--model_name", "facebook/opt-6.7b", "--per_gpu_batch_size", "1", "--validation_split_percentage", "5", "--cache", "/Users/satyaortiz-gagne/travail/mila/milabench/cache"], "time": 1711996009.1659405}, "pipe": null}
+{"event": "line", "data": "[2024-04-01 18:26:53,945] [INFO] [real_accelerator.py:158:get_accelerator] Setting ds_accelerator to cuda (auto detect)\n", "pipe": "stdout"}
+{"event": "line", "data": "[2024-04-01 18:26:54,257] [INFO] [comm.py:637:init_distributed] cdb=None\n", "pipe": "stdout"}
+{"event": "line", "data": "[2024-04-01 18:26:54,257] [INFO] [comm.py:668:init_distributed] Initializing TorchBackend in DeepSpeed with backend nccl\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [887.5625, 81920.0], "load": 0, "temperature": 64}}}, "pipe": "data"}
+{"event": "line", "data": "[04/01/24 18:26:54] INFO     [0/1] __main__ - Distributed          logging.py:60\n", "pipe": "stdout"}
+{"event": "line", "data": "                             environment: DEEPSPEED  Backend: nccl              \n", "pipe": "stdout"}
+{"event": "line", "data": "                             Num processes: 1                                   \n", "pipe": "stdout"}
+{"event": "line", "data": "                             Process index: 0                                   \n", "pipe": "stdout"}
+{"event": "line", "data": "                             Local process index: 0                             \n", "pipe": "stdout"}
+{"event": "line", "data": "                             Device: cuda:0                                     \n", "pipe": "stdout"}
+{"event": "line", "data": "                                                                                \n", "pipe": "stdout"}
+{"event": "line", "data": "                             Mixed precision type: fp16                         \n", "pipe": "stdout"}
+{"event": "line", "data": "                             ds_config: {'train_batch_size':                    \n", "pipe": "stdout"}
+{"event": "line", "data": "                             'auto',                                            \n", "pipe": "stdout"}
+{"event": "line", "data": "                             'train_micro_batch_size_per_gpu':                  \n", "pipe": "stdout"}
+{"event": "line", "data": "                             'auto',                                            \n", "pipe": "stdout"}
+{"event": "line", "data": "                             'gradient_accumulation_steps': 1,                  \n", "pipe": "stdout"}
+{"event": "line", "data": "                             'zero_optimization': {'stage': 2,                  \n", "pipe": "stdout"}
+{"event": "line", "data": "                             'offload_optimizer': {'device':                    \n", "pipe": "stdout"}
+{"event": "line", "data": "                             'none', 'nvme_path': None},                        \n", "pipe": "stdout"}
+{"event": "line", "data": "                             'offload_param': {'device': 'none',                \n", "pipe": "stdout"}
+{"event": "line", "data": "                             'nvme_path': None},                                \n", "pipe": "stdout"}
+{"event": "line", "data": "                             'stage3_gather_16bit_weights_on_model              \n", "pipe": "stdout"}
+{"event": "line", "data": "                             _save': False}, 'steps_per_print':                 \n", "pipe": "stdout"}
+{"event": "line", "data": "                             inf, 'fp16': {'enabled': True,                     \n", "pipe": "stdout"}
+{"event": "line", "data": "                             'auto_cast': True}, 'bf16':                        \n", "pipe": "stdout"}
+{"event": "line", "data": "                             {'enabled': False}}                                \n", "pipe": "stdout"}
+{"event": "line", "data": "                                                                                \n", "pipe": "stdout"}
+{"event": "line", "data": "/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/datasets/table.py:1421: FutureWarning: promote has been superseded by mode='default'.\n", "pipe": "stderr"}
+{"event": "line", "data": "  table = cls._concat_blocks(blocks, axis=0)\n", "pipe": "stderr"}
+{"event": "line", "data": "loading configuration file config.json from cache at /Users/satyaortiz-gagne/travail/mila/milabench/cache/huggingface/hub/models--facebook--opt-6.7b/snapshots/a45aa65bbeb77c1558bc99bedc6779195462dab0/config.json\n", "pipe": "stderr"}
+{"event": "line", "data": "Model config OPTConfig {\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"_name_or_path\": \"facebook/opt-6.7b\",\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"_remove_final_layer_norm\": false,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"activation_dropout\": 0.0,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"activation_function\": \"relu\",\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"architectures\": [\n", "pipe": "stderr"}
+{"event": "line", "data": "    \"OPTForCausalLM\"\n", "pipe": "stderr"}
+{"event": "line", "data": "  ],\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"attention_dropout\": 0.0,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"bos_token_id\": 2,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"do_layer_norm_before\": true,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"dropout\": 0.1,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"enable_bias\": true,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"eos_token_id\": 2,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"ffn_dim\": 16384,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"hidden_size\": 4096,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"init_std\": 0.02,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"layer_norm_elementwise_affine\": true,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"layerdrop\": 0.0,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"max_position_embeddings\": 2048,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"model_type\": \"opt\",\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"num_attention_heads\": 32,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"num_hidden_layers\": 32,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"pad_token_id\": 1,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"prefix\": \"</s>\",\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"torch_dtype\": \"float16\",\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"transformers_version\": \"4.35.0\",\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"use_cache\": true,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"vocab_size\": 50272,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"word_embed_proj_dim\": 4096\n", "pipe": "stderr"}
+{"event": "line", "data": "}\n", "pipe": "stderr"}
+{"event": "line", "data": "\n", "pipe": "stderr"}
+{"event": "line", "data": "loading configuration file config.json from cache at /Users/satyaortiz-gagne/travail/mila/milabench/cache/huggingface/hub/models--facebook--opt-6.7b/snapshots/a45aa65bbeb77c1558bc99bedc6779195462dab0/config.json\n", "pipe": "stderr"}
+{"event": "line", "data": "Model config OPTConfig {\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"_name_or_path\": \"facebook/opt-6.7b\",\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"_remove_final_layer_norm\": false,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"activation_dropout\": 0.0,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"activation_function\": \"relu\",\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"architectures\": [\n", "pipe": "stderr"}
+{"event": "line", "data": "    \"OPTForCausalLM\"\n", "pipe": "stderr"}
+{"event": "line", "data": "  ],\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"attention_dropout\": 0.0,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"bos_token_id\": 2,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"do_layer_norm_before\": true,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"dropout\": 0.1,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"enable_bias\": true,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"eos_token_id\": 2,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"ffn_dim\": 16384,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"hidden_size\": 4096,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"init_std\": 0.02,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"layer_norm_elementwise_affine\": true,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"layerdrop\": 0.0,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"max_position_embeddings\": 2048,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"model_type\": \"opt\",\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"num_attention_heads\": 32,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"num_hidden_layers\": 32,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"pad_token_id\": 1,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"prefix\": \"</s>\",\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"torch_dtype\": \"float16\",\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"transformers_version\": \"4.35.0\",\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"use_cache\": true,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"vocab_size\": 50272,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"word_embed_proj_dim\": 4096\n", "pipe": "stderr"}
+{"event": "line", "data": "}\n", "pipe": "stderr"}
+{"event": "line", "data": "\n", "pipe": "stderr"}
+{"event": "line", "data": "loading file vocab.json from cache at /Users/satyaortiz-gagne/travail/mila/milabench/cache/huggingface/hub/models--facebook--opt-6.7b/snapshots/a45aa65bbeb77c1558bc99bedc6779195462dab0/vocab.json\n", "pipe": "stderr"}
+{"event": "line", "data": "loading file merges.txt from cache at /Users/satyaortiz-gagne/travail/mila/milabench/cache/huggingface/hub/models--facebook--opt-6.7b/snapshots/a45aa65bbeb77c1558bc99bedc6779195462dab0/merges.txt\n", "pipe": "stderr"}
+{"event": "line", "data": "loading file tokenizer.json from cache at None\n", "pipe": "stderr"}
+{"event": "line", "data": "loading file added_tokens.json from cache at None\n", "pipe": "stderr"}
+{"event": "line", "data": "loading file special_tokens_map.json from cache at /Users/satyaortiz-gagne/travail/mila/milabench/cache/huggingface/hub/models--facebook--opt-6.7b/snapshots/a45aa65bbeb77c1558bc99bedc6779195462dab0/special_tokens_map.json\n", "pipe": "stderr"}
+{"event": "line", "data": "loading file tokenizer_config.json from cache at /Users/satyaortiz-gagne/travail/mila/milabench/cache/huggingface/hub/models--facebook--opt-6.7b/snapshots/a45aa65bbeb77c1558bc99bedc6779195462dab0/tokenizer_config.json\n", "pipe": "stderr"}
+{"event": "line", "data": "loading configuration file config.json from cache at /Users/satyaortiz-gagne/travail/mila/milabench/cache/huggingface/hub/models--facebook--opt-6.7b/snapshots/a45aa65bbeb77c1558bc99bedc6779195462dab0/config.json\n", "pipe": "stderr"}
+{"event": "line", "data": "Model config OPTConfig {\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"_name_or_path\": \"facebook/opt-6.7b\",\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"_remove_final_layer_norm\": false,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"activation_dropout\": 0.0,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"activation_function\": \"relu\",\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"architectures\": [\n", "pipe": "stderr"}
+{"event": "line", "data": "    \"OPTForCausalLM\"\n", "pipe": "stderr"}
+{"event": "line", "data": "  ],\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"attention_dropout\": 0.0,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"bos_token_id\": 2,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"do_layer_norm_before\": true,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"dropout\": 0.1,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"enable_bias\": true,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"eos_token_id\": 2,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"ffn_dim\": 16384,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"hidden_size\": 4096,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"init_std\": 0.02,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"layer_norm_elementwise_affine\": true,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"layerdrop\": 0.0,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"max_position_embeddings\": 2048,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"model_type\": \"opt\",\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"num_attention_heads\": 32,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"num_hidden_layers\": 32,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"pad_token_id\": 1,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"prefix\": \"</s>\",\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"torch_dtype\": \"float16\",\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"transformers_version\": \"4.35.0\",\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"use_cache\": true,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"vocab_size\": 50272,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"word_embed_proj_dim\": 4096\n", "pipe": "stderr"}
+{"event": "line", "data": "}\n", "pipe": "stderr"}
+{"event": "line", "data": "\n", "pipe": "stderr"}
+{"event": "line", "data": "loading configuration file config.json from cache at /Users/satyaortiz-gagne/travail/mila/milabench/cache/huggingface/hub/models--facebook--opt-6.7b/snapshots/a45aa65bbeb77c1558bc99bedc6779195462dab0/config.json\n", "pipe": "stderr"}
+{"event": "line", "data": "Model config OPTConfig {\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"_name_or_path\": \"facebook/opt-6.7b\",\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"_remove_final_layer_norm\": false,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"activation_dropout\": 0.0,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"activation_function\": \"relu\",\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"architectures\": [\n", "pipe": "stderr"}
+{"event": "line", "data": "    \"OPTForCausalLM\"\n", "pipe": "stderr"}
+{"event": "line", "data": "  ],\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"attention_dropout\": 0.0,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"bos_token_id\": 2,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"do_layer_norm_before\": true,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"dropout\": 0.1,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"enable_bias\": true,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"eos_token_id\": 2,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"ffn_dim\": 16384,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"hidden_size\": 4096,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"init_std\": 0.02,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"layer_norm_elementwise_affine\": true,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"layerdrop\": 0.0,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"max_position_embeddings\": 2048,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"model_type\": \"opt\",\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"num_attention_heads\": 32,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"num_hidden_layers\": 32,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"pad_token_id\": 1,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"prefix\": \"</s>\",\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"torch_dtype\": \"float16\",\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"transformers_version\": \"4.35.0\",\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"use_cache\": true,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"vocab_size\": 50272,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"word_embed_proj_dim\": 4096\n", "pipe": "stderr"}
+{"event": "line", "data": "}\n", "pipe": "stderr"}
+{"event": "line", "data": "\n", "pipe": "stderr"}
+{"event": "line", "data": "[04/01/24 18:26:55] WARNING  [0/1] __main__ - The tokenizer picked logging.py:60\n", "pipe": "stdout"}
+{"event": "line", "data": "                             seems to have a very large                         \n", "pipe": "stdout"}
+{"event": "line", "data": "                             `model_max_length`                                 \n", "pipe": "stdout"}
+{"event": "line", "data": "                             (1000000000000000019884624838656).                 \n", "pipe": "stdout"}
+{"event": "line", "data": "                             Picking 1024 instead. You can change               \n", "pipe": "stdout"}
+{"event": "line", "data": "                             that default value by passing                      \n", "pipe": "stdout"}
+{"event": "line", "data": "                             --block_size xxx.                                  \n", "pipe": "stdout"}
+{"event": "line", "data": "Generate config GenerationConfig {\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"bos_token_id\": 2,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"eos_token_id\": 2,\n", "pipe": "stderr"}
+{"event": "line", "data": "  \"pad_token_id\": 1\n", "pipe": "stderr"}
+{"event": "line", "data": "}\n", "pipe": "stderr"}
+{"event": "line", "data": "\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1468.375, 81920.0], "load": 0, "temperature": 63}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1468.375, 81920.0], "load": 0, "temperature": 63}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1468.375, 81920.0], "load": 0, "temperature": 62}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1468.375, 81920.0], "load": 0, "temperature": 61}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1468.375, 81920.0], "load": 0, "temperature": 61}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1468.375, 81920.0], "load": 0, "temperature": 60}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1468.375, 81920.0], "load": 0, "temperature": 60}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1468.375, 81920.0], "load": 0, "temperature": 59}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1468.375, 81920.0], "load": 0, "temperature": 59}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1468.375, 81920.0], "load": 0, "temperature": 58}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1468.375, 81920.0], "load": 0, "temperature": 58}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1468.375, 81920.0], "load": 0, "temperature": 57}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1468.375, 81920.0], "load": 0, "temperature": 57}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1468.375, 81920.0], "load": 0, "temperature": 56}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1468.375, 81920.0], "load": 0, "temperature": 56}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1468.375, 81920.0], "load": 0, "temperature": 55}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1468.375, 81920.0], "load": 0, "temperature": 55}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1468.375, 81920.0], "load": 0, "temperature": 55}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1468.375, 81920.0], "load": 0, "temperature": 54}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1468.375, 81920.0], "load": 0, "temperature": 54}}}, "pipe": "data"}
+{"event": "line", "data": "You are resizing the embedding layer without providing a `pad_to_multiple_of` parameter. This means that the new embedding dimension will be 50265. This might induce some performance reduction as *Tensor Cores* will not be available. For more details about this, or help on choosing the correct value for resizing, refer to this guide: https://docs.nvidia.com/deeplearning/performance/dl-performance-matrix-multiplication/index.html#requirements-tc\n", "pipe": "stderr"}
+{"event": "line", "data": "[04/01/24 18:27:56] INFO     [0/1] accelerate.accelerator - Since  logging.py:60\n", "pipe": "stdout"}
+{"event": "line", "data": "                             you passed both train and evaluation               \n", "pipe": "stdout"}
+{"event": "line", "data": "                             dataloader, `is_train_batch_min`                   \n", "pipe": "stdout"}
+{"event": "line", "data": "                             (here True will decide the                         \n", "pipe": "stdout"}
+{"event": "line", "data": "                             `train_batch_size` (1).                            \n", "pipe": "stdout"}
+{"event": "line", "data": "[2024-04-01 18:27:56,713] [INFO] [logging.py:96:log_dist] [Rank 0] DeepSpeed info: version=0.12.2, git-hash=unknown, git-branch=unknown\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1468.375, 81920.0], "load": 0, "temperature": 53}}}, "pipe": "data"}
+{"event": "line", "data": "[2024-04-01 18:27:58,465] [INFO] [logging.py:96:log_dist] [Rank 0] DeepSpeed Flops Profiler Enabled: False\n", "pipe": "stdout"}
+{"event": "line", "data": "[2024-04-01 18:27:58,466] [INFO] [logging.py:96:log_dist] [Rank 0] Using client Optimizer as basic optimizer\n", "pipe": "stdout"}
+{"event": "line", "data": "[2024-04-01 18:27:58,466] [INFO] [logging.py:96:log_dist] [Rank 0] Removing param_group that has no 'params' in the basic Optimizer\n", "pipe": "stdout"}
+{"event": "line", "data": "[2024-04-01 18:27:58,488] [INFO] [logging.py:96:log_dist] [Rank 0] DeepSpeed Basic Optimizer = AdamW\n", "pipe": "stdout"}
+{"event": "line", "data": "[2024-04-01 18:27:58,488] [INFO] [utils.py:56:is_zero_supported_optimizer] Checking ZeRO support for optimizer=AdamW type=<class 'torch.optim.adamw.AdamW'>\n", "pipe": "stdout"}
+{"event": "line", "data": "[2024-04-01 18:27:58,488] [INFO] [logging.py:96:log_dist] [Rank 0] Creating torch.float16 ZeRO stage 2 optimizer\n", "pipe": "stdout"}
+{"event": "line", "data": "[2024-04-01 18:27:58,488] [INFO] [stage_1_and_2.py:147:__init__] Reduce bucket size 500,000,000\n", "pipe": "stdout"}
+{"event": "line", "data": "[2024-04-01 18:27:58,489] [INFO] [stage_1_and_2.py:148:__init__] Allgather bucket size 500,000,000\n", "pipe": "stdout"}
+{"event": "line", "data": "[2024-04-01 18:27:58,489] [INFO] [stage_1_and_2.py:149:__init__] CPU Offload: False\n", "pipe": "stdout"}
+{"event": "line", "data": "[2024-04-01 18:27:58,489] [INFO] [stage_1_and_2.py:150:__init__] Round robin gradient partitioning: False\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1534.375, 81920.0], "load": 0.28, "temperature": 53}}}, "pipe": "data"}
+{"event": "line", "data": "[2024-04-01 18:28:01,939] [INFO] [utils.py:802:see_memory_usage] Before initializing optimizer states\n", "pipe": "stdout"}
+{"event": "line", "data": "[2024-04-01 18:28:01,939] [INFO] [utils.py:803:see_memory_usage] MA 37.21 GB         Max_MA 37.21 GB         CA 37.22 GB         Max_CA 37 GB \n", "pipe": "stdout"}
+{"event": "line", "data": "[2024-04-01 18:28:01,940] [INFO] [utils.py:810:see_memory_usage] CPU Virtual Memory:  used = 3.8 GB, percent = 1.8%\n", "pipe": "stdout"}
+{"event": "line", "data": "Traceback (most recent call last):\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/accelerate_opt/main.py\", line 430, in <module>\n", "pipe": "stderr"}
+{"event": "line", "data": "    main()\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/accelerate_opt/main.py\", line 347, in main\n", "pipe": "stderr"}
+{"event": "line", "data": "    ) = accelerator.prepare(\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/accelerate/accelerator.py\", line 1284, in prepare\n", "pipe": "stderr"}
+{"event": "line", "data": "    result = self._prepare_deepspeed(*args)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/accelerate/accelerator.py\", line 1666, in _prepare_deepspeed\n", "pipe": "stderr"}
+{"event": "line", "data": "    engine, optimizer, _, lr_scheduler = deepspeed.initialize(**kwargs)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/deepspeed/__init__.py\", line 171, in initialize\n", "pipe": "stderr"}
+{"event": "line", "data": "    engine = DeepSpeedEngine(args=args,\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/deepspeed/runtime/engine.py\", line 304, in __init__\n", "pipe": "stderr"}
+{"event": "line", "data": "    self._configure_optimizer(optimizer, model_parameters)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/deepspeed/runtime/engine.py\", line 1219, in _configure_optimizer\n", "pipe": "stderr"}
+{"event": "line", "data": "    self.optimizer = self._configure_zero_optimizer(basic_optimizer)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/deepspeed/runtime/engine.py\", line 1480, in _configure_zero_optimizer\n", "pipe": "stderr"}
+{"event": "line", "data": "    optimizer = DeepSpeedZeroOptimizer(\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/deepspeed/runtime/zero/stage_1_and_2.py\", line 510, in __init__\n", "pipe": "stderr"}
+{"event": "line", "data": "    self.initialize_optimizer_states()\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/deepspeed/runtime/zero/stage_1_and_2.py\", line 645, in initialize_optimizer_states\n", "pipe": "stderr"}
+{"event": "line", "data": "    self.optimizer.step()\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/optim/lr_scheduler.py\", line 68, in wrapper\n", "pipe": "stderr"}
+{"event": "line", "data": "    return wrapped(*args, **kwargs)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/optim/optimizer.py\", line 373, in wrapper\n", "pipe": "stderr"}
+{"event": "line", "data": "    out = func(*args, **kwargs)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/optim/optimizer.py\", line 76, in _use_grad\n", "pipe": "stderr"}
+{"event": "line", "data": "    ret = func(self, *args, **kwargs)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/optim/adamw.py\", line 173, in step\n", "pipe": "stderr"}
+{"event": "line", "data": "    self._init_group(\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/optim/adamw.py\", line 121, in _init_group\n", "pipe": "stderr"}
+{"event": "line", "data": "    state[\"exp_avg\"] = torch.zeros_like(\n", "pipe": "stderr"}
+{"event": "line", "data": "torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate 24.80 GiB. GPU 0 has a total capacty of 79.14 GiB of which 16.41 GiB is free. Including non-PyTorch memory, this process has 62.72 GiB memory in use. Of the allocated memory 62.01 GiB is allocated by PyTorch, and 11.34 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF\n", "pipe": "stderr"}
+{"event": "line", "data": "[2024-04-01 18:28:05,983] torch.distributed.elastic.multiprocessing.api: [ERROR] failed (exitcode: 1) local_rank: 0 (pid: 20648) of binary: /Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/bin/python\n", "pipe": "stderr"}
+{"event": "line", "data": "Traceback (most recent call last):\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/bin/accelerate\", line 8, in <module>\n", "pipe": "stderr"}
+{"event": "line", "data": "    sys.exit(main())\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/accelerate/commands/accelerate_cli.py\", line 47, in main\n", "pipe": "stderr"}
+{"event": "line", "data": "    args.func(args)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/accelerate/commands/launch.py\", line 979, in launch_command\n", "pipe": "stderr"}
+{"event": "line", "data": "    deepspeed_launcher(args)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/accelerate/commands/launch.py\", line 695, in deepspeed_launcher\n", "pipe": "stderr"}
+{"event": "line", "data": "    distrib_run.run(args)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/distributed/run.py\", line 797, in run\n", "pipe": "stderr"}
+{"event": "line", "data": "    elastic_launch(\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/distributed/launcher/api.py\", line 134, in __call__\n", "pipe": "stderr"}
+{"event": "line", "data": "    return launch_agent(self._config, self._entrypoint, list(args))\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/distributed/launcher/api.py\", line 264, in launch_agent\n", "pipe": "stderr"}
+{"event": "line", "data": "    raise ChildFailedError(\n", "pipe": "stderr"}
+{"event": "line", "data": "torch.distributed.elastic.multiprocessing.errors.ChildFailedError: \n", "pipe": "stderr"}
+{"event": "line", "data": "============================================================\n", "pipe": "stderr"}
+{"event": "line", "data": "/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/accelerate_opt/main.py FAILED\n", "pipe": "stderr"}
+{"event": "line", "data": "------------------------------------------------------------\n", "pipe": "stderr"}
+{"event": "line", "data": "Failures:\n", "pipe": "stderr"}
+{"event": "line", "data": "  <NO_OTHER_FAILURES>\n", "pipe": "stderr"}
+{"event": "line", "data": "------------------------------------------------------------\n", "pipe": "stderr"}
+{"event": "line", "data": "Root Cause (first observed failure):\n", "pipe": "stderr"}
+{"event": "line", "data": "[0]:\n", "pipe": "stderr"}
+{"event": "line", "data": "  time      : 2024-04-01_18:28:05\n", "pipe": "stderr"}
+{"event": "line", "data": "  host      : vm.internal.cloudapp.net\n", "pipe": "stderr"}
+{"event": "line", "data": "  rank      : 0 (local_rank: 0)\n", "pipe": "stderr"}
+{"event": "line", "data": "  exitcode  : 1 (pid: 20648)\n", "pipe": "stderr"}
+{"event": "line", "data": "  error_file: <N/A>\n", "pipe": "stderr"}
+{"event": "line", "data": "  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html\n", "pipe": "stderr"}
+{"event": "line", "data": "============================================================\n", "pipe": "stderr"}
+{"event": "end", "data": {"command": ["/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/accelerate_opt/activator", "/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch", "accelerate", "launch", "--mixed_precision=fp16", "--dynamo_backend=no", "--machine_rank=0", "--num_machines=1", "--use_deepspeed", "--deepspeed_multinode_launcher=standard", "--zero_stage=2", "--gradient_accumulation_steps=1", "--num_cpu_threads_per_process=8", "--main_process_ip=127.0.0.1", "--main_process_port=8123", "--num_processes=1", "/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/accelerate_opt/main.py", "--cpus_per_gpu", "8", "--dataset_config_name", "wikitext-103-v1", "--dataset_name", "wikitext", "--dataset_rev", "b08601e", "--max_train_steps", "100", "--model_name", "facebook/opt-6.7b", "--per_gpu_batch_size", "1", "--validation_split_percentage", "5", "--cache", "/Users/satyaortiz-gagne/travail/mila/milabench/cache"], "time": 1711996086.3043292, "return_code": 1}, "pipe": null}
