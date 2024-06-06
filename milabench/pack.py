@@ -43,10 +43,10 @@ def is_editable_install():
         return False
 
 
-def install_benchmate(pack):
+async def install_benchmate(pack):
     milabench = os.path.dirname(__file__)
     benchmate = os.path.join(milabench, "..", "benchmate")
-    pack.pip_install("-e", benchmate)
+    await pack.pip_install("-e", benchmate)
 
 
 class PackageCore:
@@ -375,7 +375,7 @@ class Package(BasePackage):
         assert self.phase == "install"
 
         if is_editable_install():
-            install_benchmate(self)
+            await install_benchmate(self)
         
         for reqs in self.requirements_files(self.config.get("install_variant", None)):
             if reqs.exists():
