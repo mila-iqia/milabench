@@ -27,6 +27,28 @@ from .utils import (
 )
 
 
+def is_editable_install():
+    import subprocess 
+    import json
+
+    try:
+        output = subprocess.check_output(["pip", "list", "-e", "--format", "json"])
+        editable_package = json.loads(output)
+
+        for p in editable_package:
+            if p["name"] == "milabench":
+                return True
+        return False
+    except:
+        return False
+
+
+def install_benchmate(pack):
+    milabench = os.path.dirname(__file__)
+    benchmate = os.path.join(milabench, "..", "benchmate")
+    pack.pip_install("-e", benchmate)
+
+
 class PackageCore:
     def __init__(self, config):
         self.pack_path = XPath(config["definition"])
@@ -94,7 +116,7 @@ class BasePackage:
         self.config = config
         self.phase = None
         self.processes = []
-
+        
     def copy(self, config):
         return type(self)(config=merge(self.config, config))
 
@@ -351,6 +373,10 @@ class Package(BasePackage):
             milabench in the venv, and then calling this method.
         """
         assert self.phase == "install"
+
+        if is_editable_install():
+            install_benchmate(self)
+        
         for reqs in self.requirements_files(self.config.get("install_variant", None)):
             if reqs.exists():
                 await self.pip_install("-r", reqs)
