@@ -5,16 +5,13 @@ import os
 import torch
 import torch.cuda.amp
 import torch.nn as nn
-import torchvision.datasets as datasets
 import torchvision.models as tvmodels
-import torchvision.transforms as transforms
 import torchcompat.core as accelerator
 
-import voir
-from voir.wrapper import DataloaderWrapper, StopProgram
-from giving import give, given
+from benchmate.dataloader import imagenet_dataloader, dataloader_arguments
 
-normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+from voir.wrapper import StopProgram
+
 
 def is_tf32_allowed(args):
     return "tf32" in args.precision
@@ -46,16 +43,6 @@ class NoScale:
         pass
 
 
-data_transforms = transforms.Compose(
-    [
-        transforms.RandomResizedCrop(224),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        normalize,
-    ]
-)
-
-
 @contextlib.contextmanager
 def scaling(enable, dtype):
     if enable:
@@ -64,124 +51,6 @@ def scaling(enable, dtype):
     else:
         yield
 
-
-class SyntheticData:
-    def __init__(self, model, device, batch_size, n, fixed_batch):
-        self.n = n
-        model = model.to(device)
-
-        self.inp = torch.randn((batch_size, 3, 224, 224), device=device)
-        self.out = torch.rand_like(model(self.inp))
-        self.fixed_batch = fixed_batch
-
-        self.inp.to(device)
-        self.out.to(device)
-
-    def __iter__(self):
-        inp, out = self.inp, self.out
-        for i in range(self.n):
-            if not self.fixed_batch:
-                inp = torch.rand_like(self.inp)
-                out = torch.rand_like(self.out)
-            yield (inp, out)
-
-    def __len__(self):
-        return self.n
-
-
-def dali(args, images_dir):
-    from nvidia.dali.pipeline import pipeline_def
-    import nvidia.dali.types as types
-    import nvidia.dali.fn as fn
-    from nvidia.dali.plugin.pytorch import DALIGenericIterator
-
-    @pipeline_def(num_threads=args.num_workers, device_id=0)
-    def get_dali_pipeline():
-        images, labels = fn.readers.file(
-            file_root=images_dir, 
-            random_shuffle=True, 
-            name="Reader",
-        )
-        
-        # decode data on the GPU
-        images = fn.decoders.image_random_crop(
-            images, 
-            device="mixed", 
-            output_type=types.RGB,
-        )
-        # the rest of processing happens on the GPU as well
-        images = fn.resize(images, resize_x=256, resize_y=256)
-        images = fn.crop_mirror_normalize(
-            images,
-            crop_h=224,
-            crop_w=224,
-            mean=[0.485 * 255, 0.456 * 255, 0.406 * 255],
-            std=[0.229 * 255, 0.224 * 255, 0.225 * 255],
-            mirror=fn.random.coin_flip()
-        )
-        return images, labels
-
-    train_data = DALIGenericIterator(
-        [get_dali_pipeline(batch_size=args.batch_size)],
-        ['data', 'label'],
-        reader_name='Reader'
-    )
-
-    class Adapter:
-        def __init__(self, iter):
-            self.iter = iter
-
-        def __len__(self):
-            return len(self.iter)
-        
-        def __iter__(self):
-            for data in self.iter:
-                x, y = data[0]['data'], data[0]['label']
-                yield x, torch.squeeze(y, dim=1).type(torch.LongTensor)
-
-    return Adapter(train_data)
-
-
-def dataloader(args, model):
-    if not args.data:
-        data_directory = os.environ.get("MILABENCH_DIR_DATA", None)
-        if data_directory:
-            args.data = os.path.join(data_directory, "FakeImageNet")
-
-    if args.fixed_batch:
-        args.synthetic_data = True
-
-    if args.synthetic_data:
-        args.data = None
-
-    if args.data:
-        if args.loader == "dali":
-            return dali(args, os.path.join(args.data, "train"))
-
-        train = datasets.ImageFolder(os.path.join(args.data, "train"), data_transforms)
-        return torch.utils.data.DataLoader(
-            train,
-            batch_size=args.batch_size,
-            num_workers=args.num_workers,
-            pin_memory=True,
-            shuffle=True,
-            # The dataloader needs a warmup sometimes
-            # by avoiding to go through too many epochs
-            # we reduce the standard deviation
-            # sampler=torch.utils.data.RandomSampler(
-            #     train, 
-            #     replacement=True, 
-            #     num_samples=len(train) * args.epochs
-            # )
-        )
-    
-    return SyntheticData(
-        model=model,
-        device=accelerator.fetch_device(0),
-        batch_size=args.batch_size,
-        n=1000,
-        fixed_batch=args.fixed_batch,
-    )
 
 def model_optimizer(args, model, device):
     if hasattr(model, "train"):
@@ -223,16 +92,9 @@ def main():
 
 def _main():
     parser = argparse.ArgumentParser(description="Torchvision models")
-    parser.add_argument(
-        "--batch-size",
-        type=int,
-        default=16,
-        metavar="N",
-        help="input batch size for training (default: 16)",
-    )
-    parser.add_argument(
-        "--loader", type=str, help="Dataloader implementation", default="pytorch"
-    )
+
+    dataloader_arguments(parser)
+
     parser.add_argument(
         "--optim", 
         type=str, 
@@ -269,34 +131,10 @@ def _main():
         help="random seed (default: 1234)",
     )
     parser.add_argument(
-        "--num-workers",
-        type=int,
-        default=8,
-        help="number of workers for data loading",
-    )
-    parser.add_argument("--data", type=str, help="data directory")
-    parser.add_argument(
-        "--synthetic-data", action="store_true", help="whether to use synthetic data"
-    )
-    parser.add_argument(
-        "--fixed-batch", action="store_true", help="use a fixed batch for training"
-    )
-    # parser.add_argument(
-    #     "--with-amp",
-    #     action="store_true",
-    #     help="whether to use mixed precision with amp",
-    # )
-    parser.add_argument(
         "--no-stdout",
         action="store_true",
         help="do not display the loss on stdout",
     )
-    # parser.add_argument(
-    #     "--no-tf32",
-    #     dest="allow_tf32",
-    #     action="store_false",
-    #     help="do not allow tf32",
-    # )
     parser.add_argument(
         "--precision",
         type=str,
@@ -327,7 +165,7 @@ def iobench(args):
     model = getattr(tvmodels, args.model)()
     model.to(device)
 
-    loader = dataloader(args, model)
+    loader = imagenet_dataloader(args, model)
     dtype = float_dtype(args.precision)
 
     for _ in range(args.epochs):
@@ -354,18 +192,13 @@ def train_epoch(args, model, criterion, optimizer, loader, device, dtype, scaler
             loss = criterion(output, target)
             loader.add_loss(loss)
 
-        if scaler:
             scaler.scale(loss).backward()
             accelerator.mark_step()
 
             scaler.step(optimizer)
-            scaler.update()
-        else:
-            loss.backward()
             accelerator.mark_step()
-            optimizer.step()
 
-        accelerator.mark_step()
+            scaler.update()
 
 def trainbench(args):
     torch.manual_seed(args.seed)
@@ -384,7 +217,7 @@ def trainbench(args):
 
     model, optimizer = accelerator.optimize(model, optimizer=optimizer, dtype=float_dtype(args.precision))
 
-    train_loader = dataloader(args, model)
+    train_loader = imagenet_dataloader(args, model)
 
     scaler = NoScale()
     if torch.cuda.is_available():

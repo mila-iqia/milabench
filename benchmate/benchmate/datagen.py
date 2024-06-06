@@ -7,16 +7,13 @@ import os
 from pathlib import Path
 import json
 import warnings
+
 warnings.filterwarnings('ignore')
+
+import torch
 
 from tqdm import tqdm
 
-TORCH_ERROR = None
-try:
-    import torch
-    import torch.distributed as dist
-except ImportError as err:
-    TORCH_ERROR = err
 
 
 class FakeInMemoryDataset:
@@ -32,9 +29,6 @@ class FakeInMemoryDataset:
 
 class FakeImageClassification(FakeInMemoryDataset):
     def __init__(self, shape, batch_size, batch_count):
-        if TORCH_ERROR:
-            raise TORCH_ERROR
-
         def producer(i):
             return (torch.randn(shape), i % 1000)
 
@@ -104,7 +98,7 @@ def generate_sets(root, sets, shape):
         json.dump(sets, fp)
 
 
-def main():
+def generate_fakeimagenet():
     parser = argparse.ArgumentParser()
     parser.add_argument("--batch-size", default=512, type=int)
     parser.add_argument("--batch-count", default=60, type=int)
@@ -129,4 +123,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    generate_fakeimagenet()
