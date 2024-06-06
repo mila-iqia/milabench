@@ -10,9 +10,11 @@ import torch.nn.functional as F
 import torchcompat.core as accelerator
 
 import model
-from giving import give
 import voir.wrapper
+import torchvision.transforms as transforms
+
 from synth import SyntheticData
+import dataloader
 
 
 def main():
@@ -75,6 +77,12 @@ def main():
         action="store_false",
         help="do not allow tf32",
     )
+    parser.add_argument(
+        "--loader",
+        type=str,
+        default="synthetic",
+        help="Dataloader to use",
+    )
 
     args = parser.parse_args()
 
@@ -96,35 +104,52 @@ def main():
     validationFlowBackWarp = validationFlowBackWarp.to(device)
 
     ###Load Datasets
+    def load_dataset():
+        if args.loader == "synthetic":
+            def igen():
+                sz = 352
+                f0 = torch.rand((3, sz, sz)) * 2 - 1
+                ft = torch.rand((3, sz, sz)) * 2 - 1
+                f1 = torch.rand((3, sz, sz)) * 2 - 1
+                return [f0, ft, f1]
 
-    # # Channel wise mean calculated on adobe240-fps training dataset
-    # mean = [0.429, 0.431, 0.397]
-    # std  = [1, 1, 1]
-    # normalize = transforms.Normalize(mean=mean,
-    #                                 std=std)
-    # transform = transforms.Compose([transforms.ToTensor(), normalize])
+            def ogen():
+                return torch.randint(0, 7, ())
 
-    # trainset = dataloader.SuperSloMo(root=args.dataset_root + '/train', transform=transform, train=True)
-    # trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.train_batch_size, shuffle=False)
+            trainset = SyntheticData(
+                n=args.train_batch_size, 
+                repeat=10000, 
+                generators=[igen, ogen]
+            )
 
-    def igen():
-        sz = 352
-        f0 = torch.rand((3, sz, sz)) * 2 - 1
-        ft = torch.rand((3, sz, sz)) * 2 - 1
-        f1 = torch.rand((3, sz, sz)) * 2 - 1
-        return [f0, ft, f1]
+            return torch.utils.data.DataLoader(
+                trainset, 
+                batch_size=args.train_batch_size,
+                num_workers=8
+            )
 
-    def ogen():
-        return torch.randint(0, 7, ())
+        # Channel wise mean calculated on adobe240-fps training dataset
+        transform = transforms.Compose([
+            transforms.ToTensor(), 
+            transforms.Normalize(
+                mean=[0.429, 0.431, 0.397],
+                std=[1, 1, 1]
+            )
+        ])
 
-    trainset = SyntheticData(
-        n=args.train_batch_size, repeat=10000, generators=[igen, ogen]
-    )
-    trainloader = torch.utils.data.DataLoader(
-        trainset, 
-        batch_size=args.train_batch_size,
-        num_workers=8
-    )
+        trainset = dataloader.SuperSloMo(root=args.dataset_root + '/train', transform=transform, train=True)
+
+        too_small = []
+        for i, p in enumerate(trainset.framesPath):
+            if len(p) < 12:
+                too_small.append(i)
+
+        for i in reversed(too_small):
+            del trainset.framesPath[i]
+
+        return torch.utils.data.DataLoader(trainset, batch_size=args.train_batch_size, shuffle=False)
+
+    trainloader = load_dataset()
 
     ###Utils
 

@@ -506,7 +506,6 @@ super-slomo:
     - video-interpolation
     - unet
     - convnet
-    - noio
   definition: ../benchmarks/super-slomo
   group: super-slomo
   install_group: torch
@@ -514,6 +513,8 @@ super-slomo:
     method: per_gpu
   argv:
     --train_batch_size: 32
+    --dataset_root: /tmp/milabench/cuda/results/data/FakeImageNet
+    --loader: pytorch
 
 ppo:
   inherits: _sb3

@@ -32,10 +32,9 @@ def instrument_main(ov, options: Config):
 
     import os
     import torchcompat.core as accelerator
-    from voir.wrapper import DataloaderWrapper, Wrapper
+    from voir.wrapper import Wrapper
 
     from timm.utils.distributed import is_global_primary
-    from timm.data import create_loader
 
     wrapper = Wrapper(
         accelerator.Event, 

@@ -1,5 +1,6 @@
 
-
+import os
+from collections import defaultdict
 
 
 def no_transform(args):
@@ -30,3 +31,20 @@ class TransformedDataset:
 
     def __getitem__(self, item):
         return self.transforms(self.dataset[item])
+
+
+
+class ImageNetAsFrames:
+    def __init__(self, folder) -> None:
+        self.clip = defaultdict(list)
+        for root, _, files in os.walk(folder):
+            clip_id = root.split("/")[-1]
+            video = self.clip[clip_id]
+            for frame in files:
+                video.append(frame)
+    
+    def __getitem__(self, item):
+        return self.clip[item]
+    
+    def __len__(self):
+        return len(self.clip)
