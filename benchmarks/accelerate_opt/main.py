@@ -58,11 +58,9 @@ _ = arguments()
 
 
 # You can also adapt this script on your own causal language modeling task. Pointers for this are left as comments.
-import json
 import logging
 import math
 import os
-import sys
 import time
 from dataclasses import dataclass
 from datetime import timedelta
@@ -88,9 +86,9 @@ from transformers import (
     default_data_collator,
     get_scheduler,
 )
-from voir.smuggle import SmuggleWriter
-from voir.instruments.gpu import get_gpu_info
-from voir.instruments.utils import Monitor
+from voir.wrapper import Wrapper
+
+from benchmate.monitor import milabench_sys_monitor
 
 logger = get_logger(__name__)
 
@@ -147,33 +145,7 @@ def main():
 
     if not is_prepare_phase and accelerator.is_main_process:
         # Set up logging for milabench (only in the run phase, for the main process)
-
-        data_file = SmuggleWriter(sys.stdout)
-        def mblog(data):
-            if data_file is not None:
-                print(json.dumps(data), file=data_file)
-
-        def monitor_fn():
-            data = {
-                gpu["device"]: {
-                    "memory": [gpu["memory"]["used"], gpu["memory"]["total"]],
-                    "load": gpu["utilization"]["compute"],
-                    "temperature": gpu["temperature"],
-                }
-                for gpu in get_gpu_info()["gpus"].values()
-            }
-            mblog({"task": "main", "gpudata": data})
-
-        monitor_fn()
-        monitor = Monitor(3, monitor_fn)
-        monitor.start()
-
-    else:
-
-        def mblog(data):
-            pass
-
-        monitor = None
+        milabench_sys_monitor()
 
     logging.basicConfig(
         level=logging.INFO,
@@ -374,7 +346,6 @@ def main():
     total_batch_size = (
         per_gpu_batch_size * accelerator.num_processes * gradient_accumulation_steps
     )
-    print("HERE", per_gpu_batch_size, total_batch_size)
 
     logger.info("***** Running training *****")
     logger.info(f"  Num examples = {len(train_dataset)}")
@@ -390,7 +361,7 @@ def main():
     starting_epoch = 0
     last_log_time = time.time()
 
-    from voir.wrapper import Wrapper
+    
     wrapper = Wrapper(
         event_fn=acc.Event, 
         earlystop=30, 
@@ -409,7 +380,6 @@ def main():
             loss = loss / gradient_accumulation_steps
             if accelerator.is_main_process:
                 loader.add_loss(loss)
-                # mblog({"task": "train", "loss": loss.detach().item()})
 
             accelerator.backward(loss)
 
