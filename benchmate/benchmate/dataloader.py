@@ -6,6 +6,7 @@ import torch.cuda.amp
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 import torchcompat.core as accelerator
+from torch.utils.data.distributed import DistributedSampler
 
 
 def generate_tensors(batch_size, shapes, device):
@@ -40,6 +41,25 @@ def generate_tensor_classification(model, batch_size, in_shape, device):
     return inp, out
 
 
+class FakeInMemoryDataset:
+    def __init__(self, producer, batch_size, batch_count):
+        self.data = [producer(i) for i in range(batch_size * batch_count)]
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, item):
+        return self.data[item]
+
+
+class FakeImageClassification(FakeInMemoryDataset):
+    def __init__(self, shape, batch_size, batch_count):
+        def producer(i):
+            return (torch.randn(shape), i % 1000)
+
+        super().__init__(producer, batch_size, batch_count)
+
+
 class SyntheticData:
     def __init__(self, tensors, n, fixed_batch):
         self.n = n
@@ -59,7 +79,7 @@ class SyntheticData:
         return self.n
 
 
-def dali(folder, batch_size, num_workers):
+def dali(folder, batch_size, num_workers, rank=0, world_size=1):
     from nvidia.dali.pipeline import pipeline_def
     import nvidia.dali.types as types
     import nvidia.dali.fn as fn
@@ -71,6 +91,8 @@ def dali(folder, batch_size, num_workers):
             file_root=folder, 
             random_shuffle=True, 
             name="Reader",
+            shard_id=rank,
+            num_shards=world_size,
         )
         
         # decode data on the GPU
@@ -112,7 +134,19 @@ def dali(folder, batch_size, num_workers):
     return Adapter(train_data)
 
 
-def pytorch(folder, batch_size, num_workers):
+def pytorch_fakedataset(folder, batch_size, num_workers):
+    train = FakeImageClassification((3, 224, 224), batch_size, 60)
+    
+    return torch.utils.data.DataLoader(
+        train,
+        batch_size=batch_size,
+        num_workers=num_workers,
+        pin_memory=True,
+        shuffle=True,
+    )
+
+
+def image_transforms():
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     data_transforms = transforms.Compose(
         [
@@ -122,22 +156,36 @@ def pytorch(folder, batch_size, num_workers):
             normalize,
         ]
     )
-        
-    train = datasets.ImageFolder(os.path.join(folder, "train"), data_transforms)
+    return data_transforms
+
+def pytorch(folder, batch_size, num_workers, distributed=False):
+    train = datasets.ImageFolder(
+        os.path.join(folder, "train"), 
+        image_transforms()
+    )
+
+    kwargs = {"shuffle": True}
+    if distributed:
+        kwargs["sampler"] = DistributedSampler(train)
+        kwargs["shuffle"] = False
+
+    # The dataloader needs a warmup sometimes
+    # by avoiding to go through too many epochs
+    # we reduce the standard deviation
+    if False:
+        kwargs["sampler"] = torch.utils.data.RandomSampler(
+            train, 
+            replacement=True, 
+            num_samples=len(train) * args.epochs
+        )
+        kwargs["shuffle"] = False
+
     return torch.utils.data.DataLoader(
         train,
         batch_size=batch_size,
         num_workers=num_workers,
         pin_memory=True,
-        shuffle=True,
-        # The dataloader needs a warmup sometimes
-        # by avoiding to go through too many epochs
-        # we reduce the standard deviation
-        # sampler=torch.utils.data.RandomSampler(
-        #     train, 
-        #     replacement=True, 
-        #     num_samples=len(train) * args.epochs
-        # )
+        **kwargs,
     )
 
 
@@ -167,7 +215,7 @@ def dataloader_arguments(parser: argparse.ArgumentParser):
         help="input batch size for training (default: 16)",
     )
     parser.add_argument(
-        "--loader", type=str,  help="Dataloader implementation", 
+        "--loader", type=str,  help="Dataloader implementation (dali, pytorch, synthetic_fixed, synthetic_random)", 
         default="pytorch"
     )
     parser.add_argument(
@@ -178,37 +226,41 @@ def dataloader_arguments(parser: argparse.ArgumentParser):
         "--data", type=str, default=os.environ.get("MILABENCH_DIR_DATA", None),
         help="data directory"
     )
-    parser.add_argument(
-        "--synthetic-data", action="store_true", 
-        help="whether to use synthetic data"
-    )
-    parser.add_argument(
-        "--fixed-batch", action="store_true", 
-        help="use a fixed batch for training"
-    )
 
-def imagenet_dataloader(args, model):
+
+def data_folder(args):
     if not args.data:
         data_directory = os.environ.get("MILABENCH_DIR_DATA", None)
         if data_directory:
             args.data = os.path.join(data_directory, "FakeImageNet")
+    return args.data
 
-    if args.fixed_batch:
-        args.synthetic_data = True
 
-    if args.synthetic_data:
-        args.data = None
+def imagenet_dataloader(args, model, rank=0, world_size=1):
+    if args.loader == "synthetic_random":
+        return synthetic(
+            model=model,
+            batch_size=args.batch_size,
+            fixed_batch=False
+        )
+    
+    if args.loader == "synthetic_fixed":
+        return synthetic(
+            model=model,
+            batch_size=args.batch_size,
+            fixed_batch=True
+        )
+    
+    if args.loader == "pytorch_fakedataset":
+        return pytorch_fakedataset(
+            None,
+            batch_size=args.batch_size,
+            num_workers=args.num_workers
+        )
 
-    if args.data:
-        folder = os.path.join(args.data, "train")
+    folder = os.path.join(data_folder(args), "train")
 
-        if args.loader == "dali":
-            return dali(folder, args.batch_size, args.num_workers)
-        
-        return pytorch(folder, args.batch_size, args.num_workers)
+    if args.loader == "dali":
+        return dali(folder, args.batch_size, args.num_workers, rank, world_size)
 
-    return synthetic(
-        model=model,
-        batch_size=args.batch_size,
-        fixed_batch=args.fixed_batch
-    )
+    return pytorch(folder, args.batch_size, args.num_workers, world_size > 1)

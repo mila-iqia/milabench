@@ -29,6 +29,7 @@ from voir.wrapper import DataloaderWrapper, StopProgram
 from voir.smuggle import SmuggleWriter
 from giving import give, given
 import torchcompat.core as accelerator
+from benchmate.dataloader import imagenet_dataloader, dataloader_arguments
 
 
 def ddp_setup(rank, world_size):
@@ -114,50 +115,16 @@ def image_transforms():
     )
     return data_transforms
 
-def prepare_dataloader(dataset: Dataset, args):
-    dsampler = DistributedSampler(dataset)
-
-    return DataLoader(
-        dataset,
-        batch_size=args.batch_size,
-        num_workers=args.num_workers if not args.noio else 0,
-        pin_memory=not args.noio,
-        shuffle=False,
-        sampler=dsampler
-    )
-
-class FakeDataset:
-    def __init__(self, args):
-        self.data = [
-            (torch.randn((3, 224, 224)), i % 1000) for i in range(60 * args.batch_size)
-        ]
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, item):
-        return self.data[item]
-
-
-def dataset(args):
-    if args.noio:
-        return FakeDataset(args)
-    else:
-        data_directory = os.environ.get("MILABENCH_DIR_DATA", None)
-        if args.data is None and data_directory:
-            args.data = os.path.join(data_directory, "FakeImageNet")
-
-        return datasets.ImageFolder(os.path.join(args.data, "train"), image_transforms())
+def prepare_dataloader(args, model, rank, world_size):
+    return imagenet_dataloader(args, model, rank, world_size)
 
 
 def load_train_objs(args):
-    train = dataset(args)
-
     model = getattr(torchvision_models, args.model)()
 
     optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
 
-    return train, model, optimizer
+    return model, optimizer
 
 
 def worker_main(rank: int, world_size: int, args):
@@ -166,8 +133,9 @@ def worker_main(rank: int, world_size: int, args):
 
         ddp_setup(rank, world_size)
 
-        dataset, model, optimizer = load_train_objs(args)
-        train_data = prepare_dataloader(dataset, args)
+        model, optimizer = load_train_objs(args)
+    
+        train_data = prepare_dataloader(args, model, rank, world_size)
 
         trainer = Trainer(model, train_data, optimizer, rank, world_size)
 
@@ -184,7 +152,7 @@ def worker_main(rank: int, world_size: int, args):
 
 def main():
     parser = argparse.ArgumentParser(description='simple distributed training job')
-    parser.add_argument('--batch-size', default=512, type=int, help='Input batch size on each device (default: 32)')
+    dataloader_arguments(parser)
     parser.add_argument(
         "--model", type=str, help="torchvision model name", default="resnet50"
     )
@@ -196,25 +164,12 @@ def main():
         help="number of epochs to train (default: 10)",
     )
     parser.add_argument(
-        "--num-workers",
-        type=int,
-        default=8,
-        help="number of workers for data loading",
-    )
-    parser.add_argument(
-        "--noio",
-        action='store_true',
-        default=False,
-        help="Disable IO by providing an in memory dataset",
-    )
-    parser.add_argument(
         "--precision",
         type=str,
         choices=["fp16", "fp32", "tf32", "tf32-fp16"],
         default="fp32",
         help="Precision configuration",
     )
-    parser.add_argument("--data", type=str, help="data directory")
     args = parser.parse_args()
     
     world_size = accelerator.device_count()

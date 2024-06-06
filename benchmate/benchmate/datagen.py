@@ -15,27 +15,6 @@ import torch
 from tqdm import tqdm
 
 
-
-class FakeInMemoryDataset:
-    def __init__(self, producer, batch_size, batch_count):
-        self.data = [producer(i) for i in range(batch_size * batch_count)]
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, item):
-        return self.data[item]
-
-
-class FakeImageClassification(FakeInMemoryDataset):
-    def __init__(self, shape, batch_size, batch_count):
-        def producer(i):
-            return (torch.randn(shape), i % 1000)
-
-        super().__init__(producer, batch_size, batch_count)
-
-
-
 def write(args):
     import torch 
     import torchvision.transforms as transforms

@@ -289,6 +289,9 @@ def resolve_argv(pack, argv):
     context["cpu_count"] = multiprocessing.cpu_count()
     context["cpu_per_gpu"] = multiprocessing.cpu_count() // device_count
     
+    context["milabench_data"] = pack.config.get("dirs", {}).get("data", None)
+    context["milabench_cache"] = pack.config.get("dirs", {}).get("cache", None)
+    
     max_worker = 16
     context["n_worker"] = min(context["cpu_per_gpu"], max_worker)
 

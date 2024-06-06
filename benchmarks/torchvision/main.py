@@ -157,10 +157,6 @@ def _main():
         trainbench(args)
 
 def iobench(args):
-    data_directory = os.environ.get("MILABENCH_DIR_DATA", None)
-    if args.data is None and data_directory:
-        args.data = os.path.join(data_directory, "FakeImageNet")
-        
     device = accelerator.fetch_device(0)
     model = getattr(tvmodels, args.model)()
     model.to(device)
