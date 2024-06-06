@@ -374,15 +374,15 @@ class Package(BasePackage):
         """
         assert self.phase == "install"
 
-        if is_editable_install():
-            await install_benchmate(self)
-        
         for reqs in self.requirements_files(self.config.get("install_variant", None)):
             if reqs.exists():
                 await self.pip_install("-r", reqs)
             else:
                 raise FileNotFoundError(f"Requirements file not found: {reqs}")
 
+        if is_editable_install():
+            await install_benchmate(self)
+        
     async def pin(
         self,
         clear_previous: bool = True,
