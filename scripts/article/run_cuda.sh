@@ -53,6 +53,8 @@ install_prepare() {
     milabench prepare "$@"
 }
 
+module load cuda/12.3.2
+
 if [ ! -d "$MILABENCH_WORDIR" ]; then
     install_prepare 
 else

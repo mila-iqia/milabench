@@ -59,10 +59,8 @@ def huggingface_main(args, model, config):
     import transformers
     from transformers import LlamaForCausalLM, LlamaTokenizerFast
     from transformers.models.llama.configuration_llama import LlamaConfig
-    from voir.wrapper import DataloaderWrapper, Wrapper
     from datasets import load_dataset
-    import optimum.habana
-    
+
     # Dataset here
     println("Dataset")
     dataset = load_dataset("wikitext", "wikitext-103-v1")
@@ -173,8 +171,11 @@ def main():
 
 
 if __name__ == "__main__":
+    from voir.wrapper import StopProgram
+    import traceback
     try:
         main()
-    except Exception as err:
-        # Habana likes to eat exceptions
-        print(err)
+    except StopProgram:
+        print("Early stopped")
+    except Exception:
+        traceback.print_exc()

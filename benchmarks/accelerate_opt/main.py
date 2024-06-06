@@ -127,7 +127,6 @@ def main():
             rank=int(os.environ["RANK"]),
             world_size=int(os.environ["WORLD_SIZE"]),
         )
-        print(init_process_group_kwargs.backend)
 
         # Accelerator SUCK, it is impossible to make it use hccl
         # We can bypass Accelerator logic by initializing the group ourselves

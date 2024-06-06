@@ -197,8 +197,13 @@ if __name__ == "__main__":
     parser.add_argument("--mode", type=str, default="train", choices=["train", "test"])
     parser.add_argument("--use_tensorboard", type=str2bool, default=False)
 
-    mbconfig = json.loads(os.environ["MILABENCH_CONFIG"])
-    datadir = mbconfig["dirs"]["extra"]
+    # try:
+    #     mbconfig = json.loads(os.environ["MILABENCH_CONFIG"])
+    #     datadir = mbconfig["dirs"]["extra"]
+    # except:
+    #     pass
+
+    datadir = "/tmp/milabench/cuda/results/data"
 
     # Directories.
     parser.add_argument("--celeba_image_dir", type=str, default="data/celeba/images")
