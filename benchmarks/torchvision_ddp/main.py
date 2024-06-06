@@ -2,32 +2,22 @@
 
 import argparse
 import os
-import sys
-import json
-import tqdm
 import warnings
 warnings.filterwarnings('ignore')
 
 import torch
 import torch.nn.functional as F
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 import torch.multiprocessing as mp
 
-import torch.distributed as dist
-
-from torch.utils.data.distributed import DistributedSampler
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
 from torch.distributed import destroy_process_group
 
 import torchvision.transforms as transforms
 import torchvision.models as torchvision_models
-import torchvision.datasets as datasets
 
-import voir
 from voir.wrapper import DataloaderWrapper, StopProgram
-from voir.smuggle import SmuggleWriter
-from giving import give, given
 import torchcompat.core as accelerator
 from benchmate.dataloader import imagenet_dataloader, dataloader_arguments
 

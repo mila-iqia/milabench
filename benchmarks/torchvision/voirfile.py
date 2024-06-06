@@ -28,6 +28,8 @@ class Config:
 @configurable
 def instrument_main(ov, options: Config):
     import torchcompat.core as accelerator
+    from ptera import refstring
+    from benchmate.dataloader import imagenet_dataloader
 
     yield ov.phases.init
 
@@ -52,7 +54,7 @@ def instrument_main(ov, options: Config):
         batch_size_fn=lambda x: len(x[0])
     )
 
-    probe = ov.probe("//dataloader() as loader", overridable=True)
+    probe = ov.probe(f"//{refstring(imagenet_dataloader)}() as loader", overridable=True)
     probe['loader'].override(wrapper.loader)
 
     probe = ov.probe("//train_epoch > criterion", overridable=True)

@@ -19,10 +19,6 @@ class TimmBenchmarkPack(Package):
     def argv(self):
         return [
             *super().argv,
-            "--data-dir",
-            self.dirs.data,
-            "--dataset",
-            "FakeImageNet",
             "--output",
             self.dirs.extra / self.logdir.name / self.tag,
             "--checkpoint-hist",

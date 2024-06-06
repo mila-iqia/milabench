@@ -186,9 +186,9 @@ Instrumentations
 To minimize code change, milabench use `ptera <https://github.com/breuleux/ptera>`_ to modify
 the code that will be run and insert the necessary hooks to measure performance.
 
-The hooks are defined inside the `voirfile.py`.
-The example below override the return value of the `dataloader()` function which is defined in the `__main__` module.
-It wraps the original object with a custom wrapper that will time the time between `__next__` calls.
+The hooks are defined inside the ``voirfile.py``.
+The example below override the return value of the ``dataloader()`` function which is defined in the ``__main__`` module.
+It wraps the original object with a custom wrapper that will time the time between ``__next__`` calls.
 
 This allows milabench to integrate benchmarks from code coming from third parties without modifying the code directly.
 
@@ -205,24 +205,31 @@ This allows milabench to integrate benchmarks from code coming from third partie
 Execution Flow
 --------------
 
-* `milabench install`
+* ``milabench install``
    * Creates virtual env for benchmarks and install their dependencies
-   * Modify: `$MILABENCH_BASE/venv/{bench}`
+   * Modify: ``$MILABENCH_BASE/venv/{bench}``
 
-* `milabench prepare`
+* ``milabench prepare``
    * Call the prepare script for each benchmarks to download/generate dataset
-   * Modify: `$MILABENCH_BASE/data/{dataset}`
+   * Modify: ``$MILABENCH_BASE/data/{dataset}``
 
-* `milabench run`
+* ``milabench run``
    * Execute each benchmark
-   * Modify: `$MILABENCH_BASE/runs/{runame}.{time}`
-
+   * Modify: ``$MILABENCH_BASE/runs/{runame}.{time}``
+   * Steps
+      * **init**: Voir has initialized itself. You can add command-line arguments here.
+      * **parse_args**: The command-line arguments have been parsed.
+      * **load_script**: The script has been loaded: its imports have been done, its functions defined,
+        but the top level statements have not been executed. You can perform some
+        manipulations prior to the script running.
+      * **run_script**: the script will start to run now
+      * **finalize**: tearing down
 
 How do I
 --------
 
 * I want to run a benchmark without milabench for debugging purposes
-   * `milabench dev {benchname}` will open bash with the benchmark venv sourced
-   * alternatively: `source $MILABENCH_BASE/venv/torch/bin/activate`
+   * ``milabench dev {benchname}`` will open bash with the benchmark venv sourced
+   * alternatively: ``source $MILABENCH_BASE/venv/torch/bin/activate``
 
 

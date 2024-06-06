@@ -99,6 +99,8 @@ _timm:
     --amp-dtype: bfloat16
     --device: '{arch}'
     --val-split: ''
+    --data-dir: "{milabench_data}"
+    --dataset: "FakeImageNet"
 
 _sb3:
   inherits: _defaults
@@ -192,7 +194,9 @@ resnet50:
     --model: resnet50
     --batch-size: 64
     --num-workers: "{cpu_per_gpu}"
-
+    --loader: pytorch
+    --data: "{milabench_data}/FakeImageNet"
+  
 resnet50-noio:
   inherits: _torchvision
   tags:
@@ -206,8 +210,7 @@ resnet50-noio:
     --model: resnet50
     --batch-size: 64
     --num-workers: 8
-    --synthetic-data: true
-
+    --loader: synthetic_fixed
 
 resnet152-ddp:
   inherits: _torchvision_ddp
@@ -221,6 +224,8 @@ resnet152-ddp:
     --model: resnet152
     --batch-size: 256
     --num-workers: 8
+    --loader: dali
+    --data: "{milabench_data}/FakeImageNet"
 
 efficientnet_b4:
   inherits: _torchvision
