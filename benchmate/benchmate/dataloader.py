@@ -123,6 +123,11 @@ def dali(folder, batch_size, num_workers, rank=0, world_size=1):
         def __init__(self, iter):
             self.iter = iter
 
+        class sampler:
+            @staticmethod
+            def set_epoch(epoch):
+                pass
+
         def __len__(self):
             return len(self.iter)
         
@@ -160,7 +165,7 @@ def image_transforms():
 
 def pytorch(folder, batch_size, num_workers, distributed=False):
     train = datasets.ImageFolder(
-        os.path.join(folder, "train"), 
+        folder, 
         image_transforms()
     )
 
