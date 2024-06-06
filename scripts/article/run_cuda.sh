@@ -62,6 +62,9 @@ fi
 
 cd $MILABENCH_WORDIR
 
+(cd $MILABENCH_WORDIR/milabench && git pull origin intel)
+pip install -e $MILABENCH_WORDIR/milabench
+
 #
 #   Run the benchmakrs
 milabench run "$@"
