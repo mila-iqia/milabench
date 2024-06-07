@@ -106,7 +106,12 @@ class Sizer:
             return None
 
         config = self.benchscaling(benchmark)
-
+        model = config.get("model", None)
+        
+        if model is None:
+            print(f"Missing batch-size model for {benchmark}")
+            return 1
+            
         data = list(sorted(config["model"].items(), key=lambda x: x[0]))
         mem = [to_octet(v[1]) for v in data]
         size = [float(v[0]) for v in data]
