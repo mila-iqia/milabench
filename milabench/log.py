@@ -225,7 +225,7 @@ class DashFormatter(BaseLogger):
     def prune(self):
         now = time.time()
         for tag, endtime in list(self.endtimes.items()):
-            if now - endtime > 60:
+            if now - endtime > 10:
                 del self.endtimes[tag]
                 del self.rows[tag]
 
