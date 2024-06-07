@@ -161,7 +161,7 @@ class Sizer:
             return argv
 
         for i, arg in enumerate(argv):
-            if arg.endswith(argname):
+            if str(arg).endswith(argname):
                 break
         else:
             # add the new argument
