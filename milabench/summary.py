@@ -6,16 +6,16 @@ import numpy as np
 from .utils import error_guard
 
 
-@error_guard(None)
-def aggregate(run_data):
-    """Group all the data inside a dictionary of lists"""
-    omnibus = defaultdict(list)
-    config = None
-    start = None
-    end = None
-    early_stop = False
 
-    for entry in run_data:
+class Aggregator:
+    def __int__(self):
+        self.omnibus = defaultdict(list)
+        self.config = None
+        self.start = None
+        self.end = None
+        self.early_stop = False
+
+    def event_aggregator(self, entry):
         event = entry["event"]
 
         if event == "config":
@@ -27,62 +27,80 @@ def aggregate(run_data):
             for k, v in data.items():
                 if task is not None and k == "rate":
                     k = f"{task}_{k}"
-                omnibus[k].append(v)
+                self.omnibus[k].append(v)
 
         elif event == "line":
-            omnibus[entry["pipe"]].append(entry["data"])
+            self.omnibus[entry["pipe"]].append(entry["data"])
 
         elif event == "stop":
-            early_stop = True
+            self.early_stop = True
 
         elif event == "start":
-            assert start is None
-            start = entry["data"]
+            assert self.start is None
+            self.start = entry["data"]
 
         elif event == "end":
-            assert end is None
-            end = entry["data"]
+            assert self.end is None
+            self.end = entry["data"]
 
-    if not config:
-        # This is not a run
-        return None
+    def aggregate(self, run_data):
+        for entry in run_data:
+            self.event_aggregator(entry)
 
-    assert config and start and end
+    def group_by(self):
+        if not self.config:
+            # This is not a run
+            return None
 
-    device = config.get("device", None)
-    omnibus["gpudata"] = [
-        {str(device): entry[str(device)]} if device is not None else entry
-        for entry in omnibus.get("gpudata", [])
-        if device is None or str(device) in entry
-    ]
+        assert self.config and start and end, "Missing metrics"
 
-    if device is not None:
-        omnibus["per_gpu"] = [(device, tr) for tr in omnibus["train_rate"]]
+        device = self.config.get("device", None)
 
-    if "loss" in omnibus:
-        fl, ll = omnibus["loss"][0], omnibus["loss"][-1]
-        omnibus["loss_gain"] = [ll - fl]
+        newdata = []
+        for entry in self.omnibus.get("gpudata", [])
+            if device is None or str(device) in entry
+                if device is not None:
+                    newdata.append({str(device): entry[str(device)]})
+                else:
+                    newdata.append(entry)
+        self.omnibus["gpudata"] = newdata
 
-    omnibus["walltime"] = [end["time"] - start["time"]]
+        if device is not None:
+            self.omnibus["per_gpu"] = [(device, tr) for tr in self.omnibus["train_rate"]]
 
-    success = early_stop or (
-        end["return_code"] == 0
-        and not any(isnan(loss) for loss in omnibus.get("loss", []))
-        and bool(omnibus.get("train_rate", []))
-    )
+        if "loss" in self.omnibus:
+            fl, ll = self.omnibus["loss"][0], self.omnibus["loss"][-1]
+            self.omnibus["loss_gain"] = [ll - fl]
 
-    if "nolog" in config["tag"]:
-        success = True
+        self.omnibus["walltime"] = [self.end["time"] - self.start["time"]]
 
-    omnibus["success"] = [success]
+        success = self.early_stop or (
+            end["return_code"] == 0
+            and not any(isnan(loss) for loss in self.omnibus.get("loss", []))
+            and bool(self.omnibus.get("train_rate", []))
+        )
 
-    return {
-        "config": config,
-        "start": start,
-        "end": end,
-        "data": omnibus,
-    }
+        if "nolog" in self.config["tag"]:
+            success = True
 
+        self.omnibus["success"] = [success]
+
+        return {
+            "config": self.config,
+            "start": self.start,
+            "end": self.end,
+            "data": self.omnibus,
+        }
+
+
+
+@error_guard(None)
+def aggregate(run_data):
+    """Group all the data inside a dictionary of lists"""
+
+    agg = Aggregator()
+    agg.aggregate(run_data)
+    return agg.group_by()
 
 def _classify(all_aggregates):
     """Group data by benchmark names"""
@@ -175,6 +193,10 @@ def _summarize(group):
 
 def make_summary(runs):
     aggs = [agg for run in runs if (agg := aggregate(run))]
+    return make_summary_from_aggregates(aggs)
+
+
+def make_summary_from_aggregates(aggs):
     classified = _classify(aggs)
     merged = {name: _merge(runs) for name, runs in classified.items()}
     summarized = {name: _summarize(agg) for name, agg in merged.items()}

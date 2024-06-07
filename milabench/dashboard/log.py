@@ -15,6 +15,7 @@ from rich.table import Table
 from rich.text import Text
 
 from .fs import XPath
+from .config import get_run_count
 
 T = Terminal()
 color_wheel = [T.cyan, T.magenta, T.yellow, T.red, T.green, T.blue]
@@ -221,11 +222,34 @@ class DashFormatter(BaseLogger):
         self.rows = defaultdict(dict)
         self.endtimes = {}
         self.early_stop = {}
+        self.prune_delay = 30
+
+        self.current = 0
+        self.total = get_run_count()
+        self.rows["GLOBAL"] = {
+            "progress": self._make_global_progress_bar()
+        }
+
+    def _make_global_progress_bar(self):
+        progress_bar = Progress(
+            BarColumn(),
+            TimeRemainingColumn(),
+            TextColumn("({task.completed}/{task.total})"),
+        )
+        progress_bar._task = progress_bar.add_task("progress")
+        self._update_global(0, self.total)
+        return progress_bar
+
+    def _update_global(self, inc):
+        self.current += inc
+        self.rows["GLOBAL"].update(
+            progress_bar._task, completed=self.current, total=self.total
+        )
 
     def prune(self):
         now = time.time()
         for tag, endtime in list(self.endtimes.items()):
-            if now - endtime > 10:
+            if now - endtime > self.prune_delay:
                 del self.endtimes[tag]
                 del self.rows[tag]
 
@@ -253,6 +277,7 @@ class DashFormatter(BaseLogger):
         self.early_stop[entry.tag] = True
 
     def on_end(self, entry, data, row):
+        self._update_global(1)
         self.endtimes[entry.tag] = time.time()
 
 

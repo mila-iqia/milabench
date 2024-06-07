@@ -200,7 +200,7 @@ def make_dataframe(summary, compare=None, weights=None):
         )
     )
 
-    return DataFrame(
+    df = DataFrame(
         {
             key: _make_row(
                 summary.get(key, {}),
@@ -210,6 +210,10 @@ def make_dataframe(summary, compare=None, weights=None):
             for key in all_keys
         }
     ).transpose()
+    
+    df = df[sorted(df.columns, key=lambda k: columns_order.get(k, 0))]
+
+    return df
 
 
 @error_guard({})
@@ -229,9 +233,6 @@ def make_report(
         weights = dict()
 
     df = make_dataframe(summary, compare, weights)
-
-    # Reorder columns
-    df = df[sorted(df.columns, key=lambda k: columns_order.get(k, 0))]
 
     out = Outputter(stdout=stream, html=html)
 

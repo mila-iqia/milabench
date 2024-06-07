@@ -11,7 +11,16 @@ from .fs import XPath
 from .merge import merge
 
 system_global = contextvars.ContextVar("system")
-config_global = contextvars.ContextVar("Config")
+config_global = contextvars.ContextVar("config")
+execution_count = contextvars.ContextVar("count")
+
+
+def set_run_count(total):
+    execution_count.set(total)
+
+
+def get_run_count():
+    return execution_count.get()
 
 
 def relative_to(pth, cwd):

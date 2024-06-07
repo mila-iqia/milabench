@@ -14,7 +14,8 @@ from ..common import (
     run_with_loggers,
     validation_names,
 )
-from ..log import (
+from ..dashbaord.live_report import LiveReportFormatter
+from ..dashboard.log import (
     DataReporter,
     LongDashFormatter,
     ShortDashFormatter,
@@ -75,6 +76,7 @@ def cli_run(args=None):
     dash_class = {
         "short": ShortDashFormatter,
         "long": LongDashFormatter,
+        "live": LiveReportFormatter
         "no": None,
     }.get(args.dash, None)
 

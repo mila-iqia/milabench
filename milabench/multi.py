@@ -17,6 +17,7 @@ from .remote import (
     milabench_remote_prepare,
     milabench_remote_run,
 )
+from .config import set_run_count
 from .utils import make_constraints_file
 
 here = XPath(__file__).parent
@@ -154,8 +155,24 @@ class MultiPackage:
 
         await self.do_phase("prepare", remote_task, "prepare")
 
+    def count_runs(self):
+        acc = 0
+        for index in range(repeat):
+            for pack in self.packs.values():
+                if not await is_system_capable(pack):
+                    continue
+
+                exec_plan = make_execution_plan(pack, index, repeat)
+
+                if isinstance(exec_plan, PerGPU):
+                    acc += len(exec_plan.gpus)
+                else:
+                    acc += 1
+        return acc
+
     async def do_run(self, repeat=1):
         setup = self.setup_pack()
+        set_run_count(self.count_runs())
 
         if is_remote(setup):
             # if we are not on the main node right now

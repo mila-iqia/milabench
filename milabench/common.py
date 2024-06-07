@@ -17,7 +17,7 @@ from milabench.utils import available_layers, blabla, multilogger
 
 from .config import build_config, build_system_config
 from .fs import XPath
-from .log import TerminalFormatter
+from .dashboard.log import TerminalFormatter
 from .merge import merge
 from .multi import MultiPackage
 from .report import make_report
