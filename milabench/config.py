@@ -1,6 +1,8 @@
 import contextvars
+import hashlib
 import os
 import socket
+from copy import deepcopy
 
 import psutil
 import yaml
@@ -57,6 +59,16 @@ def resolve_inheritance(bench_config, all_configs):
     return bench_config
 
 
+def compute_config_hash(config):
+    config = deepcopy(config)
+    for entry in config:
+        config[entry]["dirs"] = {}
+        config[entry]["config_base"] = ""
+        config[entry]["config_file"] = ""
+        config[entry]["run_name"] = ""
+    return hashlib.md5(str(config).encode("utf8")).hexdigest()
+
+
 def finalize_config(name, bench_config):
     bench_config["name"] = name
     if "definition" in bench_config:
@@ -75,6 +87,8 @@ def build_config(*config_files):
     all_configs = {}
     for layer in _config_layers(config_files):
         all_configs = merge(all_configs, layer)
+
+    all_configs["*"]["hash"] = compute_config_hash(all_configs)
 
     for name, bench_config in all_configs.items():
         all_configs[name] = resolve_inheritance(bench_config, all_configs)
@@ -114,7 +128,7 @@ def get_remote_ip():
 def _resolve_ip(ip):
     # Resolve the IP
     try:
-        hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(ip)
+        hostname, aliaslist, ipaddrlist = socket.gethostbyname_ex(ip)
         lazy_raise = None
     except socket.gaierror as err:
         # Get Addr Info (GAI) Error
@@ -159,6 +173,10 @@ def resolve_addresses(nodes):
         is_local = (
             ("127.0.0.1" in ipaddrlist)
             or (hostname in ("localhost", socket.gethostname()))
+            # Tmp workaround until networking on azure allows to associate the
+            # local hostname (`hostname.split(".")[0]`) with the public fqdn
+            # (hostname.split(".")[0].*.cloudapp.azure.com)
+            or (hostname.split(".")[0] == socket.gethostname())
             or len(ip_list.intersection(ipaddrlist)) > 0
         )
         node["local"] = is_local
@@ -213,9 +231,9 @@ def build_system_config(config_file, defaults=None, gpu=True):
             config = yaml.safe_load(cf)
 
     if defaults:
-        config = merge(defaults, config)
+        config["system"] = merge(defaults["system"], config["system"])
 
-    system = config.get("system", {})
+    system = config["system"]
 
     # capacity is only required if batch resizer is enabled
     if (gpu or is_autoscale_enabled()) and not "gpu" not in system:
