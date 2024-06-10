@@ -521,9 +521,10 @@ super-slomo:
   plan:
     method: per_gpu
   argv:
-    --train_batch_size: 32
-    --dataset_root: /tmp/milabench/cuda/results/data/FakeImageNet
+    --train_batch_size: 64
+    --dataset_root: "{milabench_data}/FakeImageNet"
     --loader: pytorch
+    --num_workers: 8
 
 ppo:
   inherits: _sb3

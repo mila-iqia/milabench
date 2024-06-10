@@ -83,6 +83,13 @@ def main():
         default="synthetic",
         help="Dataloader to use",
     )
+    parser.add_argument(
+        "--num_workers",
+        type=int,
+        default=8,
+        help="Dataloader to use",
+    )
+
 
     args = parser.parse_args()
 
@@ -147,7 +154,12 @@ def main():
         for i in reversed(too_small):
             del trainset.framesPath[i]
 
-        return torch.utils.data.DataLoader(trainset, batch_size=args.train_batch_size, shuffle=False)
+        return torch.utils.data.DataLoader(
+            trainset, 
+            batch_size=args.train_batch_size, 
+            shuffle=False,
+            num_workers=args.num_workers
+        )
 
     trainloader = load_dataset()
 
