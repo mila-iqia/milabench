@@ -243,6 +243,9 @@ class MultiPackage:
                     working_dir=here.parent
                 )
 
+                if not ig_constraint_path.exists():
+                    raise RuntimeError("Could not generate main requirements")
+
                 # Use master requirements to constrain the rest
                 new_constraints = [ig_constraint_path, *constraints]
                 for pack in packs:

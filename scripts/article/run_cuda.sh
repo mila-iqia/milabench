@@ -15,7 +15,9 @@ install_prepare() {
     mkdir -p $MILABENCH_WORDIR
     cd $MILABENCH_WORDIR
 
-    virtualenv $MILABENCH_WORDIR/env
+    if [ ! -d "$MILABENCH_WORDIR/env" ]; then
+        virtualenv $MILABENCH_WORDIR/env
+    fi
 
     if [ ! -d "$MILABENCH_WORDIR/milabench" ]; then
         git clone https://github.com/mila-iqia/milabench.git -b intel
@@ -52,7 +54,7 @@ install_prepare() {
 
 module load cuda/12.3.2
 
-if [ ! -d "$MILABENCH_WORDIR" ]; then
+if [ ! -d "$MILABENCH_WORDIR/results" ]; then
     install_prepare 
 else
     echo "Reusing previous install"
