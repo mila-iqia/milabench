@@ -20,6 +20,7 @@ install_prepare() {
     if [ ! -d "$MILABENCH_WORDIR/milabench" ]; then
         git clone https://github.com/mila-iqia/milabench.git -b intel
         git clone https://github.com/Delaunay/voir.git -b async_timer
+        git clone https://github.com/Delaunay/torchcompat.git
     fi
 
     . $MILABENCH_WORDIR/env/bin/activate
@@ -32,11 +33,13 @@ install_prepare() {
 
     which pip
     pip install -e $MILABENCH_WORDIR/voir
+    pip install -e $MILABENCH_WORDIR/torchcompat
 
     (
         . $BENCHMARK_VENV/bin/activate
         which pip
         pip install -e $MILABENCH_WORDIR/voir
+        pip install -e $MILABENCH_WORDIR/torchcompat
         pip install torch torchvision torchaudio
 
         # DALI stuff

@@ -625,3 +625,19 @@ rwkv:
     --grad_cp: 0
     --random_seed: 1234
     --enable_progress_bar: "False"
+brax:
+  inherits: _defaults
+  tags:
+    - rl
+    - jax
+  definition: ../benchmarks/brax
+  group: brax
+  install_group: torch
+  plan:
+    method: njobs
+    n: 1
+  argv:
+    --episode-length: 20
+    --batch-size: 1024
+    --num-minibatches: 32
+    --num-envs: 8192

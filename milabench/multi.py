@@ -2,6 +2,7 @@ import asyncio
 import traceback
 from collections import defaultdict
 from copy import deepcopy
+import os
 
 from voir.instruments.gpu import get_gpu_info
 
@@ -225,10 +226,10 @@ class MultiPackage:
                 pack0 = packs[0]
                 ivar = pack0.config["install_variant"]
 
-                pindir = XPath(".pin")
+                pindir = here.parent / XPath(".pin")
 
                 constraint_path = pindir / "tmp-constraints.txt"
-                constraint_files = make_constraints_file(constraint_path, constraints)
+                constraint_files = make_constraints_file(constraint_path, constraints, str(here.parent))
 
                 ig_constraint_path = pindir / f"constraints-{ivar}-{ig}.txt"
                 if ig_constraint_path.exists() and from_scratch:
@@ -239,6 +240,7 @@ class MultiPackage:
                     requirements_file=ig_constraint_path.absolute(),
                     input_files=(*constraint_files, *reqs),
                     argv=pip_compile_args,
+                    working_dir=here.parent
                 )
 
                 # Use master requirements to constrain the rest
@@ -247,4 +249,5 @@ class MultiPackage:
                     await pack.pin(
                         pip_compile_args=pip_compile_args,
                         constraints=new_constraints,
+                        working_dir=here.parent
                     )

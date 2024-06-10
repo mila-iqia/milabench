@@ -19,7 +19,6 @@ install_prepare() {
 
     git clone https://github.com/mila-iqia/milabench.git -b intel
     git clone https://github.com/Delaunay/voir.git -b async_timer
-    git clone https://github.com/Delaunay/torchcompat.git
 
     # XPU manager is necessary
     wget -nv https://github.com/intel/xpumanager/releases/download/V1.2.36/xpumanager_1.2.36_20240428.081009.377f9162.u22.04_amd64.deb
@@ -35,16 +34,15 @@ install_prepare() {
 
     which pip
     pip install -e $MILABENCH_WORDIR/voir
-    pip install -e $MILABENCH_WORDIR/torchcompat
 
     (
         . $BENCHMARK_VENV/bin/activate
         which pip
         pip install -e $MILABENCH_WORDIR/voir
-        pip install -e $MILABENCH_WORDIR/torchcompat
 
         # Override dependencies for XPU
-        pip install torch, torchvision torchaudio intel-extension-for-pytorch --extra-index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/
+        pip uninstall torch torchvision torchaudio
+        pip install torch torchvision torchaudio intel-extension-for-pytorch oneccl_bind_pt intel-extension-for-pytorch-deepspeed --index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/
     )
 
     #
