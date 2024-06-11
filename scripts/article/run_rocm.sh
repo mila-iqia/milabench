@@ -18,7 +18,6 @@ install_prepare() {
     virtualenv $MILABENCH_WORDIR/env
 
     git clone https://github.com/mila-iqia/milabench.git -b intel
-    git clone https://github.com/Delaunay/voir.git -b async_timer
 
     . $MILABENCH_WORDIR/env/bin/activate
     pip install -e $MILABENCH_WORDIR/milabench
@@ -29,12 +28,10 @@ install_prepare() {
     milabench install
 
     which pip
-    pip install -e $MILABENCH_WORDIR/voir
 
     (
         . $BENCHMARK_VENV/bin/activate
         which pip
-        pip install -e $MILABENCH_WORDIR/voir
         pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.0
     )
 

@@ -58,12 +58,9 @@ _ = arguments()
 
 
 # You can also adapt this script on your own causal language modeling task. Pointers for this are left as comments.
-import json
 import logging
 import math
 import os
-import sys
-import time
 from dataclasses import dataclass
 from datetime import timedelta
 from itertools import chain

@@ -2,7 +2,9 @@
 
 set -ex
 
-export MILABENCH_GPU_ARCH=xpu
+export MILABENCH_BRANCH="intel"
+export VOIR_BRANCH="master"
+export MILABENCH_GPU_ARCH=cuda
 export MILABENCH_WORDIR="$(pwd)/$MILABENCH_GPU_ARCH"
 
 export MILABENCH_BASE="$MILABENCH_WORDIR/results"
@@ -17,11 +19,10 @@ install_prepare() {
 
     virtualenv $MILABENCH_WORDIR/env
 
-    git clone https://github.com/mila-iqia/milabench.git -b intel
-
-    # XPU manager is necessary
-    wget -nv https://github.com/intel/xpumanager/releases/download/V1.2.36/xpumanager_1.2.36_20240428.081009.377f9162.u22.04_amd64.deb
-    sudo dpkg -i xpumanager_1.2.36_20240428.081009.377f9162.u22.04_amd64.deb
+    if [ ! -d "$MILABENCH_WORDIR/milabench" ]; then
+        git clone https://github.com/mila-iqia/milabench.git -b $MILABENCH_BRANCH
+        git clone https://github.com/Delaunay/voir.git -b $VOIR_BRANCH
+    fi
 
     . $MILABENCH_WORDIR/env/bin/activate
     pip install -e $MILABENCH_WORDIR/milabench
@@ -29,21 +30,24 @@ install_prepare() {
     #
     # Install milabench's benchmarks in their venv
     #
-    milabench install
+    milabench install "$@"
 
     which pip
 
     (
         . $BENCHMARK_VENV/bin/activate
         which pip
+        pip install torch torchvision torchaudio
 
-        # Override dependencies for XPU
-        pip install torch, torchvision torchaudio intel-extension-for-pytorch --extra-index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/
+        # DALI stuff
+        pip install --extra-index-url https://pypi.nvidia.com --upgrade nvidia-dali-cuda120
+        pip install nvidia-pyindex
+        pip install nvidia-nvjpeg-cu12
     )
 
     #
     #   Generate/download datasets, download models etc...
-    milabench prepare
+    milabench prepare "$@"
 }
 
 if [ ! -d "$MILABENCH_WORDIR" ]; then
@@ -54,6 +58,9 @@ else
 fi
 
 cd $MILABENCH_WORDIR
+
+(cd $MILABENCH_WORDIR/milabench && git pull origin $MILABENCH_BRANCH)
+pip install -e $MILABENCH_WORDIR/milabench
 
 #
 #   Run the benchmakrs

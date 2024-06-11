@@ -16,7 +16,6 @@ install_prepare() {
     virtualenv $MILABENCH_WORDIR/env
 
     git clone https://github.com/mila-iqia/milabench.git -b intel
-    git clone https://github.com/Delaunay/voir.git -b async_timer
     git clone https://github.com/huggingface/optimum-habana.git
 
     wget -nv https://vault.habana.ai/artifactory/gaudi-installer/1.15.1/habanalabs-installer.sh
@@ -32,7 +31,6 @@ install_prepare() {
     milabench install
 
     which pip
-    pip install -e $MILABENCH_WORDIR/voir
 
     # Override dependencies for HPU
     # milabench needs pyhlml
@@ -43,7 +41,6 @@ install_prepare() {
     (
         . $BENCHMARK_VENV/bin/activate
         which pip
-        pip install -e $MILABENCH_WORDIR/voir
         pip install -e $MILABENCH_WORDIR/optimum-habana
 
         (
