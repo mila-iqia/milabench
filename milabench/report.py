@@ -41,14 +41,13 @@ def _make_row(summary, compare, weights):
 
     # Sum of all the GPU performance
     # to get the overall perf of the whole machine
-
     if "per_gpu" in summary:
         acc = 0
         for _, metrics in summary["per_gpu"].items():
             acc += metrics[metric]
     else:
         acc = row["perf"]
-
+    
     success_ratio = 1 - row["fail"] / row["n"]
     score = (acc if acc > 0 else row["perf"]) * success_ratio
 
@@ -210,6 +209,29 @@ def make_dataframe(summary, compare=None, weights=None):
             for key in all_keys
         }
     ).transpose()
+    
+    return df
+
+
+@error_guard({})
+def make_report(
+    summary,
+    compare=None,
+    html=None,
+    compare_gpus=False,
+    price=None,
+    title=None,
+    sources=None,
+    errdata=None,
+    weights=None,
+):
+    if weights is None:
+        weights = dict()
+
+    df = make_dataframe(summary, compare, weights)
+
+    # Reorder columns
+    df = df[sorted(df.columns, key=lambda k: columns_order.get(k, 0))]
 
 
 @error_guard({})
