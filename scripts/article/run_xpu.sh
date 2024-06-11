@@ -44,6 +44,7 @@ install_prepare() {
 
     #
     #   Generate/download datasets, download models etc...
+    #
     milabench prepare
 }
 

@@ -54,7 +54,7 @@ class LazyMetricPusher:
         self.delayed = []
 
     def append(self, *args, **kwargs):
-        self.delayed.append(args, kwargs)
+        self.delayed.append((args, kwargs))
 
     def record(self, *args, **kwargs):
         """Record data for a future metric.
@@ -230,6 +230,7 @@ class TimedIterator:
         self.raise_stop_program = raise_stop_program # Does TimedIterator raise StopProgram
         self.profile_instrumentation = False
         self.overhead = []
+        self.previous_overhead = 0
         self.loader_init_time = []
         self.sub_overhead = 0
     
@@ -259,7 +260,8 @@ class TimedIterator:
         # Time IO wait + batch compute
         start = self.event_fn(enable_timing=True)
         start.record()
-
+        self.previous_overhead = 0
+    
         for data in iterator:
             yield data
 
@@ -268,7 +270,7 @@ class TimedIterator:
                 end.record()
 
                 bs = self.deduce_batch_size(data)
-                self.events.append((start, end, bs, self.overhead[-1]))
+                self.events.append((start, end, bs, self.previous_overhead))
 
                 # Log progress so it looks somewhat responsive
                 self.log_progress()
@@ -279,8 +281,15 @@ class TimedIterator:
                     break
 
                 start = end
-                self.overhead.append(ct.elapsed())
-
+            
+            # Note: first step does not have overhead because end event is recorded
+            # before the overhead starts
+            # Note: It is not sure if the CPU overhead impacst the device at all
+            # since we avoid sync it is possible the device is working during
+            # the overhead section and that the effective overhead ends up being minimal 
+            self.previous_overhead = ct.elapsed()
+            self.overhead.append(self.previous_overhead)
+            
         self._push()
         self.earlystop()
 
@@ -323,7 +332,7 @@ class TimedIterator:
     def _push_time_steps(self):
         for start, end, bs, overhead in self.events:
             end.synchronize()
-            elapsed = (start.elapsed_time(end) - self.sub_overhead * overhead) / self.unit
+            elapsed = (start.elapsed_time(end)) / self.unit
             rate = self.batch_size(bs) / elapsed
             self.log_rate(rate)
         
@@ -337,6 +346,7 @@ class TimedIterator:
 
             for iterinit in self.loader_init_time:
                 self.message(__iter__=iterinit, units="s", task=self.task)
+        self.previous_overhead = 0
         self.overhead = []
         self.loader_init_time = []
     

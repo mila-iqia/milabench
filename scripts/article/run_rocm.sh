@@ -27,16 +27,26 @@ install_prepare() {
     #
     milabench install
 
+    #
+    # Override/add package to milabench venv here
+    #
     which pip
+    # pip install ...
 
     (
         . $BENCHMARK_VENV/bin/activate
+
+        #
+        # Override/add package to the benchmark venv here
+        #
         which pip
+        pip uninstall torch torchvision torchaudio
         pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.0
     )
 
     #
     #   Generate/download datasets, download models etc...
+    #
     milabench prepare
 }
 

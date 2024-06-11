@@ -66,6 +66,13 @@ def test_scaler_disabled(multipack):
         assert pack.argv == []
 
 
+def fakeexec(pack):
+    from milabench.sizer import resolve_argv, scale_argv
+    sized_args = scale_argv(pack, pack.argv)
+    final_args = resolve_argv(pack, sized_args)
+    return final_args
+
+
 def test_scaler_enabled(multipack, config):
     from milabench.config import system_global
     import contextvars
@@ -83,12 +90,13 @@ def test_scaler_enabled(multipack, config):
         )
         sizer_global.set(sizer)
         system = system_global.get()
-        system["gpu"]["capacity"] = "41920 MiB"
+        gpu = system.setdefault("gpu", dict())
+        gpu["capacity"] = "41920 MiB"
 
     ctx.run(update_ctx)
 
     for k, pack in multipack.packs.items():
-        assert ctx.run(lambda: pack.argv) == ["--batch_size", "232"]
+        assert ctx.run(lambda: fakeexec(pack)) == ["--batch_size", "232"]
 
         # Sizer is only enabled inside the context
-        assert pack.argv == []
+        assert fakeexec(pack) == []
