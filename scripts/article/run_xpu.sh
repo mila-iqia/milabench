@@ -38,7 +38,8 @@ install_prepare() {
         which pip
 
         # Override dependencies for XPU
-        pip install torch, torchvision torchaudio intel-extension-for-pytorch --extra-index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/
+        pip uninstall torch torchvision torchaudio
+        pip install torch torchvision torchaudio intel-extension-for-pytorch oneccl_bind_pt intel-extension-for-pytorch-deepspeed --index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/
     )
 
     #
@@ -47,7 +48,7 @@ install_prepare() {
 }
 
 if [ ! -d "$MILABENCH_WORDIR" ]; then
-    install_prepare 
+    install_prepare
 else
     echo "Reusing previous install"
     . $MILABENCH_WORDIR/env/bin/activate

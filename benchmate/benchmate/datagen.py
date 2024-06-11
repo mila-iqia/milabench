@@ -22,7 +22,7 @@ def write(args):
     offset, outdir, size  = args
 
     img = torch.randn(*size)
-    target = torch.randint(0, 1000, size=(1,), dtype=torch.long)[0]
+    target = offset % 1000 # torch.randint(0, 1000, size=(1,), dtype=torch.long)[0]
     img = transforms.ToPILImage()(img)
 
     class_val = int(target)

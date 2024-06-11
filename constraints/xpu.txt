@@ -1,12 +1,17 @@
+# --extra-index-url https://download.pytorch.org/whl/cpu
 --extra-index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/
 
-
-torch==2.1.0a0 
-torchvision==0.16.0a0 
-torchaudio==2.1.0a0 
-intel-extension-for-pytorch==2.1.10+xpu
+#
+# Including a package in a constraints file does not trigger installation of the package.
+#
+torch>=2.1.0
+torchvision>=0.16.0a0 
+torchaudio>=2.1.0a0 
+intel-extension-for-pytorch>=2.1.10+xpu
+oneccl_bind_pt==2.1.100+xpu
+intel-extension-for-pytorch-deepspeed>=2.1.30
 
 #
 #
 voir > 0.2.10
-torchcompat > 1.0.0
+torchcompat >= 1.0.0

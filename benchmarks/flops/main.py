@@ -6,7 +6,7 @@ import time
 import torch
 import torchcompat.core as accelerator
 
-from benchmate.common import setupvoir
+from benchmate.monitor import setupvoir
 
 KILO = 1e3
 MEGA = 1e6
@@ -14,17 +14,12 @@ GIGA = 1e9
 TERA = 1e12
 EXA = 1e18
 
-
-print(f"Using, {accelerator.device_type}")
-
-
 def empty_cache():
     accelerator.empty_cache()
 
 
 def synchronize():
     accelerator.synchronize()
-
 
 
 def modelflops(
@@ -91,8 +86,6 @@ def f(N, R=30, m=5000000, n=256, unit=TERA, dtype=torch.float32, log=None):
             log({"task": "train", "rate": F / ts / unit, "units": "Tflops"})
 
     empty_cache()
-
-
 
 
 def main():

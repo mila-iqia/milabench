@@ -23,6 +23,8 @@ _torchvision:
     --no-stdout: true
     --epochs: 50
     --num-workers: 8
+    --loader: pytorch
+    --data: "{milabench_data}/FakeImageNet"
 
 
 _torchvision_ddp:
@@ -36,6 +38,8 @@ _torchvision_ddp:
   argv:
     --epochs: 10
     --num-workers: 8
+    --loader: pytorch
+    --data: "{milabench_data}/FakeImageNet"
 
 _flops:
   inherits: _defaults
@@ -59,6 +63,10 @@ llama:
   group: llm
   install_group: torch
   max_duration: 800
+  tags:
+    - nlp
+    - llm
+    - inference
 
   voir:
     options:
@@ -67,10 +75,12 @@ llama:
     
   plan:
     method: per_gpu
-  
-  tags:
-    - nlp
-    - llm
+
+  # Note: when NOT using pretrained model
+  # the benchmark becomes much harder as no end token is ever outputted by the model
+  # which makes inference much slower
+  argv:
+    --pretrained: true
 
 
 _hf:
@@ -192,10 +202,9 @@ resnet50:
   
   argv:
     --model: resnet50
-    --batch-size: 64
+    --batch-size: 256
     --num-workers: "{cpu_per_gpu}"
     --loader: pytorch
-    --data: "{milabench_data}/FakeImageNet"
   
 resnet50-noio:
   inherits: _torchvision
@@ -208,8 +217,7 @@ resnet50-noio:
   
   argv:
     --model: resnet50
-    --batch-size: 64
-    --num-workers: 8
+    --batch-size: 256
     --loader: synthetic_fixed
 
 resnet152-ddp:
@@ -225,7 +233,6 @@ resnet152-ddp:
     --batch-size: 256
     --num-workers: 8
     --loader: dali
-    --data: "{milabench_data}/FakeImageNet"
 
 efficientnet_b4:
   inherits: _torchvision
@@ -495,6 +502,11 @@ stargan:
     --c_dim: 5
     --batch_size: 16
     --dataset: "synth"
+    --celeba_image_dir: "{milabench_data}"
+    --log_dir: "{milabench_extra}/logs"
+    --model_save_dir: "{milabench_extra}/models"
+    --sample_dir: "{milabench_extra}/samples"
+    --result_dir: "{milabench_extra}/results"
 
 super-slomo:
   inherits: _defaults
@@ -503,14 +515,16 @@ super-slomo:
     - video-interpolation
     - unet
     - convnet
-    - noio
   definition: ../benchmarks/super-slomo
   group: super-slomo
   install_group: torch
   plan:
     method: per_gpu
   argv:
-    --train_batch_size: 32
+    --train_batch_size: 64
+    --dataset_root: "{milabench_data}/FakeImageNet"
+    --loader: pytorch
+    --num_workers: 8
 
 ppo:
   inherits: _sb3
@@ -611,3 +625,19 @@ rwkv:
     --grad_cp: 0
     --random_seed: 1234
     --enable_progress_bar: "False"
+brax:
+  inherits: _defaults
+  tags:
+    - rl
+    - jax
+  definition: ../benchmarks/brax
+  group: brax
+  install_group: torch
+  plan:
+    method: njobs
+    n: 1
+  argv:
+    --episode-length: 20
+    --batch-size: 1024
+    --num-minibatches: 32
+    --num-envs: 8192

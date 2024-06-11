@@ -91,6 +91,7 @@ def get_loader(
 
     if dataset == "CelebA":
         dataset = CelebA(image_dir, attr_path, selected_attrs, transform, mode)
+    
     elif dataset == "RaFD":
         dataset = ImageFolder(image_dir, transform)
 

@@ -54,6 +54,11 @@ Milabench is configured using a yaml file that specify where are the benchmark a
 
 .. code-block:: yaml
 
+   # you can include a previous configuration
+   # and override its values
+   include:
+      - base.yaml
+
    _defaults:
       max_duration: 600                           # Bench time out
       voir:
@@ -210,7 +215,7 @@ Execution Flow
    * Modify: ``$MILABENCH_BASE/venv/{bench}``
 
 * ``milabench prepare``
-   * Call the prepare script for each benchmarks to download/generate dataset
+   * Call the prepare script for each benchmarks to download/generate dataset and download pretrained models
    * Modify: ``$MILABENCH_BASE/data/{dataset}``
 
 * ``milabench run``

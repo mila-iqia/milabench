@@ -106,22 +106,23 @@ def assemble_options(options: dict):
     return args
 
 
-def relativize(pth):
+def relativize(pth, working_dir):
     pth = XPath(pth)
     if pth.is_absolute():
-        return pth.relative_to(XPath(".").absolute())
+        return pth.relative_to(XPath(working_dir))
     else:
         return pth
 
 
-def make_constraints_file(pth, constraints):
+def make_constraints_file(pth, constraints, working_dir):
     if constraints:
-        os.makedirs(XPath(pth).parent, exist_ok=True)
-        with open(pth, "w") as tfile:
+        constraint_file = XPath(working_dir) / XPath(pth)
+        os.makedirs(constraint_file.parent, exist_ok=True)
+        with open(constraint_file, "w") as tfile:
             # We prefix the constraint with ../ because we are creating a constraint
             # file in ./.pin/,but containing constraints with paths relative to ./
-            tfile.write("\n".join([f"-c ../{relativize(c)}" for c in constraints]))
-        return (pth,)
+            tfile.write("\n".join([f"-c ../{relativize(c, working_dir)}" for c in constraints]))
+        return (constraint_file,)
     else:
         return ()
 

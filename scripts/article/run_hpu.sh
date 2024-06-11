@@ -44,7 +44,7 @@ install_prepare() {
         pip install -e $MILABENCH_WORDIR/optimum-habana
 
         (
-            cd $MILABENCH_WORDIR/milabench/benchmarks/dlrm/dlrm; 
+            cd $MILABENCH_WORDIR/milabench/benchmarks/dlrm/dlrm;
             git remote add me https://github.com/Delaunay/dlrm.git
             git fetch me
             git checkout me/main
@@ -52,7 +52,8 @@ install_prepare() {
 
         # Override dependencies for HPU
         # benchmarks need pytorch
-        export HABANALABS_VIRTUAL_DIR=$BENCHMARK_VENV 
+        pip uninstall torch torchvision torchaudio
+        export HABANALABS_VIRTUAL_DIR=$BENCHMARK_VENV
         ./habanalabs-installer.sh install -t dependencies --venv -y
         ./habanalabs-installer.sh install -t pytorch --venv -y
     )
@@ -63,7 +64,7 @@ install_prepare() {
 }
 
 if [ ! -d "$MILABENCH_WORDIR" ]; then
-    install_prepare 
+    install_prepare
 else
     echo "Reusing previous install"
     . $MILABENCH_WORDIR/env/bin/activate

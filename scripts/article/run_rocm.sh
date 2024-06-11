@@ -41,7 +41,7 @@ install_prepare() {
 }
 
 if [ ! -d "$MILABENCH_WORDIR" ]; then
-    install_prepare 
+    install_prepare
 else
     echo "Reusing previous install"
     . $MILABENCH_WORDIR/env/bin/activate

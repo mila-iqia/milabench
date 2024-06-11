@@ -35,7 +35,6 @@ def instrument_main(ov, options: Config):
     from benchmate.observer import BenchObserver
 
     from timm.utils.distributed import is_global_primary
-    from timm.data import create_loader
 
     observer = BenchObserver(
         accelerator.Event, 

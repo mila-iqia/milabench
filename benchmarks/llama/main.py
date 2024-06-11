@@ -8,7 +8,7 @@ import sys
 
 import torch
 
-from benchmate.common import setupvoir
+from benchmate.monitor import setupvoir
 import torchcompat.core as accelerator
 
 root = os.path.dirname(__file__)
@@ -71,16 +71,22 @@ def huggingface_main(args, model, config):
         LlamaTokenizerFast.from_pretrained("hf-internal-testing/llama-tokenizer")
     )
 
+    if args.pretrained and args.prepare:
+        model = LlamaForCausalLM.from_pretrained(config["_name_or_path"])
+
     # Prepare is done
     if args.prepare:
         return 0
-
+    
     # We do not download LLAMA because it takes too long
     # we just instantiate an untrained one
     println("Model")
     device = accelerator.fetch_device(0)
 
-    model = LlamaForCausalLM(LlamaConfig.from_dict(config)).to(device=device)
+    if args.pretrained:
+        model = LlamaForCausalLM.from_pretrained(config["_name_or_path"]).to(device=device)
+    else:
+        model = LlamaForCausalLM(LlamaConfig.from_dict(config)).to(device=device)
 
     println("Pipeline")
     pipeline = transformers.pipeline(
@@ -155,6 +161,7 @@ def main():
     parser.add_argument("--model", default="llama2-7b", choices=models.keys())
     parser.add_argument("--prepare", action="store_true")
     parser.add_argument("--cache", required=True, type=str)
+    parser.add_argument("--pretrained", action="store_true", default=False)
 
     #
     args = parser.parse_args()
@@ -171,8 +178,11 @@ def main():
 
 
 if __name__ == "__main__":
+    from voir.wrapper import StopProgram
+    import traceback
     try:
         main()
-    except Exception as err:
-        # Habana likes to eat exceptions
-        print(err)
+    except StopProgram:
+        print("Early stopped")
+    except Exception:
+        traceback.print_exc()

@@ -2,8 +2,6 @@
 
 set -ex
 
-export MILABENCH_BRANCH="intel"
-export VOIR_BRANCH="master"
 export MILABENCH_GPU_ARCH=cuda
 export MILABENCH_WORDIR="$(pwd)/$MILABENCH_GPU_ARCH"
 
@@ -20,8 +18,9 @@ install_prepare() {
     virtualenv $MILABENCH_WORDIR/env
 
     if [ ! -d "$MILABENCH_WORDIR/milabench" ]; then
-        git clone https://github.com/mila-iqia/milabench.git -b $MILABENCH_BRANCH
-        git clone https://github.com/Delaunay/voir.git -b $VOIR_BRANCH
+        git clone https://github.com/mila-iqia/milabench.git -b intel
+        git clone https://github.com/Delaunay/voir.git -b async_timer
+        git clone https://github.com/Delaunay/torchcompat.git
     fi
 
     . $MILABENCH_WORDIR/env/bin/activate
@@ -33,10 +32,14 @@ install_prepare() {
     milabench install "$@"
 
     which pip
+    pip install -e $MILABENCH_WORDIR/voir
+    pip install -e $MILABENCH_WORDIR/torchcompat
 
     (
         . $BENCHMARK_VENV/bin/activate
         which pip
+        pip install -e $MILABENCH_WORDIR/voir
+        pip install -e $MILABENCH_WORDIR/torchcompat
         pip install torch torchvision torchaudio
 
         # DALI stuff
@@ -50,6 +53,8 @@ install_prepare() {
     milabench prepare "$@"
 }
 
+module load cuda/12.3.2
+
 if [ ! -d "$MILABENCH_WORDIR" ]; then
     install_prepare 
 else
@@ -59,8 +64,7 @@ fi
 
 cd $MILABENCH_WORDIR
 
-(cd $MILABENCH_WORDIR/milabench && git pull origin $MILABENCH_BRANCH)
-pip install -e $MILABENCH_WORDIR/milabench
+(cd $MILABENCH_WORDIR/milabench && git pull origin intel)
 
 #
 #   Run the benchmakrs

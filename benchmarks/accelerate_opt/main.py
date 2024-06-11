@@ -86,6 +86,7 @@ from transformers import (
     get_scheduler,
 )
 from benchmate.observer import BenchObserver
+from benchmate.monitor import milabench_sys_monitor
 
 logger = get_logger(__name__)
 
@@ -124,7 +125,6 @@ def main():
             rank=int(os.environ["RANK"]),
             world_size=int(os.environ["WORLD_SIZE"]),
         )
-        print(init_process_group_kwargs.backend)
 
         # Accelerator SUCK, it is impossible to make it use hccl
         # We can bypass Accelerator logic by initializing the group ourselves
@@ -143,8 +143,8 @@ def main():
     # Set up logging for milabench (only in the run phase, for the main process)
     monitor = None
     if not is_prepare_phase and accelerator.is_main_process:
-        from benchmate.common import opt_voir
-        monitor = opt_voir()
+        # Set up logging for milabench (only in the run phase, for the main process)
+        milabench_sys_monitor()
 
     logging.basicConfig(
         level=logging.INFO,
@@ -170,13 +170,13 @@ def main():
         raw_datasets["validation"] = load_dataset(
             dataset_name,
             dataset_config_name,
-            split=f"train[:{validation_split_percentage}%]", 
+            split=f"train[:{validation_split_percentage}%]",
             revision=config["dataset_rev"]
         )
         raw_datasets["train"] = load_dataset(
             dataset_name,
             dataset_config_name,
-            split=f"train[{validation_split_percentage}%:]", 
+            split=f"train[{validation_split_percentage}%:]",
             revision=config["dataset_rev"]
         )
 
@@ -360,9 +360,9 @@ def main():
     starting_epoch = 0
 
     observer = BenchObserver(
-        event_fn=acc.Event, 
-        earlystop=30, 
-        rank=int(os.environ["RANK"]), 
+        event_fn=acc.Event,
+        earlystop=30,
+        rank=int(os.environ["RANK"]),
         device=acc.fetch_device(int(os.environ["RANK"])),
         stdout=True,
         batch_size_fn=lambda batch: batch["labels"].shape[0]
