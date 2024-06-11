@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 import torchcompat.core as accelerator
 
 import transformers
-from voir.wrapper import Wrapper
+from benchmate.observer import BenchObserver
 
 from .models import models
 from .synth import SyntheticData, generators
@@ -102,17 +102,17 @@ class Runner:
             print(list(bs.keys()))
             raise RuntimeError("Batch size unknown")
         
-        wrapper = Wrapper(
+        observer = BenchObserver(
             event_fn=accelerator.Event, 
             batch_size_fn=batch_size
         )
-        loader = wrapper.loader(self.loader)
+        loader = observer.loader(self.loader)
     
         for data in loader:
             data = {k: v.to(self.device) for k, v in data.items()}
             loss = self.step(data)
 
-            loader.add_loss(loss)
+            observer.record_loss(loss)
 
 
 def parser():

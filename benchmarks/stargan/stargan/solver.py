@@ -10,8 +10,7 @@ import numpy as np
 import os
 import time
 import datetime
-from giving import give
-import voir.wrapper
+from benchmate.observer import BenchObserver
 
 
 class Solver(object):
@@ -227,11 +226,11 @@ class Solver(object):
             data_loader = self.synth_loader
 
         # Fetch fixed inputs for debugging.
-        wrapper = voir.wrapper.Wrapper(
+        observer = BenchObserver(
             event_fn=accelerator.Event, 
             batch_size_fn=lambda x: len(x[0])
         )
-        loader = wrapper.loader(data_loader)
+        loader = observer.loader(data_loader)
 
         data_iter = iter(loader)
         x_fixed, c_org = next(data_iter)
@@ -316,7 +315,7 @@ class Solver(object):
                 + self.lambda_gp * d_loss_gp
             )
             # give(task="train", loss=d_loss.item())
-            loader.add_loss(d_loss)
+            observer.record_loss(d_loss.detach())
             self.reset_grad()
 
             d_loss.backward()

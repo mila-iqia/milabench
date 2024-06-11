@@ -1,6 +1,5 @@
 import argparse
 import contextlib
-import os
 
 import torch
 import torch.cuda.amp
@@ -9,8 +8,7 @@ import torchvision.models as tvmodels
 import torchcompat.core as accelerator
 
 from benchmate.dataloader import imagenet_dataloader, dataloader_arguments
-
-from voir.wrapper import StopProgram
+from benchmate.metrics import StopProgram
 
 
 def is_tf32_allowed(args):
@@ -186,8 +184,7 @@ def train_epoch(args, model, criterion, optimizer, loader, device, dtype, scaler
         with scaling(scaler is not None, dtype):
             output = model(inp)
             loss = criterion(output, target)
-            loader.add_loss(loss)
-
+    
             scaler.scale(loss).backward()
             accelerator.mark_step()
 

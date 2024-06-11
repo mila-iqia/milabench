@@ -27,8 +27,8 @@ class Config:
 
 @configurable
 def instrument_main(ov, options: Config):
-    import torchcompat.core as accelerator
-    from voir.wrapper import earlystop_count
+    # import torchcompat.core as accelerator
+    # from benchmate.observer import BenchObserver
 
     yield ov.phases.init
 

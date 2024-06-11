@@ -32,12 +32,12 @@ def instrument_main(ov, options: Config):
 
     import os
     import torchcompat.core as accelerator
-    from voir.wrapper import DataloaderWrapper, Wrapper
+    from benchmate.observer import BenchObserver
 
     from timm.utils.distributed import is_global_primary
     from timm.data import create_loader
 
-    wrapper = Wrapper(
+    observer = BenchObserver(
         accelerator.Event, 
         earlystop=options.stop + options.skip,
         rank=int(os.getenv("RANK", 0)),
@@ -48,13 +48,13 @@ def instrument_main(ov, options: Config):
     )
 
     probe = ov.probe("/timm.data.loader/create_loader() as loader", overridable=True)
-    probe['loader'].override(wrapper.loader)
+    probe['loader'].override(observer.loader)
 
     probe = ov.probe("//train_one_epoch > loss_fn", overridable=True)
-    probe['loss_fn'].override(wrapper.criterion)
+    probe['loss_fn'].override(observer.criterion)
 
     probe = ov.probe("//train_one_epoch > optimizer", overridable=True)
-    probe['optimizer'].override(wrapper.optimizer)
+    probe['optimizer'].override(observer.optimizer)
 
     # Do not save checkpoints
     probe = ov.probe("//main > saver", overridable=True)

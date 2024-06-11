@@ -88,9 +88,7 @@ from transformers import (
     default_data_collator,
     get_scheduler,
 )
-from voir.smuggle import SmuggleWriter
-from voir.instruments.gpu import get_gpu_info
-from voir.instruments.utils import Monitor
+from benchmate.observer import BenchObserver
 
 logger = get_logger(__name__)
 
@@ -145,35 +143,11 @@ def main():
     else:
         accelerator = Accelerator()
 
+    # Set up logging for milabench (only in the run phase, for the main process)
+    monitor = None
     if not is_prepare_phase and accelerator.is_main_process:
-        # Set up logging for milabench (only in the run phase, for the main process)
-
-        data_file = SmuggleWriter(sys.stdout)
-        def mblog(data):
-            if data_file is not None:
-                print(json.dumps(data), file=data_file)
-
-        def monitor_fn():
-            data = {
-                gpu["device"]: {
-                    "memory": [gpu["memory"]["used"], gpu["memory"]["total"]],
-                    "load": gpu["utilization"]["compute"],
-                    "temperature": gpu["temperature"],
-                }
-                for gpu in get_gpu_info()["gpus"].values()
-            }
-            mblog({"task": "main", "gpudata": data})
-
-        monitor_fn()
-        monitor = Monitor(3, monitor_fn)
-        monitor.start()
-
-    else:
-
-        def mblog(data):
-            pass
-
-        monitor = None
+        from benchmate.common import opt_voir
+        monitor = opt_voir()
 
     logging.basicConfig(
         level=logging.INFO,
@@ -374,7 +348,6 @@ def main():
     total_batch_size = (
         per_gpu_batch_size * accelerator.num_processes * gradient_accumulation_steps
     )
-    print("HERE", per_gpu_batch_size, total_batch_size)
 
     logger.info("***** Running training *****")
     logger.info(f"  Num examples = {len(train_dataset)}")
@@ -388,10 +361,8 @@ def main():
 
     completed_steps = 0
     starting_epoch = 0
-    last_log_time = time.time()
 
-    from voir.wrapper import Wrapper
-    wrapper = Wrapper(
+    observer = BenchObserver(
         event_fn=acc.Event, 
         earlystop=30, 
         rank=int(os.environ["RANK"]), 
@@ -399,7 +370,7 @@ def main():
         stdout=True,
         batch_size_fn=lambda batch: batch["labels"].shape[0]
     )
-    loader = wrapper.loader(train_dataloader)
+    loader = observer.loader(train_dataloader)
 
     for epoch in range(starting_epoch, num_train_epochs):
         model.train()
@@ -407,9 +378,9 @@ def main():
             outputs = model(**batch)
             loss = outputs.loss
             loss = loss / gradient_accumulation_steps
+
             if accelerator.is_main_process:
-                loader.add_loss(loss)
-                # mblog({"task": "train", "loss": loss.detach().item()})
+                observer.record_loss(loss)
 
             accelerator.backward(loss)
 

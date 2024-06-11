@@ -1,9 +1,8 @@
 from dataclasses import dataclass
 
 from voir import configurable
-from voir.instruments import dash, early_stop, gpu_monitor, log, rate
-from voir.wrapper import DataloaderWrapper, Wrapper
-
+from voir.instruments import dash, early_stop, gpu_monitor, log
+from benchmate.observer import BenchObserver
 
 @dataclass
 class Config:
@@ -27,15 +26,10 @@ class Config:
 
 @configurable
 def instrument_main(ov, options: Config):
-    import torchcompat.core as accelerator
-    from ptera import refstring
-    from benchmate.dataloader import imagenet_dataloader
-
     yield ov.phases.init
 
     if options.dash:
         ov.require(dash)
-
 
     overhead_metrics = [] # "__iter__", "overhead", "process_time"
 
@@ -47,18 +41,22 @@ def instrument_main(ov, options: Config):
 
     yield ov.phases.load_script
 
+    from benchmate.dataloader import imagenet_dataloader
+    import torchcompat.core as accelerator
+    from ptera import refstring
+    
     # Note: the wrapper can also do early stopping, if raise_stop_program=True
-    wrapper = Wrapper(
+    observer = BenchObserver(
         accelerator.Event, 
         earlystop=options.stop + options.skip,
         batch_size_fn=lambda x: len(x[0])
     )
 
     probe = ov.probe(f"{refstring(imagenet_dataloader)}() as loader", overridable=True)
-    probe['loader'].override(wrapper.loader)
+    probe['loader'].override(observer.loader)
 
     probe = ov.probe("//train_epoch > criterion", overridable=True)
-    probe['criterion'].override(wrapper.criterion)
+    probe['criterion'].override(observer.criterion)
     
 
 

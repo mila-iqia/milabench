@@ -11,7 +11,7 @@ import torchcompat.core as accelerator
 
 import model
 from giving import give
-import voir.wrapper
+from benchmate.observer import BenchObserver
 from synth import SyntheticData
 
 
@@ -179,12 +179,12 @@ def main():
 
 
     print(device)
-    wrapper = voir.wrapper.Wrapper(
+    observer = BenchObserver(
         event_fn=accelerator.Event, 
         earlystop=60, 
         batch_size_fn=lambda batch: batch[1].shape[0]
     )
-    loader = wrapper.loader(trainloader)
+    loader = observer.loader(trainloader)
 
     ### Main training loop
     for epoch in range(dict1["epoch"] + 1, args.epochs):
@@ -275,7 +275,7 @@ def main():
             # since the loss in paper is calculated for input pixels in range 0-255
             # and the input to our network is in range 0-1
             loss = 204 * recnLoss + 102 * warpLoss + 0.005 * prcpLoss + loss_smooth
-            loader.add_loss(loss)
+            observer.record_loss(loss.detach())
 
             # Backpropagate
             loss.backward()

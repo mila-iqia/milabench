@@ -17,7 +17,7 @@ from torch.distributed import destroy_process_group
 import torchvision.transforms as transforms
 import torchvision.models as torchvision_models
 
-from voir.wrapper import DataloaderWrapper, StopProgram
+from benchmate.metrics import BenchObserver, StopProgram
 import torchcompat.core as accelerator
 from benchmate.dataloader import imagenet_dataloader, dataloader_arguments
 
@@ -47,15 +47,16 @@ class Trainer:
         self.rank = gpu_id
         self.device = accelerator.fetch_device(gpu_id)
         self.model = model.to(self.device)
-        self.train_data = DataloaderWrapper.with_sumggler(
-            train_data, 
+        self.observer = BenchObserver(
             accelerator.Event,
             rank=self.rank,
             device=self.device,
             earlystop=60,
             raise_stop_program=True,
-            batch_size_fn=lambda x: len(x[0])
+            batch_size_fn=lambda x: len(x[0]),
+            stdout=True
         )
+        self.train_data = self.observer.loader(train_data)
         self.optimizer = optimizer
         # self.model = FSDP(model, device_id=self.device)
         self.model = DDP(model, device_ids=[self.device])
@@ -77,7 +78,7 @@ class Trainer:
             self.optimizer.step()
             accelerator.mark_step()
 
-            return loss.detach()
+            self.observer.record_loss(loss.detach())
 
     def _run_epoch(self, epoch):
         self.train_data.sampler.set_epoch(epoch)
@@ -85,8 +86,7 @@ class Trainer:
             source = source.to(self.device)
             targets = targets.to(self.device)
 
-            loss = self._run_batch(source, targets)
-            self.train_data.add_loss(loss)
+            self._run_batch(source, targets)
 
     def train(self, max_epochs: int):
         for epoch in range(max_epochs):
