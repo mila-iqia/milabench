@@ -2,11 +2,12 @@ import argparse
 from contextlib import nullcontext
 
 import torch
-import transformers
-import voir
-from giving import give
 from torch import optim
 from torch.utils.data import DataLoader
+import torchcompat.core as accelerator
+
+import transformers
+from benchmate.observer import BenchObserver
 
 from .models import models
 from .synth import SyntheticData, generators
@@ -17,23 +18,45 @@ def is_tf32_allowed(args):
 
 
 def is_fp16_allowed(args):
-    return "fp16" in args.precision
+    return "fp16" in args.precision or "bf16" in args.precision
 
+
+def float_dtype(precision):
+    if "fp16" in precision:
+        if torch.cuda.is_available():
+            return torch.float16
+        else:
+            return torch.bfloat16
+        
+    if "bf16" in precision:
+        return torch.bfloat16
+        
+    return torch.float
+
+class NoScale:
+    def scale(self, loss):
+        return loss
+    def step(self, optimizer):
+        optimizer.step()
+    def update(self):
+        pass
 
 class Runner:
     def __init__(self, args):
-        use_cuda = not args.no_cuda and torch.cuda.is_available()
-        if use_cuda:
-            if is_tf32_allowed(args):
-                torch.backends.cuda.matmul.allow_tf32 = True
-                torch.backends.cudnn.allow_tf32 = True
-            torch.cuda.manual_seed(args.seed)
-            transformers.set_seed(args.seed)
-        self.device = torch.device("cuda" if use_cuda else "cpu")
+        accelerator.set_enable_tf32(is_tf32_allowed(args))
+
+        accelerator.manual_seed(args.seed)
+        transformers.set_seed(args.seed)
+
+        self.device = accelerator.fetch_device(0)
         self.batch_size = args.batch_size
         info = models[args.model]()
         self.model = info.model.to(self.device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=args.lr)
+
+        # this cause the bench to fail for one model (reformer)
+        # dtype=float_dtype(args.precision)
+        self.model, self.optimizer = accelerator.optimize(self.model, optimizer=self.optimizer)
 
         self.data = SyntheticData(
             n=args.batch_size,
@@ -44,9 +67,12 @@ class Runner:
             self.data, batch_size=args.batch_size, num_workers=args.num_workers
         )
 
-        self.amp_scaler = torch.cuda.amp.GradScaler(enabled=is_fp16_allowed(args))
+        self.amp_scaler = NoScale()
+        if torch.cuda.is_available():
+            self.amp_scaler = accelerator.amp.GradScaler(enabled=is_fp16_allowed(args))
+
         if is_fp16_allowed(args):
-            self.amp_context = lambda: torch.cuda.amp.autocast(dtype=torch.float16)
+            self.amp_context = lambda: accelerator.amp.autocast(dtype=float_dtype(args.precision))
         else:
             self.amp_context = nullcontext
 
@@ -57,17 +83,36 @@ class Runner:
         loss = outputs.loss
 
         self.amp_scaler.scale(loss).backward()
-        self.amp_scaler.step(self.optimizer)
-        self.amp_scaler.update()
+        accelerator.mark_step()
 
-        give(loss=loss.item())
+        self.amp_scaler.step(self.optimizer)
+        accelerator.mark_step()
+
+        self.amp_scaler.update()
+        return loss
 
     def train(self):
-        for data in voir.iterate(
-            "train", self.loader, report_batch=True, batch_size=self.batch_size
-        ):
+        def batch_size(bs):
+            # whisper: ['input_features', 'labels']
+            # bert   : ['input_ids', 'labels']
+            input_ids = bs.get("labels")
+            if input_ids is not None:
+                return input_ids.shape[0]
+
+            print(list(bs.keys()))
+            raise RuntimeError("Batch size unknown")
+        
+        observer = BenchObserver(
+            event_fn=accelerator.Event, 
+            batch_size_fn=batch_size
+        )
+        loader = observer.loader(self.loader)
+    
+        for data in loader:
             data = {k: v.to(self.device) for k, v in data.items()}
-            self.step(data)
+            loss = self.step(data)
+
+            observer.record_loss(loss)
 
 
 def parser():
@@ -128,7 +173,7 @@ def parser():
     parser.add_argument(
         "--precision",
         type=str,
-        choices=["fp16", "fp32", "tf32", "tf32-fp16"],
+        choices=["fp16", "fp32", "tf32", "tf32-fp16", "bf16"],
         default="fp32",
         help="Precision configuration",
     )

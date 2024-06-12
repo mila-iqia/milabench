@@ -58,12 +58,9 @@ _ = arguments()
 
 
 # You can also adapt this script on your own causal language modeling task. Pointers for this are left as comments.
-import json
 import logging
 import math
 import os
-import sys
-import time
 from dataclasses import dataclass
 from datetime import timedelta
 from itertools import chain
@@ -79,6 +76,7 @@ from accelerate.utils import DummyOptim, DummyScheduler
 from accelerate.utils.dataclasses import InitProcessGroupKwargs
 from datasets import load_dataset
 from torch.utils.data import DataLoader
+import torchcompat.core as acc
 from transformers import (
     AutoConfig,
     AutoModelForCausalLM,
@@ -87,9 +85,8 @@ from transformers import (
     default_data_collator,
     get_scheduler,
 )
-from voir.smuggle import SmuggleWriter
-from voir.instruments.gpu import get_gpu_info
-from voir.instruments.utils import Monitor
+from benchmate.observer import BenchObserver
+from benchmate.monitor import milabench_sys_monitor
 
 logger = get_logger(__name__)
 
@@ -110,6 +107,7 @@ def main():
         # IDEA: `InitProcessGroupKwargs` only has `init_method` and `timeout` entries. I'd add `store` too.
         init_method: Optional[str] = None
         timeout: timedelta = timedelta(seconds=1800)
+        backend: str = acc.ccl
 
         # store: Optional[Store] = None
 
@@ -127,40 +125,26 @@ def main():
             rank=int(os.environ["RANK"]),
             world_size=int(os.environ["WORLD_SIZE"]),
         )
+
+        # Accelerator SUCK, it is impossible to make it use hccl
+        # We can bypass Accelerator logic by initializing the group ourselves
+        if acc.device_type == "hpu":
+            acc.init_process_group(
+                init_method=f"tcp://{MASTER_ADDR}:{MASTER_PORT}",
+                timeout=timedelta(seconds=60),
+                rank=int(os.environ["RANK"]),
+                world_size=int(os.environ["WORLD_SIZE"]),
+            )
+
         accelerator = Accelerator(kwargs_handlers=[init_process_group_kwargs])
     else:
         accelerator = Accelerator()
 
+    # Set up logging for milabench (only in the run phase, for the main process)
+    monitor = None
     if not is_prepare_phase and accelerator.is_main_process:
         # Set up logging for milabench (only in the run phase, for the main process)
-
-        data_file = SmuggleWriter(sys.stdout)
-
-        def mblog(data):
-            if data_file is not None:
-                print(json.dumps(data), file=data_file)
-
-        def monitor_fn():
-            data = {
-                gpu["device"]: {
-                    "memory": [gpu["memory"]["used"], gpu["memory"]["total"]],
-                    "load": gpu["utilization"]["compute"],
-                    "temperature": gpu["temperature"],
-                }
-                for gpu in get_gpu_info()["gpus"].values()
-            }
-            mblog({"task": "main", "gpudata": data})
-
-        monitor_fn()
-        monitor = Monitor(3, monitor_fn)
-        monitor.start()
-
-    else:
-
-        def mblog(data):
-            pass
-
-        monitor = None
+        milabench_sys_monitor()
 
     logging.basicConfig(
         level=logging.INFO,
@@ -186,13 +170,13 @@ def main():
         raw_datasets["validation"] = load_dataset(
             dataset_name,
             dataset_config_name,
-            split=f"train[:{validation_split_percentage}%]", 
+            split=f"train[:{validation_split_percentage}%]",
             revision=config["dataset_rev"]
         )
         raw_datasets["train"] = load_dataset(
             dataset_name,
             dataset_config_name,
-            split=f"train[{validation_split_percentage}%:]", 
+            split=f"train[{validation_split_percentage}%:]",
             revision=config["dataset_rev"]
         )
 
@@ -374,16 +358,27 @@ def main():
 
     completed_steps = 0
     starting_epoch = 0
-    last_log_time = time.time()
+
+    observer = BenchObserver(
+        event_fn=acc.Event,
+        earlystop=30,
+        rank=int(os.environ["RANK"]),
+        device=acc.fetch_device(int(os.environ["RANK"])),
+        stdout=True,
+        batch_size_fn=lambda batch: batch["labels"].shape[0]
+    )
+    loader = observer.loader(train_dataloader)
 
     for epoch in range(starting_epoch, num_train_epochs):
         model.train()
-        for step, batch in enumerate(train_dataloader):
+        for step, batch in enumerate(loader):
             outputs = model(**batch)
             loss = outputs.loss
             loss = loss / gradient_accumulation_steps
+
             if accelerator.is_main_process:
-                mblog({"task": "train", "loss": loss.detach().item()})
+                observer.record_loss(loss)
+
             accelerator.backward(loss)
 
             if (step + 1) % gradient_accumulation_steps == 0 or step == len(
@@ -397,30 +392,6 @@ def main():
                 # skipped steps after the start.
                 if not accelerator.optimizer_step_was_skipped:
                     completed_steps += 1
-
-                log_interval = 3
-                if accelerator.is_main_process and completed_steps % log_interval == 0:
-                    torch.cuda.synchronize()
-                    if completed_steps == 0:
-                        last_log_time = time.time()
-                    else:
-                        seconds_since_last_log = time.time() - last_log_time
-
-                        n_samples_since_last_log = log_interval * total_batch_size
-
-                        throughput_samples_per_sec = (
-                            n_samples_since_last_log / seconds_since_last_log
-                        )
-
-                        mblog(
-                            {
-                                "task": "train",
-                                "rate": throughput_samples_per_sec,
-                                "units": "items/s",
-                            }
-                        )
-
-                        last_log_time = time.time()
 
             if completed_steps >= max_train_steps:
                 break

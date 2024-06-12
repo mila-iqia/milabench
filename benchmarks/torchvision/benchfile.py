@@ -1,5 +1,7 @@
 from milabench.pack import Package
 
+from milabench.commands import PackCommand
+
 
 class TorchvisionBenchmark(Package):
     base_requirements = "requirements.in"

@@ -22,6 +22,24 @@ _torchvision:
     --lr: 0.01
     --no-stdout: true
     --epochs: 50
+    --num-workers: 8
+    --loader: pytorch
+    --data: "{milabench_data}/FakeImageNet"
+
+
+_torchvision_ddp:
+  inherits: _defaults
+  definition: ../benchmarks/torchvision_ddp
+  group: torchvision
+  install_group: torch
+  plan:
+    method: njobs
+    n: 1
+  argv:
+    --epochs: 10
+    --num-workers: 8
+    --loader: pytorch
+    --data: "{milabench_data}/FakeImageNet"
 
 _flops:
   inherits: _defaults
@@ -45,6 +63,10 @@ llama:
   group: llm
   install_group: torch
   max_duration: 800
+  tags:
+    - nlp
+    - llm
+    - inference
 
   voir:
     options:
@@ -53,10 +75,12 @@ llama:
     
   plan:
     method: per_gpu
-  
-  tags:
-    - nlp
-    - llm
+
+  # Note: when NOT using pretrained model
+  # the benchmark becomes much harder as no end token is ever outputted by the model
+  # which makes inference much slower
+  argv:
+    --pretrained: true
 
 
 _hf:
@@ -76,10 +100,17 @@ _timm:
   definition: ../benchmarks/timm
   group: timm
   install_group: torch
+  tags:
+    - timm
   plan:
     method: per_gpu
   argv:
     --amp: true
+    --amp-dtype: bfloat16
+    --device: '{arch}'
+    --val-split: ''
+    --data-dir: "{milabench_data}"
+    --dataset: "FakeImageNet"
 
 _sb3:
   inherits: _defaults
@@ -171,7 +202,37 @@ resnet50:
   
   argv:
     --model: resnet50
-    --batch-size: 64
+    --batch-size: 256
+    --num-workers: "{cpu_per_gpu}"
+    --loader: pytorch
+  
+resnet50-noio:
+  inherits: _torchvision
+  tags:
+    - vision
+    - classification
+    - convnet
+    - resnet
+    - noio
+  
+  argv:
+    --model: resnet50
+    --batch-size: 256
+    --loader: synthetic_fixed
+
+resnet152-ddp:
+  inherits: _torchvision_ddp
+  tags:
+    - vision
+    - classification
+    - convnet
+    - resnet
+  
+  argv:
+    --model: resnet152
+    --batch-size: 256
+    --num-workers: 8
+    --loader: dali
 
 efficientnet_b4:
   inherits: _torchvision
@@ -249,6 +310,7 @@ _bert-base:
     - transformer
     - huggingface
     - precision-showcase
+    - noio
   argv:
     --model: "Bert"
     --batch-size: 32
@@ -283,6 +345,7 @@ t5:
     - language-modeling
     - transformer
     - huggingface
+    - noio
   argv:
     --model: "T5"
     --batch-size: 16
@@ -294,6 +357,7 @@ reformer:
     - language-modeling
     - transformer
     - huggingface
+    - noio
   argv:
     --model: "Reformer"
     --batch-size: 64
@@ -303,6 +367,7 @@ whisper:
   tags:
     - audio
     - huggingface
+    - noio
   argv:
     --model: "Whisper"
     --batch-size: 64
@@ -426,6 +491,7 @@ stargan:
     - vision
     - gan
     - resnet
+    - noio
   definition: ../benchmarks/stargan
   group: stargan
   install_group: torch
@@ -435,6 +501,12 @@ stargan:
     --image_size: 512
     --c_dim: 5
     --batch_size: 16
+    --dataset: "synth"
+    --celeba_image_dir: "{milabench_data}"
+    --log_dir: "{milabench_extra}/logs"
+    --model_save_dir: "{milabench_extra}/models"
+    --sample_dir: "{milabench_extra}/samples"
+    --result_dir: "{milabench_extra}/results"
 
 super-slomo:
   inherits: _defaults
@@ -449,7 +521,10 @@ super-slomo:
   plan:
     method: per_gpu
   argv:
-    --train_batch_size: 32
+    --train_batch_size: 64
+    --dataset_root: "{milabench_data}/FakeImageNet"
+    --loader: pytorch
+    --num_workers: 8
 
 ppo:
   inherits: _sb3
@@ -550,3 +625,19 @@ rwkv:
     --grad_cp: 0
     --random_seed: 1234
     --enable_progress_bar: "False"
+brax:
+  inherits: _defaults
+  tags:
+    - rl
+    - jax
+  definition: ../benchmarks/brax
+  group: brax
+  install_group: torch
+  plan:
+    method: njobs
+    n: 1
+  argv:
+    --episode-length: 20
+    --batch-size: 1024
+    --num-minibatches: 32
+    --num-envs: 8192

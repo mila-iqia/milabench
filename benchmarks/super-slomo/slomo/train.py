@@ -7,10 +7,14 @@ import torchvision
 import torch.optim as optim
 import torch.nn as nn
 import torch.nn.functional as F
+import torchcompat.core as accelerator
+import torchvision.transforms as transforms
+
+from benchmate.observer import BenchObserver
+
 import model
-from giving import give
-import voir
 from synth import SyntheticData
+import dataloader
 
 
 def main():
@@ -73,16 +77,27 @@ def main():
         action="store_false",
         help="do not allow tf32",
     )
+    parser.add_argument(
+        "--loader",
+        type=str,
+        default="synthetic",
+        help="Dataloader to use",
+    )
+    parser.add_argument(
+        "--num_workers",
+        type=int,
+        default=8,
+        help="Dataloader to use",
+    )
+
 
     args = parser.parse_args()
 
-    if args.allow_tf32:
-        torch.backends.cuda.matmul.allow_tf32 = True
-        torch.backends.cudnn.allow_tf32 = True
+    accelerator.set_enable_tf32(args.allow_tf32)
 
     ###Initialize flow computation and arbitrary-time flow interpolation CNNs.
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = accelerator.fetch_device(0)
     flowComp = model.UNet(6, 4)
     flowComp.to(device)
     ArbTimeFlowIntrp = model.UNet(20, 5)
@@ -96,33 +111,57 @@ def main():
     validationFlowBackWarp = validationFlowBackWarp.to(device)
 
     ###Load Datasets
+    def load_dataset():
+        if args.loader == "synthetic":
+            def igen():
+                sz = 352
+                f0 = torch.rand((3, sz, sz)) * 2 - 1
+                ft = torch.rand((3, sz, sz)) * 2 - 1
+                f1 = torch.rand((3, sz, sz)) * 2 - 1
+                return [f0, ft, f1]
 
-    # # Channel wise mean calculated on adobe240-fps training dataset
-    # mean = [0.429, 0.431, 0.397]
-    # std  = [1, 1, 1]
-    # normalize = transforms.Normalize(mean=mean,
-    #                                 std=std)
-    # transform = transforms.Compose([transforms.ToTensor(), normalize])
+            def ogen():
+                return torch.randint(0, 7, ())
 
-    # trainset = dataloader.SuperSloMo(root=args.dataset_root + '/train', transform=transform, train=True)
-    # trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.train_batch_size, shuffle=False)
+            trainset = SyntheticData(
+                n=args.train_batch_size, 
+                repeat=10000, 
+                generators=[igen, ogen]
+            )
 
-    def igen():
-        sz = 352
-        f0 = torch.rand((3, sz, sz)) * 2 - 1
-        ft = torch.rand((3, sz, sz)) * 2 - 1
-        f1 = torch.rand((3, sz, sz)) * 2 - 1
-        return [f0, ft, f1]
+            return torch.utils.data.DataLoader(
+                trainset, 
+                batch_size=args.train_batch_size,
+                num_workers=8
+            )
 
-    def ogen():
-        return torch.randint(0, 7, ())
+        # Channel wise mean calculated on adobe240-fps training dataset
+        transform = transforms.Compose([
+            transforms.ToTensor(), 
+            transforms.Normalize(
+                mean=[0.429, 0.431, 0.397],
+                std=[1, 1, 1]
+            )
+        ])
 
-    trainset = SyntheticData(
-        n=args.train_batch_size, repeat=10000, generators=[igen, ogen]
-    )
-    trainloader = torch.utils.data.DataLoader(
-        trainset, batch_size=args.train_batch_size, num_workers=2
-    )
+        trainset = dataloader.SuperSloMo(root=args.dataset_root + '/train', transform=transform, train=True)
+
+        too_small = []
+        for i, p in enumerate(trainset.framesPath):
+            if len(p) < 12:
+                too_small.append(i)
+
+        for i in reversed(too_small):
+            del trainset.framesPath[i]
+
+        return torch.utils.data.DataLoader(
+            trainset, 
+            batch_size=args.train_batch_size, 
+            shuffle=False,
+            num_workers=args.num_workers
+        )
+
+    trainloader = load_dataset()
 
     ###Utils
 
@@ -138,6 +177,7 @@ def main():
     params = list(ArbTimeFlowIntrp.parameters()) + list(flowComp.parameters())
 
     optimizer = optim.Adam(params, lr=args.init_learning_rate)
+
     # scheduler to decrease learning rate by a factor of 10 at milestones.
     scheduler = optim.lr_scheduler.MultiStepLR(
         optimizer, milestones=args.milestones, gamma=0.1
@@ -148,8 +188,16 @@ def main():
     vgg16 = torchvision.models.vgg16(pretrained=True)
     vgg16_conv_4_3 = nn.Sequential(*list(vgg16.children())[0][:22])
     vgg16_conv_4_3.to(device)
+    vgg16_conv_4_3.eval()
     for param in vgg16_conv_4_3.parameters():
         param.requires_grad = False
+
+
+    ArbTimeFlowIntrp, optimizer = accelerator.optimize(ArbTimeFlowIntrp, optimizer=optimizer, dtype=torch.float)
+
+    flowComp, optimizer = accelerator.optimize(flowComp, optimizer=optimizer, dtype=torch.float)
+
+    vgg16 = accelerator.optimize(vgg16_conv_4_3, optimizer=None, dtype=torch.float)
 
     ### Initialization
 
@@ -166,6 +214,15 @@ def main():
     valLoss = dict1["valLoss"]
     valPSNR = dict1["valPSNR"]
 
+
+    print(device)
+    observer = BenchObserver(
+        event_fn=accelerator.Event, 
+        earlystop=60, 
+        batch_size_fn=lambda batch: batch[1].shape[0]
+    )
+    loader = observer.loader(trainloader)
+
     ### Main training loop
     for epoch in range(dict1["epoch"] + 1, args.epochs):
         print("Epoch: ", epoch)
@@ -180,15 +237,7 @@ def main():
         scheduler.step()
 
         # for trainIndex, (trainData, trainFrameIndex) in enumerate(trainloader, 0):
-        for trainIndex, (trainData, trainFrameIndex) in enumerate(
-            voir.iterate(
-                "train",
-                trainloader,
-                report_batch=True,
-                batch_size=lambda batch: batch[1].shape[0],
-            ),
-            0,
-        ):
+        for trainIndex, (trainData, trainFrameIndex) in enumerate(loader, 0):
             ## Getting the input and the target from the training set
             frame0, frameT, frame1 = trainData
 
@@ -263,11 +312,14 @@ def main():
             # since the loss in paper is calculated for input pixels in range 0-255
             # and the input to our network is in range 0-1
             loss = 204 * recnLoss + 102 * warpLoss + 0.005 * prcpLoss + loss_smooth
-            give(loss=loss.item())
+            observer.record_loss(loss.detach())
+
             # Backpropagate
             loss.backward()
+            accelerator.mark_step()
+
             optimizer.step()
-            iLoss += loss.item()
+            accelerator.mark_step()
 
 
 if __name__ == "__main__":

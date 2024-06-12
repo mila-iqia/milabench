@@ -1,4 +1,5 @@
 import contextvars
+from copy import deepcopy
 import os
 import socket
 
@@ -71,17 +72,68 @@ def finalize_config(name, bench_config):
     return bench_config
 
 
+def combine_args(args, kwargs):
+    if len(args) == 0:
+        yield kwargs 
+    else:
+        key, values = args.popitem()
+        for value in values:
+            kwargs[key] = value
+            yield from combine_args(deepcopy(args), kwargs)
+
+
+def expand_matrix(name, bench_config):
+    if 'matrix' not in bench_config:
+        return [(name, bench_config)]
+
+    arguments = deepcopy(bench_config['matrix'])
+    template = bench_config['job']
+    
+    newbenches = []
+
+    for matrix_args in combine_args(arguments, dict()):
+        newbench = deepcopy(template)
+        name = newbench.pop('name').format(**matrix_args)
+
+        for karg, varg in template['argv'].items():
+            try:
+                varg = varg.format(**matrix_args)
+            except:
+                pass
+            newbench['argv'][karg] = varg
+            
+        newbenches.append((name, newbench))
+
+    return newbenches
+
+
+def build_matrix_bench(all_configs):
+    expanded_config = {}
+
+    for name, bench_config in all_configs.items():
+        for k, v in expand_matrix(name, bench_config):
+
+            if k in expanded_config:
+                raise ValueError("Bench name is not unique")
+
+            expanded_config[k] = v
+
+    return expanded_config
+
+
 def build_config(*config_files):
     all_configs = {}
     for layer in _config_layers(config_files):
         all_configs = merge(all_configs, layer)
 
+    all_configs = build_matrix_bench(all_configs)
+    
     for name, bench_config in all_configs.items():
         all_configs[name] = resolve_inheritance(bench_config, all_configs)
-
+    
     for name, bench_config in all_configs.items():
         all_configs[name] = finalize_config(name, bench_config)
-
+    
     config_global.set(all_configs)
     return all_configs
 

@@ -2,6 +2,7 @@ import contextvars
 import os
 from copy import deepcopy
 from dataclasses import dataclass
+import multiprocessing
 
 import numpy as np
 import yaml
@@ -272,3 +273,39 @@ class MemoryUsageExtractor(ValidationLayer):
         if self.filepath is not None:
             with open(self.filepath, "w") as file:
                 yaml.dump(self.memory, file)
+
+
+def resolve_argv(pack, argv):
+    context = system_global.get()
+    arch = context.get("arch", "cpu")
+
+    device_count = len(pack.config.get("devices", [0]))
+
+    ccl = {
+        "hpu": "hccl",
+        "cuda": "nccl",
+        "rocm": "rccl",
+        "xpu": "ccl",
+        "cpu": "gloo"
+    }
+
+    if device_count <= 0:
+        device_count = 1
+
+    context["arch"] = arch
+    context["ccl"] = ccl.get(arch, "gloo")
+    context["cpu_count"] = multiprocessing.cpu_count()
+    context["cpu_per_gpu"] = multiprocessing.cpu_count() // device_count
+    
+    context["milabench_data"] = pack.config.get("dirs", {}).get("data", None)
+    context["milabench_cache"] = pack.config.get("dirs", {}).get("cache", None)
+    context["milabench_extra"] = pack.config.get("dirs", {}).get("extra", None)
+    
+    max_worker = 16
+    context["n_worker"] = min(context["cpu_per_gpu"], max_worker)
+
+    argv = list(argv)
+    for i, arg in enumerate(argv):
+        argv[i] = str(arg).format(**context)
+
+    return argv

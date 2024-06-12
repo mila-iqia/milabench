@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import stat
 
 import voir.instruments.gpu as voirgpu
 
@@ -87,6 +88,18 @@ def set_env():
     os.environ["MILABENCH_BASE"] = "output"
     os.environ["MILABENCH_DASH"] = "no"
     os.environ["MILABENCH_GPU_ARCH"] = backend
+
+    #
+    # milabench expects voir to be installed in the bench venv
+    # we fake one to use the one we have in the current env
+    os.makedirs("output/venv/benchio/bin/", exist_ok=True)
+    voirexec = "output/venv/benchio/bin/voir"
+    with open(voirexec, "w") as fp:
+        fp.write("#!/bin/bash\n")
+        fp.write("python -m voir \"$@\"")
+
+    current_permissions = stat.S_IMODE(os.lstat(voirexec).st_mode)
+    os.chmod(voirexec, current_permissions | (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH))
 
     if backend == "mock":
         oldsmi = voirgpu.DEVICESMI

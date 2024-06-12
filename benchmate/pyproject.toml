@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "benchmate"
+version = "0.1.0"
+description = "Benchmarking suite for machine learning algorithms"
+authors = [
+    "Pierre Delaunay <pierre.delaunay@mila.quebec>"
+]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = ">=3.8,<4.0"
+torchcompat = "^1.0.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
+combine_as_imports = true
+
+[tool.poetry-git-version-plugin]
+alpha_version_format = '{version}a{distance}+{commit_hash}'

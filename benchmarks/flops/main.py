@@ -1,16 +1,12 @@
 #!/usr/bin/env python
 
 from argparse import ArgumentParser
-import json
 import time
-import sys
-import multiprocessing
 
 import torch
+import torchcompat.core as accelerator
 
-from voir.smuggle import SmuggleWriter
-from voir.instruments.gpu import get_gpu_info
-from voir.instruments.utils import Monitor
+from benchmate.monitor import setupvoir
 
 KILO = 1e3
 MEGA = 1e6
@@ -18,32 +14,12 @@ GIGA = 1e9
 TERA = 1e12
 EXA = 1e18
 
-
-def _worker(state, queue, func, delay):
-    import time
-
-    while state["running"]:
-        queue.put(func())
-        time.sleep(delay)
+def empty_cache():
+    accelerator.empty_cache()
 
 
-class Monitor:
-    def __init__(self, delay, func):
-        self.manager = multiprocessing.Manager()
-        self.state = self.manager.dict()
-        self.state["running"] = True
-        self.results = multiprocessing.Queue()
-        self.process = multiprocessing.Process(
-            target=_worker,
-            args=(self.state, self.results, func, delay),
-        )
-
-    def start(self):
-        self.process.start()
-
-    def stop(self):
-        self.state["running"] = False
-        self.process.join()
+def synchronize():
+    accelerator.synchronize()
 
 
 def modelflops(
@@ -53,19 +29,21 @@ def modelflops(
     # it says it return MAC but I feel its methods is wrong
     from thop import profile
 
+    device = accelerator.fetch_device(0)
+
     # MAC: Multiply–accumulate operation
-    batch = torch.randn(*shape, dtype=dtype, device="cuda:0")
+    batch = torch.randn(*shape, dtype=dtype, device=device)
 
     flops, _ = profile(model, inputs=(batch,))
 
     with torch.no_grad():
         # Prepare
-        torch.cuda.empty_cache()
+        empty_cache()
 
-        batch = batch.cuda()
-        model = model.to(dtype=dtype, device="cuda:0")
+        batch = batch.to(device)
+        model = model.to(dtype=dtype, device=device)
 
-        torch.cuda.synchronize()
+        synchronize()
 
         # Start
         start = time.time()
@@ -73,7 +51,7 @@ def modelflops(
         for i in range(repeat):
             _ = model(batch)
 
-        torch.cuda.synchronize()
+        synchronize()
         end = time.time()
         # --
 
@@ -81,62 +59,33 @@ def modelflops(
 
 
 def f(N, R=30, m=5000000, n=256, unit=TERA, dtype=torch.float32, log=None):
-    torch.cuda.empty_cache()
-    a = torch.eye(n, dtype=dtype, device="cuda:0")
-    x = torch.randn((m, n), dtype=dtype, device="cuda:0")
+    device = accelerator.fetch_device(0)
+
+    empty_cache()
+
+    a = torch.eye(n, dtype=dtype, device=device)
+    x = torch.randn((m, n), dtype=dtype, device=device)
     y = torch.zeros_like(x)
 
     F = N * (2 * m * n * n + 2 * m * n * n)
 
     for i in range(R):
-        torch.cuda.synchronize()
+        synchronize()
         ts = -time.time()
 
         for _ in range(N):
             # No allocation in main loop using dual-out strategy
             y = torch.mm(x, a, out=y)
             x = torch.mm(y, a, out=x)
+            accelerator.mark_step()
 
-        torch.cuda.synchronize()
+        synchronize()
         ts += time.time()
 
         if log is not None:
             log({"task": "train", "rate": F / ts / unit, "units": "Tflops"})
 
-    torch.cuda.empty_cache()
-
-
-def setupvoir():
-    # wtf this do
-    data_file = SmuggleWriter(sys.stdout)
-    # data_file = sys.stdout
-
-    def log(data):
-        if data_file is not None:
-            data["t"] = time.time()
-            print(json.dumps(data), file=data_file)
-
-            while not monitor.results.empty():
-                print(json.dumps(monitor.results.get()), file=data_file)
-
-    def monitor_fn():
-        data = {
-            gpu["device"]: {
-                "memory": [
-                    gpu["memory"]["used"],
-                    gpu["memory"]["total"],
-                ],
-                "load": gpu["utilization"]["compute"],
-                "temperature": gpu["temperature"],
-                "power": gpu["power"],
-            }
-            for gpu in get_gpu_info()["gpus"].values()
-        }
-        return {"task": "main", "gpudata": data, "t": time.time()}
-
-    monitor = Monitor(0.5, monitor_fn)
-    monitor.start()
-    return log, monitor
+    empty_cache()
 
 
 def main():
@@ -156,9 +105,7 @@ def main():
 
     args = parser.parse_args()
 
-    torch.backends.cuda.matmul.allow_tf32 = False
-    if args.tf32:
-        torch.backends.cuda.matmul.allow_tf32 = True
+    accelerator.set_enable_tf32(args.tf32)
 
     log, monitor = setupvoir()
 
@@ -169,3 +116,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    print("done")

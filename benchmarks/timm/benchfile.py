@@ -2,7 +2,7 @@ from milabench.commands import TorchRunCommand
 from milabench.pack import Package
 
 
-BRANCH = "56b90317cd9db1038b42ebdfc5bd81b1a2275cc1"
+BRANCH = "cb0e4391beedcc5ac3ae4bce16561b95c326f32c"
 
 
 class TimmBenchmarkPack(Package):
@@ -19,10 +19,6 @@ class TimmBenchmarkPack(Package):
     def argv(self):
         return [
             *super().argv,
-            "--data-dir",
-            self.dirs.data,
-            "--dataset",
-            "FakeImageNet",
             "--output",
             self.dirs.extra / self.logdir.name / self.tag,
             "--checkpoint-hist",

@@ -26,7 +26,7 @@ class Config:
 
 @configurable
 def instrument_main(ov, options: Config):
-    import torch
+    import torchcompat.core as accelerator
 
     yield ov.phases.init
 
@@ -38,7 +38,7 @@ def instrument_main(ov, options: Config):
         rate(
             interval=options.interval,
             skip=options.skip,
-            sync=torch.cuda.synchronize if torch.cuda.is_available() else None,
+            sync=accelerator.synchronize,
         ),
         early_stop(n=options.stop, key="rate", task="train"),
         gpu_monitor(poll_interval=options.gpu_poll),

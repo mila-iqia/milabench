@@ -1,17 +1,14 @@
 import argparse
 import contextlib
-import os
 
 import torch
 import torch.cuda.amp
 import torch.nn as nn
-import torchvision.datasets as datasets
 import torchvision.models as tvmodels
-import torchvision.transforms as transforms
-import voir
-from giving import give, given
+import torchcompat.core as accelerator
 
-normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+from benchmate.dataloader import imagenet_dataloader, dataloader_arguments
+from benchmate.metrics import StopProgram
 
 
 def is_tf32_allowed(args):
@@ -19,75 +16,90 @@ def is_tf32_allowed(args):
 
 
 def is_fp16_allowed(args):
-    return "fp16" in args.precision
+    return "fp16" in args.precision or "bf16" in args.precision
 
 
-data_transforms = transforms.Compose(
-    [
-        transforms.RandomResizedCrop(224),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        normalize,
-    ]
-)
+def float_dtype(precision):
+    if "fp16" in precision:
+        if accelerator.device_type == "cuda":
+            return torch.float16
+        else:
+            return torch.bfloat16
+        
+    if "bf16" in precision:
+        return torch.bfloat16
+        
+    return torch.float
+
+
+class NoScale:
+    def scale(self, loss):
+        return loss
+    def step(self, optimizer):
+        optimizer.step()
+    def update(self):
+        pass
 
 
 @contextlib.contextmanager
-def scaling(enable):
+def scaling(enable, dtype):
     if enable:
-        with torch.cuda.amp.autocast():
+        with accelerator.amp.autocast(dtype=dtype):
             yield
     else:
         yield
 
 
-def train_epoch(model, criterion, optimizer, loader, device, scaler=None):
-    model.train()
-    for inp, target in voir.iterate("train", loader, True):
-        inp = inp.to(device)
-        target = target.to(device)
-        optimizer.zero_grad()
-        with scaling(scaler is not None):
-            output = model(inp)
-            loss = criterion(output, target)
-            give(loss=loss.item())
+def model_optimizer(args, model, device):
+    if hasattr(model, "train"):
+        model.train()
 
-        if scaler:
-            scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
-        else:
-            loss.backward()
-            optimizer.step()
+    if "channel_last" in args.optim:
+        model = model.to(memory_format=torch.channels_last)
 
+    if "trace" in args.optim:
+        input = torch.randn((args.batch_size, 3, 224, 224)).to(device)
+        model = torch.jit.trace(model, input)
+        return model, model.parameters()
 
-class SyntheticData:
-    def __init__(self, model, device, batch_size, n, fixed_batch):
-        self.n = n
-        self.inp = torch.randn((batch_size, 3, 224, 224)).to(device)
-        self.out = torch.rand_like(model(self.inp))
-        self.fixed_batch = fixed_batch
+    if "inductor" in args.optim:
+        from functorch import make_functional_with_buffers
+        from functorch.compile import make_boxed_func
 
-    def __iter__(self):
-        inp, out = self.inp, self.out
-        for i in range(self.n):
-            if not self.fixed_batch:
-                inp = torch.rand_like(self.inp)
-                out = torch.rand_like(self.out)
-            yield (inp, out)
+        model, params, buffers = make_functional_with_buffers(model)
 
-    def __len__(self):
-        return self.n
+        model = make_boxed_func(model)
 
+        # backend , nvprims_nvfuser, cnvprims_nvfuser
+        model = torch.compile(model, backend="inductor")
+
+        def forward(*args):
+            return model((params, buffers, *args))
+
+        return forward, params
+
+    return model, model.parameters()
 
 def main():
+    from voir.phase import StopProgram
+
+    try:
+        _main()
+    except StopProgram:
+        raise
+
+def _main():
     parser = argparse.ArgumentParser(description="Torchvision models")
+
+    dataloader_arguments(parser)
+
     parser.add_argument(
-        "--batch-size",
-        type=int,
-        default=16,
-        metavar="N",
-        help="input batch size for training (default: 16)",
+        "--optim", 
+        type=str, 
+        default="",
+        nargs="+",
+        choices=["trace", "inductor", "script", "channel_last"],
+        help="Optimization to enable",
     )
     parser.add_argument(
         "--model", type=str, help="torchvision model name", required=True
@@ -117,34 +129,10 @@ def main():
         help="random seed (default: 1234)",
     )
     parser.add_argument(
-        "--num-workers",
-        type=int,
-        default=8,
-        help="number of workers for data loading",
-    )
-    parser.add_argument("--data", type=str, help="data directory")
-    parser.add_argument(
-        "--synthetic-data", action="store_true", help="whether to use synthetic data"
-    )
-    parser.add_argument(
-        "--fixed-batch", action="store_true", help="use a fixed batch for training"
-    )
-    # parser.add_argument(
-    #     "--with-amp",
-    #     action="store_true",
-    #     help="whether to use mixed precision with amp",
-    # )
-    parser.add_argument(
         "--no-stdout",
         action="store_true",
         help="do not display the loss on stdout",
     )
-    # parser.add_argument(
-    #     "--no-tf32",
-    #     dest="allow_tf32",
-    #     action="store_false",
-    #     help="do not allow tf32",
-    # )
     parser.add_argument(
         "--precision",
         type=str,
@@ -152,73 +140,97 @@ def main():
         default="fp32",
         help="Precision configuration",
     )
+    parser.add_argument(
+        "--iobench",
+        action="store_true",
+        default=False,
+        help="Precision configuration",
+    )
 
     args = parser.parse_args()
-    if args.fixed_batch:
-        args.synthetic_data = True
 
-    if args.synthetic_data:
-        args.data = None
+    if args.iobench:
+        iobench(args)
     else:
-        if not args.data:
-            data_directory = os.environ.get("MILABENCH_DIR_DATA", None)
-            if data_directory:
-                args.data = os.path.join(data_directory, "FakeImageNet")
+        trainbench(args)
 
-    if not args.no_cuda:
-        assert torch.cuda.is_available(), "Why is CUDA not available"
+def iobench(args):
+    device = accelerator.fetch_device(0)
+    model = getattr(tvmodels, args.model)()
+    model.to(device)
 
-    use_cuda = not args.no_cuda
+    loader = imagenet_dataloader(args, model)
+    dtype = float_dtype(args.precision)
 
+    for _ in range(args.epochs):
+        for inp, target in loader:
+            inp = inp.to(device, dtype=dtype)
+            target = target.to(device)
+
+
+def train_epoch(args, model, criterion, optimizer, loader, device, dtype, scaler=None):
+    if hasattr(model, 'train'):
+        model.train()
+
+    transform = dict(device=device, dtype=dtype)
+    if "channel_last" in args.optim:
+        transform["memory_format"] = torch.channels_last
+
+    for inp, target in loader:
+        inp = inp.to(**transform)
+        target = target.to(device)
+        optimizer.zero_grad()
+
+        with scaling(scaler is not None, dtype):
+            output = model(inp)
+            loss = criterion(output, target)
+    
+            scaler.scale(loss).backward()
+            accelerator.mark_step()
+
+            scaler.step(optimizer)
+            accelerator.mark_step()
+
+            scaler.update()
+
+def trainbench(args):
     torch.manual_seed(args.seed)
-    if use_cuda:
-        if is_tf32_allowed(args):
-            torch.backends.cuda.matmul.allow_tf32 = True
-            torch.backends.cudnn.allow_tf32 = True
-        torch.cuda.manual_seed(args.seed)
 
-    device = torch.device("cuda" if use_cuda else "cpu")
+    accelerator.set_enable_tf32(is_tf32_allowed(args))
+    device = accelerator.fetch_device(0)
 
     model = getattr(tvmodels, args.model)()
     model.to(device)
 
+    model, params = model_optimizer(args, model, device)
+
     criterion = nn.CrossEntropyLoss().to(device)
 
-    optimizer = torch.optim.SGD(model.parameters(), args.lr)
+    optimizer = torch.optim.SGD(params, args.lr)
 
-    if args.data:
-        train = datasets.ImageFolder(os.path.join(args.data, "train"), data_transforms)
-        train_loader = torch.utils.data.DataLoader(
-            train,
-            batch_size=args.batch_size,
-            shuffle=True,
-            num_workers=args.num_workers,
+    model, optimizer = accelerator.optimize(model, optimizer=optimizer, dtype=float_dtype(args.precision))
+
+    train_loader = imagenet_dataloader(args, model)
+
+    scaler = NoScale()
+    if torch.cuda.is_available():
+        scaler = accelerator.amp.GradScaler(enabled=is_fp16_allowed(args))
+
+    for _ in range(args.epochs):
+        train_epoch(
+            args,
+            model, 
+            criterion, 
+            optimizer, 
+            train_loader, 
+            device, 
+            scaler=scaler, 
+            dtype=float_dtype(args.precision),
         )
-    else:
-        train_loader = SyntheticData(
-            model=model,
-            device=device,
-            batch_size=args.batch_size,
-            n=1000,
-            fixed_batch=args.fixed_batch,
-        )
-
-    if is_fp16_allowed(args):
-        scaler = torch.cuda.amp.GradScaler()
-    else:
-        scaler = None
-
-    with given() as gv:
-        if not args.no_stdout:
-            gv.where("loss").display()
-
-        for epoch in voir.iterate("main", range(args.epochs)):
-            if not args.no_stdout:
-                print(f"Begin training epoch {epoch}/{args.epochs}")
-            train_epoch(
-                model, criterion, optimizer, train_loader, device, scaler=scaler
-            )
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except StopProgram:
+        print("Early stopped")

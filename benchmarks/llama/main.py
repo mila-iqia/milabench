@@ -5,12 +5,11 @@ import os
 import argparse
 import time
 import sys
-import multiprocessing
 
 import torch
 
-from voir.smuggle import SmuggleWriter
-from voir.instruments.gpu import get_gpu_info
+from benchmate.monitor import setupvoir
+import torchcompat.core as accelerator
 
 root = os.path.dirname(__file__)
 
@@ -25,66 +24,6 @@ def available_models():
         }
 
     return models
-
-
-def _worker(state, queue, func, delay):
-    import time
-
-    while state["running"]:
-        queue.put(func())
-        time.sleep(delay)
-
-
-class Monitor:
-    def __init__(self, delay, func):
-        self.manager = multiprocessing.Manager()
-        self.state = self.manager.dict()
-        self.state["running"] = True
-        self.results = multiprocessing.Queue()
-        self.process = multiprocessing.Process(
-            target=_worker,
-            args=(self.state, self.results, func, delay),
-        )
-
-    def start(self):
-        self.process.start()
-
-    def stop(self):
-        self.state["running"] = False
-        self.process.join()
-
-
-def setupvoir():
-    # wtf this do
-    data_file = SmuggleWriter(sys.stdout)
-    # data_file = sys.stdout
-
-    def log(data):
-        if data_file is not None:
-            data["t"] = time.time()
-            print(json.dumps(data), file=data_file)
-
-            while not monitor.results.empty():
-                print(json.dumps(monitor.results.get()), file=data_file)
-
-    def monitor_fn():
-        data = {
-            gpu["device"]: {
-                "memory": [
-                    gpu["memory"]["used"],
-                    gpu["memory"]["total"],
-                ],
-                "load": gpu["utilization"]["compute"],
-                "temperature": gpu["temperature"],
-                "power": gpu["power"],
-            }
-            for gpu in get_gpu_info()["gpus"].values()
-        }
-        return {"task": "main", "gpudata": data, "t": time.time()}
-
-    monitor = Monitor(0.5, monitor_fn)
-    monitor.start()
-    return log, monitor
 
 
 class WrappedTokenizer:
@@ -120,9 +59,8 @@ def huggingface_main(args, model, config):
     import transformers
     from transformers import LlamaForCausalLM, LlamaTokenizerFast
     from transformers.models.llama.configuration_llama import LlamaConfig
-
     from datasets import load_dataset
-
+    
     # Dataset here
     println("Dataset")
     dataset = load_dataset("wikitext", "wikitext-103-v1")
@@ -133,14 +71,22 @@ def huggingface_main(args, model, config):
         LlamaTokenizerFast.from_pretrained("hf-internal-testing/llama-tokenizer")
     )
 
+    if args.pretrained and args.prepare:
+        model = LlamaForCausalLM.from_pretrained(config["_name_or_path"])
+
     # Prepare is done
     if args.prepare:
         return 0
-
+    
     # We do not download LLAMA because it takes too long
     # we just instantiate an untrained one
     println("Model")
-    model = LlamaForCausalLM(LlamaConfig.from_dict(config)).cuda()
+    device = accelerator.fetch_device(0)
+
+    if args.pretrained:
+        model = LlamaForCausalLM.from_pretrained(config["_name_or_path"]).to(device=device)
+    else:
+        model = LlamaForCausalLM(LlamaConfig.from_dict(config)).to(device=device)
 
     println("Pipeline")
     pipeline = transformers.pipeline(
@@ -149,7 +95,7 @@ def huggingface_main(args, model, config):
         torch_dtype=torch.float16,
         # device_map="cuda",
         tokenizer=tokenizer,
-        device=torch.device("cuda"),
+        device=device,
     )
 
     in_token_count = 0
@@ -159,9 +105,12 @@ def huggingface_main(args, model, config):
 
     log, monitor = setupvoir()
 
+    # loader = Wrapper(dataset["train"], accelerator.Event, earlystop=60)
+    loader = dataset["train"]
+
     println("Starting")
     count = 0
-    for entry in dataset["train"]:
+    for entry in loader:
         text = entry["text"].strip()
 
         # Titles
@@ -212,6 +161,7 @@ def main():
     parser.add_argument("--model", default="llama2-7b", choices=models.keys())
     parser.add_argument("--prepare", action="store_true")
     parser.add_argument("--cache", required=True, type=str)
+    parser.add_argument("--pretrained", action="store_true", default=False)
 
     #
     args = parser.parse_args()
@@ -228,4 +178,11 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    from benchmate.metrics import StopProgram
+    import traceback
+    try:
+        main()
+    except StopProgram:
+        print("Early stopped")
+    except Exception:
+        traceback.print_exc()

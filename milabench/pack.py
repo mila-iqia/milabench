@@ -27,6 +27,28 @@ from .utils import (
 )
 
 
+def is_editable_install():
+    import subprocess 
+    import json
+
+    try:
+        output = subprocess.check_output(["pip", "list", "-e", "--format", "json"])
+        editable_package = json.loads(output)
+
+        for p in editable_package:
+            if p["name"] == "milabench":
+                return True
+        return False
+    except:
+        return False
+
+
+async def install_benchmate(pack):
+    milabench = os.path.dirname(__file__)
+    benchmate = os.path.join(milabench, "..", "benchmate")
+    await pack.pip_install("-e", benchmate)
+
+
 class PackageCore:
     def __init__(self, config):
         self.pack_path = XPath(config["definition"])
@@ -94,16 +116,13 @@ class BasePackage:
         self.config = config
         self.phase = None
         self.processes = []
-
+        
     def copy(self, config):
         return type(self)(config=merge(self.config, config))
 
     @property
     def argv(self):
-        # Circular import
-        from .sizer import scale_argv
-
-        return scale_argv(self, assemble_options(self.config.get("argv", [])))
+        return assemble_options(self.config.get("argv", []))
 
     @property
     def tag(self):
@@ -354,18 +373,23 @@ class Package(BasePackage):
             milabench in the venv, and then calling this method.
         """
         assert self.phase == "install"
+
         for reqs in self.requirements_files(self.config.get("install_variant", None)):
             if reqs.exists():
                 await self.pip_install("-r", reqs)
             else:
                 raise FileNotFoundError(f"Requirements file not found: {reqs}")
 
+        if is_editable_install():
+            await install_benchmate(self)
+        
     async def pin(
         self,
         clear_previous: bool = True,
         pip_compile_args: Sequence = tuple(),
         input_files: Sequence = tuple(),
         constraints: Sequence = tuple(),
+        working_dir=None
     ):
         """Pin versions to requirements file.
 
@@ -376,8 +400,10 @@ class Package(BasePackage):
             constraint: The constraint file
         """
         ivar = self.config.get("install_variant", None)
+        
         if ivar == "unpinned":
             raise Exception("Cannot pin the 'unpinned' variant.")
+        
         # assert self.phase == "pin"
         for base_reqs, reqs in self.requirements_map().items():
             if not base_reqs.exists():
@@ -391,20 +417,20 @@ class Package(BasePackage):
 
             grp = self.config["group"]
             constraint_path = XPath(".pin") / f"tmp-constraints-{ivar}-{grp}.txt"
-            constraint_files = make_constraints_file(constraint_path, constraints)
+            constraint_files = make_constraints_file(constraint_path, constraints, working_dir)
             current_input_files = constraint_files + (base_reqs, *input_files)
 
             await self.exec_pip_compile(
-                reqs, current_input_files, argv=pip_compile_args
+                reqs, current_input_files, argv=pip_compile_args, working_dir=working_dir
             )
 
             # Add previous requirements as inputs
             input_files = (reqs, *input_files)
 
     async def exec_pip_compile(
-        self, requirements_file: XPath, input_files: XPath, argv=[]
+        self, requirements_file: XPath, input_files: XPath, argv=[], working_dir=None
     ):
-        input_files = [relativize(inp) for inp in input_files]
+        input_files = [relativize(inp, working_dir) for inp in input_files]
         from . import commands as cmd
 
         return await cmd.CmdCommand(
@@ -413,13 +439,11 @@ class Package(BasePackage):
             "-m",
             "piptools",
             "compile",
-            "--resolver",
-            "backtracking",
-            "--output-file",
-            relativize(requirements_file),
+            "--resolver",    "backtracking",
+            "--output-file", relativize(requirements_file, working_dir),
             *argv,
             *input_files,
-            cwd=XPath(".").absolute(),
+            cwd=working_dir,
             external=True,
         ).execute()
 

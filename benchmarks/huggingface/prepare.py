@@ -8,3 +8,8 @@ if __name__ == "__main__":
     print(f"Preparing {args.model}")
     make_config = models[args.model]
     make_config()
+
+    # bert dataset
+    # t5 dataset
+    # reformer dataset
+    # whisper dataset

@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from voir import configurable
 from voir.instruments import dash, early_stop, gpu_monitor, log, rate
 
+import torchcompat.core as accelerator
 
 @dataclass
 class Config:
@@ -26,46 +27,46 @@ class Config:
 
 @configurable
 def instrument_main(ov, options: Config):
-    def setup(args):
-        import torch
-
-        if options.dash:
-            ov.require(dash)
-
-        ov.require(
-            log(
-                "value", "progress", "rate", "units", "loss", "gpudata", context="task"
-            ),
-            rate(
-                interval=options.interval,
-                skip=options.skip,
-                sync=torch.cuda.synchronize if torch.cuda.is_available() else None,
-                batch_size_calc=lambda b: len(b) * args.world_size,
-            ),
-            early_stop(n=options.stop, key="rate", task="train", signal="stop"),
-            gpu_monitor(poll_interval=options.gpu_poll),
-        )
-
-        # Loss
-        (
-            loss_probe.throttle(1)["loss"]
-            .map(lambda loss: {"task": "train", "loss": float(loss)})
-            .give()
-        )
-
-        # Compute Start & End + Batch
-        batch_probe.augment(task=lambda: "train").give()
 
     yield ov.phases.load_script
 
+    import os
+    import torchcompat.core as accelerator
+    from benchmate.observer import BenchObserver
+
     from timm.utils.distributed import is_global_primary
 
-    # Loss
-    loss_probe = ov.probe("//train_one_epoch > loss")
-
-    # Compute Start & End + Batch
-    batch_probe = ov.probe(
-        "//train_one_epoch(input as batch, !#loop_batch_idx as step, !!#endloop_batch_idx as step_end)"
+    observer = BenchObserver(
+        accelerator.Event, 
+        earlystop=options.stop + options.skip,
+        rank=int(os.getenv("RANK", 0)),
+        device=accelerator.fetch_device(int(os.getenv("RANK", 0))),
+        backward_callback=accelerator.mark_step,
+        step_callback=accelerator.mark_step,
+        batch_size_fn=lambda x: len(x[0])
     )
 
-    ov.probe("//main(args) > device")["args"].filter(is_global_primary).subscribe(setup)
+    probe = ov.probe("/timm.data.loader/create_loader() as loader", overridable=True)
+    probe['loader'].override(observer.loader)
+
+    probe = ov.probe("//train_one_epoch > loss_fn", overridable=True)
+    probe['loss_fn'].override(observer.criterion)
+
+    probe = ov.probe("//train_one_epoch > optimizer", overridable=True)
+    probe['optimizer'].override(observer.optimizer)
+
+    # Do not save checkpoints
+    probe = ov.probe("//main > saver", overridable=True)
+    probe['saver'].override(lambda save: None)
+
+    instruments = [
+        log(
+            "value", "progress", "rate", "units", "loss", "gpudata", context="task"
+        ),
+        gpu_monitor(poll_interval=options.gpu_poll),
+    ] 
+
+    if is_global_primary:
+        instruments.append(early_stop(n=options.stop, key="rate", task="train", signal="stop"))
+
+    ov.require(*instruments)

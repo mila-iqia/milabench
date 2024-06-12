@@ -197,7 +197,7 @@ def test_njobs_gpus_executor():
     acc = 0
     for r in proceed(njobs.execute()):
         if r.event == "start":
-            assert r.data["command"][0] == "torchrun"
+            assert r.data["command"][0].endswith("torchrun")
         acc += 1
         print(r)
 
@@ -218,7 +218,7 @@ def test_njobs_gpu_executor():
         print(r)
 
         if r.event == "start":
-            assert r.data["command"][0] == "voir"
+            assert r.data["command"][0].endswith("voir")
 
         acc += 1
 

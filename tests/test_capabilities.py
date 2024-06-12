@@ -21,7 +21,7 @@ def fake_config(n):
 
 def test_capabilties_ok():
     pack = BasePackage(fake_config(10))
-    assert sync_is_system_capable(pack)
+    assert sync_is_system_capable(pack) is True
 
 
 def test_capabilties_not_ok():

@@ -1,4 +1,3 @@
-import json
 import os
 import argparse
 from solver import Solver
@@ -13,16 +12,7 @@ def str2bool(v):
     return v.lower() in ("true")
 
 
-def main(config):
-    # For fast training.
-    cudnn.benchmark = True
-
-    # Create directories if not exist.
-    os.makedirs(config.log_dir, exist_ok=True)
-    os.makedirs(config.model_save_dir, exist_ok=True)
-    os.makedirs(config.sample_dir, exist_ok=True)
-    os.makedirs(config.result_dir, exist_ok=True)
-
+def dataloader(config):
     # Data loader.
     celeba_loader = None
     rafd_loader = None
@@ -68,6 +58,21 @@ def main(config):
         synth_loader = DataLoader(
             synth_dataset, batch_size=config.batch_size, num_workers=config.num_workers
         )
+    
+    return celeba_loader, rafd_loader, synth_loader
+
+
+def main(config):
+    # For fast training.
+    cudnn.benchmark = True
+
+    # Create directories if not exist.
+    os.makedirs(config.log_dir, exist_ok=True)
+    os.makedirs(config.model_save_dir, exist_ok=True)
+    os.makedirs(config.sample_dir, exist_ok=True)
+    os.makedirs(config.result_dir, exist_ok=True)
+
+    celeba_loader, rafd_loader, synth_loader = dataloader(config)
 
     # Solver for training and testing StarGAN.
     solver = Solver(celeba_loader, rafd_loader, synth_loader, config)
@@ -191,24 +196,21 @@ if __name__ == "__main__":
     parser.add_argument("--mode", type=str, default="train", choices=["train", "test"])
     parser.add_argument("--use_tensorboard", type=str2bool, default=False)
 
-    mbconfig = json.loads(os.environ["MILABENCH_CONFIG"])
-    datadir = mbconfig["dirs"]["extra"]
-
     # Directories.
     parser.add_argument("--celeba_image_dir", type=str, default="data/celeba/images")
     parser.add_argument(
         "--attr_path", type=str, default="data/celeba/list_attr_celeba.txt"
     )
     parser.add_argument("--rafd_image_dir", type=str, default="data/RaFD/train")
-    parser.add_argument("--log_dir", type=str, default=os.path.join(datadir, "logs"))
+    parser.add_argument("--log_dir", type=str, default="/data/logs")
     parser.add_argument(
-        "--model_save_dir", type=str, default=os.path.join(datadir, "models")
+        "--model_save_dir", type=str, default="data/models"
     )
     parser.add_argument(
-        "--sample_dir", type=str, default=os.path.join(datadir, "samples")
+        "--sample_dir", type=str, default="data/samples"
     )
     parser.add_argument(
-        "--result_dir", type=str, default=os.path.join(datadir, "results")
+        "--result_dir", type=str, default="data/results"
     )
 
     # Step size.

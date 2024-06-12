@@ -41,14 +41,13 @@ def _make_row(summary, compare, weights):
 
     # Sum of all the GPU performance
     # to get the overall perf of the whole machine
-
     if "per_gpu" in summary:
         acc = 0
         for _, metrics in summary["per_gpu"].items():
             acc += metrics[metric]
     else:
         acc = row["perf"]
-
+    
     success_ratio = 1 - row["fail"] / row["n"]
     score = (acc if acc > 0 else row["perf"]) * success_ratio
 
@@ -128,7 +127,7 @@ class Outputter:
         if not self.stdout:
             return
         if isinstance(x, DataFrame):
-            self._text(x.to_string(formatters=_formatters))
+            self._text(pandas_to_string(x, formatters=_formatters))
         else:
             self._text(str(x))
 
@@ -210,6 +209,29 @@ def make_dataframe(summary, compare=None, weights=None):
             for key in all_keys
         }
     ).transpose()
+    
+    return df
+
+
+@error_guard({})
+def make_report(
+    summary,
+    compare=None,
+    html=None,
+    compare_gpus=False,
+    price=None,
+    title=None,
+    sources=None,
+    errdata=None,
+    weights=None,
+):
+    if weights is None:
+        weights = dict()
+
+    df = make_dataframe(summary, compare, weights)
+
+    # Reorder columns
+    df = df[sorted(df.columns, key=lambda k: columns_order.get(k, 0))]
 
 
 @error_guard({})
@@ -300,9 +322,39 @@ def make_report(
     out.finalize()
 
 
+def pandas_to_string(df, formatters):
+    """Default stdout printer does not insert a column sep which makes it hard to retranscribe results elsewhere.
+    to_csv does not align the output.
+    """
+    from collections import defaultdict
+    columns = df.columns.tolist()
+
+    sep = " | "
+    lines = []
+    col_size = defaultdict(int)
+
+    for index, row in df.iterrows():
+        line = [f'{index:<30}']
+        for col, val in zip(columns, row):
+            fmt = formatters.get(col)
+            val = fmt(val)
+            col_size[col] = max(col_size[col], len(val))
+            line.append(val)
+
+        lines.append(sep.join(line))
+
+    def fmtcol(col):
+        size = col_size[col]
+        return f"{col:>{size}}"
+
+    header = sep.join([f"{'bench':<30}"] + [fmtcol(col) for col in columns])
+
+    return "\n".join([header] + lines)
+
+
 _formatters = {
-    "n": "{:.0f}".format,
-    "fail": "{:.0f}".format,
+    "fail": "{:4.0f}".format,
+    "n": "{:3.0f}".format,
     "std": "{:10.2f}".format,
     "iqr": "{:10.2f}".format,
     "perf": "{:10.2f}".format,
@@ -314,8 +366,9 @@ _formatters = {
     "std%": "{:6.1%}".format,
     "sem%": "{:6.1%}".format,
     "iqr%": "{:6.1%}".format,
-    "weight": "{:4.2f}".format,
-    "peak_memory": "{:.0f}".format,
+    "score": "{:10.2f}".format,
+    "weight": "{:5.2f}".format,
+    "peak_memory": "{:11.0f}".format,
     0: "{:.0%}".format,
     1: "{:.0%}".format,
     2: "{:.0%}".format,
