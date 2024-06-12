@@ -3,9 +3,9 @@ import os
 
 import torch
 import torch.cuda.amp
+import torchcompat.core as accelerator
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
-import torchcompat.core as accelerator
 from torch.utils.data.distributed import DistributedSampler
 
 
@@ -23,14 +23,14 @@ def generate_tensors(batch_size, shapes, device):
     tensors = []
     if len(shapes[0]) == 2:
         tensors = dict()
-    
+
     for kshape in shapes:
         if len(kshape) == 2:
             key, shape = kshape
             tensors[key] = torch.randn((batch_size, *shape), device=device)
         else:
-            tensors.append(torch.randn((batch_size, *kshape), device=device)) 
-    
+            tensors.append(torch.randn((batch_size, *kshape), device=device))
+
     return tensors
 
 
@@ -70,7 +70,7 @@ class SyntheticData:
         if self.fixed_batch:
             for _ in range(self.n):
                 yield self.tensors
-        
+
         else:
             for _ in range(self.n):
                 yield [torch.rand_like(t) for t in self.tensors]
@@ -80,25 +80,25 @@ class SyntheticData:
 
 
 def dali(folder, batch_size, num_workers, rank=0, world_size=1):
-    from nvidia.dali.pipeline import pipeline_def
-    import nvidia.dali.types as types
     import nvidia.dali.fn as fn
+    import nvidia.dali.types as types
+    from nvidia.dali.pipeline import pipeline_def
     from nvidia.dali.plugin.pytorch import DALIGenericIterator
 
     @pipeline_def(num_threads=num_workers, device_id=0)
     def get_dali_pipeline():
         images, labels = fn.readers.file(
-            file_root=folder, 
-            random_shuffle=True, 
+            file_root=folder,
+            random_shuffle=True,
             name="Reader",
             shard_id=rank,
             num_shards=world_size,
         )
-        
+
         # decode data on the GPU
         images = fn.decoders.image_random_crop(
-            images, 
-            device="mixed", 
+            images,
+            device="mixed",
             output_type=types.RGB,
         )
         # the rest of processing happens on the GPU as well
@@ -109,14 +109,14 @@ def dali(folder, batch_size, num_workers, rank=0, world_size=1):
             crop_w=224,
             mean=[0.485 * 255, 0.456 * 255, 0.406 * 255],
             std=[0.229 * 255, 0.224 * 255, 0.225 * 255],
-            mirror=fn.random.coin_flip()
+            mirror=fn.random.coin_flip(),
         )
         return images, labels
 
     train_data = DALIGenericIterator(
         [get_dali_pipeline(batch_size=batch_size)],
-        ['data', 'label'],
-        reader_name='Reader'
+        ["data", "label"],
+        reader_name="Reader",
     )
 
     class Adapter:
@@ -130,10 +130,10 @@ def dali(folder, batch_size, num_workers, rank=0, world_size=1):
 
         def __len__(self):
             return len(self.iter)
-        
+
         def __iter__(self):
             for data in self.iter:
-                x, y = data[0]['data'], data[0]['label']
+                x, y = data[0]["data"], data[0]["label"]
                 yield x, torch.squeeze(y, dim=1).type(torch.LongTensor)
 
     return Adapter(train_data)
@@ -141,7 +141,7 @@ def dali(folder, batch_size, num_workers, rank=0, world_size=1):
 
 def pytorch_fakedataset(folder, batch_size, num_workers):
     train = FakeImageClassification((3, 224, 224), batch_size, 60)
-    
+
     return torch.utils.data.DataLoader(
         train,
         batch_size=batch_size,
@@ -152,7 +152,9 @@ def pytorch_fakedataset(folder, batch_size, num_workers):
 
 
 def image_transforms():
-    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    normalize = transforms.Normalize(
+        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+    )
     data_transforms = transforms.Compose(
         [
             transforms.RandomResizedCrop(224),
@@ -163,11 +165,9 @@ def image_transforms():
     )
     return data_transforms
 
-def pytorch(folder, batch_size, num_workers, distributed=False):
-    train = datasets.ImageFolder(
-        folder, 
-        image_transforms()
-    )
+
+def pytorch(folder, batch_size, num_workers, distributed=False, epochs=60):
+    train = datasets.ImageFolder(folder, image_transforms())
 
     kwargs = {"shuffle": True}
     if distributed:
@@ -179,9 +179,7 @@ def pytorch(folder, batch_size, num_workers, distributed=False):
     # we reduce the standard deviation
     if False:
         kwargs["sampler"] = torch.utils.data.RandomSampler(
-            train, 
-            replacement=True, 
-            num_samples=len(train) * args.epochs
+            train, replacement=True, num_samples=len(train) * epochs
         )
         kwargs["shuffle"] = False
 
@@ -197,14 +195,12 @@ def pytorch(folder, batch_size, num_workers, distributed=False):
 def synthetic(model, batch_size, fixed_batch):
     return SyntheticData(
         tensors=generate_tensor_classification(
-            model, 
-            batch_size, 
-            (3, 244, 244), 
-            device=accelerator.fetch_device(0)
+            model, batch_size, (3, 244, 244), device=accelerator.fetch_device(0)
         ),
         n=1000,
         fixed_batch=fixed_batch,
     )
+
 
 def synthetic_fixed(*args):
     return synthetic(*args, fixed_batch=True)
@@ -216,20 +212,28 @@ def synthetic_random(*args):
 
 def dataloader_arguments(parser: argparse.ArgumentParser):
     parser.add_argument(
-        "--batch-size", type=int, default=16,
+        "--batch-size",
+        type=int,
+        default=16,
         help="input batch size for training (default: 16)",
     )
     parser.add_argument(
-        "--loader", type=str,  help="Dataloader implementation (dali, pytorch, synthetic_fixed, synthetic_random)", 
-        default="pytorch"
+        "--loader",
+        type=str,
+        help="Dataloader implementation (dali, pytorch, synthetic_fixed, synthetic_random)",
+        default="pytorch",
     )
     parser.add_argument(
-        "--num-workers", type=int, default=8,
+        "--num-workers",
+        type=int,
+        default=8,
         help="number of workers for data loading",
     )
-    parser.add_argument( 
-        "--data", type=str, default=os.environ.get("MILABENCH_DIR_DATA", None),
-        help="data directory"
+    parser.add_argument(
+        "--data",
+        type=str,
+        default=os.environ.get("MILABENCH_DIR_DATA", None),
+        help="data directory",
     )
 
 
@@ -243,24 +247,14 @@ def data_folder(args):
 
 def imagenet_dataloader(args, model, rank=0, world_size=1):
     if args.loader == "synthetic_random":
-        return synthetic(
-            model=model,
-            batch_size=args.batch_size,
-            fixed_batch=False
-        )
-    
+        return synthetic(model=model, batch_size=args.batch_size, fixed_batch=False)
+
     if args.loader == "synthetic_fixed":
-        return synthetic(
-            model=model,
-            batch_size=args.batch_size,
-            fixed_batch=True
-        )
-    
+        return synthetic(model=model, batch_size=args.batch_size, fixed_batch=True)
+
     if args.loader == "pytorch_fakedataset":
         return pytorch_fakedataset(
-            None,
-            batch_size=args.batch_size,
-            num_workers=args.num_workers
+            None, batch_size=args.batch_size, num_workers=args.num_workers
         )
 
     folder = os.path.join(data_folder(args), "train")

@@ -28,8 +28,8 @@ from .utils import (
 
 
 def is_editable_install():
-    import subprocess 
     import json
+    import subprocess
 
     try:
         output = subprocess.check_output(["pip", "list", "-e", "--format", "json"])
@@ -116,7 +116,7 @@ class BasePackage:
         self.config = config
         self.phase = None
         self.processes = []
-        
+
     def copy(self, config):
         return type(self)(config=merge(self.config, config))
 
@@ -382,14 +382,14 @@ class Package(BasePackage):
 
         if is_editable_install():
             await install_benchmate(self)
-        
+
     async def pin(
         self,
         clear_previous: bool = True,
         pip_compile_args: Sequence = tuple(),
         input_files: Sequence = tuple(),
         constraints: Sequence = tuple(),
-        working_dir=None
+        working_dir=None,
     ):
         """Pin versions to requirements file.
 
@@ -400,10 +400,10 @@ class Package(BasePackage):
             constraint: The constraint file
         """
         ivar = self.config.get("install_variant", None)
-        
+
         if ivar == "unpinned":
             raise Exception("Cannot pin the 'unpinned' variant.")
-        
+
         # assert self.phase == "pin"
         for base_reqs, reqs in self.requirements_map().items():
             if not base_reqs.exists():
@@ -417,11 +417,16 @@ class Package(BasePackage):
 
             grp = self.config["group"]
             constraint_path = XPath(".pin") / f"tmp-constraints-{ivar}-{grp}.txt"
-            constraint_files = make_constraints_file(constraint_path, constraints, working_dir)
+            constraint_files = make_constraints_file(
+                constraint_path, constraints, working_dir
+            )
             current_input_files = constraint_files + (base_reqs, *input_files)
 
             await self.exec_pip_compile(
-                reqs, current_input_files, argv=pip_compile_args, working_dir=working_dir
+                reqs,
+                current_input_files,
+                argv=pip_compile_args,
+                working_dir=working_dir,
             )
 
             # Add previous requirements as inputs
@@ -439,8 +444,10 @@ class Package(BasePackage):
             "-m",
             "piptools",
             "compile",
-            "--resolver",    "backtracking",
-            "--output-file", relativize(requirements_file, working_dir),
+            "--resolver",
+            "backtracking",
+            "--output-file",
+            relativize(requirements_file, working_dir),
             *argv,
             *input_files,
             cwd=working_dir,

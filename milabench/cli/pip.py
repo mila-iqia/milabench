@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 
 from coleo import Option, tooled
 
-from ..common import Option, get_multipack, run_sync
+from ..common import get_multipack, run_sync
 
 
 # fmt: off

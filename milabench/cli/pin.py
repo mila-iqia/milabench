@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from coleo import Option, tooled
 
-from ..common import Option, get_multipack, run_with_loggers
+from ..common import get_multipack, run_with_loggers
 from ..log import TerminalFormatter, TextReporter
 
 

@@ -1,28 +1,23 @@
 #!/usr/bin/env python
 
 import argparse
-from collections import defaultdict
+import json
 import multiprocessing
 import os
+from collections import defaultdict
 from pathlib import Path
-import json
-import warnings
-
-warnings.filterwarnings('ignore')
 
 import torch
-
 from tqdm import tqdm
 
 
 def write(args):
-    import torch 
     import torchvision.transforms as transforms
 
-    offset, outdir, size  = args
+    offset, outdir, size = args
 
     img = torch.randn(*size)
-    target = offset % 1000 # torch.randint(0, 1000, size=(1,), dtype=torch.long)[0]
+    target = offset % 1000  # torch.randint(0, 1000, size=(1,), dtype=torch.long)[0]
     img = transforms.ToPILImage()(img)
 
     class_val = int(target)
@@ -35,14 +30,16 @@ def write(args):
     img.save(image_path)
 
 
-def generate(image_size, n, outdir, start = 0):
+def generate(image_size, n, outdir, start=0):
     work_items = []
     for i in range(n):
-        work_items.append([
-            start + i,
-            outdir,
-            image_size,
-        ])
+        work_items.append(
+            [
+                start + i,
+                outdir,
+                image_size,
+            ]
+        )
 
     n_worker = min(multiprocessing.cpu_count(), 8)
     with multiprocessing.Pool(n_worker) as pool:
@@ -53,7 +50,7 @@ def generate(image_size, n, outdir, start = 0):
 def count_images(path):
     count = defaultdict(int)
     for root, _, files in tqdm(os.walk(path)):
-        split = root.split('/')[-2]
+        split = root.split("/")[-2]
         count[split] += len(files)
 
     return count
@@ -71,7 +68,12 @@ def generate_sets(root, sets, shape):
 
         if current_count < count:
             print(f"Generating {split} (current {current_count}) (target: {count})")
-            generate(shape, count - current_count, os.path.join(root, split), start=current_count)
+            generate(
+                shape,
+                count - current_count,
+                os.path.join(root, split),
+                start=current_count,
+            )
 
     with open(sentinel, "w") as fp:
         json.dump(sets, fp)
@@ -92,9 +94,9 @@ def generate_fakeimagenet():
 
     total_images = args.batch_size * args.batch_count
     size_spec = {
-        "train": total_images, 
-        "val": int(total_images * args.val), 
-        "test": int(total_images * args.test)
+        "train": total_images,
+        "val": int(total_images * args.val),
+        "test": int(total_images * args.test),
     }
 
     generate_sets(dest, size_spec, args.image_size)

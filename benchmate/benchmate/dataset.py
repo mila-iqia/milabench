@@ -1,4 +1,3 @@
-
 import os
 from collections import defaultdict
 
@@ -11,6 +10,7 @@ def transform_images(transform_x, transform_y=no_transform):
     def _(args):
         print(args)
         return transform_x(args[0]), transform_y(args[1])
+
     return _
 
 
@@ -18,6 +18,7 @@ def transform_celebA(transform_x):
     def _(args):
         print(args)
         return transform_x(args["image"])
+
     return _
 
 
@@ -33,7 +34,6 @@ class TransformedDataset:
         return self.transforms(self.dataset[item])
 
 
-
 class ImageNetAsFrames:
     def __init__(self, folder) -> None:
         self.clip = defaultdict(list)
@@ -42,9 +42,9 @@ class ImageNetAsFrames:
             video = self.clip[clip_id]
             for frame in files:
                 video.append(frame)
-    
+
     def __getitem__(self, item):
         return self.clip[item]
-    
+
     def __len__(self):
         return len(self.clip)

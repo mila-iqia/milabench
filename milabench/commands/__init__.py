@@ -451,8 +451,10 @@ class TorchRunCommand(WrapperCommand):
         # Some vendors force us to have weird venv that can resolve weirdly
         # use absolute paths to avoid issues
 
-        binfolder = executor.pack.config['dirs']['venv']
-        super().__init__(executor, f"{binfolder}/bin/torchrun", *torchrun_argv, **kwargs)
+        binfolder = executor.pack.config["dirs"]["venv"]
+        super().__init__(
+            executor, f"{binfolder}/bin/torchrun", *torchrun_argv, **kwargs
+        )
 
     def _argv(self, **kwargs):
         devices = self.pack.config.get("devices", [])
@@ -480,8 +482,10 @@ class VoirCommand(WrapperCommand):
     def __init__(self, executor: SingleCmdCommand, *voir_argv, **kwargs) -> None:
         # Some vendors force us to have weird venv that can resolve weirdly
         # use absolute paths to avoid issues
-        binfolder = executor.pack.config['dirs']['venv']
-        super().__init__(executor, f"{binfolder}/bin/voir", **{"setsid": True, **kwargs})
+        binfolder = executor.pack.config["dirs"]["venv"]
+        super().__init__(
+            executor, f"{binfolder}/bin/voir", **{"setsid": True, **kwargs}
+        )
         self.voir_argv = voir_argv
 
     def _argv(self, **kwargs) -> List:
@@ -650,7 +654,6 @@ class AccelerateLaunchCommand(SingleCmdCommand):
                 "--use_deepspeed",
                 "--deepspeed_multinode_launcher=standard",
                 "--zero_stage=2",
-               
             ]
             if self.pack.config["use_deepspeed"]
             else ["--multi_gpu"]

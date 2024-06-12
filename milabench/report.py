@@ -47,7 +47,7 @@ def _make_row(summary, compare, weights):
             acc += metrics[metric]
     else:
         acc = row["perf"]
-    
+
     success_ratio = 1 - row["fail"] / row["n"]
     score = (acc if acc > 0 else row["perf"]) * success_ratio
 
@@ -91,11 +91,11 @@ class Table:
         return tb
 
     def __str__(self):
-        l = max(map(len, self.fields.keys())) + 2
+        length = max(map(len, self.fields.keys())) + 2
         lines = []
         for k, v in self.fields.items():
             v = f"{v:10.2f}" if isinstance(v, float) else v
-            lines.append(f"{k + ':':{l}} {v}")
+            lines.append(f"{k + ':':{length}} {v}")
         return "\n".join(lines)
 
 
@@ -199,7 +199,7 @@ def make_dataframe(summary, compare=None, weights=None):
         )
     )
 
-    return DataFrame(
+    df = DataFrame(
         {
             key: _make_row(
                 summary.get(key, {}),
@@ -209,29 +209,11 @@ def make_dataframe(summary, compare=None, weights=None):
             for key in all_keys
         }
     ).transpose()
-    
-    return df
-
-
-@error_guard({})
-def make_report(
-    summary,
-    compare=None,
-    html=None,
-    compare_gpus=False,
-    price=None,
-    title=None,
-    sources=None,
-    errdata=None,
-    weights=None,
-):
-    if weights is None:
-        weights = dict()
-
-    df = make_dataframe(summary, compare, weights)
 
     # Reorder columns
     df = df[sorted(df.columns, key=lambda k: columns_order.get(k, 0))]
+
+    return df
 
 
 @error_guard({})
@@ -251,9 +233,6 @@ def make_report(
         weights = dict()
 
     df = make_dataframe(summary, compare, weights)
-
-    # Reorder columns
-    df = df[sorted(df.columns, key=lambda k: columns_order.get(k, 0))]
 
     out = Outputter(stdout=stream, html=html)
 
@@ -327,6 +306,7 @@ def pandas_to_string(df, formatters):
     to_csv does not align the output.
     """
     from collections import defaultdict
+
     columns = df.columns.tolist()
 
     sep = " | "
@@ -334,7 +314,7 @@ def pandas_to_string(df, formatters):
     col_size = defaultdict(int)
 
     for index, row in df.iterrows():
-        line = [f'{index:<30}']
+        line = [f"{index:<30}"]
         for col, val in zip(columns, row):
             fmt = formatters.get(col)
             val = fmt(val)

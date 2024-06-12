@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 
 from coleo import Option, config as configuration, tooled
 
-from ..common import Option, _error_report, _get_multipack, _read_reports
+from ..common import _error_report, _get_multipack, _read_reports
 from ..report import make_report
 from ..summary import make_summary
 
