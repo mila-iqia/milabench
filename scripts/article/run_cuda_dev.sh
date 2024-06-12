@@ -18,8 +18,8 @@ install_prepare() {
     virtualenv $MILABENCH_WORDIR/env
 
     if [ ! -d "$MILABENCH_WORDIR/milabench" ]; then
-        git clone https://github.com/mila-iqia/milabench.git -b intel
-        git clone https://github.com/Delaunay/voir.git -b async_timer
+        git clone https://github.com/mila-iqia/milabench.git
+        git clone https://github.com/Delaunay/voir.git
         git clone https://github.com/Delaunay/torchcompat.git
     fi
 

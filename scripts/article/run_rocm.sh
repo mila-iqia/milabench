@@ -17,7 +17,7 @@ install_prepare() {
 
     virtualenv $MILABENCH_WORDIR/env
 
-    git clone https://github.com/mila-iqia/milabench.git -b intel
+    git clone https://github.com/mila-iqia/milabench.git
 
     . $MILABENCH_WORDIR/env/bin/activate
     pip install -e $MILABENCH_WORDIR/milabench

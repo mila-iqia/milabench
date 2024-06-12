@@ -15,7 +15,7 @@ install_prepare() {
 
     virtualenv $MILABENCH_WORDIR/env
 
-    git clone https://github.com/mila-iqia/milabench.git -b intel
+    git clone https://github.com/mila-iqia/milabench.git
     git clone https://github.com/huggingface/optimum-habana.git
 
     wget -nv https://vault.habana.ai/artifactory/gaudi-installer/1.15.1/habanalabs-installer.sh

@@ -17,9 +17,10 @@ from torch.distributed import destroy_process_group
 import torchvision.transforms as transforms
 import torchvision.models as torchvision_models
 
-from benchmate.metrics import BenchObserver, StopProgram
-import torchcompat.core as accelerator
+from benchmate.metrics import StopProgram
+from benchmate.observer import BenchObserver
 from benchmate.dataloader import imagenet_dataloader, dataloader_arguments
+import torchcompat.core as accelerator
 
 
 def ddp_setup(rank, world_size):

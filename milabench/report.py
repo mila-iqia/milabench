@@ -354,7 +354,7 @@ def pandas_to_string(df, formatters):
 
 _formatters = {
     "fail": "{:4.0f}".format,
-    "n": "{:.0f}".format,
+    "n": "{:3.0f}".format,
     "std": "{:10.2f}".format,
     "iqr": "{:10.2f}".format,
     "perf": "{:10.2f}".format,

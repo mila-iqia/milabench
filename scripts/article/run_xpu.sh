@@ -17,7 +17,7 @@ install_prepare() {
 
     virtualenv $MILABENCH_WORDIR/env
 
-    git clone https://github.com/mila-iqia/milabench.git -b intel
+    git clone https://github.com/mila-iqia/milabench.git
 
     # XPU manager is necessary
     wget -nv https://github.com/intel/xpumanager/releases/download/V1.2.36/xpumanager_1.2.36_20240428.081009.377f9162.u22.04_amd64.deb

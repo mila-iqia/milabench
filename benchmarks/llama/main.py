@@ -178,7 +178,7 @@ def main():
 
 
 if __name__ == "__main__":
-    from voir.wrapper import StopProgram
+    from benchmate.metrics import StopProgram
     import traceback
     try:
         main()
