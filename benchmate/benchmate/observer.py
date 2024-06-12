@@ -1,6 +1,6 @@
 from voir.helpers import current_overseer
 
-from .metrics import LazyLossPusher, give_push, sumggle_push, TimedIterator
+from .metrics import LazyLossPusher, TimedIterator, give_push, sumggle_push
 
 
 class BenchObserver:
@@ -33,7 +33,7 @@ class BenchObserver:
         self.stdout = stdout
         self.task = "train"
         self.losses = LazyLossPusher(self.task)
-        
+
         self.pusher = give_push()
         if self.stdout:
             self.pusher = sumggle_push()
@@ -41,26 +41,29 @@ class BenchObserver:
     def on_iterator_stop_iterator(self):
         """Called when the timed iterator stops, used to do extra work when timers are off"""
         self.losses.push(self.pusher)
-    
+
     def record_loss(self, loss):
         self.losses.record(loss)
         return loss
-    
+
     def override_return_value(self, function, override):
         import ptera
+
         refstring = ptera.refstring(function)
-        
+
         ov = current_overseer.get()
 
         if ov is not None:
             probe = ov.probe(f"{refstring}() as retval", overridable=True)
-            probe['retval'].override(override)
+            probe["retval"].override(override)
         else:
             raise RuntimeError("Not running through voir")
-        
+
     def loader(self, loader):
         """Wrap a dataloader or an iterable which enable accurate measuring of time spent in the loop's body"""
-        self.wrapped = TimedIterator(loader, *self.args, push=self.pusher, **self.kwargs)
+        self.wrapped = TimedIterator(
+            loader, *self.args, push=self.pusher, **self.kwargs
+        )
         self.wrapped.task = self.task
         self.wrapped.on_iterator_stop_iterator = self.on_iterator_stop_iterator
         return self.wrapped

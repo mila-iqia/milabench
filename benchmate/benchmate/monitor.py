@@ -1,17 +1,16 @@
-import sys
 import json
-import time
-import sys
 import multiprocessing
+import sys
+import time
 
-
-from voir.smuggle import SmuggleWriter
 from voir.instruments.gpu import get_gpu_info
 from voir.instruments.utils import Monitor
+from voir.smuggle import SmuggleWriter
 
 
 def milabench_sys_monitor():
     data_file = SmuggleWriter(sys.stdout)
+
     def mblog(data):
         if data_file is not None:
             print(json.dumps(data), file=data_file)
@@ -32,8 +31,6 @@ def milabench_sys_monitor():
     monitor.start()
 
 
-
-
 def _worker(state, queue, func, delay):
     while state["running"]:
         queue.put(func())
@@ -47,7 +44,8 @@ class CustomMonitor:
         self.state["running"] = True
         self.results = multiprocessing.Queue()
         self.process = multiprocessing.Process(
-            target=_worker, args=(self.state, self.results, func, delay),
+            target=_worker,
+            args=(self.state, self.results, func, delay),
         )
 
     def start(self):
@@ -57,6 +55,7 @@ class CustomMonitor:
         self.state["running"] = False
         self.process.join()
 
+
 def setupvoir():
     # wtf this do
     data_file = SmuggleWriter(sys.stdout)
@@ -65,7 +64,10 @@ def setupvoir():
     def monitor_fn():
         data = {
             gpu["device"]: {
-                "memory": [gpu["memory"]["used"], gpu["memory"]["total"],],
+                "memory": [
+                    gpu["memory"]["used"],
+                    gpu["memory"]["total"],
+                ],
                 "load": gpu["utilization"]["compute"],
                 "temperature": gpu["temperature"],
                 "power": gpu["power"],

@@ -7,6 +7,7 @@ from .compare import cli_compare
 from .dev import cli_dev
 from .install import cli_install
 from .machine import cli_machine
+from .matrix import cli_matrix_run
 from .pin import cli_pin
 from .pip import cli_pip
 from .pr import cli_write_report_to_pr
@@ -18,7 +19,6 @@ from .schedule import cli_schedule
 from .slurm import cli_slurm_system
 from .sql import cli_sqlsetup
 from .summary import cli_summary
-from .matrix import cli_matrix_run
 
 
 class Main:

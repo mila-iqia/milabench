@@ -1,8 +1,8 @@
 import contextvars
+import multiprocessing
 import os
 from copy import deepcopy
 from dataclasses import dataclass
-import multiprocessing
 
 import numpy as np
 import yaml
@@ -108,11 +108,11 @@ class Sizer:
 
         config = self.benchscaling(benchmark)
         model = config.get("model", None)
-        
+
         if model is None:
             print(f"Missing batch-size model for {benchmark}")
             return 1
-            
+
         data = list(sorted(config["model"].items(), key=lambda x: x[0]))
         mem = [to_octet(v[1]) for v in data]
         size = [float(v[0]) for v in data]
@@ -281,13 +281,7 @@ def resolve_argv(pack, argv):
 
     device_count = len(pack.config.get("devices", [0]))
 
-    ccl = {
-        "hpu": "hccl",
-        "cuda": "nccl",
-        "rocm": "rccl",
-        "xpu": "ccl",
-        "cpu": "gloo"
-    }
+    ccl = {"hpu": "hccl", "cuda": "nccl", "rocm": "rccl", "xpu": "ccl", "cpu": "gloo"}
 
     if device_count <= 0:
         device_count = 1
@@ -296,11 +290,11 @@ def resolve_argv(pack, argv):
     context["ccl"] = ccl.get(arch, "gloo")
     context["cpu_count"] = multiprocessing.cpu_count()
     context["cpu_per_gpu"] = multiprocessing.cpu_count() // device_count
-    
+
     context["milabench_data"] = pack.config.get("dirs", {}).get("data", None)
     context["milabench_cache"] = pack.config.get("dirs", {}).get("cache", None)
     context["milabench_extra"] = pack.config.get("dirs", {}).get("extra", None)
-    
+
     max_worker = 16
     context["n_worker"] = min(context["cpu_per_gpu"], max_worker)
 

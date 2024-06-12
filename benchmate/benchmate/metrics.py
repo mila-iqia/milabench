@@ -58,14 +58,14 @@ class LazyMetricPusher:
 
     def record(self, *args, **kwargs):
         """Record data for a future metric.
-        
+
         No synchronization here.
         """
         self.append(*args, **kwargs)
 
     def materialize(self, *args, **kwargs):
         """Transform raw data into a metric.
-        
+
         Synchronization happens here.
         """
         return *args, kwargs
@@ -93,7 +93,7 @@ class CPUTimer:
         self._end = None
 
     def start(self):
-        self._start = - time.time()
+        self._start = -time.time()
 
     def end(self):
         self._end = time.time()
@@ -101,7 +101,7 @@ class CPUTimer:
     def __enter__(self):
         self.start()
         return self
-    
+
     def __exit__(self, *args):
         self.end()
 
@@ -123,7 +123,7 @@ class DeviceTimer:
     def __enter__(self):
         self.start()
         return self
-    
+
     def __exit__(self, *args):
         self.end()
 
@@ -205,20 +205,20 @@ class TimedIterator:
         raise_stop_program=False,
         batch_size_fn=None,
     ):
-        self.loader = loader            # original iterator
-        self.events = []                # accumulated events to be pushed
+        self.loader = loader  # original iterator
+        self.events = []  # accumulated events to be pushed
 
-        self.task = "train"             # voir task usually train but could be validation/test
-        self.total_obs = 0              # Number of "pushed" observations 
-        self.event_fn = event_fn        # function to create a device event
-        self.early_stop = earlystop     # Number of observation to target 
-        self.unit = 1000                # device timer is ms
-        
-        self.message_push = push        # How to push the metrics usually voir or stdout
+        self.task = "train"  # voir task usually train but could be validation/test
+        self.total_obs = 0  # Number of "pushed" observations
+        self.event_fn = event_fn  # function to create a device event
+        self.early_stop = earlystop  # Number of observation to target
+        self.unit = 1000  # device timer is ms
+
+        self.message_push = push  # How to push the metrics usually voir or stdout
 
         # Number of times we broke out of the iterator for early stopping
         # we should really only do this onece
-        self.break_count = 0                           
+        self.break_count = 0
         self.batch_size_fn = batch_size_fn
 
         # Multi-GPU setup
@@ -227,13 +227,15 @@ class TimedIterator:
         self.world_size = 1
 
         # Options
-        self.raise_stop_program = raise_stop_program # Does TimedIterator raise StopProgram
+        self.raise_stop_program = (
+            raise_stop_program  # Does TimedIterator raise StopProgram
+        )
         self.profile_instrumentation = False
         self.overhead = []
         self.previous_overhead = 0
         self.loader_init_time = []
         self.sub_overhead = 0
-    
+
         if not TORCH_ERROR and dist.is_initialized():
             self.rank = rank
             assert (
@@ -261,7 +263,7 @@ class TimedIterator:
         start = self.event_fn(enable_timing=True)
         start.record()
         self.previous_overhead = 0
-    
+
         for data in iterator:
             yield data
 
@@ -281,15 +283,15 @@ class TimedIterator:
                     break
 
                 start = end
-            
+
             # Note: first step does not have overhead because end event is recorded
             # before the overhead starts
             # Note: It is not sure if the CPU overhead impacst the device at all
             # since we avoid sync it is possible the device is working during
-            # the overhead section and that the effective overhead ends up being minimal 
+            # the overhead section and that the effective overhead ends up being minimal
             self.previous_overhead = ct.elapsed()
             self.overhead.append(self.previous_overhead)
-            
+
         self._push()
         self.earlystop()
 
@@ -335,7 +337,7 @@ class TimedIterator:
             elapsed = (start.elapsed_time(end)) / self.unit
             rate = self.batch_size(bs) / elapsed
             self.log_rate(rate)
-        
+
         self.total_obs += len(self.events)
         self.events = []
 
@@ -349,7 +351,7 @@ class TimedIterator:
         self.previous_overhead = 0
         self.overhead = []
         self.loader_init_time = []
-    
+
     def _push(self):
         """Push all the accumulated metrics"""
 
@@ -381,5 +383,3 @@ class TimedIterator:
     def message(self, **kwargs):
         if self.rank is None or self.rank == 0:
             self.message_push(**kwargs)
-
-

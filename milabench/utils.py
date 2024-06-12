@@ -121,7 +121,9 @@ def make_constraints_file(pth, constraints, working_dir):
         with open(constraint_file, "w") as tfile:
             # We prefix the constraint with ../ because we are creating a constraint
             # file in ./.pin/,but containing constraints with paths relative to ./
-            tfile.write("\n".join([f"-c ../{relativize(c, working_dir)}" for c in constraints]))
+            tfile.write(
+                "\n".join([f"-c ../{relativize(c, working_dir)}" for c in constraints])
+            )
         return (constraint_file,)
     else:
         return ()

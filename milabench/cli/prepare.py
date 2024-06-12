@@ -4,7 +4,7 @@ from coleo import Option, tooled
 
 from milabench.utils import validation_layers
 
-from ..common import Option, get_multipack, run_with_loggers
+from ..common import get_multipack, run_with_loggers
 from ..log import DataReporter, TerminalFormatter, TextReporter
 
 

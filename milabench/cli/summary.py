@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 
 from coleo import Option, tooled
 
-from ..common import Option, _read_reports
+from ..common import _read_reports
 from ..summary import make_summary
 
 

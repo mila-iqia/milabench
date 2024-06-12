@@ -6,7 +6,6 @@ from coleo import Option, tooled
 from milabench.utils import validation_layers
 
 from ..common import (
-    Option,
     _error_report,
     _read_reports,
     get_multipack,

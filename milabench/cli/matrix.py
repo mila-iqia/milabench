@@ -1,10 +1,15 @@
 from dataclasses import dataclass
 
 from coleo import Option, tooled
-import yaml
-import sys
 
-from ..common import deduce_arch, build_config, build_system_config, get_base_defaults, merge, is_selected
+from ..common import (
+    build_config,
+    build_system_config,
+    deduce_arch,
+    get_base_defaults,
+    is_selected,
+    merge,
+)
 
 
 # fmt: off
@@ -33,19 +38,18 @@ def arguments():
     return Arguments(base, system, config, select, exclude)
 
 
-
 def clean_config(config, args):
     disabled_benches = []
 
     if args.select:
         args.select = set(args.select.split(","))
 
-    if args.exclude:  
+    if args.exclude:
         args.exclude = set(args.exclude.split(","))
 
     for benchname, benchconfig in config.items():
-        if 'system' in benchconfig:
-            del benchconfig['system']
+        if "system" in benchconfig:
+            del benchconfig["system"]
 
         if not is_selected(benchconfig, args):
             disabled_benches.append(benchname)
@@ -63,16 +67,10 @@ def cli_matrix_run(args=None):
 
     arch = deduce_arch()
 
-    base_defaults = get_base_defaults(
-        base=args.base,
-        arch=arch,
-        run_name='matrix'
-    )
+    base_defaults = get_base_defaults(base=args.base, arch=arch, run_name="matrix")
 
     system_config = build_system_config(
-        args.system,
-        defaults={"system": base_defaults["_defaults"]["system"]},
-        gpu=True
+        args.system, defaults={"system": base_defaults["_defaults"]["system"]}, gpu=True
     )
 
     overrides = merge({"*": system_config}, overrides)
@@ -80,7 +78,6 @@ def cli_matrix_run(args=None):
     config = build_config(base_defaults, args.config, overrides)
 
     clean_config(config, args)
-
 
     for k in config:
         print(k)

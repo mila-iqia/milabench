@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from coleo import Option, tooled
 
-from ..common import Option, get_multipack, selection_keys
+from ..common import get_multipack, selection_keys
 
 
 # fmt: off

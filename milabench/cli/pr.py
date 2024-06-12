@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 from coleo import Option, tooled
 
-from ..common import Option, _short_make_report
+from ..common import _short_make_report
 from ..schedule import post_comment_on_pr
 
 
