@@ -659,6 +659,14 @@ class AccelerateLaunchCommand(SingleCmdCommand):
             else ["--multi_gpu"]
         )
 
+        #
+        # Can this logic be removed?
+        #
+        from ..sizer import new_argument_resolver
+
+        resolver = new_argument_resolver(self.pack)
+
+        cpu_per_process = resolver(str(self.pack.config['argv']['--cpus_per_gpu']))
         return [
             # -- Run the command in the right venv
             # This could be inside the SSH Command
@@ -676,7 +684,7 @@ class AccelerateLaunchCommand(SingleCmdCommand):
             f"--num_machines={num_machines}",
             *deepspeed_argv,
             f"--gradient_accumulation_steps={self.pack.config['gradient_accumulation_steps']}",
-            f"--num_cpu_threads_per_process={self.pack.config['argv']['--cpus_per_gpu']}",
+            f"--num_cpu_threads_per_process={cpu_per_process}",
             f"--main_process_ip={manager['ip']}",
             f"--main_process_port={manager['port']}",
             f"--num_processes={nproc}",

@@ -22,7 +22,7 @@ _torchvision:
     --lr: 0.01
     --no-stdout: true
     --epochs: 50
-    --num-workers: 8
+    --num-workers: "auto({n_worker}, 8)"
     --loader: pytorch
     --data: "{milabench_data}/FakeImageNet"
 
@@ -37,7 +37,7 @@ _torchvision_ddp:
     n: 1
   argv:
     --epochs: 10
-    --num-workers: 8
+    --num-workers: "auto({n_worker}, 8)"
     --loader: pytorch
     --data: "{milabench_data}/FakeImageNet"
 
@@ -82,7 +82,6 @@ llama:
   argv:
     --pretrained: true
 
-
 _hf:
   inherits: _defaults
   definition: ../benchmarks/huggingface
@@ -90,7 +89,7 @@ _hf:
   install_group: torch
   argv:
     --precision: 'tf32-fp16'
-    --num-workers: 8
+    --num-workers: "auto({n_worker}, 8)"
 
   plan:
     method: per_gpu
@@ -111,6 +110,7 @@ _timm:
     --val-split: ''
     --data-dir: "{milabench_data}"
     --dataset: "FakeImageNet"
+    --workers: "auto({n_worker}, 8)"
 
 _sb3:
   inherits: _defaults
@@ -143,7 +143,7 @@ _accelerate_opt:
     --dataset_rev: "b08601e"
     --validation_split_percentage: 5
     --per_gpu_batch_size: 1
-    --cpus_per_gpu: 8
+    --cpus_per_gpu: "auto({n_worker}, 8)"
     # --model_name: "facebook/opt-2.7b"
     # --model_name: "facebook/opt-1.3b"
     # --model_name: "facebook/opt-350m"
@@ -203,7 +203,7 @@ resnet50:
   argv:
     --model: resnet50
     --batch-size: 256
-    --num-workers: "{cpu_per_gpu}"
+    --num-workers: "auto({n_worker}, 8)"
     --loader: pytorch
   
 resnet50-noio:
@@ -231,7 +231,7 @@ resnet152-ddp:
   argv:
     --model: resnet152
     --batch-size: 256
-    --num-workers: 8
+    --num-workers: "auto({n_worker}, 8)"
     --loader: dali
 
 efficientnet_b4:
@@ -507,6 +507,7 @@ stargan:
     --model_save_dir: "{milabench_extra}/models"
     --sample_dir: "{milabench_extra}/samples"
     --result_dir: "{milabench_extra}/results"
+    --num_workers: "auto({n_worker}, 8)"
 
 super-slomo:
   inherits: _defaults
@@ -524,7 +525,7 @@ super-slomo:
     --train_batch_size: 64
     --dataset_root: "{milabench_data}/FakeImageNet"
     --loader: pytorch
-    --num_workers: 8
+    --num_workers: "auto({n_worker}, 8)"
 
 ppo:
   inherits: _sb3
@@ -588,6 +589,7 @@ dlrm:
     --test-mini-batch-size: 16384
     --test-num-workers: 0
     --use-gpu: true
+    --num-workers: "auto({n_worker}, 8)"
 
 rwkv:
   inherits: _defaults
@@ -625,6 +627,7 @@ rwkv:
     --grad_cp: 0
     --random_seed: 1234
     --enable_progress_bar: "False"
+
 brax:
   inherits: _defaults
   tags:
