@@ -2,35 +2,19 @@ import contextvars
 import multiprocessing
 import os
 from copy import deepcopy
-from dataclasses import dataclass
+import multiprocessing
 
 import numpy as np
 import yaml
+from voir.instruments.gpu import get_gpu_info
 
-from .config import is_autoscale_enabled, system_global
+from .merge import merge
+from .system import system_global, SizerOptions, CPUOptions
 from .validation.validation import ValidationLayer
 
 ROOT = os.path.dirname(__file__)
 
 default_scaling_config = os.path.join(ROOT, "..", "config", "scaling.yaml")
-
-
-def getenv(name, type):
-    value = os.getenv(name)
-
-    if value is not None:
-        return type(value)
-
-    return value
-
-
-@dataclass
-class SizerOptions:
-    size: int = getenv("MILABENCH_SIZER_BATCH_SIZE", int)
-    autoscale: bool = is_autoscale_enabled()
-    multiple: int = getenv("MILABENCH_SIZER_MULTIPLE", int)
-    optimized: bool = getenv("MILABENCH_SIZER_OPTIMIZED", int)
-    capacity: str = getenv("MILABENCH_SIZER_CAPACITY", str)
 
 
 metric_prefixes = {
@@ -110,13 +94,16 @@ class Sizer:
         model = config.get("model", None)
 
         if model is None:
-            print(f"Missing batch-size model for {benchmark}")
+            print(f"Missing batch-size model for {benchmark.config['name']}")
             return 1
 
         data = list(sorted(config["model"].items(), key=lambda x: x[0]))
         mem = [to_octet(v[1]) for v in data]
         size = [float(v[0]) for v in data]
 
+        if len(mem) == 1:
+            print(f"Not enough data for {benchmark.config['name']}")
+            return 1
         # This does not extrapolate
         # int(np.interp(capacity, mem, size))
 
@@ -126,13 +113,21 @@ class Sizer:
         newsize_f = model(capacity)
         newsize_i = int(newsize_f)
 
+        if newsize_i <= 0:
+            return 1
+
         if (newsize_f - newsize_i) > 0.5:
             newsize_i += 1
 
-        if self.options.multiple is not None:
-            newsize_i = (newsize_i // self.options.multiple) * self.options.multiple
+        final_size = newsize_i
 
-        return max(newsize_i, 1)
+        if self.options.multiple:
+            final_size = (newsize_i // self.options.multiple) * self.options.multiple
+
+        if self.options.power:
+            final_size = int(self.options.power) ** int(np.log2(newsize_i))
+
+        return max(final_size, 1)
 
     def size(self, benchmark, capacity):
         config = self.benchscaling(benchmark)
@@ -177,11 +172,20 @@ class Sizer:
         return argv
 
 
-sizer_global = contextvars.ContextVar("sizer_global", default=Sizer())
+sizer_global = contextvars.ContextVar("sizer_global", default=None)
+
+
+def batch_sizer() -> Sizer:
+    sizer = sizer_global.get()
+    if sizer is None:
+        sizer_global.set(Sizer())
+        return batch_sizer()
+    return sizer
 
 
 def scale_argv(pack, argv):
-    sizer = sizer_global.get()
+    sizer = batch_sizer()
+
     system = system_global.get()
 
     capacity = system.get("gpu", dict()).get("capacity")
@@ -193,9 +197,9 @@ class MemoryUsageExtractor(ValidationLayer):
     """Extract max memory usage per benchmark to populate the memory model"""
 
     def __init__(self):
-        self.filepath = getenv("MILABENCH_SIZER_SAVE", str)
-
-        self.memory = deepcopy(sizer_global.get().scaling_config)
+        sizer = batch_sizer()
+        self.filepath = sizer.options.save
+        self.memory = deepcopy(sizer.scaling_config)
         self.scaling = None
         self.benchname = None
         self.batch_size = 0
@@ -271,35 +275,68 @@ class MemoryUsageExtractor(ValidationLayer):
 
     def report(self, *args):
         if self.filepath is not None:
+            newdata = self.memory
+        
+            if os.path.exists(self.filepath):    
+                with open(self.filepath, "r") as fp:
+                    previous_data = yaml.safe_load(fp)
+                newdata = merge(previous_data, self.memory)
+
             with open(self.filepath, "w") as file:
-                yaml.dump(self.memory, file)
+                yaml.dump(newdata, file)
 
 
-def resolve_argv(pack, argv):
-    context = system_global.get()
+def new_argument_resolver(pack):
+    context = deepcopy(system_global.get())
     arch = context.get("arch", "cpu")
 
-    device_count = len(pack.config.get("devices", [0]))
+    if hasattr(pack, 'config'):
+        device_count = len(pack.config.get("devices", [0]))
+    else:
+        device_count = len(get_gpu_info()["gpus"])
 
     ccl = {"hpu": "hccl", "cuda": "nccl", "rocm": "rccl", "xpu": "ccl", "cpu": "gloo"}
 
     if device_count <= 0:
         device_count = 1
 
+    options = CPUOptions()
+    def auto(value, default):
+        if options.enabled:
+            return value
+        return default
+
+    def clamp(x, mn=options.cpu_min, mx=options.cpu_max):
+        return min(max(x, mn), mx)
+
+    total_cpu = multiprocessing.cpu_count()
+    total_available = total_cpu - options.reserved_cores
+
+    context["cpu_count"] = total_available
+    context["cpu_per_gpu"] = total_available // device_count
+    context["n_worker"] = clamp(context["cpu_per_gpu"])
+
+    if options.n_workers is not None:
+        context["n_worker"] = options.n_workers
+
     context["arch"] = arch
     context["ccl"] = ccl.get(arch, "gloo")
-    context["cpu_count"] = multiprocessing.cpu_count()
-    context["cpu_per_gpu"] = multiprocessing.cpu_count() // device_count
-
     context["milabench_data"] = pack.config.get("dirs", {}).get("data", None)
     context["milabench_cache"] = pack.config.get("dirs", {}).get("cache", None)
     context["milabench_extra"] = pack.config.get("dirs", {}).get("extra", None)
 
-    max_worker = 16
-    context["n_worker"] = min(context["cpu_per_gpu"], max_worker)
+    def auto_eval(arg):
+        newvalue = str(arg).format(**context)
+        if newvalue.startswith("auto"):
+            newvalue = str(eval(newvalue, {"auto": auto}, {}))
+        return newvalue
 
+    return auto_eval
+
+
+def resolve_argv(pack, argv):
+    resolver = new_argument_resolver(pack)
     argv = list(argv)
     for i, arg in enumerate(argv):
-        argv[i] = str(arg).format(**context)
-
+        argv[i] = resolver(arg)
     return argv
