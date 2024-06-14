@@ -68,14 +68,16 @@ def test_scaler_disabled(multipack):
 
 def fakeexec(pack):
     from milabench.sizer import resolve_argv, scale_argv
+
     sized_args = scale_argv(pack, pack.argv)
     final_args = resolve_argv(pack, sized_args)
     return final_args
 
 
 def test_scaler_enabled(multipack, config):
-    from milabench.config import system_global
     import contextvars
+
+    from milabench.config import system_global
 
     ctx = contextvars.copy_context()
 

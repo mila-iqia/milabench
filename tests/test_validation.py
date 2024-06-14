@@ -2,8 +2,8 @@ import os
 
 import voir.instruments.gpu
 
-from milabench.utils import validation_layers, multilogger
 from milabench.testing import interleave, replay
+from milabench.utils import multilogger, validation_layers
 
 
 def replay_validation_scenario(folder, *validation, filename=None):
@@ -104,8 +104,9 @@ def test_planning_layer_per_gpu_bad(replayfolder, monkeypatch):
     assert log.result() != 0
 
 
-def test_memory_tracking(replayfolder, config):
+def test_memory_tracking(replayfolder, config, tmp_path):
     import contextvars
+
     from milabench.sizer import (
         MemoryUsageExtractor,
         Sizer,
@@ -129,6 +130,29 @@ def test_memory_tracking(replayfolder, config):
         system_global.set({"gpu": {"capacity": "41920 MiB"}})
 
     ctx.run(update_ctx)
-    layer = MemoryUsageExtractor()
+    layer = ctx.run(lambda: MemoryUsageExtractor())
+
+    layer.filepath = f"{tmp_path}/dummy"
+
+    assert 123 not in layer.memory["benchio"]["model"]
 
     ctx.run(lambda: replay_validation_scenario(replayfolder, layer, filename="usage"))
+
+    assert 123 in layer.memory["benchio"]["model"]
+
+
+def test_exception_tracking(replayfolder, file_regression, capsys):
+    layers = validation_layers("error")
+    _ = replay_validation_scenario(replayfolder, *layers, filename="exception")
+    error = layers[0]
+
+    from milabench.utils import Summary
+
+    summary = Summary()
+    return_code = error.report(summary, short=False)
+    summary.show()
+
+    assert return_code != 0
+
+    output = capsys.readouterr().out
+    file_regression.check(output)

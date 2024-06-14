@@ -1,11 +1,10 @@
 import os
 
-from milabench.utils import multilogger
-from milabench.testing import replay_run, show_diff
-from milabench.metrics.sqlalchemy import SQLAlchemy, create_database
-from milabench.metrics.report import fetch_data, make_pivot_summary
 from milabench.common import _read_reports, make_summary
-
+from milabench.metrics.report import fetch_data, make_pivot_summary
+from milabench.metrics.sqlalchemy import SQLAlchemy, create_database
+from milabench.testing import replay_run, show_diff
+from milabench.utils import multilogger
 
 # Setup POSTGRESQL instance
 # -------------------------
