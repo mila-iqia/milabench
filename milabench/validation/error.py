@@ -119,7 +119,7 @@ class Layer(ValidationLayer):
                 for line in selected.lines:
                     summary.add(f"      | {line}")
 
-    def report(self, summary, short=True, **kwargs):
+    def report(self, summary, short=False, **kwargs):
         """Print an error report and exit with an error code if any error were found"""
 
         failures = 0
