@@ -13,16 +13,22 @@ mkdir -p $FINAL_OUTPUT
 #
 # Install
 #
-if [ "$DRY" -eq 0 ]; then
-    export MILABENCH_PREPARE=1
-    source $SCRIPT_DIR/run_cuda.sh
+# if [ "$DRY" -eq 0 ]; then
+#     export MILABENCH_PREPARE=1
+#     source $SCRIPT_DIR/run_cuda.sh
 
-    #
-    # Activate
-    #
-    source $MILABENCH_WORDIR/env/bin/activate
-fi
+#     #
+#     # Activate
+#     #
+#     source $MILABENCH_WORDIR/env/bin/activate
+# fi
 
+export MILABENCH_GPU_ARCH=cuda
+export MILABENCH_WORDIR="$(pwd)/$MILABENCH_GPU_ARCH"
+export MILABENCH_BASE="$MILABENCH_WORDIR/results"
+export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/standard.yaml"
+export MILABENCH_VENV="$MILABENCH_WORDIR/env"
+export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
 
 source $MILABENCH_WORDIR/env/bin/activate
 
@@ -36,16 +42,16 @@ maybe_run() {
     else
         milabench prepare
         milabench run --run-name $name
-        mv $MILABENCH_BASE/runs/$name $FINAL_OUTPUT/$name
+        mv $MILABENCH_BASE/runs/* ~/batch_x_worker/
     fi
 }
 
 #
 # Default everything
 #
-export MILABENCH_CPU_AUTO=0
-export MILABENCH_SIZER_AUTO=0
-maybe_run "wdef-cdef.{time}"
+#export MILABENCH_CPU_AUTO=0
+#export MILABENCH_SIZER_AUTO=0
+#maybe_run "wdef-cdef.{time}"
 
 #
 # Auto everything

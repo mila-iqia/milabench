@@ -145,8 +145,10 @@ class TerminalFormatter(BaseLogger):
             pass
 
         elif event == "config":
-
             def _show(k, entry):
+                if k in ("meta", "system"):
+                    return
+            
                 if isinstance(entry, dict):
                     for k2, v in entry.items():
                         _show(f"{k}.{k2}", v)
