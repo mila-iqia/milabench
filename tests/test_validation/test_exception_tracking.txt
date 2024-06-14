@@ -1,0 +1,107 @@
+opt-1_3b.local
+==============
+  * Error code = 1
+  * 9 exceptions found
+    * 7 x ModuleNotFoundError: No module named 'datasets'
+    * 1 x [2024-06-14 11:36:40,300] torch.distributed.elastic.multiprocessing.api: [ERROR] failed (exitcode: 1) local_rank: 0 (pid: 1078640) of binary: /milabench/milabench_venv/bin/python
+    * 1 x torch.distributed.elastic.multiprocessing.errors.
+
+opt-1_3b.local
+==============
+  * Error code = 1
+  * 9 exceptions found
+    * 7 x ModuleNotFoundError: No module named 'datasets'
+        | Traceback (most recent call last):
+        |   File "/milabench/benchmarks/accelerate_opt/main.py", line 72, in <module>
+        |     import datasets
+        | ModuleNotFoundError: No module named 'datasets'
+    * 1 x [2024-06-14 11:36:40,300] torch.distributed.elastic.multiprocessing.api: [ERROR] failed (exitcode: 1) local_rank: 0 (pid: 1078640) of binary: /milabench/milabench_venv/bin/python
+        | Traceback (most recent call last):
+        |   File "/milabench/benchmarks/accelerate_opt/main.py", line 72, in <module>
+        |     import datasets
+        | ModuleNotFoundError: No module named 'datasets'
+        | [2024-06-14 11:36:40,300] torch.distributed.elastic.multiprocessing.api: [ERROR] failed (exitcode: 1) local_rank: 0 (pid: 1078640) of binary: /milabench/milabench_venv/bin/python
+    * 1 x torch.distributed.elastic.multiprocessing.errors.
+        | Traceback (most recent call last):
+        |   File "/milabench/milabench_venv/bin/accelerate", line 8, in <module>
+        |     sys.exit(main())
+        |              ^^^^^^
+        |   File "/milabench/milabench_venv/lib/python3.11/site-packages/accelerate/commands/accelerate_cli.py", line 48, in main
+        |     args.func(args)
+        |   File "/milabench/milabench_venv/lib/python3.11/site-packages/accelerate/commands/launch.py", line 1088, in launch_command
+        |     multi_gpu_launcher(args)
+        |   File "/milabench/milabench_venv/lib/python3.11/site-packages/accelerate/commands/launch.py", line 733, in multi_gpu_launcher
+        |     distrib_run.run(args)
+        |   File "/milabench/milabench_venv/lib/python3.11/site-packages/torch/distributed/run.py", line 797, in run
+        |     elastic_launch(
+        |   File "/milabench/milabench_venv/lib/python3.11/site-packages/torch/distributed/launcher/api.py", line 134, in __call__
+        |     return launch_agent(self._config, self._entrypoint, list(args))
+        |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        |   File "/milabench/milabench_venv/lib/python3.11/site-packages/torch/distributed/launcher/api.py", line 264, in launch_agent
+        |     raise ChildFailedError(
+        | torch.distributed.elastic.multiprocessing.errors.
+        | ChildFailedError:
+        | ============================================================
+        | /milabench/benchmarks/accelerate_opt/main.py FAILED
+        | ------------------------------------------------------------
+        | Failures:
+        | [1]:
+        |   time      : 2024-06-14_11:36:40
+        |   host      : hostname
+        |   rank      : 1 (local_rank: 1)
+        |   exitcode  : 1 (pid: 1078641)
+        |   error_file: <N/A>
+        |   traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+        | [2]:
+        |   time      : 2024-06-14_11:36:40
+        |   host      : hostname
+        |   rank      : 2 (local_rank: 2)
+        |   exitcode  : 1 (pid: 1078642)
+        |   error_file: <N/A>
+        |   traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+        | [3]:
+        |   time      : 2024-06-14_11:36:40
+        |   host      : hostname
+        |   rank      : 3 (local_rank: 3)
+        |   exitcode  : 1 (pid: 1078643)
+        |   error_file: <N/A>
+        |   traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+        | [4]:
+        |   time      : 2024-06-14_11:36:40
+        |   host      : hostname
+        |   rank      : 4 (local_rank: 4)
+        |   exitcode  : 1 (pid: 1078644)
+        |   error_file: <N/A>
+        |   traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+        | [5]:
+        |   time      : 2024-06-14_11:36:40
+        |   host      : hostname
+        |   rank      : 5 (local_rank: 5)
+        |   exitcode  : 1 (pid: 1078645)
+        |   error_file: <N/A>
+        |   traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+        | [6]:
+        |   time      : 2024-06-14_11:36:40
+        |   host      : hostname
+        |   rank      : 6 (local_rank: 6)
+        |   exitcode  : 1 (pid: 1078646)
+        |   error_file: <N/A>
+        |   traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+        | [7]:
+        |   time      : 2024-06-14_11:36:40
+        |   host      : hostname
+        |   rank      : 7 (local_rank: 7)
+        |   exitcode  : 1 (pid: 1078647)
+        |   error_file: <N/A>
+        |   traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+        | ------------------------------------------------------------
+        | Root Cause (first observed failure):
+        | [0]:
+        |   time      : 2024-06-14_11:36:40
+        |   host      : hostname
+        |   rank      : 0 (local_rank: 0)
+        |   exitcode  : 1 (pid: 1078640)
+        |   error_file: <N/A>
+        |   traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+        | ============================================================
+
