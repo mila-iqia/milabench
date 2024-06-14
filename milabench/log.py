@@ -221,11 +221,12 @@ class DashFormatter(BaseLogger):
         self.rows = defaultdict(dict)
         self.endtimes = {}
         self.early_stop = {}
+        self.prune_delay = 60
 
     def prune(self):
         now = time.time()
         for tag, endtime in list(self.endtimes.items()):
-            if now - endtime > 60:
+            if now - endtime > self.prune_delay:
                 del self.endtimes[tag]
                 del self.rows[tag]
 

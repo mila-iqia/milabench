@@ -1,37 +1,7 @@
-import os
-
 import voir.instruments.gpu
 
-from milabench.testing import interleave, replay
-from milabench.utils import multilogger, validation_layers
-
-
-def replay_validation_scenario(folder, *validation, filename=None):
-    """Replay events from a data file or folder"""
-    gen = None
-
-    path = folder / filename
-    file = str(path) + ".txt"
-
-    if os.path.isdir(path):
-        files = [path / f for f in os.scandir(path)]
-        gen = interleave(*files)
-
-    if os.path.isfile(file):
-        gen = replay(file)
-
-    with multilogger(*validation) as log:
-        for entry in gen:
-            log(entry)
-
-    return log
-
-
-def replay_scenario(folder, name, filename=None):
-    """Replay events from a data file or folder"""
-    return replay_validation_scenario(
-        folder, *validation_layers(name), filename=filename or name
-    )
+from milabench.testing import replay_scenario, replay_validation_scenario
+from milabench.utils import validation_layers
 
 
 def test_error_layer(replayfolder):
@@ -152,6 +122,6 @@ def test_exception_tracking(replayfolder, file_regression, capsys):
     # return_code = error.report(summary, short=False)
     # summary.show()
     # assert return_code != 0
-    
+
     output = capsys.readouterr().out
     file_regression.check(output)
