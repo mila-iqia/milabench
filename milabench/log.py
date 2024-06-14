@@ -14,6 +14,7 @@ from rich.progress import BarColumn, Progress, TextColumn, TimeRemainingColumn
 from rich.table import Table
 from rich.text import Text
 
+from .config import get_run_count
 from .fs import XPath
 
 T = Terminal()
@@ -222,6 +223,28 @@ class DashFormatter(BaseLogger):
         self.endtimes = {}
         self.early_stop = {}
         self.prune_delay = 60
+        self.current = 0
+
+    def _get_global_progress_bar(self):
+        progress = self.rows.get("GLOBAL")
+        if progress is not None:
+            return progress["progress"]
+
+        progress = Progress(
+            BarColumn(),
+            TimeRemainingColumn(),
+            TextColumn("({task.completed}/{task.total})"),
+        )
+        progress._task = progress.add_task("progress")
+        progress.update(progress._task, completed=self.current, total=get_run_count())
+        self.rows["GLOBAL"] = {"progress": progress}
+        return progress
+
+    def _update_global(self, inc):
+        self.current += inc
+        if total := get_run_count():
+            progress = self._get_global_progress_bar()
+            progress.update(progress._task, completed=self.current, total=total)
 
     def prune(self):
         now = time.time()
@@ -254,6 +277,7 @@ class DashFormatter(BaseLogger):
         self.early_stop[entry.tag] = True
 
     def on_end(self, entry, data, row):
+        self._update_global(1)
         self.endtimes[entry.tag] = time.time()
 
 

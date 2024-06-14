@@ -7,6 +7,7 @@ from voir.instruments.gpu import get_gpu_info
 
 from .capability import is_system_capable
 from .commands import NJobs, PerGPU
+from .config import set_run_count
 from .fs import XPath
 from .pack import Package
 from .remote import (
@@ -167,6 +168,8 @@ class MultiPackage:
 
         assert is_main_local(setup), "Running benchmarks only works on the main node"
 
+        set_run_count(await self.count_runs(repeat))
+
         for index in range(repeat):
             for pack in self.packs.values():
                 try:
@@ -255,3 +258,18 @@ class MultiPackage:
                         constraints=new_constraints,
                         working_dir=here.parent,
                     )
+
+    async def count_runs(self, repeat):
+        acc = 0
+        for index in range(repeat):
+            for pack in self.packs.values():
+                if not await is_system_capable(pack):
+                    continue
+
+                exec_plan = make_execution_plan(pack, index, repeat)
+
+                if isinstance(exec_plan, PerGPU):
+                    acc += len(exec_plan.gpus)
+                else:
+                    acc += 1
+        return acc

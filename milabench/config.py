@@ -13,6 +13,15 @@ from .merge import merge
 
 system_global = contextvars.ContextVar("system")
 config_global = contextvars.ContextVar("Config")
+execution_count = contextvars.ContextVar("count", default=0)
+
+
+def set_run_count(total):
+    execution_count.set(total)
+
+
+def get_run_count():
+    return execution_count.get()
 
 
 def relative_to(pth, cwd):
