@@ -2,14 +2,13 @@ import contextvars
 import multiprocessing
 import os
 from copy import deepcopy
-import multiprocessing
 
 import numpy as np
 import yaml
 from voir.instruments.gpu import get_gpu_info
 
 from .merge import merge
-from .system import system_global, SizerOptions, CPUOptions
+from .system import CPUOptions, SizerOptions, system_global
 from .validation.validation import ValidationLayer
 
 ROOT = os.path.dirname(__file__)
@@ -70,7 +69,7 @@ class Sizer:
 
         # benchmark config
         if isinstance(benchmark, dict) and "name" in benchmark:
-            return benchmark
+            return self.scaling_config.get(benchmark["name"])
 
         # pack
         return self.scaling_config.get(benchmark.config["name"])
@@ -143,6 +142,27 @@ class Sizer:
 
         return None
 
+    def find_batch_size(self, benchmark, event):
+        config = self.benchscaling(benchmark)
+
+        if config is None:
+            return None
+
+        argname = config.get("arg")
+        if argname is None:
+            return -1
+
+        if "event" in event:
+            event = event["data"]
+
+        argv = event["command"]
+
+        for i, arg in enumerate(argv):
+            if str(arg).endswith(argname):
+                return int(argv[i + 1])
+
+        return -1
+
     def argv(self, benchmark, capacity, argv):
         """Find the batch size and override it with a new value"""
 
@@ -181,6 +201,11 @@ def batch_sizer() -> Sizer:
         sizer_global.set(Sizer())
         return batch_sizer()
     return sizer
+
+
+def get_batch_size(config, start_event):
+    sizer = batch_sizer()
+    return sizer.find_batch_size(config, start_event)
 
 
 def scale_argv(pack, argv):
@@ -276,8 +301,8 @@ class MemoryUsageExtractor(ValidationLayer):
     def report(self, *args):
         if self.filepath is not None:
             newdata = self.memory
-        
-            if os.path.exists(self.filepath):    
+
+            if os.path.exists(self.filepath):
                 with open(self.filepath, "r") as fp:
                     previous_data = yaml.safe_load(fp)
                 newdata = merge(previous_data, self.memory)
@@ -290,7 +315,7 @@ def new_argument_resolver(pack):
     context = deepcopy(system_global.get())
     arch = context.get("arch", "cpu")
 
-    if hasattr(pack, 'config'):
+    if hasattr(pack, "config"):
         device_count = len(pack.config.get("devices", [0]))
     else:
         device_count = len(get_gpu_info()["gpus"])
@@ -301,6 +326,7 @@ def new_argument_resolver(pack):
         device_count = 1
 
     options = CPUOptions()
+
     def auto(value, default):
         if options.enabled:
             return value

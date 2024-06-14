@@ -13,7 +13,7 @@ H = HTML()
 
 
 @error_guard({})
-def _make_row(summary, compare, weights):
+def _make_row(summary, compare, weights, query=None):
     mkey = "train_rate"
     metric = "mean"
     row = {}
@@ -54,6 +54,12 @@ def _make_row(summary, compare, weights):
     row["score"] = score
     row["weight"] = weights.get("weight", summary.get("weight", 0))
     # ----
+
+    if query is not None:
+        extra = summary.get("extra", dict())
+        for q in query:
+            if v := extra.get(q):
+                row[q] = v
 
     return row
 
@@ -185,19 +191,35 @@ columns_order = {
 }
 
 
-def make_dataframe(summary, compare=None, weights=None):
+def make_dataframe(summary, compare=None, weights=None, query=None):
     if weights is None:
         weights = dict()
 
     all_keys = list(
-        sorted(
-            {
-                *(summary.keys() if summary else []),
-                *(compare.keys() if compare else []),
-                *(weights.keys() if weights else []),
-            }
-        )
+        {
+            *(summary.keys() if summary else []),
+            *(compare.keys() if compare else []),
+            *(weights.keys() if weights else []),
+        }
     )
+
+    def sort_by(key):
+        """Group similar runs together"""
+        if weights:
+            return weights[key]["group"]
+
+        if summary:
+            return summary[key]["group"]
+
+        return key
+
+    # Sort by name first so bench with similar names are together
+    #   we want bench in the same group with similar names to be close
+    all_keys = sorted(all_keys)
+
+    # Sort by group so bench are grouped together
+    #   we want flops bench to be close together no matter what their names are
+    all_keys = sorted(all_keys, key=sort_by)
 
     df = DataFrame(
         {
@@ -205,13 +227,14 @@ def make_dataframe(summary, compare=None, weights=None):
                 summary.get(key, {}),
                 compare and compare.get(key, {}),
                 weights and weights.get(key, {}),
+                query=query,
             )
             for key in all_keys
         }
     ).transpose()
 
     # Reorder columns
-    df = df[sorted(df.columns, key=lambda k: columns_order.get(k, 0))]
+    df = df[sorted(df.columns, key=lambda k: columns_order.get(k, 2000))]
 
     return df
 
@@ -301,37 +324,6 @@ def make_report(
     out.finalize()
 
 
-def pandas_to_string(df, formatters):
-    """Default stdout printer does not insert a column sep which makes it hard to retranscribe results elsewhere.
-    to_csv does not align the output.
-    """
-    from collections import defaultdict
-
-    columns = df.columns.tolist()
-
-    sep = " | "
-    lines = []
-    col_size = defaultdict(int)
-
-    for index, row in df.iterrows():
-        line = [f"{index:<30}"]
-        for col, val in zip(columns, row):
-            fmt = formatters.get(col)
-            val = fmt(val)
-            col_size[col] = max(col_size[col], len(val))
-            line.append(val)
-
-        lines.append(sep.join(line))
-
-    def fmtcol(col):
-        size = col_size[col]
-        return f"{col:>{size}}"
-
-    header = sep.join([f"{'bench':<30}"] + [fmtcol(col) for col in columns])
-
-    return "\n".join([header] + lines)
-
-
 _formatters = {
     "fail": "{:4.0f}".format,
     "n": "{:3.0f}".format,
@@ -347,8 +339,10 @@ _formatters = {
     "sem%": "{:6.1%}".format,
     "iqr%": "{:6.1%}".format,
     "score": "{:10.2f}".format,
-    "weight": "{:5.2f}".format,
+    "weight": "{:6.2f}".format,
     "peak_memory": "{:11.0f}".format,
+    "elapsed": "{:5.0f}".format,
+    "batch_size": "{:3.0f}".format,
     0: "{:.0%}".format,
     1: "{:.0%}".format,
     2: "{:.0%}".format,
@@ -366,6 +360,42 @@ _formatters = {
     14: "{:.0%}".format,
     15: "{:.0%}".format,
 }
+
+
+def pandas_to_string(df, formatters=_formatters):
+    """Default stdout printer does not insert a column sep which makes it hard to retranscribe results elsewhere.
+    to_csv does not align the output.
+    """
+    from collections import defaultdict
+
+    columns = df.columns.tolist()
+
+    sep = " | "
+    lines = []
+    col_size = defaultdict(int)
+
+    for index, row in df.iterrows():
+        line = [f"{index:<30}"]
+        for col, val in zip(columns, row):
+            fmt = formatters.get(col)
+
+            if fmt is not None:
+                val = fmt(val)
+                col_size[col] = max(col_size[col], len(val))
+            else:
+                val = str(val)
+
+            line.append(val)
+
+        lines.append(sep.join(line))
+
+    def fmtcol(col):
+        size = col_size[col]
+        return f"{col:>{size}}"
+
+    header = sep.join([f"{'bench':<30}"] + [fmtcol(col) for col in columns])
+
+    return "\n".join([header] + lines)
 
 
 _table_style = H.style(

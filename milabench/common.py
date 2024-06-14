@@ -15,7 +15,6 @@ from voir.instruments.gpu import deduce_backend, select_backend
 from milabench.alt_async import proceed
 from milabench.utils import available_layers, blabla, multilogger
 
-from .system import build_system_config
 from .config import build_config
 from .fs import XPath
 from .log import TerminalFormatter
@@ -23,6 +22,7 @@ from .merge import merge
 from .multi import MultiPackage
 from .report import make_report
 from .summary import aggregate, make_summary
+from .system import build_system_config
 
 
 def get_pack(defn):

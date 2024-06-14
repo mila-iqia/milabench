@@ -4,13 +4,11 @@ import socket
 from copy import deepcopy
 
 import psutil
-from copy import deepcopy
 import yaml
 from omegaconf import OmegaConf
 
 from .fs import XPath
 from .merge import merge
-
 
 config_global = contextvars.ContextVar("config", default=None)
 
@@ -112,7 +110,6 @@ def build_matrix_bench(all_configs):
 
     for name, bench_config in all_configs.items():
         for k, v in expand_matrix(name, bench_config):
-
             if k in expanded_config:
                 raise ValueError("Bench name is not unique")
 

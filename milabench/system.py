@@ -1,7 +1,7 @@
 import contextvars
-from dataclasses import dataclass, field
 import os
 import socket
+from dataclasses import dataclass, field
 
 import psutil
 import yaml
@@ -27,12 +27,15 @@ def getenv(name, expected_type):
 
 def print_once(*args, **kwargs):
     printed = 0
+
     def _print():
         nonlocal printed
         if printed == 0:
             print(*args, **kwargs)
             printed += 1
+
     return _print
+
 
 warn_no_config = print_once("No system config found, using defaults")
 
@@ -40,7 +43,7 @@ warn_no_config = print_once("No system config found, using defaults")
 def option(name, etype, default=None):
     options = dict()
     system = system_global.get()
-    
+
     if system:
         options = system.get("options", dict())
     else:
@@ -59,7 +62,7 @@ def option(name, etype, default=None):
 
     if final_value is None:
         return None
-    
+
     try:
         value = etype(final_value)
         lookup[frags[-1]] = value
@@ -75,6 +78,7 @@ def is_autoscale_enabled():
 
 def default_save_location():
     from pathlib import Path
+
     return Path.home() / "new_scaling.yaml"
 
 
@@ -97,13 +101,13 @@ class CPUOptions:
     cpu_max: int = option("cpu.max", int, 16)
 
     # min number of CPU per GPU
-    cpu_min: int = option("cpu.min", int, 2)                             
+    cpu_min: int = option("cpu.min", int, 2)
 
     # reserved CPU cores (i.e not available for the benchmark)
-    reserved_cores: int = option("cpu.reserved_cores", int, 0) 
+    reserved_cores: int = option("cpu.reserved_cores", int, 0)
 
     # Number of workers (ignores cpu_max and cpu_min)
-    n_workers: int = option("cpu.n_workers", int)  
+    n_workers: int = option("cpu.n_workers", int)
 
 
 @dataclass
@@ -130,8 +134,8 @@ class Nodes:
 class SystemConfig:
     arch: str = getenv("MILABENCH_GPU_ARCH", str)
     sshkey: str = None
-    docker_image: str  = None
-    nodes : list[Nodes] = field(default_factory=list)
+    docker_image: str = None
+    nodes: list[Nodes] = field(default_factory=list)
     gpu: GPUConfig = None
     options: Options = None
 

@@ -666,7 +666,7 @@ class AccelerateLaunchCommand(SingleCmdCommand):
 
         resolver = new_argument_resolver(self.pack)
 
-        cpu_per_process = resolver(str(self.pack.config['argv']['--cpus_per_gpu']))
+        cpu_per_process = resolver(str(self.pack.config["argv"]["--cpus_per_gpu"]))
         return [
             # -- Run the command in the right venv
             # This could be inside the SSH Command
