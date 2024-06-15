@@ -3,17 +3,17 @@ import os
 
 import pytest
 
+import milabench.commands.executors
+from milabench.alt_async import proceed
 from milabench.commands import (
-    PerGPU,
-    PackCommand,
-    SingleCmdCommand,
-    VoirCommand,
     NJobs,
+    PackCommand,
+    PerGPU,
+    SingleCmdCommand,
     TorchRunCommand,
+    VoirCommand,
 )
 from milabench.common import _get_multipack, arguments
-from milabench.alt_async import proceed
-import milabench.commands.executors
 
 
 class ExecMock1(SingleCmdCommand):

@@ -221,11 +221,12 @@ class DashFormatter(BaseLogger):
         self.rows = defaultdict(dict)
         self.endtimes = {}
         self.early_stop = {}
+        self.prune_delay = 60
 
     def prune(self):
         now = time.time()
         for tag, endtime in list(self.endtimes.items()):
-            if now - endtime > 60:
+            if now - endtime > self.prune_delay:
                 del self.endtimes[tag]
                 del self.rows[tag]
 
@@ -300,9 +301,9 @@ class ShortDashFormatter(DashFormatter):
                 load = int(data.get("load", 0) * 100)
                 currm, totalm = data.get("memory", [0, 0])
                 temp = int(data.get("temperature", 0))
-                row[f"gpu:{gpuid}"] = (
-                    f"{load}% load | {currm:.0f}/{totalm:.0f} MB | {temp}C"
-                )
+                row[
+                    f"gpu:{gpuid}"
+                ] = f"{load}% load | {currm:.0f}/{totalm:.0f} MB | {temp}C"
                 row["gpu_load"] = f"{load}%"
                 row["gpu_mem"] = f"{currm:.0f}/{totalm:.0f} MB"
                 row["gpu_temp"] = f"{temp}C"
@@ -376,9 +377,9 @@ class LongDashFormatter(DashFormatter):
                 load = int(data.get("load", 0) * 100)
                 currm, totalm = data.get("memory", [0, 0])
                 temp = int(data.get("temperature", 0))
-                row[f"gpu:{gpuid}"] = (
-                    f"{load}% load | {currm:.0f}/{totalm:.0f} MB | {temp}C"
-                )
+                row[
+                    f"gpu:{gpuid}"
+                ] = f"{load}% load | {currm:.0f}/{totalm:.0f} MB | {temp}C"
         else:
             task = data.pop("task", "")
             units = data.pop("units", "")

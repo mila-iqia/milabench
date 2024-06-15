@@ -16,9 +16,32 @@ class PackError:
     trace: str = None
 
 
-def _extract_traceback(lines):
+@dataclass
+class ParsedTraceback:
+    lines: list[str]
+
+    def find_raise(self):
+        import re
+
+        pattern = re.compile("raise (.*)\(")
+        for i, line in enumerate(self.lines):
+            if m := pattern.search(line):
+                return i, m.group(1)
+
+        return None, None
+
+    def raised_exception(self):
+        raised_idx, _ = self.find_raise()
+
+        if raised_idx is not None:
+            return self.lines[min(raised_idx + 1, len(self.lines))]
+
+        return self.lines[-1]
+
+
+def _extract_traceback(lines) -> list[ParsedTraceback]:
     output = []
-    traceback = False
+    traceback = None
 
     for line in lines:
         line = line.rstrip()
@@ -28,10 +51,16 @@ def _extract_traceback(lines):
             break
 
         if "Traceback" in line:
-            traceback = True
+            if traceback is not None:
+                output.append(traceback)
+
+            traceback = ParsedTraceback([])
 
         if traceback and line != "":
-            output.append(line)
+            traceback.lines.append(line)
+
+    if traceback is not None:
+        output.append(traceback)
 
     return output
 
@@ -66,7 +95,31 @@ class Layer(ValidationLayer):
         info = entry.data
         error.code = info["return_code"]
 
-    def report(self, summary, short=True, **kwargs):
+    def report_exceptions(self, summary, error, short):
+        if error.trace:
+            exceptions = [ParsedTraceback(error.trace.splitlines())]
+        else:
+            exceptions = _extract_traceback(error.stderr)
+
+        if len(exceptions) == 0:
+            summary.add("* No traceback info about the error")
+            return
+
+        summary.add(f"* {len(exceptions)} exceptions found")
+
+        grouped = defaultdict(list)
+        for exception in exceptions:
+            grouped[exception.raised_exception()].append(exception)
+
+        for k, exceptions in grouped.items():
+            summary.add(f"  * {len(exceptions)} x {k}")
+
+            if not short:
+                selected = exceptions[0]
+                for line in selected.lines:
+                    summary.add(f"      | {line}")
+
+    def report(self, summary, short=False, **kwargs):
         """Print an error report and exit with an error code if any error were found"""
 
         failures = 0
@@ -88,21 +141,9 @@ class Layer(ValidationLayer):
                     summary.add("* early stopped")
                     continue
 
-                if error.trace:
-                    tracebacks = error.trace.splitlines()
-                else:
-                    tracebacks = _extract_traceback(error.stderr)
                 summary.add(f"* Error code = {error.code}")
 
-                if len(tracebacks) != 0:
-                    if short:
-                        summary.add("* " + tracebacks[-1])
-                    else:
-                        summary.add("* " + tracebacks[0])
-                        for line in tracebacks[1:]:
-                            summary.add("  " + line)
-                else:
-                    summary.add("* No traceback info about the error")
+                self.report_exceptions(summary, error, short)
 
         self.set_error_code(failures)
         return failures

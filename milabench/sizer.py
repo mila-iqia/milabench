@@ -215,7 +215,7 @@ class MemoryUsageExtractor(ValidationLayer):
         self.batch_size = None
         self.max_usage = float("-inf")
 
-        config = self.memory.get(self.benchname, dict())
+        config = self.memory.setdefault(self.benchname, dict())
         scalingarg = config.get("arg", None)
 
         if scalingarg is None:
