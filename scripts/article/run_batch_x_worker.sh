@@ -10,6 +10,8 @@ FINAL_OUTPUT="$HOME/batch_x_worker"
 export MILABENCH_SIZER_SAVE="$FINAL_OUTPUT/scaling.yaml"
 mkdir -p $FINAL_OUTPUT
 
+module load cuda/12.3.2
+
 #
 # Install
 #
@@ -43,7 +45,7 @@ maybe_run() {
             echo "running $name"
             milabench prepare
             milabench run --run-name $name
-            mv $MILABENCH_BASE/runs/$name $FINAL_OUTPUT/$name
+            mv $MILABENCH_BASE/runs/* $FINAL_OUTPUT/
         fi  
     fi
 }
