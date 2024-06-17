@@ -8,7 +8,10 @@ export MILABENCH_BASE="$MILABENCH_WORDIR/results"
 export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/standard.yaml"
 export MILABENCH_VENV="$MILABENCH_WORDIR/env"
 export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
-export MILABENCH_PREPARE=0
+
+if [ -z "${MILABENCH_PREPARE}" ]; then
+    export MILABENCH_PREPARE=0
+fi
 
 install_prepare() {
     mkdir -p $MILABENCH_WORDIR

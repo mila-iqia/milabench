@@ -156,7 +156,7 @@ def augment(group, query=tuple([])):
 
 
 @error_guard(None)
-def _summarize(group, query):
+def _summarize(group, query=tuple([])):
     agg = group["data"]
     gpudata = defaultdict(lambda: defaultdict(list))
 
@@ -198,7 +198,7 @@ def _summarize(group, query):
     }
 
 
-def make_summary(runs, query=None):
+def make_summary(runs, query=tuple([])):
     aggs = [agg for run in runs if (agg := aggregate(run))]
     classified = _classify(aggs)
     merged = {name: _merge(runs) for name, runs in classified.items()}

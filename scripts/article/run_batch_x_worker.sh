@@ -18,13 +18,7 @@ module load cuda/12.3.2
 if [ "$DRY" -eq 0 ]; then
     export MILABENCH_PREPARE=1
     source $SCRIPT_DIR/run_cuda.sh
-
-    #
-    # Activate
-    #
-    source $MILABENCH_WORDIR/env/bin/activate
 fi
-
 
 source $MILABENCH_WORDIR/env/bin/activate
 
