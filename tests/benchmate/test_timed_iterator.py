@@ -2,7 +2,7 @@ import time
 
 import pytest
 
-from benchmate.metrics import TimedIterator, StopProgram
+from benchmate.metrics import StopProgram, TimedIterator
 
 
 class CPUEvent:

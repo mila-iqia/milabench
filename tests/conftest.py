@@ -1,11 +1,9 @@
 import os
-from pathlib import Path
 import stat
-
-import voir.instruments.gpu as voirgpu
+from pathlib import Path
 
 import pytest
-
+import voir.instruments.gpu as voirgpu
 
 here = Path(__file__).parent
 
@@ -96,10 +94,12 @@ def set_env():
     voirexec = "output/venv/benchio/bin/voir"
     with open(voirexec, "w") as fp:
         fp.write("#!/bin/bash\n")
-        fp.write("python -m voir \"$@\"")
+        fp.write('python -m voir "$@"')
 
     current_permissions = stat.S_IMODE(os.lstat(voirexec).st_mode)
-    os.chmod(voirexec, current_permissions | (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH))
+    os.chmod(
+        voirexec, current_permissions | (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    )
 
     if backend == "mock":
         oldsmi = voirgpu.DEVICESMI

@@ -27,7 +27,6 @@ def getenv(name, expected_type):
 
 def print_once(*args, **kwargs):
     printed = 0
-
     def _print():
         nonlocal printed
         if printed == 0:
@@ -43,7 +42,6 @@ warn_no_config = print_once("No system config found, using defaults")
 def option(name, etype, default=None):
     options = dict()
     system = system_global.get()
-
     if system:
         options = system.get("options", dict())
     else:
@@ -62,7 +60,6 @@ def option(name, etype, default=None):
 
     if final_value is None:
         return None
-
     try:
         value = etype(final_value)
         lookup[frags[-1]] = value
@@ -78,7 +75,6 @@ def is_autoscale_enabled():
 
 def default_save_location():
     from pathlib import Path
-
     return Path.home() / "new_scaling.yaml"
 
 

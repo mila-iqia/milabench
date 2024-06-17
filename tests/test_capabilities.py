@@ -1,7 +1,7 @@
 from omegaconf import OmegaConf
 
-from milabench.pack import BasePackage
 from milabench.capability import sync_is_system_capable
+from milabench.pack import BasePackage
 
 
 def _fake_config(n):

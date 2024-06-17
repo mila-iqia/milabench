@@ -10,48 +10,50 @@ FINAL_OUTPUT="$HOME/batch_x_worker"
 export MILABENCH_SIZER_SAVE="$FINAL_OUTPUT/scaling.yaml"
 mkdir -p $FINAL_OUTPUT
 
+module load cuda/12.3.2
+
 #
 # Install
 #
-# if [ "$DRY" -eq 0 ]; then
-#     export MILABENCH_PREPARE=1
-#     source $SCRIPT_DIR/run_cuda.sh
+if [ "$DRY" -eq 0 ]; then
+    export MILABENCH_PREPARE=1
+    source $SCRIPT_DIR/run_cuda.sh
 
-#     #
-#     # Activate
-#     #
-#     source $MILABENCH_WORDIR/env/bin/activate
-# fi
+    #
+    # Activate
+    #
+    source $MILABENCH_WORDIR/env/bin/activate
+fi
 
-export MILABENCH_GPU_ARCH=cuda
-export MILABENCH_WORDIR="$(pwd)/$MILABENCH_GPU_ARCH"
-export MILABENCH_BASE="$MILABENCH_WORDIR/results"
-export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/standard.yaml"
-export MILABENCH_VENV="$MILABENCH_WORDIR/env"
-export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
 
 source $MILABENCH_WORDIR/env/bin/activate
 
-
 maybe_run() {
     local name=$1
-    if [ "$DRY" -eq 1 ]; then
-        mkdir -p dry
-        echo $name
-        milabench matrix --base output --config config/standard.yaml > dry/$name.yaml
+    local first_part=$(echo "$name" | cut -d'.' -f1)
+
+    if ls -d "$FINAL_OUTPUT/$first_part".* 1> /dev/null 2>&1; then 
+        echo "Skipping because folder exists $FINAL_OUTPUT/$name"
     else
-        milabench prepare
-        milabench run --run-name $name
-        mv $MILABENCH_BASE/runs/* ~/batch_x_worker/
+        if [ "$DRY" -eq 1 ]; then
+            mkdir -p dry
+            echo $name
+            milabench matrix --base output --config config/standard.yaml > dry/$name.yaml
+        else
+            echo "running $name"
+            milabench prepare
+            milabench run --run-name $name
+            mv $MILABENCH_BASE/runs/* $FINAL_OUTPUT/
+        fi  
     fi
 }
 
 #
 # Default everything
 #
-#export MILABENCH_CPU_AUTO=0
-#export MILABENCH_SIZER_AUTO=0
-#maybe_run "wdef-cdef.{time}"
+export MILABENCH_CPU_AUTO=0
+export MILABENCH_SIZER_AUTO=0
+maybe_run "wdef-cdef.{time}"
 
 #
 # Auto everything

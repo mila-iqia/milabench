@@ -1,11 +1,14 @@
 import json
 import os
+import time
+import zipfile
 from collections import defaultdict
 from copy import deepcopy
 from pathlib import Path
 
 from milabench.pack import BasePackage
 from milabench.structs import BenchLogEntry
+from milabench.utils import multilogger, validation_layers
 
 
 class ReplayPackage(BasePackage):
@@ -18,9 +21,9 @@ class ReplayPackage(BasePackage):
         self.processes = []
 
 
-def replay(filename):
+def replay(filename, open_fun=open):
     pack = None
-    with open(filename, "r") as f:
+    with open_fun(filename, "r") as f:
         for line in f.readlines():
             try:
                 entry = json.loads(line)
@@ -35,9 +38,9 @@ def replay(filename):
                 yield BenchLogEntry(pack, **entry)
 
 
-def interleave(*filenames):
+def interleave(*filenames, open_fun=open):
     """Interleaves replay lines to simulate multiple bench sending events in parallel"""
-    generators = [replay(file) for file in filenames]
+    generators = [replay(file, open_fun=open_fun) for file in filenames]
 
     while len(generators) > 0:
         finished = []
@@ -104,3 +107,53 @@ def show_diff(a, b, depth=0, path=None):
             acc += 1
 
     return acc
+
+
+def replay_zipfile(path, *validation, sleep=0):
+    with zipfile.ZipFile(path, "r") as archive:
+        data = defaultdict(list)
+
+        for member in archive.namelist():
+            if member.endswith(".data"):
+                filename = member.split("/")[-1]
+                benchname = filename.split(".", maxsplit=1)[0]
+                data[benchname].append(member)
+
+        with multilogger(*validation) as log:
+            for _, streams in data.items():
+                gen = interleave(*streams, open_fun=archive.open)
+
+                for entry in gen:
+                    time.sleep(sleep)
+                    log(entry)
+                    # callback(entry)
+
+        return log
+
+
+def replay_validation_scenario(folder, *validation, filename=None):
+    """Replay events from a data file or folder"""
+    gen = None
+
+    path = folder / filename
+    file = str(path) + ".txt"
+
+    if os.path.isdir(path):
+        files = [path / f for f in os.scandir(path)]
+        gen = interleave(*files)
+
+    if os.path.isfile(file):
+        gen = replay(file)
+
+    with multilogger(*validation) as log:
+        for entry in gen:
+            log(entry)
+
+    return log
+
+
+def replay_scenario(folder, name, filename=None):
+    """Replay events from a data file or folder"""
+    return replay_validation_scenario(
+        folder, *validation_layers(name), filename=filename or name
+    )

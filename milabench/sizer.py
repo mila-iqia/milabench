@@ -2,6 +2,7 @@ import contextvars
 import multiprocessing
 import os
 from copy import deepcopy
+import multiprocessing
 
 import numpy as np
 import yaml
@@ -240,7 +241,7 @@ class MemoryUsageExtractor(ValidationLayer):
         self.batch_size = None
         self.max_usage = float("-inf")
 
-        config = self.memory.get(self.benchname, dict())
+        config = self.memory.setdefault(self.benchname, dict())
         scalingarg = config.get("arg", None)
 
         if scalingarg is None:
@@ -326,7 +327,6 @@ def new_argument_resolver(pack):
         device_count = 1
 
     options = CPUOptions()
-
     def auto(value, default):
         if options.enabled:
             return value

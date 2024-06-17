@@ -1,5 +1,6 @@
 import sys
 from dataclasses import dataclass
+import sys
 
 import yaml
 from coleo import Option, tooled
@@ -91,7 +92,6 @@ def cli_matrix_run(args=None):
         for k, v in argv.items():
             args.append(k)
             args.append(v)
-
         sized_args = scale_argv(pack, args)
         final_args = resolve_argv(pack, sized_args)
 
@@ -101,7 +101,6 @@ def cli_matrix_run(args=None):
                 argv[k] = final_args[i + 1]
                 i += 2
                 continue
-
             print(f"Missing resolved argument {k}")
 
         return argv
