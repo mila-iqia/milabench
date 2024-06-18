@@ -42,9 +42,9 @@ you can force milabench to use a single environment for everything.
 
 .. code-block:: bash
 
-    milabench --use-current-env install
-    milabench --use-current-env prepare
-    milabench --use-current-env run --select  bert-fp32 
+    milabench install --use-current-env
+    milabench prepare --use-current-env
+    milabench run --use-current-env --select bert-fp32 
 
 Batch resizer
 ^^^^^^^^^^^^^
