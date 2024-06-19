@@ -2,12 +2,15 @@ import asyncio
 import traceback
 from collections import defaultdict
 from copy import deepcopy
+from contextlib import contextmanager
 
+from filelock import FileLock, Timeout
 from voir.instruments.gpu import get_gpu_info
 
 from .capability import is_system_capable
 from .commands import NJobs, PerGPU
 from .fs import XPath
+from .config import get_base_folder
 from .pack import Package
 from .remote import (
     is_main_local,
@@ -22,6 +25,21 @@ from .utils import make_constraints_file
 here = XPath(__file__).parent
 
 planning_methods = {}
+
+
+def lock_file(phase):
+    folder = get_base_folder() / "extra" / f"{phase}.lock"
+    folder.parent.mkdir(exist_ok=True)
+    return folder
+
+
+@contextmanager
+def phase_lock(phase):
+    filename = lock_file(phase)
+    try:
+        yield FileLock(filename, blocking=False)
+    except Timeout:
+        print("Shared filesystem detected")
 
 
 async def aprint(pack, msg):
@@ -135,7 +153,8 @@ class MultiPackage:
             remote_task = asyncio.create_task(remote_plan.execute())
 
         # do the installation step
-        await self.do_phase("install", remote_task, "checked_install")
+        with phase_lock("install"):
+            await self.do_phase("install", remote_task, "checked_install")
 
     async def do_prepare(self):
         setup = self.setup_pack()
@@ -152,7 +171,8 @@ class MultiPackage:
             remote_plan = milabench_remote_prepare(setup, run_for="worker")
             remote_task = asyncio.create_task(remote_plan.execute())
 
-        await self.do_phase("prepare", remote_task, "prepare")
+        with phase_lock("prepare"):
+            await self.do_phase("prepare", remote_task, "prepare")
 
     async def do_run(self, repeat=1):
         setup = self.setup_pack()

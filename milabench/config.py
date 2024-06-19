@@ -14,6 +14,10 @@ from .merge import merge
 config_global = contextvars.ContextVar("config", default=None)
 
 
+def get_base_folder():
+    config = config_global.get()
+    return XPath(config["dirs"]["base"])
+
 def relative_to(pth, cwd):
     pth = XPath(pth).expanduser()
     if not pth.is_absolute():
