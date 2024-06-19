@@ -4,12 +4,14 @@ set -ex
 
 export MILABENCH_GPU_ARCH=cuda
 export MILABENCH_WORDIR="$(pwd)/$MILABENCH_GPU_ARCH"
-
 export MILABENCH_BASE="$MILABENCH_WORDIR/results"
 export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/standard.yaml"
 export MILABENCH_VENV="$MILABENCH_WORDIR/env"
 export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
 
+if [ -z "${MILABENCH_PREPARE}" ]; then
+    export MILABENCH_PREPARE=0
+fi
 
 install_prepare() {
     mkdir -p $MILABENCH_WORDIR
@@ -20,7 +22,7 @@ install_prepare() {
     fi
 
     if [ ! -d "$MILABENCH_WORDIR/milabench" ]; then
-        git clone https://github.com/mila-iqia/milabench.git
+        git clone https://github.com/mila-iqia/milabench.git -b worker_x_batch
     fi
 
     . $MILABENCH_WORDIR/env/bin/activate
@@ -58,12 +60,15 @@ else
     . $MILABENCH_WORDIR/env/bin/activate
 fi
 
-cd $MILABENCH_WORDIR
 
-#
-#   Run the benchmakrs
-milabench run "$@"
+if [ "$MILABENCH_PREPARE" -eq 0 ]; then
+    cd $MILABENCH_WORDIR
 
-#
-#   Display report
-milabench report --runs $MILABENCH_WORDIR/results/runs
+    #
+    #   Run the benchmakrs
+    milabench run "$@"
+
+    #
+    #   Display report
+    milabench report --runs $MILABENCH_WORDIR/results/runs
+fi

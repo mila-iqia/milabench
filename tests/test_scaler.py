@@ -75,9 +75,8 @@ def fakeexec(pack):
 
 
 def test_scaler_enabled(multipack, config):
+    from milabench.system import system_global
     import contextvars
-
-    from milabench.config import system_global
 
     ctx = contextvars.copy_context()
 

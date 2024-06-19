@@ -135,8 +135,28 @@ def _metrics(xs):
     return metrics
 
 
+@error_guard(dict())
+def augment(group, query=tuple([])):
+    """Optional augmentation steps that will add additional data.
+    Usually extracted from the run itself
+    """
+    data = {}
+
+    if "batch_size" in query:
+        from .sizer import get_batch_size
+
+        data["batch_size"] = get_batch_size(group["config"], group["start"])
+
+    if "elapsed" in query:
+        start_time = group["start"]["time"]
+        end_time = group["end"]["time"]
+        data["elapsed"] = end_time - start_time
+
+    return data
+
+
 @error_guard(None)
-def _summarize(group):
+def _summarize(group, query=tuple([])):
     agg = group["data"]
     gpudata = defaultdict(lambda: defaultdict(list))
 
@@ -152,8 +172,12 @@ def _summarize(group):
         per_gpu[device].append(tr)
 
     config = group["config"]
+
+    additional = augment(group, query)
+
     return {
         "name": config["name"],
+        "group": config["group"],
         "n": len(agg["success"]),
         "successes": sum(agg["success"]),
         "failures": sum(not x for x in agg["success"]),
@@ -170,12 +194,13 @@ def _summarize(group):
             for device, data in gpudata.items()
         },
         "weight": config.get("weight", 0),
+        "extra": additional,
     }
 
 
-def make_summary(runs):
+def make_summary(runs, query=tuple([])):
     aggs = [agg for run in runs if (agg := aggregate(run))]
     classified = _classify(aggs)
     merged = {name: _merge(runs) for name, runs in classified.items()}
-    summarized = {name: _summarize(agg) for name, agg in merged.items()}
+    summarized = {name: _summarize(agg, query) for name, agg in merged.items()}
     return summarized

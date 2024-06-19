@@ -74,7 +74,7 @@ def setupvoir():
             }
             for gpu in get_gpu_info()["gpus"].values()
         }
-        return {"task": "main", "gpudata": data, "t": time.time()}
+        return {"task": "main", "gpudata": data, "time": time.time(), "units": "s"}
 
     monitor = CustomMonitor(0.5, monitor_fn)
 

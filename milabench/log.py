@@ -147,6 +147,9 @@ class TerminalFormatter(BaseLogger):
         elif event == "config":
 
             def _show(k, entry):
+                if k in ("meta", "system"):
+                    return
+
                 if isinstance(entry, dict):
                     for k2, v in entry.items():
                         _show(f"{k}.{k2}", v)
@@ -221,12 +224,16 @@ class DashFormatter(BaseLogger):
         self.rows = defaultdict(dict)
         self.endtimes = {}
         self.early_stop = {}
-        self.prune_delay = 60
+        # Delay the pruning so we can see the results
+        self.prune_delay = 30
+        # Limit the number of rows to avoid too much clutering
+        # This is a soft limit, it only prunes finished runs
+        self.max_rows = 8
 
     def prune(self):
         now = time.time()
         for tag, endtime in list(self.endtimes.items()):
-            if now - endtime > self.prune_delay:
+            if (now - endtime > self.prune_delay) or len(self.rows) > self.max_rows:
                 del self.endtimes[tag]
                 del self.rows[tag]
 
