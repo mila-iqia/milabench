@@ -11,7 +11,17 @@ from omegaconf import OmegaConf
 from .fs import XPath
 from .merge import merge
 
+
 config_global = contextvars.ContextVar("config", default=None)
+execution_count = contextvars.ContextVar("count", default=0)
+
+
+def set_run_count(total):
+    execution_count.set(total)
+
+
+def get_run_count():
+    return execution_count.get()
 
 
 def get_base_folder():
