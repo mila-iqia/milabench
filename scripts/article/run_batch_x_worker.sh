@@ -10,14 +10,14 @@ FINAL_OUTPUT="$HOME/batch_x_worker"
 export MILABENCH_SIZER_SAVE="$FINAL_OUTPUT/scaling.yaml"
 mkdir -p $FINAL_OUTPUT
 
-module load cuda/12.3.2
+# module load cuda/12.3.2
 
 #
 # Install
 #
 if [ "$DRY" -eq 0 ]; then
     export MILABENCH_PREPARE=1
-    source $SCRIPT_DIR/run_cuda.sh
+    source $SCRIPT_DIR/run_hpu.sh
 fi
 
 source $MILABENCH_WORDIR/env/bin/activate
@@ -36,7 +36,7 @@ maybe_run() {
         else
             echo "running $name"
             milabench prepare
-            milabench run --run-name $name
+            milabench run --run-name $name --exclude llama
             mv $MILABENCH_BASE/runs/* $FINAL_OUTPUT/
         fi  
     fi

@@ -34,8 +34,8 @@ def generate_tensors(batch_size, shapes, device):
     return tensors
 
 
-def generate_tensor_classification(model, batch_size, in_shape, device):
-    model = model.to(device)
+def generate_tensor_classification(original_model, batch_size, in_shape, device):
+    model = original_model.to(device=device)
     inp = torch.randn((batch_size, *in_shape), device=device)
     out = torch.rand_like(model(inp))
     return inp, out
@@ -195,7 +195,10 @@ def pytorch(folder, batch_size, num_workers, distributed=False, epochs=60):
 def synthetic(model, batch_size, fixed_batch):
     return SyntheticData(
         tensors=generate_tensor_classification(
-            model, batch_size, (3, 244, 244), device=accelerator.fetch_device(0)
+            model, 
+            batch_size, 
+            (3, 244, 244), 
+            device=accelerator.fetch_device(0)
         ),
         n=1000,
         fixed_batch=fixed_batch,

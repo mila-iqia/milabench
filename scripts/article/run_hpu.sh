@@ -9,6 +9,10 @@ export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/standard.yaml"
 export MILABENCH_VENV="$MILABENCH_WORDIR/env"
 export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
 
+if [ -z "${MILABENCH_PREPARE}" ]; then
+    export MILABENCH_PREPARE=0
+fi
+
 install_prepare() {
     mkdir -p $MILABENCH_WORDIR
     cd $MILABENCH_WORDIR
@@ -71,13 +75,15 @@ else
     . $MILABENCH_WORDIR/env/bin/activate
 fi
 
-cd $MILABENCH_WORDIR
 
+if [ "$MILABENCH_PREPARE" -eq 0 ]; then
+    cd $MILABENCH_WORDIR
 
-#
-#   Run the benchmakrs
-milabench run "$@"
+    #
+    #   Run the benchmakrs
+    milabench run "$@"
 
-#
-#   Display report
-milabench report --runs $MILABENCH_WORDIR/results/runs
+    #
+    #   Display report
+    milabench report --runs $MILABENCH_WORDIR/results/runs
+fi
