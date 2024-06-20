@@ -19,6 +19,7 @@ from .schedule import cli_schedule
 from .slurm import cli_slurm_system
 from .sql import cli_sqlsetup
 from .summary import cli_summary
+from .resolve import cli_resolve
 
 
 class Main:
@@ -85,6 +86,9 @@ class Main:
 
     def matrix():
         cli_matrix_run()
+
+    def resolve():
+        cli_resolve()
 
 
 def main(argv=None):
