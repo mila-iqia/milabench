@@ -4,10 +4,12 @@
 # Cannot be split in multiple files because slurm copy the bash file to be executed
 #
 
+set -ex
+
 function usage() {
   echo "Usage: $0 [-m] [-p]"
   echo "  -h              Display this help message."
-  echo "  -b arch         GPU arch           (default: cuda)"
+  echo "  -a arch         GPU arch           (default: cuda)"
   echo "  -b BRANCH       Branch to checkout (default: master)"
   echo "  -o ORIGIN       Origin to use      (default: github/mila/milabench)"
   echo "  -c CONFIG       Configuration      (default: milabench/config/standard.yaml)"
@@ -17,64 +19,70 @@ function usage() {
   exit 1
 }
 
-function parse_args() {
-  ARCH="cuda"
-  PYTHON="3.9"
-  BRANCH="master"
-  ORIGIN="https://github.com/mila-iqia/milabench.git"
-  LOC="$SLURM_TMPDIR"
-  CONFIG="$LOC/milabench/config/standard.yaml"
-  BASE="$LOC/base"
-  ENV="./env"
-  REMAINING_ARGS=""
+ARCH="cuda"
+PYTHON="3.10"
+BRANCH="master"
+ORIGIN="https://github.com/mila-iqia/milabench.git"
+LOC="$SLURM_TMPDIR/$SLURM_JOB_ID"
+CONFIG="$LOC/milabench/config/standard.yaml"
+BASE="$LOC/base"
+ENV="./env"
+REMAINING_ARGS=""
+FUN="run"
 
-  while getopts ":hm:p:e:b:o:c:" opt; do
-    case $opt in
-      h)
+while getopts ":hm:p:e:b:o:c:f:" opt; do
+  case $opt in
+    h)
+      usage
+      ;;
+    f)
+      FUN="$OPTARG"
+      ;;
+    p)
+        PYTHON="$OPTARG"
+        ;;
+    b)
+        BRANCH="$OPTARG"
+        ;;
+    o)
+        ORIGIN="$OPTARG"
+        ;;
+    c)
+        CONFIG="$OPTARG"
+        ;;
+    e)
+        ENV="$OPTARG"
+        ;;
+    a)
+        ARCH="$OPTARG"
+        ;;
+    l)
+        # FIX ME
+        LOC="$OPTARG"
+        CONFIG="$LOC/milabench/config/standard.yaml"
+        BASE="$LOC/base"
+        ;;
+    :)
+        echo "Option -$OPTARG requires an argument." >&2
         usage
         ;;
-      p)
-          PYTHON="$OPTARG"
-          ;;
-      b)
-          BRANCH="$OPTARG"
-          ;;
-      o)
-          ORIGIN="$OPTARG"
-          ;;
-      c)
-          CONFIG="$OPTARG"
-          ;;
-      e)
-          ENV="$OPTARG"
-          ;;
-      a)
-          ARCH="$OPTARG"
-          ;;
-      l)
-          # FIX ME
-          LOC="$OPTARG"
-          CONFIG="$LOC/milabench/config/standard.yaml"
-          BASE="$LOC/base"
-          ;;
-      :)
-          echo "Option -$OPTARG requires an argument." >&2
-          usage
-          ;;
-    esac
-  done
+  esac
+done
 
-  shift "$((OPTIND-1))"
-  REMAINING_ARGS="$@"
+shift "$((OPTIND-1))"
+REMAINING_ARGS="$@"
 
-  echo "  PYTHON: $PYTHON"
-  echo "  branch: $BRANCH"
-  echo "  origin: $ORIGIN"
-  echo "  config: $CONFIG"
-  echo "     env: $ENV"
-  echo "    args: $REMAINING_ARGS"
+echo "  PYTHON: $PYTHON"
+echo "  branch: $BRANCH"
+echo "  origin: $ORIGIN"
+echo "  config: $CONFIG"
+echo "     env: $ENV"
+echo "    args: $REMAINING_ARGS"
+echo "     loc: $LOC"
 
-}
+mkdir -p $LOC
+cd $LOC
+
 
 function conda_env() {
   #
@@ -112,15 +120,17 @@ function setup() {
   #
   # Fetch the repo
   #
+  cd $LOC
   git clone --single-branch --depth 1 -b $BRANCH $ORIGIN
   python -m pip install -e ./milabench
-
+  (
+    cd milabench
+    git status
+  )
   SYSTEM="$LOC/system.yaml"
 }
 
 function pin() {
-  parse_args
-
   conda_env
 
   setup
@@ -138,8 +148,7 @@ function pin() {
 }
 
 function run() {
-  parse_args
-
+  
   conda_env
 
   setup
@@ -148,8 +157,8 @@ function run() {
   echo "System"
   echo "------"
 
-  milabench slurm_system 
   milabench slurm_system > $SYSTEM
+  cat $SYSTEM
 
   module load gcc/9.3.0 
   module load cuda/11.8
@@ -179,3 +188,12 @@ function run() {
   echo "Done after $SECONDS"
   echo ""
 }
+
+case "$FUN" in
+  run)
+    run
+    ;;
+  pin)
+    pin
+    ;;
+esac

@@ -5,6 +5,7 @@ import subprocess
 
 import importlib_resources
 import requests
+import yaml
 from coleo import Option, tooled
 
 
@@ -14,6 +15,7 @@ class Arguments:
     sync: bool = False
     dry : bool = False
     args: list = field(default_factory=list)
+    profile: str = None
 # fmt: on
 
 
@@ -25,11 +27,29 @@ def arguments():
     # Print the command and return without running it
     dry: Option & bool = False
 
-    # pip arguments
+    # sbatch run profile
+    profile: Option & str = None
+
+    # script arguments
     # [remainder]
     args: Option = []
 
-    return Arguments(sync, dry, args)
+    return Arguments(sync, dry, args, profile)
+
+
+def get_sbatch_profiles(profile, default):
+    ROOT = os.path.dirname(__file__)
+    default_scaling_config = os.path.join(ROOT, "..", "..", "config", "slurm.yaml")
+
+    with open(default_scaling_config, "r") as fp:
+        sbatch_profiles = yaml.safe_load(fp)
+
+    args = sbatch_profiles.get(profile)
+
+    if args is None:
+        args = sbatch_profiles.get(default)
+    
+    return args 
 
 
 @tooled
@@ -39,9 +59,9 @@ def cli_schedule(args=None):
     if args is None:
         args = arguments()
 
-    launch_milabench(args.args, sbatch_args=None, dry=args.dry, sync=args.sync)
+    sbatch_args = get_sbatch_profiles(args.profile, "single-node-small")
 
-
+    launch_milabench(args.args, sbatch_args=sbatch_args, dry=args.dry, sync=args.sync)
 
 
 def popen(cmd, callback=None):
@@ -119,7 +139,8 @@ class SetupOptions:
     origin: str = "https://github.com/mila-iqia/milabench.git"
     config: str = "milabench/config/standard.yaml"
     env: str = "./env"
-    python: str = "3.9"
+    python: str = "3.10"
+    fun: str = "run"
 
     def deduce_remote(self, current_branch):
         prefix = "refs/heads/"
@@ -164,35 +185,25 @@ class SetupOptions:
             self.env,
             "-p",
             self.python,
+            "-f",
+            self.fun
         ]
 
 
 def launch_milabench(args, sbatch_args=None, dry: bool = False, sync: bool = False):
     sbatch_script = (
-        importlib_resources.files(__name__) / "scripts" / "milabench_run.bash"
+        os.path.abspath(importlib_resources.files(__name__) / ".." / "scripts" / "milabench_run.bash")
     )
     sbatch_script = str(sbatch_script)
-
-    # salloc --gres=gpu:rtx8000:1 --mem=64G --cpus-per-gpu=4
-
-    if sbatch_args is None:
-        sbatch_args = [
-            "--ntasks=1",
-            "--gpus-per-task=rtx8000:2",
-            "--cpus-per-task=8",
-            "--time=01:30:00",
-            "--ntasks-per-node=1",
-            "--mem=64G",
-        ]
 
     script_args = SetupOptions()
     script_args.deduce_from_repository()
     script_args = script_args.arguments()
 
     cmd = sbatch_args + [sbatch_script] + script_args + args
+    print("sbatch " + " ".join(cmd))
 
     if dry:
-        print("sbatch " + " ".join(cmd))
         code = 0
     else:
         code, _ = sbatch(cmd, sync=sync, tags=None)

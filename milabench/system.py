@@ -2,6 +2,7 @@ import contextvars
 import os
 import socket
 from dataclasses import dataclass, field
+import sys
 
 import psutil
 import yaml
@@ -30,7 +31,7 @@ def print_once(*args, **kwargs):
     def _print():
         nonlocal printed
         if printed == 0:
-            print(*args, **kwargs)
+            print(*args, **kwargs, file=sys.stderr)
             printed += 1
 
     return _print
@@ -181,6 +182,19 @@ def _resolve_ip(ip):
     return hostname, aliaslist, ipaddrlist, lazy_raise
 
 
+def _fix_weird(hostname):
+    if hostname.endswith(".server.mila.quebec.server.mila.quebec"):
+        print()
+        print("Hostname was extra long for no reason")
+        print(hostname, socket.gethostname())
+        print()
+
+        # why is this happening
+        hostname = hostname[: -len(".server.mila.quebec")]
+    
+    return hostname
+
+
 def resolve_addresses(nodes):
     # Note: it is possible for self to be none
     # if we are running milabench on a node that is not part of the system
@@ -193,24 +207,20 @@ def resolve_addresses(nodes):
     for node in nodes:
         hostname, aliaslist, ipaddrlist, lazy_raise = _resolve_ip(node["ip"])
 
+        hostname = _fix_weird(hostname)
+
         node["hostname"] = hostname
         node["aliaslist"] = aliaslist
         node["ipaddrlist"] = ipaddrlist
 
-        if hostname.endswith(".server.mila.quebec.server.mila.quebec"):
-            print()
-            print("Hostname was extra long for no reason")
-            print(hostname, socket.gethostname())
-            print()
-
-            # why is this happening
-            hostname = hostname[: -len(".server.mila.quebec")]
-
         is_local = (
             ("127.0.0.1" in ipaddrlist)
             or (hostname in ("localhost", socket.gethostname()))
+            or (socket.gethostname().startswith(hostname))
             or len(ip_list.intersection(ipaddrlist)) > 0
         )
+        # cn-g005 cn-g005.server.mila.quebec
+        # print(hostname, socket.gethostname())
         node["local"] = is_local
 
         if is_local:
@@ -232,7 +242,7 @@ def get_gpu_capacity(strict=False):
         for k, v in get_gpu_info()["gpus"].items():
             capacity = min(v["memory"]["total"], capacity)
 
-        return capacity
+        return int(capacity)
     except:
         print("GPU not available, defaulting to 0 MiB")
         if strict:

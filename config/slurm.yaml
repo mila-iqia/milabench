@@ -1,0 +1,53 @@
+#
+# SBatch arguments for different run profile
+#
+
+multi-node-full:
+  # DGX run: 2 nodes x 8 A100 80Go SXM4
+  - --partition=staff-idt
+  - -w cn-d[003-004]
+  - --ntasks=1
+  - --gpus-per-task=a100l:8
+  - --exclusive
+  - --nodes=2
+  - --cpus-per-task=128
+  - --time=1:30:00
+  - --ntasks-per-node=1
+  - --mem=0
+
+single-node-full:
+  # DGX run: 1 node x 8 A100 80Go SXM4
+  - --partition=staff-idt
+  - -w cn-d[003-004]
+  - --ntasks=1
+  - --gpus-per-task=a100l:8
+  - --exclusive
+  - --nodes=1
+  - --cpus-per-task=128
+  - --time=1:30:00
+  - --ntasks-per-node=1
+  - --mem=0
+
+multi-node-small:
+  # Any GPU, 2 nodes x 2 GPU
+  - --partition=staff-idt
+  - --ntasks=1
+  - --gpus-per-task=2
+  - --exclusive
+  - --nodes=2
+  - --cpus-per-task=16
+  - --time=1:30:00
+  - --ntasks-per-node=1
+  - --mem=128G
+
+single-node-small:
+  # Any GPU, 1 node x 2 GPU
+  - --partition=staff-idt
+  - --ntasks=1
+  - --gpus-per-task=2
+  - --exclusive
+  - --nodes=1
+  - --cpus-per-task=16
+  - --time=1:30:00
+  - --ntasks-per-node=1
+  - --mem=128G

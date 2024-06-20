@@ -289,7 +289,7 @@ class MultiPackage:
                 exec_plan = make_execution_plan(pack, index, repeat)
 
                 if isinstance(exec_plan, PerGPU):
-                    acc += len(exec_plan.gpus)
+                    acc += len(exec_plan.devices)
                 else:
                     acc += 1
         return acc

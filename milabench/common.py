@@ -365,7 +365,7 @@ def _short_make_report(runs, config):
         summary = make_summary(reports.values())
 
     if config:
-        config = _get_multipack(config, return_config=True)
+        config = _get_multipack(CommonArguments(config), return_config=True)
 
     stream = io.StringIO()
 

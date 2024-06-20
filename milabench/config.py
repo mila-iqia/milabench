@@ -26,7 +26,7 @@ def get_run_count():
 
 def get_base_folder():
     config = config_global.get()
-    return XPath(config["dirs"]["base"])
+    return XPath(config["_defaults"]["dirs"]["base"])
 
 def relative_to(pth, cwd):
     pth = XPath(pth).expanduser()
