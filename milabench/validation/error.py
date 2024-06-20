@@ -23,7 +23,7 @@ class ParsedTraceback:
     def find_raise(self):
         import re
 
-        pattern = re.compile("raise (.*)\(")
+        pattern = re.compile(r"raise (.*)\(")
         for i, line in enumerate(self.lines):
             if m := pattern.search(line):
                 return i, m.group(1)
