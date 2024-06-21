@@ -13,10 +13,7 @@ from benchmate.observer import BenchObserver
 def main():
     device = accelerator.fetch_device(0) # <= This is your cuda device
     
-    observer = BenchObserver(
-        event_fn=accelerator.Event,
-        batch_size_fn=lambda batch: 1
-    )
+    observer = BenchObserver(batch_size_fn=lambda batch: 1)
     dataloader = [1, 2, 3, 4]
     
     for epoch in range(10):
