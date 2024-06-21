@@ -84,7 +84,10 @@ class LazyLossPusher(LazyMetricPusher):
 
     def materialize(self, loss):
         # synch here is fine
-        return {"loss": loss.item(), "task": self.task}
+        value = loss
+        if hasattr(loss, "item"):
+            value = loss.item()
+        return {"loss": value, "task": self.task}
 
 
 class CPUTimer:
