@@ -6,14 +6,31 @@
 
 import time
 
-import voir
-from giving import give
+import torchcompat.core as accelerator
+from benchmate.observer import BenchObserver
 
 
 def main():
-    for i in voir.iterate("train", range(10000), report_batch=True, batch_size=64):
-        give(loss=1 / (i + 1))
-        time.sleep(0.1)
+    device = accelerator.fetch_device(0) # <= This is your cuda device
+    
+    observer = BenchObserver(batch_size_fn=lambda batch: 1)
+    # optimizer = observer.optimizer(optimizer)
+    # criterion = observer.criterion(criterion)
+    
+    dataloader = [1, 2, 3, 4]
+    
+    for epoch in range(10):
+        for i in observer.iterate(dataloader):
+            # avoid .item()
+            # avoid torch.cuda; use accelerator from torchcompat instead
+            # avoid torch.cuda.synchronize or accelerator.synchronize
+            
+            # y = model(i)
+            # loss = criterion(y)
+            # loss.backward()
+            # optimizer.step()
+            
+            time.sleep(0.1)
 
 
 if __name__ == "__main__":

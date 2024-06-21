@@ -132,6 +132,15 @@ class DeviceTimer:
         return self._start.elapsed_time(self._end)
 
 
+def default_event():
+    try:
+        import torchcompat.core as accelerator
+        return accelerator.Event
+    except:
+        print("Could not find a device timer")
+        return CPUTimer()
+
+
 class TimedIterator:
     """Time the body of a loop, ignoring the time it took to initialize the iterator.`
     The timings are measured using `torch.cuda.Event` to avoid explicit sync.
@@ -197,7 +206,7 @@ class TimedIterator:
     def __init__(
         self,
         loader,
-        event_fn,
+        event_fn=default_event(),
         rank=0,
         push=file_push(),
         device=None,

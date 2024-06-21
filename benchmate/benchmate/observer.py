@@ -59,6 +59,9 @@ class BenchObserver:
         else:
             raise RuntimeError("Not running through voir")
 
+    def iterate(self, iterator):
+        return self.loader(loader)
+    
     def loader(self, loader):
         """Wrap a dataloader or an iterable which enable accurate measuring of time spent in the loop's body"""
         self.wrapped = TimedIterator(
