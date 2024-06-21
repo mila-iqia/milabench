@@ -15,7 +15,7 @@ def main():
     
     observer = BenchObserver(batch_size_fn=lambda batch: 1)
     # optimizer = observer.optimizer(optimizer)
-    # criterion = observer.optimizer(criterion)
+    # criterion = observer.criterion(criterion)
     
     dataloader = [1, 2, 3, 4]
     
