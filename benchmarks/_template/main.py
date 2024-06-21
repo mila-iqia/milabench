@@ -14,6 +14,9 @@ def main():
     device = accelerator.fetch_device(0) # <= This is your cuda device
     
     observer = BenchObserver(batch_size_fn=lambda batch: 1)
+    # optimizer = observer.optimizer(optimizer)
+    # criterion = observer.optimizer(criterion)
+    
     dataloader = [1, 2, 3, 4]
     
     for epoch in range(10):
@@ -21,7 +24,12 @@ def main():
             # avoid .item()
             # avoid torch.cuda; use accelerator from torchcompat instead
             # avoid torch.cuda.synchronize or accelerator.synchronize
-            observer.record_loss(loss=1 / (i + 1))
+            
+            # y = model(i)
+            # loss = criterion(y)
+            # loss.backward()
+            # optimizer.step()
+            
             time.sleep(0.1)
 
 
