@@ -22,6 +22,8 @@ fi
 
 source $MILABENCH_WORDIR/env/bin/activate
 
+pip install -e $MILABENCH_WORDIR/milabench
+
 maybe_run() {
     local name=$1
     local first_part=$(echo "$name" | cut -d'.' -f1)

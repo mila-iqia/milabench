@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from voir import configurable
+from voir.phase import StopProgram
 from voir.instruments import dash, early_stop, gpu_monitor, log, rate
 
 
@@ -40,3 +41,8 @@ def instrument_main(ov, options: Config):
         early_stop(n=options.stop, key="rate", task="train"),
         gpu_monitor(poll_interval=3),
     )
+
+    try:
+        yield ov.phases.run_script
+    except StopProgram:
+        print("early stopped")

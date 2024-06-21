@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from voir import configurable
+from voir.phase import StopProgram
 from voir.instruments import dash, early_stop, gpu_monitor, log
 from benchmate.observer import BenchObserver
 
@@ -58,5 +59,7 @@ def instrument_main(ov, options: Config):
     probe = ov.probe("//train_epoch > criterion", overridable=True)
     probe['criterion'].override(observer.criterion)
     
-
-
+    try:
+        yield ov.phases.run_script
+    except StopProgram:
+        print("early stopped")

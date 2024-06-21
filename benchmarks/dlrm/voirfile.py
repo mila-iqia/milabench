@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from voir import configurable
+from voir.phase import StopProgram
 from voir.instruments import dash, early_stop, gpu_monitor, log, rate
 
 
@@ -53,3 +54,8 @@ def instrument_main(ov, options: Config):
     ov.probe(
         "//run(inputBatch as batch, !#loop_inputBatch as step, !!#endloop_inputBatch as step_end)"
     ).augment(task=lambda: "train").give()
+
+    try:
+        yield ov.phases.run_script
+    except StopProgram:
+        print("early stopped")
