@@ -84,10 +84,7 @@ class LazyLossPusher(LazyMetricPusher):
 
     def materialize(self, loss):
         # synch here is fine
-        value = loss
-        if hasattr(loss, "item"):
-            value = loss.item()
-        return {"loss": value, "task": self.task}
+        return {"loss": loss.item(), "task": self.task}
 
 
 class CPUTimer:
@@ -133,6 +130,15 @@ class DeviceTimer:
     def elapsed(self):
         self._end.synchronize()
         return self._start.elapsed_time(self._end)
+
+
+def default_event():
+    try:
+        import torchcompat.core as accelerator
+        return accelerator.Event
+    except:
+        print("Could not find a device timer")
+        return CPUTimer()
 
 
 class TimedIterator:
@@ -200,7 +206,7 @@ class TimedIterator:
     def __init__(
         self,
         loader,
-        event_fn,
+        event_fn=default_event(),
         rank=0,
         push=file_push(),
         device=None,
