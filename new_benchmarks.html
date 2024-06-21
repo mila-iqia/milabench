@@ -146,17 +146,34 @@ milabench<span class="w"> </span>run
 <p>This is the main script that will be benchmarked when you run <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">run</span></code>. It is run as <code class="docutils literal notranslate"><span class="pre">voir</span> <span class="pre">main.py</span> <span class="pre">ARGV...</span></code></p>
 <p>The template <code class="docutils literal notranslate"><span class="pre">main.py</span></code> demonstrates a simple loop that you can adapt to any script:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">voir</span><span class="o">.</span><span class="n">iterate</span><span class="p">(</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">report_batch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">):</span>
-        <span class="n">give</span><span class="p">(</span><span class="n">loss</span><span class="o">=</span><span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
-        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+    <span class="n">observer</span> <span class="o">=</span> <span class="n">BenchObserver</span><span class="p">(</span><span class="n">batch_size_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">batch</span><span class="p">:</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">criterion</span> <span class="o">=</span> <span class="n">observer</span><span class="o">.</span><span class="n">criterion</span><span class="p">(</span><span class="n">criterion</span><span class="p">)</span>
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">observer</span><span class="o">.</span><span class="n">optimizer</span><span class="p">(</span><span class="n">optimizer</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">observer</span><span class="o">.</span><span class="n">iterate</span><span class="p">(</span><span class="n">dataloader</span><span class="p">):</span>
+            <span class="c1"># ...</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
 </pre></div>
 </div>
 <ul class="simple">
-<li><p>Wrap the training loop with <code class="docutils literal notranslate"><span class="pre">voir.iterate</span></code>.
-* <code class="docutils literal notranslate"><span class="pre">report_batch=True</span></code> triggers the computation of the number of training samples per second.
-* Set <code class="docutils literal notranslate"><span class="pre">batch_size</span></code> to the batch_size. milabench can also figure it out automatically if you are iterating over the input batches (it will use the first number in the tensor’s shape).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">give(loss=loss.item())</span></code> will forward the value of the loss to milabench. Make sure the value is a plain Python <code class="docutils literal notranslate"><span class="pre">float</span></code>.</p></li>
+<li><dl class="simple">
+<dt>Create a new bench observer, this class is used to time the benchmark and measure batch times.</dt><dd><ul>
+<li><p>Set <code class="docutils literal notranslate"><span class="pre">batch_size_fn</span></code> to provide a function to compute the right batch size given a batch.</p></li>
 </ul>
+</dd>
+</dl>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">observer.criterion(criterion)</span></code> will wrap the criterion function so the loss will be reported automatically.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">observer.optimizer(optimizer)</span></code> will wrap the optimizer so device that need special handling can have their logic executed there</p></li>
+<li><p>Wrap the batch loop with <code class="docutils literal notranslate"><span class="pre">observer.iterate</span></code>, it will take care of timing the body of the loop and handle early stopping if necessary</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Avoid calls to <code class="docutils literal notranslate"><span class="pre">.item()</span></code>, <code class="docutils literal notranslate"><span class="pre">torch.cuda</span></code> and <code class="docutils literal notranslate"><span class="pre">torch.cuda.synchronize()</span></code>.
+To access <code class="docutils literal notranslate"><span class="pre">cuda</span></code> related features use <code class="docutils literal notranslate"><span class="pre">accelerator</span></code> from torchcompat.
+<code class="docutils literal notranslate"><span class="pre">accelerator</span></code> is a light wrapper around <code class="docutils literal notranslate"><span class="pre">torch.cuda</span></code> to allow a wider range of devices to be used.</p>
+</div>
 <p>If the script takes command line arguments, you can parse them however you like, for example with <code class="docutils literal notranslate"><span class="pre">argparse.ArgumentParser</span></code>. Then, you can add an <code class="docutils literal notranslate"><span class="pre">argv</span></code> section in <code class="docutils literal notranslate"><span class="pre">dev.yaml</span></code>, just like this:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">trivial</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">inherits</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">_defaults</span>

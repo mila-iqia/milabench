@@ -78,15 +78,28 @@ The template ``main.py`` demonstrates a simple loop that you can adapt to any sc
 
 .. code-block:: python
 
-    def main():
-        for i in voir.iterate("train", range(100), report_batch=True, batch_size=64):
-            give(loss=1/(i + 1))
-            time.sleep(0.1)
 
-* Wrap the training loop with ``voir.iterate``.
-  * ``report_batch=True`` triggers the computation of the number of training samples per second.
-  * Set ``batch_size`` to the batch_size. milabench can also figure it out automatically if you are iterating over the input batches (it will use the first number in the tensor's shape).
-* ``give(loss=loss.item())`` will forward the value of the loss to milabench. Make sure the value is a plain Python ``float``.
+    def main():
+        observer = BenchObserver(batch_size_fn=lambda batch: 1)
+        criterion = observer.criterion(criterion)
+        optimizer = observer.optimizer(optimizer)
+
+        for epoch in range(10):
+            for i in observer.iterate(dataloader):
+                # ...
+                time.sleep(0.1)
+
+* Create a new bench observer, this class is used to time the benchmark and measure batch times.
+    * Set ``batch_size_fn`` to provide a function to compute the right batch size given a batch.
+* ``observer.criterion(criterion)`` will wrap the criterion function so the loss will be reported automatically.
+* ``observer.optimizer(optimizer)`` will wrap the optimizer so device that need special handling can have their logic executed there
+* Wrap the batch loop with ``observer.iterate``, it will take care of timing the body of the loop and handle early stopping if necessary
+
+.. note::
+
+   Avoid calls to ``.item()``, ``torch.cuda`` and ``torch.cuda.synchronize()``.
+   To access ``cuda`` related features use ``accelerator`` from torchcompat.
+   ``accelerator`` is a light wrapper around ``torch.cuda`` to allow a wider range of devices to be used.
 
 If the script takes command line arguments, you can parse them however you like, for example with ``argparse.ArgumentParser``. Then, you can add an ``argv`` section in ``dev.yaml``, just like this:
 
