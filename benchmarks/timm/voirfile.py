@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from voir import configurable
+from voir.phase import StopProgram
 from voir.instruments import dash, early_stop, gpu_monitor, log, rate
 
 import torchcompat.core as accelerator
@@ -70,3 +71,8 @@ def instrument_main(ov, options: Config):
         instruments.append(early_stop(n=options.stop, key="rate", task="train", signal="stop"))
 
     ov.require(*instruments)
+
+    try:
+        yield ov.phases.run_script
+    except StopProgram:
+        print("early stopped")

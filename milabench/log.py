@@ -148,7 +148,7 @@ class TerminalFormatter(BaseLogger):
         elif event == "config":
 
             def _show(k, entry):
-                if k in ("meta", "system"):
+                if k.startswith("config.system") or k:
                     return
 
                 if isinstance(entry, dict):
@@ -159,6 +159,9 @@ class TerminalFormatter(BaseLogger):
 
             _show("config", data)
 
+        elif event == "meta":
+            pass
+        
         elif event == "message":
             console.pretty(T.bold(f"[{event}]"), data["message"])
 

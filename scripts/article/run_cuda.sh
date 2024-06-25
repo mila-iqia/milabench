@@ -22,7 +22,7 @@ install_prepare() {
     fi
 
     if [ ! -d "$MILABENCH_WORDIR/milabench" ]; then
-        git clone https://github.com/mila-iqia/milabench.git -b worker_x_batch
+        git clone https://github.com/mila-iqia/milabench.git
     fi
 
     . $MILABENCH_WORDIR/env/bin/activate

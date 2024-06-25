@@ -678,7 +678,7 @@ class AccelerateLaunchCommand(SingleCmdCommand):
             # --
             "accelerate",
             "launch",
-            "--mixed_precision=fp16",
+            "--mixed_precision=bf16",
             "--dynamo_backend=no",
             f"--machine_rank={self.rank}",
             f"--num_machines={num_machines}",
