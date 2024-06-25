@@ -79,12 +79,19 @@ class LazyMetricPusher:
 
 class LazyLossPusher(LazyMetricPusher):
     def record(self, loss):
+        value = loss
         # no .item() we do not want to sync
-        self.append(loss.detach())
+        if hasattr(loss, "detach"):
+            value = loss.detach()
+        self.append(value)
 
     def materialize(self, loss):
+        value = loss
         # synch here is fine
-        return {"loss": loss.item(), "task": self.task}
+        if hasattr(loss, "item"):
+            value = loss.item()
+
+        return {"loss": value, "task": self.task}
 
 
 class CPUTimer:
