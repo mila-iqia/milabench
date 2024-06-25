@@ -7,20 +7,13 @@ from milabench.commands import (
 )
 from milabench.pack import Package
 from milabench.utils import select_nodes
-from milabench.sizer import resolve_argv
-
-
-def resolve_placeholder(pack, name):
-    placeholder = pack.config["argv"][name]
-    return resolve_argv(pack, [placeholder])
-
 
 class AccelerateBenchmark(Package):
     base_requirements = "requirements.in"
 
     def make_env(self):
         env = super().make_env()
-        value = resolve_placeholder(pack, "--cpus_per_gpu")
+        value = self.resolve_argument("--cpus_per_gpu")
         env["OMP_NUM_THREADS"] = str(value)
         return env
 

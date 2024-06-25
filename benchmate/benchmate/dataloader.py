@@ -195,10 +195,7 @@ def pytorch(folder, batch_size, num_workers, distributed=False, epochs=60):
 def synthetic(model, batch_size, fixed_batch):
     return SyntheticData(
         tensors=generate_tensor_classification(
-            model, 
-            batch_size, 
-            (3, 244, 244), 
-            device=accelerator.fetch_device(0)
+            model, batch_size, (3, 244, 244), device=accelerator.fetch_device(0)
         ),
         n=1000,
         fixed_batch=fixed_batch,

@@ -29,6 +29,7 @@ BASE="$LOC/base"
 ENV="./env"
 REMAINING_ARGS=""
 FUN="run"
+OUTPUT="$HOME/RUN_$SLURM_JOB_ID"
 
 while getopts ":hm:p:e:b:o:c:f:" opt; do
   case $opt in
@@ -117,6 +118,9 @@ function setup() {
   export PYTHONUNBUFFERED=1
   export MILABENCH_BASE=$BASE
   export MILABENCH_CONFIG=$CONFIG
+  export MILABENCH_VENV=$ENV
+  export BENCHMARK_VENV="$BASE/venv/torch"
+
   #
   # Fetch the repo
   #
@@ -161,7 +165,7 @@ function run() {
   cat $SYSTEM
 
   module load gcc/9.3.0 
-  module load cuda/11.8
+  module load cuda/12.3.2
 
   echo ""
   echo "Install"
@@ -178,11 +182,13 @@ function run() {
   echo "---"
   milabench run     --config $CONFIG --system $SYSTEM --base $BASE $REMAINING_ARGS
 
-  echo ""
-  echo "Report"
-  echo "------"
+  mkdir -p $OUTPUT
+  mv $BASE/runs $OUTPUT
 
-  milabench write_report_to_pr --remote $ORIGIN --branch $BRANCH --config $CONFIG
+  # echo ""
+  # echo "Report"
+  # echo "------"
+  # milabench write_report_to_pr --remote $ORIGIN --branch $BRANCH --config $CONFIG
 
   echo "----"
   echo "Done after $SECONDS"

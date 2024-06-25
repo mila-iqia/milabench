@@ -10,8 +10,8 @@ from asyncio.base_events import _run_until_complete_cb
 from collections import deque
 from functools import wraps
 
+from benchmate.warden import process_cleaner, destroy
 from voir.proc import run as voir_run
-from .syslog import syslog
 
 
 class FeedbackEventLoop(type(asyncio.get_event_loop())):
@@ -166,134 +166,30 @@ def feedback_runner(gen):
     return wrapped
 
 
-def _kill_pid_with_delay(pid, sig, method, step, delay):
-    acc = 0
-    try:
-        while acc < delay:
-            method(pid, sig)
-            time.sleep(step)
-            acc += step
-        return pid, method, acc, sig
-    except ProcessLookupError:
-        # success
-        return None, method, acc, sig
-    except PermissionError:
-        syslog("Not allowed to kill pid {0}", pid)
-        return None, method, acc, sig
-    except OSError:
-        syslog("Unhandled os error for pid {0}", pid)
-        return None, method, acc, sig
-
-
-def _kill_proc_with_delay(proc, sig, delay):
-    start = - time.time()
-    def elasped():
-        return start + time.time()
-
-    proc.send_signal(sig)
-    try:
-        proc.wait(timeout=delay)
-
-        # success
-        return None, None, elasped(), sig
-    except subprocess.TimeoutExpired:
-        return pid, None, elasped(), sig
-
-
-def _filter_process_groups(processes):
-    group_pids = []
-    proc_pids = []
-    already_dead = []
-
-    for proc in processes:
-        if proc.returncode is not None:
-            already_dead.append((proc, proc.id))
-            continue
-
-        if getattr(proc, "did_setsid", False):
-            group_pids.append((proc, os.getpgid(proc.pid)))
-        else:
-            proc_pids.append((proc, proc.pid))
-    
-    return proc_pids, group_pids, already_dead
-
-
-def destroy_all(processes, delay=30):
-    from concurrent.futures import ThreadPoolExecutor
-
-    futures = [] 
-    def submit(pool, pid, signal, method):
-        args = (
-            pid, 
-            signal, 
-            method,
-            1, 
-            delay
-        )
-        futures.append(pool.submit(_kill_with_delay, *args))
-
-    signal_flow = {
-        None          : signal.SIGTERM,
-        signal.SIGTERM: signal.SIGKILL
-    }
-
-    def nextsignal(previous=None):
-        return signal_flow.get(previous, None)
-
-    proc_pids, group_pids, already_dead = _filter_process_groups(processes)
-    stats = []
-    with ThreadPoolExecutor(max_workers=8) as pool:
-        for proc, pid in group_pids:
-            submit(pool, pid, nextsignal(), os.killpg)
-
-        for proc, pid in group_pids:
-            submit(pool, pid, nextsignal(), os.kill)
-
-        futures = list(reversed(futures))
-
-        while futures:
-            future = futures.pop()
-            pid, method, elapsed, sig = future.result(timeout=delay + 1)
-
-            # on failure submit a SIGKILL
-            if pid is not None:
-                if (sig := nextsignal(sig)) is not None:
-                    futures.append(submit(pool, pid, sig, method))
-                else:
-                    syslog("{0} failed on pid {1}", sig, pid)
-
-            stats.append([pid, method, elapsed, sig])
-
-    #
-    # We want data on this: `SIGKILL` should never be necesary 
-    #
-    to_be_killed = len(processes) - len(already_dead)
-    syslog("{0} kill event for {1} processes ({2} already dead)", len(starts), to_be_killed, len(already_dead))
-    for pid, method, elapsed, sig in stats:
-        syslog(" - {0} was killed with {1} after {2} sec ({3})", pid, sig, elapsed, method)
-
-
-def destroy(*processes):
-    destroy_all(processes, delay=30)
-
-
 @feedback_runner
-def run(argv, setsid=None, info={}, process_accumulator=None, **kwargs):
-    if setsid:
-        kwargs["preexec_fn"] = os.setsid
-    mx = voir_run(argv, info=info, **kwargs, timeout=0)
-    if process_accumulator is not None:
-        process_accumulator.extend(mx.processes)
-    if setsid:
-        for proc in mx.processes:
-            proc.did_setsid = True
-    loop = asyncio.get_running_loop()
-    loop._multiplexers.append(mx)
-    for entry in mx:
-        if entry and entry.event == "stop":
-            destroy(*mx.processes)
-        yield entry
+def run(argv, setsid=None, process_accumulator=None, info={}, **kwargs):
+    with process_cleaner() as processes:
+        if setsid:
+            kwargs["preexec_fn"] = os.setsid
+    
+        mx = voir_run(argv, info=info, **kwargs, timeout=0)
+        processes.add_process(*mx.processes)
 
+        if process_accumulator is not None:
+            process_accumulator.extend(mx.processes)
+
+        if setsid:
+            for proc in mx.processes:
+                proc.did_setsid = True
+
+        loop = asyncio.get_running_loop()
+        loop._multiplexers.append(mx)
+
+        for entry in mx:
+            if entry and entry.event == "stop":
+                destroy(*mx.processes)
+            yield entry
+        
 
 def proceed(coro):
     loop = FeedbackEventLoop()

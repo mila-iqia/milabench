@@ -24,7 +24,7 @@ def milabench_sys_monitor():
             }
             for gpu in get_gpu_info()["gpus"].values()
         }
-        mblog({"task": "main", "gpudata": data})
+        mblog({"task": "train", "gpudata": data})
 
     monitor_fn()
     monitor = Monitor(3, monitor_fn)
@@ -74,7 +74,7 @@ def setupvoir():
             }
             for gpu in get_gpu_info()["gpus"].values()
         }
-        return {"task": "main", "gpudata": data, "time": time.time(), "units": "s"}
+        return {"task": "train", "gpudata": data, "time": time.time(), "units": "s"}
 
     monitor = CustomMonitor(0.5, monitor_fn)
 

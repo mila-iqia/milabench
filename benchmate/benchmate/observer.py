@@ -23,7 +23,13 @@ class BenchObserver:
     """
 
     def __init__(
-        self, *args, backward_callback=None, step_callback=None, stdout=False, rank=None, **kwargs
+        self,
+        *args,
+        backward_callback=None,
+        step_callback=None,
+        stdout=False,
+        rank=None,
+        **kwargs,
     ):
         self.wrapped = None
         self.args = args
