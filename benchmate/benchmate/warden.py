@@ -38,7 +38,7 @@ def _default():
     return []
 
 backends = {
-    "hpu": _hpu_parse_processes
+    "hpu": _hpu_parse_processes,
     "cpu": _default
 }
 
