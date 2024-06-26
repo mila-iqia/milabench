@@ -1,92 +1,137 @@
 import json
-import multiprocessing
 import sys
+import os
 import time
+from contextlib import contextmanager
 
-from voir.instruments.gpu import get_gpu_info
-from voir.instruments.utils import Monitor
+
+from voir.instruments.utils import monitor as generic_monitor
 from voir.smuggle import SmuggleWriter
+from voir.tools import instrument_definition
+from voir.instruments.cpu import cpu_monitor, process_monitor
+from voir.instruments.gpu import gpu_monitor as gpu_monitor_fun, select_backend
+from voir.instruments.io import io_monitor
+from voir.instruments.network import network_monitor
+from voir.instruments.monitor import monitor
 
 
-def milabench_sys_monitor():
+
+@instrument_definition
+def monitor_monogpu(ov, poll_interval=10, arch=None):
+    return monitor(
+        ov,
+        poll_interval=poll_interval,
+        gpudata=gpu_monitor_fun(),
+        process=process_monitor(os.getpid()),
+        worker_init=lambda: select_backend(arch, force=True),
+    )
+
+
+@instrument_definition
+def monitor_node(ov, poll_interval=10, arch=None):
+    return monitor(
+        ov,
+        poll_interval=poll_interval,
+        gpudata=gpu_monitor_fun(),
+        iodata=io_monitor(),
+        netdata=network_monitor(),
+        cpudata=cpu_monitor(),
+        worker_init=lambda: select_backend(arch, force=True),
+    )
+
+
+def _smuggle_monitor(poll_interval=10, worker_init=None, **monitors):
     data_file = SmuggleWriter(sys.stdout)
-
     def mblog(data):
+        nonlocal data_file
         if data_file is not None:
             print(json.dumps(data), file=data_file)
 
-    def monitor_fn():
-        data = {
-            gpu["device"]: {
-                "memory": [gpu["memory"]["used"], gpu["memory"]["total"]],
-                "load": gpu["utilization"]["compute"],
-                "temperature": gpu["temperature"],
+    def get():
+        t = time.time()
+        entries = []
+        for k, v in monitors.items():
+            values = {
+                "task": "main",
+                "time": t,
+                k: v(),
             }
-            for gpu in get_gpu_info()["gpus"].values()
-        }
-        mblog({"task": "train", "gpudata": data})
+            entries.append(values)
+        return entries
 
-    monitor_fn()
-    monitor = Monitor(3, monitor_fn)
-    monitor.start()
+    def push(data):
+        for entry in data:
+            mblog(entry)
 
-
-def _worker(state, queue, func, delay):
-    while state["running"]:
-        queue.put(func())
-        time.sleep(delay)
-
-
-class CustomMonitor:
-    def __init__(self, delay, func):
-        self.manager = multiprocessing.Manager()
-        self.state = self.manager.dict()
-        self.state["running"] = True
-        self.results = multiprocessing.Queue()
-        self.process = multiprocessing.Process(
-            target=_worker,
-            args=(self.state, self.results, func, delay),
-        )
-
-    def start(self):
-        self.process.start()
-
-    def stop(self):
-        self.state["running"] = False
-        self.process.join()
+    mon = generic_monitor(
+        poll_interval,
+        get,
+        push,
+        process=False,
+        worker_init=worker_init,
+    )
+    mon.start()
+    
+    return mblog, mon
 
 
-def setupvoir():
-    # wtf this do
-    data_file = SmuggleWriter(sys.stdout)
-    # data_file = sys.stdout
+@contextmanager
+def smuggle_monitor(poll_interval=10, worker_init=None, enabled=True, **monitors):
+    if enabled:
+        # rank == 0
+        mblog, mon = _smuggle_monitor(poll_interval, worker_init, **monitors)
 
-    def monitor_fn():
-        data = {
-            gpu["device"]: {
-                "memory": [
-                    gpu["memory"]["used"],
-                    gpu["memory"]["total"],
-                ],
-                "load": gpu["utilization"]["compute"],
-                "temperature": gpu["temperature"],
-                "power": gpu["power"],
-            }
-            for gpu in get_gpu_info()["gpus"].values()
-        }
-        return {"task": "train", "gpudata": data, "time": time.time()}
+        try:
+            yield mblog
+        finally:
+            mon.stop()
+        
+    else:
+        # rank > 0
+        yield
 
-    monitor = CustomMonitor(0.5, monitor_fn)
 
-    def log(data):
-        nonlocal monitor
+def _monitors(monogpu=True):
+    if monogpu:
+        monitors = [
+            ("gpudata", gpu_monitor_fun()),
+            ("process", process_monitor(os.getpid())),
+            ("worker_init", lambda: select_backend(None, True)),
+        ]
+    else:
+        monitors = [
+            ("gpudata", gpu_monitor_fun()),
+            ("iodata", io_monitor()),
+            ("netdata", network_monitor()),
+            ("cpudata", cpu_monitor()),
+            ("worker_init", lambda: select_backend(None, True)),
+        ]
+    return dict(monitors)
 
-        if data_file is not None:
-            data["time"] = time.time()
-            print(json.dumps(data), file=data_file)
 
-            while not monitor.results.empty():
-                print(json.dumps(monitor.results.get()), file=data_file)
+@contextmanager
+def multigpu_monitor(*args, **kwargs):
+    with smuggle_monitor(*args, **kwargs, **_monitors(False)) as log:
+        yield log
+        
 
-    monitor.start()
-    return log, monitor
+@contextmanager
+def monogpu_monitor(*args, **kwargs):
+    with smuggle_monitor(*args, **kwargs, **_monitors(True)) as log:
+        yield log
+
+
+#
+# Legacy compatibility
+#
+def setupvoir(monogpu=True, enabled=True):
+    return _smuggle_monitor(
+        poll_interval=3, 
+        **_monitors(monogpu)
+    )
+
+
+def milabench_sys_monitor(monogpu=False):
+    return setupvoir(monogpu)
+
+

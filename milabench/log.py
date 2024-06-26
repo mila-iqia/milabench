@@ -243,6 +243,7 @@ class DashFormatter(BaseLogger):
         self.max_rows = 8
         self.prune_delay = 60
         self.current = 0
+        self.created_time = time.time()
 
     def _get_global_progress_bar(self):
         progress = self.rows.get("GLOBAL")
@@ -260,15 +261,20 @@ class DashFormatter(BaseLogger):
             progress.update(progress._task, completed=self.current, total=total)
 
     def should_prune(self, tag, elasped):
+        # Old run, remove it
+        if elasped > self.prune_delay:
+            return True
+        
+        # Bench is running
         bench = tag.split(".")[0]
-        if self.benchcount.get(bench, 0) != 0:
+        if self.benchcount.get(bench, 0) > 0:
             return False
 
-        old = (elasped > self.prune_delay)
+        # We have too many rows
         if self.max_rows:
-            return old or len(self.rows) > self.max_rows
+            return len(self.rows) > self.max_rows
         
-        return old
+        return False
     
     def prune(self):
         now = time.time()
@@ -305,12 +311,12 @@ class DashFormatter(BaseLogger):
         self.benchcount[entry.tag.split('.')[0]] += 1
 
     def on_stop(self, entry, data, row):
-        self.benchcount[entry.tag.split('.')[0]] -= 1
         self.early_stop[entry.tag] = True
 
     def on_end(self, entry, data, row):
         self._update_global(1)
         self.endtimes[entry.tag] = time.time()
+        self.benchcount[entry.tag.split('.')[0]] -= 1
 
 
 class ShortDashFormatter(DashFormatter):
@@ -398,6 +404,25 @@ class ShortDashFormatter(DashFormatter):
         self.refresh()
 
 
+
+octet_units = [
+    (" o", 1024 ** 0),
+    ("Ko", 1024 ** 1),
+    ("Mo", 1024 ** 2),
+    ("Go", 1024 ** 3)
+]
+
+def find_byte_exponent(value):
+    for i in reversed(range(len(octet_units))):
+        if value > octet_units[i][1]:
+            return octet_units[i]
+    return octet_units[0]
+
+def formatbyte(value):
+    name, exp = find_byte_exponent(value)
+    return f"{value // exp:4d} {name}"
+    
+
 class LongDashFormatter(DashFormatter):
     def make_table(self):
         table = Table.grid(padding=(0, 3, 0, 0))
@@ -442,27 +467,73 @@ class LongDashFormatter(DashFormatter):
                 currm, totalm = data.get("memory", [0, 0])
                 temp = int(data.get("temperature", 0))
                 row[f"gpu:{gpuid}"] = (
-                    f"{load}% load | {currm:.0f}/{totalm:.0f} MB | {temp}C"
+                    f"{load:3d}% load | {currm:.0f}/{totalm:.0f} MB | {temp}C"
                 )
+        elif iodata := data.get("iodata", None):
+            read = int(iodata.get("read_time", 0))
+            write = int(iodata.get("write_time", 0))
+            readc = int(iodata.get("read_count", 0))
+            writec = int(iodata.get("write_count", 0))
+            busy = int(iodata.get("busy_time", 0))
+            row["iodata"] = (
+                f"(rt={read} wt={write} bt={busy}) ms | (rc={readc} wc={writec}) bytes"
+            )
+            
+        elif process := data.get("process", None):
+            pid = process.get("pid", "0")
+            currm, totalm = process.get("memory", [0, 0])
+            load = process.get("load", 0)
+            read_bytes = int(process.get("read_bytes", 0))
+            write_bytes = int(process.get("write_bytes", 0))
+
+            read_chars = int(process.get("read_chars", 0))
+            write_chars = int(process.get("write_chars", 0))
+
+            row[f"cpu.{pid}"] = f"{load:3.0f}% load | {currm/1e9:.0f}/{totalm/1e9:.0f} GB"
+            row[f"physical.io.{pid}"] = f"{formatbyte(read_bytes)} reads {formatbyte(write_bytes)} writes"
+            row[f"virtual.io.{pid}"] = f"{formatbyte(read_chars)} reads {formatbyte(write_chars)} writes"
+
+        elif cpudata := data.get("cpudata", None):
+            currm, totalm = cpudata.get("memory", [0, 0])
+            load = cpudata.get("load", 0)
+            row["cpudata"] = (
+                f"{load:3.0f}% load | {currm/1e9:.0f}/{totalm/1e9:.0f} GB"
+            )
+        elif netdata := data.get("netdata", None):
+            bytes_sent = netdata.get("bytes_sent", 0)
+            bytes_recv = netdata.get("bytes_recv", 0)
+            row["netdata"] = (
+                f"s={bytes_sent} | r={bytes_recv}"
+            )
         else:
             task = data.pop("task", "")
             units = data.pop("units", "")
-            metric_rows = {
-                f"{task} {k}".strip(): f"{self.format(v)} {self.unit(k, units)}" 
-                    for k, v in data.items()
-            }
-            row.update(metric_rows)
+            time = data.pop("time", "")
+            if time:
+                time = f"time {self.time(time)} s"
+            row.update(self.newlines(task, units, time, data))
+        
         self.refresh()
+
+    def newlines(self, task, units, time, data):
+        lines = {}
+        for k, v in data.items():
+            key = f"{task} {k}".strip()
+            value = f"{self.format(k, v)} {self.unit(k, units)}"
+
+            if time:
+                value = f"{value:<{max(80 - len(value), 1)}} {time}"
+                time = ""
+            lines[key] = value
+        return lines
 
     def time(self, t):
         return int(t - self.created_time)
 
     def unit(self, k, unit):
-        if k == "time":
-            return "s"
         return unit
 
-    def format(self, value):
+    def format(self, key, value):
         try:
             return f"{value:0.2f}"
         except:

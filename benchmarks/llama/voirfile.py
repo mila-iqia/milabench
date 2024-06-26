@@ -1,4 +1,5 @@
 from voir.phase import StopProgram
+from voir import configurable
 
 
 @configurable
