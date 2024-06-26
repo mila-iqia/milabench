@@ -112,7 +112,7 @@ def cli_run(args=None):
             reports = _read_reports(*runs)
             assert len(reports) != 0, "No reports found"
 
-            summary = make_summary(reports.values())
+            summary = make_summary(reports)
             assert len(summary) != 0, "No summaries"
 
             make_report(

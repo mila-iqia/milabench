@@ -74,7 +74,7 @@ def setupvoir():
             }
             for gpu in get_gpu_info()["gpus"].values()
         }
-        return {"task": "train", "gpudata": data, "time": time.time(), "units": "s"}
+        return {"task": "train", "gpudata": data, "time": time.time()}
 
     monitor = CustomMonitor(0.5, monitor_fn)
 
@@ -82,7 +82,7 @@ def setupvoir():
         nonlocal monitor
 
         if data_file is not None:
-            data["t"] = time.time()
+            data["time"] = time.time()
             print(json.dumps(data), file=data_file)
 
             while not monitor.results.empty():

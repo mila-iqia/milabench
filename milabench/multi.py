@@ -187,9 +187,8 @@ class MultiPackage:
             return
 
         assert is_main_local(setup), "Running benchmarks only works on the main node"
-
-        set_run_count(await self.count_runs(repeat))
-
+        await self.count_runs(repeat)
+        
         for index in range(repeat):
             for pack in self.packs.values():
                 try:
@@ -280,7 +279,8 @@ class MultiPackage:
                     )
 
     async def count_runs(self, repeat):
-        acc = 0
+        total_run = 0
+        total_bench = 0
         for index in range(repeat):
             for pack in self.packs.values():
                 if not await is_system_capable(pack):
@@ -288,8 +288,12 @@ class MultiPackage:
 
                 exec_plan = make_execution_plan(pack, index, repeat)
 
+                total_bench += 1
+
                 if isinstance(exec_plan, PerGPU):
-                    acc += len(exec_plan.devices)
+                    total_run += len(exec_plan.devices)
                 else:
-                    acc += 1
-        return acc
+                    total_run += 1
+
+        set_run_count(total_run, total_bench)
+        return total_run

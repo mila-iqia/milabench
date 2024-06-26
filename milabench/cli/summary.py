@@ -34,7 +34,7 @@ def cli_summary(args=None):
         args = arguments()
 
     all_data = _read_reports(*args.runs)
-    summary = make_summary(all_data.values())
+    summary = make_summary(all_data)
 
     if args.out is not None:
         with open(args.out, "w") as file:

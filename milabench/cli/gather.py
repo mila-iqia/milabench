@@ -106,7 +106,7 @@ def gather_cli(args=None):
     data = []
     for run in runs:
         reports = _read_reports(run)
-        summary = make_summary(reports.values(), query=query)
+        summary = make_summary(reports, query=query)
         df = make_dataframe(summary, None, None, query=query)
 
         name = run.split("/")[-1]

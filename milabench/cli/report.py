@@ -71,7 +71,7 @@ def cli_report(args=None):
     reports = None
     if args.runs:
         reports = _read_reports(*args.runs)
-        summary = make_summary(reports.values())
+        summary = make_summary(reports)
 
     if args.config:
         from milabench.common import arguments as multipack_args

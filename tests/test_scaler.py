@@ -36,7 +36,7 @@ _values = [
 
 @pytest.mark.parametrize("capacity,expected", _values)
 def test_scaler_autoscaler_lerp(multipack, config, capacity, expected):
-    sizer = Sizer(SizerOptions(size=None, autoscale=True), config("scaling"))
+    sizer = Sizer(SizerOptions(size=None, autoscale=True, multiple=None), config("scaling"))
     for k, pack in multipack.packs.items():
         assert sizer.size(pack, capacity) == expected
 

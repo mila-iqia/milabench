@@ -10,7 +10,7 @@ from asyncio.base_events import _run_until_complete_cb
 from collections import deque
 from functools import wraps
 
-from benchmate.warden import process_cleaner, destroy
+from benchmate.warden import destroy
 from voir.proc import run as voir_run
 
 
@@ -166,29 +166,29 @@ def feedback_runner(gen):
     return wrapped
 
 
+
+
 @feedback_runner
 def run(argv, setsid=None, process_accumulator=None, info={}, **kwargs):
-    with process_cleaner() as processes:
-        if setsid:
-            kwargs["preexec_fn"] = os.setsid
+    if setsid:
+        kwargs["preexec_fn"] = os.setsid
+
+    mx = voir_run(argv, info=info, **kwargs, timeout=0)
     
-        mx = voir_run(argv, info=info, **kwargs, timeout=0)
-        processes.add_process(*mx.processes)
+    if process_accumulator is not None:
+        process_accumulator.extend(mx.processes)
 
-        if process_accumulator is not None:
-            process_accumulator.extend(mx.processes)
+    if setsid:
+        for proc in mx.processes:
+            proc.did_setsid = True
 
-        if setsid:
-            for proc in mx.processes:
-                proc.did_setsid = True
+    loop = asyncio.get_running_loop()
+    loop._multiplexers.append(mx)
 
-        loop = asyncio.get_running_loop()
-        loop._multiplexers.append(mx)
-
-        for entry in mx:
-            if entry and entry.event == "stop":
-                destroy(*mx.processes)
-            yield entry
+    for entry in mx:
+        if entry and entry.event == "stop":
+            destroy(*mx.processes)
+        yield entry
         
 
 def proceed(coro):

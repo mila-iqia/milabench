@@ -278,7 +278,10 @@ def _parse_report(pth):
                 traceback.print_exc()
                 bad_lines += 1
 
-    if good_lines == 0:
+    if good_lines == 0 and bad_lines == 0:
+        print(f"Empty file {pth}")
+
+    if good_lines == 0 and bad_lines > 0:
         print(f"Unknow format for file {pth}")
 
     return data
@@ -300,12 +303,14 @@ def _read_reports(*runs):
 def _error_report(reports):
     out = {}
     for r, data in reports.items():
-        agg = aggregate(data)
-        if not agg:
-            continue
-        (success,) = agg["data"]["success"]
-        if not success:
-            out[r] = [line for line in data if "#stdout" in line or "#stderr" in line]
+        try:
+            agg = aggregate(data)
+            (success,) = agg["data"]["success"]
+            if not success:
+                out[r] = [line for line in data if "#stdout" in line or "#stderr" in line]
+        except:
+            pass
+    
     return out
 
 
@@ -362,7 +367,7 @@ def _short_make_report(runs, config):
 
     if runs:
         reports = _read_reports(*runs)
-        summary = make_summary(reports.values())
+        summary = make_summary(reports)
 
     if config:
         config = _get_multipack(CommonArguments(config), return_config=True)

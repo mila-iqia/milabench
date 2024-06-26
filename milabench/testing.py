@@ -123,7 +123,7 @@ def replay_zipfile(path, *validation, sleep=0):
 
         from milabench.config import set_run_count
 
-        set_run_count(total)
+        set_run_count(total, len(data))
 
         with multilogger(*validation) as log:
             for _, streams in data.items():

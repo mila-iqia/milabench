@@ -208,13 +208,18 @@ columns_order = {
 
 def make_dataframe(summary, compare=None, weights=None, query=None):
     if weights is not None:
-        # We overriden the config
+        # We've overriden the config
         required = weights.keys()
 
         for key in required:
             if key not in summary:
-                print(f"Missing benchmark {key}")
-                summary[key] = {"name": key, "n": 0, "successes": 0, "failures": 0}
+                summary[key] = {
+                    "name": key, 
+                    "n": 0, 
+                    "successes": 0,
+                    "failures": 0, 
+                    "enabled": weights[key]["enabled"]
+                }
 
     if weights is None:
         weights = dict()

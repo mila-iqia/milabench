@@ -90,6 +90,6 @@ def test_summary_full(runs_folder):
 
     runs = [run]
     reports = _read_reports(*runs)
-    summary = make_summary(reports.values())
+    summary = make_summary(reports)
 
     make_report(summary, None)

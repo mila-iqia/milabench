@@ -5,9 +5,9 @@ from math import isnan, nan
 import numpy as np
 
 from .utils import error_guard
+from .syslog import syslog
 
 
-@error_guard(None)
 def aggregate(run_data):
     """Group all the data inside a dictionary of lists"""
     omnibus = defaultdict(list)
@@ -228,8 +228,18 @@ def _summarize(group, query=tuple([])) -> Summary:
 
 
 def make_summary(runs, query=tuple([])) -> dict[str, Summary]:
-    aggs = [agg for run in runs if (agg := aggregate(run))]
+    aggs = []
+    for name, run in runs.items():
+        try:
+            if agg := aggregate(run):
+                aggs.append(agg)
+        except AssertionError:
+            syslog("Ignoring run {0}: it looks like it did not finish successfully", name)
+        except Exception as err:
+            syslog("Ignoring run {0}: beause of exception: {1}", name, err)
+
     classified = _classify(aggs)
     merged = {name: _merge(runs) for name, runs in classified.items()}
     summarized = {name: _summarize(agg, query) for name, agg in merged.items()}
     return summarized
+

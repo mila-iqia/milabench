@@ -220,6 +220,15 @@ class DataReporter(BaseReporter):
         self.file(entry).write(f"{j}\n")
 
 
+def new_progress_bar():
+    progress = Progress(
+        BarColumn(),
+        TextColumn("({task.completed}/{task.total})"),
+    )
+    progress._task = progress.add_task("progress")
+    return progress
+
+
 class DashFormatter(BaseLogger):
     def __init__(self):
         self.panel = Panel("")
@@ -230,7 +239,7 @@ class DashFormatter(BaseLogger):
         self.early_stop = {}
         # Limit the number of rows to avoid too much clutering
         # This is a soft limit, it only prunes finished runs
-        self.max_rows = 8
+        self.max_rows = 2
         self.prune_delay = 60
         self.current = 0
 
@@ -238,13 +247,7 @@ class DashFormatter(BaseLogger):
         progress = self.rows.get("GLOBAL")
         if progress is not None:
             return progress["progress"]
-
-        progress = Progress(
-            BarColumn(),
-            TimeRemainingColumn(),
-            TextColumn("({task.completed}/{task.total})"),
-        )
-        progress._task = progress.add_task("progress")
+        progress = new_progress_bar()
         progress.update(progress._task, completed=self.current, total=get_run_count())
         self.rows["GLOBAL"] = {"progress": progress}
         return progress
@@ -267,12 +270,16 @@ class DashFormatter(BaseLogger):
         self.live.update(self.make_table())
 
     def start(self):
+        self._update_global(0)
         self.live.__enter__()
 
     def end(self):
         self.live.__exit__(None, None, None)
 
     def __call__(self, entry):
+        if get_run_count():
+            self._get_global_progress_bar()
+    
         event = entry.event
         data = entry.data
         tag = entry.tag
