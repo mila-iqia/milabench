@@ -659,7 +659,7 @@ class AccelerateLaunchCommand(SingleCmdCommand):
             else ["--multi_gpu"]
         )
 
-        cpu_per_process = self.resolve_argument('--cpus_per_gpu')
+        cpu_per_process = self.pack.resolve_argument('--cpus_per_gpu')
         return [
             # -- Run the command in the right venv
             # This could be inside the SSH Command

@@ -177,8 +177,6 @@ class Protected:
         # and make the program stop
         self.restore_handlers()
 
-        self.stop()
-
     def restore_handlers(self):
         """Restore old signal handlers"""
         if not self.signal_installed:
@@ -188,6 +186,9 @@ class Protected:
         signal.signal(signal.SIGTERM, self.handlers[signal.SIGTERM])
 
         self.signal_installed = False
+
+        # Cleanup now
+        self.stop()
 
     def maybe_stop(self):
         """Raise the delayed signal if any or restore the old signal handlers"""

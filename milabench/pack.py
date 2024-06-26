@@ -509,7 +509,7 @@ class Package(BasePackage):
     def resolve_argument(self, name):
         """Resolve as single placeholder argument"""
         placeholder = str(self.config["argv"][name])
-        return self.resolve_argument(placeholder)
+        return self.resolve_placeholder(placeholder)
 
     def resolve_placeholder(self, placeholder):
         """Resolve as single placeholder argument
@@ -521,5 +521,4 @@ class Package(BasePackage):
 
         """
         from milabench.sizer import resolve_argv
-
         return str(resolve_argv(self, [str(placeholder)])[0])

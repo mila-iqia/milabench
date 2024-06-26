@@ -33,7 +33,7 @@ def _make_row(summary, compare, config, query=None):
         "enabled": is_enabled,
     }
 
-    if not summary:
+    if not summary or summary.get("empty", False):
         return row
 
     # Count not running an enabled benchmark as a failure
@@ -218,7 +218,8 @@ def make_dataframe(summary, compare=None, weights=None, query=None):
                     "n": 0, 
                     "successes": 0,
                     "failures": 0, 
-                    "enabled": weights[key]["enabled"]
+                    "enabled": weights[key]["enabled"],
+                    "empty": True
                 }
 
     if weights is None:
