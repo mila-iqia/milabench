@@ -2,6 +2,10 @@
 
 set -ex
 
+# Asssumes
+# ./habanalabs-installer.sh install --type base
+# pip install virtualen
+
 export MILABENCH_GPU_ARCH=hpu
 export MILABENCH_WORDIR="$(pwd)/$MILABENCH_GPU_ARCH"
 export MILABENCH_BASE="$MILABENCH_WORDIR/results"
@@ -22,7 +26,8 @@ install_prepare() {
     git clone https://github.com/mila-iqia/milabench.git
     git clone https://github.com/huggingface/optimum-habana.git
 
-    wget -nv https://vault.habana.ai/artifactory/gaudi-installer/1.15.1/habanalabs-installer.sh
+    # wget -nv https://vault.habana.ai/artifactory/gaudi-installer/1.15.1/habanalabs-installer.sh
+    wget -nv https://vault.habana.ai/artifactory/gaudi-installer/1.16.1/habanalabs-installer.sh
     chmod +x habanalabs-installer.sh
 
     . $MILABENCH_WORDIR/env/bin/activate
