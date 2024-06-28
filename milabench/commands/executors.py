@@ -69,7 +69,7 @@ async def execute_command(
 
             fut = execute(pack, *argv, **{**_kwargs, **kwargs})
             coro.append(fut)
-            warden.add_process(*pack.processes)
+            warden.extend(pack.processes)
 
             if timeout:
                 delay = pack.config.get("max_duration", timeout_delay)
