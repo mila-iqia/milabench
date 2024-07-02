@@ -126,16 +126,6 @@ def main():
             world_size=int(os.environ["WORLD_SIZE"]),
         )
 
-        # Accelerator SUCK, it is impossible to make it use hccl
-        # We can bypass Accelerator logic by initializing the group ourselves
-        if acc.device_type == "hpu":
-            acc.init_process_group(
-                init_method=f"tcp://{MASTER_ADDR}:{MASTER_PORT}",
-                timeout=timedelta(seconds=60),
-                rank=int(os.environ["RANK"]),
-                world_size=int(os.environ["WORLD_SIZE"]),
-            )
-
         accelerator = Accelerator(kwargs_handlers=[init_process_group_kwargs])
     else:
         accelerator = Accelerator()
