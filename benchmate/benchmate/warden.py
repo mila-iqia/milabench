@@ -111,15 +111,18 @@ class GPUProcessWarden:
 
     def _kill(self, pid, signal):
         if pid in self.dead_processes:
-            return
+            return False
 
         try:
             os.kill(int(pid), signal)
+            return True
         except PermissionError:
             syslog("PermissionError: Could not kill process {0}", pid)
             self.dead_processes.append(pid)
+            return False
         except ProcessLookupError:
             self.dead_processes.append(pid)
+            return False
 
     def terminate(self, start=False):
         self.ensure_free(signal.SIGTERM, start)
@@ -127,23 +130,24 @@ class GPUProcessWarden:
     def kill(self, start=True):
         self.ensure_free(signal.SIGKILL, start)
 
-    def ensure_free(self, signal, start):
+    def ensure_free(self, signal_code, start):
         try:
             processes = self.fetch_processes()
             if len(processes) == 0:
                 return
 
-            if start:
-                syslog("Found {0} still using devices before bench started", len(processes))
-            else:
-                syslog("Found {0} still using devices after bench ended", len(processes))
-
+            sig = "KILL" if signal_code == signal.SIGKILL else "TERM"
+            syslog("warden: {0}: Found {1} processes still using devices: {2}", 
+                sig, len(processes), [p.pid for p in processes]
+            )
+ 
             # Those processes might not be known by milabench
             # Depending on whose the parent the reaping might be happening later
             # and we cannot wait for the process to die
             # we could try something like os.waitpid but it might interfere with `SignalProtected`
+            # for the processes we do know
             for process in processes:
-                self._kill(process.pid, signal.SIGTERM)
+                self._kill(process.pid, signal_code)
         except:
             traceback.print_exc()
 
@@ -271,7 +275,8 @@ def destroy(*processes, step=1, timeout=30):
 
         k += 1
     
-    syslog("{0} processes needed to be killed, retried {1} times, waited {2} s", stats["alive"], k, elapsed)
+    if stats["alive"] != 0:
+        syslog("{0} processes needed to be killed, retried {1} times, waited {2} s", stats["alive"], k, elapsed)
 
 
 @contextmanager
