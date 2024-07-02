@@ -24,6 +24,6 @@ def test_sqlalchemy_sqlite(runs_folder):
     # -------
     runs = [run_dir]
     reports = _read_reports(*runs)
-    summary = make_summary(reports.values())
+    summary = make_summary(reports)
 
     show_diff(summary, replicated)

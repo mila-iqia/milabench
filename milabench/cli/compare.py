@@ -70,6 +70,6 @@ def cli_compare(args=None):
 
     for run in runs:
         all_data = _read_reports(run.path)
-        run.summary = make_summary(all_data.values())
+        run.summary = make_summary(all_data)
 
     compare(runs, args.last, args.metric, args.stat)

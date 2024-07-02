@@ -34,8 +34,8 @@ def generate_tensors(batch_size, shapes, device):
     return tensors
 
 
-def generate_tensor_classification(model, batch_size, in_shape, device):
-    model = model.to(device)
+def generate_tensor_classification(original_model, batch_size, in_shape, device):
+    model = original_model.to(device=device)
     inp = torch.randn((batch_size, *in_shape), device=device)
     out = torch.rand_like(model(inp))
     return inp, out

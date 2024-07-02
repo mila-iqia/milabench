@@ -1,6 +1,8 @@
 import asyncio
 import os
 
+from benchmate.warden import process_cleaner
+
 from ..alt_async import destroy, run
 from ..metadata import machine_metadata
 from ..structs import BenchLogEntry
@@ -60,21 +62,23 @@ async def execute_command(
         pack.phase = phase
 
     timeout_tasks = []
-    for pack, argv, _kwargs in command.commands():
-        await pack.send(event="config", data=pack.config)
-        await pack.send(event="meta", data=machine_metadata(pack))
+    with process_cleaner() as warden:
+        for pack, argv, _kwargs in command.commands():
+            await pack.send(event="config", data=pack.config)
+            await pack.send(event="meta", data=machine_metadata(pack))
 
-        fut = execute(pack, *argv, **{**_kwargs, **kwargs})
-        coro.append(fut)
+            fut = execute(pack, *argv, **{**_kwargs, **kwargs})
+            coro.append(fut)
+            warden.extend(pack.processes)
+
+            if timeout:
+                delay = pack.config.get("max_duration", timeout_delay)
+                timeout_task = asyncio.create_task(force_terminate(pack, delay))
+                timeout_tasks.append(timeout_task)
+
+        results = await asyncio.gather(*coro)
 
         if timeout:
-            delay = pack.config.get("max_duration", timeout_delay)
-            timeout_task = asyncio.create_task(force_terminate(pack, delay))
-            timeout_tasks.append(timeout_task)
-
-    results = await asyncio.gather(*coro)
-
-    if timeout:
-        for task in timeout_tasks:
-            task.cancel()
-    return results
+            for task in timeout_tasks:
+                task.cancel()
+        return results

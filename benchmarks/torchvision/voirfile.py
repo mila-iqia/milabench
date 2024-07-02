@@ -1,8 +1,11 @@
 from dataclasses import dataclass
 
 from voir import configurable
-from voir.instruments import dash, early_stop, gpu_monitor, log
+from voir.phase import StopProgram
+from voir.instruments import dash, early_stop, log
 from benchmate.observer import BenchObserver
+from benchmate.monitor import monitor_monogpu
+
 
 @dataclass
 class Config:
@@ -33,10 +36,22 @@ def instrument_main(ov, options: Config):
 
     overhead_metrics = [] # "__iter__", "overhead", "process_time"
 
+    metrics = [
+        "value", 
+        "progress", 
+        "rate", 
+        "units", 
+        "loss", 
+        "gpudata",
+        "iodata",
+        "cpudata",
+        "process"
+    ]
+
     ov.require(
-        log("value", "progress", "rate", "units", "loss", "gpudata", *overhead_metrics, context="task"),
+        log(*metrics, *overhead_metrics, context="task"),
         early_stop(n=options.stop, key="rate", task="train"),
-        gpu_monitor(poll_interval=options.gpu_poll),
+        monitor_monogpu(poll_interval=options.gpu_poll),
     )
 
     yield ov.phases.load_script
@@ -58,5 +73,7 @@ def instrument_main(ov, options: Config):
     probe = ov.probe("//train_epoch > criterion", overridable=True)
     probe['criterion'].override(observer.criterion)
     
-
-
+    try:
+        yield ov.phases.run_script
+    except StopProgram:
+        print("early stopped")

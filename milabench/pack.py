@@ -505,3 +505,20 @@ class Package(BasePackage):
         main = self.dirs.code / self.main_script
         pack = cmd.PackCommand(self, *self.argv, lazy=True)
         return cmd.VoirCommand(pack, cwd=main.parent)
+
+    def resolve_argument(self, name):
+        """Resolve as single placeholder argument"""
+        placeholder = str(self.config["argv"][name])
+        return self.resolve_placeholder(placeholder)
+
+    def resolve_placeholder(self, placeholder):
+        """Resolve as single placeholder argument
+
+        Examples
+        --------
+        >>> resolve_placeholder("auto({n_worker}, 8)")
+        16
+
+        """
+        from milabench.sizer import resolve_argv
+        return str(resolve_argv(self, [str(placeholder)])[0])

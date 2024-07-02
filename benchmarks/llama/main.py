@@ -8,6 +8,7 @@ import sys
 
 import torch
 
+from voir.phase import StopProgram
 from benchmate.monitor import setupvoir
 import torchcompat.core as accelerator
 

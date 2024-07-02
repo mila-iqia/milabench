@@ -20,6 +20,8 @@ import torchvision.models as torchvision_models
 from benchmate.metrics import StopProgram
 from benchmate.observer import BenchObserver
 from benchmate.dataloader import imagenet_dataloader, dataloader_arguments
+from benchmate.monitor import multigpu_monitor
+
 import torchcompat.core as accelerator
 
 
@@ -168,15 +170,16 @@ def main():
     #
     # This is not voir friendly as it does not allow voir to hook itself
     # to the process
-    mp.spawn(
-        worker_main,
-        args=(
-            world_size, 
-            args
-        ), 
-        nprocs=world_size,
-        join=True
-    )
+    with multigpu_monitor(poll_interval=3):
+        mp.spawn(
+            worker_main,
+            args=(
+                world_size, 
+                args
+            ), 
+            nprocs=world_size,
+            join=True
+        )
 
 if __name__ == "__main__":
     main()

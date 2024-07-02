@@ -10,6 +10,7 @@ from asyncio.base_events import _run_until_complete_cb
 from collections import deque
 from functools import wraps
 
+from benchmate.warden import destroy
 from voir.proc import run as voir_run
 
 
@@ -165,32 +166,30 @@ def feedback_runner(gen):
     return wrapped
 
 
-def destroy(*processes):
-    for proc in processes:
-        if getattr(proc, "did_setsid", False):
-            os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-        else:
-            proc.kill()
-        # TODO: send SIGKILL after a certain time if the process is not dead
 
 
 @feedback_runner
-def run(argv, setsid=None, info={}, process_accumulator=None, **kwargs):
+def run(argv, setsid=None, process_accumulator=None, info={}, **kwargs):
     if setsid:
         kwargs["preexec_fn"] = os.setsid
+
     mx = voir_run(argv, info=info, **kwargs, timeout=0)
+    
     if process_accumulator is not None:
         process_accumulator.extend(mx.processes)
+
     if setsid:
         for proc in mx.processes:
             proc.did_setsid = True
+
     loop = asyncio.get_running_loop()
     loop._multiplexers.append(mx)
+
     for entry in mx:
         if entry and entry.event == "stop":
             destroy(*mx.processes)
         yield entry
-
+        
 
 def proceed(coro):
     loop = FeedbackEventLoop()

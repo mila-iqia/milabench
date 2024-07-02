@@ -1,4 +1,4 @@
-from milabench.slurm import expand_node_list
+from milabench.cli.slurm import expand_node_list
 
 
 def test_slurm_node_expand_0():

@@ -2,12 +2,20 @@
 
 set -ex
 
+# Asssumes
+# ./habanalabs-installer.sh install --type base
+# pip install virtualen
+
 export MILABENCH_GPU_ARCH=hpu
 export MILABENCH_WORDIR="$(pwd)/$MILABENCH_GPU_ARCH"
 export MILABENCH_BASE="$MILABENCH_WORDIR/results"
 export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/standard.yaml"
 export MILABENCH_VENV="$MILABENCH_WORDIR/env"
 export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
+
+if [ -z "${MILABENCH_PREPARE}" ]; then
+    export MILABENCH_PREPARE=0
+fi
 
 install_prepare() {
     mkdir -p $MILABENCH_WORDIR
@@ -18,7 +26,8 @@ install_prepare() {
     git clone https://github.com/mila-iqia/milabench.git
     git clone https://github.com/huggingface/optimum-habana.git
 
-    wget -nv https://vault.habana.ai/artifactory/gaudi-installer/1.15.1/habanalabs-installer.sh
+    # wget -nv https://vault.habana.ai/artifactory/gaudi-installer/1.15.1/habanalabs-installer.sh
+    wget -nv https://vault.habana.ai/artifactory/gaudi-installer/1.16.1/habanalabs-installer.sh
     chmod +x habanalabs-installer.sh
 
     . $MILABENCH_WORDIR/env/bin/activate
@@ -71,13 +80,15 @@ else
     . $MILABENCH_WORDIR/env/bin/activate
 fi
 
-cd $MILABENCH_WORDIR
 
+if [ "$MILABENCH_PREPARE" -eq 0 ]; then
+    cd $MILABENCH_WORDIR
 
-#
-#   Run the benchmakrs
-milabench run "$@"
+    #
+    #   Run the benchmakrs
+    milabench run "$@"
 
-#
-#   Display report
-milabench report --runs $MILABENCH_WORDIR/results/runs
+    #
+    #   Display report
+    milabench report --runs $MILABENCH_WORDIR/results/runs
+fi

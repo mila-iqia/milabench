@@ -112,12 +112,18 @@ def show_diff(a, b, depth=0, path=None):
 def replay_zipfile(path, *validation, sleep=0):
     with zipfile.ZipFile(path, "r") as archive:
         data = defaultdict(list)
+        total = 0
 
         for member in archive.namelist():
             if member.endswith(".data"):
                 filename = member.split("/")[-1]
                 benchname = filename.split(".", maxsplit=1)[0]
                 data[benchname].append(member)
+                total += 1
+
+        from milabench.config import set_run_count
+
+        set_run_count(total, len(data))
 
         with multilogger(*validation) as log:
             for _, streams in data.items():

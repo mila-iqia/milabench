@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 
 from voir import configurable
-from voir.instruments import dash, early_stop, gpu_monitor, log, rate
+from voir.phase import StopProgram
+from voir.instruments import early_stop, gpu_monitor, log
+from benchmate.monitor import monitor_monogpu, multigpu_monitor
 
-import torchcompat.core as accelerator
 
 @dataclass
 class Config:
@@ -59,14 +60,23 @@ def instrument_main(ov, options: Config):
     probe = ov.probe("//main > saver", overridable=True)
     probe['saver'].override(lambda save: None)
 
+    monitor = monitor_monogpu
+    if os.getenv("RANK", -1) != -1:
+        monitor = multigpu_monitor
+
     instruments = [
         log(
             "value", "progress", "rate", "units", "loss", "gpudata", context="task"
         ),
-        gpu_monitor(poll_interval=options.gpu_poll),
+        monitor(poll_interval=options.gpu_poll) 
     ] 
 
     if is_global_primary:
         instruments.append(early_stop(n=options.stop, key="rate", task="train", signal="stop"))
 
     ov.require(*instruments)
+
+    try:
+        yield ov.phases.run_script
+    except StopProgram:
+        print("early stopped")

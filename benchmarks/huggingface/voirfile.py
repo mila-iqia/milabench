@@ -3,7 +3,9 @@ import os
 
 
 from voir import configurable
+from voir.phase import StopProgram
 from voir.instruments import dash, early_stop, gpu_monitor, log, rate
+from benchmate.monitor import monitor_monogpu
 
 
 @dataclass
@@ -38,8 +40,13 @@ def instrument_main(ov, options: Config):
     ov.require(
         log("value", "progress", "rate", "units", "loss", "gpudata", context="task"),
         early_stop(n=options.stop, key="rate", task="train"),
-        gpu_monitor(poll_interval=options.gpu_poll),
+        monitor_monogpu(poll_interval=options.gpu_poll),
     )
 
     os.environ["VOIR_EARLYSTOP_COUNT"] = str(options.stop)
     os.environ["VOIR_EARLYSTOP_SKIP"] = str(options.skip)
+
+    try:
+        yield ov.phases.run_script
+    except StopProgram:
+        print("early stopped")

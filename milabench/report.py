@@ -6,6 +6,7 @@ from hrepr import HTML, hrepr
 from pandas import DataFrame
 
 from milabench.utils import error_guard
+from milabench.summary import Summary
 
 nan = math.nan
 
@@ -13,31 +14,48 @@ H = HTML()
 
 
 @error_guard({})
-def _make_row(summary, compare, weights, query=None):
+def _make_row(summary, compare, config, query=None):
     mkey = "train_rate"
     metric = "mean"
-    row = {}
 
-    row["n"] = summary["n"] if summary else nan
-    row["fail"] = summary["failures"] if summary else nan
-    row["perf"] = summary[mkey][metric] if summary else nan
+    weight = config.get("weight", summary.get("weight", 0))
+    is_enabled = config.get("enabled", summary.get("enabled", 0))
+
+    row = {
+        "n": nan,
+        "fail": nan,
+        "perf": nan,
+        "std%": nan,
+        "sem%": nan,
+        "peak_memory": nan,
+        "score": nan,
+        "weight": weight,
+        "enabled": is_enabled,
+    }
+
+    if not summary or summary.get("empty", False):
+        return row
+
+    # Count not running an enabled benchmark as a failure
+    failures = summary["failures"]
+    if is_enabled and row["n"] <= 0:
+        failures += 1
+
+    row["n"] = summary["n"]
+    row["fail"] = failures
+    row["perf"] = summary[mkey][metric]
 
     if compare:
         row["perf_base"] = compare[mkey][metric]
         row["perf_ratio"] = row["perf_adj"] / row["perf_base"]
 
-    row["std%"] = summary[mkey]["std"] / summary[mkey][metric] if summary else nan
-    row["sem%"] = summary[mkey]["sem"] / summary[mkey][metric] if summary else nan
+    row["std%"] = summary[mkey]["std"] / summary[mkey][metric]
+    row["sem%"] = summary[mkey]["sem"] / summary[mkey][metric]
     # row["iqr%"] = (summary[mkey]["q3"] - summary[mkey]["q1"]) / summary[mkey]["median"] if summary else nan
-    row["peak_memory"] = (
-        max(
-            (data["memory"]["max"] for data in summary["gpu_load"].values())
-            if summary["gpu_load"]
-            else [-1]
-        )
-        if summary
-        else nan
-    )
+
+    if summary["gpu_load"]:
+        memory = [data["memory"]["max"] for data in summary["gpu_load"].values()]
+        row["peak_memory"] = max(memory)
 
     # Sum of all the GPU performance
     # to get the overall perf of the whole machine
@@ -48,12 +66,9 @@ def _make_row(summary, compare, weights, query=None):
     else:
         acc = row["perf"]
 
-    success_ratio = 1 - row["fail"] / row["n"]
+    success_ratio = 1 - row["fail"] / max(row["n"], 1)
     score = (acc if acc > 0 else row["perf"]) * success_ratio
-
     row["score"] = score
-    row["weight"] = weights.get("weight", summary.get("weight", 0))
-    # ----
 
     if query is not None:
         extra = summary.get("extra", dict())
@@ -192,6 +207,21 @@ columns_order = {
 
 
 def make_dataframe(summary, compare=None, weights=None, query=None):
+    if weights is not None:
+        # We've overriden the config
+        required = weights.keys()
+
+        for key in required:
+            if key not in summary:
+                summary[key] = {
+                    "name": key, 
+                    "n": 0, 
+                    "successes": 0,
+                    "failures": 0, 
+                    "enabled": weights[key]["enabled"],
+                    "empty": True
+                }
+
     if weights is None:
         weights = dict()
 
@@ -239,9 +269,17 @@ def make_dataframe(summary, compare=None, weights=None, query=None):
     return df
 
 
+def normalize_dataframe(df):
+    columns = filter(lambda k: k in columns_order, df.columns)
+    columns = sorted(columns, key=lambda k: columns_order.get(k, 0))
+    for col in columns:
+        df[col] = df[col].astype(float)
+    return df[columns]
+
+
 @error_guard({})
 def make_report(
-    summary,
+    summary: dict[str, Summary],
     compare=None,
     html=None,
     compare_gpus=False,
@@ -256,7 +294,6 @@ def make_report(
         weights = dict()
 
     df = make_dataframe(summary, compare, weights)
-
     out = Outputter(stdout=stream, html=html)
 
     if sources:
@@ -264,20 +301,31 @@ def make_report(
             sources = [sources]
         for source in sources:
             out.print(f"Source: {source}")
+
     out.title(title or "Benchmark results")
-    out.print(df)
+
+    # Reorder columns
+    out.print(normalize_dataframe(df))
 
     out.section("Scores")
 
     def _score(column):
-        # This computes a weighted geometric mean
-        perf = df[column]
-        weights = df["weight"]
-        logscore = np.sum(np.log(perf) * weights) / np.sum(weights)
-        return np.exp(logscore)
+        try:
+            # This computes a weighted geometric mean
+
+            # perf can be object np.float64 !?
+            perf = df[column].astype(float)
+
+            weights = df["weight"] * df["enabled"].astype(int)
+            weight_total = np.sum(weights)
+
+            logscore = np.sum(np.log(perf) * weights) / weight_total
+            return np.exp(logscore)
+        except ZeroDivisionError:
+            return 0
 
     score = _score("score")
-    failure_rate = df["fail"].sum() / df["n"].sum()
+    failure_rate = df["fail"].sum() / max(df["n"].sum(), 1)
     scores = {
         "Failure rate": PassFail(failure_rate, failure_rate <= 0.01),
         "Score": WithClass(f"{score:10.2f}", "score"),

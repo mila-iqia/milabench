@@ -14,6 +14,7 @@ from rich.progress import BarColumn, Progress, TextColumn, TimeRemainingColumn
 from rich.table import Table
 from rich.text import Text
 
+from .config import get_run_count
 from .fs import XPath
 
 T = Terminal()
@@ -147,7 +148,7 @@ class TerminalFormatter(BaseLogger):
         elif event == "config":
 
             def _show(k, entry):
-                if k in ("meta", "system"):
+                if k.startswith("config.system"):
                     return
 
                 if isinstance(entry, dict):
@@ -158,6 +159,9 @@ class TerminalFormatter(BaseLogger):
 
             _show("config", data)
 
+        elif event == "meta":
+            pass
+        
         elif event == "message":
             console.pretty(T.bold(f"[{event}]"), data["message"])
 
@@ -216,24 +220,66 @@ class DataReporter(BaseReporter):
         self.file(entry).write(f"{j}\n")
 
 
+def new_progress_bar():
+    progress = Progress(
+        BarColumn(),
+        TextColumn("({task.completed}/{task.total})"),
+    )
+    progress._task = progress.add_task("progress")
+    return progress
+
+
 class DashFormatter(BaseLogger):
     def __init__(self):
         self.panel = Panel("")
         self.console = Console()
         self.live = Live(self.panel, refresh_per_second=4, console=self.console)
         self.rows = defaultdict(dict)
+        self.benchcount = defaultdict(int)
         self.endtimes = {}
         self.early_stop = {}
-        # Delay the pruning so we can see the results
-        self.prune_delay = 30
         # Limit the number of rows to avoid too much clutering
         # This is a soft limit, it only prunes finished runs
         self.max_rows = 8
+        self.prune_delay = 60
+        self.current = 0
+        self.created_time = time.time()
 
+    def _get_global_progress_bar(self):
+        progress = self.rows.get("GLOBAL")
+        if progress is not None:
+            return progress["progress"]
+        progress = new_progress_bar()
+        progress.update(progress._task, completed=self.current, total=get_run_count())
+        self.rows["GLOBAL"] = {"progress": progress}
+        return progress
+
+    def _update_global(self, inc):
+        self.current += inc
+        if total := get_run_count():
+            progress = self._get_global_progress_bar()
+            progress.update(progress._task, completed=self.current, total=total)
+
+    def should_prune(self, tag, elasped):
+        # Old run, remove it
+        if elasped > self.prune_delay:
+            return True
+        
+        # Bench is running
+        bench = tag.split(".")[0]
+        if self.benchcount.get(bench, 0) > 0:
+            return False
+
+        # We have too many rows
+        if self.max_rows:
+            return len(self.rows) > self.max_rows
+        
+        return False
+    
     def prune(self):
         now = time.time()
         for tag, endtime in list(self.endtimes.items()):
-            if (now - endtime > self.prune_delay) or len(self.rows) > self.max_rows:
+            if self.should_prune(tag, now - endtime):
                 del self.endtimes[tag]
                 del self.rows[tag]
 
@@ -242,12 +288,16 @@ class DashFormatter(BaseLogger):
         self.live.update(self.make_table())
 
     def start(self):
+        self._update_global(0)
         self.live.__enter__()
 
     def end(self):
         self.live.__exit__(None, None, None)
 
     def __call__(self, entry):
+        if get_run_count():
+            self._get_global_progress_bar()
+    
         event = entry.event
         data = entry.data
         tag = entry.tag
@@ -257,11 +307,16 @@ class DashFormatter(BaseLogger):
         if method:
             method(entry, data, row)
 
+    def on_start(self, entry, data, row):
+        self.benchcount[entry.tag.split('.')[0]] += 1
+
     def on_stop(self, entry, data, row):
         self.early_stop[entry.tag] = True
 
     def on_end(self, entry, data, row):
+        self._update_global(1)
         self.endtimes[entry.tag] = time.time()
+        self.benchcount[entry.tag.split('.')[0]] -= 1
 
 
 class ShortDashFormatter(DashFormatter):
@@ -277,16 +332,22 @@ class ShortDashFormatter(DashFormatter):
         table.add_column("gpu_temp", style="bold magenta")
 
         for bench, values in self.rows.items():
-            table.add_row(
-                bench,
-                values.get("status", "?"),
-                values.get("progress", "??%"),
-                values.get("rate", "?"),
-                values.get("loss", "?"),
-                values.get("gpu_load", "?"),
-                values.get("gpu_mem", "?"),
-                values.get("gpu_temp", "?"),
-            )
+            if bench == "GLOBAL":
+                table.add_row(
+                    bench,
+                    values.get("progress", "??%"),
+                )
+            else:
+                table.add_row(
+                    bench,
+                    values.get("status", "?"),
+                    values.get("progress", "??%"),
+                    values.get("rate", "?"),
+                    values.get("loss", "?"),
+                    values.get("gpu_load", "?"),
+                    values.get("gpu_mem", "?"),
+                    values.get("gpu_temp", "?"),
+                )
 
         return table
 
@@ -308,9 +369,9 @@ class ShortDashFormatter(DashFormatter):
                 load = int(data.get("load", 0) * 100)
                 currm, totalm = data.get("memory", [0, 0])
                 temp = int(data.get("temperature", 0))
-                row[
-                    f"gpu:{gpuid}"
-                ] = f"{load}% load | {currm:.0f}/{totalm:.0f} MB | {temp}C"
+                row[f"gpu:{gpuid}"] = (
+                    f"{load}% load | {currm:.0f}/{totalm:.0f} MB | {temp}C"
+                )
                 row["gpu_load"] = f"{load}%"
                 row["gpu_mem"] = f"{currm:.0f}/{totalm:.0f} MB"
                 row["gpu_temp"] = f"{temp}C"
@@ -324,6 +385,8 @@ class ShortDashFormatter(DashFormatter):
         self.refresh()
 
     def on_start(self, entry, data, row):
+        super().on_start(entry, data, row)
+
         row["status"] = Text("RUNNING", style="bold yellow")
         self.refresh()
 
@@ -340,6 +403,25 @@ class ShortDashFormatter(DashFormatter):
             row["status"] = Text(f"FAIL:{rc}", style="bold red")
         self.refresh()
 
+
+
+octet_units = [
+    (" o", 1024 ** 0),
+    ("Ko", 1024 ** 1),
+    ("Mo", 1024 ** 2),
+    ("Go", 1024 ** 3)
+]
+
+def find_byte_exponent(value):
+    for i in reversed(range(len(octet_units))):
+        if value > octet_units[i][1]:
+            return octet_units[i]
+    return octet_units[0]
+
+def formatbyte(value):
+    name, exp = find_byte_exponent(value)
+    return f"{value // exp:4d} {name}"
+    
 
 class LongDashFormatter(DashFormatter):
     def make_table(self):
@@ -384,11 +466,75 @@ class LongDashFormatter(DashFormatter):
                 load = int(data.get("load", 0) * 100)
                 currm, totalm = data.get("memory", [0, 0])
                 temp = int(data.get("temperature", 0))
-                row[
-                    f"gpu:{gpuid}"
-                ] = f"{load}% load | {currm:.0f}/{totalm:.0f} MB | {temp}C"
+                row[f"gpu:{gpuid}"] = (
+                    f"{load:3d}% load | {currm:.0f}/{totalm:.0f} MB | {temp}C"
+                )
+        elif iodata := data.get("iodata", None):
+            read = int(iodata.get("read_time", 0))
+            write = int(iodata.get("write_time", 0))
+            readc = int(iodata.get("read_count", 0))
+            writec = int(iodata.get("write_count", 0))
+            busy = int(iodata.get("busy_time", 0))
+            row["iodata"] = (
+                f"(rt={read} wt={write} bt={busy}) ms | (rc={readc} wc={writec}) bytes"
+            )
+            
+        elif process := data.get("process", None):
+            pid = process.get("pid", "0")
+            currm, totalm = process.get("memory", [0, 0])
+            load = process.get("load", 0)
+            read_bytes = int(process.get("read_bytes", 0))
+            write_bytes = int(process.get("write_bytes", 0))
+
+            read_chars = int(process.get("read_chars", 0))
+            write_chars = int(process.get("write_chars", 0))
+
+            row[f"cpu.{pid}"] = f"{load:3.0f}% load | {currm/1e9:.0f}/{totalm/1e9:.0f} GB"
+            row[f"physical.io.{pid}"] = f"{formatbyte(read_bytes)} reads {formatbyte(write_bytes)} writes"
+            row[f"virtual.io.{pid}"] = f"{formatbyte(read_chars)} reads {formatbyte(write_chars)} writes"
+
+        elif cpudata := data.get("cpudata", None):
+            currm, totalm = cpudata.get("memory", [0, 0])
+            load = cpudata.get("load", 0)
+            row["cpudata"] = (
+                f"{load:3.0f}% load | {currm/1e9:.0f}/{totalm/1e9:.0f} GB"
+            )
+        elif netdata := data.get("netdata", None):
+            bytes_sent = netdata.get("bytes_sent", 0)
+            bytes_recv = netdata.get("bytes_recv", 0)
+            row["netdata"] = (
+                f"s={bytes_sent} | r={bytes_recv}"
+            )
         else:
             task = data.pop("task", "")
             units = data.pop("units", "")
-            row.update({f"{task} {k}".strip(): f"{v} {units}" for k, v in data.items()})
+            time = data.pop("time", "")
+            if time:
+                time = f"time {self.time(time)} s"
+            row.update(self.newlines(task, units, time, data))
+        
         self.refresh()
+
+    def newlines(self, task, units, time, data):
+        lines = {}
+        for k, v in data.items():
+            key = f"{task} {k}".strip()
+            value = f"{self.format(k, v)} {self.unit(k, units)}"
+
+            if time:
+                value = f"{value:<{max(80 - len(value), 1)}} {time}"
+                time = ""
+            lines[key] = value
+        return lines
+
+    def time(self, t):
+        return int(t - self.created_time)
+
+    def unit(self, k, unit):
+        return unit
+
+    def format(self, key, value):
+        try:
+            return f"{value:0.2f}"
+        except:
+            return str(value)

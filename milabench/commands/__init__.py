@@ -659,14 +659,7 @@ class AccelerateLaunchCommand(SingleCmdCommand):
             else ["--multi_gpu"]
         )
 
-        #
-        # Can this logic be removed?
-        #
-        from ..sizer import new_argument_resolver
-
-        resolver = new_argument_resolver(self.pack)
-
-        cpu_per_process = resolver(str(self.pack.config["argv"]["--cpus_per_gpu"]))
+        cpu_per_process = self.pack.resolve_argument('--cpus_per_gpu')
         return [
             # -- Run the command in the right venv
             # This could be inside the SSH Command
@@ -678,7 +671,7 @@ class AccelerateLaunchCommand(SingleCmdCommand):
             # --
             "accelerate",
             "launch",
-            "--mixed_precision=fp16",
+            "--mixed_precision=bf16",
             "--dynamo_backend=no",
             f"--machine_rank={self.rank}",
             f"--num_machines={num_machines}",

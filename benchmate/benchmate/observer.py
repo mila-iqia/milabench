@@ -23,7 +23,13 @@ class BenchObserver:
     """
 
     def __init__(
-        self, *args, backward_callback=None, step_callback=None, stdout=False, **kwargs
+        self,
+        *args,
+        backward_callback=None,
+        step_callback=None,
+        stdout=False,
+        rank=None,
+        **kwargs,
     ):
         self.wrapped = None
         self.args = args
@@ -32,6 +38,7 @@ class BenchObserver:
         self.optimizer_step_callback = step_callback
         self.stdout = stdout
         self.task = "train"
+        self.rank = rank
         self.losses = LazyLossPusher(self.task)
 
         self.pusher = give_push()
@@ -43,7 +50,8 @@ class BenchObserver:
         self.losses.push(self.pusher)
 
     def record_loss(self, loss):
-        self.losses.record(loss)
+        if self.rank is None or self.rank == 1:
+            self.losses.record(loss)
         return loss
 
     def override_return_value(self, function, override):
@@ -65,7 +73,7 @@ class BenchObserver:
     def loader(self, loader):
         """Wrap a dataloader or an iterable which enable accurate measuring of time spent in the loop's body"""
         self.wrapped = TimedIterator(
-            loader, *self.args, push=self.pusher, **self.kwargs
+            loader, *self.args, rank=self.rank, push=self.pusher, **self.kwargs
         )
         self.wrapped.task = self.task
         self.wrapped.on_iterator_stop_iterator = self.on_iterator_stop_iterator

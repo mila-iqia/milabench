@@ -1,9 +1,15 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+#
+# Cannot be split in multiple files because slurm copy the bash file to be executed
+#
+
+set -ex
 
 function usage() {
   echo "Usage: $0 [-m] [-p]"
   echo "  -h              Display this help message."
-  echo "  -b arch         GPU arch           (default: cuda)"
+  echo "  -a arch         GPU arch           (default: cuda)"
   echo "  -b BRANCH       Branch to checkout (default: master)"
   echo "  -o ORIGIN       Origin to use      (default: github/mila/milabench)"
   echo "  -c CONFIG       Configuration      (default: milabench/config/standard.yaml)"
@@ -14,20 +20,24 @@ function usage() {
 }
 
 ARCH="cuda"
-PYTHON="3.9"
+PYTHON="3.10"
 BRANCH="master"
 ORIGIN="https://github.com/mila-iqia/milabench.git"
-LOC="$SLURM_TMPDIR"
+LOC="$SLURM_TMPDIR/$SLURM_JOB_ID"
 CONFIG="$LOC/milabench/config/standard.yaml"
 BASE="$LOC/base"
 ENV="./env"
 REMAINING_ARGS=""
+FUN="run"
+OUTPUT="$HOME/RUN_$SLURM_JOB_ID"
 
-
-while getopts ":hm:p:e:b:o:c:" opt; do
+while getopts ":hm:p:e:b:o:c:f:" opt; do
   case $opt in
     h)
       usage
+      ;;
+    f)
+      FUN="$OPTARG"
       ;;
     p)
         PYTHON="$OPTARG"
@@ -69,76 +79,127 @@ echo "  origin: $ORIGIN"
 echo "  config: $CONFIG"
 echo "     env: $ENV"
 echo "    args: $REMAINING_ARGS"
-#
-#   Fix problem with conda saying it is not "init properly"
-#
-CONDA_EXEC="$(which conda)"
-CONDA_BASE=$(dirname $CONDA_EXEC)
-source $CONDA_BASE/../etc/profile.d/conda.sh
+echo "     loc: $LOC"
 
-if [ -e $HOME/.credentials.env ]; then
-  source $HOME/.credentials.env
-fi
-
+mkdir -p $LOC
 cd $LOC
-#
-#   Create a new environment
-#
-if [ ! -d "$ENV" ] && [ "$ENV" != "base" ] && [ ! -d "$CONDA_ENVS/$ENV" ]; then
-     conda create --prefix $ENV python=$PYTHON -y
-fi
-conda activate $ENV
-
-export HF_HOME=$BASE/cache
-export HF_DATASETS_CACHE=$BASE/cache
-export TORCH_HOME=$BASE/cache
-export XDG_CACHE_HOME=$BASE/cache
-export MILABENCH_GPU_ARCH=$ARCH
-
-export MILABENCH_DASH=no 
-export PYTHONUNBUFFERED=1
-export MILABENCH_BASE=$BASE
-export MILABENCH_CONFIG=$CONFIG
-#
-# Fetch the repo
-#
-git clone --single-branch --depth 1 -b $BRANCH $ORIGIN
-python -m pip install -e ./milabench
-
-SYSTEM="$LOC/system.yaml"
-
-echo ""
-echo "System"
-echo "------"
-
-milabench slurm_system 
-milabench slurm_system > $SYSTEM
-
-module load gcc/9.3.0 
-module load cuda/11.8
-
-echo ""
-echo "Install"
-echo "-------"
-milabench install --config $CONFIG --system $SYSTEM --base $BASE $REMAINING_ARGS
 
 
-echo ""
-echo "Prepare"
-echo "-------"
-milabench prepare --config $CONFIG --system $SYSTEM --base $BASE $REMAINING_ARGS
+function conda_env() {
+  #
+  #   Fix problem with conda saying it is not "init properly"
+  #
+  CONDA_EXEC="$(which conda)"
+  CONDA_BASE=$(dirname $CONDA_EXEC)
+  source $CONDA_BASE/../etc/profile.d/conda.sh
 
-echo ""
-echo "Run"
-echo "---"
-milabench run     --config $CONFIG --system $SYSTEM --base $BASE $REMAINING_ARGS
+  if [ -e $HOME/.credentials.env ]; then
+    source $HOME/.credentials.env
+  fi
 
-echo ""
-echo "Report"
-echo "------"
+  cd $LOC
+  #
+  #   Create a new environment
+  #
+  if [ ! -d "$ENV" ] && [ "$ENV" != "base" ] && [ ! -d "$CONDA_ENVS/$ENV" ]; then
+      conda create --prefix $ENV python=$PYTHON -y
+  fi
+  conda activate $ENV
+}
 
-milabench write_report_to_pr --remote $ORIGIN --branch $BRANCH --config $CONFIG
+function setup() {
+  export HF_HOME=$BASE/cache
+  export HF_DATASETS_CACHE=$BASE/cache
+  export TORCH_HOME=$BASE/cache
+  export XDG_CACHE_HOME=$BASE/cache
+  export MILABENCH_GPU_ARCH=$ARCH
 
-echo "----"
-echo "Done after $SECONDS"
-echo ""
+  export MILABENCH_DASH=no 
+  export PYTHONUNBUFFERED=1
+  export MILABENCH_BASE=$BASE
+  export MILABENCH_CONFIG=$CONFIG
+  export MILABENCH_VENV=$ENV
+  export BENCHMARK_VENV="$BASE/venv/torch"
+
+  #
+  # Fetch the repo
+  #
+  cd $LOC
+  git clone --single-branch --depth 1 -b $BRANCH $ORIGIN
+  python -m pip install -e ./milabench
+  (
+    cd milabench
+    git status
+  )
+  SYSTEM="$LOC/system.yaml"
+}
+
+function pin() {
+  conda_env
+
+  setup
+
+  MILABENCH_GPU_ARCH=cuda milabench pin --config config/standard.yaml --from-scratch --base /tmp
+  MILABENCH_GPU_ARCH=rocm milabench pin --config config/standard.yaml --from-scratch --base /tmp
+  MILABENCH_GPU_ARCH=xpu milabench pin --config config/standard.yaml --from-scratch --base /tmp
+  MILABENCH_GPU_ARCH=hpu milabench pin --config config/standard.yaml --from-scratch --base /tmp
+
+  cd $SLURM_TMPDIR/milabench
+  git add --all
+  git commit -m "milabench pin"
+  git push $ORIGIN $BRANCH
+
+}
+
+function run() {
+  
+  conda_env
+
+  setup
+
+  echo ""
+  echo "System"
+  echo "------"
+
+  milabench slurm_system > $SYSTEM
+  cat $SYSTEM
+
+  module load gcc/9.3.0 
+  module load cuda/12.3.2
+
+  echo ""
+  echo "Install"
+  echo "-------"
+  milabench install --config $CONFIG --system $SYSTEM --base $BASE $REMAINING_ARGS
+
+  echo ""
+  echo "Prepare"
+  echo "-------"
+  milabench prepare --config $CONFIG --system $SYSTEM --base $BASE $REMAINING_ARGS
+
+  echo ""
+  echo "Run"
+  echo "---"
+  milabench run     --config $CONFIG --system $SYSTEM --base $BASE $REMAINING_ARGS
+
+  mkdir -p $OUTPUT
+  mv $BASE/runs $OUTPUT
+
+  # echo ""
+  # echo "Report"
+  # echo "------"
+  # milabench write_report_to_pr --remote $ORIGIN --branch $BRANCH --config $CONFIG
+
+  echo "----"
+  echo "Done after $SECONDS"
+  echo ""
+}
+
+case "$FUN" in
+  run)
+    run
+    ;;
+  pin)
+    pin
+    ;;
+esac
