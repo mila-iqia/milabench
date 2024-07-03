@@ -1,0 +1,43 @@
+name: unit
+
+on:
+  push:
+
+  # Runs for pull requests
+  pull_request:
+    branches:
+      - master
+
+  # Runs on publish
+  release:
+    types:
+      [published]
+
+  # Allow manual triggers
+  workflow_dispatch:
+
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    # Cancel previous jobs if a new version was pushed
+    concurrency:
+      group: "${{ github.ref }}-${{ matrix.arch }}"
+      cancel-in-progress: true
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10' 
+
+      - name: dependencies
+        run: |
+          pip install poetry
+          poetry install --with dev
+
+      - name: tests
+        run: |
+          poetry run pytest --ignore=tests/integration tests/ 
