@@ -2,7 +2,7 @@ import json
 import os
 import subprocess
 import traceback
-from datetime import datetime
+import datetime
 
 import cpuinfo
 from voir.instruments.gpu import get_gpu_info
@@ -36,6 +36,7 @@ def fetch_torch_version(pack):
     return json.loads(result.stdout)
 
 
+@error_guard({})
 def machine_metadata(pack=None):
     """Retrieve machine metadata"""
 
@@ -61,7 +62,7 @@ def machine_metadata(pack=None):
             "machine": uname.machine,
         },
         "accelerators": gpus,
-        "date": datetime.utcnow().timestamp(),
+        "date": datetime.datetime.now(datetime.UTC).timestamp(),
         "milabench": retrieve_git_versions(
             __tag__,
             __commit__,

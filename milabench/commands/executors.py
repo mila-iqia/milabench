@@ -61,7 +61,6 @@ async def execute_command(
     for pack in command.packs():
         pack.phase = phase
 
-    timeout_tasks = []
     with process_cleaner() as warden:
         for pack, argv, _kwargs in command.commands():
             await pack.send(event="config", data=pack.config)
@@ -77,7 +76,10 @@ async def execute_command(
             try:
                 return await asyncio.wait_for(asyncio.gather(*coro), timeout=delay)
             
-            except TimeoutError | asyncio.TimeoutError:
+            except TimeoutError:
+                await force_terminate(pack, delay)
+                return [-1 for _ in coro]
+            except asyncio.TimeoutError:
                 await force_terminate(pack, delay)
                 return [-1 for _ in coro]
 

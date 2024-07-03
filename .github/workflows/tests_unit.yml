@@ -35,9 +35,22 @@ jobs:
 
       - name: dependencies
         run: |
+          pip install -U pip
           pip install poetry
+          poetry env use python3.10
+          source $(poetry env info -p)/bin/activate
+          #
+          # poetry doesnot work when installing those !?
+          #
+          pip install antlr4-python3-runtime==4.9.3
+          pip install -e .
+          pip install -e benchmate
+          #
+          #
+          #
           poetry install --with dev
 
       - name: tests
         run: |
-          poetry run pytest --ignore=tests/integration tests/ 
+          source $(poetry env info -p)/bin/activate
+          pytest --ignore=tests/integration tests/ 

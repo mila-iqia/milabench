@@ -54,18 +54,15 @@ jobs:
 
       - name: dependencies
         run: |
-          if [[ ! -d "~/.cargo/bin" ]]; then
-            wget --no-check-certificate --secure-protocol=TLSv1_2 -qO- https://sh.rustup.rs | sh -s -- -y 
-          fi
           export PATH="~/.cargo/bin:${PATH}"
           python -m pip install -U pip
           python -m pip install -U poetry
 
       - name: install
         run: |
-          pip install pytest
-          poetry lock --no-update
-          pip install -e .
+          poetry install --with dev
+          source $(poetry env info -p)/bin/activate
+          pip install psycopg2-binary
 
       - name: tests
         env:
@@ -74,4 +71,4 @@ jobs:
           POSTGRES_DB: milabench
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
-        run: pytest tests/integration
+        run: poetry run pytest tests/integration
