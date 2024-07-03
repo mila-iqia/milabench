@@ -71,14 +71,15 @@ async def execute_command(
             coro.append(fut)
             warden.extend(pack.processes)
 
-            if timeout:
-                delay = pack.config.get("max_duration", timeout_delay)
-                timeout_task = asyncio.create_task(force_terminate(pack, delay))
-                timeout_tasks.append(timeout_task)
-
-        results = await asyncio.gather(*coro)
-
         if timeout:
-            for task in timeout_tasks:
-                task.cancel()
-        return results
+            delay = pack.config.get("max_duration", timeout_delay)
+
+            try:
+                return await asyncio.wait_for(asyncio.gather(*coro), timeout=delay)
+            
+            except TimeoutError | asyncio.TimeoutError:
+                await force_terminate(pack, delay)
+                return [-1 for _ in coro]
+
+        return await asyncio.gather(*coro)
+    
