@@ -242,3 +242,55 @@ def enumerate_rank(nodes):
         else:
             yield rank, node
             rank += 1
+
+
+def get_available_ram(leeway=1024):
+    import os
+    import psutil
+    try:
+        # Note: if slurm does not give us access to the entire RAM we wont be able
+        # to do much
+        if jobid := os.getenv("SLURM_JOB_ID", None):
+            filename = f"/sys/fs/cgroup/system.slice/slurmstepd.scope/job_{jobid}"
+            mem_max = filename + "/memory.max"
+            mem_cur = filename + "/memory.current"
+            with open(mem_max, "r") as fp:
+                mem_max = int(fp.read())
+            with open(mem_cur, "r") as fp:
+                mem_cur = int(fp.read())
+            return (int(mem_max) - int(mem_cur) - leeway)
+    except Exception as err:
+        vm = psutil.virtual_memory()
+        return vm.available - leeway
+
+
+def fill_ram():
+    #
+    # This takes too long to be a viable option
+    #
+    import numpy as np
+    available = get_available_ram()
+    array = np.zeros((available,), dtype=np.int8)
+    # unless we use it it wont allocate it
+    array.fill(1)
+    del array
+
+
+def empty_cache():
+    """Empty ram cache before a bench"""
+    import subprocess
+
+    # make users able to manage cgroup
+    # $SUDO chmod 777 -R /sys/fs/cgroup/*
+
+    # make sysctl executable by user, for cache cleaning
+    # $SUDO chmod u+s /sbin/sysctl
+
+    try:
+        # finish on the fly writes
+        subprocess.run(["sync"])
+        # Drop the cache
+        subprocess.run(["sysctl", "vm.drop_caches=3"])
+        subprocess.run(["sudo", "sysctl", "vm.drop_caches=3"])
+    except Exception:
+        pass
