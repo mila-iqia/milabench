@@ -53,4 +53,15 @@ jobs:
       - name: tests
         run: |
           source $(poetry env info -p)/bin/activate
-          pytest --ignore=tests/integration tests/ 
+          coverage run --source=milabench -m pytest --ignore=tests/integration tests/ 
+          coverage report -m
+          coverage xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          env_vars: PLATFORM,PYTHON
+          name: codecov-umbrella
+          fail_ci_if_error: false
