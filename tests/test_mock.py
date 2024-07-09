@@ -13,7 +13,7 @@ def run_cli(*args):
 
     print(" ".join(args))
     try:
-        main(args)
+        return main(args)
     except SystemExit as exc:
         assert not exc.code
 

@@ -25,70 +25,70 @@ from .resolve import cli_resolve
 class Main:
     def run():
         """Run the benchmarks."""
-        cli_run()
+        return cli_run()
 
     def prepare():
         """Prepare a benchmark: download datasets, weights etc."""
-        cli_prepare()
+        return cli_prepare()
 
     def install():
         """Install the benchmarks' dependencies."""
-        cli_install()
+        return cli_install()
 
     def pin():
         """Pin the benchmarks' dependencies."""
-        cli_pin()
+        return cli_pin()
 
     def dev():
         """Create a shell in a benchmark's environment for development."""
-        cli_dev()
+        return cli_dev()
 
     def summary():
         """Produce a JSON summary of a previous run."""
-        cli_summary()
+        return cli_summary()
 
     def compare():
         """Compare all runs with each other."""
-        cli_compare()
+        return cli_compare()
 
     def report():
         """Generate a report aggregating all runs together into a final report."""
-        cli_report()
+        return cli_report()
 
     def pip():
         """Run pip on every pack"""
-        cli_pip()
+        return cli_pip()
 
     def slurm_system():
         """Generate a system file based of slurm environment variables"""
-        cli_slurm_system()
+        return cli_slurm_system()
 
     def machine():
         """Display machine metadata.
         Used to generate metadata json to back populate archived run
 
         """
-        cli_machine()
+        return cli_machine()
 
     def publish():
         """Publish an archived run to a database"""
-        cli_publish()
+        return cli_publish()
 
     def schedule():
         """Launch a slurm job to run milabench"""
-        cli_schedule()
+        return cli_schedule()
 
     def sqlsetup():
-        cli_sqlsetup()
+        return cli_sqlsetup()
 
     def write_report_to_pr():
-        cli_write_report_to_pr()
+        return cli_write_report_to_pr()
 
     def matrix():
-        cli_matrix_run()
+        return cli_matrix_run()
 
     def resolve():
-        cli_resolve()
+        return cli_resolve()
 
 
 def main(argv=None):

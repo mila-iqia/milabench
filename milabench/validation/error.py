@@ -10,7 +10,7 @@ class PackError:
     """Error messages received from a running pack"""
 
     stderr: List[str] = field(default_factory=list)
-    code: int = 0
+    code: List[int] = field(default_factory=list)
     message: str = None
     early_stop: bool = False
     trace: str = None
@@ -42,7 +42,16 @@ class ParsedTraceback:
 def _extract_traceback(lines) -> list[ParsedTraceback]:
     output = []
     traceback = None
+    parsing_pip_error = False
 
+    def push_trace():
+        nonlocal parsing_pip_error, traceback, output
+        if traceback is not None:
+            if parsing_pip_error:
+                traceback.lines.append("PipInstallError")
+                parsing_pip_error = False
+            output.append(traceback)
+  
     for line in lines:
         line = line.rstrip()
 
@@ -50,17 +59,19 @@ def _extract_traceback(lines) -> list[ParsedTraceback]:
             # The exceptions that happened afterwards are not relevant
             break
 
-        if "Traceback" in line:
-            if traceback is not None:
-                output.append(traceback)
+        # "ERROR" comes from pip install
+        if "Traceback" in line or ("ERROR" in line and not parsing_pip_error):
+            # New traceback push old one
+            push_trace()
 
+            if "ERROR" in line:
+                parsing_pip_error = True
             traceback = ParsedTraceback([])
 
         if traceback and line != "":
             traceback.lines.append(line)
 
-    if traceback is not None:
-        output.append(traceback)
+    push_trace()
 
     return output
 
@@ -82,10 +93,7 @@ class Layer(ValidationLayer):
 
     def on_error(self, entry):
         error = self.errors[entry.tag]
-
-        if error.code == 0:
-            error.code = 1
-
+        error.code.append(1)
         info = entry.data
         error.message = f'{info["type"]}: {info["message"]}'
         error.trace = info.get("trace")
@@ -93,7 +101,7 @@ class Layer(ValidationLayer):
     def on_end(self, entry):
         error = self.errors[entry.tag]
         info = entry.data
-        error.code = info["return_code"]
+        error.code.append(info["return_code"])
 
     def report_exceptions(self, summary, error, short):
         if error.trace:
@@ -126,11 +134,9 @@ class Layer(ValidationLayer):
         success = 0
 
         for name, error in self.errors.items():
-            if error.code == 0:
-                success += 1
-                continue
+            total = sum(error.code)
 
-            if error.code == 0:
+            if total == 0:
                 success += 1
                 continue
 
@@ -141,7 +147,7 @@ class Layer(ValidationLayer):
                     summary.add("* early stopped")
                     continue
 
-                summary.add(f"* Error code = {error.code}")
+                summary.add(f"* Error codes = {', '.join(str(c) for c in error.code)}")
 
                 self.report_exceptions(summary, error, short)
 
