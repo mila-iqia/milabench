@@ -39,7 +39,7 @@ class ParsedTraceback:
         return self.lines[-1]
 
 
-def _extract_traceback(lines) -> list[ParsedTraceback]:
+def _extract_traceback(lines, is_install) -> list[ParsedTraceback]:
     output = []
     traceback = None
     parsing_pip_error = False
@@ -52,6 +52,16 @@ def _extract_traceback(lines) -> list[ParsedTraceback]:
                 parsing_pip_error = False
             output.append(traceback)
   
+    # Only extract pip error during installs
+    # to avoid false positive
+    def is_pip_error(line):
+        nonlocal is_install
+
+        if not is_install:
+            return False
+        
+        return "ERROR" in line and not parsing_pip_error
+
     for line in lines:
         line = line.rstrip()
 
@@ -60,12 +70,13 @@ def _extract_traceback(lines) -> list[ParsedTraceback]:
             break
 
         # "ERROR" comes from pip install
-        if "Traceback" in line or ("ERROR" in line and not parsing_pip_error):
+        if "Traceback" in line or is_pip_error(line):
             # New traceback push old one
             push_trace()
 
-            if "ERROR" in line:
+            if is_pip_error(line):
                 parsing_pip_error = True
+        
             traceback = ParsedTraceback([])
 
         if traceback and line != "":
@@ -81,10 +92,21 @@ class Layer(ValidationLayer):
 
     def __init__(self, **kwargs) -> None:
         self.errors = defaultdict(PackError)
+        self.is_prepare = False
+        self.is_install = False
 
     def on_stop(self, entry):
         error = self.errors[entry.tag]
         error.early_stop = True
+
+    def on_config(self, entry):
+        # config is not passed for install & prepare run
+        self.is_prepare = False
+        self.is_install = False
+
+    def on_start(self, entry):
+        cmd = entry.data.get("command", ["nothing"])[0]
+        self.is_install = cmd == "pip"
 
     def on_line(self, entry):
         error = self.errors[entry.tag]
@@ -107,7 +129,7 @@ class Layer(ValidationLayer):
         if error.trace:
             exceptions = [ParsedTraceback(error.trace.splitlines())]
         else:
-            exceptions = _extract_traceback(error.stderr)
+            exceptions = _extract_traceback(error.stderr, self.is_install)
 
         if len(exceptions) == 0:
             summary.add("* No traceback info about the error")
@@ -133,7 +155,9 @@ class Layer(ValidationLayer):
         failures = 0
         success = 0
 
-        for name, error in self.errors.items():
+        items = sorted(self.errors.items(), key=lambda item: str(item[0]))
+
+        for name, error in items:
             total = sum(error.code)
 
             if total == 0:

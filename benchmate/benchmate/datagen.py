@@ -97,8 +97,12 @@ def generate_fakeimagenet():
     parser.add_argument("--image-size", default=[3, 384, 384], type=int, nargs="+")
     parser.add_argument("--val", default=0.1, type=float, nargs="+")
     parser.add_argument("--test", default=0.1, type=float, nargs="+")
-    
+
     args, _ = parser.parse_known_args()
+
+    if overrides := os.getenv("MILABENCH_TESTING_PREPARE"):
+        bs, bc = overrides.split(",")
+        args.batch_size, args.batch_count = int(bs), int(bc)
 
     data_directory = os.environ["MILABENCH_DIR_DATA"]
     

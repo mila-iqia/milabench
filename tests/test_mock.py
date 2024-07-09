@@ -82,6 +82,9 @@ def test_milabench(monkeypatch, bench, module_tmp_dir, standard_config):
     with filecount_inc(module_tmp_dir, "install"):
         run_cli("install", *args, "--select", bench)
 
+    # Reduce the number of images we generate to make the CI faster
+    # and reduce disk space since we will not be using them anyway
+    monkeypatch.setenv("MILABENCH_TESTING_PREPARE", "10,10")
     with filecount_inc(module_tmp_dir, "prepare"):
         run_cli("prepare", *args, "--select", bench)
 
@@ -97,18 +100,31 @@ def test_milabench(monkeypatch, bench, module_tmp_dir, standard_config):
                 run_cli("run", *args, "--no-report", "--select", bench, "--run-name", str(bench))
 
 
-
-
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 def cleanpath(out, tmppath):
+    import subprocess
+    import voir
+
+    # system
+    # "/opt/hostedtoolcache/Python/3.11.9/x64/lib/python3.11/subprocess.py"
+    sys_path = os.path.dirname(subprocess.__file__)
+    
+
+    # poetry
+    # "/home/runner/.cache/pypoetry/virtualenvs/milabench-sFzduoS0-py3.11/lib/python3.11/site-packages/
+    site_packages = os.path.abspath(os.path.join(
+        os.path.dirname(voir.__file__), '..'
+    ))
+
     return (out
+        .replace(str(site_packages), "$SITEPACKAGES")
+        .replace(str(sys_path), "$INSTALL")
         .replace(str(ROOT), "$SRC")
         .replace(str(tmppath), "$TMP")
     )
 
 
-
-def test_milabench_bad_install(monkeypatch, tmp_path, config, capsys, file_regression):
+def test_milabench_bad_install(monkeypatch, tmp_path, config, file_regression, capsys):
     args= [
         "--base", str(tmp_path),
         "--config", str(config("benchio_bad"))
@@ -124,7 +140,11 @@ def test_milabench_bad_install(monkeypatch, tmp_path, config, capsys, file_regre
     all = capsys.readouterr()
     stdout = cleanpath(all.out, tmp_path)
     stdout = "\n".join(stdout.split("\n")[-15:-2])
-    file_regression.check(stdout)
+
+    # PIP often prints a warning about a new version which gets caught by the error reporting
+    # the message might be useful but it also changes quite often
+    assert "ERROR: Could not find a version that satisfies the requirement this_package_does_not_exist" in stdout
+    # file_regression.check(stdout)
 
 
 def test_milabench_bad_prepare(monkeypatch, tmp_path, config, capsys, file_regression):
@@ -204,4 +224,7 @@ def test_milabench_bad_run_before_install(monkeypatch, tmp_path, config, capsys,
     all = capsys.readouterr()
     stdout = cleanpath(all.out, tmp_path)
     stdout = "\n".join(stdout.split("\n")[-53:-2])
-    file_regression.check(stdout)
+
+    # Because this is a python exception the version of python can impact the diff
+    # file_regression.check(stdout)
+    assert "FileNotFoundError" in stdout
