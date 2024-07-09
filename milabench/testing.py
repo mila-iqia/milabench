@@ -11,6 +11,26 @@ from milabench.structs import BenchLogEntry
 from milabench.utils import multilogger, validation_layers
 
 
+here = Path(__file__).parent
+
+
+def official_config(name):
+    p = here / ".." / "config" / f"{name}.yaml"
+
+    if p.exists():
+        return p.resolve()
+    
+    raise FileNotFoundError(f"{p} does not exist") 
+
+
+def resolved_config(name):
+    from .config import build_config
+
+    p = official_config(name)
+
+    return build_config(p)
+
+
 class ReplayPackage(BasePackage):
     """Disable some folder creation for replay purposes"""
 

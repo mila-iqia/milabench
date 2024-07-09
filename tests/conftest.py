@@ -2,6 +2,8 @@ import os
 import stat
 from pathlib import Path
 
+
+from milabench.testing import official_config
 import pytest
 import voir.instruments.gpu as voirgpu
 
@@ -21,20 +23,17 @@ def runs_folder():
 def config():
     def get_config(name):
         return here / "config" / f"{name}.yaml"
-
     return get_config
 
 
-
-@pytest.fixture
-def official_config():
-    def get_config(name):
-        return here / ".." / "config" / f"{name}.yaml"
-    return get_config
+@pytest.fixture(scope='session')
+def module_tmp_dir():
+    import tempfile
+    yield tempfile.mkdtemp()
 
 
-@pytest.fixture
-def standard_config(official_config):
+@pytest.fixture(scope='session')
+def standard_config():
     return official_config("standard")
 
 
