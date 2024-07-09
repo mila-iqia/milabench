@@ -1,5 +1,6 @@
 import asyncio
 import os
+import traceback
 
 from benchmate.warden import process_cleaner
 
@@ -56,6 +57,22 @@ async def force_terminate_now(pack, delay):
 async def force_terminate(pack, delay):
     await asyncio.sleep(delay)
     force_terminate_now(pack, delay)
+
+
+async def trigger_exceptions(futures, packs):
+    for task in futures:
+        pack = packs[task]
+        if exc := task.exception():
+            # Send the traceback
+            for line in traceback.format_exception(exc):
+                for l in line.split("\n"):
+                    await pack.send(event="line", data=l, pipe="stderr")
+
+            # also send the error
+            await pack.send(event="error", data={
+                "type": type(exc).__name__, 
+                "message": str(exc) + ": did you run milabench install/prepare?",
+            })
 
 
 async def execute_command(
@@ -122,6 +139,8 @@ async def execute_command(
 
                 # Grace period
                 max_delay = 10
+
+            await trigger_exceptions(all_done, packs)
 
             return all_done
         else:
