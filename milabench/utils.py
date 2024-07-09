@@ -200,7 +200,10 @@ class MultiLogger:
     def report(self, **kwargs):
         """Generate a full report containing warnings from all loggers"""
         summary = Summary()
-        for _, layer in self.funs.items():
+
+        items = sorted(self.funs.items(), key=lambda item: str(item[0]))
+
+        for _, layer in items:
             if hasattr(layer, "report"):
                 layer.report(summary, **kwargs)
         summary.show()
@@ -210,6 +213,8 @@ class MultiLogger:
 def multilogger(*logs, **kwargs):
     """Combine loggers into a single context manager"""
     results = dict()
+
+    logs = sorted(logs, key=lambda l: str(type(l)))
 
     with ExitStack() as stack:
         for log in logs:

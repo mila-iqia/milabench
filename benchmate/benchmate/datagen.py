@@ -93,6 +93,7 @@ def generate_fakeimagenet():
     parser.add_argument("--batch-size", default=512, type=int)
     parser.add_argument("--batch-count", default=60, type=int)
     parser.add_argument("--device-count", default=device_count(), type=int)
+    parser.add_argument("--device", default=None, type=str)
     parser.add_argument("--image-size", default=[3, 384, 384], type=int, nargs="+")
     parser.add_argument("--val", default=0.1, type=float, nargs="+")
     parser.add_argument("--test", default=0.1, type=float, nargs="+")
@@ -110,8 +111,6 @@ def generate_fakeimagenet():
         f"val": int(total_images * args.val),
         f"test": int(total_images * args.test),
     }
-
-
 
     generate_sets(dest, size_spec, args.image_size)
     print("Done!")

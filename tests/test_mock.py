@@ -100,8 +100,11 @@ def test_milabench(monkeypatch, bench, module_tmp_dir, standard_config):
 
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-def cleanpath(out):
-    return out.replace(str(ROOT), "$SRC")
+def cleanpath(out, tmppath):
+    return (out
+        .replace(str(ROOT), "$SRC")
+        .replace(str(tmppath), "$TMP")
+    )
 
 
 
@@ -119,7 +122,7 @@ def test_milabench_bad_install(monkeypatch, tmp_path, config, capsys, file_regre
 
     # Check that the error was extracted
     all = capsys.readouterr()
-    stdout = cleanpath(all.out)
+    stdout = cleanpath(all.out, tmp_path)
     stdout = "\n".join(stdout.split("\n")[-15:-2])
     file_regression.check(stdout)
 
@@ -137,7 +140,7 @@ def test_milabench_bad_prepare(monkeypatch, tmp_path, config, capsys, file_regre
 
     # Check that the error was extracted
     all = capsys.readouterr()
-    stdout = cleanpath(all.out)
+    stdout = cleanpath(all.out, tmp_path)
     stdout = "\n".join(stdout.split("\n")[-12:-2])
     file_regression.check(stdout)
 
@@ -171,15 +174,13 @@ def test_milabench_bad_run(monkeypatch, tmp_path, config, capsys, file_regressio
 
     # Check that the error was extracted
     all = capsys.readouterr()
-    stdout = cleanpath(all.out)
+    stdout = cleanpath(all.out, tmp_path)
     stdout = "\n".join(stdout.split("\n")[-53:-2])
     file_regression.check(stdout)
 
 
 
 def test_milabench_bad_run_before_install(monkeypatch, tmp_path, config, capsys, file_regression):
-    from milabench.cli.dry import assume_gpu
-    
     #
     # Do a bad run
     #
@@ -201,6 +202,6 @@ def test_milabench_bad_run_before_install(monkeypatch, tmp_path, config, capsys,
 
     # Check that the error was extracted
     all = capsys.readouterr()
-    stdout = cleanpath(all.out)
+    stdout = cleanpath(all.out, tmp_path)
     stdout = "\n".join(stdout.split("\n")[-53:-2])
     file_regression.check(stdout)
