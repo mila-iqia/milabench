@@ -70,6 +70,8 @@
 <li class="toctree-l4"><a class="reference internal" href="#milabench.pack.Package.make_env"><code class="docutils literal notranslate"><span class="pre">Package.make_env()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#milabench.pack.Package.pin"><code class="docutils literal notranslate"><span class="pre">Package.pin()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#milabench.pack.Package.prepare"><code class="docutils literal notranslate"><span class="pre">Package.prepare()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#milabench.pack.Package.resolve_argument"><code class="docutils literal notranslate"><span class="pre">Package.resolve_argument()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#milabench.pack.Package.resolve_placeholder"><code class="docutils literal notranslate"><span class="pre">Package.resolve_placeholder()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#milabench.pack.Package.run"><code class="docutils literal notranslate"><span class="pre">Package.run()</span></code></a></li>
 </ul>
 </li>
@@ -301,6 +303,23 @@ which should be an executable (python, bash, etc.)</p>
 invocation, so the script can use e.g. <code class="docutils literal notranslate"><span class="pre">$MILABENCH_DIR_DATA</span></code> to
 access the data directory for the benchmark.</p>
 <p>The default value of <code class="docutils literal notranslate"><span class="pre">self.prepare_script</span></code> is <code class="docutils literal notranslate"><span class="pre">&quot;prepare.py&quot;</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="milabench.pack.Package.resolve_argument">
+<span class="sig-name descname"><span class="pre">resolve_argument</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.Package.resolve_argument" title="Link to this definition"></a></dt>
+<dd><p>Resolve as single placeholder argument</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="milabench.pack.Package.resolve_placeholder">
+<span class="sig-name descname"><span class="pre">resolve_placeholder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">placeholder</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.Package.resolve_placeholder" title="Link to this definition"></a></dt>
+<dd><p>Resolve as single placeholder argument</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">resolve_placeholder</span><span class="p">(</span><span class="s2">&quot;auto(</span><span class="si">{n_worker}</span><span class="s2">, 8)&quot;</span><span class="p">)</span>
+<span class="go">16</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
