@@ -7,6 +7,7 @@ import os
 from collections import defaultdict
 from pathlib import Path
 
+import torchcompat.core as acc
 import torch
 from tqdm import tqdm
 
@@ -79,24 +80,40 @@ def generate_sets(root, sets, shape):
         json.dump(sets, fp)
 
 
+def device_count():
+    try:
+        return acc.device_count()
+    except:
+        return 1
+
 def generate_fakeimagenet():
+    # config = json.loads(os.environ["MILABENCH_CONFIG"])
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--batch-size", default=512, type=int)
     parser.add_argument("--batch-count", default=60, type=int)
+    parser.add_argument("--device-count", default=device_count(), type=int)
+    parser.add_argument("--device", default=None, type=str)
     parser.add_argument("--image-size", default=[3, 384, 384], type=int, nargs="+")
     parser.add_argument("--val", default=0.1, type=float, nargs="+")
     parser.add_argument("--test", default=0.1, type=float, nargs="+")
+
     args, _ = parser.parse_known_args()
 
+    if overrides := os.getenv("MILABENCH_TESTING_PREPARE"):
+        bs, bc = overrides.split(",")
+        args.batch_size, args.batch_count = int(bs), int(bc)
+
     data_directory = os.environ["MILABENCH_DIR_DATA"]
-    dest = os.path.join(data_directory, "FakeImageNet")
+    
+    dest = os.path.join(data_directory, f"FakeImageNet")
     print(f"Generating fake data into {dest}...")
 
-    total_images = args.batch_size * args.batch_count
+    total_images = args.batch_size * args.batch_count * args.device_count
     size_spec = {
-        "train": total_images,
-        "val": int(total_images * args.val),
-        "test": int(total_images * args.test),
+        f"train": total_images,
+        f"val": int(total_images * args.val),
+        f"test": int(total_images * args.test),
     }
 
     generate_sets(dest, size_spec, args.image_size)

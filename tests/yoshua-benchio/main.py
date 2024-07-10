@@ -23,6 +23,10 @@ def main():
         type=int,
         default=None,
     )
+    parser.add_argument(
+        "--bad",
+        action="store_true"
+    )
 
     args = parser.parse_args()
 
@@ -30,6 +34,9 @@ def main():
         time.sleep(args.sleep)
 
     data = [[[i]] for i in range(args.start, args.end)]
+
+    if args.bad:
+        raise RuntimeError()
 
     for [[x]] in voir.iterate("train", data, True):
         give(loss=1 / x)

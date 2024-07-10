@@ -233,12 +233,12 @@ class Protected:
 def destroy(*processes, step=1, timeout=30):
     processes = list(processes)
 
-    def kill(proc, signal):
+    def kill(proc, sig):
         try:
             if getattr(proc, "did_setsid", False):
-                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                os.killpg(os.getpgid(proc.pid), sig)
             else:
-                os.kill(proc.pid, signal.SIGTERM)
+                os.kill(proc.pid, sig)
         except ProcessLookupError:
             pass
 
@@ -249,11 +249,9 @@ def destroy(*processes, step=1, timeout=30):
     elapsed = 0
     def wait(proc):
         nonlocal elapsed
-
         while (ret := proc.poll()) is None and elapsed < timeout:
             time.sleep(step)
             elapsed += step
-
         return ret is None
 
     k = 0
@@ -280,14 +278,24 @@ def destroy(*processes, step=1, timeout=30):
 
 
 @contextmanager
-def process_cleaner():
+def process_cleaner(timeout=30):
     """Delay signal handling until all the processes have been killed"""
 
-    with Protected():
+    def kill_everything(processes):
+        def _():
+            destroy(*processes, timeout=timeout)
+
+        return _
+
+    with Protected() as signalhandler:
         with GPUProcessWarden() as warden:  # => SIGTERM all processes using GPUs
             processes = []
-            try:                            # NOTE: we have not waited much between both signals
+  
+            # when a signal is received kill the known processes first
+            # then handle the signal
+            signalhandler.stop = kill_everything(processes)
 
+            try:                            # NOTE: we have not waited much between both signals
                 warden.kill()               # => SIGKILL all processes using GPUs
 
                 yield processes             # => Run milabench, spawning processes for the benches
@@ -295,10 +303,9 @@ def process_cleaner():
             finally:
                 warden.terminate()          # => SIGTERM all processes using GPUs
 
-                destroy(*processes)         # => SIGTERM+SIGKILL milabench processes
+                destroy(*processes, timeout=timeout) # => SIGTERM+SIGKILL milabench processes
 
                                             # destroy waited 30s
                                         
                 # warden.__exit__           # => SIGKILL all  processes still using GPUs
              
-    

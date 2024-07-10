@@ -83,7 +83,7 @@ The benchmark suite has been validated on the following configurations:
 
 | Python version |          GPU                   |   Configuration file |
 |       -        |        -                       |           -          |
-| 3.9.12 (conda) | 2 node x 8xNVIDIA A100 80GB    | config/standard.yaml |
+| 3.11   (conda) | 2 node x 8xNVIDIA A100 80GB    | config/standard.yaml |
 | 3.9.12 (conda) | 8x NVIDIA RTX8000 48GB         | config/standard.yaml |
 | 3.9.16 (conda) | 2x NVIDIA K80                  | config/ci.yaml       |
 | 3.9.16 (conda) | 2x AMD MI100                   | config/ci.yaml       |

@@ -1,0 +1,454 @@
+#!/bin/sh
+
+echo "---"
+echo "Virtual Env"
+echo "==========="
+export VIRTUAL_ENV=$BASE/venv/torch
+
+source $VIRTUAL_ENV/bin/activate
+echo "---"
+echo "Milabench"
+echo "========="
+export MILABENCH_DIR_BASE=$BASE
+export MILABENCH_DIR_VENV=$BASE/venv/torch
+export MILABENCH_DIR_DATA=$BASE/data
+export MILABENCH_DIR_RUNS=$BASE/runs
+export MILABENCH_DIR_EXTRA=$BASE/extra/llm
+export MILABENCH_DIR_CACHE=$BASE/cache
+export MILABENCH_CONFIG='{"system": {"arch": "cuda", "sshkey": null, "nodes": [{"ip": "127.0.0.1", "main": true, "name": "0", "port": 22, "user": "username", "hostname": "127.0.0.1", "aliaslist": [], "ipaddrlist": ["127.0.0.1"], "local": true}, {"ip": "192.168.0.11", "main": false, "name": "1", "port": 22, "user": "username", "hostname": "192.168.0.11", "aliaslist": [], "ipaddrlist": ["192.168.0.11"], "local": false}], "self": {"ip": "127.0.0.1", "main": true, "name": "0", "port": 22, "user": "username", "hostname": "127.0.0.1", "aliaslist": [], "ipaddrlist": ["127.0.0.1"], "local": true}}, "dirs": {"base": "$BASE", "venv": "$BASE/venv/torch", "data": "$BASE/data", "runs": "$BASE/runs", "extra": "$BASE/extra/llm", "cache": "$BASE/cache"}, "group": "llm", "install_group": "torch", "install_variant": "cuda", "run_name": "dev", "enabled": true, "capabilities": {"nodes": 1}, "max_duration": 800, "voir": {"options": {"stop": 30, "interval": "1s"}}, "validation": {"usage": {"gpu_load_threshold": 0.5, "gpu_mem_threshold": 0.5}}, "config_base": "$SRC/milabench/config", "config_file": "$SRC/milabench/config/standard.yaml", "definition": "$SRC/milabench/benchmarks/llama", "tags": ["inference", "llm", "nlp"], "plan": {"method": "per_gpu"}, "weight": 1.0, "name": "llama", "tag": ["llama"]}'
+export OMP_NUM_THREADS=8
+
+echo "---"
+echo "llama"
+echo "====="
+time (
+  CUDA_VISIBLE_DEVICES=0 python $SRC/milabench/benchmarks/llama/main.py --cache $BASE/cache &
+  CUDA_VISIBLE_DEVICES=1 python $SRC/milabench/benchmarks/llama/main.py --cache $BASE/cache &
+  CUDA_VISIBLE_DEVICES=2 python $SRC/milabench/benchmarks/llama/main.py --cache $BASE/cache &
+  CUDA_VISIBLE_DEVICES=3 python $SRC/milabench/benchmarks/llama/main.py --cache $BASE/cache &
+  CUDA_VISIBLE_DEVICES=4 python $SRC/milabench/benchmarks/llama/main.py --cache $BASE/cache &
+  CUDA_VISIBLE_DEVICES=5 python $SRC/milabench/benchmarks/llama/main.py --cache $BASE/cache &
+  CUDA_VISIBLE_DEVICES=6 python $SRC/milabench/benchmarks/llama/main.py --cache $BASE/cache &
+  CUDA_VISIBLE_DEVICES=7 python $SRC/milabench/benchmarks/llama/main.py --cache $BASE/cache &
+  wait
+)
+
+echo "---"
+echo "fp16"
+echo "===="
+time (
+  CUDA_VISIBLE_DEVICES=0 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 30 --repeat 90 --m 8192 --n 8192 --dtype fp16 &
+  CUDA_VISIBLE_DEVICES=1 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 30 --repeat 90 --m 8192 --n 8192 --dtype fp16 &
+  CUDA_VISIBLE_DEVICES=2 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 30 --repeat 90 --m 8192 --n 8192 --dtype fp16 &
+  CUDA_VISIBLE_DEVICES=3 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 30 --repeat 90 --m 8192 --n 8192 --dtype fp16 &
+  CUDA_VISIBLE_DEVICES=4 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 30 --repeat 90 --m 8192 --n 8192 --dtype fp16 &
+  CUDA_VISIBLE_DEVICES=5 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 30 --repeat 90 --m 8192 --n 8192 --dtype fp16 &
+  CUDA_VISIBLE_DEVICES=6 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 30 --repeat 90 --m 8192 --n 8192 --dtype fp16 &
+  CUDA_VISIBLE_DEVICES=7 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 30 --repeat 90 --m 8192 --n 8192 --dtype fp16 &
+  wait
+)
+
+echo "---"
+echo "bf16"
+echo "===="
+time (
+  CUDA_VISIBLE_DEVICES=0 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 10 --repeat 90 --m 8192 --n 8192 --dtype bf16 &
+  CUDA_VISIBLE_DEVICES=1 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 10 --repeat 90 --m 8192 --n 8192 --dtype bf16 &
+  CUDA_VISIBLE_DEVICES=2 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 10 --repeat 90 --m 8192 --n 8192 --dtype bf16 &
+  CUDA_VISIBLE_DEVICES=3 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 10 --repeat 90 --m 8192 --n 8192 --dtype bf16 &
+  CUDA_VISIBLE_DEVICES=4 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 10 --repeat 90 --m 8192 --n 8192 --dtype bf16 &
+  CUDA_VISIBLE_DEVICES=5 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 10 --repeat 90 --m 8192 --n 8192 --dtype bf16 &
+  CUDA_VISIBLE_DEVICES=6 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 10 --repeat 90 --m 8192 --n 8192 --dtype bf16 &
+  CUDA_VISIBLE_DEVICES=7 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 10 --repeat 90 --m 8192 --n 8192 --dtype bf16 &
+  wait
+)
+
+echo "---"
+echo "tf32"
+echo "===="
+time (
+  CUDA_VISIBLE_DEVICES=0 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 10 --repeat 90 --m 8192 --n 8192 --dtype fp32 --tf32 &
+  CUDA_VISIBLE_DEVICES=1 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 10 --repeat 90 --m 8192 --n 8192 --dtype fp32 --tf32 &
+  CUDA_VISIBLE_DEVICES=2 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 10 --repeat 90 --m 8192 --n 8192 --dtype fp32 --tf32 &
+  CUDA_VISIBLE_DEVICES=3 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 10 --repeat 90 --m 8192 --n 8192 --dtype fp32 --tf32 &
+  CUDA_VISIBLE_DEVICES=4 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 10 --repeat 90 --m 8192 --n 8192 --dtype fp32 --tf32 &
+  CUDA_VISIBLE_DEVICES=5 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 10 --repeat 90 --m 8192 --n 8192 --dtype fp32 --tf32 &
+  CUDA_VISIBLE_DEVICES=6 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 10 --repeat 90 --m 8192 --n 8192 --dtype fp32 --tf32 &
+  CUDA_VISIBLE_DEVICES=7 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 10 --repeat 90 --m 8192 --n 8192 --dtype fp32 --tf32 &
+  wait
+)
+
+echo "---"
+echo "fp32"
+echo "===="
+time (
+  CUDA_VISIBLE_DEVICES=0 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 10 --repeat 90 --m 8192 --n 8192 --dtype fp32 &
+  CUDA_VISIBLE_DEVICES=1 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 10 --repeat 90 --m 8192 --n 8192 --dtype fp32 &
+  CUDA_VISIBLE_DEVICES=2 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 10 --repeat 90 --m 8192 --n 8192 --dtype fp32 &
+  CUDA_VISIBLE_DEVICES=3 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 10 --repeat 90 --m 8192 --n 8192 --dtype fp32 &
+  CUDA_VISIBLE_DEVICES=4 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 10 --repeat 90 --m 8192 --n 8192 --dtype fp32 &
+  CUDA_VISIBLE_DEVICES=5 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 10 --repeat 90 --m 8192 --n 8192 --dtype fp32 &
+  CUDA_VISIBLE_DEVICES=6 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 10 --repeat 90 --m 8192 --n 8192 --dtype fp32 &
+  CUDA_VISIBLE_DEVICES=7 $SRC/milabench/benchmarks/flops/activator $BASE/venv/torch $SRC/milabench/benchmarks/flops/main.py --number 10 --repeat 90 --m 8192 --n 8192 --dtype fp32 &
+  wait
+)
+
+echo "---"
+echo "resnet50"
+echo "========"
+time (
+  CUDA_VISIBLE_DEVICES=0 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model resnet50 --batch-size 256 &
+  CUDA_VISIBLE_DEVICES=1 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model resnet50 --batch-size 256 &
+  CUDA_VISIBLE_DEVICES=2 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model resnet50 --batch-size 256 &
+  CUDA_VISIBLE_DEVICES=3 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model resnet50 --batch-size 256 &
+  CUDA_VISIBLE_DEVICES=4 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model resnet50 --batch-size 256 &
+  CUDA_VISIBLE_DEVICES=5 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model resnet50 --batch-size 256 &
+  CUDA_VISIBLE_DEVICES=6 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model resnet50 --batch-size 256 &
+  CUDA_VISIBLE_DEVICES=7 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model resnet50 --batch-size 256 &
+  wait
+)
+
+echo "---"
+echo "resnet50-noio"
+echo "============="
+time (
+  CUDA_VISIBLE_DEVICES=0 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader synthetic_fixed --data $BASE/data/FakeImageNet --model resnet50 --batch-size 256 &
+  CUDA_VISIBLE_DEVICES=1 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader synthetic_fixed --data $BASE/data/FakeImageNet --model resnet50 --batch-size 256 &
+  CUDA_VISIBLE_DEVICES=2 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader synthetic_fixed --data $BASE/data/FakeImageNet --model resnet50 --batch-size 256 &
+  CUDA_VISIBLE_DEVICES=3 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader synthetic_fixed --data $BASE/data/FakeImageNet --model resnet50 --batch-size 256 &
+  CUDA_VISIBLE_DEVICES=4 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader synthetic_fixed --data $BASE/data/FakeImageNet --model resnet50 --batch-size 256 &
+  CUDA_VISIBLE_DEVICES=5 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader synthetic_fixed --data $BASE/data/FakeImageNet --model resnet50 --batch-size 256 &
+  CUDA_VISIBLE_DEVICES=6 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader synthetic_fixed --data $BASE/data/FakeImageNet --model resnet50 --batch-size 256 &
+  CUDA_VISIBLE_DEVICES=7 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader synthetic_fixed --data $BASE/data/FakeImageNet --model resnet50 --batch-size 256 &
+  wait
+)
+
+echo "---"
+echo "resnet152-ddp"
+echo "============="
+time (
+  $SRC/milabench/benchmarks/torchvision_ddp/activator $BASE/venv/torch $SRC/milabench/benchmarks/torchvision_ddp/main.py --epochs 10 --num-workers 8 --loader torch --data $BASE/data/FakeImageNet --model resnet152 --batch-size 256 &
+  wait
+)
+
+echo "---"
+echo "convnext_large-fp32"
+echo "==================="
+time (
+  CUDA_VISIBLE_DEVICES=0 python $SRC/milabench/benchmarks/torchvision/main.py --precision fp32 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=1 python $SRC/milabench/benchmarks/torchvision/main.py --precision fp32 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=2 python $SRC/milabench/benchmarks/torchvision/main.py --precision fp32 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=3 python $SRC/milabench/benchmarks/torchvision/main.py --precision fp32 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=4 python $SRC/milabench/benchmarks/torchvision/main.py --precision fp32 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=5 python $SRC/milabench/benchmarks/torchvision/main.py --precision fp32 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=6 python $SRC/milabench/benchmarks/torchvision/main.py --precision fp32 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=7 python $SRC/milabench/benchmarks/torchvision/main.py --precision fp32 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  wait
+)
+
+echo "---"
+echo "convnext_large-fp16"
+echo "==================="
+time (
+  CUDA_VISIBLE_DEVICES=0 python $SRC/milabench/benchmarks/torchvision/main.py --precision fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=1 python $SRC/milabench/benchmarks/torchvision/main.py --precision fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=2 python $SRC/milabench/benchmarks/torchvision/main.py --precision fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=3 python $SRC/milabench/benchmarks/torchvision/main.py --precision fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=4 python $SRC/milabench/benchmarks/torchvision/main.py --precision fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=5 python $SRC/milabench/benchmarks/torchvision/main.py --precision fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=6 python $SRC/milabench/benchmarks/torchvision/main.py --precision fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=7 python $SRC/milabench/benchmarks/torchvision/main.py --precision fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  wait
+)
+
+echo "---"
+echo "convnext_large-tf32"
+echo "==================="
+time (
+  CUDA_VISIBLE_DEVICES=0 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=1 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=2 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=3 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=4 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=5 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=6 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=7 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  wait
+)
+
+echo "---"
+echo "convnext_large-tf32-fp16"
+echo "========================"
+time (
+  CUDA_VISIBLE_DEVICES=0 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=1 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=2 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=3 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=4 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=5 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=6 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  CUDA_VISIBLE_DEVICES=7 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model convnext_large --batch-size 128 &
+  wait
+)
+
+echo "---"
+echo "regnet_y_128gf"
+echo "=============="
+time (
+  CUDA_VISIBLE_DEVICES=0 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model regnet_y_128gf --batch-size 64 &
+  CUDA_VISIBLE_DEVICES=1 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model regnet_y_128gf --batch-size 64 &
+  CUDA_VISIBLE_DEVICES=2 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model regnet_y_128gf --batch-size 64 &
+  CUDA_VISIBLE_DEVICES=3 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model regnet_y_128gf --batch-size 64 &
+  CUDA_VISIBLE_DEVICES=4 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model regnet_y_128gf --batch-size 64 &
+  CUDA_VISIBLE_DEVICES=5 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model regnet_y_128gf --batch-size 64 &
+  CUDA_VISIBLE_DEVICES=6 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model regnet_y_128gf --batch-size 64 &
+  CUDA_VISIBLE_DEVICES=7 python $SRC/milabench/benchmarks/torchvision/main.py --precision tf32-fp16 --lr 0.01 --no-stdout --epochs 50 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model regnet_y_128gf --batch-size 64 &
+  wait
+)
+
+echo "---"
+echo "bert-fp32"
+echo "========="
+time (
+  CUDA_VISIBLE_DEVICES=0 python -m bench --precision fp32 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=1 python -m bench --precision fp32 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=2 python -m bench --precision fp32 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=3 python -m bench --precision fp32 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=4 python -m bench --precision fp32 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=5 python -m bench --precision fp32 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=6 python -m bench --precision fp32 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=7 python -m bench --precision fp32 --num-workers 8 --model Bert --batch-size 32 &
+  wait
+)
+
+echo "---"
+echo "bert-fp16"
+echo "========="
+time (
+  CUDA_VISIBLE_DEVICES=0 python -m bench --precision fp16 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=1 python -m bench --precision fp16 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=2 python -m bench --precision fp16 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=3 python -m bench --precision fp16 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=4 python -m bench --precision fp16 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=5 python -m bench --precision fp16 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=6 python -m bench --precision fp16 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=7 python -m bench --precision fp16 --num-workers 8 --model Bert --batch-size 32 &
+  wait
+)
+
+echo "---"
+echo "bert-tf32"
+echo "========="
+time (
+  CUDA_VISIBLE_DEVICES=0 python -m bench --precision tf32 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=1 python -m bench --precision tf32 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=2 python -m bench --precision tf32 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=3 python -m bench --precision tf32 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=4 python -m bench --precision tf32 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=5 python -m bench --precision tf32 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=6 python -m bench --precision tf32 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=7 python -m bench --precision tf32 --num-workers 8 --model Bert --batch-size 32 &
+  wait
+)
+
+echo "---"
+echo "bert-tf32-fp16"
+echo "=============="
+time (
+  CUDA_VISIBLE_DEVICES=0 python -m bench --precision tf32-fp16 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=1 python -m bench --precision tf32-fp16 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=2 python -m bench --precision tf32-fp16 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=3 python -m bench --precision tf32-fp16 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=4 python -m bench --precision tf32-fp16 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=5 python -m bench --precision tf32-fp16 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=6 python -m bench --precision tf32-fp16 --num-workers 8 --model Bert --batch-size 32 &
+  CUDA_VISIBLE_DEVICES=7 python -m bench --precision tf32-fp16 --num-workers 8 --model Bert --batch-size 32 &
+  wait
+)
+
+echo "---"
+echo "t5"
+echo "=="
+time (
+  CUDA_VISIBLE_DEVICES=0 python -m bench --precision tf32-fp16 --num-workers 8 --model T5 --batch-size 16 &
+  CUDA_VISIBLE_DEVICES=1 python -m bench --precision tf32-fp16 --num-workers 8 --model T5 --batch-size 16 &
+  CUDA_VISIBLE_DEVICES=2 python -m bench --precision tf32-fp16 --num-workers 8 --model T5 --batch-size 16 &
+  CUDA_VISIBLE_DEVICES=3 python -m bench --precision tf32-fp16 --num-workers 8 --model T5 --batch-size 16 &
+  CUDA_VISIBLE_DEVICES=4 python -m bench --precision tf32-fp16 --num-workers 8 --model T5 --batch-size 16 &
+  CUDA_VISIBLE_DEVICES=5 python -m bench --precision tf32-fp16 --num-workers 8 --model T5 --batch-size 16 &
+  CUDA_VISIBLE_DEVICES=6 python -m bench --precision tf32-fp16 --num-workers 8 --model T5 --batch-size 16 &
+  CUDA_VISIBLE_DEVICES=7 python -m bench --precision tf32-fp16 --num-workers 8 --model T5 --batch-size 16 &
+  wait
+)
+
+echo "---"
+echo "reformer"
+echo "========"
+time (
+  CUDA_VISIBLE_DEVICES=0 python -m bench --precision tf32-fp16 --num-workers 8 --model Reformer --batch-size 64 &
+  CUDA_VISIBLE_DEVICES=1 python -m bench --precision tf32-fp16 --num-workers 8 --model Reformer --batch-size 64 &
+  CUDA_VISIBLE_DEVICES=2 python -m bench --precision tf32-fp16 --num-workers 8 --model Reformer --batch-size 64 &
+  CUDA_VISIBLE_DEVICES=3 python -m bench --precision tf32-fp16 --num-workers 8 --model Reformer --batch-size 64 &
+  CUDA_VISIBLE_DEVICES=4 python -m bench --precision tf32-fp16 --num-workers 8 --model Reformer --batch-size 64 &
+  CUDA_VISIBLE_DEVICES=5 python -m bench --precision tf32-fp16 --num-workers 8 --model Reformer --batch-size 64 &
+  CUDA_VISIBLE_DEVICES=6 python -m bench --precision tf32-fp16 --num-workers 8 --model Reformer --batch-size 64 &
+  CUDA_VISIBLE_DEVICES=7 python -m bench --precision tf32-fp16 --num-workers 8 --model Reformer --batch-size 64 &
+  wait
+)
+
+echo "---"
+echo "whisper"
+echo "======="
+time (
+  CUDA_VISIBLE_DEVICES=0 python -m bench --precision tf32-fp16 --num-workers 8 --model Whisper --batch-size 64 &
+  CUDA_VISIBLE_DEVICES=1 python -m bench --precision tf32-fp16 --num-workers 8 --model Whisper --batch-size 64 &
+  CUDA_VISIBLE_DEVICES=2 python -m bench --precision tf32-fp16 --num-workers 8 --model Whisper --batch-size 64 &
+  CUDA_VISIBLE_DEVICES=3 python -m bench --precision tf32-fp16 --num-workers 8 --model Whisper --batch-size 64 &
+  CUDA_VISIBLE_DEVICES=4 python -m bench --precision tf32-fp16 --num-workers 8 --model Whisper --batch-size 64 &
+  CUDA_VISIBLE_DEVICES=5 python -m bench --precision tf32-fp16 --num-workers 8 --model Whisper --batch-size 64 &
+  CUDA_VISIBLE_DEVICES=6 python -m bench --precision tf32-fp16 --num-workers 8 --model Whisper --batch-size 64 &
+  CUDA_VISIBLE_DEVICES=7 python -m bench --precision tf32-fp16 --num-workers 8 --model Whisper --batch-size 64 &
+  wait
+)
+
+echo "---"
+echo "resnet152"
+echo "========="
+time (
+  CUDA_VISIBLE_DEVICES=0 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model resnet152 --batch-size 256 --output $BASE/extra/timm/dev/resnet152.D0 --checkpoint-hist 1 &
+  CUDA_VISIBLE_DEVICES=1 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model resnet152 --batch-size 256 --output $BASE/extra/timm/dev/resnet152.D1 --checkpoint-hist 1 &
+  CUDA_VISIBLE_DEVICES=2 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model resnet152 --batch-size 256 --output $BASE/extra/timm/dev/resnet152.D2 --checkpoint-hist 1 &
+  CUDA_VISIBLE_DEVICES=3 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model resnet152 --batch-size 256 --output $BASE/extra/timm/dev/resnet152.D3 --checkpoint-hist 1 &
+  CUDA_VISIBLE_DEVICES=4 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model resnet152 --batch-size 256 --output $BASE/extra/timm/dev/resnet152.D4 --checkpoint-hist 1 &
+  CUDA_VISIBLE_DEVICES=5 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model resnet152 --batch-size 256 --output $BASE/extra/timm/dev/resnet152.D5 --checkpoint-hist 1 &
+  CUDA_VISIBLE_DEVICES=6 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model resnet152 --batch-size 256 --output $BASE/extra/timm/dev/resnet152.D6 --checkpoint-hist 1 &
+  CUDA_VISIBLE_DEVICES=7 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model resnet152 --batch-size 256 --output $BASE/extra/timm/dev/resnet152.D7 --checkpoint-hist 1 &
+  wait
+)
+
+echo "---"
+echo "resnet152-multi"
+echo "==============="
+time (
+  $BASE/venv/torch/bin/torchrun --nproc_per_node=8 --no-python -- python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model resnet152 --batch-size 256 --output $BASE/extra/timm/dev/resnet152-multi.0 --checkpoint-hist 1 &
+  wait
+)
+
+echo "---"
+echo "davit_large"
+echo "==========="
+time (
+  CUDA_VISIBLE_DEVICES=0 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model davit_large --batch-size 128 --lr-base 0.01 --output $BASE/extra/timm/dev/davit_large.D0 --checkpoint-hist 1 &
+  CUDA_VISIBLE_DEVICES=1 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model davit_large --batch-size 128 --lr-base 0.01 --output $BASE/extra/timm/dev/davit_large.D1 --checkpoint-hist 1 &
+  CUDA_VISIBLE_DEVICES=2 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model davit_large --batch-size 128 --lr-base 0.01 --output $BASE/extra/timm/dev/davit_large.D2 --checkpoint-hist 1 &
+  CUDA_VISIBLE_DEVICES=3 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model davit_large --batch-size 128 --lr-base 0.01 --output $BASE/extra/timm/dev/davit_large.D3 --checkpoint-hist 1 &
+  CUDA_VISIBLE_DEVICES=4 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model davit_large --batch-size 128 --lr-base 0.01 --output $BASE/extra/timm/dev/davit_large.D4 --checkpoint-hist 1 &
+  CUDA_VISIBLE_DEVICES=5 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model davit_large --batch-size 128 --lr-base 0.01 --output $BASE/extra/timm/dev/davit_large.D5 --checkpoint-hist 1 &
+  CUDA_VISIBLE_DEVICES=6 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model davit_large --batch-size 128 --lr-base 0.01 --output $BASE/extra/timm/dev/davit_large.D6 --checkpoint-hist 1 &
+  CUDA_VISIBLE_DEVICES=7 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model davit_large --batch-size 128 --lr-base 0.01 --output $BASE/extra/timm/dev/davit_large.D7 --checkpoint-hist 1 &
+  wait
+)
+
+echo "---"
+echo "davit_large-multi"
+echo "================="
+time (
+  $BASE/venv/torch/bin/torchrun --nproc_per_node=8 --no-python -- python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model davit_large --batch-size 128 --lr-base 0.01 --output $BASE/extra/timm/dev/davit_large-multi.0 --checkpoint-hist 1 &
+  wait
+)
+
+echo "---"
+echo "focalnet"
+echo "========"
+time (
+  CUDA_VISIBLE_DEVICES=0 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model focalnet_base_lrf --output $BASE/extra/timm/dev/focalnet.D0 --checkpoint-hist 1 &
+  CUDA_VISIBLE_DEVICES=1 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model focalnet_base_lrf --output $BASE/extra/timm/dev/focalnet.D1 --checkpoint-hist 1 &
+  CUDA_VISIBLE_DEVICES=2 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model focalnet_base_lrf --output $BASE/extra/timm/dev/focalnet.D2 --checkpoint-hist 1 &
+  CUDA_VISIBLE_DEVICES=3 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model focalnet_base_lrf --output $BASE/extra/timm/dev/focalnet.D3 --checkpoint-hist 1 &
+  CUDA_VISIBLE_DEVICES=4 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model focalnet_base_lrf --output $BASE/extra/timm/dev/focalnet.D4 --checkpoint-hist 1 &
+  CUDA_VISIBLE_DEVICES=5 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model focalnet_base_lrf --output $BASE/extra/timm/dev/focalnet.D5 --checkpoint-hist 1 &
+  CUDA_VISIBLE_DEVICES=6 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model focalnet_base_lrf --output $BASE/extra/timm/dev/focalnet.D6 --checkpoint-hist 1 &
+  CUDA_VISIBLE_DEVICES=7 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model focalnet_base_lrf --output $BASE/extra/timm/dev/focalnet.D7 --checkpoint-hist 1 &
+  wait
+)
+
+echo "---"
+echo "opt-1_3b"
+echo "========"
+time (
+  $SRC/milabench/benchmarks/accelerate_opt/activator $BASE/venv/torch accelerate launch --mixed_precision=bf16 --dynamo_backend=no --machine_rank=0 --num_machines=1 --multi_gpu --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=8 $SRC/milabench/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --model_name facebook/opt-1.3b --cache $BASE/cache &
+  wait
+)
+
+echo "---"
+echo "opt-1_3b-multinode"
+echo "=================="
+time (
+  $SRC/milabench/benchmarks/accelerate_opt/activator $BASE/venv/torch accelerate launch --mixed_precision=bf16 --dynamo_backend=no --machine_rank=0 --num_machines=2 --multi_gpu --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=16 $SRC/milabench/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --model_name facebook/opt-1.3b --cache $BASE/cache &
+  ssh -oCheckHostIP=no -oStrictHostKeyChecking=no -oPasswordAuthentication=no -oPasswordAuthentication=no -p 22 username@192.168.0.11 $SRC/milabench/benchmarks/accelerate_opt/activator $BASE/venv/torch accelerate launch --mixed_precision=bf16 --dynamo_backend=no --machine_rank=1 --num_machines=2 --multi_gpu --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=16 $SRC/milabench/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --model_name facebook/opt-1.3b --cache $BASE/cache &
+  wait
+)
+
+echo "---"
+echo "opt-6_7b"
+echo "========"
+time (
+  $SRC/milabench/benchmarks/accelerate_opt/activator $BASE/venv/torch accelerate launch --mixed_precision=bf16 --dynamo_backend=no --machine_rank=0 --num_machines=1 --use_deepspeed --deepspeed_multinode_launcher=standard --zero_stage=2 --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=8 $SRC/milabench/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --model_name facebook/opt-6.7b --cache $BASE/cache &
+  wait
+)
+
+echo "---"
+echo "opt-6_7b-multinode"
+echo "=================="
+time (
+  $SRC/milabench/benchmarks/accelerate_opt/activator $BASE/venv/torch accelerate launch --mixed_precision=bf16 --dynamo_backend=no --machine_rank=0 --num_machines=2 --use_deepspeed --deepspeed_multinode_launcher=standard --zero_stage=2 --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=16 $SRC/milabench/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --model_name facebook/opt-6.7b --cache $BASE/cache &
+  ssh -oCheckHostIP=no -oStrictHostKeyChecking=no -oPasswordAuthentication=no -oPasswordAuthentication=no -p 22 username@192.168.0.11 $SRC/milabench/benchmarks/accelerate_opt/activator $BASE/venv/torch accelerate launch --mixed_precision=bf16 --dynamo_backend=no --machine_rank=1 --num_machines=2 --use_deepspeed --deepspeed_multinode_launcher=standard --zero_stage=2 --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=16 $SRC/milabench/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --model_name facebook/opt-6.7b --cache $BASE/cache &
+  wait
+)
+
+echo "---"
+echo "stargan"
+echo "======="
+time (
+  CUDA_VISIBLE_DEVICES=0 python $SRC/milabench/benchmarks/stargan/stargan/main.py --image_size 512 --c_dim 5 --batch_size 16 --dataset synth --celeba_image_dir $BASE/data --log_dir $BASE/extra/stargan/logs --model_save_dir $BASE/extra/stargan/models --sample_dir $BASE/extra/stargan/samples --result_dir $BASE/extra/stargan/results --num_workers 8 &
+  CUDA_VISIBLE_DEVICES=1 python $SRC/milabench/benchmarks/stargan/stargan/main.py --image_size 512 --c_dim 5 --batch_size 16 --dataset synth --celeba_image_dir $BASE/data --log_dir $BASE/extra/stargan/logs --model_save_dir $BASE/extra/stargan/models --sample_dir $BASE/extra/stargan/samples --result_dir $BASE/extra/stargan/results --num_workers 8 &
+  CUDA_VISIBLE_DEVICES=2 python $SRC/milabench/benchmarks/stargan/stargan/main.py --image_size 512 --c_dim 5 --batch_size 16 --dataset synth --celeba_image_dir $BASE/data --log_dir $BASE/extra/stargan/logs --model_save_dir $BASE/extra/stargan/models --sample_dir $BASE/extra/stargan/samples --result_dir $BASE/extra/stargan/results --num_workers 8 &
+  CUDA_VISIBLE_DEVICES=3 python $SRC/milabench/benchmarks/stargan/stargan/main.py --image_size 512 --c_dim 5 --batch_size 16 --dataset synth --celeba_image_dir $BASE/data --log_dir $BASE/extra/stargan/logs --model_save_dir $BASE/extra/stargan/models --sample_dir $BASE/extra/stargan/samples --result_dir $BASE/extra/stargan/results --num_workers 8 &
+  CUDA_VISIBLE_DEVICES=4 python $SRC/milabench/benchmarks/stargan/stargan/main.py --image_size 512 --c_dim 5 --batch_size 16 --dataset synth --celeba_image_dir $BASE/data --log_dir $BASE/extra/stargan/logs --model_save_dir $BASE/extra/stargan/models --sample_dir $BASE/extra/stargan/samples --result_dir $BASE/extra/stargan/results --num_workers 8 &
+  CUDA_VISIBLE_DEVICES=5 python $SRC/milabench/benchmarks/stargan/stargan/main.py --image_size 512 --c_dim 5 --batch_size 16 --dataset synth --celeba_image_dir $BASE/data --log_dir $BASE/extra/stargan/logs --model_save_dir $BASE/extra/stargan/models --sample_dir $BASE/extra/stargan/samples --result_dir $BASE/extra/stargan/results --num_workers 8 &
+  CUDA_VISIBLE_DEVICES=6 python $SRC/milabench/benchmarks/stargan/stargan/main.py --image_size 512 --c_dim 5 --batch_size 16 --dataset synth --celeba_image_dir $BASE/data --log_dir $BASE/extra/stargan/logs --model_save_dir $BASE/extra/stargan/models --sample_dir $BASE/extra/stargan/samples --result_dir $BASE/extra/stargan/results --num_workers 8 &
+  CUDA_VISIBLE_DEVICES=7 python $SRC/milabench/benchmarks/stargan/stargan/main.py --image_size 512 --c_dim 5 --batch_size 16 --dataset synth --celeba_image_dir $BASE/data --log_dir $BASE/extra/stargan/logs --model_save_dir $BASE/extra/stargan/models --sample_dir $BASE/extra/stargan/samples --result_dir $BASE/extra/stargan/results --num_workers 8 &
+  wait
+)
+
+echo "---"
+echo "super-slomo"
+echo "==========="
+time (
+  CUDA_VISIBLE_DEVICES=0 python $SRC/milabench/benchmarks/super-slomo/slomo/train.py --train_batch_size 64 --dataset_root $BASE/data/FakeImageNet --loader pytorch --num_workers 8 &
+  CUDA_VISIBLE_DEVICES=1 python $SRC/milabench/benchmarks/super-slomo/slomo/train.py --train_batch_size 64 --dataset_root $BASE/data/FakeImageNet --loader pytorch --num_workers 8 &
+  CUDA_VISIBLE_DEVICES=2 python $SRC/milabench/benchmarks/super-slomo/slomo/train.py --train_batch_size 64 --dataset_root $BASE/data/FakeImageNet --loader pytorch --num_workers 8 &
+  CUDA_VISIBLE_DEVICES=3 python $SRC/milabench/benchmarks/super-slomo/slomo/train.py --train_batch_size 64 --dataset_root $BASE/data/FakeImageNet --loader pytorch --num_workers 8 &
+  CUDA_VISIBLE_DEVICES=4 python $SRC/milabench/benchmarks/super-slomo/slomo/train.py --train_batch_size 64 --dataset_root $BASE/data/FakeImageNet --loader pytorch --num_workers 8 &
+  CUDA_VISIBLE_DEVICES=5 python $SRC/milabench/benchmarks/super-slomo/slomo/train.py --train_batch_size 64 --dataset_root $BASE/data/FakeImageNet --loader pytorch --num_workers 8 &
+  CUDA_VISIBLE_DEVICES=6 python $SRC/milabench/benchmarks/super-slomo/slomo/train.py --train_batch_size 64 --dataset_root $BASE/data/FakeImageNet --loader pytorch --num_workers 8 &
+  CUDA_VISIBLE_DEVICES=7 python $SRC/milabench/benchmarks/super-slomo/slomo/train.py --train_batch_size 64 --dataset_root $BASE/data/FakeImageNet --loader pytorch --num_workers 8 &
+  wait
+)
+
+echo "---"
+echo "dlrm"
+echo "===="
+time (
+  python $SRC/milabench/benchmarks/dlrm/dlrm/dlrm_s_pytorch.py --num-batches 1000 --data-generation random --arch-mlp-bot 512-512-64 --arch-mlp-top 1024-1024-1024-1 --arch-sparse-feature-size 64 --arch-embedding-size 1000000-1000000-1000000-1000000-1000000-1000000-1000000-1000000 --num-indices-per-lookup 100 --arch-interaction-op dot --numpy-rand-seed 727 --print-freq 999999 --mini-batch-size 16384 --test-mini-batch-size 16384 --test-num-workers 0 --use-gpu --num-workers 8 &
+  wait
+)
+
+echo "---"
+echo "brax"
+echo "===="
+time (
+  python $SRC/milabench/benchmarks/brax/main.py --episode-length 20 --batch-size 1024 --num-minibatches 32 --num-envs 8192 &
+  wait
+)
+

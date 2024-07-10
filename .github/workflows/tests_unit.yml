@@ -1,0 +1,67 @@
+name: unit
+
+on:
+  push:
+
+  # Runs for pull requests
+  pull_request:
+    branches:
+      - master
+
+  # Runs on publish
+  release:
+    types:
+      [published]
+
+  # Allow manual triggers
+  workflow_dispatch:
+
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    # Cancel previous jobs if a new version was pushed
+    concurrency:
+      group: "${{ github.ref }}-${{ matrix.arch }}"
+      cancel-in-progress: true
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: dependencies
+        run: |
+          pip install -U pip
+          pip install poetry
+          poetry env use python3.11
+          source $(poetry env info -p)/bin/activate
+          #
+          # poetry doesnot work when installing those !?
+          #
+          pip install antlr4-python3-runtime==4.9.3
+          pip install -e .
+          pip install -e benchmate
+          #
+          #
+          #
+          poetry install --with dev
+
+      - name: tests
+        run: |
+          source $(poetry env info -p)/bin/activate
+          coverage run --source=milabench -m pytest --ignore=tests/integration tests/ 
+          coverage report -m
+          coverage xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          env_vars: PLATFORM,PYTHON
+          name: codecov-umbrella
+          fail_ci_if_error: false

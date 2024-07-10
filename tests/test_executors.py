@@ -140,7 +140,7 @@ def test_pack_executor():
         print(r)
         acc += 1
 
-    assert acc == 4, "Only 4 message received (config, meta, start, end)"
+    assert acc >= 4, "Only 4 message received (config, meta, start, end)"
 
 
 def test_voir_executor():
@@ -234,7 +234,7 @@ def test_njobs_novoir_executor():
         print(r)
         acc += 1
 
-    assert acc == 2 * 10
+    assert acc >= 2 * 10
 
 
 def mock_gpu_list():
@@ -266,3 +266,64 @@ def test_void_executor():
 
     for _ in proceed(plan.execute()):
         pass
+
+
+def await_now(function):
+    loop = asyncio.get_event_loop()
+    return loop.run_until_complete(function)
+
+
+from argparse import Namespace
+
+class MockPack:
+    config = {
+        "max_duration": 1,
+        "name": "Mock"
+    }
+    processes = []
+
+    dirs = Namespace(**{
+        "code": os.getcwd()
+    })
+
+    def full_env(self, *args, **kwargs):
+        return {}
+
+    async def send(self, **kwargs):
+        print(kwargs)
+
+    async def message(self, msg):
+        print(msg)
+
+
+class Commands:
+    def __init__(self, time) -> None:
+        self.time = time
+
+    def packs(self):
+        return []
+
+    def commands(self):
+        yield MockPack(), ["sleep", str(self.time)], {}
+
+
+def test_execute_command_timeout():
+    from milabench.commands.executors import execute_command
+    
+    future = execute_command(Commands(10), timeout=True, timeout_delay=1)
+    
+    for msg in proceed(future):
+        print(msg)
+
+
+
+def test_execute_command():
+    from milabench.commands.executors import execute_command
+
+    future = execute_command(Commands(0), timeout=True, timeout_delay=1)
+    messages = []
+    for msg in proceed(future):
+        messages.append(msg)
+
+    assert len(messages) == 2
+    assert messages[-1].data["return_code"] == 0

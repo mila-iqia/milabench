@@ -16,14 +16,30 @@ def _worker(delay):
     print('done')
 
 
+def fake_poll(self):
+    def poll(*args, **kwargs):
+        try:
+            if self.exitcode is not None:
+                return self.exitcode
+            
+            if self.alive():
+                pid, rc = os.waitpid(self.pid, 0)
+                return rc
+            else:
+                return 0
+        except:
+            return None
+
+    return poll
 
 def spawn(delay, warden):
     procs = []
     for _ in range(10):
         proc = multiprocessing.Process(target=_worker, args=(delay,))
         proc.start()
+        proc.poll = fake_poll(proc)
         procs.append(proc)
-        warden.add_process(proc)
+        warden.append(proc)
     
     return procs
 
@@ -58,7 +74,7 @@ def test_process_cleaner_process():
     proc = multiprocessing.Process(target=_protected_process, args=(60,))
     proc.start()
 
-    time.sleep(1)
+    time.sleep(2)
     os.kill(proc.pid, signal.SIGINT)
 
     elapsed = time.time() - start
@@ -69,8 +85,11 @@ def test_keyboard_cleaner_process():
     start = time.time()
 
     with pytest.raises(KeyboardInterrupt):
-        with process_cleaner() as warden:
+        with process_cleaner(10) as warden:
             procs = spawn(60, warden)
+
+            assert len(warden) != 0
+            print(warden[0])
 
             time.sleep(1)
             os.kill(os.getpid(), signal.SIGINT)
@@ -78,7 +97,7 @@ def test_keyboard_cleaner_process():
             wait(procs)
     
     elapsed = time.time() - start
-    assert elapsed < 30
+    assert elapsed < 12
 
 
 def test_keyboard_cleaner_process_ended():
@@ -106,10 +125,10 @@ def test_protected_multiplexer():
         return kwargs
 
     with pytest.raises(KeyboardInterrupt):
-        with process_cleaner() as warden:
+        with process_cleaner(timeout=10) as warden:
             mx = Multiplexer(timeout=0, constructor=ctor)
             proc = mx.start(["sleep", "60"], info={}, env={}, **{})
-            warden.add_process(proc)
+            warden.append(proc)
 
             time.sleep(2)
             os.kill(os.getpid(), signal.SIGINT)
@@ -119,7 +138,7 @@ def test_protected_multiplexer():
                     print(entry)
     
     elapsed = time.time() - start
-    assert elapsed < 30
+    assert elapsed < 12
 
 
 def test_protected_multiplexer_ended():
@@ -128,10 +147,10 @@ def test_protected_multiplexer_ended():
     start = time.time()
 
     with pytest.raises(KeyboardInterrupt):
-        with process_cleaner() as warden:
+        with process_cleaner(timeout=10) as warden:
             mx = Multiplexer(timeout=0, constructor=lambda **kwargs: kwargs)
             proc = mx.start(["sleep", "1"], info={}, env={}, **{})
-            warden.add_process(proc)
+            warden.append(proc)
 
             time.sleep(2)
             os.kill(os.getpid(), signal.SIGINT)
@@ -141,4 +160,4 @@ def test_protected_multiplexer_ended():
                     print(entry)
     
     elapsed = time.time() - start
-    assert elapsed < 30
+    assert elapsed < 10

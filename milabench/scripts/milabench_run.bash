@@ -20,7 +20,7 @@ function usage() {
 }
 
 ARCH="cuda"
-PYTHON="3.10"
+PYTHON="3.11"
 BRANCH="master"
 ORIGIN="https://github.com/mila-iqia/milabench.git"
 LOC="$SLURM_TMPDIR/$SLURM_JOB_ID"

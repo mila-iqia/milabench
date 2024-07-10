@@ -213,10 +213,12 @@ def scale_argv(pack, argv):
     sizer = batch_sizer()
 
     system = system_global.get()
-
-    capacity = system.get("gpu", dict()).get("capacity")
-
-    return sizer.argv(pack, capacity, argv)
+    
+    if system:
+        capacity = system.get("gpu", dict()).get("capacity")
+        return sizer.argv(pack, capacity, argv)
+    else:
+        return argv
 
 
 class MemoryUsageExtractor(ValidationLayer):
@@ -313,7 +315,12 @@ class MemoryUsageExtractor(ValidationLayer):
 
 
 def new_argument_resolver(pack):
-    context = deepcopy(system_global.get())
+    system_config = system_global.get()
+    if system_config is None:
+        system_config = {}
+
+    context = deepcopy(system_config)
+
     arch = context.get("arch", "cpu")
 
     if hasattr(pack, "config"):

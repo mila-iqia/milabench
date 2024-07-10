@@ -139,7 +139,7 @@ class SetupOptions:
     origin: str = "https://github.com/mila-iqia/milabench.git"
     config: str = "milabench/config/standard.yaml"
     env: str = "./env"
-    python: str = "3.10"
+    python: str = "3.11"
     fun: str = "run"
 
     def deduce_remote(self, current_branch):

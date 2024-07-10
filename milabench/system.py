@@ -3,7 +3,7 @@ import os
 import socket
 from dataclasses import dataclass, field
 import sys
-
+from contextlib import contextmanager
 import psutil
 import yaml
 from voir.instruments.gpu import get_gpu_info
@@ -149,6 +149,9 @@ def check_node_config(nodes):
 
 def get_remote_ip():
     """Get all the ip of all the network interfaces"""
+    if offline:
+        return set()
+
     addresses = psutil.net_if_addrs()
     stats = psutil.net_if_stats()
 
@@ -163,21 +166,28 @@ def get_remote_ip():
 
 
 def _resolve_ip(ip):
-    # Resolve the IP
-    try:
-        hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(ip)
-        lazy_raise = None
-    except socket.gaierror as err:
-        # Get Addr Info (GAI) Error
-        #
-        # When we are connecting to a node through a ssh proxy jump
-        # the node IPs/Hostnames are not available until we reach
-        # the first node inside the cluster
-        #
-        hostname = ip
-        aliaslist = []
-        ipaddrlist = []
-        lazy_raise = err
+    hostname = ip
+    aliaslist = []
+    ipaddrlist = [ip]
+    lazy_raise = None
+
+    if not offline:
+        # Resolve the IP
+        try:
+            hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(ip)
+            lazy_raise = None
+        
+        except socket.herror as err:
+            lazy_raise = err
+
+        except socket.gaierror as err:
+            # Get Addr Info (GAI) Error
+            #
+            # When we are connecting to a node through a ssh proxy jump
+            # the node IPs/Hostnames are not available until we reach
+            # the first node inside the cluster
+            #
+            lazy_raise = err
 
     return hostname, aliaslist, ipaddrlist, lazy_raise
 
@@ -193,6 +203,21 @@ def _fix_weird(hostname):
         hostname = hostname[: -len(".server.mila.quebec")]
     
     return hostname
+
+
+# If true that means we cannot resolve the ip addresses
+# so we ignore errors
+offline = False
+
+
+@contextmanager
+def enable_offline(enabled):
+    global offline
+    old = offline
+
+    offline = enabled
+    yield
+    offline = old
 
 
 def resolve_addresses(nodes):
@@ -215,7 +240,7 @@ def resolve_addresses(nodes):
 
         is_local = (
             ("127.0.0.1" in ipaddrlist)
-            or (hostname in ("localhost", socket.gethostname()))
+            or (hostname in ("localhost", socket.gethostname(), "127.0.0.1"))
             or (socket.gethostname().startswith(hostname))
             or len(ip_list.intersection(ipaddrlist)) > 0
         )
@@ -225,12 +250,13 @@ def resolve_addresses(nodes):
 
         if is_local:
             self = node
-            node["ipaddrlist"] = list(ip_list)
+            node["ipaddrlist"] = list(set(list(ip_list) + list(ipaddrlist)))
 
     # if self is node we might be outisde the cluster
     # which explains why we could not resolve the IP of the nodes
-    if self is not None and lazy_raise:
-        raise RuntimeError("Could not resolve node ip") from lazy_raise
+    if not offline:
+        if self is not None and lazy_raise:
+            raise RuntimeError("Could not resolve node ip") from lazy_raise
 
     return self
 

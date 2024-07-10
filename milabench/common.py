@@ -196,11 +196,14 @@ def is_selected(defn, args):
     )
 
 def _get_multipack(
-    args: CommonArguments = arguments(),
+    args: CommonArguments = None,
     run_name=None,
     overrides={},
     return_config=False,
 ):
+    if args is None:
+        args = arguments()
+
     if args.config is None:
         args.config = os.environ.get("MILABENCH_CONFIG", None)
 

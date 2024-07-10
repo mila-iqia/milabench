@@ -6,6 +6,8 @@ import os
 from copy import deepcopy
 from hashlib import md5
 from typing import Dict, Generator, List, Tuple
+from contextlib import contextmanager
+import warnings
 
 from voir.instruments.gpu import get_gpu_info
 
@@ -217,9 +219,7 @@ class PackCommand(CmdCommand):
             abs_main = script
 
         if not abs_main.exists():
-            raise FileNotFoundError(
-                f"Cannot run script or directory because it does not exist: {script}"
-            )
+            warnings.warn(f"Could not find `{script}` did you run `milabench install` ?")
 
         if abs_main.is_dir():
             script = ["-m", str(script)]
@@ -389,15 +389,19 @@ class SSHCommand(WrapperCommand):
     def is_local(self):
         localnode = self.pack.config["system"]["self"]
 
+        if localnode is not None:
+            return (False
+                # The ip belongs to the local node
+                or self.host in localnode["ipaddrlist"]
+                # The hostname is the local node
+                or self.host == localnode["hostname"]  
+            )
+    
         # self is none; the node we are currently
         # on is not part of the system; we are running
         # milabench remotely, sending remote commands to
         # the main node
-        return (localnode is not None) and (
-            self.host in localnode["ipaddrlist"]
-            or self.host  # The ip belongs to the local node
-            == localnode["hostname"]  # The hostname is the local node
-        )
+        return False
 
     def _argv(self, **kwargs) -> List:
         # No-op when executing on a local node
@@ -460,14 +464,37 @@ class TorchRunCommand(WrapperCommand):
         devices = self.pack.config.get("devices", [])
         nproc = len(devices)
         if nproc > 1:
-            argv = [*super()._argv(**kwargs), f"--nproc_per_node={nproc}", "--"]
+            argv = [*super()._argv(**kwargs), f"--nproc_per_node={nproc}"]
+
             # Check if the sub-executor targets a module or not
             cmd = next(iter(self.exec.argv()), None)
-            # if the command exists and it is not a path assume it is a module
-            if cmd and not XPath(cmd).exists():
-                argv.append("-m")
+
+            if cmd:
+                # python or voir; tell it to not prepend python since we are doing it
+                if cmd in ("python", "voir"):
+                    argv.append("--no-python")
+
+                # if the command exists and it is not a path assume it is a module
+                # script is not a file, maybe it is a module
+                elif not XPath(cmd).exists():
+                    argv.append("-m")
+
+            # everything after torchrun args are script args
+            argv.append("--")
             return argv
         return []
+
+
+use_voir = True
+
+
+@contextmanager
+def disable_voir(enabled):
+    global use_voir
+    old = use_voir
+    use_voir = enabled
+    yield
+    use_voir = old
 
 
 class VoirCommand(WrapperCommand):
@@ -491,6 +518,10 @@ class VoirCommand(WrapperCommand):
     def _argv(self, **kwargs) -> List:
         argv = super()._argv(**kwargs)
 
+        if not use_voir:
+            # voir replace python
+            return ["python"]
+        
         if voirconf := self.pack.config.get("voir", None):
             hsh = md5(str(voirconf).encode("utf8"))
             voirconf_file = (

@@ -1,5 +1,9 @@
 import os
 from collections import defaultdict
+import math
+
+import torch
+from torch.utils.data.distributed import DistributedSampler
 
 
 def no_transform(args):
@@ -48,3 +52,16 @@ class ImageNetAsFrames:
 
     def __len__(self):
         return len(self.clip)
+
+
+class ExclusiveSetSampler(DistributedSampler):
+    def __init__(self, dataset, num_sets: int, set_id: int, shuffle: bool = True, seed: int = 0, drop_last: bool = False) -> None:
+        super().__init__(
+            dataset, 
+            num_replicas=num_sets,
+            rank=set_id,
+            shuffle=shuffle,
+            seed=seed,
+            drop_last=drop_last        
+        )
+
