@@ -7,11 +7,14 @@ Welcome to milabench's documentation!
    :caption: Contents:
 
    usage.rst
+   recipes.rst
+   new_benchmarks.rst
+
    docker.rst
    dev-usage.rst
-   new_benchmarks.rst
    reference.rst
    sizer.rst
+
 
 Indices and tables
 ==================

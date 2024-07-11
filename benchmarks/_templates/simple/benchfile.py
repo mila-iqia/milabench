@@ -1,7 +1,7 @@
 from milabench.pack import Package
 
 
-class TheBenchmark(Package):
+class Template(Package):
     # Requirements file installed by install(). It can be empty or absent.
     base_requirements = "requirements.in"
 
@@ -26,8 +26,6 @@ class TheBenchmark(Package):
     async def prepare(self):
         await super().prepare()  # super() call executes prepare_script
 
-    async def run(self):
-        return await super().run()
 
 
-__pack__ = TheBenchmark
+__pack__ = Template

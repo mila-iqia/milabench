@@ -5,32 +5,44 @@
 # be deleted.
 
 import time
+import random
 
 import torchcompat.core as accelerator
 from benchmate.observer import BenchObserver
 
 
+def criterion(*args, **kwargs):
+    return random.normalvariate()
+
+
 def main():
     device = accelerator.fetch_device(0) # <= This is your cuda device
-    
-    observer = BenchObserver(batch_size_fn=lambda batch: 1)
+
+    observer = BenchObserver(
+        batch_size_fn=lambda batch: 1
+    )
     # optimizer = observer.optimizer(optimizer)
     # criterion = observer.criterion(criterion)
     
-    dataloader = [1, 2, 3, 4]
+    dataloader = list(range(6000))
     
-    for epoch in range(10):
+    for epoch in range(10000):
         for i in observer.iterate(dataloader):
             # avoid .item()
             # avoid torch.cuda; use accelerator from torchcompat instead
             # avoid torch.cuda.synchronize or accelerator.synchronize
             
             # y = model(i)
-            # loss = criterion(y)
+            loss = criterion()
             # loss.backward()
             # optimizer.step()
+
+            observer.record_loss(loss)
             
             time.sleep(0.1)
+
+    assert epoch < 2, "milabench stopped the train script before the end of training"
+    assert i < 72, "milabench stopped the train script before the end of training"
 
 
 if __name__ == "__main__":

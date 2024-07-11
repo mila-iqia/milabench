@@ -50,6 +50,24 @@ jobs:
           #
           poetry install --with dev
 
+      - name: Simple Template
+        run: |
+          source $(poetry env info -p)/bin/activate
+          milabench new --name simplebench --template simple
+          cd benchmarks/simplebench
+          make tests
+          cd ..
+          rm -rf simplebench
+        
+      - name: Voir Template
+        run: |
+          source $(poetry env info -p)/bin/activate
+          milabench new --name  voirbench --template voir
+          cd benchmarks/voirbench
+          make tests
+          cd ..
+          rm -rf voirbench
+        
       - name: tests
         run: |
           source $(poetry env info -p)/bin/activate

@@ -68,7 +68,7 @@ class BenchObserver:
             raise RuntimeError("Not running through voir")
 
     def iterate(self, iterator):
-        return self.loader(loader)
+        return self.loader(iterator)
     
     def loader(self, loader):
         """Wrap a dataloader or an iterable which enable accurate measuring of time spent in the loop's body"""
@@ -94,7 +94,7 @@ class BenchObserver:
 
                 loss.backward = new_backward
 
-            self.record_loss(loss.detach())
+            self.record_loss(loss)
             return loss
 
         return wrapped

@@ -1,4 +1,4 @@
 
-# {{STEM}}
+# Template
 
 Rewrite this README to explain what the benchmark is!

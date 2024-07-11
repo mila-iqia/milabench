@@ -612,7 +612,7 @@ class PerGPU(ListCommand):
     """
 
     def __init__(self, executor: Command, gpus: list = None, **kwargs) -> None:
-        if gpus is None:
+        if gpus is None or len(gpus) == 0:
             gpus = [{"device": 0, "selection_variable": "CPU_VISIBLE_DEVICE"}]
 
         self.devices = gpus

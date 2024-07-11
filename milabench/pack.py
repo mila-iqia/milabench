@@ -374,7 +374,7 @@ class Package(BasePackage):
         """
         assert self.phase == "install"
 
-        for reqs in self.requirements_files(self.config.get("install_variant", None)):
+        for reqs in self.requirements_files(self.config.get("install-variant", None)):
             if reqs.exists():
                 await self.pip_install("-r", reqs)
             else:
