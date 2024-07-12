@@ -1,6 +1,5 @@
-
-Getting Started
-===============
+Running Milabench
+=================
 
 Base Setup
 ----------
@@ -12,17 +11,22 @@ Base Setup
    mkdir milabench
    cd milabench
    git clone https://github.com/mila-iqia/milabench.git
+
    conda activate base
    python --version
    Python 3.11.4
+
    virtualenv ./env
    source ./env/bin/activate
    pip install -e milabench/
+
    export MILABENCH_WORDIR="$(pwd)"
    export MILABENCH_BASE="$MILABENCH_WORDIR/results"
    export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/standard.yaml"
    export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
+
    module load cuda/12.3.2                                          # <= or set CUDA_HOME to the right spot
+   
    milabench install
    milabench prepare
    milabench run

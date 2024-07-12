@@ -21,8 +21,8 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Reference" href="reference.html" />
-    <link rel="prev" title="Using milabench (DEVELOPERS)" href="dev-usage.html" /> 
+    <link rel="next" title="Docker" href="docker.html" />
+    <link rel="prev" title="Running Milabench" href="recipes.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -47,8 +47,7 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Install and use</a></li>
-<li class="toctree-l1"><a class="reference internal" href="docker.html">Docker</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dev-usage.html">Using milabench (DEVELOPERS)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="recipes.html">Running Milabench</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Creating a new benchmark</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#benchfile-py">benchfile.py</a></li>
@@ -60,8 +59,14 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#development">Development</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#integrating-in-base-yaml">Integrating in base.yaml</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#adapting-existing-repository">Adapting existing repository</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#wrap-a-return-value">Wrap a return value</a></li>
 </ul>
 </li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="docker.html">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dev-usage.html">Using milabench (DEVELOPERS)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sizer.html">Scaling</a></li>
 </ul>
@@ -92,40 +97,54 @@
              
   <section id="creating-a-new-benchmark">
 <h1>Creating a new benchmark<a class="headerlink" href="#creating-a-new-benchmark" title="Link to this heading"></a></h1>
-<p>To define a new benchmark (let’s assume it is called <code class="docutils literal notranslate"><span class="pre">ornatebench</span></code>), make a copy of <code class="docutils literal notranslate"><span class="pre">benchmarks/_template</span></code> using <code class="docutils literal notranslate"><span class="pre">cp-template</span></code>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cp-template<span class="w"> </span>benchmarks/_template/<span class="w"> </span>benchmarks/ornatebench
+<p>To define a new benchmark (let’s assume it is called <code class="docutils literal notranslate"><span class="pre">ornatebench</span></code>),</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/mila-iqia/milabench.git
+git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>ornatebench
+
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>milabench/
+milabench<span class="w"> </span>new<span class="w"> </span>--name<span class="w"> </span>ornatebench
 </pre></div>
 </div>
 <p>You should see a directory with the following structure:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ornatebench</span>
-<span class="o">|-</span> <span class="n">README</span><span class="o">.</span><span class="n">md</span>          <span class="c1"># Document the benchmark here</span>
-<span class="o">|-</span> <span class="n">benchfile</span><span class="o">.</span><span class="n">py</span>       <span class="c1"># Benchmark definition file</span>
-<span class="o">|-</span> <span class="n">main</span><span class="o">.</span><span class="n">py</span>            <span class="c1"># Executed by milabench run</span>
-<span class="o">|-</span> <span class="n">prepare</span><span class="o">.</span><span class="n">py</span>         <span class="c1"># Executed by milabench prepare (EXECUTABLE)</span>
-<span class="o">|-</span> <span class="n">requirements</span><span class="o">.</span><span class="ow">in</span>    <span class="c1"># Python requirements to install from pip</span>
-<span class="o">|-</span> <span class="n">voirfile</span><span class="o">.</span><span class="n">py</span>        <span class="c1"># Probes and extra instruments</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>milabench
+└── benchmarks
+    └── ornatebench
+        ├── README.md          # Document the benchmark here
+        ├── benchfile.py       # Benchmark definition file
+        ├── main.py            # Executed by milabench run
+        ├── prepare.py         # Executed by milabench prepare (EXECUTABLE)
+        ├── requirements.in    # Python requirements to install from pip
+        └── voirfile.py        # Probes and extra instruments
 </pre></div>
 </div>
 <p>Some of these files may be unnecessary depending on the benchmark.</p>
 <p>First of all, if you want to verify that everything works, you can use the <code class="docutils literal notranslate"><span class="pre">dev.yaml</span></code> benchmark config that comes with the template:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># You can also use --config</span>
-<span class="nb">export</span><span class="w"> </span><span class="nv">MILABENCH_CONFIG</span><span class="o">=</span>benchmarks/ornatebench/dev.yaml
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>milabench/benchmarks/ornatebench
 
-milabench<span class="w"> </span>install
-milabench<span class="w"> </span>prepare
-milabench<span class="w"> </span>run
+milabench<span class="w"> </span>install<span class="w"> </span>--config<span class="w"> </span>dev.yaml<span class="w"> </span>--base<span class="w"> </span>.
+
+milabench<span class="w"> </span>prepare<span class="w"> </span>--config<span class="w"> </span>dev.yaml<span class="w"> </span>--base<span class="w"> </span>.
+
+milabench<span class="w"> </span>run<span class="w">     </span>--config<span class="w"> </span>dev.yaml<span class="w"> </span>--base<span class="w"> </span>.
 </pre></div>
 </div>
 <section id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
 <section id="benchfile-py">
 <h3>benchfile.py<a class="headerlink" href="#benchfile-py" title="Link to this heading"></a></h3>
-<p><code class="docutils literal notranslate"><span class="pre">benchfile.py</span></code> defines what to do on <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">install/prepare/run</span></code>. It is run from the benchmark directory directly, in the <em>current</em> virtual environment, but it can create <em>new processes</em> in the virtual environment of the benchmark.</p>
-<p>By default it will dispatch to <code class="docutils literal notranslate"><span class="pre">requirements.in</span></code> for install requirements, <code class="docutils literal notranslate"><span class="pre">prepare.py</span></code> for prep work and downloading datasets, and <code class="docutils literal notranslate"><span class="pre">main.py</span></code> for running the actual benchmark. If that is suitable you may not need to change it at all.</p>
+<p><code class="docutils literal notranslate"><span class="pre">benchfile.py</span></code> defines what to do on <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">install/prepare/run</span></code>.
+It is run from the benchmark directory directly, in the <em>current</em> virtual environment,
+but it can create <em>new processes</em> in the virtual environment of the benchmark.</p>
+<p>By default it will dispatch to <code class="docutils literal notranslate"><span class="pre">requirements.in</span></code> for install requirements,
+<code class="docutils literal notranslate"><span class="pre">prepare.py</span></code> for prep work and downloading datasets, and
+<code class="docutils literal notranslate"><span class="pre">main.py</span></code> for running the actual benchmark.
+If that is suitable you may not need to change it at all.</p>
 </section>
 <section id="requirements-in">
 <h3>requirements.in<a class="headerlink" href="#requirements-in" title="Link to this heading"></a></h3>
-<p>Write all of the benchmark’s requirements in this file. Use <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">install</span> <span class="pre">--config</span> <span class="pre">benchmarks/ornatebench/dev.yaml</span></code> to install them during development (add <code class="docutils literal notranslate"><span class="pre">--force</span></code> if you made changes and want to reinstall.)</p>
+<p>Write all of the benchmark’s requirements in this file.
+Use <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">install</span> <span class="pre">--config</span> <span class="pre">benchmarks/ornatebench/dev.yaml</span></code>
+to install them during development (add <code class="docutils literal notranslate"><span class="pre">--force</span></code> if you made changes and want to reinstall.)</p>
 </section>
 <section id="prepare-py">
 <h3>prepare.py<a class="headerlink" href="#prepare-py" title="Link to this heading"></a></h3>
@@ -192,7 +211,6 @@ To access <code class="docutils literal notranslate"><span class="pre">cuda</spa
 <h3>voirfile.py<a class="headerlink" href="#voirfile-py" title="Link to this heading"></a></h3>
 <p>The voirfile contains instrumentation for the main script. You can usually just leave it as it is. By default, it will:</p>
 <ul class="simple">
-<li><p>Compute the train “rate” (number of samples per second) using events from <code class="docutils literal notranslate"><span class="pre">voir.iterate</span></code>.</p></li>
 <li><p>Forcefully stop the program after a certain number of rate measurements.</p></li>
 <li><p>Monitor GPU usage.</p></li>
 </ul>
@@ -200,8 +218,10 @@ To access <code class="docutils literal notranslate"><span class="pre">cuda</spa
 </section>
 <section id="development">
 <h2>Development<a class="headerlink" href="#development" title="Link to this heading"></a></h2>
-<p>To develop the benchmark, first run <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">dev</span> <span class="pre">--config</span> <span class="pre">benchmarks/BENCHNAME/dev.yaml</span></code>. This will activate the benchmark’s virtual environment and put you into a shell.</p>
-<p>Then, try and run <code class="docutils literal notranslate"><span class="pre">voir</span> <span class="pre">--dash</span> <span class="pre">main.py</span></code>. This should show you a little dashboard and display losses, train rate calculations and one or more progress bars.</p>
+<p>To develop the benchmark, first run <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">dev</span> <span class="pre">--config</span> <span class="pre">benchmarks/BENCHNAME/dev.yaml</span></code>.
+This will activate the benchmark’s virtual environment and put you into a shell.</p>
+<p>Then, try and run <code class="docutils literal notranslate"><span class="pre">voir</span> <span class="pre">--dash</span> <span class="pre">main.py</span></code>. This should show you a little dashboard and display losses,
+train rate calculations and one or more progress bars.</p>
 <p>From there, you can develop as you would any other Python program.</p>
 </section>
 <section id="integrating-in-base-yaml">
@@ -223,14 +243,47 @@ To access <code class="docutils literal notranslate"><span class="pre">cuda</spa
 <p><code class="docutils literal notranslate"><span class="pre">--variant</span> <span class="pre">unpinned</span></code> means installing directly from <code class="docutils literal notranslate"><span class="pre">requirements.in</span></code>. This can be useful during development, but less stable over time since various dependencies may break.</p>
 </div>
 </section>
+<section id="adapting-existing-repository">
+<h2>Adapting existing repository<a class="headerlink" href="#adapting-existing-repository" title="Link to this heading"></a></h2>
+<p>To simplify the creation of benchmarks, milabench can use ptera and voir to override or wrap code from a third party
+without modifying the third party code.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/mila-iqia/milabench.git
+git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>ornatebench
+
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>milabench/
+milabench<span class="w"> </span>new<span class="w"> </span>--name<span class="w"> </span>ornatebench<span class="w"> </span>--repo-url<span class="w"> </span>https://github.com/Delaunay/extern_example.git
+</pre></div>
+</div>
+<p>The instrumentation is inserted inside <code class="docutils literal notranslate"><span class="pre">voirfile.py</span></code> using the <code class="docutils literal notranslate"><span class="pre">Overseer.probe</span></code>, examples can
+be found in ptera <a class="reference external" href="https://ptera.readthedocs.io/en/latest/guide.html#probing">documentation</a></p>
+<section id="wrap-a-return-value">
+<h3>Wrap a return value<a class="headerlink" href="#wrap-a-return-value" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Wrapper</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+
+<span class="k">def</span> <span class="nf">wrap</span><span class="p">(</span><span class="n">original</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">Wrapper</span><span class="p">(</span><span class="n">original</span><span class="p">)</span>
+
+<span class="n">probe</span> <span class="o">=</span> <span class="n">ov</span><span class="o">.</span><span class="n">probe</span><span class="p">(</span><span class="s2">&quot;//my_optimizer_creator() as optimizer&quot;</span><span class="p">,</span> <span class="n">overridable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">probe</span><span class="p">[</span><span class="s1">&#39;optimizer&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">override</span><span class="p">(</span><span class="n">wrap</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">//my_optimizer_creator()</span> <span class="pre">as</span> <span class="pre">optimizer</span></code>: get the return value of a function inside the main script</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">/module.path.function()</span> <span class="pre">as</span> <span class="pre">optimizer</span></code>: get the return value of a function inside a module</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">/module.path.function</span> <span class="pre">&gt;</span> <span class="pre">loss_fn</span></code>: get a variable inside a function inside a module</p></li>
+</ul>
+</section>
+</section>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="dev-usage.html" class="btn btn-neutral float-left" title="Using milabench (DEVELOPERS)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="reference.html" class="btn btn-neutral float-right" title="Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="recipes.html" class="btn btn-neutral float-left" title="Running Milabench" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="docker.html" class="btn btn-neutral float-right" title="Docker" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

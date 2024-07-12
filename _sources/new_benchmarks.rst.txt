@@ -2,23 +2,30 @@
 Creating a new benchmark
 ------------------------
 
-To define a new benchmark (let's assume it is called ``ornatebench``), make a copy of ``benchmarks/_template`` using ``cp-template``:
+To define a new benchmark (let's assume it is called ``ornatebench``), 
 
 .. code-block:: bash
 
-    cp-template benchmarks/_template/ benchmarks/ornatebench
+    git clone https://github.com/mila-iqia/milabench.git
+    git checkout -b ornatebench
+
+    pip install -e milabench/
+    milabench new --name ornatebench
+
 
 You should see a directory with the following structure:
 
 .. code-block::
 
-    ornatebench
-    |- README.md          # Document the benchmark here
-    |- benchfile.py       # Benchmark definition file
-    |- main.py            # Executed by milabench run
-    |- prepare.py         # Executed by milabench prepare (EXECUTABLE)
-    |- requirements.in    # Python requirements to install from pip
-    |- voirfile.py        # Probes and extra instruments
+    milabench
+    └── benchmarks
+        └── ornatebench
+            ├── README.md          # Document the benchmark here
+            ├── benchfile.py       # Benchmark definition file
+            ├── main.py            # Executed by milabench run
+            ├── prepare.py         # Executed by milabench prepare (EXECUTABLE)
+            ├── requirements.in    # Python requirements to install from pip
+            └── voirfile.py        # Probes and extra instruments
 
 Some of these files may be unnecessary depending on the benchmark.
 
@@ -26,30 +33,37 @@ First of all, if you want to verify that everything works, you can use the ``dev
 
 .. code-block:: bash
 
-    # You can also use --config
-    export MILABENCH_CONFIG=benchmarks/ornatebench/dev.yaml
+    cd milabench/benchmarks/ornatebench
 
-    milabench install
-    milabench prepare
-    milabench run
+    milabench install --config dev.yaml --base .
+
+    milabench prepare --config dev.yaml --base .
+
+    milabench run     --config dev.yaml --base .
 
 
 Overview
 ~~~~~~~~
 
-
 benchfile.py
 ++++++++++++
 
-``benchfile.py`` defines what to do on ``milabench install/prepare/run``. It is run from the benchmark directory directly, in the *current* virtual environment, but it can create *new processes* in the virtual environment of the benchmark.
+``benchfile.py`` defines what to do on ``milabench install/prepare/run``. 
+It is run from the benchmark directory directly, in the *current* virtual environment, 
+but it can create *new processes* in the virtual environment of the benchmark.
 
-By default it will dispatch to ``requirements.in`` for install requirements, ``prepare.py`` for prep work and downloading datasets, and ``main.py`` for running the actual benchmark. If that is suitable you may not need to change it at all.
+By default it will dispatch to ``requirements.in`` for install requirements, 
+``prepare.py`` for prep work and downloading datasets, and
+``main.py`` for running the actual benchmark. 
+If that is suitable you may not need to change it at all.
 
 
 requirements.in
 +++++++++++++++
 
-Write all of the benchmark's requirements in this file. Use ``milabench install --config benchmarks/ornatebench/dev.yaml`` to install them during development (add ``--force`` if you made changes and want to reinstall.)
+Write all of the benchmark's requirements in this file. 
+Use ``milabench install --config benchmarks/ornatebench/dev.yaml`` 
+to install them during development (add ``--force`` if you made changes and want to reinstall.)
 
 
 prepare.py
@@ -123,7 +137,6 @@ voirfile.py
 
 The voirfile contains instrumentation for the main script. You can usually just leave it as it is. By default, it will:
 
-* Compute the train "rate" (number of samples per second) using events from ``voir.iterate``.
 * Forcefully stop the program after a certain number of rate measurements.
 * Monitor GPU usage.
 
@@ -131,9 +144,11 @@ The voirfile contains instrumentation for the main script. You can usually just 
 Development
 ~~~~~~~~~~~
 
-To develop the benchmark, first run ``milabench dev --config benchmarks/BENCHNAME/dev.yaml``. This will activate the benchmark's virtual environment and put you into a shell.
+To develop the benchmark, first run ``milabench dev --config benchmarks/BENCHNAME/dev.yaml``. 
+This will activate the benchmark's virtual environment and put you into a shell.
 
-Then, try and run ``voir --dash main.py``. This should show you a little dashboard and display losses, train rate calculations and one or more progress bars.
+Then, try and run ``voir --dash main.py``. This should show you a little dashboard and display losses, 
+train rate calculations and one or more progress bars.
 
 From there, you can develop as you would any other Python program.
 
@@ -159,9 +174,43 @@ This will create ``requirements.<arch>.txt`` for these two architectures. These 
     ``--variant unpinned`` means installing directly from ``requirements.in``. This can be useful during development, but less stable over time since various dependencies may break.
 
 
-.. Adapting existing code
-.. ~~~~~~~~~~~~~~~~~~~~~~
+Adapting existing repository
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. Now, let's say you want to adapt code from the repo at ``https://github.com/snakeoilplz/agi``, more specifically the ``train.py`` script.
+To simplify the creation of benchmarks, milabench can use ptera and voir to override or wrap code from a third party
+without modifying the third party code.
 
-.. TODO
+.. code-block:: bash
+
+    git clone https://github.com/mila-iqia/milabench.git
+    git checkout -b ornatebench
+
+    pip install -e milabench/
+    milabench new --name ornatebench --repo-url https://github.com/Delaunay/extern_example.git
+
+
+The instrumentation is inserted inside ``voirfile.py`` using the ``Overseer.probe``, examples can 
+be found in ptera `documentation <https://ptera.readthedocs.io/en/latest/guide.html#probing>`_
+
+
+Wrap a return value
++++++++++++++++++++
+
+
+.. code-block:: python
+
+    class Wrapper:
+        def __init__(self, value):
+            self.value = value
+
+    def wrap(original):
+        return Wrapper(original)
+
+    probe = ov.probe("//my_optimizer_creator() as optimizer", overridable=True)
+    probe['optimizer'].override(wrap)
+
+
+* ``//my_optimizer_creator() as optimizer``: get the return value of a function inside the main script
+* ``/module.path.function() as optimizer``: get the return value of a function inside a module
+* ``/module.path.function > loss_fn``: get a variable inside a function inside a module
+

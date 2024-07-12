@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Getting Started &mdash; milabench  documentation</title>
+  <title>Running Milabench &mdash; milabench  documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
 
@@ -20,7 +20,9 @@
         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" /> 
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Creating a new benchmark" href="new_benchmarks.html" />
+    <link rel="prev" title="Install and use" href="usage.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -43,11 +45,30 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Install and use</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Running Milabench</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#base-setup">Base Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#recipes">Recipes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#one-env">One Env</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#batch-resizer">Batch resizer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#device-select">Device Select</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#update-package">Update Package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#arguments">Arguments</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#example-reports">Example Reports</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#xa100-sxm4-80go">8xA100 SXM4 80Go</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id1">4xA100 SXM4 80Go</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#xa100-sxm4-80go-limited-to-40go-of-vram">4xA100 SXM4 80Go limited to 40Go of VRAM</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#issues">Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="new_benchmarks.html">Creating a new benchmark</a></li>
 <li class="toctree-l1"><a class="reference internal" href="docker.html">Docker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dev-usage.html">Using milabench (DEVELOPERS)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="new_benchmarks.html">Creating a new benchmark</a></li>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sizer.html">Scaling</a></li>
 </ul>
@@ -66,9 +87,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Getting Started</li>
+      <li class="breadcrumb-item active">Running Milabench</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="_sources/start.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/recipes.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -76,8 +97,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="getting-started">
-<h1>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading"></a></h1>
+  <section id="running-milabench">
+<h1>Running Milabench<a class="headerlink" href="#running-milabench" title="Link to this heading"></a></h1>
 <section id="base-setup">
 <h2>Base Setup<a class="headerlink" href="#base-setup" title="Link to this heading"></a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>salloc<span class="w">  </span>-w<span class="w"> </span><span class="s2">&quot;cn-d[003-004]&quot;</span><span class="w"> </span>--ntasks<span class="o">=</span><span class="m">1</span><span class="w"> </span>--gpus-per-task<span class="o">=</span>a100l:8<span class="w"> </span>--exclusive<span class="w"> </span>--nodes<span class="o">=</span><span class="m">1</span><span class="w"> </span>--cpus-per-task<span class="o">=</span><span class="m">128</span><span class="w"> </span>--time<span class="o">=</span><span class="m">120</span>:00:00<span class="w"> </span>--ntasks-per-node<span class="o">=</span><span class="m">1</span><span class="w"> </span>--mem<span class="o">=</span><span class="m">0</span>
@@ -85,17 +106,22 @@
 mkdir<span class="w"> </span>milabench
 <span class="nb">cd</span><span class="w"> </span>milabench
 git<span class="w"> </span>clone<span class="w"> </span>https://github.com/mila-iqia/milabench.git
+
 conda<span class="w"> </span>activate<span class="w"> </span>base
 python<span class="w"> </span>--version
 Python<span class="w"> </span><span class="m">3</span>.11.4
+
 virtualenv<span class="w"> </span>./env
 <span class="nb">source</span><span class="w"> </span>./env/bin/activate
 pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>milabench/
+
 <span class="nb">export</span><span class="w"> </span><span class="nv">MILABENCH_WORDIR</span><span class="o">=</span><span class="s2">&quot;</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span><span class="s2">&quot;</span>
 <span class="nb">export</span><span class="w"> </span><span class="nv">MILABENCH_BASE</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$MILABENCH_WORDIR</span><span class="s2">/results&quot;</span>
 <span class="nb">export</span><span class="w"> </span><span class="nv">MILABENCH_CONFIG</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$MILABENCH_WORDIR</span><span class="s2">/milabench/config/standard.yaml&quot;</span>
 <span class="nb">export</span><span class="w"> </span><span class="nv">BENCHMARK_VENV</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$MILABENCH_WORDIR</span><span class="s2">/results/venv/torch&quot;</span>
+
 module<span class="w"> </span>load<span class="w"> </span>cuda/12.3.2<span class="w">                                          </span><span class="c1"># &lt;= or set CUDA_HOME to the right spot</span>
+
 milabench<span class="w"> </span>install
 milabench<span class="w"> </span>prepare
 milabench<span class="w"> </span>run
@@ -327,7 +353,10 @@ might be missing. It can be the symptom of another problem that caused benchmark
 
            </div>
           </div>
-          <footer>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="usage.html" class="btn btn-neutral float-left" title="Install and use" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="new_benchmarks.html" class="btn btn-neutral float-right" title="Creating a new benchmark" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
   <hr/>
 
