@@ -26,11 +26,6 @@ class Config:
 
 @configurable
 def instrument_main(ov, options: Config):
-    try:
-        import torch
-    except ImportError:
-        torch = None
-
     yield ov.phases.init
 
     if options.dash:
@@ -38,13 +33,6 @@ def instrument_main(ov, options: Config):
 
     ov.require(
         log("value", "progress", "rate", "units", "loss", "gpudata", context="task"),
-        rate(
-            interval=options.interval,
-            skip=options.skip,
-            sync=torch.cuda.synchronize
-            if torch and torch.cuda.is_available()
-            else None,
-        ),
         early_stop(n=options.stop, key="rate", task="train"),
         monitor_monogpu(poll_interval=options.gpu_poll),
     )

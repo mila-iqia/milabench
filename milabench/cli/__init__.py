@@ -20,9 +20,14 @@ from .slurm import cli_slurm_system
 from .sql import cli_sqlsetup
 from .summary import cli_summary
 from .resolve import cli_resolve
+from .new import cli_new
 
 
 class Main:
+    def new():
+        """Create a new benchmark from template"""
+        return cli_new()
+
     def run():
         """Run the benchmarks."""
         return cli_run()
