@@ -450,7 +450,7 @@ class SCPCommand(SSHCommand, CmdCommand):
         return argv
 
 
-class TorchRunCommand(WrapperCommand):
+class TorchrunAllGPU(WrapperCommand):
     def __init__(self, executor: SingleCmdCommand, *torchrun_argv, **kwargs) -> None:
         # Some vendors force us to have weird venv that can resolve weirdly
         # use absolute paths to avoid issues
@@ -484,6 +484,12 @@ class TorchRunCommand(WrapperCommand):
             return argv
         return []
 
+
+
+class TorchrunAllNodes(WrapperCommand):
+    pass
+
+TorchRunCommand = TorchrunAllGPU
 
 use_voir = True
 

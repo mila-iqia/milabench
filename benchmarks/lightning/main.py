@@ -42,19 +42,33 @@ def main():
         metavar="N",
         help="number of epochs to train (default: 10)",
     )
+    parser.add_argument(
+        "--model", type=str, help="torchvision model name", required=True
+    )
     dataloader_arguments(parser)
     args = parser.parse_args()
     model = getattr(torchvision_models, args.model)()
 
-    rank = os.getenv("RANK", 0)
-    world_size = os.getenv("WORLD_SIZE", 1)
-    local_world_size = os.getenv("LOCAL_WORLD_SIZE", 1)
+    rank = int(os.getenv("RANK", 0))
+    world_size = int(os.getenv("WORLD_SIZE", 1))
+    local_world_size = int(os.getenv("LOCAL_WORLD_SIZE", 1))
 
     n = accelerator.device_count()
     nnodes = world_size // local_world_size
-    dataset = imagenet_dataloader(args, model, rank, world_size)
 
     model = TorchvisionLightning(model)
+
+    dataset = imagenet_dataloader(args, model, rank, world_size)
+   
+    from benchmate.observer import BenchObserver
+
+    observer = BenchObserver(
+        accelerator.Event, 
+        earlystop=65,
+        batch_size_fn=lambda x: len(x[0]),
+        raise_stop_program=False,
+        stdout=True,
+    )
 
     # train model
     trainer = L.Trainer(
@@ -63,9 +77,14 @@ def main():
         num_nodes=nnodes, 
         strategy="ddp",
         max_epochs=args.epochs,
-        precision=16
+        precision=16,
+        enable_checkpointing=False,
+        enable_progress_bar=False,
+        reload_dataloaders_every_n_epochs=1,
+        max_steps=100
     )
-    trainer.fit(model=model, train_dataloaders=dataset)
+    trainer.fit(model=model, train_dataloaders=observer.loader(dataset))
+    print("finished: ", rank)
 
 
 if __name__ == "__main__":

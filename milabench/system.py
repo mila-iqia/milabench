@@ -81,12 +81,25 @@ def default_save_location():
 
 @dataclass
 class SizerOptions:
+    # overrides the batch size to use for all benchmarks
     size: int = option("sizer.batch_size", int)
+
+    # Enables auto batch resize
     autoscale: bool = option("sizer.auto", int, 0)
+
+    # Constraint the batch size to be a multiple of a number
     multiple: int = option("sizer.multiple", int, 8)
+
+    # Constraint the batch size to be a power of a specified base (usually 2)
     power: int = option("sizer.power", int)
+
+    # Use the optimized batch size
     optimized: bool = option("sizer.optimized", int)
+
+    # Set a target VRAM capacity to use
     capacity: str = option("sizer.capacity", str)
+
+    # Save the batch size, VRM usage data to a scaling file
     save: str = option("sizer.save", str, None)
 
 
@@ -108,9 +121,29 @@ class CPUOptions:
 
 
 @dataclass
+class DatasetConfig:
+    # If use buffer is true then datasets are copied to the buffer before running the benchmark
+    use_buffer: bool = option("data.use_buffer", bool, default=False)
+
+    # buffer location to copy the datasets bfore running the benchmarks
+    buffer: str = option("data.buffer", str, default="${dirs.base}/buffer")
+
+
+@dataclass
+class Dirs:
+    venv: str = option("dirs.venv", str, default="${dirs.base}/venv/${install_group}")
+    data: str = option("dirs.data", str, default="${dirs.base}/data")
+    runs: str = option("dirs.runs", str, default="${dirs.base}/runs")
+    extra: str = option("dirs.extra", str, default="${dirs.base}/extra/${group}")
+    cache: str = option("dirs.cache", str, default="${dirs.base}/cache")
+
+
+@dataclass
 class Options:
     sizer: SizerOptions
     cpu: CPUOptions
+    dataset: DatasetConfig
+    dirs: Dirs
 
 
 @dataclass

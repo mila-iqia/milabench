@@ -148,6 +148,15 @@ def default_event():
         return CPUTimer()
 
 
+def default_device():
+    try:
+        import torchcompat.core as accelerator
+        return accelerator.fetch_device(int(os.getenv("LOCAL_RANK", 0)))
+    except:
+        print("Could not find a device")
+        return None
+    
+
 class TimedIterator:
     """Time the body of a loop, ignoring the time it took to initialize the iterator.`
     The timings are measured using `torch.cuda.Event` to avoid explicit sync.
@@ -214,9 +223,9 @@ class TimedIterator:
         self,
         loader,
         event_fn=default_event(),
-        rank=0,
+        rank=int(os.getenv("RANK", 0)),
         push=file_push(),
-        device=None,
+        device=default_device(),
         earlystop=earlystop_count(),
         raise_stop_program=False,
         batch_size_fn=None,
@@ -238,9 +247,8 @@ class TimedIterator:
         self.batch_size_fn = batch_size_fn
 
         # Multi-GPU setup
-        self.rank = None
+        self.rank = rank
         self.device = device
-        self.world_size = 1
 
         # Options
         self.raise_stop_program = (
@@ -367,6 +375,18 @@ class TimedIterator:
         self.previous_overhead = 0
         self.overhead = []
         self.loader_init_time = []
+
+    def __del__(self):
+        try:
+            if self.events:
+                self._push()
+        except ValueError as err:
+            print("Some events could not be pushed because: ", str(err))
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self._push()
 
     def _push(self):
         """Push all the accumulated metrics"""

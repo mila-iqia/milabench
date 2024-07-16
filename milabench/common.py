@@ -22,7 +22,7 @@ from .merge import merge
 from .multi import MultiPackage
 from .report import make_report
 from .summary import aggregate, make_summary
-from .system import build_system_config
+from .system import build_system_config, option
 
 
 def get_pack(defn):
@@ -149,11 +149,11 @@ def get_base_defaults(base, arch="none", run_name="none"):
             },
             "dirs": {
                 "base": base,
-                "venv": "${dirs.base}/venv/${install_group}",
-                "data": "${dirs.base}/data",
-                "runs": "${dirs.base}/runs",
-                "extra": "${dirs.base}/extra/${group}",
-                "cache": "${dirs.base}/cache",
+                "venv": option("dirs.venv", str, default="${dirs.base}/venv/${install_group}"),
+                "data": option("dirs.data", str, default="${dirs.base}/data"),
+                "runs": option("dirs.runs", str, default="${dirs.base}/runs"),
+                "extra": option("dirs.extra", str, default="${dirs.base}/extra/${group}"),
+                "cache": option("dirs.cache", str, default="${dirs.base}/cache"),
             },
             "group": "${name}",
             "install_group": "${group}",

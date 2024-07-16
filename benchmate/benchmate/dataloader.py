@@ -166,12 +166,12 @@ def image_transforms():
     return data_transforms
 
 
-def pytorch(folder, batch_size, num_workers, distributed=False, epochs=60):
+def pytorch(folder, batch_size, num_workers, distributed=False, epochs=60, rank=None, world_size=None):
     train = datasets.ImageFolder(folder, image_transforms())
 
     kwargs = {"shuffle": True}
     if distributed:
-        kwargs["sampler"] = DistributedSampler(train)
+        kwargs["sampler"] = DistributedSampler(train, rank=rank, num_replicas=world_size)
         kwargs["shuffle"] = False
 
     # The dataloader needs a warmup sometimes
@@ -262,4 +262,5 @@ def imagenet_dataloader(args, model, rank=0, world_size=1):
     if args.loader == "dali":
         return dali(folder, args.batch_size, args.num_workers, rank, world_size)
 
-    return pytorch(folder, args.batch_size, args.num_workers, world_size > 1)
+    return pytorch(folder, args.batch_size, args.num_workers, 
+                   distributed=world_size > 1, rank=rank, world_size=world_size)

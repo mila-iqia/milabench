@@ -1,3 +1,5 @@
+import os
+
 from voir.helpers import current_overseer
 
 from .metrics import LazyLossPusher, TimedIterator, give_push, sumggle_push
@@ -28,7 +30,7 @@ class BenchObserver:
         backward_callback=None,
         step_callback=None,
         stdout=False,
-        rank=None,
+        rank=int(os.getenv("RANK", 0)),
         **kwargs,
     ):
         self.wrapped = None

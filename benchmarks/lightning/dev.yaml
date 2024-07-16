@@ -4,11 +4,13 @@ _lightning:
   inherits: _defaults
   definition: .
   install-variant: unpinned
+  install_group: torch
   argv:
     --epochs: 10
     --num-workers: "auto({n_worker}, 8)"
     --loader: pytorch
     --data: "{milabench_data}/FakeImageNet"
+    --model: resnet152
 
 lightning:
   inherits: _lightning
