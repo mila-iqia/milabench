@@ -1,0 +1,29 @@
+
+
+_lightning:
+  inherits: _defaults
+  definition: .
+  install-variant: unpinned
+  argv:
+    --epochs: 10
+    --num-workers: "auto({n_worker}, 8)"
+    --loader: pytorch
+    --data: "{milabench_data}/FakeImageNet"
+
+lightning:
+  inherits: _lightning
+  plan:
+    method: per_gpu
+    n: 1
+
+lightning-gpus:
+  inherits: _lightning
+  plan:
+    method: njobs
+    n: 1
+
+lightning-nodes:
+  inherits: _lightning
+  plan:
+    method: njobs
+    n: 1
