@@ -12,15 +12,20 @@ import torchcompat.core as accelerator
 from benchmate.dataloader import imagenet_dataloader, dataloader_arguments
 
 
+def criterion():
+    return F.cross_entropy
+
+
 class TorchvisionLightning(L.LightningModule):
     def __init__(self, model):
         super().__init__()
         self.model = model
+        self.criterion = criterion()
 
     def training_step(self, batch, batch_idx):
         x, y = batch
         p = self.model(x)
-        loss = F.cross_entropy(p, y)
+        loss = self.criterion(p, y)
         return loss
 
     def configure_optimizers(self):
