@@ -73,7 +73,8 @@ class LazyMetricPusher:
     def push(self, pusher):
         """Iterate through data and push metrics."""
         for args, kwargs in self.delayed:
-            pusher(**self.materialize(*args, **kwargs))
+            data = self.materialize(*args, **kwargs)
+            pusher(**data)
         self.delayed = []
 
 

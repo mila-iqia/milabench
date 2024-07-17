@@ -42,7 +42,7 @@ class BenchObserver:
         self.task = "train"
         self.rank = rank
         self.losses = LazyLossPusher(self.task)
-
+        self.instance = None
         self.pusher = give_push()
         if self.stdout:
             self.pusher = sumggle_push()
@@ -52,7 +52,7 @@ class BenchObserver:
         self.losses.push(self.pusher)
 
     def record_loss(self, loss):
-        if self.rank is None or self.rank == 1:
+        if self.rank is None or self.rank == 0:
             self.losses.record(loss)
         return loss
 
@@ -74,11 +74,15 @@ class BenchObserver:
     
     def loader(self, loader):
         """Wrap a dataloader or an iterable which enable accurate measuring of time spent in the loop's body"""
+        if self.instance:
+            return self.instance
+        
         self.wrapped = TimedIterator(
             loader, *self.args, rank=self.rank, push=self.pusher, **self.kwargs
         )
         self.wrapped.task = self.task
         self.wrapped.on_iterator_stop_iterator = self.on_iterator_stop_iterator
+        self.instance = self.wrapped
         return self.wrapped
 
     def criterion(self, criterion):
@@ -110,5 +114,12 @@ class BenchObserver:
                 original(*args, **kwargs)
                 self.optimizer_step_callback()
 
+            # wow
+            # pytorch does
+            #   instance_ref = weakref.ref(method.__self__)
+            #   where
+            #       method == self.optimizer.step
+            new_step.__self__ = optimizer.step.__self__
+            new_step.__func__ = optimizer.step.__func__
             optimizer.step = new_step
         return optimizer

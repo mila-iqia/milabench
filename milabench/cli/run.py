@@ -63,6 +63,15 @@ def arguments():
     return Arguments(run_name, repeat, fulltrace, report, dash, noterm, validations)
 
 
+
+def _fetch_arch(mp):
+    try:
+        arch = next(iter(mp.packs.values())).config["system"]["arch"]
+    except StopIteration:
+        print("no selected bench")
+        return None
+    
+
 @tooled
 def cli_run(args=None):
     """Run the benchmarks."""
@@ -78,7 +87,7 @@ def cli_run(args=None):
     }.get(args.dash, None)
 
     mp = get_multipack(run_name=args.run_name)
-    arch = next(iter(mp.packs.values())).config["system"]["arch"]
+    arch = _fetch_arch(mp)
 
     # Initialize the backend here so we can retrieve GPU stats
     init_arch(arch)

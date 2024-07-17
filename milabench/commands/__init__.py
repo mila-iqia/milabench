@@ -520,10 +520,31 @@ class TorchrunAllGPU(WrapperCommand):
 
 
 class ForeachNode(ListCommand):
-    def __init__(self, executor: Command, use_stdout=True, **kwargs) -> None:
+    def __init__(self, executor: Command, **kwargs) -> None:
         super().__init__(None, **kwargs)
+        self.options = kwargs
         self.executor = executor
-        self.use_stdout = use_stdout
+
+    def make_new_node_pack(self, rank, node, base) -> "BasePackage":
+        """Make a new environment/config for the run"""
+        config = base.pack.config
+        tags = [*config["tag"], node["name"]]
+
+        # Workers do not send training data
+        # tag it as such so validation can ignore this pack
+        if rank != 0:
+            tags.append("nolog")
+
+        run = clone_with(config, {"tag": tags})
+        return base.pack.copy(run)
+
+    def make_new_node_executor(self, rank, node, base):
+        """Make a new environment and create a new executor for the node"""
+        pack = self.make_new_node_pack(rank, node, base)
+        return base.copy(pack)
+
+    def single_node(self):
+        return self.executor
 
     @property
     def executors(self):
@@ -538,34 +559,24 @@ class ForeachNode(ListCommand):
 
         # useless in single node setups
         if len(self.nodes) == 1 or max_num == 1:
-            return [self.executor]
+            return [self.single_node()]
         
-        def new_executor(base, cfg):
-            nonlocal config
-            run = clone_with(config, cfg)
-            new_pack = self.executor.pack.copy(run)
-            return base.copy(new_pack)
-
         for rank, node in enumerate(self.nodes):
             options = dict()
-            tags = [*self.executor.pack.config["tag"], node["name"]]
+        
             # Hummm...
             if rank == 0:
                 options = dict(
                     setsid=True,
-                    use_stdout=self.use_stdout,
+                    **self.options
                 )
-            else:
-                # Workers do not send training data
-                # tag it as such so validation can ignore this pack
-                tags.append("nolog")
 
             worker = SSHCommand(
                 host=node["ip"],
                 user=node["user"],
                 key=key,
                 port=node.get("port", 22),
-                executor=new_executor(self.executor, {"tag": tags}),
+                executor=self.make_new_node_executor(rank, node, self.executor),
                 **options
             )
             executors.append(worker)
@@ -773,6 +784,43 @@ class ActivatorCommand(SingleCmdCommand):
         return [f"{self.pack.dirs.code / 'activator'}", f"{self.pack.dirs.venv}"]
 
 
+
+class AccelerateAllNodes(ForeachNode):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+    def single_node(self):
+        ngpu = len(self.executor.pack.config.get("devices", []))
+
+        # Multi GPU
+        if ngpu > 1:
+            return AccelerateLaunchCommand(self.executor, rank=0, **self.options)
+        
+        # Single GPU
+        return self.executor
+    
+    def make_new_node_executor(self, rank, node, base):
+        config = base.pack.config
+
+        pack = self.make_new_node_pack(rank, node, base)
+    
+        return DockerRunCommand(
+            AccelerateLaunchCommand(pack, rank=rank),
+            config["system"].get("docker_image"),
+        )
+
+
+def activator_script():
+    """Scripts that activate the venv just before executing a script
+    
+    Useful for commands that SSH somewhere and need to execute a command in a particular venv
+    """
+
+    path = XPath(__file__).parent.parent / "scripts" / "activator"
+    assert path.exists()
+    return str(path)
+
+
 # Accelerate
 class AccelerateLaunchCommand(SingleCmdCommand):
     """Execute a `pack.BasePackage` with Accelerate
@@ -801,28 +849,33 @@ class AccelerateLaunchCommand(SingleCmdCommand):
 
         num_machines = max(1, len(nodes) + 1)
 
-        ngpu = len(get_gpu_info()["gpus"].values())
+        # Cant do that maybe this run is constrained
+        # ngpu = len(get_gpu_info()["gpus"].values())
+
+        ngpu = len(self.pack.config["devices"])
         nproc = ngpu * num_machines
         assert nproc > 0, f"nproc: {nproc} num_machines: {num_machines} ngpu: {ngpu}"
 
-        deepspeed_argv = (
-            [
+
+        if self.pack.config.get("use_deepspeed", False):
+            deepspeed_argv = [
                 "--use_deepspeed",
                 "--deepspeed_multinode_launcher=standard",
                 "--zero_stage=2",
             ]
-            if self.pack.config["use_deepspeed"]
-            else ["--multi_gpu"]
-        )
-
-        cpu_per_process = self.pack.resolve_argument('--cpus_per_gpu')
+        elif ngpu > 1:
+            deepspeed_argv = ["--multi_gpu"]
+        else:
+            deepspeed_argv = []
+    
+        cpu_per_process = self.pack.resolve_argument('--cpus_per_gpu', 4)
         return [
             # -- Run the command in the right venv
             # This could be inside the SSH Command
             # but it would need to be repeated for Docker
             # could be its own Command like VenvCommand that execute code
             # inside a specifc venv
-            f"{self.pack.dirs.code / 'activator'}",
+            activator_script(),
             f"{self.pack.dirs.venv}",
             # --
             "accelerate",
@@ -832,7 +885,7 @@ class AccelerateLaunchCommand(SingleCmdCommand):
             f"--machine_rank={self.rank}",
             f"--num_machines={num_machines}",
             *deepspeed_argv,
-            f"--gradient_accumulation_steps={self.pack.config['gradient_accumulation_steps']}",
+            f"--gradient_accumulation_steps={self.pack.config.get('gradient_accumulation_steps', 1)}",
             f"--num_cpu_threads_per_process={cpu_per_process}",
             f"--main_process_ip={manager['ip']}",
             f"--main_process_port={manager['port']}",

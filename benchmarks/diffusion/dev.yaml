@@ -1,33 +1,29 @@
 
-
-_lightning:
+diffusion:
   inherits: _defaults
   definition: .
   install-variant: unpinned
   install_group: torch
-  argv:
-    --epochs: 10
-    --num-workers: "auto({n_worker}, 8)"
-    --loader: pytorch
-    --data: "{milabench_data}/FakeImageNet"
-    --model: resnet152
-
-lightning:
-  inherits: _lightning
   num_machines: 1
   plan:
     method: per_gpu
 
-lightning-gpus:
-  inherits: _lightning
+diffusion-gpus:
+  inherits: _defaults
+  definition: .
+  install-variant: unpinned
+  install_group: torch
   num_machines: 1
   plan:
     method: njobs
     n: 1
 
-lightning-nodes:
-  inherits: _lightning
+diffusion-nodes:
+  inherits: _defaults
   num_machines: 2
+  definition: .
+  install-variant: unpinned
+  install_group: torch
   plan:
     method: njobs
     n: 1

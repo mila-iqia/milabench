@@ -35,7 +35,7 @@ class AccelerateBenchmark(Package):
         )
 
     def build_run_plan(self):
-        # FIXME: use ForeachNode
+        # FIXME: or AccelerateAllNodes
         plans = []
 
         max_num = self.config["num_machines"]
