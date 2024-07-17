@@ -1,4 +1,4 @@
-from milabench.commands import TorchRunCommand
+from milabench.commands import TorchrunAllNodes, TorchrunAllGPU, ListCommand
 from milabench.pack import Package
 
 
@@ -16,7 +16,11 @@ class LightningBenchmark(Package):
     def build_run_plan(self):
         # self.config is not the right config for this
         plan = super().build_run_plan()
-        return TorchRunCommand(plan, use_stdout=True)
+
+        # if self.config.get("num_machines", 1) <= 1:
+        #    return ListCommand(TorchrunAllGPU(plan, use_stdout=True))
+    
+        return TorchrunAllNodes(plan, use_stdout=True)
 
 
 __pack__ = LightningBenchmark

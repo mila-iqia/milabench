@@ -16,6 +16,7 @@ from ..fs import XPath
 from ..merge import merge
 from ..utils import select_nodes
 from .executors import execute_command
+from ..system import option
 
 
 def clone_with(cfg, new_cfg):
@@ -109,6 +110,17 @@ class Command:
         """Execute all the commands and return the aggregated results"""
         return await execute_command(self, phase, timeout, timeout_delay, **kwargs)
 
+    def __repr__(self) -> str:
+        typename = f"{type(self).__name__}"
+        frags = []
+        if self._pack:
+            frags.append("pack")
+
+        if self.exec:
+            frags.append(repr(self.exec))
+            
+        return f"{typename}({', '.join(frags)})"
+
 
 class SingleCmdCommand(Command):
     def argv(self, **kwargs) -> List:
@@ -141,7 +153,14 @@ class ListCommand(Command):
 
     def __init__(self, *executors: Tuple[Command], **kwargs) -> None:
         super().__init__(None, **kwargs)
-        self.executors = executors
+        # Note: it is better to use the function for it
+        # since it will generate the executors when needed
+        # allowing the environment to be modified/updated
+        self._executors = executors
+
+    @property
+    def executors(self):
+        return self._executors
 
     @property
     def pack(self):
@@ -154,6 +173,20 @@ class ListCommand(Command):
     def packs(self):
         for exec in self.executors:
             yield from exec.packs()
+
+    def __repr__(self):
+        typename = f"{type(self).__name__}"
+        frags = []
+        for e in self.executors:
+            frags.append(repr(e))
+        return f"{typename}([{', '.join(frags)}])"
+    
+    def copy(self, pack):
+        """Copy the execution plan but use a different pack"""
+        copy = deepcopy(self)
+        for e in copy._executors:
+            e._set_pack(pack)
+        return copy
 
 
 class CmdCommand(SingleCmdCommand):
@@ -450,6 +483,7 @@ class SCPCommand(SSHCommand, CmdCommand):
         return argv
 
 
+
 class TorchrunAllGPU(WrapperCommand):
     def __init__(self, executor: SingleCmdCommand, *torchrun_argv, **kwargs) -> None:
         # Some vendors force us to have weird venv that can resolve weirdly
@@ -464,7 +498,7 @@ class TorchrunAllGPU(WrapperCommand):
         devices = self.pack.config.get("devices", [])
         nproc = len(devices)
         if nproc > 1:
-            argv = [*super()._argv(**kwargs), f"--nproc_per_node={nproc}"]
+            argv = [*super()._argv(**kwargs), f"--nproc-per-node={nproc}"]
 
             # Check if the sub-executor targets a module or not
             cmd = next(iter(self.exec.argv()), None)
@@ -485,9 +519,94 @@ class TorchrunAllGPU(WrapperCommand):
         return []
 
 
+class ForeachNode(ListCommand):
+    def __init__(self, executor: Command, use_stdout=True, **kwargs) -> None:
+        super().__init__(None, **kwargs)
+        self.executor = executor
+        self.use_stdout = use_stdout
 
-class TorchrunAllNodes(WrapperCommand):
-    pass
+    @property
+    def executors(self):
+        """Build the executor lazyly when necessary so we get the latest config"""
+        executors = []
+
+        config = self.executor.pack.config
+
+        max_num = config.get("num_machines", 1)
+        self.nodes = select_nodes(config["system"]["nodes"], max_num)
+        key = config["system"].get("sshkey")
+
+        # useless in single node setups
+        if len(self.nodes) == 1 or max_num == 1:
+            return [self.executor]
+        
+        def new_executor(base, cfg):
+            nonlocal config
+            run = clone_with(config, cfg)
+            new_pack = self.executor.pack.copy(run)
+            return base.copy(new_pack)
+
+        for rank, node in enumerate(self.nodes):
+            options = dict()
+            tags = [*self.executor.pack.config["tag"], node["name"]]
+            # Hummm...
+            if rank == 0:
+                options = dict(
+                    setsid=True,
+                    use_stdout=self.use_stdout,
+                )
+            else:
+                # Workers do not send training data
+                # tag it as such so validation can ignore this pack
+                tags.append("nolog")
+
+            worker = SSHCommand(
+                host=node["ip"],
+                user=node["user"],
+                key=key,
+                port=node.get("port", 22),
+                executor=new_executor(self.executor, {"tag": tags}),
+                **options
+            )
+            executors.append(worker)
+        return executors
+
+    def copy(self, pack):
+        """Copy the execution plan but use a different pack"""
+        copy = deepcopy(self)
+        copy.executor._set_pack(pack)
+        return copy
+
+
+class TorchrunAllNodes(ForeachNode):
+    """executes torchrun on multiple machines"""
+    def __init__(self, executor: Command, **kwargs) -> None:
+
+        config = executor.pack.config
+        max_num = config.get("num_machines", 1)
+        self.nodes = select_nodes(config["system"]["nodes"], max_num)
+
+        main = self.nodes[0]
+
+        # node[port] is for SSH
+        main_host = main["ip"]
+        # add them as option so we could tweak them if necessary
+        main_port = option("torchrun.port", int, default=29400)
+        backend = option("torchrun.backend", str, default="c10d")
+
+        main_addr = f"{main_host}:{main_port}"
+        base_exec = TorchrunAllGPU(
+            executor,
+            f"--nnodes={len(self.nodes)}",
+            f"--rdzv-backend={backend}",
+            f"--rdzv-endpoint={main_addr}",
+            f"--master-addr={main_host}",
+            f"--master-port={main_port}",
+            **kwargs
+        )
+
+        super().__init__(base_exec)
+
 
 TorchRunCommand = TorchrunAllGPU
 

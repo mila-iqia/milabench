@@ -62,6 +62,8 @@ def main():
    
     from benchmate.observer import BenchObserver
 
+    accelerator.set_enable_tf32(True)
+
     observer = BenchObserver(
         accelerator.Event, 
         earlystop=65,
@@ -77,7 +79,7 @@ def main():
         num_nodes=nnodes, 
         strategy="ddp",
         max_epochs=args.epochs,
-        precision=16,
+        precision="16-mixed",
         enable_checkpointing=False,
         enable_progress_bar=False,
         reload_dataloaders_every_n_epochs=1,

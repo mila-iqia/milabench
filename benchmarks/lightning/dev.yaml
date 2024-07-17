@@ -14,18 +14,24 @@ _lightning:
 
 lightning:
   inherits: _lightning
+  num_machines: 1
   plan:
     method: per_gpu
     n: 1
 
 lightning-gpus:
   inherits: _lightning
+  num_machines: 1
   plan:
     method: njobs
     n: 1
 
 lightning-nodes:
   inherits: _lightning
+  num_machines: 2
   plan:
     method: njobs
     n: 1
+  
+  requires_capabilities:
+    - "len(nodes) >= ${num_machines}"

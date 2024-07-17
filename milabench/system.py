@@ -131,11 +131,19 @@ class DatasetConfig:
 
 @dataclass
 class Dirs:
+    """Common directories used by milabench. This can be used to override
+    location in case compute node do not have internet access."""
     venv: str = option("dirs.venv", str, default="${dirs.base}/venv/${install_group}")
     data: str = option("dirs.data", str, default="${dirs.base}/data")
     runs: str = option("dirs.runs", str, default="${dirs.base}/runs")
     extra: str = option("dirs.extra", str, default="${dirs.base}/extra/${group}")
     cache: str = option("dirs.cache", str, default="${dirs.base}/cache")
+
+
+@dataclass 
+class Torchrun:
+    port: int = option("torchrun.port", int, default=29400)
+    backend: str = option("torchrun.backend", str, default="c10d")
 
 
 @dataclass
@@ -144,6 +152,7 @@ class Options:
     cpu: CPUOptions
     dataset: DatasetConfig
     dirs: Dirs
+    torchrun: Torchrun
 
 
 @dataclass
