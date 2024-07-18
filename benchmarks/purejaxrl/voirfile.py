@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 
 from voir import configurable
+from voir.instruments import dash, early_stop, log, rate
 from voir.phase import StopProgram
-from voir.instruments import dash, early_stop, gpu_monitor, log, rate
+
 from benchmate.monitor import monitor_monogpu
 
 

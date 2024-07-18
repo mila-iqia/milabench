@@ -1,4 +1,10 @@
-"""PureJaxRL"""
+"""PureJaxRL example based on https://github.com/luchris429/purejaxrl/blob/main/examples/walkthrough.ipynb
+
+TODOs:
+- This is a simple example on CartPole, it would be preferable to do something more serious (and for longer). 
+- Should probably try something like https://github.com/luchris429/purejaxrl/blob/main/purejaxrl/experimental/s5/ppo_s5.py
+
+"""
 import dataclasses
 import os
 
