@@ -1,16 +1,24 @@
 #!/usr/bin/env python
-
+from dataclasses import dataclass
 import os
 
+from datasets import load_dataset
+
+
+@dataclass
+class TrainingConfig:
+    dataset_name: str = "huggan/smithsonian_butterflies_subset"
+
+
+def main():
+    from argklass import ArgumentParser
+
+    parser = ArgumentParser()
+    parser.add_arguments(TrainingConfig)
+    config, _ = parser.parse_known_args()
+
+    _ = load_dataset(config.dataset_name, split="train")
+
+
 if __name__ == "__main__":
-    # If you need the whole configuration:
-    # config = json.loads(os.environ["MILABENCH_CONFIG"])
-
-    data_directory = os.environ["MILABENCH_DIR_DATA"]
-
-    # Download (or generate) the needed dataset(s). You are responsible
-    # to check if it has already been properly downloaded or not, and to
-    # do nothing if it has been.
-    print("Hello I am doing some data stuff!")
-
-    # If there is nothing to download or generate, just delete this file.
+    main()
