@@ -7,6 +7,9 @@ tests:
 	milabench prepare --config dev.yaml --base base
 	milabench run --config dev.yaml --base base
 
+single:
+	milabench run --config dev.yaml --base base --select diffusion-single
+
 gpus:
 	milabench run --config dev.yaml --base base --select diffusion-gpus
 

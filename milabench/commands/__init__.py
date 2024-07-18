@@ -59,6 +59,22 @@ class Command:
 
         self._kwargs = kwargs
 
+    def use_stdout(self):
+        self.set_run_options(use_stdout=True)
+        return self
+
+    def set_run_options(self, **kwargs):
+        self.options.update(kwargs)
+        return self
+
+    @property
+    def options(self):
+        if self._pack:
+            return self._kwargs
+        if self.exec:
+            return self.exec.options
+        return self._kwargs
+
     @property
     def pack(self) -> pack.BasePackage:
         if self._pack:
@@ -104,7 +120,7 @@ class Command:
         command line's arguments and the `Command`'s kwargs to send to
         `pack.BasePackage.execute()`
         """
-        yield self.pack, [], self.kwargs()
+        yield self.pack, [], self.options # self.kwargs()
 
     async def execute(self, phase="run", timeout=False, timeout_delay=600, **kwargs):
         """Execute all the commands and return the aggregated results"""
@@ -136,7 +152,7 @@ class SingleCmdCommand(Command):
         return self._argv(**kwargs)
 
     def commands(self) -> Generator[Tuple[pack.BasePackage, List, Dict], None, None]:
-        yield self.pack, self.argv(), self.kwargs()
+        yield self.pack, self.argv(), self.options
 
     def _argv(self, **kwargs) -> List:
         del kwargs
@@ -180,6 +196,11 @@ class ListCommand(Command):
         for e in self.executors:
             frags.append(repr(e))
         return f"{typename}([{', '.join(frags)}])"
+    
+    def set_run_options(self, **kwargs):
+        for exec in self._executors:
+            exec.set_run_options(**kwargs)
+        return self
     
     def copy(self, pack):
         """Copy the execution plan but use a different pack"""
@@ -522,7 +543,7 @@ class TorchrunAllGPU(WrapperCommand):
 class ForeachNode(ListCommand):
     def __init__(self, executor: Command, **kwargs) -> None:
         super().__init__(None, **kwargs)
-        self.options = kwargs
+        self.options.update(kwargs)
         self.executor = executor
 
     def make_new_node_pack(self, rank, node, base) -> "BasePackage":
@@ -582,6 +603,10 @@ class ForeachNode(ListCommand):
             executors.append(worker)
         return executors
 
+    def set_run_options(self, **kwargs):
+        self.executor.set_run_options(**kwargs)
+        return self
+    
     def copy(self, pack):
         """Copy the execution plan but use a different pack"""
         copy = deepcopy(self)
@@ -856,7 +881,6 @@ class AccelerateLaunchCommand(SingleCmdCommand):
         nproc = ngpu * num_machines
         assert nproc > 0, f"nproc: {nproc} num_machines: {num_machines} ngpu: {ngpu}"
 
-
         if self.pack.config.get("use_deepspeed", False):
             deepspeed_argv = [
                 "--use_deepspeed",
@@ -891,8 +915,4 @@ class AccelerateLaunchCommand(SingleCmdCommand):
             f"--main_process_port={manager['port']}",
             f"--num_processes={nproc}",
             *self.accelerate_argv,
-            str(self.pack.dirs.code / "main.py"),
-            *self.pack.argv,
-            "--cache",
-            str(self.pack.dirs.cache),
         ]

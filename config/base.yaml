@@ -135,6 +135,12 @@ _accelerate_opt:
     method: njobs
     n: 1
   
+  # Accelerate
+  # accelerate:
+  #   - --mixed_precision=bf16
+  #   - --dynamo_backend=no
+  #   - --gradient_accumulation_steps=1
+
   # Script Args
   argv:
     --max_train_steps: 100
@@ -144,13 +150,13 @@ _accelerate_opt:
     --validation_split_percentage: 5
     --per_gpu_batch_size: 1
     --cpus_per_gpu: "auto({n_worker}, 8)"
+    --cache: "{milabench_cache}"
     # --model_name: "facebook/opt-2.7b"
     # --model_name: "facebook/opt-1.3b"
     # --model_name: "facebook/opt-350m"
     # --model_name: "facebook/opt-125m"
 
   # Accelerate Args
-  gradient_accumulation_steps: 1
   use_deepspeed: true
   num_machines: 1
 

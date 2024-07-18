@@ -30,9 +30,9 @@ class Diffusion(Package):
         await super().prepare()  # super() call executes prepare_script
 
     def build_run_plan(self):
-        plan = super().build_run_plan()
+        plan = super().build_run_plan().use_stdout()
 
-        return AccelerateAllNodes(plan, use_stdout=True)
+        return AccelerateAllNodes(plan)
 
 
 __pack__ = Diffusion

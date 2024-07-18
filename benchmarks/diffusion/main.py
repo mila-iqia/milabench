@@ -16,25 +16,6 @@ from diffusers.optimization import get_cosine_schedule_with_warmup
 
 # from huggingface_hub import HfFolder, Repository, whoami
 
-@dataclass
-class TrainingConfig:
-    image_size = 128  # the generated image resolution
-    train_batch_size = 16
-    eval_batch_size = 16  # how many images to sample during evaluation
-    num_epochs = 50
-    gradient_accumulation_steps = 1
-    dataset_name: str = "huggan/smithsonian_butterflies_subset"
-    learning_rate = 1e-4
-    lr_warmup_steps = 500
-    save_image_epochs = 10
-    save_model_epochs = 30
-    mixed_precision = "fp16"  # `no` for float32, `fp16` for automatic mixed precision
-    output_dir = "ddpm-butterflies-128"  # the model name locally and on the HF Hub
-    push_to_hub = False  # whether to upload the saved model to the HF Hub
-    hub_private_repo = False
-    overwrite_output_dir = True  # overwrite the old model when re-running the notebook
-    seed = 0
-
 
 def build_dataset(config):
     dataset = load_dataset(config.dataset_name, split="train")
@@ -199,22 +180,46 @@ def train_loop(config, model, noise_scheduler, optimizer, train_dataloader, lr_s
 def build_optimizer(config, model):
     return torch.optim.AdamW(model.parameters(), lr=config.learning_rate)
 
+
+
+@dataclass
+class TrainingConfig:
+    image_size: int = 128  # the generated image resolution
+    train_batch_size: int = 16
+    eval_batch_size: int = 16  # how many images to sample during evaluation
+    num_epochs: int = 50
+    gradient_accumulation_steps: int = 1
+    dataset_name: str = "huggan/smithsonian_butterflies_subset"
+    learning_rate: float = 1e-4
+    lr_warmup_steps: int = 500
+    save_image_epochs: int = 10
+    save_model_epochs: int = 30
+    mixed_precision: str = "fp16"  # `no` for float32, `fp16` for automatic mixed precision
+    output_dir:str  = "ddpm-butterflies-128"  # the model name locally and on the HF Hub
+    push_to_hub: bool = False  # whether to upload the saved model to the HF Hub
+    hub_private_repo: bool = False
+    overwrite_output_dir: bool = True  # overwrite the old model when re-running the notebook
+    seed: int = 0
+    cache: str = None
+
 def main():
-    config = TrainingConfig()
+    from argklass import ArgumentParser
+    from benchmate.metrics import StopProgram
+
+    parser = ArgumentParser()
+    parser.add_arguments(TrainingConfig)
+    config = parser.parse_args()
 
     model = build_model(config)
     dataset = build_dataset(config)
     optimizer = build_optimizer(config, model)
     noise_scheduler = DDPMScheduler(num_train_timesteps=1000)
 
-  
     lr_scheduler = get_cosine_schedule_with_warmup(
         optimizer=optimizer,
         num_warmup_steps=config.lr_warmup_steps,
         num_training_steps=(len(dataset) * config.num_epochs),
     )
-
-    from benchmate.metrics import StopProgram
 
     try:
         train_loop(config, model, noise_scheduler, optimizer, dataset, lr_scheduler)

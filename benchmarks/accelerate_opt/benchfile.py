@@ -1,4 +1,5 @@
 from milabench.commands import (
+    AccelerateAllNodes,
     AccelerateLaunchCommand,
     CmdCommand,
     DockerRunCommand,
@@ -35,46 +36,8 @@ class AccelerateBenchmark(Package):
         )
 
     def build_run_plan(self):
-        # FIXME: or AccelerateAllNodes
-        plans = []
-
-        max_num = self.config["num_machines"]
-        nodes = select_nodes(self.config["system"]["nodes"], max_num)
-        key = self.config["system"].get("sshkey")
-
-        for rank, node in enumerate(nodes):
-            host = node["ip"]
-            user = node["user"]
-            port = node.get("port", 22)
-            options = dict()
-
-            if rank == 0:
-                options = dict(
-                    setsid=True,
-                    use_stdout=True,
-                )
-
-            tags = [*self.config["tag"], node["name"]]
-            if rank != 0:
-                # Workers do not send training data
-                # tag it as such so we validation can ignore this pack
-                tags.append("nolog")
-
-            pack = self.copy({"tag": tags})
-            worker = SSHCommand(
-                host=host,
-                user=user,
-                key=key,
-                port=port,
-                executor=DockerRunCommand(
-                    AccelerateLaunchCommand(pack, rank=rank),
-                    self.config["system"].get("docker_image"),
-                ),
-                **options
-            )
-            plans.append(worker)
-
-        return ListCommand(*plans)
+        plan = super().build_run_plan().use_stdout()
+        return AccelerateAllNodes(plan)
 
 
 __pack__ = AccelerateBenchmark
