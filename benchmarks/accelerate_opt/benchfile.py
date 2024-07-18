@@ -13,7 +13,7 @@ class AccelerateBenchmark(Package):
 
     def make_env(self):
         env = super().make_env()
-        value = self.resolve_argument("--cpus_per_gpu")
+        value = self.resolve_argument("--cpus_per_gpu", 8)
         env["OMP_NUM_THREADS"] = str(value)
         return env
 

@@ -1,0 +1,21 @@
+
+vision:
+  inherits: _defaults
+  definition: .
+  install-variant: unpinned
+  install_group: torch
+  num_machines: 1
+  plan:
+    method: per_gpu
+
+  argv:
+    --precision: 'tf32-fp16'
+    --lr: 0.01
+    --no-stdout: true
+    --epochs: 50
+    --loader: pytorch
+    --data: "{milabench_data}/FakeImageNet"
+    --model: resnet50
+    --batch-size: 256
+    --num-workers: "auto({n_worker}, 8)"
+    --loader: pytorch
