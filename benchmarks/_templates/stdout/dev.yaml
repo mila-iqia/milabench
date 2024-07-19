@@ -1,0 +1,36 @@
+_template:
+  inherits: _defaults
+  definition: .
+  install-variant: unpinned
+  install_group: torch
+
+  #argv:
+  #  --train_batch_size: 32
+  #  --num_epochs: 5
+
+
+template-single:
+  inherits: _template
+
+  num_machines: 1
+  plan:
+    method: per_gpu
+
+template-gpus:
+  inherits: _template
+
+  num_machines: 1
+  plan:
+    method: njobs
+    n: 1
+
+template-nodes:
+  inherits: _template
+
+  num_machines: 2
+  plan:
+    method: njobs
+    n: 1
+  
+  requires_capabilities:
+    - "len(nodes) >= ${num_machines}"

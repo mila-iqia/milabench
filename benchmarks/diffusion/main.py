@@ -1,231 +1,230 @@
-from pathlib import Path
-import os
 from dataclasses import dataclass
 
-import torch
-from torchvision import transforms
-import torch.nn.functional as F
-from diffusers import DDPMScheduler
-
-from diffusers import DDPMPipeline
 from accelerate import Accelerator
-from tqdm.auto import tqdm
+
+import math
+import random
+from contextlib import nullcontext
+from pathlib import Path
+
+import numpy as np
+import torch
+import torch.nn.functional as F
+import torch.utils.checkpoint
+from accelerate import Accelerator
 from datasets import load_dataset
-from diffusers import UNet2DModel
-from diffusers.optimization import get_cosine_schedule_with_warmup
+from torchvision import transforms
+from tqdm.auto import tqdm
+from transformers import CLIPTextModel, CLIPTokenizer
 
-# from huggingface_hub import HfFolder, Repository, whoami
+from diffusers import AutoencoderKL, DDPMScheduler, UNet2DConditionModel
+from diffusers.optimization import get_scheduler
+
+@dataclass
+class Arguments:
+    model: str = "runwayml/stable-diffusion-v1-5"
+    dataset: str = "lambdalabs/naruto-blip-captions"
+    batch_size: int = 16
+    num_workers: int = 8
+    revision: str = None
+    variant: str = None
+    gradient_accumulation_steps: int = 1
+    learning_rate: float = 1e-4
+    scale_lr: bool = True
+    adam_beta1: float = 0.9
+    adam_beta2: float = 0.999
+    adam_weight_decay: float = 1e-2
+    adam_epsilon: float = 1e-08
+    max_grad_norm: float = 1.0
+    mixed_precision: str = "bf16"
+    resolution: int = 512
+    center_crop: bool = False
+    random_flip: bool = False
+    variant: str = None
+    lr_scheduler: str = "constant"
+    lr_warmup_steps: int = 500
+    epochs: int = 10
+
+def step():
+    pass
 
 
-def build_dataset(config):
-    dataset = load_dataset(config.dataset_name, split="train")
+def models(accelerator, args: Arguments):
+    encoder = CLIPTextModel.from_pretrained(
+        args.model, subfolder="text_encoder", revision=args.revision, variant=args.variant
+    )
+    vae = AutoencoderKL.from_pretrained(
+        args.model, subfolder="vae", revision=args.revision, variant=args.variant
+    )
 
-    preprocess = transforms.Compose(
+    unet = UNet2DConditionModel.from_pretrained(
+        args.model, subfolder="unet", revision=args.revision, variant=args.variant
+    )
+
+    vae.requires_grad_(False)
+    encoder.requires_grad_(False)
+    unet.train()
+
+    # Move text_encode and vae to gpu and cast to weight_dtype
+    encoder.to(accelerator.device, dtype=torch.bfloat16)
+    vae.to(accelerator.device, dtype=torch.bfloat16)
+
+    return encoder, vae, unet
+
+
+def dataset(accelerator, args: Arguments):
+    dataset = load_dataset(args.dataset, None)
+
+    image_column = "image"
+    caption_column = "text"
+
+    tokenizer = CLIPTokenizer.from_pretrained(
+        args.model, subfolder="tokenizer", revision=args.revision
+    )
+
+    # Preprocessing the datasets.
+    # We need to tokenize input captions and transform the images.
+    def tokenize_captions(examples, is_train=True):
+        captions = []
+        for caption in examples[caption_column]:
+            if isinstance(caption, str):
+                captions.append(caption)
+            elif isinstance(caption, (list, np.ndarray)):
+                # take a random caption if there are multiple
+                captions.append(random.choice(caption) if is_train else caption[0])
+            else:
+                raise ValueError(
+                    f"Caption column `{caption_column}` should contain either strings or lists of strings."
+                )
+        inputs = tokenizer(
+            captions, max_length=tokenizer.model_max_length, padding="max_length", truncation=True, return_tensors="pt"
+        )
+        return inputs.input_ids
+
+    # Preprocessing the datasets.
+    train_transforms = transforms.Compose(
         [
-            transforms.Resize((config.image_size, config.image_size)),
-            transforms.RandomHorizontalFlip(),
+            transforms.Resize(args.resolution, interpolation=transforms.InterpolationMode.BILINEAR),
+            transforms.CenterCrop(args.resolution) if args.center_crop else transforms.RandomCrop(args.resolution),
+            transforms.RandomHorizontalFlip() if args.random_flip else transforms.Lambda(lambda x: x),
             transforms.ToTensor(),
             transforms.Normalize([0.5], [0.5]),
         ]
     )
 
-    def transform(examples):
-        images = [preprocess(image.convert("RGB")) for image in examples["image"]]
-        return {"images": images}
+    def preprocess_train(examples):
+        images = [image.convert("RGB") for image in examples[image_column]]
+        examples["pixel_values"] = [train_transforms(image) for image in images]
+        examples["input_ids"] = tokenize_captions(examples)
+        return examples
 
-    dataset.set_transform(transform)
+    with accelerator.main_process_first():
+        # Set the training transforms
+        train_dataset = dataset["train"].with_transform(preprocess_train)
 
-    loader = torch.utils.data.DataLoader(
-        dataset, 
-        batch_size=config.train_batch_size, 
-        shuffle=True
-    )
-    return loader
+    def collate_fn(examples):
+        pixel_values = torch.stack([example["pixel_values"] for example in examples])
+        pixel_values = pixel_values.to(memory_format=torch.contiguous_format).float()
+        input_ids = torch.stack([example["input_ids"] for example in examples])
+        return {"pixel_values": pixel_values, "input_ids": input_ids}
 
-
-
-def build_model(config):
-    model = UNet2DModel(
-        sample_size=config.image_size,  # the target image resolution
-        in_channels=3,  # the number of input channels, 3 for RGB images
-        out_channels=3,  # the number of output channels
-        layers_per_block=2,  # how many ResNet layers to use per UNet block
-        block_out_channels=(128, 128, 256, 256, 512, 512),  # the number of output channels for each UNet block
-        down_block_types=(
-            "DownBlock2D",  # a regular ResNet downsampling block
-            "DownBlock2D",
-            "DownBlock2D",
-            "DownBlock2D",
-            "AttnDownBlock2D",  # a ResNet downsampling block with spatial self-attention
-            "DownBlock2D",
-        ),
-        up_block_types=(
-            "UpBlock2D",  # a regular ResNet upsampling block
-            "AttnUpBlock2D",  # a ResNet upsampling block with spatial self-attention
-            "UpBlock2D",
-            "UpBlock2D",
-            "UpBlock2D",
-            "UpBlock2D",
-        ),
+    # DataLoaders creation:
+    return torch.utils.data.DataLoader(
+        train_dataset,
+        shuffle=True,
+        collate_fn=collate_fn,
+        batch_size=args.batch_size,
+        num_workers=args.num_workers,
     )
 
-    return model
+def train(args: Arguments):
+    weight_dtype = torch.bfloat16
 
+    accelerator = Accelerator(
+        gradient_accumulation_steps=args.gradient_accumulation_steps,
+        mixed_precision=args.mixed_precision,
+    )
 
+    loader = dataset(accelerator, args)
 
-def get_full_repo_name(model_id: str, organization: str = None, token: str = None):
-    if token is None:
-        token = HfFolder.get_token()
-    if organization is None:
-        username = whoami(token)["name"]
-        return f"{username}/{model_id}"
-    else:
-        return f"{organization}/{model_id}"
-
-
-def build_loss():
-    return F.mse_loss
-
-def train_loop(config, model, noise_scheduler, optimizer, train_dataloader, lr_scheduler):
     from benchmate.observer import BenchObserver
 
     def batch_size(x):
-        return x["images"].shape[0]
+        return x["pixel_values"].shape[0]
 
     observer = BenchObserver(
-        earlystop=65,
-        batch_size_fn=lambda x: batch_size(x),
-        stdout=True,
-        raise_stop_program=True
+        earlystop=60,
+        raise_stop_program=True,
+        batch_size_fn=batch_size,
+        stdout=True
     )
 
-    # Initialize accelerator and tensorboard logging
-    accelerator = Accelerator(
-        mixed_precision=config.mixed_precision,
-        gradient_accumulation_steps=config.gradient_accumulation_steps,
-        # log_with="tensorboard",
-        # project_dir=os.path.join(config.output_dir, "logs"),
-    )
-    if accelerator.is_main_process:
-        if False:
-            if config.push_to_hub:
-                repo_name = get_full_repo_name(Path(config.output_dir).name)
-                repo = Repository(config.output_dir, clone_from=repo_name)
-            elif config.output_dir is not None:
-                os.makedirs(config.output_dir, exist_ok=True)
-            accelerator.init_trackers("train_example")
+    encoder, vae, unet = models(accelerator, args)
 
-    # Prepare everything
-    # There is no specific order to remember, you just need to unpack the
-    # objects in the same order you gave them to the prepare method.
-    model, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
-        model, optimizer, train_dataloader, lr_scheduler
+    optimizer = torch.optim.AdamW(
+        unet.parameters(),
+        lr=args.learning_rate,
+        betas=(args.adam_beta1, args.adam_beta2),
+        weight_decay=args.adam_weight_decay,
+        eps=args.adam_epsilon,
     )
 
-    global_step = 0
-    criterion = build_loss()
+    max_train_steps = args.epochs * math.ceil(len(loader) / args.gradient_accumulation_steps)
+    lr_scheduler = get_scheduler(
+        args.lr_scheduler,
+        optimizer=optimizer,
+        num_warmup_steps=args.lr_warmup_steps * accelerator.num_processes,
+        num_training_steps=max_train_steps * accelerator.num_processes,
+    )
 
-    # Now you train the model
-    for epoch in range(config.num_epochs):
-        # progress_bar = tqdm(total=len(train_dataloader), disable=not accelerator.is_local_main_process)
-        # progress_bar.set_description(f"Epoch {epoch}")
+    noise_scheduler = DDPMScheduler.from_pretrained(args.model, subfolder="scheduler")
 
-        for step, batch in enumerate(observer.iterate(train_dataloader)):
-            clean_images = batch["images"].to(model.device)
-            # Sample noise to add to the images
-            noise = torch.randn(clean_images.shape).to(clean_images.device)
-            bs = clean_images.shape[0]
+    unet, optimizer, loader, lr_scheduler = accelerator.prepare(
+        unet, optimizer, loader, lr_scheduler
+    )
 
+    encoder.to(accelerator.device, dtype=weight_dtype)
+    vae.to(accelerator.device, dtype=weight_dtype)
+
+    for epoch in range(0, args.epochs):
+
+        for step, batch in enumerate(observer.iterate(loader)):
+            latents = vae.encode(batch["pixel_values"].to(weight_dtype)).latent_dist.sample()
+            latents = latents * vae.config.scaling_factor
+            noise = torch.randn_like(latents)
+
+            bsz = latents.shape[0]
             # Sample a random timestep for each image
-            timesteps = torch.randint(
-                0, noise_scheduler.config.num_train_timesteps, (bs,), device=clean_images.device
-            ).long()
+            timesteps = torch.randint(0, noise_scheduler.config.num_train_timesteps, (bsz,), device=latents.device)
+            timesteps = timesteps.long()
 
-            # Add noise to the clean images according to the noise magnitude at each timestep
-            # (this is the forward diffusion process)
-            noisy_images = noise_scheduler.add_noise(clean_images, noise, timesteps)
+            noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
 
-            with accelerator.accumulate(model):
-                # Predict the noise residual
-                noise_pred = model(noisy_images, timesteps, return_dict=False)[0]
-                loss = criterion(noise_pred, noise)
-                accelerator.backward(loss)
-                observer.record_loss(loss)
+            # Get the text embedding for conditioning
+            encoder_hidden_states = encoder(batch["input_ids"], return_dict=False)[0]
 
-                accelerator.clip_grad_norm_(model.parameters(), 1.0)
-                optimizer.step()
-                lr_scheduler.step()
-                optimizer.zero_grad()
+            # Predict the noise residual and compute loss
+            model_pred = unet(noisy_latents, timesteps, encoder_hidden_states, return_dict=False)[0]
 
-            # progress_bar.update(1)
-            global_step += 1
+            target = noise
+            loss = F.mse_loss(model_pred.float(), target.float(), reduction="mean")
 
-        # After each epoch you optionally sample some demo images with evaluate() and save the model
-        if accelerator.is_main_process:
-            if False:
-                pipeline = DDPMPipeline(unet=accelerator.unwrap_model(model), scheduler=noise_scheduler)
+            accelerator.backward(loss)
+            optimizer.step()
+            lr_scheduler.step()
+            optimizer.zero_grad()
 
-                if (epoch + 1) % config.save_image_epochs == 0 or epoch == config.num_epochs - 1:
-                    evaluate(config, epoch, pipeline)
+            
 
-                if (epoch + 1) % config.save_model_epochs == 0 or epoch == config.num_epochs - 1:
-                    if config.push_to_hub:
-                        repo.push_to_hub(commit_message=f"Epoch {epoch}", blocking=True)
-                    else:
-                        pipeline.save_pretrained(config.output_dir)
-
-
-
-
-def build_optimizer(config, model):
-    return torch.optim.AdamW(model.parameters(), lr=config.learning_rate)
-
-
-
-@dataclass
-class TrainingConfig:
-    image_size: int = 128  # the generated image resolution
-    train_batch_size: int = 16
-    eval_batch_size: int = 16  # how many images to sample during evaluation
-    num_epochs: int = 50
-    gradient_accumulation_steps: int = 1
-    dataset_name: str = "huggan/smithsonian_butterflies_subset"
-    learning_rate: float = 1e-4
-    lr_warmup_steps: int = 500
-    save_image_epochs: int = 10
-    save_model_epochs: int = 30
-    mixed_precision: str = "fp16"  # `no` for float32, `fp16` for automatic mixed precision
-    output_dir:str  = "ddpm-butterflies-128"  # the model name locally and on the HF Hub
-    push_to_hub: bool = False  # whether to upload the saved model to the HF Hub
-    hub_private_repo: bool = False
-    overwrite_output_dir: bool = True  # overwrite the old model when re-running the notebook
-    seed: int = 0
-    cache: str = None
 
 def main():
     from argklass import ArgumentParser
-    from benchmate.metrics import StopProgram
-
     parser = ArgumentParser()
-    parser.add_arguments(TrainingConfig)
-    config = parser.parse_args()
+    parser.add_arguments(Arguments)
+    config, _ = parser.parse_known_args()
 
-    model = build_model(config)
-    dataset = build_dataset(config)
-    optimizer = build_optimizer(config, model)
-    noise_scheduler = DDPMScheduler(num_train_timesteps=1000)
+    train(config)
 
-    lr_scheduler = get_cosine_schedule_with_warmup(
-        optimizer=optimizer,
-        num_warmup_steps=config.lr_warmup_steps,
-        num_training_steps=(len(dataset) * config.num_epochs),
-    )
-
-    try:
-        train_loop(config, model, noise_scheduler, optimizer, dataset, lr_scheduler)
-
-    except StopProgram:
-        pass
 
 if __name__ == "__main__":
     main()

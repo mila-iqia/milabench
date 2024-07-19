@@ -264,3 +264,97 @@ def imagenet_dataloader(args, model, rank=0, world_size=1):
 
     return pytorch(folder, args.batch_size, args.num_workers, 
                    distributed=world_size > 1, rank=rank, world_size=world_size)
+
+
+
+from dataclasses import dataclass, asdict
+from copy import deepcopy
+
+@dataclass
+class Dataloader:
+    """
+    
+    Specify the common configuration of the dataloader
+    >>> helper = LazyDataLoader(num_workers=8, pin_memory=True, collate_fn)
+
+    Instantiate the loader for each split
+    >>> train = helper.dataloader(train, batch_size=128, shuffle=True)
+
+    >>> vali = helper.dataloader(validation, batch_size=1024, shuffle=False)
+
+    """
+    @dataclass
+    class Arguments:
+        batch_size: int = 1
+        shuffle: bool = False
+        num_workers: int = 0
+        pin_memory: bool = False
+        drop_last: bool = False
+        timeout: float = 0
+        prefetch_factor: int = None
+        persistent_workers: bool = False
+        pin_memory_device: str = ''
+
+    argparse_arguments = Arguments()
+
+    def __init__(self, 
+            dataset: 'Dataset',
+            sampler: 'Sampler' = None,
+            batch_sampler: 'BatchSampler' = None,
+            generator=None,
+            worker_init_fn=None,
+            multiprocessing_context=None,
+            collate_fn=None,
+            **kwargs
+        ):
+        self.base_args = {
+            "dataset": dataset,
+            "sampler": sampler,
+            "batch_sampler": batch_sampler,
+            "generator": generator,
+            "worker_init_fn": worker_init_fn,
+            "multiprocessing_context": multiprocessing_context,
+            "collate_fn": collate_fn,
+            **kwargs
+        }
+
+        defaults = asdict(Dataloader.Arguments())
+        argparse = asdict(self.argparse_arguments)
+
+        for k in defaults.keys():
+            vdef = defaults.get(k)
+            vset = argparse.get(k)
+            vcode = self.base_args.get(k)
+
+            if vcode is None:
+                self.base_args[k] = vset
+            else:
+                # code set the arguments and it is different from the default
+                if vcode != vdef and vset == vdef:
+                    self.base_args[k] = vcode
+
+                # code set the arguments but it is the default 
+                if vcode == vdef and vset != vdef:
+                    self.base_args[k] = vset
+
+                if vcode != vdef and vset != vdef:
+                    print(f"ambiguous value for {k} code set {vcode} argparse set {vset} default is {vdef}")
+                    self.base_args[k] = vset
+
+    def dataloader(self, **kwargs):
+        from torch.utils.data import DataLoader
+        args = deepcopy(self.base_args)
+        args.update(kwargs)
+        return DataLoader(**args)
+
+    def train(self, **kwargs):
+        kwargs.setdefault("shuffle", True)
+        return self.dataloader(**kwargs)
+
+    def validation(self, **kwargs):
+        kwargs.setdefault("shuffle", False)
+        return self.dataloader(**kwargs)
+    
+    def test(self, **kwargs):
+        kwargs.setdefault("shuffle", False)
+        return self.dataloader(**kwargs)

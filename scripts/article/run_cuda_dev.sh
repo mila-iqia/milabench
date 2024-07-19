@@ -2,6 +2,12 @@
 
 set -ex
 
+# export MILABENCH_SOURCE=$HOME/milabench
+# mkdir /tmp/workspace && cd /tmp/workspace
+# conda activate py310
+#
+#
+
 export MILABENCH_GPU_ARCH=cuda
 export MILABENCH_WORDIR="$(pwd)/$MILABENCH_GPU_ARCH"
 
@@ -10,21 +16,33 @@ export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/standard.yaml"
 export MILABENCH_VENV="$MILABENCH_WORDIR/env"
 export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
 
+if [ -z "${MILABENCH_SOURCE}" ]; then
+    export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/standard.yaml"
+else
+    export MILABENCH_CONFIG="$MILABENCH_SOURCE/config/standard.yaml"
+fi
 
 install_prepare() {
     mkdir -p $MILABENCH_WORDIR
     cd $MILABENCH_WORDIR
 
-    virtualenv $MILABENCH_WORDIR/env
+    virtualenv $MILABENCH_WORDIR/env --reset-app-data
 
-    if [ ! -d "$MILABENCH_WORDIR/milabench" ]; then
-        git clone https://github.com/mila-iqia/milabench.git
-        git clone https://github.com/Delaunay/voir.git
+    if [ -z "${MILABENCH_SOURCE}" ]; then
+        if [ ! -d "$MILABENCH_WORDIR/milabench" ]; then
+            git clone https://github.com/mila-iqia/milabench.git
+        fi
+        export MILABENCH_SOURCE="$MILABENCH_WORDIR/milabench"
+    fi
+
+    if [ ! -d "$MILABENCH_WORDIR/voir" ]; then
+        
+        git clone https://github.com/Delaunay/voir.git -b patch-4
         git clone https://github.com/Delaunay/torchcompat.git
     fi
 
     . $MILABENCH_WORDIR/env/bin/activate
-    pip install -e $MILABENCH_WORDIR/milabench
+    pip install -e $MILABENCH_SOURCE
 
     #
     # Install milabench's benchmarks in their venv
@@ -63,8 +81,6 @@ else
 fi
 
 cd $MILABENCH_WORDIR
-
-(cd $MILABENCH_WORDIR/milabench && git pull origin intel)
 
 #
 #   Run the benchmakrs
