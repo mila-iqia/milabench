@@ -45,9 +45,6 @@ class Arguments:
     lr_warmup_steps: int = 500
     epochs: int = 10
 
-def step():
-    pass
-
 
 def models(accelerator, args: Arguments):
     encoder = CLIPTextModel.from_pretrained(
@@ -135,6 +132,7 @@ def dataset(accelerator, args: Arguments):
         collate_fn=collate_fn,
         batch_size=args.batch_size,
         num_workers=args.num_workers,
+        persistent_workers=True,
     )
 
 def train(args: Arguments):
@@ -214,16 +212,19 @@ def train(args: Arguments):
             lr_scheduler.step()
             optimizer.zero_grad()
 
-            
-
 
 def main():
-    from argklass import ArgumentParser
-    parser = ArgumentParser()
-    parser.add_arguments(Arguments)
-    config, _ = parser.parse_known_args()
+    from benchmate.metrics import StopProgram
 
-    train(config)
+    try:
+        from argklass import ArgumentParser
+        parser = ArgumentParser()
+        parser.add_arguments(Arguments)
+        config, _ = parser.parse_known_args()
+
+        train(config)
+    except StopProgram:
+        pass
 
 
 if __name__ == "__main__":

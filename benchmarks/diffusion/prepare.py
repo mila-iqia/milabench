@@ -2,12 +2,16 @@
 from dataclasses import dataclass
 import os
 
+from transformers import CLIPTextModel, CLIPTokenizer
+
+from diffusers import AutoencoderKL, UNet2DConditionModel, DDPMScheduler
 from datasets import load_dataset
 
 
 @dataclass
 class TrainingConfig:
-    dataset_name: str = "huggan/smithsonian_butterflies_subset"
+    model: str = "runwayml/stable-diffusion-v1-5"
+    dataset: str = "lambdalabs/naruto-blip-captions"
 
 
 def main():
@@ -15,9 +19,27 @@ def main():
 
     parser = ArgumentParser()
     parser.add_arguments(TrainingConfig)
-    config, _ = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
-    _ = load_dataset(config.dataset_name, split="train")
+    _ = load_dataset(args.dataset)
+
+    _ = CLIPTextModel.from_pretrained(
+        args.model, subfolder="text_encoder", revision=args.revision, variant=args.variant
+    )
+
+    _ = AutoencoderKL.from_pretrained(
+        args.model, subfolder="vae", revision=args.revision, variant=args.variant
+    )
+
+    _ = UNet2DConditionModel.from_pretrained(
+        args.model, subfolder="unet", revision=args.revision, variant=args.variant
+    )
+
+    _ = CLIPTokenizer.from_pretrained(
+        args.model, subfolder="tokenizer", revision=args.revision
+    )
+
+    _ = DDPMScheduler.from_pretrained(args.model, subfolder="scheduler")
 
 
 if __name__ == "__main__":
