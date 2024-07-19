@@ -33,6 +33,8 @@ install_prepare() {
             git clone https://github.com/mila-iqia/milabench.git
         fi
         export MILABENCH_SOURCE="$MILABENCH_WORDIR/milabench"
+    else
+        export MILABENCH_CONFIG="$MILABENCH_SOURCE/config/standard.yaml"
     fi
 
     if [ ! -d "$MILABENCH_WORDIR/voir" ]; then

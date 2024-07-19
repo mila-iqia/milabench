@@ -650,3 +650,22 @@ brax:
     --batch-size: 1024
     --num-minibatches: 32
     --num-envs: 8192
+
+
+_diffusion:
+  inherits: _defaults
+  definition: ../benchmarks/diffusion
+  install_group: torch
+
+  argv:
+    --train_batch_size: 32
+    --num_epochs: 5
+
+
+diffusion-gpus:
+  inherits: _diffusion
+
+  num_machines: 1
+  plan:
+    method: njobs
+    n: 1
