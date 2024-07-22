@@ -16,6 +16,11 @@ export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/standard.yaml"
 export MILABENCH_VENV="$MILABENCH_WORDIR/env"
 export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
 
+
+if [ -z "${MILABENCH_PREPARE}" ]; then
+    export MILABENCH_PREPARE=0
+fi
+
 if [ -z "${MILABENCH_SOURCE}" ]; then
     export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/standard.yaml"
 else
@@ -45,6 +50,8 @@ install_prepare() {
 
     . $MILABENCH_WORDIR/env/bin/activate
     pip install -e $MILABENCH_SOURCE
+
+    milabench pin --variant cuda "$@"
 
     #
     # Install milabench's benchmarks in their venv
@@ -82,12 +89,16 @@ else
     . $MILABENCH_WORDIR/env/bin/activate
 fi
 
-cd $MILABENCH_WORDIR
 
-#
-#   Run the benchmakrs
-milabench run "$@"
 
-#
-#   Display report
-milabench report --runs $MILABENCH_WORDIR/results/runs
+if [ "$MILABENCH_PREPARE" -eq 0 ]; then
+    cd $MILABENCH_WORDIR
+
+    #
+    #   Run the benchmakrs
+    milabench run "$@"
+
+    #
+    #   Display report
+    milabench report --runs $MILABENCH_WORDIR/results/runs
+fi
