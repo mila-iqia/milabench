@@ -407,7 +407,7 @@ def show_overrides(to_json=False):
 
         val["type"] = str(val["type"].__name__)
         dct[val_name] = val
-        val["env_name"] = envname = as_environment_variable(name)
+        val["env_name"] = as_environment_variable(name)
 
     def compact(d, depth):
         for k, v in d.items():
@@ -428,8 +428,6 @@ def show_overrides(to_json=False):
         print(json.dumps(config, indent=2))
     else:
         compact(config, 0)
-    
-        
 
 
 if __name__ == "__main__":

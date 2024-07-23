@@ -26,13 +26,17 @@ class TimmBenchmarkPack(Package):
         ]
 
     async def install(self):
-        await super().install()
-
         timm = self.dirs.code / "pytorch-image-models"
         if not timm.exists():
             timm.clone_subtree(
                 "https://github.com/huggingface/pytorch-image-models", BRANCH
             )
+
+        # Install TIMM first
+        await self.pip_install("-e", str(timm))
+
+        # install the rest, which might override what TIMM specified
+        await super().install()
 
     def build_run_plan(self):
         # self.config is not the right config for this

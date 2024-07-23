@@ -178,7 +178,7 @@ class BaseReporter(BaseLogger):
         if entry.tag not in self.files:
             file = entry.pack.logfile(self.pipe)
             os.makedirs(XPath(file).parent, exist_ok=True)
-            self.files[entry.tag] = open(file, "w").__enter__()
+            self.files[entry.tag] = open(file, "a").__enter__()
         return self.files[entry.tag]
 
     def log(self, entry):
