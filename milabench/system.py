@@ -40,6 +40,27 @@ def print_once(*args, **kwargs):
 warn_no_config = print_once("No system config found, using defaults")
 
 
+_global_options = {}
+
+def _track_options(name, type, default, value):
+    """This is just a helper so command line can display the options"""
+    global _global_options
+
+    try:
+        _global_options[name] = {
+            "type": type,
+            "default": default,
+            "value": value
+        } 
+    except:
+        pass
+
+
+def as_environment_variable(name):
+    frags = name.split(".")
+    return "MILABENCH_" + "_".join(map(str.upper, frags))
+
+
 def option(name, etype, default=None):
     options = dict()
     system = system_global.get()
@@ -49,7 +70,7 @@ def option(name, etype, default=None):
         warn_no_config()
 
     frags = name.split(".")
-    env_name = "MILABENCH_" + "_".join(map(str.upper, frags))
+    env_name = as_environment_variable(name)
     env_value = getenv(env_name, etype)
 
     lookup = options
@@ -58,6 +79,8 @@ def option(name, etype, default=None):
 
     system_value = lookup.get(frags[-1], None)
     final_value = env_value or system_value or default
+
+    _track_options(name, etype, default, final_value)
 
     if final_value is None:
         return None
@@ -170,13 +193,25 @@ class Nodes:
 
 
 @dataclass
+class Github:
+    pat: str = option("github.path", str, None)
+
+
+@dataclass
 class SystemConfig:
+    """This is meant to be an exhaustive list of all the environment overrides"""
     arch: str = getenv("MILABENCH_GPU_ARCH", str)
     sshkey: str = None
     docker_image: str = None
     nodes: list[Nodes] = field(default_factory=list)
     gpu: GPUConfig = None
     options: Options = None
+
+    base: str = option("base", str, None)
+    config: str = option("config", str, None)
+    dash: bool = option("dash", bool, 1)
+    noterm: bool = option("noterm", bool, 0)
+    github: Github = None
 
 
 def check_node_config(nodes):
@@ -353,3 +388,49 @@ def build_system_config(config_file, defaults=None, gpu=True):
     system["self"] = self
 
     return config
+
+
+def show_overrides(to_json=False):
+    import json
+    import copy
+    config = {}
+
+    for name, value in _global_options.items():
+        frags = name.split('.')
+
+        dct = config
+        for p in frags[:-1]:
+            dct = dct.setdefault(p, dict())
+            
+        val_name = frags[-1]
+        val = copy.deepcopy(value)
+
+        val["type"] = str(val["type"].__name__)
+        dct[val_name] = val
+        val["env_name"] = envname = as_environment_variable(name)
+
+    def compact(d, depth):
+        for k, v in d.items():
+            idt = "    " * depth
+
+            if "env_name" in v:
+                value = v["value"]
+                default = v["default"]
+                if value != default:
+                    print(f"{idt}{k:<{30 - len(idt)}}: {str(value):<40} (default={default})")
+                else:
+                    print(f"{idt}{k:<{30 - len(idt)}}: {str(value):<40} {v['env_name']}")
+            else:
+                print(f"{idt}{k}:")
+                compact(v, depth + 1)
+    
+    if to_json:
+        print(json.dumps(config, indent=2))
+    else:
+        compact(config, 0)
+    
+        
+
+
+if __name__ == "__main__":
+    show_overrides()

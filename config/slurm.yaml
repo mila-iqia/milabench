@@ -14,6 +14,7 @@ multi-node-full:
   - --time=2:00:00
   - --ntasks-per-node=1
   - --mem=0
+  - --export=ALL,MILABENCH_SIZER_AUTO=0
 
 single-node-full:
   # DGX run: 1 node x 8 A100 80Go SXM4
@@ -27,19 +28,11 @@ single-node-full:
   - --time=1:30:00
   - --ntasks-per-node=1
   - --mem=0
+  - --export=ALL,MILABENCH_SIZER_AUTO=0
 
-multi-node-small:
-  # Any GPU, 2 nodes x 2 GPU
-  - --partition=staff-idt
-  - --ntasks=1
-  - --gpus-per-task=2
-  - --exclusive
-  - --nodes=2
-  - --cpus-per-task=16
-  - --time=1:30:00
-  - --ntasks-per-node=1
-  - --mem=128G
-
+#
+#
+#
 single-node-small:
   # Any GPU, 1 node x 2 GPU
   - --partition=staff-idt
@@ -51,3 +44,66 @@ single-node-small:
   - --time=1:30:00
   - --ntasks-per-node=1
   - --mem=128G
+  - --export=ALL,MILABENCH_SIZER_AUTO=1,MILABENCH_SIZER_MULTIPLE=8
+
+
+multi-node-small:
+  # rtx8000, 2 nodes x 2 GPU
+  - --partition=staff-idt
+  - --gpus-per-task=rtx8000:2
+  - --ntasks=1
+  - --exclusive
+  - --nodes=2
+  - --cpus-per-task=16
+  - --time=1:30:00
+  - --ntasks-per-node=1
+  - --mem=128G
+  - --export=ALL,MILABENCH_SIZER_AUTO=1,MILABENCH_SIZER_MULTIPLE=8
+
+#
+# RTS 48Go
+#
+multi-node-rtx:
+  - --partition=staff-idt
+  - --gpus-per-task=rtx8000:8
+  - --ntasks=1
+  - --exclusive
+  - --nodes=2
+  - --cpus-per-task=64
+  - --time=1:30:00
+  - --ntasks-per-node=1
+  - --mem=0
+  - --exclusive
+  - --export=ALL,MILABENCH_SIZER_AUTO=1,MILABENCH_SIZER_MULTIPLE=8
+
+#
+# V100 - 32 Go
+#
+multi-node-v100:
+  - --partition=staff-idt
+  - --gpus-per-task=v100:8
+  - --ntasks=1
+  - --exclusive
+  - --nodes=2
+  - --cpus-per-task=40
+  - --time=1:30:00
+  - --ntasks-per-node=1
+  - --mem=0
+  - --exclusive
+  - --export=ALL,MILABENCH_SIZER_AUTO=1,MILABENCH_SIZER_MULTIPLE=8
+
+#
+# Small A100 - 40Go
+#
+multi-node-a100:
+  - --partition=staff-idt
+  - --gpus-per-task=a100:8
+  - --ntasks=1
+  - --exclusive
+  - --nodes=2
+  - --cpus-per-task=128
+  - --time=1:30:00
+  - --ntasks-per-node=1
+  - --mem=0
+  - --exclusive
+  - --export=ALL,MILABENCH_SIZER_AUTO=1,MILABENCH_SIZER_MULTIPLE=8
