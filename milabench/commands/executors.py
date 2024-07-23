@@ -23,7 +23,7 @@ async def execute(pack, *args, cwd=None, env={}, external=False, use_stdout=Fals
     from ..sizer import resolve_argv, scale_argv
 
     if cwd is None:
-        cwd = pack.dirs.code
+        cwd = pack.working_directory
 
     exec_env = pack.full_env(env) if not external else {**os.environ, **env}
 

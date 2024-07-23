@@ -9,8 +9,8 @@ class TorchvisionBenchmarkDDP(Package):
     def build_run_plan(self) -> "Command":
         import milabench.commands as cmd
         pack = cmd.PackCommand(self, *self.argv, lazy=True)
-        pack = cmd.ActivatorCommand(pack, use_stdout=True)
-        return pack
+        pack = cmd.ActivatorCommand(pack)
+        return pack.use_stdout()
 
 
 __pack__ = TorchvisionBenchmarkDDP

@@ -506,36 +506,50 @@ class SCPCommand(SSHCommand, CmdCommand):
 
 
 class TorchrunAllGPU(WrapperCommand):
-    def __init__(self, executor: SingleCmdCommand, *torchrun_argv, **kwargs) -> None:
+    def __init__(self, executor: SingleCmdCommand, *torchrun_argv, module=False, **kwargs) -> None:
         # Some vendors force us to have weird venv that can resolve weirdly
         # use absolute paths to avoid issues
 
         binfolder = executor.pack.config["dirs"]["venv"]
+        self.module=module
+
+        # benchrun is a wrapper around torchrun
+        # which insert voir file descritor
         super().__init__(
-            executor, f"{binfolder}/bin/torchrun", *torchrun_argv, **kwargs
+            executor, f"{binfolder}/bin/benchrun", *torchrun_argv, **kwargs
         )
 
     def _argv(self, **kwargs):
         devices = self.pack.config.get("devices", [])
         nproc = len(devices)
         if nproc > 1:
-            argv = [*super()._argv(**kwargs), f"--nproc-per-node={nproc}"]
+            # spawn,fork,forkserver
+            argv = [
+                *super()._argv(**kwargs), 
+                f"--nproc-per-node={nproc}", 
+                # "--start-method=forkserver"
+            ]
 
             # Check if the sub-executor targets a module or not
             cmd = next(iter(self.exec.argv()), None)
 
-            if cmd:
-                # python or voir; tell it to not prepend python since we are doing it
-                if cmd in ("python", "voir"):
-                    argv.append("--no-python")
+            if self.module:
+                argv.append("-m")
 
-                # if the command exists and it is not a path assume it is a module
-                # script is not a file, maybe it is a module
-                elif not XPath(cmd).exists():
-                    argv.append("-m")
+            else:
+                if cmd:
+                    # python or voir; tell it to not prepend python since we are doing it
+                    if cmd in ("python", "voir"):
+                        argv.append("--no-python")
 
-            # everything after torchrun args are script args
-            argv.append("--")
+                    # if the command exists and it is not a path assume it is a module
+                    # script is not a file, maybe it is a module
+                    elif not XPath(cmd).exists():
+                        argv.append("-m")
+
+                # everything after torchrun args are script args
+                argv.append("--")
+            
             return argv
         return []
 
@@ -665,14 +679,23 @@ class VoirCommand(WrapperCommand):
         executor: `Command` to be executed
         *voir_argv: voir command line arguments list
         **kwargs: kwargs to be passed to the `pack.execute()`
+        module: bool use voir module instead of voir wrapper.
+            this is useful for torchrun since when a module is used
+            the main torchrun process can be reused for rank=0 enabling
+            voir to work using file descriptor.
     """
 
-    def __init__(self, executor: SingleCmdCommand, *voir_argv, **kwargs) -> None:
+    def __init__(self, executor: SingleCmdCommand, *voir_argv, module=False, **kwargs) -> None:
         # Some vendors force us to have weird venv that can resolve weirdly
         # use absolute paths to avoid issues
         binfolder = executor.pack.config["dirs"]["venv"]
+        voir = f"{binfolder}/bin/voir"
+
+        if module:
+            voir = "voir"
+
         super().__init__(
-            executor, f"{binfolder}/bin/voir", **{"setsid": True, **kwargs}
+            executor, voir, **{"setsid": True, **kwargs}
         )
         self.voir_argv = voir_argv
 

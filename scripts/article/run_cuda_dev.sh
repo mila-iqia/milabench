@@ -94,9 +94,11 @@ fi
 (
     . $MILABENCH_WORDIR/env/bin/activate
     pip install -e $MILABENCH_WORDIR/voir
+    pip install -e $MILABENCH_SOURCE/benchmate
 
     . $BENCHMARK_VENV/bin/activate
     pip install -e $MILABENCH_WORDIR/voir
+    pip install -e $MILABENCH_SOURCE/benchmate
 )
 
 if [ "$MILABENCH_PREPARE" -eq 0 ]; then

@@ -310,6 +310,10 @@ class Package(BasePackage):
     def requirements_files(self, variant=None):
         return list(self.requirements_map(variant).values())
 
+    @property
+    def working_directory(self):
+        return self.dirs.code
+    
     def make_env(self):
         """Return a dict of environment variables to use for prepare/run.
 

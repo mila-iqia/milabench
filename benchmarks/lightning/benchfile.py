@@ -20,7 +20,7 @@ class LightningBenchmark(Package):
         # if self.config.get("num_machines", 1) <= 1:
         #    return ListCommand(TorchrunAllGPU(plan, use_stdout=True))
     
-        return TorchrunAllNodes(plan, use_stdout=True)
+        return TorchrunAllNodes(plan).use_stdout()
 
 
 __pack__ = LightningBenchmark

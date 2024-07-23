@@ -36,8 +36,8 @@ class AccelerateBenchmark(Package):
         )
 
     def build_run_plan(self):
-        plan = super().build_run_plan().use_stdout()
-        return AccelerateAllNodes(plan)
+        plan = super().build_run_plan()
+        return AccelerateAllNodes(plan).use_stdout()
 
 
 __pack__ = AccelerateBenchmark
