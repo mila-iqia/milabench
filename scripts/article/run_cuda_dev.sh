@@ -91,6 +91,14 @@ fi
 
 
 
+(
+    . $MILABENCH_WORDIR/env/bin/activate
+    pip install -e $MILABENCH_WORDIR/voir
+
+    . $BENCHMARK_VENV/bin/activate
+    pip install -e $MILABENCH_WORDIR/voir
+)
+
 if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     cd $MILABENCH_WORDIR
 

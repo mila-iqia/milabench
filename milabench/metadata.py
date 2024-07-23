@@ -3,6 +3,7 @@ import os
 import subprocess
 import traceback
 import datetime
+import functools
 
 import cpuinfo
 from voir.instruments.gpu import get_gpu_info
@@ -36,6 +37,7 @@ def fetch_torch_version(pack):
     return json.loads(result.stdout)
 
 
+@functools.cache
 @error_guard({})
 def machine_metadata(pack=None):
     """Retrieve machine metadata"""

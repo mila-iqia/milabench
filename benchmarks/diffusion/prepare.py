@@ -12,6 +12,8 @@ from datasets import load_dataset
 class TrainingConfig:
     model: str = "runwayml/stable-diffusion-v1-5"
     dataset: str = "lambdalabs/naruto-blip-captions"
+    revision: str = None
+    variant: str = None
 
 
 def main():
