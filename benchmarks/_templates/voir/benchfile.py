@@ -3,7 +3,7 @@ from milabench.pack import Package
 
 SOURCE_DIR = "src"
 REPO_URL = "https://github.com/Delaunay/extern_example.git"
-BRANCH = "a524286ab6364bca6729dd6ef4936e175a87c7e4"
+BRANCH = "a3130b3251d3a909d2a7c59efa948a34e52cbbbb"
 
 
 class Template(Package):
