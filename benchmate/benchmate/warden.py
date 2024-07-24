@@ -79,11 +79,19 @@ backends = {
 }
 
 
+def safe_get_gpu_info():
+    try:
+        return get_gpu_info()
+    except:
+        traceback.print_exc()
+        return {}
+
+
 class GPUProcessWarden:
     """Ensure all the process using the GPU are killed before & after the bench"""
 
     def __init__(self, kill_on_start=True, kill_on_end=True):
-        self.gpus = get_gpu_info()
+        self.gpus = safe_get_gpu_info()
         self.arch = self.gpus.get("arch", "cpu")
         self.fetch_fun = backends.get(self.arch, _default)
         self.kill_on_start = kill_on_start

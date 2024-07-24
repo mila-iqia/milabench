@@ -1,4 +1,5 @@
 from milabench.commands import (
+    AccelerateAllNodes,
     AccelerateLaunchCommand,
     CmdCommand,
     DockerRunCommand,
@@ -13,7 +14,7 @@ class AccelerateBenchmark(Package):
 
     def make_env(self):
         env = super().make_env()
-        value = self.resolve_argument("--cpus_per_gpu")
+        value = self.resolve_argument("--cpus_per_gpu", 8)
         env["OMP_NUM_THREADS"] = str(value)
         return env
 
@@ -34,46 +35,15 @@ class AccelerateBenchmark(Package):
             str(self.dirs.cache)
         )
 
-    def build_run_plan(self):
-        plans = []
+    def build_run_plan(self): 
+        from milabench.commands import PackCommand, VoirCommand
+        main = self.dirs.code / self.main_script
+        plan = PackCommand(self, *self.argv, lazy=True)
 
-        max_num = self.config["num_machines"]
-        nodes = select_nodes(self.config["system"]["nodes"], max_num)
-        key = self.config["system"].get("sshkey")
+        if False:
+            plan = VoirCommand(pack, cwd=main.parent)
 
-        for rank, node in enumerate(nodes):
-            host = node["ip"]
-            user = node["user"]
-            port = node.get("port", 22)
-            options = dict()
-
-            if rank == 0:
-                options = dict(
-                    setsid=True,
-                    use_stdout=True,
-                )
-
-            tags = [*self.config["tag"], node["name"]]
-            if rank != 0:
-                # Workers do not send training data
-                # tag it as such so we validation can ignore this pack
-                tags.append("nolog")
-
-            pack = self.copy({"tag": tags})
-            worker = SSHCommand(
-                host=host,
-                user=user,
-                key=key,
-                port=port,
-                executor=DockerRunCommand(
-                    AccelerateLaunchCommand(pack, rank=rank),
-                    self.config["system"].get("docker_image"),
-                ),
-                **options
-            )
-            plans.append(worker)
-
-        return ListCommand(*plans)
+        return AccelerateAllNodes(plan).use_stdout()
 
 
 __pack__ = AccelerateBenchmark

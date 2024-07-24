@@ -310,6 +310,10 @@ class Package(BasePackage):
     def requirements_files(self, variant=None):
         return list(self.requirements_map(variant).values())
 
+    @property
+    def working_directory(self):
+        return self.dirs.code
+    
     def make_env(self):
         """Return a dict of environment variables to use for prepare/run.
 
@@ -506,10 +510,12 @@ class Package(BasePackage):
         pack = cmd.PackCommand(self, *self.argv, lazy=True)
         return cmd.VoirCommand(pack, cwd=main.parent)
 
-    def resolve_argument(self, name):
+    def resolve_argument(self, name, default):
         """Resolve as single placeholder argument"""
-        placeholder = str(self.config["argv"][name])
-        return self.resolve_placeholder(placeholder)
+        placeholder = self.config.get("argv", {}).get(name)
+        if placeholder:
+            return self.resolve_placeholder(placeholder)
+        return default
 
     def resolve_placeholder(self, placeholder):
         """Resolve as single placeholder argument

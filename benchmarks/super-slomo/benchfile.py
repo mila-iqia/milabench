@@ -6,5 +6,8 @@ class SuperSlomoPack(Package):
     prepare_script = "prepare.py"
     main_script = "slomo/train.py"
 
+    @property
+    def working_directory(self):
+        return self.dirs.code / "slomo"
 
 __pack__ = SuperSlomoPack

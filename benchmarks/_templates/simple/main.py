@@ -12,7 +12,7 @@ from benchmate.observer import BenchObserver
 
 
 def criterion(*args, **kwargs):
-    return random.normalvariate()
+    return random.normalvariate(0, 1)
 
 
 def main():

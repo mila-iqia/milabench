@@ -35,16 +35,13 @@ def instrument_main(ov, options: Config):
     import torchcompat.core as accelerator
     from benchmate.observer import BenchObserver
 
-    from timm.utils.distributed import is_global_primary
-
     observer = BenchObserver(
         accelerator.Event, 
         earlystop=options.stop + options.skip,
-        rank=int(os.getenv("RANK", 0)),
-        device=accelerator.fetch_device(int(os.getenv("RANK", 0))),
         backward_callback=accelerator.mark_step,
         step_callback=accelerator.mark_step,
-        batch_size_fn=lambda x: len(x[0])
+        batch_size_fn=lambda x: len(x[0]),
+        stdout=False,
     )
 
     probe = ov.probe("/timm.data.loader/create_loader() as loader", overridable=True)
@@ -71,7 +68,7 @@ def instrument_main(ov, options: Config):
         monitor(poll_interval=options.gpu_poll) 
     ] 
 
-    if is_global_primary:
+    if int(os.getenv("RANK", 0)) == 0:
         instruments.append(early_stop(n=options.stop, key="rate", task="train", signal="stop"))
 
     ov.require(*instruments)

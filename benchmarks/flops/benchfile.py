@@ -11,8 +11,8 @@ class FlopsBenchmarch(Package):
 
         pack = cmd.PackCommand(self, *self.argv, lazy=True)
         # pack = cmd.VoirCommand(pack, cwd=main.parent)
-        pack = cmd.ActivatorCommand(pack, use_stdout=True)
-        return pack
+        pack = cmd.ActivatorCommand(pack)
+        return pack.use_stdout()
 
 
 __pack__ = FlopsBenchmarch

@@ -9,6 +9,10 @@ class TimmBenchmarkPack(Package):
     base_requirements = "requirements.in"
     main_script = "pytorch-image-models/train.py"
 
+    @property
+    def working_directory(self):
+        return self.dirs.code / "pytorch-image-models"
+    
     def make_env(self):
         return {
             **super().make_env(),
@@ -26,18 +30,27 @@ class TimmBenchmarkPack(Package):
         ]
 
     async def install(self):
-        await super().install()
-
         timm = self.dirs.code / "pytorch-image-models"
         if not timm.exists():
             timm.clone_subtree(
                 "https://github.com/huggingface/pytorch-image-models", BRANCH
             )
 
+        # Install TIMM first
+        # await self.pip_install("-e", str(timm))
+
+        # install the rest, which might override what TIMM specified
+        await super().install()
+
     def build_run_plan(self):
-        # self.config is not the right config for this
-        plan = super().build_run_plan()
-        return TorchRunCommand(plan, use_stdout=True)
+        import milabench.commands as cmd
+        main = self.dirs.code / self.main_script
+
+        # torchrun ... -m voir ... train_script ...
+        return TorchRunCommand(
+            cmd.VoirCommand(cmd.PackCommand(self, *self.argv, lazy=True), cwd=main.parent, module=True),
+            module=True
+        )
 
 
 __pack__ = TimmBenchmarkPack

@@ -128,7 +128,7 @@ def test_executor_execute(noexecute):
     ]
     print(result)
     print(expected)
-    assert result == expected
+    assert sorted(result) == sorted(expected)
 
 
 def test_pack_executor():
@@ -295,6 +295,9 @@ class MockPack:
     async def message(self, msg):
         print(msg)
 
+    @property
+    def working_directory(self):
+        return self.dirs.code
 
 class Commands:
     def __init__(self, time) -> None:

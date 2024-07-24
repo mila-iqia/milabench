@@ -196,6 +196,8 @@ class MultiPackage:
                         continue
 
                     exec_plan = make_execution_plan(pack, index, repeat)
+
+                    print(repr(exec_plan))
                     await exec_plan.execute("run", timeout=True, timeout_delay=600)
 
                 except Exception as exc:

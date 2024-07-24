@@ -10,7 +10,7 @@ from ..structs import BenchLogEntry
 from ..syslog import syslog
 
 
-async def execute(pack, *args, cwd=None, env={}, external=False, **kwargs):
+async def execute(pack, *args, cwd=None, env={}, external=False, use_stdout=False, **kwargs):
     """Run a command in the virtual environment.
 
     Unless specified otherwise, the command is run with
@@ -23,7 +23,7 @@ async def execute(pack, *args, cwd=None, env={}, external=False, **kwargs):
     from ..sizer import resolve_argv, scale_argv
 
     if cwd is None:
-        cwd = pack.dirs.code
+        cwd = pack.working_directory
 
     exec_env = pack.full_env(env) if not external else {**os.environ, **env}
 
@@ -35,6 +35,7 @@ async def execute(pack, *args, cwd=None, env={}, external=False, **kwargs):
     return await run(
         final_args,
         **kwargs,
+        use_stdout=use_stdout,
         info={"pack": pack},
         env=exec_env,
         constructor=BenchLogEntry,

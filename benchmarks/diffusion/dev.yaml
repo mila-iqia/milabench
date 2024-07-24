@@ -1,0 +1,38 @@
+
+
+
+_diffusion:
+  inherits: _defaults
+  definition: .
+  install-variant: unpinned
+  install_group: torch
+
+  argv:
+    --train_batch_size: 32
+    --num_epochs: 5
+
+diffusion-single:
+  inherits: _diffusion
+
+  num_machines: 1
+  plan:
+    method: per_gpu
+
+diffusion-gpus:
+  inherits: _diffusion
+
+  num_machines: 1
+  plan:
+    method: njobs
+    n: 1
+
+diffusion-nodes:
+  inherits: _diffusion
+
+  num_machines: 2
+  plan:
+    method: njobs
+    n: 1
+  
+  requires_capabilities:
+    - "len(nodes) >= ${num_machines}"

@@ -16,6 +16,7 @@ from ..fs import XPath
 from ..merge import merge
 from ..utils import select_nodes
 from .executors import execute_command
+from ..system import option
 
 
 def clone_with(cfg, new_cfg):
@@ -57,6 +58,29 @@ class Command:
             raise TypeError(f"Need to be pack or executor not `{pack_or_exec}`")
 
         self._kwargs = kwargs
+
+    def use_stdout(self):
+        self.set_run_options(use_stdout=True)
+        return self
+
+    def set_run_options(self, **kwargs):
+        self.options.update(kwargs)
+        return self
+
+    @property
+    def options(self):
+        if self._pack:
+            return self._kwargs
+        
+        if self.exec:
+            # recursively retrieve options
+            # this relies on dict insertion order
+            opt = dict()
+            opt.update(self.exec.options)
+            opt.update(self._kwargs)
+            return opt
+    
+        return self._kwargs
 
     @property
     def pack(self) -> pack.BasePackage:
@@ -103,11 +127,22 @@ class Command:
         command line's arguments and the `Command`'s kwargs to send to
         `pack.BasePackage.execute()`
         """
-        yield self.pack, [], self.kwargs()
+        yield self.pack, [], self.options
 
     async def execute(self, phase="run", timeout=False, timeout_delay=600, **kwargs):
         """Execute all the commands and return the aggregated results"""
         return await execute_command(self, phase, timeout, timeout_delay, **kwargs)
+
+    def __repr__(self) -> str:
+        typename = f"{type(self).__name__}"
+        frags = []
+        if self._pack:
+            frags.append("pack")
+
+        if self.exec:
+            frags.append(repr(self.exec))
+            
+        return f"{typename}({', '.join(frags)})"
 
 
 class SingleCmdCommand(Command):
@@ -124,7 +159,7 @@ class SingleCmdCommand(Command):
         return self._argv(**kwargs)
 
     def commands(self) -> Generator[Tuple[pack.BasePackage, List, Dict], None, None]:
-        yield self.pack, self.argv(), self.kwargs()
+        yield self.pack, self.argv(), self.options
 
     def _argv(self, **kwargs) -> List:
         del kwargs
@@ -141,7 +176,14 @@ class ListCommand(Command):
 
     def __init__(self, *executors: Tuple[Command], **kwargs) -> None:
         super().__init__(None, **kwargs)
-        self.executors = executors
+        # Note: it is better to use the function for it
+        # since it will generate the executors when needed
+        # allowing the environment to be modified/updated
+        self._executors = executors
+
+    @property
+    def executors(self):
+        return self._executors
 
     @property
     def pack(self):
@@ -154,6 +196,25 @@ class ListCommand(Command):
     def packs(self):
         for exec in self.executors:
             yield from exec.packs()
+
+    def __repr__(self):
+        typename = f"{type(self).__name__}"
+        frags = []
+        for e in self.executors:
+            frags.append(repr(e))
+        return f"{typename}([{', '.join(frags)}])"
+    
+    def set_run_options(self, **kwargs):
+        for exec in self._executors:
+            exec.set_run_options(**kwargs)
+        return self
+    
+    def copy(self, pack):
+        """Copy the execution plan but use a different pack"""
+        copy = deepcopy(self)
+        for e in copy._executors:
+            e._set_pack(pack)
+        return copy
 
 
 class CmdCommand(SingleCmdCommand):
@@ -450,40 +511,161 @@ class SCPCommand(SSHCommand, CmdCommand):
         return argv
 
 
-class TorchRunCommand(WrapperCommand):
-    def __init__(self, executor: SingleCmdCommand, *torchrun_argv, **kwargs) -> None:
+
+class TorchrunAllGPU(WrapperCommand):
+    def __init__(self, executor: SingleCmdCommand, *torchrun_argv, module=False, **kwargs) -> None:
         # Some vendors force us to have weird venv that can resolve weirdly
         # use absolute paths to avoid issues
 
         binfolder = executor.pack.config["dirs"]["venv"]
+        self.module=module
+
+        # benchrun is a wrapper around torchrun
+        # which insert voir file descritor
         super().__init__(
-            executor, f"{binfolder}/bin/torchrun", *torchrun_argv, **kwargs
+            executor, f"{binfolder}/bin/benchrun", *torchrun_argv, **kwargs
         )
 
     def _argv(self, **kwargs):
         devices = self.pack.config.get("devices", [])
         nproc = len(devices)
         if nproc > 1:
-            argv = [*super()._argv(**kwargs), f"--nproc_per_node={nproc}"]
+            # spawn,fork,forkserver
+            argv = [
+                *super()._argv(**kwargs), 
+                f"--nproc-per-node={nproc}", 
+                # "--start-method=forkserver"
+            ]
 
             # Check if the sub-executor targets a module or not
             cmd = next(iter(self.exec.argv()), None)
 
-            if cmd:
-                # python or voir; tell it to not prepend python since we are doing it
-                if cmd in ("python", "voir"):
-                    argv.append("--no-python")
+            if self.module:
+                argv.append("-m")
 
-                # if the command exists and it is not a path assume it is a module
-                # script is not a file, maybe it is a module
-                elif not XPath(cmd).exists():
-                    argv.append("-m")
+            else:
+                if cmd:
+                    # python or voir; tell it to not prepend python since we are doing it
+                    if cmd in ("python", "voir"):
+                        argv.append("--no-python")
 
-            # everything after torchrun args are script args
-            argv.append("--")
+                    # if the command exists and it is not a path assume it is a module
+                    # script is not a file, maybe it is a module
+                    elif not XPath(cmd).exists():
+                        argv.append("-m")
+
+                # everything after torchrun args are script args
+                argv.append("--")
+            
             return argv
         return []
 
+
+class ForeachNode(ListCommand):
+    def __init__(self, executor: Command, **kwargs) -> None:
+        super().__init__(None, **kwargs)
+        self.options.update(kwargs)
+        self.executor = executor
+
+    def make_new_node_pack(self, rank, node, base) -> "BasePackage":
+        """Make a new environment/config for the run"""
+        config = base.pack.config
+        tags = [*config["tag"], node["name"]]
+
+        # Workers do not send training data
+        # tag it as such so validation can ignore this pack
+        if rank != 0:
+            tags.append("nolog")
+
+        run = clone_with(config, {"tag": tags})
+        return base.pack.copy(run)
+
+    def make_new_node_executor(self, rank, node, base):
+        """Make a new environment and create a new executor for the node"""
+        pack = self.make_new_node_pack(rank, node, base)
+        return base.copy(pack)
+
+    def single_node(self):
+        return self.executor
+
+    @property
+    def executors(self):
+        """Build the executor lazyly when necessary so we get the latest config"""
+        executors = []
+
+        config = self.executor.pack.config
+
+        max_num = config.get("num_machines", 1)
+        self.nodes = select_nodes(config["system"]["nodes"], max_num)
+        key = config["system"].get("sshkey")
+
+        # useless in single node setups
+        if len(self.nodes) == 1 or max_num == 1:
+            return [self.single_node()]
+        
+        for rank, node in enumerate(self.nodes):
+            options = dict()
+        
+            # Hummm...
+            if rank == 0:
+                options = dict(
+                    setsid=True,
+                    **self.options
+                )
+
+            worker = SSHCommand(
+                host=node["ip"],
+                user=node["user"],
+                key=key,
+                port=node.get("port", 22),
+                executor=self.make_new_node_executor(rank, node, self.executor),
+                **options
+            )
+            executors.append(worker)
+        return executors
+
+    def set_run_options(self, **kwargs):
+        self.executor.set_run_options(**kwargs)
+        return self
+    
+    def copy(self, pack):
+        """Copy the execution plan but use a different pack"""
+        copy = deepcopy(self)
+        copy.executor._set_pack(pack)
+        return copy
+
+
+class TorchrunAllNodes(ForeachNode):
+    """executes torchrun on multiple machines"""
+    def __init__(self, executor: Command, **kwargs) -> None:
+
+        config = executor.pack.config
+        max_num = config.get("num_machines", 1)
+        self.nodes = select_nodes(config["system"]["nodes"], max_num)
+
+        main = self.nodes[0]
+
+        # node[port] is for SSH
+        main_host = main["ip"]
+        # add them as option so we could tweak them if necessary
+        main_port = option("torchrun.port", int, default=29400)
+        backend = option("torchrun.backend", str, default="c10d")
+
+        main_addr = f"{main_host}:{main_port}"
+        base_exec = TorchrunAllGPU(
+            executor,
+            f"--nnodes={len(self.nodes)}",
+            f"--rdzv-backend={backend}",
+            f"--rdzv-endpoint={main_addr}",
+            f"--master-addr={main_host}",
+            f"--master-port={main_port}",
+            **kwargs
+        )
+
+        super().__init__(base_exec)
+
+
+TorchRunCommand = TorchrunAllGPU
 
 use_voir = True
 
@@ -504,14 +686,23 @@ class VoirCommand(WrapperCommand):
         executor: `Command` to be executed
         *voir_argv: voir command line arguments list
         **kwargs: kwargs to be passed to the `pack.execute()`
+        module: bool use voir module instead of voir wrapper.
+            this is useful for torchrun since when a module is used
+            the main torchrun process can be reused for rank=0 enabling
+            voir to work using file descriptor.
     """
 
-    def __init__(self, executor: SingleCmdCommand, *voir_argv, **kwargs) -> None:
+    def __init__(self, executor: SingleCmdCommand, *voir_argv, module=False, **kwargs) -> None:
         # Some vendors force us to have weird venv that can resolve weirdly
         # use absolute paths to avoid issues
         binfolder = executor.pack.config["dirs"]["venv"]
+        voir = f"{binfolder}/bin/voir"
+
+        if module:
+            voir = "voir"
+
         super().__init__(
-            executor, f"{binfolder}/bin/voir", **{"setsid": True, **kwargs}
+            executor, voir, **{"setsid": True, **kwargs}
         )
         self.voir_argv = voir_argv
 
@@ -648,6 +839,43 @@ class ActivatorCommand(SingleCmdCommand):
         return [f"{self.pack.dirs.code / 'activator'}", f"{self.pack.dirs.venv}"]
 
 
+
+class AccelerateAllNodes(ForeachNode):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+    def single_node(self):
+        ngpu = len(self.executor.pack.config.get("devices", []))
+
+        # Multi GPU
+        if ngpu > 1:
+            return AccelerateLaunchCommand(self.executor, rank=0, **self.options)
+        
+        # Single GPU
+        return self.executor
+    
+    def make_new_node_executor(self, rank, node, base):
+        config = base.pack.config
+
+        pack = self.make_new_node_pack(rank, node, base)
+    
+        return DockerRunCommand(
+            AccelerateLaunchCommand(pack, rank=rank),
+            config["system"].get("docker_image"),
+        )
+
+
+def activator_script():
+    """Scripts that activate the venv just before executing a script
+    
+    Useful for commands that SSH somewhere and need to execute a command in a particular venv
+    """
+
+    path = XPath(__file__).parent.parent / "scripts" / "activator"
+    assert path.exists()
+    return str(path)
+
+
 # Accelerate
 class AccelerateLaunchCommand(SingleCmdCommand):
     """Execute a `pack.BasePackage` with Accelerate
@@ -676,28 +904,32 @@ class AccelerateLaunchCommand(SingleCmdCommand):
 
         num_machines = max(1, len(nodes) + 1)
 
-        ngpu = len(get_gpu_info()["gpus"].values())
+        # Cant do that maybe this run is constrained
+        # ngpu = len(get_gpu_info()["gpus"].values())
+
+        ngpu = len(self.pack.config["devices"])
         nproc = ngpu * num_machines
         assert nproc > 0, f"nproc: {nproc} num_machines: {num_machines} ngpu: {ngpu}"
 
-        deepspeed_argv = (
-            [
+        if self.pack.config.get("use_deepspeed", False):
+            deepspeed_argv = [
                 "--use_deepspeed",
                 "--deepspeed_multinode_launcher=standard",
                 "--zero_stage=2",
             ]
-            if self.pack.config["use_deepspeed"]
-            else ["--multi_gpu"]
-        )
-
-        cpu_per_process = self.pack.resolve_argument('--cpus_per_gpu')
+        elif ngpu > 1:
+            deepspeed_argv = ["--multi_gpu"]
+        else:
+            deepspeed_argv = []
+    
+        cpu_per_process = self.pack.resolve_argument('--cpus_per_gpu', 4)
         return [
             # -- Run the command in the right venv
             # This could be inside the SSH Command
             # but it would need to be repeated for Docker
             # could be its own Command like VenvCommand that execute code
             # inside a specifc venv
-            f"{self.pack.dirs.code / 'activator'}",
+            activator_script(),
             f"{self.pack.dirs.venv}",
             # --
             "accelerate",
@@ -707,14 +939,10 @@ class AccelerateLaunchCommand(SingleCmdCommand):
             f"--machine_rank={self.rank}",
             f"--num_machines={num_machines}",
             *deepspeed_argv,
-            f"--gradient_accumulation_steps={self.pack.config['gradient_accumulation_steps']}",
+            f"--gradient_accumulation_steps={self.pack.config.get('gradient_accumulation_steps', 1)}",
             f"--num_cpu_threads_per_process={cpu_per_process}",
             f"--main_process_ip={manager['ip']}",
             f"--main_process_port={manager['port']}",
             f"--num_processes={nproc}",
             *self.accelerate_argv,
-            str(self.pack.dirs.code / "main.py"),
-            *self.pack.argv,
-            "--cache",
-            str(self.pack.dirs.cache),
         ]

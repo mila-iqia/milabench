@@ -116,11 +116,16 @@ def cleanpath(out, tmppath):
         os.path.dirname(voir.__file__), '..'
     ))
 
-    return (out
+    def rmdate(date):
+        import re
+        return re.sub(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}.\d{6}", "1990-01-01 00:00:00.000000", date, 0)
+
+    return rmdate(out
         .replace(str(site_packages), "$SITEPACKAGES")
         .replace(str(sys_path), "$INSTALL")
         .replace(str(ROOT), "$SRC")
         .replace(str(tmppath), "$TMP")
+        
     )
 
 
