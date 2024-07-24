@@ -71,8 +71,15 @@ class Command:
     def options(self):
         if self._pack:
             return self._kwargs
+        
         if self.exec:
-            return self.exec.options
+            # recursively retrieve options
+            # this relies on dict insertion order
+            opt = dict()
+            opt.update(self.exec.options)
+            opt.update(self._kwargs)
+            return opt
+    
         return self._kwargs
 
     @property
@@ -120,7 +127,7 @@ class Command:
         command line's arguments and the `Command`'s kwargs to send to
         `pack.BasePackage.execute()`
         """
-        yield self.pack, [], self.options # self.kwargs()
+        yield self.pack, [], self.options
 
     async def execute(self, phase="run", timeout=False, timeout_delay=600, **kwargs):
         """Execute all the commands and return the aggregated results"""

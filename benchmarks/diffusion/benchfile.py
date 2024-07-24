@@ -30,9 +30,15 @@ class Diffusion(Package):
         await super().prepare()  # super() call executes prepare_script
 
     def build_run_plan(self):
-        plan = super().build_run_plan().use_stdout()
+        from milabench.commands import PackCommand
 
-        return AccelerateAllNodes(plan)
+        main = self.dirs.code / self.main_script
+        plan = PackCommand(self, *self.argv, lazy=True)
+        
+        if False:
+            plan = VoirCommand(plan, cwd=main.parent)
+
+        return AccelerateAllNodes(plan).use_stdout()
 
 
 __pack__ = Diffusion

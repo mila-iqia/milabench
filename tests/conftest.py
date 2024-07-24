@@ -87,10 +87,23 @@ class MockDeviceSMI:
     def close(self):
         pass
 
+class MockDeviceModule:
+    @staticmethod
+    def is_installed():
+        return True
+
+    DeviceSMI = MockDeviceSMI
+
 
 @pytest.fixture(scope="session", autouse=True)
 def set_env():
-    backend = voirgpu.deduce_backend()
+    voirgpu.BACKENDS["mock"] = MockDeviceModule
+
+    try:
+        backend = voirgpu.deduce_backend()
+    except Exception:
+        backend = "mock"
+
     if backend == "cpu":
         backend = "mock"
 

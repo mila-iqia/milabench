@@ -330,7 +330,7 @@ echo "---"
 echo "resnet152-multi"
 echo "==============="
 time (
-  $BASE/venv/torch/bin/torchrun --nproc_per_node=8 --no-python -- python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model resnet152 --batch-size 256 --output $BASE/extra/timm/dev/resnet152-multi.0 --checkpoint-hist 1 &
+  $BASE/venv/torch/bin/benchrun --nproc-per-node=8 -m python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model resnet152 --batch-size 256 --output $BASE/extra/timm/dev/resnet152-multi.0 --checkpoint-hist 1 &
   wait
 )
 
@@ -353,7 +353,7 @@ echo "---"
 echo "davit_large-multi"
 echo "================="
 time (
-  $BASE/venv/torch/bin/torchrun --nproc_per_node=8 --no-python -- python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model davit_large --batch-size 128 --lr-base 0.01 --output $BASE/extra/timm/dev/davit_large-multi.0 --checkpoint-hist 1 &
+  $BASE/venv/torch/bin/benchrun --nproc-per-node=8 -m python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model davit_large --batch-size 128 --lr-base 0.01 --output $BASE/extra/timm/dev/davit_large-multi.0 --checkpoint-hist 1 &
   wait
 )
 
@@ -376,7 +376,7 @@ echo "---"
 echo "opt-1_3b"
 echo "========"
 time (
-  $SRC/milabench/benchmarks/accelerate_opt/activator $BASE/venv/torch accelerate launch --mixed_precision=bf16 --dynamo_backend=no --machine_rank=0 --num_machines=1 --multi_gpu --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=8 $SRC/milabench/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --model_name facebook/opt-1.3b --cache $BASE/cache &
+  $SRC/milabench/milabench/scripts/activator $BASE/venv/torch accelerate launch --mixed_precision=bf16 --dynamo_backend=no --machine_rank=0 --num_machines=1 --multi_gpu --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=8 $SRC/milabench/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --cache $BASE/cache --model_name facebook/opt-1.3b &
   wait
 )
 
@@ -384,8 +384,8 @@ echo "---"
 echo "opt-1_3b-multinode"
 echo "=================="
 time (
-  $SRC/milabench/benchmarks/accelerate_opt/activator $BASE/venv/torch accelerate launch --mixed_precision=bf16 --dynamo_backend=no --machine_rank=0 --num_machines=2 --multi_gpu --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=16 $SRC/milabench/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --model_name facebook/opt-1.3b --cache $BASE/cache &
-  ssh -oCheckHostIP=no -oStrictHostKeyChecking=no -oPasswordAuthentication=no -oPasswordAuthentication=no -p 22 username@192.168.0.11 $SRC/milabench/benchmarks/accelerate_opt/activator $BASE/venv/torch accelerate launch --mixed_precision=bf16 --dynamo_backend=no --machine_rank=1 --num_machines=2 --multi_gpu --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=16 $SRC/milabench/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --model_name facebook/opt-1.3b --cache $BASE/cache &
+  $SRC/milabench/milabench/scripts/activator $BASE/venv/torch accelerate launch --mixed_precision=bf16 --dynamo_backend=no --machine_rank=0 --num_machines=2 --multi_gpu --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=16 &
+  ssh -oCheckHostIP=no -oStrictHostKeyChecking=no -oPasswordAuthentication=no -oPasswordAuthentication=no -p 22 username@192.168.0.11 $SRC/milabench/milabench/scripts/activator $BASE/venv/torch accelerate launch --mixed_precision=bf16 --dynamo_backend=no --machine_rank=1 --num_machines=2 --multi_gpu --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=16 &
   wait
 )
 
@@ -393,7 +393,7 @@ echo "---"
 echo "opt-6_7b"
 echo "========"
 time (
-  $SRC/milabench/benchmarks/accelerate_opt/activator $BASE/venv/torch accelerate launch --mixed_precision=bf16 --dynamo_backend=no --machine_rank=0 --num_machines=1 --use_deepspeed --deepspeed_multinode_launcher=standard --zero_stage=2 --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=8 $SRC/milabench/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --model_name facebook/opt-6.7b --cache $BASE/cache &
+  $SRC/milabench/milabench/scripts/activator $BASE/venv/torch accelerate launch --mixed_precision=bf16 --dynamo_backend=no --machine_rank=0 --num_machines=1 --use_deepspeed --deepspeed_multinode_launcher=standard --zero_stage=2 --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=8 $SRC/milabench/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --cache $BASE/cache --model_name facebook/opt-6.7b &
   wait
 )
 
@@ -401,8 +401,8 @@ echo "---"
 echo "opt-6_7b-multinode"
 echo "=================="
 time (
-  $SRC/milabench/benchmarks/accelerate_opt/activator $BASE/venv/torch accelerate launch --mixed_precision=bf16 --dynamo_backend=no --machine_rank=0 --num_machines=2 --use_deepspeed --deepspeed_multinode_launcher=standard --zero_stage=2 --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=16 $SRC/milabench/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --model_name facebook/opt-6.7b --cache $BASE/cache &
-  ssh -oCheckHostIP=no -oStrictHostKeyChecking=no -oPasswordAuthentication=no -oPasswordAuthentication=no -p 22 username@192.168.0.11 $SRC/milabench/benchmarks/accelerate_opt/activator $BASE/venv/torch accelerate launch --mixed_precision=bf16 --dynamo_backend=no --machine_rank=1 --num_machines=2 --use_deepspeed --deepspeed_multinode_launcher=standard --zero_stage=2 --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=16 $SRC/milabench/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --model_name facebook/opt-6.7b --cache $BASE/cache &
+  $SRC/milabench/milabench/scripts/activator $BASE/venv/torch accelerate launch --mixed_precision=bf16 --dynamo_backend=no --machine_rank=0 --num_machines=2 --use_deepspeed --deepspeed_multinode_launcher=standard --zero_stage=2 --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=16 &
+  ssh -oCheckHostIP=no -oStrictHostKeyChecking=no -oPasswordAuthentication=no -oPasswordAuthentication=no -p 22 username@192.168.0.11 $SRC/milabench/milabench/scripts/activator $BASE/venv/torch accelerate launch --mixed_precision=bf16 --dynamo_backend=no --machine_rank=1 --num_machines=2 --use_deepspeed --deepspeed_multinode_launcher=standard --zero_stage=2 --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=16 &
   wait
 )
 
@@ -449,6 +449,37 @@ echo "brax"
 echo "===="
 time (
   python $SRC/milabench/benchmarks/brax/main.py --episode-length 20 --batch-size 1024 --num-minibatches 32 --num-envs 8192 &
+  wait
+)
+
+echo "---"
+echo "diffusion-gpus"
+echo "=============="
+time (
+  $SRC/milabench/milabench/scripts/activator $BASE/venv/torch accelerate launch --mixed_precision=bf16 --dynamo_backend=no --machine_rank=0 --num_machines=1 --multi_gpu --gradient_accumulation_steps=1 --num_cpu_threads_per_process=4 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=8 $SRC/milabench/benchmarks/diffusion/main.py --train_batch_size 32 --num_epochs 5 &
+  wait
+)
+
+echo "---"
+echo "lightning"
+echo "========="
+time (
+  CUDA_VISIBLE_DEVICES=0 python $SRC/milabench/benchmarks/lightning/main.py --epochs 10 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model resnet152 &
+  CUDA_VISIBLE_DEVICES=1 python $SRC/milabench/benchmarks/lightning/main.py --epochs 10 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model resnet152 &
+  CUDA_VISIBLE_DEVICES=2 python $SRC/milabench/benchmarks/lightning/main.py --epochs 10 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model resnet152 &
+  CUDA_VISIBLE_DEVICES=3 python $SRC/milabench/benchmarks/lightning/main.py --epochs 10 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model resnet152 &
+  CUDA_VISIBLE_DEVICES=4 python $SRC/milabench/benchmarks/lightning/main.py --epochs 10 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model resnet152 &
+  CUDA_VISIBLE_DEVICES=5 python $SRC/milabench/benchmarks/lightning/main.py --epochs 10 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model resnet152 &
+  CUDA_VISIBLE_DEVICES=6 python $SRC/milabench/benchmarks/lightning/main.py --epochs 10 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model resnet152 &
+  CUDA_VISIBLE_DEVICES=7 python $SRC/milabench/benchmarks/lightning/main.py --epochs 10 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model resnet152 &
+  wait
+)
+
+echo "---"
+echo "lightning-gpus"
+echo "=============="
+time (
+  $BASE/venv/torch/bin/benchrun --nnodes=1 --rdzv-backend=c10d --rdzv-endpoint=127.0.0.1:29400 --master-addr=127.0.0.1 --master-port=29400 --nproc-per-node=8 --no-python -- python $SRC/milabench/benchmarks/lightning/main.py --epochs 10 --num-workers 8 --loader pytorch --data $BASE/data/FakeImageNet --model resnet152 &
   wait
 )
 
