@@ -35,8 +35,14 @@ class AccelerateBenchmark(Package):
             str(self.dirs.cache)
         )
 
-    def build_run_plan(self):
-        plan = super().build_run_plan()
+    def build_run_plan(self): 
+        from milabench.commands import PackCommand, VoirCommand
+        main = self.dirs.code / self.main_script
+        plan = PackCommand(self, *self.argv, lazy=True)
+
+        if False:
+            plan = VoirCommand(pack, cwd=main.parent)
+
         return AccelerateAllNodes(plan).use_stdout()
 
 
