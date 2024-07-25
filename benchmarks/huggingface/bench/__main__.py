@@ -61,22 +61,18 @@ class Runner:
 
         self.device = accelerator.fetch_device(0)
         self.batch_size = args.batch_size
-        info = models[args.model]()
-        self.model = info.model.to(self.device)
+        self.info = models[args.model](args)
+        self.model = self.info.model.to(self.device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=args.lr)
 
         # this cause the bench to fail for one model (reformer)
         # dtype=float_dtype(args.precision)
         self.model, self.optimizer = accelerator.optimize(self.model, optimizer=self.optimizer)
 
-        if hasattr(info, "dataset"):
-            from datasets import load_dataset
-            dataset = load_dataset(info.dataset)
-            self.loader =  DataLoader(
-                dataset, batch_size=args.batch_size, num_workers=args.num_workers
-            )
+        if hasattr(self.info, "dataloader"):
+            self.loader = self.info.dataloader
         else:
-            self.loader = make_dataloader(args, info)
+            self.loader = make_dataloader(args, self.info)
 
         self.amp_scaler = NoScale()
         if torch.cuda.is_available():

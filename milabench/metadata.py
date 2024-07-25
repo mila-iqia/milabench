@@ -26,7 +26,7 @@ def _get_gpu_info():
 def fetch_torch_version(pack):
     cwd = pack.dirs.code
     exec_env = pack.full_env(dict())
-
+    
     result = subprocess.run(
         [str(x) for x in ["python", torchversion.__file__]],
         env=exec_env,

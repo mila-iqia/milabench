@@ -43,9 +43,9 @@ install_prepare() {
     fi
 
     if [ ! -d "$MILABENCH_WORDIR/voir" ]; then
-        
-        git clone https://github.com/Delaunay/voir.git
-        git clone https://github.com/Delaunay/torchcompat.git
+        echo ""
+        # git clone https://github.com/Delaunay/voir.git
+        # git clone https://github.com/Delaunay/torchcompat.git
     fi
 
     . $MILABENCH_WORDIR/env/bin/activate
@@ -59,20 +59,20 @@ install_prepare() {
     milabench install "$@"
 
     which pip
-    pip install -e $MILABENCH_WORDIR/voir
-    pip install -e $MILABENCH_WORDIR/torchcompat
+    # pip install -e $MILABENCH_WORDIR/voir
+    # pip install -e $MILABENCH_WORDIR/torchcompat
 
     (
         . $BENCHMARK_VENV/bin/activate
         which pip
-        pip install -e $MILABENCH_WORDIR/voir
-        pip install -e $MILABENCH_WORDIR/torchcompat
-        pip install torch torchvision torchaudio
+        #pip install -e $MILABENCH_WORDIR/voir
+        # pip install -e $MILABENCH_WORDIR/torchcompat
+        # pip install torch torchvision torchaudio
 
         # DALI stuff
-        pip install --extra-index-url https://pypi.nvidia.com --upgrade nvidia-dali-cuda120
-        pip install nvidia-pyindex
-        pip install nvidia-nvjpeg-cu12
+        # pip install --extra-index-url https://pypi.nvidia.com --upgrade nvidia-dali-cuda120
+        # pip install nvidia-pyindex
+        # pip install nvidia-nvjpeg-cu12
     )
 
     #
@@ -82,24 +82,12 @@ install_prepare() {
 
 module load cuda/12.3.2
 
-if [ ! -d "$MILABENCH_WORDIR" ]; then
+if [ ! -d "$MILABENCH_WORDIR/results/venv/torch" ]; then
     install_prepare 
 else
     echo "Reusing previous install"
     . $MILABENCH_WORDIR/env/bin/activate
 fi
-
-
-
-(
-    . $MILABENCH_WORDIR/env/bin/activate
-    pip install -e $MILABENCH_WORDIR/voir
-    pip install -e $MILABENCH_SOURCE/benchmate
-
-    . $BENCHMARK_VENV/bin/activate
-    pip install -e $MILABENCH_WORDIR/voir
-    pip install -e $MILABENCH_SOURCE/benchmate
-)
 
 if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     cd $MILABENCH_WORDIR

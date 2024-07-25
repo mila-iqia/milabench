@@ -1,0 +1,29 @@
+
+_dinov2:
+  inherits: _defaults
+  definition: .
+  install-variant: unpinned
+  plan:
+    method: njobs
+    n: 1
+
+  argv:
+    --output-dir: "{milabench_extra}/output"
+    --no-resume: true
+
+dinov2-large-single:
+  inherits: _dinov2
+  argv:
+    --config-file: src/dinov2/configs/train/vitl14.yaml
+    # THIS NEEDS TO BE LAST
+    train.dataset_path=ImageNet:split=TRAIN:root={milabench_data}/FakeImageNet:extra={milabench_data}/FakeImageNet: true
+
+
+
+dinov2-giant:
+  inherits: _dinov2
+  argv:
+    --config-file: src/dinov2/configs/train/vitg14.yaml
+    # THIS NEEDS TO BE LAST
+    train.dataset_path=ImageNet:split=TRAIN:root={milabench_data}/FakeImageNet:extra={milabench_data}/FakeImageNet: true
+

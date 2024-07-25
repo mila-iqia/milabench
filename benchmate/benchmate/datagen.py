@@ -85,10 +85,9 @@ def device_count():
         return acc.device_count()
     except:
         return 1
+    
 
-def generate_fakeimagenet():
-    # config = json.loads(os.environ["MILABENCH_CONFIG"])
-
+def fakeimagenet_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--batch-size", default=512, type=int)
     parser.add_argument("--batch-count", default=60, type=int)
@@ -97,8 +96,13 @@ def generate_fakeimagenet():
     parser.add_argument("--image-size", default=[3, 384, 384], type=int, nargs="+")
     parser.add_argument("--val", default=0.1, type=float, nargs="+")
     parser.add_argument("--test", default=0.1, type=float, nargs="+")
-
     args, _ = parser.parse_known_args()
+
+def generate_fakeimagenet(args=None):
+    # config = json.loads(os.environ["MILABENCH_CONFIG"])
+
+    if args is None:
+        args = fakeimagenet_args()
 
     if overrides := os.getenv("MILABENCH_TESTING_PREPARE"):
         bs, bc = overrides.split(",")

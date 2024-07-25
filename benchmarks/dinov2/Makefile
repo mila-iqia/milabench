@@ -5,7 +5,7 @@ endif
 
 export MILABENCH_BASE
 
-BENCH_NAME=dinov2_large
+BENCH_NAME=dinov2-large
 MILABENCH_CONFIG=dev.yaml
 MILABENCH_ARGS=--config $(MILABENCH_CONFIG) --base $(MILABENCH_BASE)
 
@@ -21,11 +21,8 @@ prepare:
 tests: install prepare
 	milabench run $(MILABENCH_ARGS)
 
-debug:
-	CUDA_VISIBLE_DEVICES=0 milabench run $(MILABENCH_ARGS) --select $(BENCH_NAME)-single
-
 single:
-	milabench run $(MILABENCH_ARGS) --select $(BENCH_NAME)-single
+	CUDA_VISIBLE_DEVICES=0,1 milabench run $(MILABENCH_ARGS) --select $(BENCH_NAME)-single
 
 gpus:
 	milabench run $(MILABENCH_ARGS) --select $(BENCH_NAME)-gpus

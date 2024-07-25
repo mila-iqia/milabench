@@ -31,7 +31,7 @@ def synthetic_dataset(info, args):
 
 
 @register_model
-def Opt350m():
+def Opt350m(args):
     category = "AutoModelForCausalLM"
     config = AutoConfig.from_pretrained("facebook/opt-350m")
     return NS(
@@ -44,7 +44,7 @@ def Opt350m():
 
 
 @register_model
-def GPT2():
+def GPT2(args):
     category = "AutoModelForCausalLM"
     config = AutoConfig.from_pretrained("gpt2")
     return NS(
@@ -57,7 +57,7 @@ def GPT2():
 
 
 @register_model
-def GPT2_large():
+def GPT2_large(args):
     category = "AutoModelForCausalLM"
     config = AutoConfig.from_pretrained("gpt2-large")
     return NS(
@@ -70,7 +70,7 @@ def GPT2_large():
 
 
 @register_model
-def T5():
+def T5(args):
     category = "AutoModelForSeq2SeqLM"
     config = AutoConfig.from_pretrained("t5-small")
     return NS(
@@ -83,7 +83,7 @@ def T5():
 
 
 @register_model
-def T5_base():
+def T5_base(args):
     category = "AutoModelForSeq2SeqLM"
     config = AutoConfig.from_pretrained("t5-base")
     return NS(
@@ -96,7 +96,7 @@ def T5_base():
 
 
 @register_model
-def T5_large():
+def T5_large(args):
     category = "AutoModelForSeq2SeqLM"
     config = AutoConfig.from_pretrained("t5-large")
     return NS(
@@ -109,7 +109,7 @@ def T5_large():
 
 
 @register_model
-def Bart():
+def Bart(args):
     category = "AutoModelForSeq2SeqLM"
     config = AutoConfig.from_pretrained("facebook/bart-base")
     return NS(
@@ -122,7 +122,7 @@ def Bart():
 
 
 @register_model
-def Reformer():
+def Reformer(args):
     category = "AutoModelForMaskedLM"
     config = ReformerConfig()
     if not config.num_buckets:
@@ -137,7 +137,7 @@ def Reformer():
 
 
 @register_model
-def BigBird():
+def BigBird(args):
     category = "AutoModelForMaskedLM"
     config = BigBirdConfig(attention_type="block_sparse")
     return NS(
@@ -150,7 +150,7 @@ def BigBird():
 
 
 @register_model
-def Albert():
+def Albert(args):
     category = "AutoModelForMaskedLM"
     config = AutoConfig.from_pretrained("albert-base-v2")
     return NS(
@@ -163,7 +163,7 @@ def Albert():
 
 
 @register_model
-def DistilBert():
+def DistilBert(args):
     category = "AutoModelForMaskedLM"
     config = AutoConfig.from_pretrained("distilbert-base-uncased")
     return NS(
@@ -176,7 +176,7 @@ def DistilBert():
 
 
 @register_model
-def Longformer():
+def Longformer(args):
     category = "AutoModelForMaskedLM"
     config = AutoConfig.from_pretrained("allenai/longformer-base-4096")
     return NS(
@@ -189,7 +189,7 @@ def Longformer():
 
 
 @register_model
-def Bert():
+def Bert(args):
     category = "AutoModelForMaskedLM"
     config = BertConfig()
     return NS(
@@ -202,7 +202,7 @@ def Bert():
 
 
 @register_model
-def Bert_large():
+def Bert_large(args):
     category = "AutoModelForMaskedLM"
     config = BertConfig(hidden_size=1024, num_hidden_layers=24, num_attention_heads=16)
     return NS(
@@ -215,7 +215,7 @@ def Bert_large():
 
 
 @register_model
-def Whisper():
+def Whisper(args):
     category = "AutoModelForAudioClassification"
     config = AutoConfig.from_pretrained("openai/whisper-tiny")
     return NS(
@@ -229,10 +229,78 @@ def Whisper():
     )
 
 
+def dataset_ade20k(args, transform):
+    from datasets import load_dataset
+    from torch.utils.data import DataLoader
+    from collections import defaultdict
+    import torch
+
+    dataset = load_dataset("helenlu/ade20k", trust_remote_code=True)["train"]
+    scenes = defaultdict(int)
+
+    def collate_function(data):
+        # {'image': <PIL.JpegImagePlugin.>, 'conditioning_image': <PIL.Pn>, 'text': 'bathroom'}
+        images = []
+        conditioning_images = []
+        texts = []
+        labels = []
+
+        def get_label(txt):
+            # Note: this is wrong for a real usecase because the label would change
+            # depending on the shuffling
+            nonlocal scenes
+        
+            label = scenes.get(txt)
+            if label is None:
+                label = len(scenes)
+                scenes[text] = label
+            return label
+
+        for items in data:
+            image = items["image"]
+            conditioning_image = items["conditioning_image"]
+            text = items["text"]
+            label = get_label(text)
+
+            texts.append(text)
+            labels.append(label)
+            images.append(transform(image, return_tensors="pt")["pixel_values"])
+            conditioning_images.append(transform(conditioning_image, return_tensors="pt")["pixel_values"])
+
+        return {
+            "pixel_values": torch.cat(images),
+            "conditioning_images": torch.cat(conditioning_images),
+            "labels": torch.tensor(labels, dtype=torch.long)
+        }
+
+    loader = DataLoader(
+        dataset, 
+        batch_size=args.batch_size, 
+        num_workers=args.num_workers,
+        collate_fn=collate_function
+    )
+
+    for i in loader:
+        assert i['pixel_values'].shape == (args.batch_size, 3, 224, 224)
+        print(i['pixel_values'].shape)
+        print(i['conditioning_images'].shape)
+        print(i['labels'].shape)
+        break
+
+    return loader
+
+
 @register_model
-def dinov2_large():
+def dinov2_large(args):
     category = "AutoModel"
-    config = transformers.Dinov2Config("facebook/dinov2-large")
+    config = AutoConfig.from_pretrained("facebook/dinov2-large")
+
+
+    def criterion(model_output, dataloader_input):
+        mask = dataloader_input["conditioning_images"]
+        print(model_output)
+        return 0
+
     processor = transformers.AutoImageProcessor.from_pretrained('facebook/dinov2-large')
     return NS(
         category=category,
@@ -240,12 +308,20 @@ def dinov2_large():
         train_length=512,
         eval_length=1024,
         model=_make(category, config),
-        processor=processor
+        transform=processor,
+        dataloader = dataset_ade20k(args, processor),
+        model_inputs=lambda x: {"pixel_values": x["pixel_values"]},
+        criterion=criterion
     )
 
 
+
+
+
+
+
 @register_model
-def dinov20_giant():
+def dinov20_giant(args):
     category = "AutoModel"
     config = transformers.Dinov2Config("facebook/dinov2-giant")
     processor = transformers.AutoImageProcessor.from_pretrained('facebook/dinov2-large')
@@ -256,6 +332,7 @@ def dinov20_giant():
         train_length=512,
         eval_length=1024,
         model=_make(category, config),
-        processor=processor,
-        dataset = "helenlu/ade20k",
+        transform=processor,
+        dataloader=dataset_ade20k(args, processor),
+        model_inputs=lambda x: {"pixel_values": x["pixel_values"]}
     )
