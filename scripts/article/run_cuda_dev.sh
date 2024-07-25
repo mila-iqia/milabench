@@ -44,14 +44,14 @@ install_prepare() {
 
     if [ ! -d "$MILABENCH_WORDIR/voir" ]; then
         
-        git clone https://github.com/Delaunay/voir.git -b patch-4
+        git clone https://github.com/Delaunay/voir.git
         git clone https://github.com/Delaunay/torchcompat.git
     fi
 
     . $MILABENCH_WORDIR/env/bin/activate
     pip install -e $MILABENCH_SOURCE
 
-    milabench pin --variant cuda "$@"
+    # milabench pin --variant cuda "$@"
 
     #
     # Install milabench's benchmarks in their venv

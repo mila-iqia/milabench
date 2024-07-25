@@ -15,6 +15,21 @@ def _make(category, config):
     return getattr(transformers, category).from_config(config)
 
 
+
+def synthetic_dataset(info, args):
+    from .synth import SyntheticData, generators
+    from torch.utils.data import DataLoader
+
+    data = SyntheticData(
+        n=args.batch_size,
+        repeat=100000,
+        generators=generators[info.category](info),
+    )
+    return DataLoader(
+        data, batch_size=args.batch_size, num_workers=args.num_workers
+    )
+
+
 @register_model
 def Opt350m():
     category = "AutoModelForCausalLM"
@@ -211,4 +226,36 @@ def Whisper():
         sampling_rate=16000,
         extractor_class=transformers.WhisperFeatureExtractor,
         model=_make(category, config),
+    )
+
+
+@register_model
+def dinov2_large():
+    category = "AutoModel"
+    config = transformers.Dinov2Config("facebook/dinov2-large")
+    processor = transformers.AutoImageProcessor.from_pretrained('facebook/dinov2-large')
+    return NS(
+        category=category,
+        config=config,
+        train_length=512,
+        eval_length=1024,
+        model=_make(category, config),
+        processor=processor
+    )
+
+
+@register_model
+def dinov20_giant():
+    category = "AutoModel"
+    config = transformers.Dinov2Config("facebook/dinov2-giant")
+    processor = transformers.AutoImageProcessor.from_pretrained('facebook/dinov2-large')
+    
+    return NS(
+        category=category,
+        config=config,
+        train_length=512,
+        eval_length=1024,
+        model=_make(category, config),
+        processor=processor,
+        dataset = "helenlu/ade20k",
     )

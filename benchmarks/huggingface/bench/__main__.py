@@ -41,6 +41,17 @@ class NoScale:
     def update(self):
         pass
 
+
+def make_dataloader(args, info):
+    data = SyntheticData(
+        n=args.batch_size,
+        repeat=100000,
+        generators=generators[info.category](info),
+    )
+    return DataLoader(
+        data, batch_size=args.batch_size, num_workers=args.num_workers
+    )
+
 class Runner:
     def __init__(self, args):
         accelerator.set_enable_tf32(is_tf32_allowed(args))
@@ -58,14 +69,14 @@ class Runner:
         # dtype=float_dtype(args.precision)
         self.model, self.optimizer = accelerator.optimize(self.model, optimizer=self.optimizer)
 
-        self.data = SyntheticData(
-            n=args.batch_size,
-            repeat=100000,
-            generators=generators[info.category](info),
-        )
-        self.loader = DataLoader(
-            self.data, batch_size=args.batch_size, num_workers=args.num_workers
-        )
+        if hasattr(info, "dataset"):
+            from datasets import load_dataset
+            dataset = load_dataset(info.dataset)
+            self.loader =  DataLoader(
+                dataset, batch_size=args.batch_size, num_workers=args.num_workers
+            )
+        else:
+            self.loader = make_dataloader(args, info)
 
         self.amp_scaler = NoScale()
         if torch.cuda.is_available():
