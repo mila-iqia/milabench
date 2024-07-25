@@ -64,7 +64,7 @@ class Command:
         return self
 
     def set_run_options(self, **kwargs):
-        self.options.update(kwargs)
+        self._kwargs.update(kwargs)
         return self
 
     @property
