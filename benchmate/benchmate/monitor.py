@@ -135,3 +135,24 @@ def milabench_sys_monitor(monogpu=False):
     return setupvoir(monogpu)
 
 
+
+def voirfile_monitor(ov, options):
+    from voir.instruments import early_stop, log, dash
+
+    if options.dash:
+        ov.require(dash)
+    
+    instruments = [
+        log(
+            "value", "progress", "rate", "units", "loss", "gpudata", context="task"
+        )
+    ] 
+
+    if int(os.getenv("RANK", 0)) == 0:
+        instruments.append(early_stop(n=options.stop, key="rate", task="train", signal="stop"))
+        instruments.append(monitor_node(poll_interval=options.gpu_poll))
+
+    if os.getenv("RANK", -1) == -1:
+        instruments.append(monitor_monogpu(poll_interval=options.gpu_poll))
+    
+    ov.require(*instruments)

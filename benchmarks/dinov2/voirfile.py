@@ -2,9 +2,8 @@ from dataclasses import dataclass
 
 from voir.phase import StopProgram
 from voir import configurable
-from voir.instruments import dash, early_stop, log
 from benchmate.observer import BenchObserver
-from benchmate.monitor import monitor_monogpu, multigpu_monitor
+from benchmate.monitor import voirfile_monitor
 
 
 @dataclass
@@ -37,50 +36,10 @@ def instrument_main(ov, options: Config):
 
     yield ov.phases.load_script
 
-    if options.dash:
-        ov.require(dash)
+    # GPU monitor, rate, loss etc...
+    voirfile_monitor(ov, options)
 
-    monitor = monitor_monogpu
-    if os.getenv("RANK", -1) != -1:
-        monitor = multigpu_monitor
-
-    instruments = [
-        log(
-            "value", "progress", "rate", "units", "loss", "gpudata", context="task"
-        ),
-        monitor(poll_interval=options.gpu_poll) 
-    ] 
-
-    if int(os.getenv("RANK", 0)) == 0:
-        instruments.append(early_stop(n=options.stop, key="rate", task="train", signal="stop"))
-
-    ov.require(*instruments)
-
-    # FIX dinov2 code using ptera
-    from torchvision.datasets import ImageFolder
-    import torch
-    import dinov2.train.train 
-
-    class SSLMetaArch2(dinov2.train.train.SSLMetaArch):
-        def fsdp_synchronize_streams(self):
-            if self.need_to_synchronize_fsdp_streams:
-                torch.cuda.synchronize()
-                self.need_to_synchronize_fsdp_streams = False
-
-
-    dinov2.train.train.SSLMetaArch = SSLMetaArch2
-    dinov2.train.ssl_meta_arch.reshard_fsdp_model = lambda *args: None
-
-    probe = ov.probe("/dinov2.distributed/_is_slurm_job_process() as is_slrum", overridable=True)
-    probe['is_slrum'].override(lambda *args: False)
-
-    def override_parsed_dataset(results):
-        class_, kwargs = results
-        return ImageFolder, {"root": os.path.join(kwargs["root"], "train")}
-
-    probe = ov.probe("/dinov2.data.loaders/_parse_dataset_str() as dataset_kwargs", overridable=True)
-    probe['dataset_kwargs'].override(override_parsed_dataset)
-
+    code_patch(ov)
 
     #
     # Insert milabench tools
@@ -109,3 +68,33 @@ def instrument_main(ov, options: Config):
         yield ov.phases.run_script
     except StopProgram:
         print("early stopped")
+
+
+
+def code_patch(ov):
+    # FIX dinov2 code using ptera
+    import os
+    
+    from torchvision.datasets import ImageFolder
+    import torch
+    import dinov2.train.train 
+
+    class SSLMetaArch2(dinov2.train.train.SSLMetaArch):
+        def fsdp_synchronize_streams(self):
+            if self.need_to_synchronize_fsdp_streams:
+                torch.cuda.synchronize()
+                self.need_to_synchronize_fsdp_streams = False
+
+
+    dinov2.train.train.SSLMetaArch = SSLMetaArch2
+    dinov2.train.ssl_meta_arch.reshard_fsdp_model = lambda *args: None
+
+    probe = ov.probe("/dinov2.distributed/_is_slurm_job_process() as is_slrum", overridable=True)
+    probe['is_slrum'].override(lambda *args: False)
+
+    def override_parsed_dataset(results):
+        class_, kwargs = results
+        return ImageFolder, {"root": os.path.join(kwargs["root"], "train")}
+
+    probe = ov.probe("/dinov2.data.loaders/_parse_dataset_str() as dataset_kwargs", overridable=True)
+    probe['dataset_kwargs'].override(override_parsed_dataset)

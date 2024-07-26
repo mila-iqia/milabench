@@ -1,31 +1,31 @@
 #!/usr/bin/env python
 
 import os
-from benchmate.datagen import generate_fakeimagenet
-
-
-
+from benchmate.datagen import generate_fakeimagenet, device_count
 
 
 if __name__ == "__main__":
+    import os
     import sys
     sys.path.append(os.path.dirname(__file__) + "/src/")
-    from dinov2.data.datasets import ImageNet
 
-    data_directory = os.environ["MILABENCH_DIR_DATA"]
-    dest = os.path.join(data_directory, f"FakeImageNet")
+    if job_id := os.getenv("SLURM_JOB_ID"):
+        del os.environ["SLURM_JOB_ID"]
 
+    from argparse import Namespace
+    from dinov2.train.train import setup, get_args_parser
 
-    # class_id, class_name
-    with open(dest + "/labels.txt", "w") as fp:
-        for i in range(1000):
-            fp.write(f"{i}, {i}\n")
+    args = get_args_parser(add_help=True).parse_args()
+    cfg = setup(args)
 
+    args = Namespace(
+        batch_size=cfg["train"]["batch_size_per_gpu"],
+        batch_count=60,
+        device_count=device_count(),
+        device=None,
+        image_size=[3, 384, 384],
+        val=0.1,
+        test=0.1
+    )
     # 
-    # generate_fakeimagenet()
-
-
-
-    for split in ImageNet.Split:
-        dataset = ImageNet(split=split, root=dest, extra=dest)
-        dataset.dump_extra()
+    generate_fakeimagenet(args)
