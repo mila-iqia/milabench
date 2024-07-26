@@ -359,7 +359,7 @@ def new_argument_resolver(pack):
     def clamp(x, mn=options.cpu_min, mx=options.cpu_max):
         return min(max(x, mn), mx)
 
-    total_cpu = multiprocessing.cpu_count()
+    total_cpu = options.total_count or multiprocessing.cpu_count()
     total_available = total_cpu - options.reserved_cores
 
     context["cpu_count"] = total_available

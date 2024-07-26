@@ -93,7 +93,7 @@ fi
 
 if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     cd $MILABENCH_WORDIR
-
+    
     #
     #   Run the benchmakrs
     milabench run "$@"

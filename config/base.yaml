@@ -112,13 +112,6 @@ _timm:
     --dataset: "FakeImageNet"
     --workers: "auto({n_worker}, 8)"
 
-_sb3:
-  inherits: _defaults
-  definition: ../benchmarks/stable_baselines3
-  group: sb3
-  plan:
-    method: njobs
-    n: 1
 
 _accelerate_opt:
   inherits: _defaults
@@ -533,40 +526,6 @@ super-slomo:
     --loader: pytorch
     --num_workers: "auto({n_worker}, 8)"
 
-ppo:
-  inherits: _sb3
-  tags:
-    - rl
-
-  argv:
-    --algo: ppo
-    --env: HalfCheetahBulletEnv-v0
-    -n: '-1'
-    --num-threads: '-1'
-    --seed: '0'
-    --vec-env: subproc
-    --device: auto
-    --: [-params, n_envs:16, n_steps:512, n_epochs:20, n_timesteps:50000]
-
-td3:
-  inherits: _sb3
-  tags:
-    - rl
-
-  argv:
-    --algo: td3
-    --env: HalfCheetahBulletEnv-v0 # Default: CartPole-v1
-    --n-eval-envs: '1'
-    --n-timesteps: '50000' # Default: '-1'
-    --num-threads: '-1'
-    --log-interval: '-1'
-    --eval-episodes: '5'
-    --save-freq: '-1'
-    --seed: '0' # Default: -1
-    --vec-env: subproc # Default: dummy
-    --device: auto
-    --n-trials: '10' # Default: 500
-    --n-jobs: '1'
 
 dlrm:
   inherits: _defaults
