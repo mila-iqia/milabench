@@ -51,7 +51,7 @@ install_prepare() {
     . $MILABENCH_WORDIR/env/bin/activate
     pip install -e $MILABENCH_SOURCE
 
-    # milabench pin --variant cuda "$@"
+    milabench pin --variant cuda "$@"
 
     #
     # Install milabench's benchmarks in their venv
@@ -69,7 +69,7 @@ install_prepare() {
         # pip install -e $MILABENCH_WORDIR/torchcompat
         # pip install torch torchvision torchaudio
 
-        pip install fvcore xFormers
+        # pip install fvcore xFormers
 
         # DALI stuff
         # pip install --extra-index-url https://pypi.nvidia.com --upgrade nvidia-dali-cuda120

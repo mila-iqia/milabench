@@ -97,6 +97,8 @@ def fakeimagenet_args():
     parser.add_argument("--val", default=0.1, type=float, nargs="+")
     parser.add_argument("--test", default=0.1, type=float, nargs="+")
     args, _ = parser.parse_known_args()
+    return args
+
 
 def generate_fakeimagenet(args=None):
     # config = json.loads(os.environ["MILABENCH_CONFIG"])
