@@ -93,6 +93,10 @@ def option(name, etype, default=None):
         return None
 
 
+def defaultfield(name, type, default=None):
+    return field(default_factory=lambda: option(name, type, default))
+
+
 def is_autoscale_enabled():
     return option("sizer.auto", int, 0) > 0
 
@@ -105,68 +109,70 @@ def default_save_location():
 @dataclass
 class SizerOptions:
     # overrides the batch size to use for all benchmarks
-    size: int = option("sizer.batch_size", int)
+    size: int = defaultfield("sizer.batch_size", int, None)
 
     # Enables auto batch resize
-    autoscale: bool = option("sizer.auto", int, 0)
+    autoscale: bool = defaultfield("sizer.auto", int, 0)
 
     # Constraint the batch size to be a multiple of a number
-    multiple: int = option("sizer.multiple", int, 8)
+    multiple: int = defaultfield("sizer.multiple", int, 8)
 
     # Constraint the batch size to be a power of a specified base (usually 2)
-    power: int = option("sizer.power", int)
+    power: int = defaultfield("sizer.power", int)
 
     # Use the optimized batch size
-    optimized: bool = option("sizer.optimized", int)
+    optimized: bool = defaultfield("sizer.optimized", int)
 
     # Set a target VRAM capacity to use
-    capacity: str = option("sizer.capacity", str)
+    capacity: str = defaultfield("sizer.capacity", str)
 
     # Save the batch size, VRM usage data to a scaling file
-    save: str = option("sizer.save", str, None)
+    save: str = defaultfield("sizer.save", str, None)
 
 
 @dataclass
 class CPUOptions:
-    enabled: bool = option("cpu.auto", bool, False)
+    enabled: bool = defaultfield("cpu.auto", bool, False)
+
+    total_count: bool = defaultfield("cpu.total_count", int, None)
 
     # max number of CPU per GPU
-    cpu_max: int = option("cpu.max", int, 16)
+    cpu_max: int = defaultfield("cpu.max", int, 16)
 
     # min number of CPU per GPU
-    cpu_min: int = option("cpu.min", int, 2)
+    cpu_min: int = defaultfield("cpu.min", int, 2)
 
     # reserved CPU cores (i.e not available for the benchmark)
-    reserved_cores: int = option("cpu.reserved_cores", int, 0)
+    reserved_cores: int = defaultfield("cpu.reserved_cores", int, 0)
 
     # Number of workers (ignores cpu_max and cpu_min)
-    n_workers: int = option("cpu.n_workers", int)
+    n_workers: int = defaultfield("cpu.n_workers", int)
 
 
 @dataclass
 class DatasetConfig:
     # If use buffer is true then datasets are copied to the buffer before running the benchmark
-    use_buffer: bool = option("data.use_buffer", bool, default=False)
+    use_buffer: bool = defaultfield("data.use_buffer", bool, default=False)
 
     # buffer location to copy the datasets bfore running the benchmarks
-    buffer: str = option("data.buffer", str, default="${dirs.base}/buffer")
+    buffer: str = defaultfield("data.buffer", str, default="${dirs.base}/buffer")
 
 
 @dataclass
 class Dirs:
     """Common directories used by milabench. This can be used to override
     location in case compute node do not have internet access."""
-    venv: str = option("dirs.venv", str, default="${dirs.base}/venv/${install_group}")
-    data: str = option("dirs.data", str, default="${dirs.base}/data")
-    runs: str = option("dirs.runs", str, default="${dirs.base}/runs")
-    extra: str = option("dirs.extra", str, default="${dirs.base}/extra/${group}")
-    cache: str = option("dirs.cache", str, default="${dirs.base}/cache")
+    venv: str = defaultfield("dirs.venv", str, default="${dirs.base}/venv/${install_group}")
+    data: str = defaultfield("dirs.data", str, default="${dirs.base}/data")
+    runs: str = defaultfield("dirs.runs", str, default="${dirs.base}/runs")
+    extra: str = defaultfield("dirs.extra", str, default="${dirs.base}/extra/${group}")
+    cache: str = defaultfield("dirs.cache", str, default="${dirs.base}/cache")
 
 
 @dataclass 
 class Torchrun:
-    port: int = option("torchrun.port", int, default=29400)
-    backend: str = option("torchrun.backend", str, default="c10d")
+    port: int = defaultfield("torchrun.port", int, default=29400)
+    backend: str = defaultfield("torchrun.backend", str, default="c10d")
 
 
 @dataclass
@@ -180,6 +186,7 @@ class Options:
 
 @dataclass
 class GPUConfig:
+    arch: str = defaultfield("gpu.arch", str, None)
     capacity: str = None
 
 
@@ -194,23 +201,23 @@ class Nodes:
 
 @dataclass
 class Github:
-    pat: str = option("github.path", str, None)
+    pat: str = defaultfield("github.path", str, None)
 
 
 @dataclass
 class SystemConfig:
     """This is meant to be an exhaustive list of all the environment overrides"""
-    arch: str = getenv("MILABENCH_GPU_ARCH", str)
+    arch: str = defaultfield("gpu.arch", str, None)
     sshkey: str = None
     docker_image: str = None
     nodes: list[Nodes] = field(default_factory=list)
     gpu: GPUConfig = None
     options: Options = None
 
-    base: str = option("base", str, None)
-    config: str = option("config", str, None)
-    dash: bool = option("dash", bool, 1)
-    noterm: bool = option("noterm", bool, 0)
+    base: str = defaultfield("base", str, None)
+    config: str = defaultfield("config", str, None)
+    dash: bool = defaultfield("dash", bool, 1)
+    noterm: bool = defaultfield("noterm", bool, 0)
     github: Github = None
 
 

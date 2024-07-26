@@ -125,17 +125,28 @@ def dataset(accelerator, args: Arguments):
         input_ids = torch.stack([example["input_ids"] for example in examples])
         return {"pixel_values": pixel_values, "input_ids": input_ids}
 
+    import os
+    total_samples = args.batch_size * 70 * int(os.getenv("WORLD_SIZE", 1))
+
     # DataLoaders creation:
     return torch.utils.data.DataLoader(
         train_dataset,
-        shuffle=True,
+        shuffle=False,
+        # This should be a distributed sampler
+        # but the dataset is a bit small so epochs are too small as well
+        sampler=torch.utils.data.RandomSampler(
+            train_dataset, 
+            replacement=True, 
+            num_samples=total_samples
+        ),
         collate_fn=collate_fn,
         batch_size=args.batch_size,
         num_workers=args.num_workers,
         persistent_workers=True,
     )
 
-def train(args: Arguments):
+
+def train(observer, args: Arguments):
     weight_dtype = torch.bfloat16
 
     accelerator = Accelerator(
@@ -144,18 +155,6 @@ def train(args: Arguments):
     )
 
     loader = dataset(accelerator, args)
-
-    from benchmate.observer import BenchObserver
-
-    def batch_size(x):
-        return x["pixel_values"].shape[0]
-
-    observer = BenchObserver(
-        earlystop=60,
-        raise_stop_program=True,
-        batch_size_fn=batch_size,
-        stdout=True
-    )
 
     encoder, vae, unet = models(accelerator, args)
 
@@ -213,18 +212,37 @@ def train(args: Arguments):
             optimizer.zero_grad()
 
 
+
+def prepare_voir():
+    from benchmate.observer import BenchObserver
+    from benchmate.monitor import bench_monitor
+    def batch_size(x):
+        return x["pixel_values"].shape[0]
+
+    observer = BenchObserver(
+        earlystop=60,
+        raise_stop_program=True,
+        batch_size_fn=batch_size,
+        stdout=True
+    )
+
+    return observer, bench_monitor
+
 def main():
     from benchmate.metrics import StopProgram
 
-    try:
-        from argklass import ArgumentParser
-        parser = ArgumentParser()
-        parser.add_arguments(Arguments)
-        config, _ = parser.parse_known_args()
+    observer, monitor = prepare_voir()
 
-        train(config)
-    except StopProgram:
-        pass
+    with monitor():
+        try:
+            from argklass import ArgumentParser
+            parser = ArgumentParser()
+            parser.add_arguments(Arguments)
+            config, _ = parser.parse_known_args()
+
+            train(observer, config)
+        except StopProgram:
+            pass
 
 
 if __name__ == "__main__":

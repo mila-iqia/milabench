@@ -172,7 +172,7 @@ class Sizer:
             return argv
 
         newsize = self.size(benchmark, capacity)
-
+ 
         if newsize is None:
             return argv
 
@@ -181,7 +181,24 @@ class Sizer:
         argname = config.get("arg")
         if argname is None:
             return argv
+        
+        # placeholder replace
+        #   train.batch_size_per_gpu={batch_size}
+        placeholder = "{batch_size}" 
+        if placeholder in argname:
+            newval = argname.format(batch_size=str(newsize))
 
+            for i, arg in enumerate(argv):
+                if str(arg).startswith(argname[0:-len(placeholder)]):
+                    break
+            else:
+                return argv + [newval]
+            
+            argv[i] = newval
+            return argv
+
+        # positional argument replace
+        #   --argname {batch_size}
         for i, arg in enumerate(argv):
             if str(arg).endswith(argname):
                 break
@@ -342,7 +359,7 @@ def new_argument_resolver(pack):
     def clamp(x, mn=options.cpu_min, mx=options.cpu_max):
         return min(max(x, mn), mx)
 
-    total_cpu = multiprocessing.cpu_count()
+    total_cpu = options.total_count or multiprocessing.cpu_count()
     total_available = total_cpu - options.reserved_cores
 
     context["cpu_count"] = total_available
@@ -365,6 +382,11 @@ def new_argument_resolver(pack):
         return newvalue
 
     return auto_eval
+
+
+def resolve_placeholder(pack, value):
+    resolver = new_argument_resolver(pack)
+    return resolver(value)
 
 
 def resolve_argv(pack, argv):

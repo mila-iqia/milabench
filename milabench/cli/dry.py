@@ -134,6 +134,7 @@ class Arguments:
     capacity: int = 80000
     withenv: bool = True
     usevoir: bool = False
+    ncpu: int = 256
 # fmt: on
 
 
@@ -142,13 +143,14 @@ def arguments():
     ngpu: Option & int = 8
     capacity: Option & int = 80000
     nnodes: Option & int = 2
+    ncpu: Option & int = 256
 
     # [negate]
     withenv: Option & bool = True
 
     # [negate]
     usevoir: Option & bool = True
-    return Arguments(nnodes, ngpu, capacity, withenv, usevoir)
+    return Arguments(nnodes, ngpu, capacity, withenv, usevoir, ncpu)
 
 
 @tooled
@@ -180,6 +182,18 @@ def multipack_args(conf: Arguments):
 
     return args
 
+@contextmanager
+def with_env(**kwargs):
+    for k, v in kwargs.items():
+        if v:
+            os.environ[k] = str(v)
+    
+    yield
+
+    for k, v in kwargs.items():
+        if v:
+            del os.environ[k]
+
 
 @tooled
 def cli_dry(args=None):
@@ -192,7 +206,7 @@ def cli_dry(args=None):
         args = arguments()
 
     with disable_voir(enabled=False), enable_offline(enabled=True):
-        with assume_gpu(args.ngpu, args.capacity, enabled=True):
+        with assume_gpu(args.ngpu, args.capacity, enabled=True), with_env(MILABENCH_CPU_TOTAL_COUNT=args.ncpu):
             repeat = 1
             mp = get_multipack(multipack_args(args), run_name="dev")
             gen = BashGenerator()

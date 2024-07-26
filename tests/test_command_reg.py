@@ -27,9 +27,9 @@ def test_command_reg_one_node(set_reg_env, tmp_path, capsys, file_regression):
     args.ngpu = 8
     args.capacity = 80000
     args.nnodes = 1
+    args.ncpu = 4
 
     cli_dry(args)
-    
     compare(str(tmp_path), capsys, file_regression)
 
 
@@ -38,6 +38,7 @@ def test_command_reg_two_nodes(set_reg_env, tmp_path, capsys, file_regression):
     args.ngpu = 8
     args.capacity = 80000
     args.nnodes = 2
+    args.ncpu = 4
     
     cli_dry(args)
 

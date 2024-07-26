@@ -121,6 +121,19 @@ def monogpu_monitor(*args, **kwargs):
         yield log
 
 
+
+@contextmanager
+def bench_monitor(*args, **kwargs):
+    if int(os.getenv("RANK", -1)) == -1:
+        with monogpu_monitor(*args, **kwargs) as mon:
+            yield mon
+    
+    elif int(os.getenv("RANK", -1)) == 0:
+        with multigpu_monitor(*args, **kwargs) as mon:
+            yield mon
+    else:
+        yield 
+
 #
 # Legacy compatibility
 #
@@ -135,3 +148,38 @@ def milabench_sys_monitor(monogpu=False):
     return setupvoir(monogpu)
 
 
+
+def get_rank():
+    try:
+        return int(os.getenv("RANK", -1))
+    except:
+        return -1
+
+
+def voirfile_monitor(ov, options):
+    from voir.instruments import early_stop, log, dash
+
+    if options.dash:
+        ov.require(dash)
+    
+    instruments = [
+        log(
+            "value", "progress", "rate", "units", "loss", "gpudata", context="task"
+        )
+    ] 
+
+    rank = get_rank()
+
+    # -1 & 0 early stop
+    if rank <= 0:
+        instruments.append(early_stop(n=options.stop, key="rate", task="train", signal="stop"))
+        
+    # mono gpu if rank is not set
+    if rank == -1:
+        instruments.append(monitor_monogpu(poll_interval=options.gpu_poll))
+
+    # rank is set only monitor main rank
+    if rank == 0:
+        instruments.append(monitor_node(poll_interval=options.gpu_poll))
+
+    ov.require(*instruments)

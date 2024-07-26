@@ -12,12 +12,6 @@ from milabench.utils import select_nodes
 class AccelerateBenchmark(Package):
     base_requirements = "requirements.in"
 
-    def make_env(self):
-        env = super().make_env()
-        value = self.resolve_argument("--cpus_per_gpu", 8)
-        env["OMP_NUM_THREADS"] = str(value)
-        return env
-
     def build_prepare_plan(self):
         return CmdCommand(
             self,

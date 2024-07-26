@@ -1,0 +1,37 @@
+
+
+
+_huggingface:
+  inherits: _defaults
+  definition: .
+  install-variant: unpinned
+  install_group: torch
+
+  argv:
+    --model: dinov2_large
+
+dinov2_large-single:
+  inherits: _huggingface
+
+  num_machines: 1
+  plan:
+    method: per_gpu
+
+dinov2_large-gpus:
+  inherits: _huggingface
+
+  num_machines: 1
+  plan:
+    method: njobs
+    n: 1
+
+dinov2_large-nodes:
+  inherits: _huggingface
+
+  num_machines: 2
+  plan:
+    method: njobs
+    n: 1
+  
+  requires_capabilities:
+    - "len(nodes) >= ${num_machines}"

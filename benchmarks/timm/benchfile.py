@@ -12,12 +12,6 @@ class TimmBenchmarkPack(Package):
     @property
     def working_directory(self):
         return self.dirs.code / "pytorch-image-models"
-    
-    def make_env(self):
-        return {
-            **super().make_env(),
-            "OMP_NUM_THREADS": str(self.config.get("cpus_per_gpu", 8)),
-        }
 
     @property
     def argv(self):
