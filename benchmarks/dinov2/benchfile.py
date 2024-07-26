@@ -28,10 +28,7 @@ class Dinov2(Package):
     def make_env(self):
         # Return a dict of environment variables for prepare_script and
         # main_script.
-        return {
-            "OMP_NUM_THREADS": str(8),   
-            **super().make_env()
-        }
+        return super().make_env()
 
     async def install(self):
         await super().install()

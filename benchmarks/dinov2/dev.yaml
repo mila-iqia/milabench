@@ -11,16 +11,6 @@ _dinov2:
     --output-dir: "{milabench_extra}/output"
     --no-resume: true
 
-dinov2-large:
-  inherits: _dinov2
-  argv:
-    --config-file: src/dinov2/configs/train/vitl14.yaml
-    # THOSE NEED TO BE LAST
-    train.dataset_path=ImageNet:split=TRAIN:root={milabench_data}/FakeImageNet:extra={milabench_data}/FakeImageNet: true
-    train.batch_size_per_gpu=32: true
-    train.saveckp_freq=100: true
-    train.num_workers=10: true
-
 
 dinov2-giant:
   inherits: _dinov2

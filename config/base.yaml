@@ -226,7 +226,7 @@ resnet50-noio:
     --batch-size: 256
     --loader: synthetic_fixed
 
-resnet152-ddp:
+resnet152-ddp-gpus:
   inherits: _torchvision_ddp
   tags:
     - vision
@@ -391,7 +391,7 @@ resnet152:
     --model: resnet152
     --batch-size: 256
 
-resnet152-multi:
+resnet152-gpus:
   inherits: resnet152
   tags:
     - multigpu
@@ -427,7 +427,7 @@ davit_large:
     --batch-size: 128
     --lr-base: 0.01
 
-davit_large-multi:
+davit_large-gpus:
   inherits: davit_large
   tags:
     - multigpu
@@ -446,7 +446,7 @@ focalnet:
   argv:
     --model: focalnet_base_lrf
 
-opt-1_3b:
+opt-1_3b-gpus:
   inherits: _accelerate_opt
   tags:
     - multigpu
@@ -458,7 +458,7 @@ opt-1_3b:
   use_deepspeed: false
   num_machines: 1
 
-opt-1_3b-multinode:
+opt-1_3b-nodes:
   inherits: opt-1_3b
 
   tags:
@@ -469,7 +469,7 @@ opt-1_3b-multinode:
   docker_image: "ghcr.io/mila-iqia/milabench:cuda-nightly"
   num_machines: 2
 
-opt-6_7b:
+opt-6_7b-gpus:
   inherits: _accelerate_opt
   tags:
     - multigpu
@@ -480,7 +480,7 @@ opt-6_7b:
 
   num_machines: 1
 
-opt-6_7b-multinode:
+opt-6_7b-nodes:
   inherits: opt-6_7b
   tags:
     - multinode
@@ -693,3 +693,35 @@ lightning-gpus:
   plan:
     method: njobs
     n: 1
+
+_dinov2:
+  inherits: _defaults
+  definition: ../benchmarks/dinov2
+  install_group: torch
+  plan:
+    method: njobs
+    n: 1
+
+  argv:
+    --output-dir: "{milabench_extra}/output"
+    --no-resume: true
+
+dinov2-large-gpus:
+  inherits: _dinov2
+  argv:
+    --config-file: src/dinov2/configs/train/vitl14.yaml
+    # THOSE NEED TO BE LAST
+    train.dataset_path=ImageNet:split=TRAIN:root={milabench_data}/FakeImageNet:extra={milabench_data}/FakeImageNet: true
+    train.batch_size_per_gpu=32: true
+    train.saveckp_freq=100: true
+    train.num_workers=10: true
+
+dinov2-giant-gpus:
+  inherits: _dinov2
+  argv:
+    --config-file: src/dinov2/configs/train/vitg14.yaml
+    # THOSE NEED TO BE LAST
+    train.dataset_path=ImageNet:split=TRAIN:root={milabench_data}/FakeImageNet:extra={milabench_data}/FakeImageNet: true
+    train.batch_size_per_gpu=32: true
+    train.saveckp_freq=100: true
+    train.num_workers=10: true

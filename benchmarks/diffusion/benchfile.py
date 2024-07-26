@@ -17,12 +17,6 @@ class Diffusion(Package):
 
     # You can remove the functions below if you don't need to modify them.
 
-    def make_env(self):
-        return {
-            **super().make_env(),
-            "OMP_NUM_THREADS": str(self.config.get("cpus_per_gpu", 8)),
-        }
-
     async def install(self):
         await super().install()  # super() call installs the requirements
         

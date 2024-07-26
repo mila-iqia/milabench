@@ -367,6 +367,11 @@ def new_argument_resolver(pack):
     return auto_eval
 
 
+def resolve_placeholder(pack, value):
+    resolver = new_argument_resolver(pack)
+    return resolver(value)
+
+
 def resolve_argv(pack, argv):
     resolver = new_argument_resolver(pack)
     argv = list(argv)

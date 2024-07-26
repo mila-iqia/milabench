@@ -329,10 +329,14 @@ class Package(BasePackage):
                 "MILABENCH_CONFIG": json.dumps(self.config),
             }
         """
+        from .sizer import resolve_placeholder
+
         env = {
             f"MILABENCH_DIR_{name.upper()}": path
             for name, path in self.config["dirs"].items()
         }
+
+        env["OMP_NUM_THREADS"] = resolve_placeholder(self, "{cpu_per_gpu}")
 
         env["MILABENCH_CONFIG"] = json.dumps(self.config)
         if self.phase == "prepare" or self.phase == "run":
