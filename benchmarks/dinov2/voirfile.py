@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from voir.phase import StopProgram
 from voir import configurable
 from voir.instruments import dash, early_stop, log
-from benchmate.monitor import monitor_monogpu
 from benchmate.observer import BenchObserver
+from benchmate.monitor import monitor_monogpu, multigpu_monitor
 
 
 @dataclass
@@ -40,29 +40,23 @@ def instrument_main(ov, options: Config):
     if options.dash:
         ov.require(dash)
 
+    monitor = monitor_monogpu
+    if os.getenv("RANK", -1) != -1:
+        monitor = multigpu_monitor
+
+    instruments = [
+        log(
+            "value", "progress", "rate", "units", "loss", "gpudata", context="task"
+        ),
+        monitor(poll_interval=options.gpu_poll) 
+    ] 
+
     if int(os.getenv("RANK", 0)) == 0:
-        ov.require(
-            log("value", "progress", "rate", "units", "loss", "gpudata", context="task"),
-            early_stop(n=options.stop, key="rate", task="train"),
-            monitor_monogpu(poll_interval=options.gpu_poll),
-        )
+        instruments.append(early_stop(n=options.stop, key="rate", task="train", signal="stop"))
 
-    #
-    # Insert milabench tools
-    #
-    def batch_size(x):
-        return x["collated_global_crops"].shape[0]
+    ov.require(*instruments)
 
-    observer = BenchObserver(
-        earlystop=options.stop + options.skip,
-        batch_size_fn=batch_size,
-    )
-
-    # Prevent dinov2 from recognizing slurm 
-    probe = ov.probe("/dinov2.distributed/_is_slurm_job_process() as is_slrum", overridable=True)
-    probe['is_slrum'].override(lambda *args: False)
-
-
+    # FIX dinov2 code using ptera
     from torchvision.datasets import ImageFolder
     import torch
     import dinov2.train.train 
@@ -81,21 +75,32 @@ def instrument_main(ov, options: Config):
     probe['is_slrum'].override(lambda *args: False)
 
     def override_parsed_dataset(results):
-        print(results)
         class_, kwargs = results
         return ImageFolder, {"root": os.path.join(kwargs["root"], "train")}
 
     probe = ov.probe("/dinov2.data.loaders/_parse_dataset_str() as dataset_kwargs", overridable=True)
     probe['dataset_kwargs'].override(override_parsed_dataset)
 
+
+    #
+    # Insert milabench tools
+    #
+    def batch_size(x):
+        return x["collated_global_crops"].shape[0]
+
+    observer = BenchObserver(
+        earlystop=options.stop + options.skip,
+        batch_size_fn=batch_size,
+    )
+
     probe = ov.probe("/dinov2.data.loaders/make_data_loader() as loader", overridable=True)
     probe['loader'].override(observer.loader)
 
-    # probe = ov.probe("//my_criterion_creator() as criterion", overridable=True)
-    # probe['criterion'].override(observer.criterion)
+    probe = ov.probe("/dinov2.train.train/do_train > losses_reduced", overridable=True)
+    probe["losses_reduced"].override(observer.record_loss)
 
-    # probe = ov.probe("//my_optimizer_creator() as optimizer", overridable=True)
-    # probe['optimizer'].override(observer.optimizer)
+    probe = ov.probe("/dinov2.train.train/build_optimizer() as optimizer", overridable=True)
+    probe['optimizer'].override(observer.optimizer)
     
     #
     # Run the benchmark
