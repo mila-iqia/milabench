@@ -33,6 +33,21 @@ class TorchvisionLightning(L.LightningModule):
         return optimizer
 
 
+
+def prepare_voir():
+    from benchmate.observer import BenchObserver
+    from benchmate.monitor import bench_monitor
+
+    observer = BenchObserver(
+        accelerator.Event, 
+        earlystop=65,
+        batch_size_fn=lambda x: len(x[0]),
+        raise_stop_program=False,
+        stdout=True,
+    )
+
+    return observer, bench_monitor
+
 def main():
     parser = argparse.ArgumentParser(description='simple distributed training job')
     parser.add_argument(
@@ -58,19 +73,12 @@ def main():
 
     model = TorchvisionLightning(model)
 
-    dataset = imagenet_dataloader(args, model, rank, world_size)
+    
    
-    from benchmate.observer import BenchObserver
-
     accelerator.set_enable_tf32(True)
 
-    observer = BenchObserver(
-        accelerator.Event, 
-        earlystop=65,
-        batch_size_fn=lambda x: len(x[0]),
-        raise_stop_program=False,
-        stdout=True,
-    )
+    observer, monitor = prepare_voir()
+    loader = observer.loader(imagenet_dataloader(args, model, rank, world_size))
 
     # train model
     trainer = L.Trainer(
@@ -85,7 +93,9 @@ def main():
         reload_dataloaders_every_n_epochs=1,
         max_steps=100
     )
-    trainer.fit(model=model, train_dataloaders=observer.loader(dataset))
+
+    with monitor():
+        trainer.fit(model=model, train_dataloaders=loader)
     print("finished: ", rank)
 
 

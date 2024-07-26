@@ -69,6 +69,8 @@ install_prepare() {
         # pip install -e $MILABENCH_WORDIR/torchcompat
         # pip install torch torchvision torchaudio
 
+        pip install fvcore xFormers
+
         # DALI stuff
         # pip install --extra-index-url https://pypi.nvidia.com --upgrade nvidia-dali-cuda120
         # pip install nvidia-pyindex

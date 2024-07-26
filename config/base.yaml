@@ -459,7 +459,7 @@ opt-1_3b-gpus:
   num_machines: 1
 
 opt-1_3b-nodes:
-  inherits: opt-1_3b
+  inherits: opt-1_3b-gpus
 
   tags:
     - multinode
@@ -481,7 +481,7 @@ opt-6_7b-gpus:
   num_machines: 1
 
 opt-6_7b-nodes:
-  inherits: opt-6_7b
+  inherits: opt-6_7b-gpus
   tags:
     - multinode
 
@@ -658,8 +658,9 @@ _diffusion:
   install_group: torch
 
   argv:
-    --train_batch_size: 32
     --num_epochs: 5
+    --batch_size: 32
+    --num_workers: "auto({n_worker}, 8)"
 
 diffusion-gpus:
   inherits: _diffusion
@@ -680,6 +681,7 @@ _lightning:
     --loader: pytorch
     --data: "{milabench_data}/FakeImageNet"
     --model: resnet152
+    --batch-size: 16
 
 lightning:
   inherits: _lightning
@@ -706,15 +708,6 @@ _dinov2:
     --output-dir: "{milabench_extra}/output"
     --no-resume: true
 
-dinov2-large-gpus:
-  inherits: _dinov2
-  argv:
-    --config-file: src/dinov2/configs/train/vitl14.yaml
-    # THOSE NEED TO BE LAST
-    train.dataset_path=ImageNet:split=TRAIN:root={milabench_data}/FakeImageNet:extra={milabench_data}/FakeImageNet: true
-    train.batch_size_per_gpu=32: true
-    train.saveckp_freq=100: true
-    train.num_workers=10: true
 
 dinov2-giant-gpus:
   inherits: _dinov2

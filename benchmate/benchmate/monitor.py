@@ -121,6 +121,19 @@ def monogpu_monitor(*args, **kwargs):
         yield log
 
 
+
+@contextmanager
+def bench_monitor(*args, **kwargs):
+    if int(os.getenv("RANK", -1)) == -1:
+        with monogpu_monitor(*args, **kwargs) as mon:
+            yield mon
+    
+    elif int(os.getenv("RANK", -1)) == 0:
+        with multigpu_monitor(*args, **kwargs) as mon:
+            yield mon
+    else:
+        yield 
+
 #
 # Legacy compatibility
 #
@@ -159,7 +172,7 @@ def voirfile_monitor(ov, options):
 
     # -1 & 0 early stop
     if rank <= 0:
-            instruments.append(early_stop(n=options.stop, key="rate", task="train", signal="stop"))
+        instruments.append(early_stop(n=options.stop, key="rate", task="train", signal="stop"))
         
     # mono gpu if rank is not set
     if rank == -1:

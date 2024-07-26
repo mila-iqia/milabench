@@ -3,6 +3,7 @@ _dinov2:
   inherits: _defaults
   definition: .
   install-variant: unpinned
+  install_group: torch
   plan:
     method: njobs
     n: 1
@@ -12,7 +13,7 @@ _dinov2:
     --no-resume: true
 
 
-dinov2-giant:
+dinov2-giant-gpus:
   inherits: _dinov2
   argv:
     --config-file: src/dinov2/configs/train/vitg14.yaml
