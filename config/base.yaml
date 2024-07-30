@@ -435,51 +435,6 @@ focalnet:
   argv:
     --model: focalnet_base_lrf
 
-opt-1_3b-gpus:
-  inherits: _accelerate_opt
-  tags:
-    - multigpu
-  
-  argv:
-    --model_name: "facebook/opt-1.3b"
-    --per_gpu_batch_size: 1
-
-  use_deepspeed: false
-  num_machines: 1
-
-opt-1_3b-nodes:
-  inherits: opt-1_3b-gpus
-
-  tags:
-    - multinode
-  requires_capabilities:
-    - "len(nodes) >= ${num_machines}"
-
-  docker_image: "ghcr.io/mila-iqia/milabench:cuda-nightly"
-  num_machines: 2
-
-opt-6_7b-gpus:
-  inherits: _accelerate_opt
-  tags:
-    - multigpu
-
-  argv:
-    --model_name: "facebook/opt-6.7b"
-    --per_gpu_batch_size: 1
-
-  num_machines: 1
-
-opt-6_7b-nodes:
-  inherits: opt-6_7b-gpus
-  tags:
-    - multinode
-
-  requires_capabilities:
-    - "len(nodes) >= ${num_machines}"
-
-  docker_image: "ghcr.io/mila-iqia/milabench:cuda-nightly"
-  num_machines: 2
-
 stargan:
   inherits: _defaults
   tags:
