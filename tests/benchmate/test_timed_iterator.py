@@ -55,40 +55,52 @@ def test_wrapper():
     ), "Computed rate should be close to theorical rate"
 
 
-def test_accumulation_steps():
+def fake_run(dataset_size, accumulation_steps = 32, loss_backward = 0.01, optimizer_step = 0.01, eps=2):
     batch = [1, 2]
-    process_time = 0.1
+    loss_backward = 0.01
+    optimizer_step = 0.01
 
-    iterable = [(batch, 3) for i in range(40)]
+    iterable = [(batch, 3) for i in range(dataset_size)]
     messages = []
 
     def push(**kwargs):
         nonlocal messages
         messages.append(kwargs)
 
+    min_steps = 50
     loader = ManualTimedIterator(
         iterable, 
         event_fn=CPUEvent, 
-        earlystop=50, 
+        earlystop=min_steps, 
         raise_stop_program=True, 
         push=push,
         batch_size_fn=lambda x: len(x[0])
     )
 
     accumulation_steps = 32
-    min_steps = 50
     epochs = (len(iterable) // accumulation_steps) * min_steps * 10
 
+    normal_batch_count = len(iterable) // accumulation_steps - 1
+    bigger_batch = 1
+
+    normal_batch_size = len(batch) * accumulation_steps 
+    bigger_batch_size = (normal_batch_size + len(batch) * len(iterable) % accumulation_steps)
+
+    normal_step_time = loss_backward * accumulation_steps + optimizer_step
+    bigger_step_time = loss_backward * (accumulation_steps + len(iterable) % accumulation_steps) + optimizer_step
+
+    step_batch_size = (normal_batch_size * normal_batch_count +  bigger_batch_size * bigger_batch)/ (normal_batch_count + bigger_batch)
+    step_batch_time = (normal_step_time * normal_batch_count +  bigger_step_time * bigger_batch)/ (normal_batch_count + bigger_batch)
+
+    expected_rate = step_batch_size / step_batch_time
+    
     with pytest.raises(StopProgram):
         for e in range(epochs):
             for j, _ in enumerate(loader):
+                time.sleep(loss_backward)
                 if (j + 1) % accumulation_steps == 0:
-                    time.sleep(process_time)
+                    time.sleep(optimizer_step)
                     loader.step()
-
-    # there is more message here because we are doing more epochs
-    # to get the same amount of observations
-    assert len(messages) == 252
 
     rate_acc = 0
     rate_count = 0
@@ -97,13 +109,36 @@ def test_accumulation_steps():
             rate_acc += rate
             rate_count += 1
 
-    print()
-    print(len(batch) * accumulation_steps / process_time)
-    print(rate_acc / rate_count)
+    empirical_rate = rate_acc / rate_count
+    print(expected_rate)
+    print(empirical_rate)
     print()
 
     assert (
-        abs((rate_acc / rate_count) - len(batch) * accumulation_steps / process_time) < 2
+        abs(empirical_rate - expected_rate) < eps
     ), "Computed rate should be close to theorical rate"
 
     assert rate_count == 50, "Program should stop once we reached the necessary count"
+
+def test_accumulation_steps_perfect():
+    fake_run(dataset_size=128, accumulation_steps=32, eps=2)
+    
+    # all steps have the same amount of batches
+    # expected_rate : 193.93939393939394
+    # empirical_rate: 192.66509115668907
+
+def test_accumulation_steps_dataloader_is_bigger():
+    fake_run(dataset_size=400 + 8, accumulation_steps=32, eps=18)
+
+    # only the first batch of the epoch (1+) is wrong
+    # so it is amortized nicely and does not impact us
+    # expected_rate : 186.66666666666663
+    # empirical_rate: 204.35944379315433
+
+def test_accumulation_steps_dataloader_is_small():
+    fake_run(dataset_size=40, accumulation_steps=32, eps=45)
+
+    # only the first batch is "normal" which makes it wrong
+    # `expected_rate` computation looks wrong here
+    # expected_rate : 195.12195121951217
+    # empirical_rate: 239.94828507678048

@@ -433,8 +433,27 @@ class TimedIterator:
             self.message_push(**kwargs)
 
 
-
 class ManualTimedIterator(TimedIterator):
+    """Used when the model is trained with graident accumulation steps.
+    
+    Users need to call iterator.step() manually.
+
+
+    Examples
+    --------
+
+
+    .. code-block:: python
+
+        for e in range(epochs):
+            for j, _ in enumerate(loader):
+                if (j + 1) % accumulation_steps == 0:
+                    # work here
+                    # ...
+                    #
+                    loader.step()
+
+    """
     def __init__(self, loader, event_fn=default_event(), rank=int(os.getenv("RANK", 0)), push=file_push(), device=default_device(), earlystop=earlystop_count(), raise_stop_program=False, batch_size_fn=None):
         super().__init__(loader, event_fn, rank, push, device, earlystop, raise_stop_program, batch_size_fn)
         self.acc_batch_size = 0
@@ -446,28 +465,26 @@ class ManualTimedIterator(TimedIterator):
         self.should_stop = super().step(self.acc_batch_size)
         self.acc_batch_size = 0
         self.accumulation_steps = 0
-
+       
     def wrapped(self, iterator):
         # Time IO wait + batch compute
         self.start = self.event_fn(enable_timing=True)
         self.start.record()
         self.previous_overhead = 0
-        self.acc_batch_size = 0
-        self.accumulation_steps = 0
         
         for data in iterator:
-            # no step here we are doing gradient accumulation step
-            # we have to compute the batch size now
-            # because step might be call before the execution returns to this
-            # block
+            # we have to compute the batch size now because 
+            # step might be call before the execution returns to this  block
             self.accumulation_steps += 1
             self.acc_batch_size += self.deduce_batch_size(data)
           
-            yield data
+            yield data # step will probably be called right before the control
+                       # returns to this block
 
+            # step was called, should we stop ?
             if self.should_stop:
                 break
-    
+
         self._push()
         self.earlystop()
         self.epochs += 1

@@ -43,11 +43,24 @@ def instrument_main(ov, options: Config):
 
     def wrap_dataloader(args):
         sampler, loader = args
-        wrapped = observer.loader(loader)
+        wrapped = observer.loader(loader, custom_step=True)
         return sampler, wrapped
+    
+    def wrap_lr_scheduler(scheduler):
+        original = scheduler.step
+
+        def newstep(*args, **kwargs):
+            original(*args, **kwargs)
+            observer.step()
+
+        scheduler.step = newstep
+        return scheduler
 
     probe = ov.probe("//LoRAFinetuneRecipeSingleDevice/_setup_data() as loader", overridable=True)
     probe['loader'].override(wrap_dataloader)
+
+    probe = ov.probe("//LoRAFinetuneRecipeSingleDevice/_setup_lr_scheduler() as scheduler", overridable=True)
+    probe['scheduler'].override(wrap_lr_scheduler)
 
     try:
         yield ov.phases.run_script
