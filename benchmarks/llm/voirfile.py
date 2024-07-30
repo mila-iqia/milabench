@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 
+from voir.phase import StopProgram
 from voir import configurable
-from voir.instruments import dash, early_stop, log
-from benchmate.monitor import monitor_monogpu
+from benchmate.observer import BenchObserver
+from benchmate.monitor import voirfile_monitor
 
 @dataclass
 class Config:
@@ -28,11 +29,27 @@ class Config:
 def instrument_main(ov, options: Config):
     yield ov.phases.init
 
-    if options.dash:
-        ov.require(dash)
+    yield ov.phases.load_script
 
-    ov.require(
-        log("value", "progress", "rate", "units", "loss", "gpudata", context="task"),
-        early_stop(n=options.stop, key="rate", task="train"),
-        monitor_monogpu(poll_interval=options.gpu_poll),
+    voirfile_monitor(ov, options)
+
+    def batch_size(x):
+        return x["tokens"].shape[0]
+
+    observer = BenchObserver(
+        earlystop=options.stop + options.skip,
+        batch_size_fn=batch_size,
     )
+
+    def wrap_dataloader(args):
+        sampler, loader = args
+        wrapped = observer.loader(loader)
+        return sampler, wrapped
+
+    probe = ov.probe("//LoRAFinetuneRecipeSingleDevice/_setup_data() as loader", overridable=True)
+    probe['loader'].override(wrap_dataloader)
+
+    try:
+        yield ov.phases.run_script
+    except StopProgram:
+        print("early stopped")

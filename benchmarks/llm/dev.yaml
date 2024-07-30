@@ -25,8 +25,6 @@ llm-qlora-single:
     checkpointer.checkpoint_dir={milabench_data}/{milabench_name}/chckpt/original: true
     checkpointer.output_dir={milabench_extra}/chckpt: true
     metric_logger.log_dir={milabench_extra}/metrics: true
-    # this is a config key that does not exist (that what the + is for)
-    # we add it so the prepare steps knows which model to download
     repo_id="meta-llama/Meta-Llama-3.1-8B": true
 
 
@@ -64,12 +62,3 @@ llm-qlora-mp-nodes:
   plan:
     method: njobs
     n: 1
-
-
-# tune cp qat_distributed recipes/qat_distributed
-# tune cp llama3/8B_qat_full configs/llama3_8B_qat_full
-# tune cp llama3/8B_lora configs/llama3_8B_lora
-# tune cp llama3/8B_lora_single_device configs/llama3_8B_lora_single_device
-# tune cp llama3/8B_qat_full configs/llama3_8B_qat_full
-# tune cp llama3/8B_qlora_single_device configs/llama3_8B_qlora_single_device
-

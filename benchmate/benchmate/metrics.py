@@ -286,40 +286,50 @@ class TimedIterator:
 
     def wrapped(self, iterator):
         # Time IO wait + batch compute
-        start = self.event_fn(enable_timing=True)
-        start.record()
+        self.start = self.event_fn(enable_timing=True)
+        self.start.record()
         self.previous_overhead = 0
 
         for data in iterator:
             yield data
 
-            with CPUTimer() as ct:
-                end = self.event_fn(enable_timing=True)
-                end.record()
+            # Simple one iteration = one backward
+            bs = self.deduce_batch_size(data)
 
-                bs = self.deduce_batch_size(data)
-                self.events.append((start, end, bs, self.previous_overhead))
-
-                # Log progress so it looks somewhat responsive
-                self.log_progress()
-
-                # check for early stopping to avoid doing the full epoch
-                if self.is_done() and self.break_count == 0:
-                    self.break_count += 1
-                    break
-
-                start = end
-
-            # Note: first step does not have overhead because end event is recorded
-            # before the overhead starts
-            # Note: It is not sure if the CPU overhead impacst the device at all
-            # since we avoid sync it is possible the device is working during
-            # the overhead section and that the effective overhead ends up being minimal
-            self.previous_overhead = ct.elapsed()
-            self.overhead.append(self.previous_overhead)
+            if should_break := self.step(bs):
+                break
 
         self._push()
         self.earlystop()
+
+    def step(self, batch_size):
+        should_break = False
+
+        with CPUTimer() as ct:
+            end = self.event_fn(enable_timing=True)
+            end.record()
+
+            self.events.append((self.start, end, batch_size, self.previous_overhead))
+
+            # Log progress so it looks somewhat responsive
+            self.log_progress()
+
+            # check for early stopping to avoid doing the full epoch
+            if self.is_done() and self.break_count == 0:
+                self.break_count += 1
+                should_break = True
+
+            self.start = end
+
+        # Note: first step does not have overhead because end event is recorded
+        # before the overhead starts
+        # Note: It is not sure if the CPU overhead impacst the device at all
+        # since we avoid sync it is possible the device is working during
+        # the overhead section and that the effective overhead ends up being minimal
+        self.previous_overhead = ct.elapsed()
+        self.overhead.append(self.previous_overhead)
+    
+        return should_break
 
     def deduce_batch_size(self, elem):
         if self.batch_size_fn:
@@ -421,3 +431,43 @@ class TimedIterator:
     def message(self, **kwargs):
         if self.rank is None or self.rank == 0:
             self.message_push(**kwargs)
+
+
+
+class ManualTimedIterator(TimedIterator):
+    def __init__(self, loader, event_fn=default_event(), rank=int(os.getenv("RANK", 0)), push=file_push(), device=default_device(), earlystop=earlystop_count(), raise_stop_program=False, batch_size_fn=None):
+        super().__init__(loader, event_fn, rank, push, device, earlystop, raise_stop_program, batch_size_fn)
+        self.acc_batch_size = 0
+        self.should_stop = False
+        self.accumulation_steps = 0
+        self.epochs = 0
+
+    def step(self):
+        self.should_stop = super().step(self.acc_batch_size)
+        self.acc_batch_size = 0
+        self.accumulation_steps = 0
+
+    def wrapped(self, iterator):
+        # Time IO wait + batch compute
+        self.start = self.event_fn(enable_timing=True)
+        self.start.record()
+        self.previous_overhead = 0
+        self.acc_batch_size = 0
+        self.accumulation_steps = 0
+        
+        for data in iterator:
+            # no step here we are doing gradient accumulation step
+            # we have to compute the batch size now
+            # because step might be call before the execution returns to this
+            # block
+            self.accumulation_steps += 1
+            self.acc_batch_size += self.deduce_batch_size(data)
+          
+            yield data
+
+            if self.should_stop:
+                break
+    
+        self._push()
+        self.earlystop()
+        self.epochs += 1
