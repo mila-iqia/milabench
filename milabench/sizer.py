@@ -371,9 +371,15 @@ def new_argument_resolver(pack):
 
     context["arch"] = arch
     context["ccl"] = ccl.get(arch, "gloo")
-    context["milabench_data"] = pack.config.get("dirs", {}).get("data", None)
-    context["milabench_cache"] = pack.config.get("dirs", {}).get("cache", None)
-    context["milabench_extra"] = pack.config.get("dirs", {}).get("extra", None)
+
+    context["milabench_base"] = pack.dirs.base
+    context["milabench_venv"] = pack.dirs.venv
+    context["milabench_code"] = pack.dirs.code
+    context["milabench_extra"] = pack.dirs.extra
+    context["milabench_data"] = pack.dirs.data
+    context["milabench_runs"] = pack.dirs.runs
+    context["milabench_cache"] = pack.dirs.cache
+    context["milabench_name"] = pack.config.get("name", None)
 
     def auto_eval(arg):
         newvalue = str(arg).format(**context)

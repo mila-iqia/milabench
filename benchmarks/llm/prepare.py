@@ -2,9 +2,9 @@
 import argparse
 from dataclasses import dataclass
 
-
+from argklass import ArgumentParser, argument
 from torchtune._cli.tune import TuneCLIParser
-import pyyaml
+import yaml
 
 @dataclass
 class Arguments:
@@ -19,20 +19,19 @@ class MyParser(TuneCLIParser):
 
 
 def main():
-    from argklass import ArgumentParser
 
     parser = ArgumentParser()
     parser.add_arguments(Arguments)
     args, _ = parser.parse_known_args()
 
-    print(args)
+    from omegaconf import OmegaConf
+    cli = OmegaConf.from_cli()
+    base = OmegaConf.load(args.config)
+    config = OmegaConf.merge(base, cli)
 
-    with open(args.config, "r") as fp:
-        config = pyyaml.safe_load(fp)
-
-    repo_id = config["model"]["repo_id"]
+    repo_id = config["repo_id"]
     hf_token = ""
-    output_dir = config["checkpointer"]["checkpoint_dir"]
+    output_dir = config["checkpointer"]["output_dir"]
 
     download_args = [
         "download",
