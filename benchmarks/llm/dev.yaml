@@ -1,0 +1,75 @@
+
+_llm:
+  inherits: _defaults
+  definition: .
+  install-variant: unpinned
+  install_group: torch
+  plan:
+    method: per_gpu
+
+
+llm-qlora-single:
+  inherits: _llm
+  definition: .
+  install-variant: unpinned
+  plan:
+    method: per_gpu
+
+  argv:
+    "{milabench_code}/recipes/lora_finetune_single_device.py"
+    --config: "{benchmark_config}"
+    epochs=1: true
+    batch_size=2: true
+    tokenizer.path={milabench_data}: true
+    output_dir={milabench_extra}/output: true
+    checkpointer.checkpoint_dir={milabench_extra}/chckpt: true
+    checkpointer.output_dir={milabench_extra}/chckpt: true
+    metric_logger.log_dir={milabench_extra}/metrics: true
+    # this is a config key that does not exist (that what the + is for)
+    # we add it so the prepare steps knows which model to download
+    +model.repo_id: "meta-llama/Meta-Llama-3-8B-Instruct"
+
+
+llm-qlora-ddp-gpus:
+  inherits: _llm
+  definition: .
+  install-variant: unpinned
+  plan:
+    method: njobs
+    n: 1
+
+
+llm-qlora-ddp-nodes:
+  inherits: _llm
+  definition: .
+  install-variant: unpinned
+  plan:
+    method: njobs
+    n: 1
+
+
+llm-qlora-mp-gpus:
+  inherits: _llm
+  definition: .
+  install-variant: unpinned
+  plan:
+    method: njobs
+    n: 1
+
+
+llm-qlora-mp-nodes:
+  inherits: _llm
+  definition: .
+  install-variant: unpinned
+  plan:
+    method: njobs
+    n: 1
+
+
+# tune cp qat_distributed recipes/qat_distributed
+# tune cp llama3/8B_qat_full configs/llama3_8B_qat_full
+# tune cp llama3/8B_lora configs/llama3_8B_lora
+# tune cp llama3/8B_lora_single_device configs/llama3_8B_lora_single_device
+# tune cp llama3/8B_qat_full configs/llama3_8B_qat_full
+# tune cp llama3/8B_qlora_single_device configs/llama3_8B_qlora_single_device
+
