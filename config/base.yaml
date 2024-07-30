@@ -144,10 +144,6 @@ _accelerate_opt:
     --per_gpu_batch_size: 1
     --cpus_per_gpu: "auto({n_worker}, 8)"
     --cache: "{milabench_cache}"
-    # --model_name: "facebook/opt-2.7b"
-    # --model_name: "facebook/opt-1.3b"
-    # --model_name: "facebook/opt-350m"
-    # --model_name: "facebook/opt-125m"
 
   # Accelerate Args
   use_deepspeed: true
@@ -677,3 +673,52 @@ dinov2-giant-gpus:
     train.batch_size_per_gpu=32: true
     train.saveckp_freq=100: true
     train.num_workers=10: true
+
+
+#
+# replace OPT
+#
+llm-small-gpus:
+  inherits: _accelerate_opt
+  tags:
+    - multigpu
+  
+  argv:
+    --model_name: "meta-llama/Meta-Llama-3.1-8B"
+    --per_gpu_batch_size: 1
+
+  use_deepspeed: false
+  num_machines: 1
+
+llm-small-nodes:
+  inherits: llm-small-gpus
+
+  tags:
+    - multinode
+  requires_capabilities:
+    - "len(nodes) >= ${num_machines}"
+
+  docker_image: "ghcr.io/mila-iqia/milabench:cuda-nightly"
+  num_machines: 2
+
+llm-big-gpus:
+  inherits: _accelerate_opt
+  tags:
+    - multigpu
+
+  argv:
+    --model_name: "meta-llama/Meta-Llama-3.1-70B-Instruct"
+    --per_gpu_batch_size: 1
+
+  num_machines: 1
+
+llm-big-nodes:
+  inherits: llm-big-gpus
+  tags:
+    - multinode
+
+  requires_capabilities:
+    - "len(nodes) >= ${num_machines}"
+
+  docker_image: "ghcr.io/mila-iqia/milabench:cuda-nightly"
+  num_machines: 2
