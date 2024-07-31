@@ -417,8 +417,9 @@ class TimedIterator:
             # Optional
             self._push_profile_metrics()
 
-        self.message(sync_time=sync_time.elapsed(), units="s", task=self.task)
-        self.message(process_time=process_time.elapsed(), units="s", task=self.task)
+        if False:
+            self.message(sync_time=sync_time.elapsed(), units="s", task=self.task)
+            self.message(process_time=process_time.elapsed(), units="s", task=self.task)
 
     def log_rate(self, rate):
         self.message(rate=rate, units="items/s", task=self.task)

@@ -13,7 +13,7 @@ _llm:
     method: per_gpu
 
 
-llm-qlora-single:
+llm-lora-single:
   inherits: _llm
   definition: .
   install-variant: unpinned
@@ -24,17 +24,60 @@ llm-qlora-single:
     "{milabench_code}/recipes/lora_finetune_single_device.py": true
     --config: "{milabench_code}/configs/llama3_8B_lora_single_device.yaml"
     epochs=1: true
-    tokenizer.path={milabench_data}/{milabench_name}/chckpt/original/tokenizer.model: true
     output_dir={milabench_extra}/output: true
-    checkpointer.checkpoint_dir={milabench_data}/{milabench_name}/chckpt/original: true
-    checkpointer.output_dir={milabench_extra}/chckpt: true
+    tokenizer.path={milabench_data}/llama3_8B/original/tokenizer.model: true
+    checkpointer.checkpoint_dir={milabench_data}/llama3_8B/original: true
+    checkpointer.output_dir={milabench_data}/llama3_8B/: true
     metric_logger.log_dir={milabench_extra}/metrics: true
     repo_id="meta-llama/Meta-Llama-3.1-8B": true
     batch_size=8: true
     gradient_accumulation_steps=8: true
 
 
-llm-qlora-ddp-gpus:
+llm-qlora-single:
+  inherits: _llm
+  definition: .
+  install-variant: unpinned
+  plan:
+    method: per_gpu
+
+  argv:
+    "{milabench_code}/recipes/lora_finetune_single_device.py": true
+    --config: "{milabench_code}/configs/llama3_8B_qlora_single_device.yaml"
+    epochs=1: true
+    output_dir={milabench_extra}/output: true
+    tokenizer.path={milabench_data}/llama3_8B/original/tokenizer.model: true
+    checkpointer.checkpoint_dir={milabench_data}/llama3_8B/original: true
+    checkpointer.output_dir={milabench_data}/llama3_8B/: true
+    metric_logger.log_dir={milabench_extra}/metrics: true
+    repo_id="meta-llama/Meta-Llama-3.1-8B": true
+    batch_size=8: true
+    gradient_accumulation_steps=8: true
+
+
+llm-lora-ddp-gpus:
+  inherits: _llm
+  definition: .
+  install-variant: unpinned
+  plan:
+    method: njobs
+    n: 1
+  
+  argv:
+    "{milabench_code}/recipes/lora_finetune_distributed.py": true
+    --config: "{milabench_code}/configs/llama3_8B_lora_single_device.yaml"
+    epochs=1: true
+    output_dir={milabench_extra}/output: true
+    tokenizer.path={milabench_data}/llama3_8B/original/tokenizer.model: true
+    checkpointer.checkpoint_dir={milabench_data}/llama3_8B/original: true
+    checkpointer.output_dir={milabench_data}/llama3_8B/: true
+    metric_logger.log_dir={milabench_extra}/metrics: true
+    repo_id="meta-llama/Meta-Llama-3.1-8B": true
+    batch_size=8: true
+    gradient_accumulation_steps=8: true
+
+
+llm-lora-mp-gpus:
   inherits: _llm
   definition: .
   install-variant: unpinned
@@ -42,24 +85,18 @@ llm-qlora-ddp-gpus:
     method: njobs
     n: 1
 
-
-llm-qlora-ddp-nodes:
-  inherits: _llm
-  definition: .
-  install-variant: unpinned
-  plan:
-    method: njobs
-    n: 1
-
-
-llm-qlora-mp-gpus:
-  inherits: _llm
-  definition: .
-  install-variant: unpinned
-  plan:
-    method: njobs
-    n: 1
-
+  argv:
+    "{milabench_code}/recipes/lora_finetune_distributed.py": true
+    --config: "{milabench_code}/configs/llama3_70B_lora.yaml"
+    epochs=1: true
+    output_dir={milabench_extra}/output: true
+    tokenizer.path={milabench_data}/llama3_70B/original/tokenizer.model: true
+    checkpointer.checkpoint_dir={milabench_data}/llama3_70B: true
+    checkpointer.output_dir={milabench_data}/llama3_70B/: true
+    metric_logger.log_dir={milabench_extra}/metrics: true
+    repo_id="meta-llama/Meta-Llama-3.1-70B": true
+    batch_size=8: true
+    gradient_accumulation_steps=8: true
 
 llm-qlora-mp-nodes:
   inherits: _llm
@@ -68,3 +105,21 @@ llm-qlora-mp-nodes:
   plan:
     method: njobs
     n: 1
+  
+  argv:
+    "{milabench_code}/recipes/lora_finetune_distributed.py": true
+    --config: "{milabench_code}/configs/llama3_70B_lora.yaml"
+    epochs=1: true
+    output_dir={milabench_extra}/output: true
+    tokenizer.path={milabench_data}/llama3_70B/original/tokenizer.model: true
+    checkpointer.checkpoint_dir={milabench_data}/llama3_70B/original: true
+    checkpointer.output_dir={milabench_data}/llama3_70B/: true
+    metric_logger.log_dir={milabench_extra}/metrics: true
+    repo_id="meta-llama/Meta-Llama-3.1-70B": true
+    batch_size=8: true
+    gradient_accumulation_steps=8: true
+
+  requires_capabilities:
+    - "len(nodes) >= ${num_machines}"
+
+  num_machines: 2

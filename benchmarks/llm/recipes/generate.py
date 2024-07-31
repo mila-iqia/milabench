@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #

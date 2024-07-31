@@ -1,27 +1,21 @@
 from milabench.pack import Package
 
 
-from milabench.commands import AccelerateAllNodes
+from milabench.commands import TorchrunAllGPU
 from milabench.pack import BasePackage
-from milabench.commands import CmdCommand
+from milabench.commands import SimpleCommand
 
 
-class Torchtune(CmdCommand):
-    def __init__(self, pack: BasePackage, lazy=True, **kwargs):
-        super().__init__(pack, **kwargs)
-        self.lazy = lazy
+class Torchtune(TorchrunAllGPU):
+    @property
+    def executable(self):
+        return f"{self.binfolder}/bin/tune"
 
-    def command_arguments(self, **kwargs):
-        if self.lazy:
-            return self.pack.argv
-        return super()._argv(**kwargs)
+    #def should_wrap(self):
+    #    return True
 
-    def _argv(self, **kwargs):
-        # tune run [TORCHRUN-OPTIONS] <recipe> --config <config> [RECIPE-OPTIONS]
-        return [
-            "-m", "torchtune._cli.tune", "run", "--"
-        ] + self.command_arguments()
-
+    def __init__(self, pack: BasePackage, *torchrun_args, **kwargs):
+        super().__init__(pack, *torchrun_args, module=False, **kwargs)
 
 
 class Llm(Package):
@@ -35,24 +29,9 @@ class Llm(Package):
     async def install(self):
         await super().install()  # super() call installs the requirements
 
-    # def build_prepare_plan(self) -> "cmd.Command":
-    #     from milabench.commands import PackCommand, VoidCommand
-
-    #     if self.prepare_script is not None:
-    #         prep = self.dirs.code / self.prepare_script
-    #         if prep.exists():
-    #             print(self.argv)
-    #             return PackCommand(
-    #                 self, prep, *self.argv, env=self.make_env(), cwd=prep.parent
-    #             )
-    #     return VoidCommand(self)
-
     def build_run_plan(self):
-        from milabench.commands import VoirCommand
-        # python -m torchtune._cli.tune run ...
-        pack = Torchtune(self, lazy=True)
-        # voir ... -m torchtune._cli.tune run ...
-        return VoirCommand(pack, cwd=self.dirs.code)
+        exec = SimpleCommand(self)
+        return Torchtune(exec, "run").use_stdout()
 
 
 __pack__ = Llm

@@ -32,12 +32,18 @@ def main():
     repo_id = config["repo_id"]
     hf_token = ""
     output_dir = config["checkpointer"]["output_dir"]
+    ignore_pattern = "*.safetensors"
+
+    if config["checkpointer"].get("safetensors", False):
+        ignore_pattern = "consolidated.*.pth"
 
     download_args = [
         "download",
         repo_id,
         "--output-dir",
-        output_dir
+        output_dir,
+        "--ignore-patterns",
+        ignore_pattern
     ]
     
     if hf_token:

@@ -1,17 +1,16 @@
 # Config for multi-device LoRA in lora_finetune_distributed.py
-# using a Llama3 70B model
+# using a Llama3.1 70B model
 #
 # This config assumes that you've run the following command before launching
 # this run:
-#   tune download meta-llama/Meta-Llama-3-70B-Instruct --hf-token <TOKEN> --output-dir /tmp/Meta-Llama-3-70B-Instruct --ignore-patterns "original/consolidated*"
+#   tune download meta-llama/Meta-Llama-3.1-70B-Instruct --output-dir /tmp/Meta-Llama-3.1-70B-Instruct --ignore-patterns "original/consolidated*"
 #
 # This config needs 8 GPUs to run
-#   # tune run --nproc_per_node 8 lora_finetune_distributed --config llama3/70B_lora
-#
+#   tune run --nproc_per_node 8 lora_finetune_distributed --config llama3_1/70B_lora
 
 # Model Arguments
 model:
-  _component_: torchtune.models.llama3.lora_llama3_70b
+  _component_: torchtune.models.llama3_1.lora_llama3_1_70b
   lora_attn_modules: ['q_proj', 'k_proj', 'v_proj']
   apply_lora_to_mlp: False
   apply_lora_to_output: False
@@ -20,11 +19,12 @@ model:
 
 tokenizer:
   _component_: torchtune.models.llama3.llama3_tokenizer
-  path: /tmp/Meta-Llama-3-70B-Instruct/original/tokenizer.model
+  path: /tmp/Meta-Llama-3.1-70B-Instruct/original/tokenizer.model
 
 checkpointer:
   _component_: torchtune.utils.FullModelHFCheckpointer
-  checkpoint_dir:  /tmp/Meta-Llama-3-70B-Instruct
+  checkpoint_dir: /tmp/Meta-Llama-3.1-70B-Instruct/
+  safetensors: true
   checkpoint_files: [
     model-00001-of-00030.safetensors,
     model-00002-of-00030.safetensors,
@@ -58,9 +58,10 @@ checkpointer:
     model-00030-of-00030.safetensors,
   ]
   recipe_checkpoint: null
-  output_dir: /tmp/Meta-Llama-3-70B-Instruct
+  output_dir: /tmp/Meta-Llama-3.1-70B-Instruct/
   model_type: LLAMA3
 resume_from_checkpoint: False
+save_adapter_weights_only: False
 
 # Dataset and Sampler
 dataset:

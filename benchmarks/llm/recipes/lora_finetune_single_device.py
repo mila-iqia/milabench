@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
@@ -585,6 +587,7 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
                         self.global_step += 1
 
                         loss_to_log = running_loss.item()
+                        self.log_loss(loss_to_log)
                         pbar.update(1)
                         pbar.set_description(
                             f"{curr_epoch+1}|{self.global_step}|Loss: {loss_to_log}"
@@ -625,6 +628,35 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
 
     def cleanup(self) -> None:
         self._metric_logger.close()
+    
+    def log_loss(self, loss):
+        pass
+
+
+
+def prepare_voir(recipe):
+    from benchmate.observer import BenchObserver
+    from benchmate.monitor import bench_monitor
+
+    def batch_size(x):
+        bs, token = x["tokens"].shape
+        return bs * token
+
+    observer = BenchObserver(
+        earlystop=30,
+        raise_stop_program=True,
+        batch_size_fn=batch_size,
+        stdout=True
+    )
+
+    def on_loss(loss):
+        observer.record_loss(loss)
+        observer.step()
+
+    recipe._dataloader = observer.loader(recipe._dataloader, custom_step=True)
+    recipe.log_loss = on_loss
+
+    return observer, bench_monitor
 
 
 @config.parse
@@ -636,13 +668,18 @@ def recipe_main(cfg: DictConfig) -> None:
         - Parameters specified in config (see available configs through ``tune ls``)
         - Overwritten by arguments from the command-line
     """
-    import ptera 
-    print(ptera.refstring(LoRAFinetuneRecipeSingleDevice._setup_data))
-
     config.log_config(recipe_name="LoRAFinetuneRecipeSingleDevice", cfg=cfg)
     recipe = LoRAFinetuneRecipeSingleDevice(cfg=cfg)
     recipe.setup(cfg=cfg)
-    recipe.train()
+
+    from voir.phase import StopProgram
+    try:
+        _, monitor = prepare_voir(recipe)
+        with monitor():
+            recipe.train()
+    except StopProgram:
+        print("early stopping")
+
     recipe.cleanup()
 
 
