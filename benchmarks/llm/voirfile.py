@@ -51,16 +51,24 @@ def instrument_main(ov, options: Config):
 
         def newstep(*args, **kwargs):
             original(*args, **kwargs)
-            observer.step()
+            # observer.step()
 
         scheduler.step = newstep
         return scheduler
+    
+    def wrap_loss(loss):
+        observer.record_loss(loss)
+        observer.step()
+        return loss
 
     probe = ov.probe("//LoRAFinetuneRecipeSingleDevice/_setup_data() as loader", overridable=True)
     probe['loader'].override(wrap_dataloader)
 
     probe = ov.probe("//LoRAFinetuneRecipeSingleDevice/_setup_lr_scheduler() as scheduler", overridable=True)
     probe['scheduler'].override(wrap_lr_scheduler)
+
+    probe = ov.probe("//LoRAFinetuneRecipeSingleDevice/train > loss_to_log", overridable=True)
+    probe['loss_to_log'].override(wrap_loss)
 
     try:
         yield ov.phases.run_script

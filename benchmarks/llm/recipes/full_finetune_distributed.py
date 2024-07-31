@@ -523,9 +523,7 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
                 logits = logits.transpose(1, 2)
                 # Compute loss
                 loss = self._loss_fn(logits, labels)
-
-                loss = loss / self._gradient_accumulation_steps
-                running_loss += loss
+                running_loss += loss / self._gradient_accumulation_steps
                 loss.backward()
 
                 # Step with optimizer

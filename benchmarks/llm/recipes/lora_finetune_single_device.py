@@ -572,8 +572,7 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
                     labels = labels[..., 1:].contiguous()
                     logits = logits.transpose(1, 2)
                     # Compute loss
-                    loss = self._loss_fn(logits, labels)
-                    loss = loss / self._gradient_accumulation_steps
+                    loss = self._loss_fn(logits, labels) / self._gradient_accumulation_steps
                     running_loss += loss
                     loss.backward()
 
