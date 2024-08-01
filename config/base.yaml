@@ -160,7 +160,6 @@ fp16:
     --n: 8192
     --dtype: fp16
 
-
 bf16:
   inherits: _flops
  
@@ -184,8 +183,7 @@ fp32:
   argv:
     --m: 8192
     --n: 8192
-    --dtype: fp32
-  
+    --dtype: fp32  
 
 resnet50:
   inherits: _torchvision
@@ -228,28 +226,6 @@ resnet152-ddp-gpus:
     --batch-size: 256
     --num-workers: "auto({n_worker}, 8)"
     --loader: torch
-
-efficientnet_b4:
-  inherits: _torchvision
-
-  tags:
-    - vision
-    - classification
-    - convnet
-
-  argv:
-    --model: efficientnet_b4
-    --batch-size: 256
-
-efficientnet_b7:
-  inherits: _torchvision
-  tags:
-    - vision
-    - classification
-    - convnet
-  argv:
-    --model: efficientnet_b7
-    --batch-size: 128
 
 _convnext_large-base:
   inherits: _torchvision
@@ -367,63 +343,6 @@ whisper:
     --model: "Whisper"
     --batch-size: 64
 
-resnet152:
-  inherits: _timm
-  tags:
-    - vision
-    - classification
-    - convnet
-    - resnet
-  plan:
-    method: per_gpu
-  argv:
-    --model: resnet152
-    --batch-size: 256
-
-resnet152-gpus:
-  inherits: resnet152
-  tags:
-    - multigpu
-  plan:
-    method: njobs
-    n: 1
-
-vit_l_32:
-  inherits: _timm
-  tags:
-    - vision
-    - classification
-    - transformer
-    - multigpu
-
-  plan:
-    method: njobs
-    n: 1
-  argv:
-    --model: vit_large_patch32_224
-    --batch-size: 256
-
-davit_large:
-  inherits: _timm
-  tags:
-    - vision
-    - classification
-    - transformer
-  plan:
-    method: per_gpu
-  argv:
-    --model: davit_large
-    --batch-size: 128
-    --lr-base: 0.01
-
-davit_large-gpus:
-  inherits: davit_large
-  tags:
-    - multigpu
-  plan:
-    method: njobs
-    n: 1
-
 focalnet:
   inherits: _timm
   tags:
@@ -434,30 +353,6 @@ focalnet:
     method: per_gpu
   argv:
     --model: focalnet_base_lrf
-
-stargan:
-  inherits: _defaults
-  tags:
-    - vision
-    - gan
-    - resnet
-    - noio
-  definition: ../benchmarks/stargan
-  group: stargan
-  install_group: torch
-  plan:
-    method: per_gpu
-  argv:
-    --image_size: 512
-    --c_dim: 5
-    --batch_size: 16
-    --dataset: "synth"
-    --celeba_image_dir: "{milabench_data}"
-    --log_dir: "{milabench_extra}/logs"
-    --model_save_dir: "{milabench_extra}/models"
-    --sample_dir: "{milabench_extra}/samples"
-    --result_dir: "{milabench_extra}/results"
-    --num_workers: "auto({n_worker}, 8)"
 
 super-slomo:
   inherits: _defaults
@@ -476,73 +371,6 @@ super-slomo:
     --dataset_root: "{milabench_data}/FakeImageNet"
     --loader: pytorch
     --num_workers: "auto({n_worker}, 8)"
-
-
-dlrm:
-  inherits: _defaults
-  tags:
-    - nlp
-    - rl
-    
-  definition: ../benchmarks/dlrm
-  group: dlrm
-  install_group: torch
-  plan:
-    method: njobs
-    n: 1
-  argv:
-    --num-batches: 1000
-    --data-generation: "random"
-    --arch-mlp-bot: "512-512-64"
-    --arch-mlp-top: "1024-1024-1024-1"
-    --arch-sparse-feature-size: 64
-    --arch-embedding-size: "1000000-1000000-1000000-1000000-1000000-1000000-1000000-1000000"
-    --num-indices-per-lookup: 100
-    --arch-interaction-op: "dot"
-    --numpy-rand-seed: "727"
-    --print-freq: 999999
-    --mini-batch-size: 16384
-    --test-mini-batch-size: 16384
-    --test-num-workers: 0
-    --use-gpu: true
-    --num-workers: "auto({n_worker}, 8)"
-
-rwkv:
-  inherits: _defaults
-  definition: ../benchmarks/rwkv
-  group: rwkv
-  install_group: torch
-  tags:
-    - llm
-    - rnn
-    - unsupported-rocm
-  plan:
-    method: per_gpu
-  argv:
-    --data_type: "dummy"
-    --ctx_len: 128
-    --epoch_steps: 1000
-    --epoch_count: 20
-    --epoch_begin: 0
-    --epoch_save: 0
-    --micro_bsz: 16
-    --n_layer: 12
-    --n_embd: 768
-    --pre_ffn: 0
-    --head_qk: 0
-    --lr_init: 6e-4
-    --lr_final: 1e-5
-    --warmup_steps: 0
-    --beta1: 0.9
-    --beta2: 0.99
-    --adam_eps: 1e-8
-    --accelerator: "gpu"
-    --devices: 1
-    --precision: "tf32"
-    --strategy: "ddp_find_unused_parameters_false"
-    --grad_cp: 0
-    --random_seed: 1234
-    --enable_progress_bar: "False"
 
 brax:
   inherits: _defaults
