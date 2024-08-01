@@ -19,11 +19,13 @@ absl-py==2.1.0
     #   mujoco-mjx
     #   optax
     #   orbax-checkpoint
-accelerate==0.32.1
+accelerate==0.33.0
     # via
     #   -r benchmarks/diffusion/requirements.in
     #   diffusers
-aiohttp==3.9.5
+aiohappyeyeballs==2.3.4
+    # via aiohttp
+aiohttp==3.10.0
     # via
     #   datasets
     #   fsspec
@@ -128,7 +130,7 @@ giving==0.4.2
     #   voir
 glfw==2.7.0
     # via mujoco
-grpcio==1.65.1
+grpcio==1.65.2
     # via brax
 gym==0.26.2
     # via brax
@@ -136,7 +138,7 @@ gym-notices==0.0.8
     # via gym
 hjson==3.1.0
     # via argklass
-huggingface-hub==0.24.0
+huggingface-hub==0.24.5
     # via
     #   -r benchmarks/timm/requirements.in
     #   accelerate
@@ -149,7 +151,7 @@ idna==3.7
     # via
     #   requests
     #   yarl
-importlib-metadata==8.0.0
+importlib-metadata==8.2.0
     # via diffusers
 importlib-resources==6.4.0
     # via
@@ -162,7 +164,7 @@ iopath==0.1.10
     #   fvcore
 itsdangerous==2.2.0
     # via flask
-jax[cuda12]==0.4.28
+jax[cuda12]==0.4.31
     # via
     #   -r benchmarks/brax/requirements.in
     #   brax
@@ -172,11 +174,11 @@ jax[cuda12]==0.4.28
     #   mujoco-mjx
     #   optax
     #   orbax-checkpoint
-jax-cuda12-pjrt==0.4.28
+jax-cuda12-pjrt==0.4.31
     # via jax-cuda12-plugin
-jax-cuda12-plugin==0.4.28
+jax-cuda12-plugin[with-cuda]==0.4.31
     # via jax
-jaxlib==0.4.28+cuda12.cudnn89
+jaxlib==0.4.31
     # via
     #   brax
     #   chex
@@ -194,7 +196,7 @@ jinja2==3.1.4
     #   torch
 lightning==2.3.3
     # via -r benchmarks/lightning/requirements.in
-lightning-utilities==0.11.5
+lightning-utilities==0.11.6
     # via
     #   lightning
     #   pytorch-lightning
@@ -275,48 +277,48 @@ numpy==1.26.4
     #   xformers
 nvidia-cublas-cu12==12.1.3.1
     # via
-    #   jax
+    #   jax-cuda12-plugin
     #   nvidia-cudnn-cu12
     #   nvidia-cusolver-cu12
     #   torch
 nvidia-cuda-cupti-cu12==12.1.105
     # via
-    #   jax
+    #   jax-cuda12-plugin
     #   torch
-nvidia-cuda-nvcc-cu12==12.5.82
-    # via jax
+nvidia-cuda-nvcc-cu12==12.6.20
+    # via jax-cuda12-plugin
 nvidia-cuda-nvrtc-cu12==12.1.105
     # via torch
 nvidia-cuda-runtime-cu12==12.1.105
     # via
-    #   jax
+    #   jax-cuda12-plugin
     #   torch
-nvidia-cudnn-cu12==8.9.2.26
+nvidia-cudnn-cu12==9.1.0.70
     # via
-    #   jax
+    #   jax-cuda12-plugin
     #   torch
 nvidia-cufft-cu12==11.0.2.54
     # via
-    #   jax
+    #   jax-cuda12-plugin
     #   torch
 nvidia-curand-cu12==10.3.2.106
     # via torch
 nvidia-cusolver-cu12==11.4.5.107
     # via
-    #   jax
+    #   jax-cuda12-plugin
     #   torch
 nvidia-cusparse-cu12==12.1.0.106
     # via
-    #   jax
+    #   jax-cuda12-plugin
     #   nvidia-cusolver-cu12
     #   torch
 nvidia-nccl-cu12==2.20.5
     # via
-    #   jax
+    #   jax-cuda12-plugin
     #   torch
-nvidia-nvjitlink-cu12==12.5.82
+nvidia-nvjitlink-cu12==12.6.20
     # via
-    #   jax
+    #   jax-cuda12-plugin
     #   nvidia-cusolver-cu12
     #   nvidia-cusparse-cu12
 nvidia-nvtx-cu12==12.1.105
@@ -334,11 +336,11 @@ optax==0.2.3
     # via
     #   brax
     #   flax
-orbax-checkpoint==0.5.22
+orbax-checkpoint==0.5.23
     # via
     #   brax
     #   flax
-ovld==0.3.5
+ovld==0.3.6
     # via voir
 packaging==24.1
     # via
@@ -362,7 +364,7 @@ pillow==10.4.0
     #   torchvision
 portalocker==2.10.1
     # via iopath
-protobuf==4.25.3
+protobuf==5.27.3
     # via
     #   orbax-checkpoint
     #   tensorboardx
@@ -410,7 +412,7 @@ pyyaml==6.0.1
     #   yacs
 reactivex==4.0.4
     # via giving
-regex==2024.5.15
+regex==2024.7.24
     # via
     #   diffusers
     #   tiktoken
@@ -473,7 +475,7 @@ tokenizers==0.19.1
     # via transformers
 toolz==0.12.1
     # via chex
-torch==2.3.1+cu121
+torch==2.4.0+cu121
     # via
     #   -r benchmarks/brax/requirements.in
     #   -r benchmarks/dinov2/requirements.in
@@ -503,14 +505,14 @@ torchcompat==1.1.4
     #   -r benchmarks/lightning/requirements.in
     #   -r benchmarks/torchvision/requirements.in
     #   -r benchmarks/torchvision_ddp/requirements.in
-torchmetrics==1.0.3
+torchmetrics==1.4.0.post0
     # via
     #   -r benchmarks/dinov2/requirements.in
     #   lightning
     #   pytorch-lightning
 torchtune==0.2.1+cu121
     # via -r benchmarks/llm/requirements.in
-torchvision==0.18.1+cu121
+torchvision==0.19.0+cu121
     # via
     #   -r benchmarks/diffusion/requirements.in
     #   -r benchmarks/dinov2/requirements.in
@@ -535,7 +537,7 @@ tqdm==4.66.4
     #   pytorch-lightning
     #   torchtune
     #   transformers
-transformers==4.42.4
+transformers==4.43.3
     # via
     #   -r benchmarks/diffusion/requirements.in
     #   -r benchmarks/huggingface/requirements.in
@@ -544,7 +546,7 @@ trimesh==4.4.3
     # via
     #   brax
     #   mujoco-mjx
-triton==2.3.1
+triton==3.0.0
     # via torch
 typing-extensions==4.12.2
     # via
@@ -563,7 +565,7 @@ typing-extensions==4.12.2
     #   torch
 tzdata==2024.1
     # via pandas
-urllib3==1.26.19
+urllib3==2.2.2
     # via
     #   blobfile
     #   requests
@@ -586,7 +588,7 @@ voir==0.2.17
     #   -r benchmarks/torchvision_ddp/requirements.in
 werkzeug==3.0.3
     # via flask
-xformers==0.0.27
+xformers==0.0.27.post2
     # via -r benchmarks/dinov2/requirements.in
 xxhash==3.4.1
     # via datasets

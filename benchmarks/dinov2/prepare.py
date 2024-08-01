@@ -13,7 +13,8 @@ if __name__ == "__main__":
         del os.environ["SLURM_JOB_ID"]
 
     from argparse import Namespace
-    from dinov2.train.train import get_args_parser, get_cfg_from_args, apply_scaling_rules_to_cfg
+    from dinov2.train.train import get_args_parser
+    from dinov2.utils.config import get_cfg_from_args, apply_scaling_rules_to_cfg
 
     args = get_args_parser(add_help=True).parse_args()
 
