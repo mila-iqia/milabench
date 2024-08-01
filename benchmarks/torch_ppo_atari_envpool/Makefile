@@ -22,7 +22,7 @@ tests: install prepare
 	milabench run $(MILABENCH_ARGS)
 
 single:
-	milabench run $(MILABENCH_ARGS) --select $(BENCH_NAME)-single
+	milabench run $(MILABENCH_ARGS) --select $(BENCH_NAME)
 
 gpus:
 	milabench run $(MILABENCH_ARGS) --select $(BENCH_NAME)-gpus
