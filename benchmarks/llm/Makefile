@@ -5,7 +5,7 @@ endif
 
 export MILABENCH_BASE
 
-BENCH_NAME=llm-lora
+BENCH_NAME=llm-qlora
 MILABENCH_CONFIG=dev.yaml
 MILABENCH_ARGS=--config $(MILABENCH_CONFIG) --base $(MILABENCH_BASE)
 
@@ -30,6 +30,10 @@ gpus:
 gpus-mp:
 	milabench prepare $(MILABENCH_ARGS) --select llm-lora-mp-gpus
 	milabench run $(MILABENCH_ARGS) --select llm-lora-mp-gpus
+
+gpus-full-mp:
+	milabench prepare $(MILABENCH_ARGS) --select llm-full-mp-gpus
+	milabench run $(MILABENCH_ARGS) --select llm-full-mp-gpus
 
 nodes:
 	milabench run $(MILABENCH_ARGS) --select $(BENCH_NAME)-nodes

@@ -65,7 +65,6 @@ def lora_distributed(ov, observer):
     def wrap_dataloader(args):
         sampler, loader = args
         wrapped = observer.loader(loader, custom_step=True)
-        print("WRAPPED")
         return sampler, wrapped
     
     def wrap_lr_scheduler(scheduler):

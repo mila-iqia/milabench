@@ -86,3 +86,72 @@ opt-6_7b-nodes:
 
   docker_image: "ghcr.io/mila-iqia/milabench:cuda-nightly"
   num_machines: 2
+
+
+opt-1_3b-gpus:
+  enabled: true
+  weight: 5.0
+
+opt-1_3b-nodes:
+  enabled: true
+  weight: 10.0
+
+opt-6_7b-gpus:
+  enabled: true
+  weight: 5.0
+
+opt-6_7b-nodes:
+  enabled: true
+  weight: 10.0
+
+
+
+
+
+#
+# replace OPT
+#
+llm-small-gpus:
+  inherits: _accelerate_opt
+  tags:
+    - multigpu
+  
+  argv:
+    --model_name: "meta-llama/Meta-Llama-3.1-8B"
+    --per_gpu_batch_size: 1
+
+  use_deepspeed: false
+  num_machines: 1
+
+llm-small-nodes:
+  inherits: llm-small-gpus
+
+  tags:
+    - multinode
+  requires_capabilities:
+    - "len(nodes) >= ${num_machines}"
+
+  docker_image: "ghcr.io/mila-iqia/milabench:cuda-nightly"
+  num_machines: 2
+
+llm-big-gpus:
+  inherits: _accelerate_opt
+  tags:
+    - multigpu
+
+  argv:
+    --model_name: "meta-llama/Meta-Llama-3.1-70B-Instruct"
+    --per_gpu_batch_size: 1
+
+  num_machines: 1
+
+llm-big-nodes:
+  inherits: llm-big-gpus
+  tags:
+    - multinode
+
+  requires_capabilities:
+    - "len(nodes) >= ${num_machines}"
+
+  docker_image: "ghcr.io/mila-iqia/milabench:cuda-nightly"
+  num_machines: 2

@@ -4,7 +4,8 @@ from dataclasses import dataclass
 
 from argklass import ArgumentParser, argument
 from torchtune._cli.tune import TuneCLIParser
-import yaml
+from benchmate.ux import long_action
+
 
 @dataclass
 class Arguments:
@@ -18,13 +19,33 @@ class MyParser(TuneCLIParser):
         return self._parser.parse_args(args)
 
 
-def main():
+def load_model(recipe, cfg):
+    import sys
+    import os
+    sys.path.append(os.path.join(os.path.dirname(__file__), "recipes"))
 
+    if recipe.endswith("full_finetune_distributed.py"):
+        from full_finetune_distributed import FullFinetuneRecipeDistributed as Recipe
+
+    if recipe.endswith("lora_finetune_distributed.py"):
+        from lora_finetune_distributed import LoRAFinetuneRecipeDistributed as Recipe
+        
+    if recipe.endswith("lora_finetune_single_device.py"):
+        from lora_finetune_single_device import LoRAFinetuneRecipeSingleDevice as Recipe
+
+    with long_action("Still working", 30):
+        recipe = Recipe(cfg=cfg)
+        recipe.setup(cfg=cfg)
+        recipe.save_checkpoint(0)
+
+
+def main():
     parser = ArgumentParser()
     parser.add_arguments(Arguments)
-    args, _ = parser.parse_known_args()
+    args, rest = parser.parse_known_args()
 
     from omegaconf import OmegaConf
+
     cli = OmegaConf.from_cli()
     base = OmegaConf.load(args.config)
     config = OmegaConf.merge(base, cli)
@@ -34,7 +55,7 @@ def main():
     output_dir = config["checkpointer"]["output_dir"]
     ignore_pattern = "*.safetensors"
 
-    if config["checkpointer"].get("safetensors", False):
+    if config.get("safetensors", False):
         ignore_pattern = "consolidated.*.pth"
 
     download_args = [
@@ -55,6 +76,9 @@ def main():
     parser = MyParser()
     args = parser.parse_args(download_args)
     parser.run(args)
+
+    if "qlora" in config.get("model", {}).get("_component_", ""):
+        load_model(args.recipe, config)
 
 
 if __name__ == "__main__":

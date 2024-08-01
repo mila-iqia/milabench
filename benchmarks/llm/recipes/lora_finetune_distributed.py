@@ -733,9 +733,6 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
     def log_loss(self, loss):
         pass
 
-
-
-
 def prepare_voir(recipe):
     from benchmate.observer import BenchObserver
     from benchmate.monitor import bench_monitor

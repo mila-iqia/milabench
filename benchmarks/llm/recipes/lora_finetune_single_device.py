@@ -161,28 +161,28 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
         Updates the recipe state from checkpoint.
         """
         try:
-            self.epochs_run = ckpt_dict[utils.EPOCHS_KEY]
+            self.epochs_run = ckpt_dict.get(utils.EPOCHS_KEY, 0)
 
             # on mismatch, warn the user and prevent the override
-            if self.seed != ckpt_dict[utils.SEED_KEY]:
+            if self.seed != ckpt_dict.get(utils.SEED_KEY, self.seed):
                 warn(
                     message=(
                         "Config value for seed does not match the checkpoint value, "
-                        f"using the checkpoint value: {ckpt_dict[utils.SEED_KEY]}"
+                        f"using the checkpoint value: {ckpt_dict.get(utils.SEED_KEY, 0)}"
                     )
                 )
-                self.seed = ckpt_dict[utils.SEED_KEY]
-            if self.max_steps_per_epoch != ckpt_dict[utils.MAX_STEPS_KEY]:
+                self.seed = ckpt_dict.get(utils.SEED_KEY, self.seed)
+            if self.max_steps_per_epoch != ckpt_dict.get(utils.MAX_STEPS_KEY, self.max_steps_per_epoch):
                 warn(
                     message=(
                         "Config value for max_steps_per_epoch does not match the checkpoint value, "
                         f"using the checkpoint value: {ckpt_dict[utils.MAX_STEPS_KEY]}"
                     )
                 )
-                self.max_steps_per_epoch = ckpt_dict[utils.MAX_STEPS_KEY]
+                self.max_steps_per_epoch = ckpt_dict.get(utils.MAX_STEPS_KEY, self.max_steps_per_epoch)
 
             # on mismatch, warn the user but allow the override
-            if self.total_epochs != ckpt_dict[utils.TOTAL_EPOCHS_KEY]:
+            if self.total_epochs != ckpt_dict.get(utils.TOTAL_EPOCHS_KEY, self.total_epochs):
                 warn(
                     message=(
                         "Config value for total_epochs does not match the checkpoint value, "
@@ -364,6 +364,7 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
             )
         else:
             lora_missing, lora_unexpected = None, None
+        
         validate_missing_and_unexpected_for_lora(
             lora_attn_modules=self._lora_attn_modules,
             apply_lora_to_mlp=self._apply_lora_to_mlp,
@@ -375,6 +376,7 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
         )
         # Validate model adapter params were loaded in with the expected dtype
         # TODO (rohan-varma): Further validation to ensure the appropriate base params
+        
         # are NF4 vs bf16 based on the quantization config.
         utils.validate_expected_param_dtype(
             self.adapter_params.items(), dtype=self._dtype

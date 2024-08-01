@@ -17,14 +17,6 @@ resnet50-noio:
   enabled: true
   weight: 0.0
 
-efficientnet_b4:
-  enabled: false
-  weight: 1.0
-
-efficientnet_b7:
-  enabled: false
-  weight: 1.0
-
 convnext_large-fp32:
   enabled: true
   weight: 0.0
@@ -73,49 +65,9 @@ whisper:
   enabled: true
   weight: 1.0
 
-resnet152:
-  enabled: true
-  weight: 1.0
-
-resnet152-gpus:
-  enabled: true
-  weight: 5.0
-
-vit_l_32:
-  enabled: false
-  weight: 0.0
-
-davit_large:
-  enabled: true
-  weight: 1.0
-
-davit_large-gpus:
-  enabled: true
-  weight: 5.0
-
-opt-1_3b-gpus:
-  enabled: true
-  weight: 5.0
-
-opt-1_3b-nodes:
-  enabled: true
-  weight: 10.0
-
-opt-6_7b-gpus:
-  enabled: true
-  weight: 5.0
-
-opt-6_7b-nodes:
-  enabled: true
-  weight: 10.0
-
 focalnet:
   enabled: true
   weight: 2.0
-
-stargan:
-  enabled: true
-  weight: 1.0
 
 super-slomo:
   enabled: true
@@ -123,10 +75,6 @@ super-slomo:
 
 dlrm:
   enabled: true
-  weight: 1.0
-
-rwkv:
-  enabled: false
   weight: 1.0
 
 fp16:
@@ -149,6 +97,86 @@ brax:
   enabled: true
   weight: 1.0
 
+diffusion-gpus:
+  enabled: True
+  weight: 1.0
+
+lightning-gpus:
+  enabled: True
+  weight: 1.0
+
+dinov2-giant-gpus:
+  enabled: True
+  weight: 1.0
+
+# LLM
+
+llm-lora-single:
+  enabled: True
+  weight: 1.0
+
+llm-lora-ddp-gpus:
+  enabled: True
+  weight: 1.0
+
+llm-lora-ddp-nodes:
+  enabled: True
+  weight: 1.0
+
+llm-lora-mp-gpus:
+  enabled: True
+  weight: 1.0
+
+llm-full-mp-gpus:
+  enabled: True
+  weight: 1.0
+
+llm-full-mp-nodes:
+  enabled: True
+  weight: 1.0
+
 ##################
 # Disabled tests #
 ##################
+
+# replaced by diffusion
+stargan:
+  enabled: false
+  weight: 0.0
+
+# replaced by dinov2
+vit_l_32:
+  enabled: false
+  weight: 0.0
+
+davit_large:
+  enabled: false
+  weight: 0.0
+
+davit_large-gpus:
+  enabled: false
+  weight: 0.0
+
+# replaced by lightning
+resnet152:
+  enabled: false
+  weight: 0.0
+
+# replaced by lightning-gpus
+resnet152-gpus:
+  enabled: false
+  weight: 0.0
+
+# Too similar to things we already have
+efficientnet_b4:
+  enabled: false
+  weight: 1.0
+
+efficientnet_b7:
+  enabled: false
+  weight: 1.0
+
+# Hard to make work reliably
+rwkv:
+  enabled: false
+  weight: 1.0
