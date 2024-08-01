@@ -4,7 +4,7 @@ Plan
 per_gpu
 -------
 
-``per_gpu`: used for mono gpu benchmarks, spawn one process per gpu and run the same benchmark
+``per_gpu``: used for mono gpu benchmarks, spawn one process per gpu and run the same benchmark
 
 .. code-block:: yaml
 
