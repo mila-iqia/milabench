@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 
 from voir import configurable
-from voir.instruments import dash, early_stop, log, rate
-from benchmate.monitor import monitor_monogpu
+from voir.phase import StopProgram
+from benchmate.observer import BenchObserver
+from benchmate.monitor import voirfile_monitor
+
 
 @dataclass
 class Config:
@@ -28,11 +30,43 @@ class Config:
 def instrument_main(ov, options: Config):
     yield ov.phases.init
 
-    if options.dash:
-        ov.require(dash)
+    # GPU monitor, rate, loss etc...
+    voirfile_monitor(ov, options)
 
-    ov.require(
-        log("value", "progress", "rate", "units", "loss", "gpudata", context="task"),
-        early_stop(n=options.stop, key="rate", task="train"),
-        monitor_monogpu(poll_interval=options.gpu_poll),
+    yield ov.phases.load_script
+    
+    step_per_iteration = 0
+    
+    def fetch_args(args):
+        nonlocal step_per_iteration
+        step_per_iteration = args.num_envs * args.num_steps
+        return args
+        
+    def batch_size(x):
+        return step_per_iteration
+
+    observer = BenchObserver(
+        earlystop=options.stop + options.skip,
+        batch_size_fn=batch_size,
     )
+    
+    probe = ov.probe("//main > args", overridable=True)
+    probe['args'].override(fetch_args)
+    
+    # measure the time it took to execute the body
+    probe = ov.probe("//main > iterations", overridable=True)
+    probe['iterations'].override(observer.loader)
+
+    probe = ov.probe("//main > loss", overridable=True)
+    probe["loss"].override(observer.record_loss)
+
+    probe = ov.probe("//main > optimizer", overridable=True)
+    probe['optimizer'].override(observer.optimizer)
+    
+    #
+    # Run the benchmark
+    #
+    try:
+        yield ov.phases.run_script
+    except StopProgram:
+        print("early stopped")

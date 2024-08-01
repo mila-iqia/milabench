@@ -14,7 +14,7 @@ import torch.optim as optim
 import tyro
 from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
-
+import torchcompat.core as acc
 
 @dataclass
 class Args:
@@ -149,7 +149,7 @@ class Agent(nn.Module):
         return action, probs.log_prob(action), probs.entropy(), self.critic(hidden)
 
 
-if __name__ == "__main__":
+def main():
     args = tyro.cli(Args)
     args.batch_size = int(args.num_envs * args.num_steps)
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
@@ -179,7 +179,7 @@ if __name__ == "__main__":
     torch.manual_seed(args.seed)
     torch.backends.cudnn.deterministic = args.torch_deterministic
 
-    device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
+    device = acc.fetch_device(0)
 
     # env setup
     envs = envpool.make(
@@ -213,8 +213,9 @@ if __name__ == "__main__":
     start_time = time.time()
     next_obs = torch.Tensor(envs.reset()).to(device)
     next_done = torch.zeros(args.num_envs).to(device)
+    iterations = range(1, args.num_iterations + 1)
 
-    for iteration in range(1, args.num_iterations + 1):
+    for iteration in iterations:
         # Annealing the rate if instructed to do so.
         if args.anneal_lr:
             frac = 1.0 - (iteration - 1.0) / args.num_iterations
@@ -240,7 +241,7 @@ if __name__ == "__main__":
 
             for idx, d in enumerate(next_done):
                 if d and info["lives"][idx] == 0:
-                    print(f"global_step={global_step}, episodic_return={info['r'][idx]}")
+                    # print(f"global_step={global_step}, episodic_return={info['r'][idx]}")
                     avg_returns.append(info["r"][idx])
                     writer.add_scalar("charts/avg_episodic_return", np.average(avg_returns), global_step)
                     writer.add_scalar("charts/episodic_return", info["r"][idx], global_step)
@@ -342,3 +343,7 @@ if __name__ == "__main__":
 
     envs.close()
     writer.close()
+
+
+if __name__ == "__main__":
+    main()
