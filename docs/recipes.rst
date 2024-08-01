@@ -38,6 +38,24 @@ One bench might be problematic; rwkv which requires nvcc but can be ignored.
 Recipes
 -------
 
+Increase Runtime
+^^^^^^^^^^^^^^^^
+
+For profiling it might be useful to run the benchmark for longer than the default configuration.
+You can update the yaml file (``config/base.yaml`` or ``config/standard.yaml``) to increase the runtime limits.
+There is two values that govern the runtime of a benchmark ``max_duration`` which is a pure timeout to avoid benchmark hangs
+and ``voir.options.stop`` which represent the target number of observations milabench will gather before stopping.
+
+.. code-blocl:: yaml
+  
+   _defaults:
+     max_duration: 600           # <= Maximum number of seconds the bench can run
+     voir:                       # note that if this triggers the bench is marked as failed
+       options:
+         stop: 60                # <= Maximum number of observation we are gathering
+         interval: "1s"          # This is usually what triggers the premature exit of the benchmark
+                                 # an observation is usually a batch forward/backward/optimizer.step (i.e one train step)
+
 One Env
 ^^^^^^^
 
