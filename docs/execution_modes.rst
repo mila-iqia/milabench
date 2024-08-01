@@ -13,6 +13,8 @@ Plan
      plan:
        method: per_gpu
 
+Milabench will essentially execute something akin to below. 
+
 .. code-block:: bash
 
    echo "---"
@@ -42,6 +44,8 @@ Plan
      plan:
        method: njobs
        n: 1
+
+Milabench will essentially execute something akin to below.
 
 .. code-block:: bash
 
