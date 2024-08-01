@@ -140,6 +140,15 @@ One bench might be problematic; rwkv which requires nvcc but can be ignored.</p>
 You can update the yaml file (<code class="docutils literal notranslate"><span class="pre">config/base.yaml</span></code> or <code class="docutils literal notranslate"><span class="pre">config/standard.yaml</span></code>) to increase the runtime limits.
 There is two values that govern the runtime of a benchmark <code class="docutils literal notranslate"><span class="pre">max_duration</span></code> which is a pure timeout to avoid benchmark hangs
 and <code class="docutils literal notranslate"><span class="pre">voir.options.stop</span></code> which represent the target number of observations milabench will gather before stopping.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">_defaults</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">max_duration</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">600</span><span class="w">           </span><span class="c1"># &lt;= Maximum number of seconds the bench can run</span>
+<span class="w">  </span><span class="nt">voir</span><span class="p">:</span><span class="w">                       </span><span class="c1"># note that if this triggers the bench is marked as failed</span>
+<span class="w">    </span><span class="nt">options</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">stop</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60</span><span class="w">                </span><span class="c1"># &lt;= Maximum number of observation we are gathering</span>
+<span class="w">      </span><span class="nt">interval</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1s&quot;</span><span class="w">          </span><span class="c1"># This is usually what triggers the premature exit of the benchmark</span>
+<span class="w">                              </span><span class="c1"># an observation is usually a batch forward/backward/optimizer.step (i.e one train step)</span>
+</pre></div>
+</div>
 </section>
 <section id="one-env">
 <h3>One Env<a class="headerlink" href="#one-env" title="Link to this heading"></a></h3>

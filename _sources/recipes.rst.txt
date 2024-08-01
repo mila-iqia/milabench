@@ -46,7 +46,7 @@ You can update the yaml file (``config/base.yaml`` or ``config/standard.yaml``) 
 There is two values that govern the runtime of a benchmark ``max_duration`` which is a pure timeout to avoid benchmark hangs
 and ``voir.options.stop`` which represent the target number of observations milabench will gather before stopping.
 
-.. code-blocl:: yaml
+.. code-block:: yaml
   
    _defaults:
      max_duration: 600           # <= Maximum number of seconds the bench can run
