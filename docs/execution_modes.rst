@@ -1,7 +1,10 @@
 Plan
 ====
 
-* ``per_gpu``: used for mono gpu benchmarks, spawn one process per gpu and run the same benchmark
+per_gpu
+-------
+
+``per_gpu`: used for mono gpu benchmarks, spawn one process per gpu and run the same benchmark
 
 .. code-block:: yaml
 
@@ -32,7 +35,10 @@ Milabench will essentially execute something akin to below.
      wait
    )
 
-* ``njobs``: used to launch a single jobs that can see all the gpus.
+njobs
+-----
+
+``njobs`` used to launch a single jobs that can see all the gpus.
 
 .. code-block:: yaml
 
