@@ -73,6 +73,8 @@ def main():
             "--hf-token",
             hf_token,
         ])
+    else:
+        print("No HF token found...")
                 
     parser = MyParser()
     args = parser.parse_args(download_args)
