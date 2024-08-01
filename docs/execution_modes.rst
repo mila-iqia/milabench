@@ -5,13 +5,13 @@ Plan
 
 .. code-block:: yaml
 
-  _torchvision:
-    inherits: _defaults
-    definition: ../benchmarks/torchvision
-    group: torchvision
-    install_group: torch
-    plan:
-      method: per_gpu
+   _torchvision:
+     inherits: _defaults
+     definition: ../benchmarks/torchvision
+     group: torchvision
+     install_group: torch
+     plan:
+       method: per_gpu
 
 .. code-block:: bash
 
@@ -34,14 +34,14 @@ Plan
 
 .. code-block:: yaml
 
-  _torchvision_ddp:
-    inherits: _defaults
-    definition: ../benchmarks/torchvision_ddp
-    group: torchvision
-    install_group: torch
-    plan:
-      method: njobs
-      n: 1
+   _torchvision_ddp:
+     inherits: _defaults
+     definition: ../benchmarks/torchvision_ddp
+     group: torchvision
+     install_group: torch
+     plan:
+       method: njobs
+       n: 1
 
 .. code-block:: bash
 
