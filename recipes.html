@@ -50,6 +50,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Running Milabench</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#base-setup">Base Setup</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#recipes">Recipes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#increase-runtime">Increase Runtime</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#one-env">One Env</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#batch-resizer">Batch resizer</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#device-select">Device Select</a></li>
@@ -133,6 +134,13 @@ One bench might be problematic; rwkv which requires nvcc but can be ignored.</p>
 </section>
 <section id="recipes">
 <h2>Recipes<a class="headerlink" href="#recipes" title="Link to this heading"></a></h2>
+<section id="increase-runtime">
+<h3>Increase Runtime<a class="headerlink" href="#increase-runtime" title="Link to this heading"></a></h3>
+<p>For profiling it might be useful to run the benchmark for longer than the default configuration.
+You can update the yaml file (<code class="docutils literal notranslate"><span class="pre">config/base.yaml</span></code> or <code class="docutils literal notranslate"><span class="pre">config/standard.yaml</span></code>) to increase the runtime limits.
+There is two values that govern the runtime of a benchmark <code class="docutils literal notranslate"><span class="pre">max_duration</span></code> which is a pure timeout to avoid benchmark hangs
+and <code class="docutils literal notranslate"><span class="pre">voir.options.stop</span></code> which represent the target number of observations milabench will gather before stopping.</p>
+</section>
 <section id="one-env">
 <h3>One Env<a class="headerlink" href="#one-env" title="Link to this heading"></a></h3>
 <p>If your are using a container with dependencies such as pytorch already installed,
