@@ -68,7 +68,7 @@ def main():
         ignore_pattern
     ]
     
-    if hf_token:
+    if hf_token is not None:
         download_args.extend([
             "--hf-token",
             hf_token,

@@ -51,7 +51,7 @@ install_prepare() {
     . $MILABENCH_WORDIR/env/bin/activate
     pip install -e $MILABENCH_SOURCE
 
-    milabench pin --variant cuda --from-scratch "$@" 
+    # milabench pin --variant cuda --from-scratch "$@" 
 
     #
     # Install milabench's benchmarks in their venv
@@ -111,7 +111,7 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     cd $MILABENCH_WORDIR
     
 
-    milabench prepare "$@"
+    # milabench prepare "$@"
     #
     #   Run the benchmakrs
     milabench run "$@"

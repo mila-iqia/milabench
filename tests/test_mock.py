@@ -9,6 +9,9 @@ import pytest
 
 # benchmark that cannot be prepared because they are too big
 OVERSIZED_BENCHMARKS = {
+    "llm-lora-single",
+    "llm-lora-ddp-gpus",
+    "llm-lora-ddp-nodes",
     "llm-lora-mp-gpus",
     "llm-full-mp-gpus",
     "llm-full-mp-nodes"
