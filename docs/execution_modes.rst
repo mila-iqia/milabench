@@ -1,8 +1,30 @@
+Milabench processes overview
+============================
+
+* milabench main process
+  * gather metrics from benchmark processes, save them to file
+  * manages the benchmarks (timeout etc...)
+
+  * if ``per_gpu`` is used, milabench will launch one process per GPU (sets ``CUDA_VISIBLE_DEVCES``)
+    * each processes log their GPU data
+    * might spawn a monitor process
+      * will init pynvml
+    * dataloader will also spawn process workers
+      * usually not using GPU
+
+  * if ``njobs`` is used, milabench will launch a single process (torchrun)
+    * torchrun in turn will spawn one process per GPU
+      * RANK 0 is used for logging
+      * RANK 0 might spawn a monitor process
+        * will init pynvml
+      * dataloader will also spawn process workers 
+        * usually not using GPU
+
 Plan
-====
+----
 
 per_gpu
--------
++++++++
 
 ``per_gpu``: used for mono gpu benchmarks, spawn one process per gpu and run the same benchmark
 
@@ -36,7 +58,7 @@ Milabench will essentially execute something akin to below.
    )
 
 njobs
------
++++++
 
 ``njobs`` used to launch a single jobs that can see all the gpus.
 
@@ -64,27 +86,6 @@ Milabench will essentially execute something akin to below.
    )
 
 
-Milabench processes overview
-----------------------------
-
-* milabench main process
-  * gather metrics from benchmark processes, save them to file
-  * manages the benchmarks (timeout etc...)
-
-  * if ``per_gpu`` is used, milabench will launch one process per GPU (sets ``CUDA_VISIBLE_DEVCES``)
-    * each processes log their GPU data
-    * might spawn a monitor process
-      * will init pynvml
-    * dataloader will also spawn process workers
-      * usually not using GPU
-
-  * if ``njobs`` is used, milabench will launch a single process (torchrun)
-    * torchrun in turn will spawn one process per GPU
-      * RANK 0 is used for logging
-      * RANK 0 might spawn a monitor process
-        * will init pynvml
-      * dataloader will also spawn process workers 
-        * usually not using GPU
 
 
 
