@@ -7,6 +7,12 @@ from milabench.testing import resolved_config
 
 import pytest
 
+# benchmark that cannot be prepared because they are too big
+OVERSIZED_BENCHMARKS = {
+    "llm-lora-mp-gpus",
+    "llm-full-mp-gpus",
+    "llm-full-mp-nodes"
+}
 
 def run_cli(*args, expected_code=0, msg=None):
     from milabench.cli import main
@@ -82,11 +88,13 @@ def test_milabench(monkeypatch, bench, module_tmp_dir, standard_config):
     with filecount_inc(module_tmp_dir, "install"):
         run_cli("install", *args, "--select", bench)
 
-    # Reduce the number of images we generate to make the CI faster
-    # and reduce disk space since we will not be using them anyway
-    monkeypatch.setenv("MILABENCH_TESTING_PREPARE", "10,10")
-    with filecount_inc(module_tmp_dir, "prepare"):
-        run_cli("prepare", *args, "--select", bench)
+
+    if bench not in OVERSIZED_BENCHMARKS:
+        # Reduce the number of images we generate to make the CI faster
+        # and reduce disk space since we will not be using them anyway
+        monkeypatch.setenv("MILABENCH_TESTING_PREPARE", "10,10")
+        with filecount_inc(module_tmp_dir, "prepare"):
+            run_cli("prepare", *args, "--select", bench)
 
     #
     # use Mock GPU-SMI

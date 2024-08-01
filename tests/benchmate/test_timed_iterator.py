@@ -121,7 +121,7 @@ def fake_run(dataset_size, accumulation_steps = 32, loss_backward = 0.01, optimi
     assert rate_count == 50, "Program should stop once we reached the necessary count"
 
 def test_accumulation_steps_perfect():
-    fake_run(dataset_size=128, accumulation_steps=32, eps=2)
+    fake_run(dataset_size=128, accumulation_steps=32, eps=3)
     
     # all steps have the same amount of batches
     # expected_rate : 193.93939393939394

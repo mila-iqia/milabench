@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 import argparse
 from dataclasses import dataclass
+import os
 
-from argklass import ArgumentParser, argument
+from omegaconf import OmegaConf
+from argklass import ArgumentParser
 from torchtune._cli.tune import TuneCLIParser
+
 from benchmate.ux import long_action
 
 
@@ -44,14 +47,12 @@ def main():
     parser.add_arguments(Arguments)
     args, rest = parser.parse_known_args()
 
-    from omegaconf import OmegaConf
-
     cli = OmegaConf.from_cli()
     base = OmegaConf.load(args.config)
     config = OmegaConf.merge(base, cli)
 
     repo_id = config["repo_id"]
-    hf_token = ""
+    hf_token = os.getenv("HUGGING_FACE_TOKEN", None)
     output_dir = config["checkpointer"]["output_dir"]
     ignore_pattern = "*.safetensors"
 

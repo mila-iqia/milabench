@@ -222,7 +222,7 @@ def test_njobs_gpu_executor():
 
         acc += 1
 
-    assert acc == len(devices) * 70
+    assert acc == len(devices) * 72
 
 
 def test_njobs_novoir_executor():
@@ -256,7 +256,7 @@ def test_per_gpu_executor():
         print(r)
         acc += 1
 
-    assert acc == len(devices) * 70
+    assert acc == len(devices) * 72
 
 
 def test_void_executor():

@@ -737,7 +737,7 @@ class VoirCommand(WrapperCommand):
             )
             with open(voirconf_file, "w") as f:
                 json.dump(fp=f, obj=voirconf, indent=4)
-            voir_argv = ("--wth-config", voirconf_file)
+            voir_argv = ("--config", voirconf_file)
         else:
             voir_argv = ()
 

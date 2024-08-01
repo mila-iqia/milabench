@@ -394,20 +394,30 @@ _diffusion:
   inherits: _defaults
   definition: ../benchmarks/diffusion
   install_group: torch
-
+  plan:
+    method: njobs
+    n: 1
+  
   argv:
     --num_epochs: 5
     --batch_size: 32
     --num_workers: "auto({n_worker}, 8)"
 
-diffusion-gpus:
+diffusion-single:
   inherits: _diffusion
-
   num_machines: 1
   plan:
     method: njobs
-    n: 1
 
+diffusion-gpus:
+  inherits: _diffusion
+  num_machines: 1
+
+diffusion-nodes:
+  inherits: _diffusion
+  num_machines: 2
+  requires_capabilities:
+    - "len(nodes) >= ${num_machines}"
 
 _lightning:
   inherits: _defaults
@@ -438,6 +448,7 @@ _dinov2:
   inherits: _defaults
   definition: ../benchmarks/dinov2
   install_group: torch
+  num_machines: 1
   plan:
     method: njobs
     n: 1
@@ -446,6 +457,18 @@ _dinov2:
     --output-dir: "{milabench_extra}/output"
     --no-resume: true
 
+dinov2-giant-single:
+  inherits: _dinov2
+  plan:
+    method: per_gpu
+
+  argv:
+    --config-file: src/dinov2/configs/train/vitg14.yaml
+    # THOSE NEED TO BE LAST
+    train.dataset_path=ImageNet:split=TRAIN:root={milabench_data}/FakeImageNet:extra={milabench_data}/FakeImageNet: true
+    train.batch_size_per_gpu=32: true
+    train.saveckp_freq=100: true
+    train.num_workers=10: true
 
 dinov2-giant-gpus:
   inherits: _dinov2
@@ -457,6 +480,19 @@ dinov2-giant-gpus:
     train.saveckp_freq=100: true
     train.num_workers=10: true
 
+dinov2-giant-nodes:
+  inherits: _dinov2
+  argv:
+    --config-file: src/dinov2/configs/train/vitg14.yaml
+    # THOSE NEED TO BE LAST
+    train.dataset_path=ImageNet:split=TRAIN:root={milabench_data}/FakeImageNet:extra={milabench_data}/FakeImageNet: true
+    train.batch_size_per_gpu=32: true
+    train.saveckp_freq=100: true
+    train.num_workers=10: true
+
+  num_machines: 2
+  requires_capabilities:
+    - "len(nodes) >= ${num_machines}"
 
 _llm:
   voir:
@@ -464,7 +500,7 @@ _llm:
       stop: 30
   
   max_duration: 1200
-
+  num_machines: 1
   inherits: _defaults
   definition: ../benchmarks/llm
   install_group: torch
