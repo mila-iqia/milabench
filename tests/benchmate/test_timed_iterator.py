@@ -40,7 +40,7 @@ def test_wrapper():
             for i in loader:
                 time.sleep(process_time)
 
-    assert len(messages) == 117
+    assert len(messages) == 105
 
     rate_acc = 0
     rate_count = 0

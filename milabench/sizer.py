@@ -9,7 +9,7 @@ import yaml
 from voir.instruments.gpu import get_gpu_info
 
 from .merge import merge
-from .system import CPUOptions, SizerOptions, system_global
+from .system import CPUOptions, SizerOptions, system_global, option
 from .validation.validation import ValidationLayer
 
 ROOT = os.path.dirname(__file__)
@@ -350,35 +350,36 @@ def new_argument_resolver(pack):
     if device_count <= 0:
         device_count = 1
 
-    options = CPUOptions()
+    cpu_opt = CPUOptions()
     def auto(value, default):
-        if options.enabled:
+        if cpu_opt.enabled:
             return value
         return default
 
-    def clamp(x, mn=options.cpu_min, mx=options.cpu_max):
+    def clamp(x, mn=cpu_opt.cpu_min, mx=cpu_opt.cpu_max):
         return min(max(x, mn), mx)
 
-    total_cpu = options.total_count or multiprocessing.cpu_count()
-    total_available = total_cpu - options.reserved_cores
+    total_cpu = cpu_opt.total_count or multiprocessing.cpu_count()
+    total_available = total_cpu - cpu_opt.reserved_cores
 
     context["cpu_count"] = total_available
     context["cpu_per_gpu"] = total_available // device_count
     context["n_worker"] = clamp(context["cpu_per_gpu"])
 
-    if options.n_workers is not None:
-        context["n_worker"] = options.n_workers
+    if cpu_opt.n_workers is not None:
+        context["n_worker"] = cpu_opt.n_workers
 
     context["arch"] = arch
     context["ccl"] = ccl.get(arch, "gloo")
-
-    context["milabench_base"] = pack.dirs.base
-    context["milabench_venv"] = pack.dirs.venv
-    context["milabench_code"] = pack.dirs.code
-    context["milabench_extra"] = pack.dirs.extra
-    context["milabench_data"] = pack.dirs.data
-    context["milabench_runs"] = pack.dirs.runs
-    context["milabench_cache"] = pack.dirs.cache
+    
+    context["milabench_base"] = option("base", str, default="")
+    dirs = vars(pack.dirs)
+    context["milabench_venv"] = dirs.get('venv', "")
+    context["milabench_code"] = dirs.get('code', "")
+    context["milabench_extra"] = dirs.get('extra', "")
+    context["milabench_data"] = dirs.get('data', "")
+    context["milabench_runs"] = dirs.get('runs', "")
+    context["milabench_cache"] = dirs.get('cache', "")
     context["milabench_name"] = pack.config.get("name", None)
 
     def auto_eval(arg):

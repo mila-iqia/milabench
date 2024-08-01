@@ -312,52 +312,6 @@ time (
 )
 
 echo "---"
-echo "resnet152"
-echo "========="
-time (
-  CUDA_VISIBLE_DEVICES=0 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model resnet152 --batch-size 256 --output $BASE/extra/timm/dev/resnet152.D0 --checkpoint-hist 1 &
-  CUDA_VISIBLE_DEVICES=1 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model resnet152 --batch-size 256 --output $BASE/extra/timm/dev/resnet152.D1 --checkpoint-hist 1 &
-  CUDA_VISIBLE_DEVICES=2 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model resnet152 --batch-size 256 --output $BASE/extra/timm/dev/resnet152.D2 --checkpoint-hist 1 &
-  CUDA_VISIBLE_DEVICES=3 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model resnet152 --batch-size 256 --output $BASE/extra/timm/dev/resnet152.D3 --checkpoint-hist 1 &
-  CUDA_VISIBLE_DEVICES=4 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model resnet152 --batch-size 256 --output $BASE/extra/timm/dev/resnet152.D4 --checkpoint-hist 1 &
-  CUDA_VISIBLE_DEVICES=5 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model resnet152 --batch-size 256 --output $BASE/extra/timm/dev/resnet152.D5 --checkpoint-hist 1 &
-  CUDA_VISIBLE_DEVICES=6 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model resnet152 --batch-size 256 --output $BASE/extra/timm/dev/resnet152.D6 --checkpoint-hist 1 &
-  CUDA_VISIBLE_DEVICES=7 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model resnet152 --batch-size 256 --output $BASE/extra/timm/dev/resnet152.D7 --checkpoint-hist 1 &
-  wait
-)
-
-echo "---"
-echo "resnet152-gpus"
-echo "=============="
-time (
-  $BASE/venv/torch/bin/benchrun --nproc-per-node=8 -m python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model resnet152 --batch-size 256 --output $BASE/extra/timm/dev/resnet152-gpus.0 --checkpoint-hist 1 &
-  wait
-)
-
-echo "---"
-echo "davit_large"
-echo "==========="
-time (
-  CUDA_VISIBLE_DEVICES=0 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model davit_large --batch-size 128 --lr-base 0.01 --output $BASE/extra/timm/dev/davit_large.D0 --checkpoint-hist 1 &
-  CUDA_VISIBLE_DEVICES=1 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model davit_large --batch-size 128 --lr-base 0.01 --output $BASE/extra/timm/dev/davit_large.D1 --checkpoint-hist 1 &
-  CUDA_VISIBLE_DEVICES=2 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model davit_large --batch-size 128 --lr-base 0.01 --output $BASE/extra/timm/dev/davit_large.D2 --checkpoint-hist 1 &
-  CUDA_VISIBLE_DEVICES=3 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model davit_large --batch-size 128 --lr-base 0.01 --output $BASE/extra/timm/dev/davit_large.D3 --checkpoint-hist 1 &
-  CUDA_VISIBLE_DEVICES=4 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model davit_large --batch-size 128 --lr-base 0.01 --output $BASE/extra/timm/dev/davit_large.D4 --checkpoint-hist 1 &
-  CUDA_VISIBLE_DEVICES=5 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model davit_large --batch-size 128 --lr-base 0.01 --output $BASE/extra/timm/dev/davit_large.D5 --checkpoint-hist 1 &
-  CUDA_VISIBLE_DEVICES=6 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model davit_large --batch-size 128 --lr-base 0.01 --output $BASE/extra/timm/dev/davit_large.D6 --checkpoint-hist 1 &
-  CUDA_VISIBLE_DEVICES=7 python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model davit_large --batch-size 128 --lr-base 0.01 --output $BASE/extra/timm/dev/davit_large.D7 --checkpoint-hist 1 &
-  wait
-)
-
-echo "---"
-echo "davit_large-gpus"
-echo "================"
-time (
-  $BASE/venv/torch/bin/benchrun --nproc-per-node=8 -m python $SRC/milabench/benchmarks/timm/pytorch-image-models/train.py --amp --amp-dtype bfloat16 --device cuda --val-split --data-dir $BASE/data --dataset FakeImageNet --workers 8 --model davit_large --batch-size 128 --lr-base 0.01 --output $BASE/extra/timm/dev/davit_large-gpus.0 --checkpoint-hist 1 &
-  wait
-)
-
-echo "---"
 echo "focalnet"
 echo "========"
 time (
@@ -373,55 +327,6 @@ time (
 )
 
 echo "---"
-echo "opt-1_3b-gpus"
-echo "============="
-time (
-  $SRC/milabench/milabench/scripts/activator $BASE/venv/torch accelerate launch --mixed_precision=bf16 --dynamo_backend=no --machine_rank=0 --num_machines=1 --multi_gpu --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=8 $SRC/milabench/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --cache $BASE/cache --model_name facebook/opt-1.3b &
-  wait
-)
-
-echo "---"
-echo "opt-1_3b-nodes"
-echo "=============="
-time (
-  $SRC/milabench/milabench/scripts/activator $BASE/venv/torch accelerate launch --mixed_precision=bf16 --dynamo_backend=no --machine_rank=0 --num_machines=2 --multi_gpu --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=16 &
-  ssh -oCheckHostIP=no -oStrictHostKeyChecking=no -oPasswordAuthentication=no -oPasswordAuthentication=no -p 22 username@192.168.0.11 $SRC/milabench/milabench/scripts/activator $BASE/venv/torch accelerate launch --mixed_precision=bf16 --dynamo_backend=no --machine_rank=1 --num_machines=2 --multi_gpu --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=16 &
-  wait
-)
-
-echo "---"
-echo "opt-6_7b-gpus"
-echo "============="
-time (
-  $SRC/milabench/milabench/scripts/activator $BASE/venv/torch accelerate launch --mixed_precision=bf16 --dynamo_backend=no --machine_rank=0 --num_machines=1 --use_deepspeed --deepspeed_multinode_launcher=standard --zero_stage=2 --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=8 $SRC/milabench/benchmarks/accelerate_opt/main.py --max_train_steps 100 --dataset_name wikitext --dataset_config_name wikitext-103-v1 --dataset_rev b08601e --validation_split_percentage 5 --per_gpu_batch_size 1 --cpus_per_gpu 8 --cache $BASE/cache --model_name facebook/opt-6.7b &
-  wait
-)
-
-echo "---"
-echo "opt-6_7b-nodes"
-echo "=============="
-time (
-  $SRC/milabench/milabench/scripts/activator $BASE/venv/torch accelerate launch --mixed_precision=bf16 --dynamo_backend=no --machine_rank=0 --num_machines=2 --use_deepspeed --deepspeed_multinode_launcher=standard --zero_stage=2 --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=16 &
-  ssh -oCheckHostIP=no -oStrictHostKeyChecking=no -oPasswordAuthentication=no -oPasswordAuthentication=no -p 22 username@192.168.0.11 $SRC/milabench/milabench/scripts/activator $BASE/venv/torch accelerate launch --mixed_precision=bf16 --dynamo_backend=no --machine_rank=1 --num_machines=2 --use_deepspeed --deepspeed_multinode_launcher=standard --zero_stage=2 --gradient_accumulation_steps=1 --num_cpu_threads_per_process=8 --main_process_ip=127.0.0.1 --main_process_port=22 --num_processes=16 &
-  wait
-)
-
-echo "---"
-echo "stargan"
-echo "======="
-time (
-  CUDA_VISIBLE_DEVICES=0 python $SRC/milabench/benchmarks/stargan/stargan/main.py --image_size 512 --c_dim 5 --batch_size 16 --dataset synth --celeba_image_dir $BASE/data --log_dir $BASE/extra/stargan/logs --model_save_dir $BASE/extra/stargan/models --sample_dir $BASE/extra/stargan/samples --result_dir $BASE/extra/stargan/results --num_workers 8 &
-  CUDA_VISIBLE_DEVICES=1 python $SRC/milabench/benchmarks/stargan/stargan/main.py --image_size 512 --c_dim 5 --batch_size 16 --dataset synth --celeba_image_dir $BASE/data --log_dir $BASE/extra/stargan/logs --model_save_dir $BASE/extra/stargan/models --sample_dir $BASE/extra/stargan/samples --result_dir $BASE/extra/stargan/results --num_workers 8 &
-  CUDA_VISIBLE_DEVICES=2 python $SRC/milabench/benchmarks/stargan/stargan/main.py --image_size 512 --c_dim 5 --batch_size 16 --dataset synth --celeba_image_dir $BASE/data --log_dir $BASE/extra/stargan/logs --model_save_dir $BASE/extra/stargan/models --sample_dir $BASE/extra/stargan/samples --result_dir $BASE/extra/stargan/results --num_workers 8 &
-  CUDA_VISIBLE_DEVICES=3 python $SRC/milabench/benchmarks/stargan/stargan/main.py --image_size 512 --c_dim 5 --batch_size 16 --dataset synth --celeba_image_dir $BASE/data --log_dir $BASE/extra/stargan/logs --model_save_dir $BASE/extra/stargan/models --sample_dir $BASE/extra/stargan/samples --result_dir $BASE/extra/stargan/results --num_workers 8 &
-  CUDA_VISIBLE_DEVICES=4 python $SRC/milabench/benchmarks/stargan/stargan/main.py --image_size 512 --c_dim 5 --batch_size 16 --dataset synth --celeba_image_dir $BASE/data --log_dir $BASE/extra/stargan/logs --model_save_dir $BASE/extra/stargan/models --sample_dir $BASE/extra/stargan/samples --result_dir $BASE/extra/stargan/results --num_workers 8 &
-  CUDA_VISIBLE_DEVICES=5 python $SRC/milabench/benchmarks/stargan/stargan/main.py --image_size 512 --c_dim 5 --batch_size 16 --dataset synth --celeba_image_dir $BASE/data --log_dir $BASE/extra/stargan/logs --model_save_dir $BASE/extra/stargan/models --sample_dir $BASE/extra/stargan/samples --result_dir $BASE/extra/stargan/results --num_workers 8 &
-  CUDA_VISIBLE_DEVICES=6 python $SRC/milabench/benchmarks/stargan/stargan/main.py --image_size 512 --c_dim 5 --batch_size 16 --dataset synth --celeba_image_dir $BASE/data --log_dir $BASE/extra/stargan/logs --model_save_dir $BASE/extra/stargan/models --sample_dir $BASE/extra/stargan/samples --result_dir $BASE/extra/stargan/results --num_workers 8 &
-  CUDA_VISIBLE_DEVICES=7 python $SRC/milabench/benchmarks/stargan/stargan/main.py --image_size 512 --c_dim 5 --batch_size 16 --dataset synth --celeba_image_dir $BASE/data --log_dir $BASE/extra/stargan/logs --model_save_dir $BASE/extra/stargan/models --sample_dir $BASE/extra/stargan/samples --result_dir $BASE/extra/stargan/results --num_workers 8 &
-  wait
-)
-
-echo "---"
 echo "super-slomo"
 echo "==========="
 time (
@@ -433,14 +338,6 @@ time (
   CUDA_VISIBLE_DEVICES=5 python $SRC/milabench/benchmarks/super-slomo/slomo/train.py --train_batch_size 64 --dataset_root $BASE/data/FakeImageNet --loader pytorch --num_workers 8 &
   CUDA_VISIBLE_DEVICES=6 python $SRC/milabench/benchmarks/super-slomo/slomo/train.py --train_batch_size 64 --dataset_root $BASE/data/FakeImageNet --loader pytorch --num_workers 8 &
   CUDA_VISIBLE_DEVICES=7 python $SRC/milabench/benchmarks/super-slomo/slomo/train.py --train_batch_size 64 --dataset_root $BASE/data/FakeImageNet --loader pytorch --num_workers 8 &
-  wait
-)
-
-echo "---"
-echo "dlrm"
-echo "===="
-time (
-  python $SRC/milabench/benchmarks/dlrm/dlrm/dlrm_s_pytorch.py --num-batches 1000 --data-generation random --arch-mlp-bot 512-512-64 --arch-mlp-top 1024-1024-1024-1 --arch-sparse-feature-size 64 --arch-embedding-size 1000000-1000000-1000000-1000000-1000000-1000000-1000000-1000000 --num-indices-per-lookup 100 --arch-interaction-op dot --numpy-rand-seed 727 --print-freq 999999 --mini-batch-size 16384 --test-mini-batch-size 16384 --test-num-workers 0 --use-gpu --num-workers 8 &
   wait
 )
 
@@ -488,6 +385,61 @@ echo "dinov2-giant-gpus"
 echo "================="
 time (
   $BASE/venv/torch/bin/benchrun --nnodes=1 --rdzv-backend=c10d --rdzv-endpoint=127.0.0.1:29400 --master-addr=127.0.0.1 --master-port=29400 --nproc-per-node=8 --no-python -- python $SRC/milabench/benchmarks/dinov2/main.py --output-dir $BASE/extra/dinov2-giant-gpus/output --no-resume --config-file src/dinov2/configs/train/vitg14.yaml train.dataset_path=ImageNet:split=TRAIN:root=$BASE/data/FakeImageNet:extra=$BASE/data/FakeImageNet train.batch_size_per_gpu=32 train.saveckp_freq=100 train.num_workers=10 &
+  wait
+)
+
+echo "---"
+echo "llm-lora-single"
+echo "==============="
+time (
+  CUDA_VISIBLE_DEVICES=0 $SRC/milabench/benchmarks/llm/recipes/lora_finetune_single_device.py --config $SRC/milabench/benchmarks/llm/configs/llama3_8B_lora_single_device.yaml epochs=1 output_dir=$BASE/extra/llm-lora-single/output tokenizer.path=$BASE/data/llama3_8B/original/tokenizer.model checkpointer.checkpoint_dir=$BASE/data/llama3_8B/original checkpointer.output_dir=$BASE/data/llama3_8B/ metric_logger.log_dir=$BASE/extra/llm-lora-single/metrics repo_id="meta-llama/Meta-Llama-3.1-8B" batch_size=8 gradient_accumulation_steps=8 &
+  CUDA_VISIBLE_DEVICES=1 $SRC/milabench/benchmarks/llm/recipes/lora_finetune_single_device.py --config $SRC/milabench/benchmarks/llm/configs/llama3_8B_lora_single_device.yaml epochs=1 output_dir=$BASE/extra/llm-lora-single/output tokenizer.path=$BASE/data/llama3_8B/original/tokenizer.model checkpointer.checkpoint_dir=$BASE/data/llama3_8B/original checkpointer.output_dir=$BASE/data/llama3_8B/ metric_logger.log_dir=$BASE/extra/llm-lora-single/metrics repo_id="meta-llama/Meta-Llama-3.1-8B" batch_size=8 gradient_accumulation_steps=8 &
+  CUDA_VISIBLE_DEVICES=2 $SRC/milabench/benchmarks/llm/recipes/lora_finetune_single_device.py --config $SRC/milabench/benchmarks/llm/configs/llama3_8B_lora_single_device.yaml epochs=1 output_dir=$BASE/extra/llm-lora-single/output tokenizer.path=$BASE/data/llama3_8B/original/tokenizer.model checkpointer.checkpoint_dir=$BASE/data/llama3_8B/original checkpointer.output_dir=$BASE/data/llama3_8B/ metric_logger.log_dir=$BASE/extra/llm-lora-single/metrics repo_id="meta-llama/Meta-Llama-3.1-8B" batch_size=8 gradient_accumulation_steps=8 &
+  CUDA_VISIBLE_DEVICES=3 $SRC/milabench/benchmarks/llm/recipes/lora_finetune_single_device.py --config $SRC/milabench/benchmarks/llm/configs/llama3_8B_lora_single_device.yaml epochs=1 output_dir=$BASE/extra/llm-lora-single/output tokenizer.path=$BASE/data/llama3_8B/original/tokenizer.model checkpointer.checkpoint_dir=$BASE/data/llama3_8B/original checkpointer.output_dir=$BASE/data/llama3_8B/ metric_logger.log_dir=$BASE/extra/llm-lora-single/metrics repo_id="meta-llama/Meta-Llama-3.1-8B" batch_size=8 gradient_accumulation_steps=8 &
+  CUDA_VISIBLE_DEVICES=4 $SRC/milabench/benchmarks/llm/recipes/lora_finetune_single_device.py --config $SRC/milabench/benchmarks/llm/configs/llama3_8B_lora_single_device.yaml epochs=1 output_dir=$BASE/extra/llm-lora-single/output tokenizer.path=$BASE/data/llama3_8B/original/tokenizer.model checkpointer.checkpoint_dir=$BASE/data/llama3_8B/original checkpointer.output_dir=$BASE/data/llama3_8B/ metric_logger.log_dir=$BASE/extra/llm-lora-single/metrics repo_id="meta-llama/Meta-Llama-3.1-8B" batch_size=8 gradient_accumulation_steps=8 &
+  CUDA_VISIBLE_DEVICES=5 $SRC/milabench/benchmarks/llm/recipes/lora_finetune_single_device.py --config $SRC/milabench/benchmarks/llm/configs/llama3_8B_lora_single_device.yaml epochs=1 output_dir=$BASE/extra/llm-lora-single/output tokenizer.path=$BASE/data/llama3_8B/original/tokenizer.model checkpointer.checkpoint_dir=$BASE/data/llama3_8B/original checkpointer.output_dir=$BASE/data/llama3_8B/ metric_logger.log_dir=$BASE/extra/llm-lora-single/metrics repo_id="meta-llama/Meta-Llama-3.1-8B" batch_size=8 gradient_accumulation_steps=8 &
+  CUDA_VISIBLE_DEVICES=6 $SRC/milabench/benchmarks/llm/recipes/lora_finetune_single_device.py --config $SRC/milabench/benchmarks/llm/configs/llama3_8B_lora_single_device.yaml epochs=1 output_dir=$BASE/extra/llm-lora-single/output tokenizer.path=$BASE/data/llama3_8B/original/tokenizer.model checkpointer.checkpoint_dir=$BASE/data/llama3_8B/original checkpointer.output_dir=$BASE/data/llama3_8B/ metric_logger.log_dir=$BASE/extra/llm-lora-single/metrics repo_id="meta-llama/Meta-Llama-3.1-8B" batch_size=8 gradient_accumulation_steps=8 &
+  CUDA_VISIBLE_DEVICES=7 $SRC/milabench/benchmarks/llm/recipes/lora_finetune_single_device.py --config $SRC/milabench/benchmarks/llm/configs/llama3_8B_lora_single_device.yaml epochs=1 output_dir=$BASE/extra/llm-lora-single/output tokenizer.path=$BASE/data/llama3_8B/original/tokenizer.model checkpointer.checkpoint_dir=$BASE/data/llama3_8B/original checkpointer.output_dir=$BASE/data/llama3_8B/ metric_logger.log_dir=$BASE/extra/llm-lora-single/metrics repo_id="meta-llama/Meta-Llama-3.1-8B" batch_size=8 gradient_accumulation_steps=8 &
+  wait
+)
+
+echo "---"
+echo "llm-lora-ddp-gpus"
+echo "================="
+time (
+  $BASE/venv/torch/bin/tune run --nproc-per-node=8 -- $SRC/milabench/benchmarks/llm/recipes/lora_finetune_distributed.py --config $SRC/milabench/benchmarks/llm/configs/llama3_8B_lora_single_device.yaml epochs=1 output_dir=$BASE/extra/llm-lora-ddp-gpus/output tokenizer.path=$BASE/data/llama3_8B/original/tokenizer.model checkpointer.checkpoint_dir=$BASE/data/llama3_8B/original checkpointer.output_dir=$BASE/data/llama3_8B/ metric_logger.log_dir=$BASE/extra/llm-lora-ddp-gpus/metrics repo_id="meta-llama/Meta-Llama-3.1-8B" batch_size=8 gradient_accumulation_steps=8 &
+  wait
+)
+
+echo "---"
+echo "llm-lora-ddp-nodes"
+echo "=================="
+time (
+  $BASE/venv/torch/bin/tune run --nproc-per-node=8 -- $SRC/milabench/benchmarks/llm/recipes/lora_finetune_distributed.py --config $SRC/milabench/benchmarks/llm/configs/llama3_8B_lora_single_device.yaml epochs=1 output_dir=$BASE/extra/llm-lora-ddp-nodes/output tokenizer.path=$BASE/data/llama3_8B/original/tokenizer.model checkpointer.checkpoint_dir=$BASE/data/llama3_8B/original checkpointer.output_dir=$BASE/data/llama3_8B/ metric_logger.log_dir=$BASE/extra/llm-lora-ddp-nodes/metrics repo_id="meta-llama/Meta-Llama-3.1-8B" batch_size=8 gradient_accumulation_steps=8 &
+  wait
+)
+
+echo "---"
+echo "llm-lora-mp-gpus"
+echo "================"
+time (
+  $BASE/venv/torch/bin/tune run --nproc-per-node=8 -- $SRC/milabench/benchmarks/llm/recipes/lora_finetune_distributed.py --config $SRC/milabench/benchmarks/llm/configs/llama3_70B_lora.yaml epochs=1 output_dir=$BASE/extra/llm-lora-mp-gpus/output tokenizer.path=$BASE/data/llama3_70B/original/tokenizer.model checkpointer.checkpoint_dir=$BASE/data/llama3_70B checkpointer.output_dir=$BASE/data/llama3_70B/ metric_logger.log_dir=$BASE/extra/llm-lora-mp-gpus/metrics repo_id="meta-llama/Meta-Llama-3.1-70B" batch_size=8 gradient_accumulation_steps=1 &
+  wait
+)
+
+echo "---"
+echo "llm-full-mp-gpus"
+echo "================"
+time (
+  $BASE/venv/torch/bin/tune run --nproc-per-node=8 -- $SRC/milabench/benchmarks/llm/recipes/full_finetune_distributed.py --config $SRC/milabench/benchmarks/llm/configs/llama3_70B_full.yaml epochs=1 output_dir=$BASE/extra/llm-full-mp-gpus/output tokenizer.path=$BASE/data/llama3_70B/original/tokenizer.model checkpointer.checkpoint_dir=$BASE/data/llama3_70B checkpointer.output_dir=$BASE/data/llama3_70B/ metric_logger.log_dir=$BASE/extra/llm-full-mp-gpus/metrics repo_id="meta-llama/Meta-Llama-3.1-70B" safetensors=true batch_size=2 gradient_accumulation_steps=1 &
+  wait
+)
+
+echo "---"
+echo "llm-full-mp-nodes"
+echo "================="
+time (
+  $BASE/venv/torch/bin/tune run --nproc-per-node=8 -- $SRC/milabench/benchmarks/llm/recipes/full_finetune_distributed.py --config $SRC/milabench/benchmarks/llm/configs/llama3_70B_full.yaml epochs=1 output_dir=$BASE/extra/llm-full-mp-nodes/output tokenizer.path=$BASE/data/llama3_70B/original/tokenizer.model checkpointer.checkpoint_dir=$BASE/data/llama3_70B checkpointer.output_dir=$BASE/data/llama3_70B/ metric_logger.log_dir=$BASE/extra/llm-full-mp-nodes/metrics repo_id="meta-llama/Meta-Llama-3.1-70B" safetensors=true batch_size=2 gradient_accumulation_steps=1 &
   wait
 )
 

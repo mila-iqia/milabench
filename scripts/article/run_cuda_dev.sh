@@ -91,11 +91,19 @@ else
     . $MILABENCH_WORDIR/env/bin/activate
 fi
 
+
+(
+    . $MILABENCH_WORDIR/env/bin/activate
+    pip show setuptools
+    pip show pip
+)
+
 (
     . $BENCHMARK_VENV/bin/activate
-    which pip
-    pip install accelerate==0.32.1 deepspeed transformers
+    pip show setuptools
+    pip show pip
 )
+
 
 if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     cd $MILABENCH_WORDIR

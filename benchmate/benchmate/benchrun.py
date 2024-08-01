@@ -64,9 +64,8 @@ def run(args):
 
 
 def main(args=None):
-    with forward_voir_file():
-        distrun.torchrun(args)
-
+    args = distrun.parse_args(args)
+    run(args)
 
 
 if __name__ == "__main__":
