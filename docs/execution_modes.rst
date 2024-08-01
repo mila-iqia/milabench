@@ -58,7 +58,8 @@ Milabench processes overview
 ----------------------------
 
 * milabench main process
-  * gather metrics from benchmark processes
+  * gather metrics from benchmark processes, save them to file
+  * manages the benchmarks (timeout etc...)
 
   * if ``per_gpu`` is used, milabench will launch one process per GPU (sets ``CUDA_VISIBLE_DEVCES``)
     * each processes log their GPU data
