@@ -13,10 +13,14 @@ if __name__ == "__main__":
         del os.environ["SLURM_JOB_ID"]
 
     from argparse import Namespace
-    from dinov2.train.train import setup, get_args_parser
+    from dinov2.train.train import get_args_parser
+    from dinov2.utils.config import get_cfg_from_args, apply_scaling_rules_to_cfg
 
     args = get_args_parser(add_help=True).parse_args()
-    cfg = setup(args)
+
+    cfg = get_cfg_from_args(args)
+    os.makedirs(args.output_dir, exist_ok=True)
+    apply_scaling_rules_to_cfg(cfg)
 
     args = Namespace(
         batch_size=cfg["train"]["batch_size_per_gpu"],

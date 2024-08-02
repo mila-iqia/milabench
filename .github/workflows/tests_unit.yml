@@ -68,7 +68,13 @@ jobs:
           cd ..
           rm -rf voirbench
         
+      - name: space
+        run: |
+          df -h
+
       - name: tests
+        env:
+          HUGGING_FACE_TOKEN: ${{ secrets.HUGGING_FACE_TOKEN}}
         run: |
           source $(poetry env info -p)/bin/activate
           coverage run --source=milabench -m pytest --ignore=tests/integration tests/ 

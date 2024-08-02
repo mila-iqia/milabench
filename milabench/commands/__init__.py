@@ -127,7 +127,10 @@ class Command:
         command line's arguments and the `Command`'s kwargs to send to
         `pack.BasePackage.execute()`
         """
-        yield self.pack, [], self.options
+        yield self.pack, self.argv(), self.options
+
+    def argv(self):
+        raise NotImplementedError()
 
     async def execute(self, phase="run", timeout=False, timeout_delay=600, **kwargs):
         """Execute all the commands and return the aggregated results"""
@@ -517,28 +520,41 @@ class TorchrunAllGPU(WrapperCommand):
         # Some vendors force us to have weird venv that can resolve weirdly
         # use absolute paths to avoid issues
 
-        binfolder = executor.pack.config["dirs"]["venv"]
+        self.binfolder = executor.pack.config["dirs"]["venv"]
         self.module=module
 
         # benchrun is a wrapper around torchrun
         # which insert voir file descritor
         super().__init__(
-            executor, f"{binfolder}/bin/benchrun", *torchrun_argv, **kwargs
+            executor, self.executable, *torchrun_argv, **kwargs
         )
+
+    @property
+    def executable(self):
+        return f"{self.binfolder}/bin/benchrun"
+
+    def get_cmd(self):
+        return next(iter(self.exec.argv()), None)
+
+    def should_wrap(self):
+        devices = self.pack.config.get("devices", [])
+        nproc = len(devices)
+        return nproc > 1
 
     def _argv(self, **kwargs):
         devices = self.pack.config.get("devices", [])
         nproc = len(devices)
-        if nproc > 1:
+        if self.should_wrap():
             # spawn,fork,forkserver
             argv = [
+
                 *super()._argv(**kwargs), 
                 f"--nproc-per-node={nproc}", 
                 # "--start-method=forkserver"
             ]
 
             # Check if the sub-executor targets a module or not
-            cmd = next(iter(self.exec.argv()), None)
+            cmd = self.get_cmd()
 
             if self.module:
                 argv.append("-m")
@@ -551,7 +567,7 @@ class TorchrunAllGPU(WrapperCommand):
 
                     # if the command exists and it is not a path assume it is a module
                     # script is not a file, maybe it is a module
-                    elif not XPath(cmd).exists():
+                    elif not XPath(cmd).exists() and "/" not in cmd:
                         argv.append("-m")
 
                 # everything after torchrun args are script args
@@ -874,6 +890,15 @@ def activator_script():
     path = XPath(__file__).parent.parent / "scripts" / "activator"
     assert path.exists()
     return str(path)
+
+
+class SimpleCommand(SingleCmdCommand):
+    def __init__(self, pack_or_exec: Command | pack.BasePackage, *args, **options) -> None:
+        super().__init__(pack_or_exec, **options)
+        self.args = args
+
+    def argv(self):
+        return list(self.pack.argv) + list(self.args)
 
 
 # Accelerate

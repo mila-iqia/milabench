@@ -2,7 +2,7 @@ import os
 
 from voir.helpers import current_overseer
 
-from .metrics import LazyLossPusher, TimedIterator, give_push, sumggle_push
+from .metrics import LazyLossPusher, TimedIterator, ManualTimedIterator, give_push, sumggle_push
 
 
 class BenchObserver:
@@ -69,15 +69,22 @@ class BenchObserver:
         else:
             raise RuntimeError("Not running through voir")
 
-    def iterate(self, iterator):
-        return self.loader(iterator)
+    def iterate(self, iterator, custom_step=False):
+        return self.loader(iterator, custom_step=custom_step)
     
-    def loader(self, loader):
+    def step(self):
+        self.instance.step()
+    
+    def loader(self, loader, custom_step=False):
         """Wrap a dataloader or an iterable which enable accurate measuring of time spent in the loop's body"""
         if self.instance:
             return self.instance
         
-        self.wrapped = TimedIterator(
+        cls = TimedIterator
+        if custom_step:
+            cls = ManualTimedIterator
+        
+        self.wrapped = cls(
             loader, *self.args, rank=self.rank, push=self.pusher, **self.kwargs
         )
         self.wrapped.task = self.task
