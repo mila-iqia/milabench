@@ -3,9 +3,11 @@
 import os
 import subprocess
 
-from torch.distributed.run import main as torchrun
+import torch.distributed.run as distrun
 import torch.distributed.elastic.multiprocessing.api as elastic
 import torch.distributed.elastic.multiprocessing.subprocess_handler as sub
+
+from contextlib import contextmanager
 
 
 class NewSubprocessHandler(sub.SubprocessHandler):
@@ -41,12 +43,29 @@ def get_subprocess_handler(
     )
 
 
-def main(args=None):
+@contextmanager
+def forward_voir_file():
+    """Overrides torchruns way of creating a new process so we can forward our file desctriptor"""
+    old_handle = elastic.get_subprocess_handler
+    old_handler = elastic.SubprocessHandler
+
     elastic.get_subprocess_handler = get_subprocess_handler
     elastic.SubprocessHandler = NewSubprocessHandler
 
-    torchrun(args)
+    yield
 
+    elastic.get_subprocess_handler = old_handle
+    elastic.SubprocessHandler = old_handler
+
+
+def run(args):
+    with forward_voir_file():
+        distrun.run(args)
+
+
+def main(args=None):
+    args = distrun.parse_args(args)
+    run(args)
 
 
 if __name__ == "__main__":
