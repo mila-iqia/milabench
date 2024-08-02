@@ -1,9 +1,17 @@
 
 torch_ppo_atari_envpool:
-  max_duration: 60000
+  max_duration: 600
   inherits: _defaults
   definition: .
   install-variant: unpinned
   install_group: torch
   plan:
     method: per_gpu
+
+  argv:
+    --num-minibatches: 16
+    --update-epochs: 4
+    --num-steps: 128
+    --num-envs: auto({cpu_per_gpu}, 128)
+    --total-timesteps: 1000000
+    --env-id: Breakout-v5

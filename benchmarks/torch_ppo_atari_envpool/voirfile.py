@@ -57,8 +57,23 @@ def instrument_main(ov, options: Config):
     probe = ov.probe("//main > iterations", overridable=True)
     probe['iterations'].override(observer.loader)
 
-    probe = ov.probe("//main > loss", overridable=True)
-    probe["loss"].override(observer.record_loss)
+    # Too many losses
+    # probe = ov.probe("//main > loss", overridable=True)
+    # probe["loss"].override(observer.record_loss)
+
+    def record_starts(writer):
+        old_add_scalar = writer.add_scalar
+
+        def add_scalar(name, *values):
+            if name == "losses/value_loss":
+                observer.record_loss(values[0])
+            old_add_scalar(name, *values)
+        
+        writer.add_scalar = add_scalar
+        return writer
+
+    probe = ov.probe("//main > writer", overridable=True)
+    probe["writer"].override(record_starts)
 
     probe = ov.probe("//main > optimizer", overridable=True)
     probe['optimizer'].override(observer.optimizer)
