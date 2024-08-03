@@ -60,7 +60,7 @@ class PCQM4Mv2Subset(PCQM4Mv2):
         # Download 3D coordinates
         file_path = download_url(self.suppl_url, self.raw_dir)
         # md5sum: fd72bce606e7ddf36c2a832badeec6ab
-        extract_tar(file_path, self.raw_dir, mode="r:gz")
+        extract_tar(file_path, osp.join(self.raw_dir, "pcqm4m-v2", "raw"), mode="r:gz")
         os.unlink(file_path)
 
     def process(self) -> None:
