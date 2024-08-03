@@ -21,11 +21,12 @@ class Dimenet(Package):
         return super().make_env()
 
     async def install(self):
+        # Need to install torch before installing torch-cluster.
+        await self.pip_install("torch")
         await super().install()  # super() call installs the requirements
 
     async def prepare(self):
         await super().prepare()  # super() call executes prepare_script
-
 
 
 __pack__ = Dimenet
