@@ -5,7 +5,7 @@ endif
 
 export MILABENCH_BASE
 
-BENCH_NAME=dimenet
+BENCH_NAME=geo_gnn
 MILABENCH_CONFIG=dev.yaml
 MILABENCH_ARGS=--config $(MILABENCH_CONFIG) --base $(MILABENCH_BASE)
 
