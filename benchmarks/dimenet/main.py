@@ -31,7 +31,7 @@ def parser():
     parser.add_argument("--model", type=str, help="GNN name", required=True)
     parser.add_argument(
         "--num-samples",
-        type=str,
+        type=int,
         help="Number of samples to process in the dataset",
         default=10000,
     )
@@ -54,6 +54,13 @@ def parser():
         type=int,
         default=0,
         help="number of workers for data loading",
+    )
+    parser.add_argument(
+        "--3d",
+        type=bool,
+        action="store_true",
+        default=False,
+        help="Use 3D coordinates with data",
     )
     return parser
 
@@ -109,9 +116,12 @@ def main():
         for step, batch in enumerate(observer.iterate(train_loader)):
             batch = batch.to(device)
 
-            molecule_3D_repr = model(batch.x, batch.pos, batch.batch)
+            if args.3d:
+                molecule_repr = model(batch.x, batch.pos, batch.batch)
+            else:
+                molecule_repr = model(batch.x, batch.batch)
 
-            pred = molecule_3D_repr.squeeze()
+            pred = molecule_repr.squeeze()
 
             B = pred.size()[0]
             y = batch.y.view(B, -1)
