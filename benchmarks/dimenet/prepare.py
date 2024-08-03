@@ -10,9 +10,6 @@ if __name__ == "__main__":
 
     data_directory = os.environ["MILABENCH_DIR_DATA"]
 
-    # Download (or generate) the needed dataset(s). You are responsible
-    # to check if it has already been properly downloaded or not, and to
-    # do nothing if it has been.
-
+    # TODO: Handle argument for the number of samples
     dataset = PCQM4Mv2Subset(10000, root=data_directory)
     # If there is nothing to download or generate, just delete this file.

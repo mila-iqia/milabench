@@ -1,6 +1,6 @@
 from types import SimpleNamespace as NS
 
-from torch_geometric.nn.models import DimeNet as _DimeNet
+from torch_geometric.nn.models import PNA as _PNA, DimeNet as _DimeNet
 
 models = {}
 
@@ -26,5 +26,16 @@ def DimeNet(args):
             num_before_skip=1,
             num_after_skip=2,
             num_output_layers=3,
+        ),
+    )
+
+
+@register_model
+def PNA(args):
+    return NS(
+        category="2d",
+        model=_PNA(
+            hidden_channels=64,
+            # TODO: Need help to know what parameters to use.
         ),
     )
