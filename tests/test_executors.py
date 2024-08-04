@@ -197,11 +197,11 @@ def test_njobs_gpus_executor():
     acc = 0
     for r in proceed(njobs.execute()):
         if r.event == "start":
-            assert r.data["command"][0].endswith("torchrun")
+            assert r.data["command"][0].endswith("benchrun")
         acc += 1
         print(r)
 
-    assert acc == len(devices) * 72
+    assert acc == len(devices) * 70
 
 
 def test_njobs_gpu_executor():
