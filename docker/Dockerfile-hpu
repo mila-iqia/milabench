@@ -1,1 +1,69 @@
 
+FROM ubuntu:22.04
+
+# Arguments
+# ---------
+
+ARG ARCH=rocm
+ENV MILABENCH_GPU_ARCH=$ARCH
+
+ARG CONFIG=standard.yaml
+ENV MILABENCH_CONFIG_NAME=$CONFIG
+ENV MILABENCH_DOCKER=1
+
+ARG PYTHON=3.10
+
+
+# Paths
+# -----
+
+ENV MILABENCH_CONFIG=/milabench/milabench/config/$MILABENCH_CONFIG_NAME
+ENV MILABENCH_BASE=/milabench/envs
+ENV MILABENCH_OUTPUT=/milabench/results/
+ENV MILABENCH_ARGS=""
+ENV CONDA_PATH=/opt/anaconda
+
+
+# Copy milabench
+# --------------
+
+WORKDIR /milabench
+COPY . /milabench/milabench/
+
+
+# Install Dependencies
+# --------------------
+
+#            curl: used to download anaconda
+#             git: used by milabench
+#           rustc: used by BERT models inside https://pypi.org/project/tokenizers/
+# build-essential: for rust
+
+RUN apt-get update &&\
+    apt-get install -y git build-essential curl python3.10 &&\
+    apt-get clean &&\
+    rm -rf /var/lib/apt/lists/*
+
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Install Milabench
+# -----------------
+
+RUN python3 -m pip install -U pip            &&\
+    python3 -m pip install -U setuptools     &&\
+    python3 -m pip install -U poetry         &&\
+    python3 -m pip install -e /milabench/milabench/ &&\
+    python3 -m pip cache purge
+
+
+# Prepare bench
+# -------------
+
+# pip times out often when downloading pytorch
+ENV PIP_DEFAULT_TIMEOUT=800
+
+RUN milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
+    python3 -m pip cache purge
+
+CMD ["milabench", "run"]
