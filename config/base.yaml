@@ -429,7 +429,7 @@ _lightning:
     --loader: pytorch
     --data: "{milabench_data}/FakeImageNet"
     --model: resnet152
-    --batch-size: 16
+    --batch-size: 256
 
 lightning:
   inherits: _lightning
@@ -546,6 +546,7 @@ llm-lora-ddp-gpus:
 
 
 llm-lora-ddp-nodes:
+  max_duration: 3600
   inherits: _llm
   plan:
     method: njobs
@@ -611,6 +612,7 @@ llm-full-mp-gpus:
 
 
 llm-full-mp-nodes:
+  max_duration: 3600
   inherits: _llm
   plan:
     method: njobs

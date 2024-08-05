@@ -1,9 +1,40 @@
 import getpass
 import os
-
+import socket
+import subprocess
 from coleo import tooled
 
 from ..system import get_gpu_capacity
+
+
+def gethostname(host):
+    try:
+        return subprocess.check_output(["ssh", host, "cat", "/etc/hostname"], text=True).strip()
+    except:
+        print("Could not resolve hostname")
+        return host
+
+
+def getip(ip):
+    # This does get a good IP for everything except the local node
+    
+    hostname, _, iplist = socket.gethostbyaddr(ip)
+    if len(iplist) > 1:
+        print("Multiple IP found")
+
+
+    from milabench.system import get_remote_ip
+
+    resolved = iplist[0]
+    if resolved.startswith("127.0"):
+        ips = get_remote_ip()
+        for ip in ips:
+            if "." in ip and not ip.startswith("127.0"):
+                return ip
+    
+        return resolved
+    
+    return resolved
 
 
 @tooled
@@ -15,9 +46,11 @@ def cli_slurm_system():
     def make_node(i, ip):
         node = {
             "name": ip,
-            "ip": ip,
+            "ip": getip(ip),
+            "hostname": gethostname(ip),
             "user": getpass.getuser(),
             "main": i == 0,
+            "sshport": 22,
         }
 
         if i == 0:

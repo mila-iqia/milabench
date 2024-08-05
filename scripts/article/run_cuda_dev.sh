@@ -15,7 +15,7 @@ export MILABENCH_BASE="$MILABENCH_WORDIR/results"
 export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/standard.yaml"
 export MILABENCH_VENV="$MILABENCH_WORDIR/env"
 export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
-
+export MILABENCH_SYSTEM="$MILABENCH_WORDIR/system.yaml"
 
 if [ -z "${MILABENCH_PREPARE}" ]; then
     export MILABENCH_PREPARE=0
@@ -53,10 +53,13 @@ install_prepare() {
 
     # milabench pin --variant cuda --from-scratch "$@" 
 
+
+    milabench slurm_system > $MILABENCH_WORDIR/system.yaml
+
     #
     # Install milabench's benchmarks in their venv
     #
-    milabench install "$@"
+    milabench install --system $MILABENCH_WORDIR/system.yaml "$@"
 
     which pip
     # pip install -e $MILABENCH_WORDIR/voir
@@ -79,7 +82,7 @@ install_prepare() {
 
     #
     #   Generate/download datasets, download models etc...
-    milabench prepare "$@"
+    milabench prepare --system $MILABENCH_WORDIR/system.yaml "$@"
 }
 
 module load cuda/12.3.2
@@ -114,7 +117,7 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     # milabench prepare "$@"
     #
     #   Run the benchmakrs
-    milabench run "$@"
+    milabench run --system $MILABENCH_WORDIR/system.yaml "$@"
 
     #
     #   Display report

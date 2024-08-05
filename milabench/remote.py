@@ -75,6 +75,45 @@ def should_run_for(worker, setup_for):
     return worker["main"]
 
 
+def worker_commands(pack, worker_plan, setup_for="worker"):
+    nodes = pack.config["system"]["nodes"]
+    copy = []
+    node_packs = []
+
+    for node in nodes:
+        node_pack = None
+
+        if should_run_for(node, setup_for):
+            node_pack = worker_pack(pack, node)
+
+            cmds = worker_plan(node_pack, node)
+
+            if not isinstance(cmds, list):
+                cmds = [cmds]
+            copy.extend(cmds)
+
+        node_packs.append(node_pack)
+
+    return ListCommand(*copy)
+
+
+def sshnode(node, cmd):
+    host = node["ip"]
+    user = node["user"]
+    port = node["sshport"]
+    return SSHCommand(cmd, user=user, host=host, port=port)
+
+
+def copy_folder(pack, folder, setup_for="worker"):
+    def copy_to_worker(nodepack, node):
+        return [
+             sshnode(node, CmdCommand(nodepack, "mkdir", "-p", folder)),
+             CmdCommand(nodepack, *rsync(node, folder))
+        ]
+    return worker_commands(pack, copy_to_worker, setup_for=setup_for)
+
+
+
 def milabench_remote_setup_plan(pack, setup_for="worker") -> SequenceCommand:
     """Copy milabench source files to remote
 
@@ -87,14 +126,7 @@ def milabench_remote_setup_plan(pack, setup_for="worker") -> SequenceCommand:
     copy = []
     node_packs = []
 
-    for node in nodes:
-        node_pack = None
-
-        if should_run_for(node, setup_for):
-            node_pack = worker_pack(pack, node)
-            copy.append(CmdCommand(node_pack, *rsync(node, INSTALL_FOLDER)))
-
-        node_packs.append(node_pack)
+    copy_source = copy_folder (INSTALL_FOLDER)
 
     install = []
     for i, node in enumerate(nodes):
@@ -102,7 +134,7 @@ def milabench_remote_setup_plan(pack, setup_for="worker") -> SequenceCommand:
             install.append(pip_install_milabench(node_packs[i], node, INSTALL_FOLDER))
 
     return SequenceCommand(
-        ListCommand(*copy),
+        copy_source,
         ListCommand(*install),
     )
 
