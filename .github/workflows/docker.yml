@@ -53,6 +53,7 @@ jobs:
         run: |
           # Prune all images older than 2 weeks
           # The images are still on github registry
+          cat /etc/docker/daemon.json
           docker image prune -f -a --filter "until=336h"
           docker system prune -f
 
