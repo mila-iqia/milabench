@@ -4,24 +4,25 @@ FROM ubuntu:22.04
 # Arguments
 # ---------
 
-ARG ARCH=rocm
+ARG ARCH=hpu
 ENV MILABENCH_GPU_ARCH=$ARCH
 
 ARG CONFIG=standard.yaml
 ENV MILABENCH_CONFIG_NAME=$CONFIG
 ENV MILABENCH_DOCKER=1
 
-ARG PYTHON=3.10
+ARG PYTHON="3.10"
 
+ENV HABANA_INSTALLER=https://vault.habana.ai/artifactory/gaudi-installer/1.16.1/habanalabs-installer.sh
 
 # Paths
 # -----
 
 ENV MILABENCH_CONFIG=/milabench/milabench/config/$MILABENCH_CONFIG_NAME
 ENV MILABENCH_BASE=/milabench/envs
-ENV MILABENCH_OUTPUT=/milabench/results/
 ENV MILABENCH_ARGS=""
-ENV CONDA_PATH=/opt/anaconda
+ENV MILABENCH_OUTPUT="$MILABENCH_BASE/runs"
+ENV BENCHMARK_VENV="$MILABENCH_BASE/venv"
 
 
 # Copy milabench
@@ -40,9 +41,11 @@ COPY . /milabench/milabench/
 # build-essential: for rust
 
 RUN apt-get update &&\
-    apt-get install -y git build-essential curl python3.10 &&\
+    apt-get install -y git build-essential curl python3.10 python-is-python3 python3-pip &&\
     apt-get clean &&\
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* &&\
+    curl -L -o habana_installer.sh -s ${HABANA_INSTALLER} &&\
+    chmod +x habana_installer.sh
 
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
@@ -50,20 +53,28 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 # Install Milabench
 # -----------------
 
-RUN python3 -m pip install -U pip            &&\
-    python3 -m pip install -U setuptools     &&\
-    python3 -m pip install -U poetry         &&\
-    python3 -m pip install -e /milabench/milabench/ &&\
-    python3 -m pip cache purge
-
+# Have to install habana in the system env too...
+# so we can monitor the HPU..
+RUN python -m pip install -U pip                      &&\
+    python -m pip install -U setuptools               &&\
+    python -m pip install -U poetry                   &&\
+    python -m pip install -e /milabench/milabench/    &&\
+    ./habana_installer.sh install -t dependencies     &&\
+    ./habana_installer.sh install -t pytorch          &&\
+    python -m pip cache purge
 
 # Prepare bench
 # -------------
 
 # pip times out often when downloading pytorch
 ENV PIP_DEFAULT_TIMEOUT=800
+ENV HABANALABS_VIRTUAL_DIR=$BENCHMARK_VENV/torch
 
-RUN milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
-    python3 -m pip cache purge
+# Install habana in the benchmark environment
+RUN milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS  &&\
+    ./habana_installer.sh install -t dependencies --venv -y                              &&\
+    ./habana_installer.sh install -t pytorch --venv -y                                   &&\
+    python -m pip cache purge    &&\
+    rm -rf habana_installer.sh
 
 CMD ["milabench", "run"]

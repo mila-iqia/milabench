@@ -15,6 +15,10 @@ ENV MILABENCH_GPU_ARCH=$ARCH
 ENV MILABENCH_CONFIG_NAME=$CONFIG
 ENV MILABENCH_DOCKER=1
 
+ENV CUDA_VER=12.1
+ENV MELLANOX_KEY="https://content.mellanox.com/ofed/RPM-GPG-KEY-Mellanox"
+ENV MELLANOX_LIST="https://linux.mellanox.com/public/repo/mlnx_ofed/${MOFED_VERSION}/ubuntu22.04/mellanox_mlnx_ofed.list"
+
 # Paths
 # -----
 
@@ -42,17 +46,17 @@ COPY . /milabench/milabench/
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update -y &&\
     apt-get install -y --no-install-recommends git build-essential curl python3.10 python-is-python3 python3-pip &&\
-    curl -o /etc/apt/trusted.gpg.d/mellanox.asc https://content.mellanox.com/ofed/RPM-GPG-KEY-Mellanox &&\
-    curl -o /etc/apt/sources.list.d/mellanox.list https://linux.mellanox.com/public/repo/mlnx_ofed/${MOFED_VERSION}/ubuntu22.04/mellanox_mlnx_ofed.list &&\
+    curl -o /etc/apt/trusted.gpg.d/mellanox.asc $MELLANOX_KEY &&\
+    curl -o /etc/apt/sources.list.d/mellanox.list $MELLANOX_LIST &&\
     apt-get update -y &&\
     apt-get install -y --no-install-recommends libibverbs1 &&\
     apt-get clean &&\
-    rm -rf /var/lib/apt/lists/* 
+    rm -rf /var/lib/apt/lists/*
 
 # Install Rust
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
-ENV CUDA_HOME=/usr/local/cuda-12.1
+ENV CUDA_HOME="/usr/local/cuda-${CUDA_VER}"
 
 # Install Milabench
 # -----------------
@@ -71,6 +75,6 @@ RUN python -m pip install -U pip            &&\
 ENV PIP_DEFAULT_TIMEOUT=800
 
 RUN milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
-    python -m pip cache purge                                                          
+    python -m pip cache purge
 
 CMD milabench run

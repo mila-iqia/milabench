@@ -3,7 +3,7 @@ name: Publish Docker image
 on:
   # Allow manual runs
   workflow_dispatch:
-  
+
   # Only run for push on the main branch or for tagged version
   push:
     branches:
@@ -15,13 +15,10 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
-
 permissions:
   packages: write
 
-
 # define build arguments
-
 jobs:
   build-image:
     strategy:
@@ -30,8 +27,10 @@ jobs:
         include:
           - arch: cuda
           - arch: rocm
+          - arch: xpu
+          - arch: hpu
 
-    runs-on: ubuntu-latest 
+    runs-on: ubuntu-latest
 
     permissions:
       contents: read
@@ -45,7 +44,7 @@ jobs:
           remove-haskell: 'true'
           remove-android: 'true'
           build-mount-path: /home/runner/work/milabench/
-          
+
       - name: Show all images
         run: |
           docker image ls
@@ -56,7 +55,7 @@ jobs:
           # The images are still on github registry
           docker image prune -f -a --filter "until=336h"
           docker system prune -f
-          sudo apt install jq -y 
+          sudo apt install jq -y
           jq '. + { "data-root": "/home/runner/work/milabench/docker" }' /etc/docker/daemon.json > newconfig.json
           sudo mv -f newconfig.json /etc/docker/daemon.json
           cat /etc/docker/daemon.json
@@ -68,7 +67,7 @@ jobs:
 
       - name: Check out the repo
         uses: actions/checkout@v3
-      
+
       - name: Get Image Tag Name
         env:
           GITHUB_REF_NAME_ENV: ${{ github.ref_name }}
@@ -79,14 +78,14 @@ jobs:
               IMAGE_TAG="${GITHUB_REF_NAME##*/}"
           fi
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
-    
+
       - name: Log in to the registry
         uses: docker/login-action@v2
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Extract metadata (tags, labels) for the image
         id: meta
         uses: docker/metadata-action@v4

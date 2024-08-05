@@ -1,1 +1,79 @@
 
+
+FROM ubuntu:22.04
+
+# Arguments
+# ---------
+
+ARG ARCH=xpu
+ENV MILABENCH_GPU_ARCH=$ARCH
+
+ARG CONFIG=standard.yaml
+ENV MILABENCH_CONFIG_NAME=$CONFIG
+ENV MILABENCH_DOCKER=1
+
+ARG PYTHON="3.10"
+
+ENV XPU_MANAGER="V1.2.36/xpumanager_1.2.36_20240428.081009.377f9162.u22.04_amd64.deb"
+
+# Paths
+# -----
+
+ENV MILABENCH_CONFIG=/milabench/milabench/config/$MILABENCH_CONFIG_NAME
+ENV MILABENCH_BASE=/milabench/base
+ENV MILABENCH_ARGS=""
+
+ENV MILABENCH_OUTPUT="$MILABENCH_BASE/runs"
+ENV BENCHMARK_VENV="$MILABENCH_BASE/venv"
+
+# Copy milabench
+# --------------
+
+WORKDIR /milabench
+COPY . /milabench/milabench/
+
+
+# Install Dependencies
+# --------------------
+
+#            curl: used to download anaconda
+#             git: used by milabench
+#           rustc: used by BERT models inside https://pypi.org/project/tokenizers/
+# build-essential: for rust
+
+RUN apt-get update &&\
+    apt-get install -y git build-essential curl python3.10 python-is-python3 python3-pip &&\
+    apt-get clean &&\
+    rm -rf /var/lib/apt/lists/* &&\
+    curl -L -o xpu_manager.deb -s https://github.com/intel/xpumanager/releases/download/${XPU_MANAGER} &&\
+    dpkg -i xpu_manager.deb &&\
+    rm -rf xpu_manager.deb
+
+
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Install Milabench
+# -----------------
+
+RUN python -m pip install -U pip            &&\
+    python -m pip install -U setuptools     &&\
+    python -m pip install -U poetry         &&\
+    python -m pip install -e /milabench/milabench/ &&\
+    python -m pip cache purge
+
+
+# Prepare bench
+# -------------
+
+# pip times out often when downloading pytorch
+ENV PIP_DEFAULT_TIMEOUT=800
+
+# Uninstall default pytorch
+# reinstall pytorch with the right extensions...
+RUN milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
+    /bin/bash -c "source $BENCHMARK_VENV/torch/bin/activate && pip uninstall torch torchvision torchaudio" &&\
+    /bin/bash -c "source $BENCHMARK_VENV/torch/bin/activate && pip install torch torchvision torchaudio intel-extension-for-pytorch oneccl_bind_pt intel-extension-for-pytorch-deepspeed --index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/" &&\
+    python -m pip cache purge
+
+CMD ["milabench", "run"]
