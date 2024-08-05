@@ -57,7 +57,8 @@ jobs:
           docker system prune -f
           docker info
           sudo apt install jq -y 
-          sudo bash -c "jq '. + { \"data-root\": \"/home/runner/work/milabench/milabench\" }' /etc/docker/daemon.json > /etc/docker/daemon.json"
+          jq '. + { "data-root": "/home/runner/work/milabench/milabench" }' /etc/docker/daemon.json > newconfig.json
+          sudo mv -f newconfig.json /etc/docker/daemon.json
           cat /etc/docker/daemon.json
           sudo systemctl stop docker.service
           sudo systemctl stop docker.socket
