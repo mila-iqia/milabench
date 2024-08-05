@@ -59,8 +59,8 @@ jobs:
           cat /etc/docker/daemon.json
           sudo systemctl stop docker.service
           sudo systemctl stop docker.socket
-          sudo systemctl start docker.service
           sudo systemctl start docker.socket
+          sudo systemctl start docker.service
           docker info
           docker image prune -f -a --filter "until=336h"
           docker system prune -f
