@@ -53,6 +53,7 @@ jobs:
         run: |
           # Prune all images older than 2 weeks
           # The images are still on github registry
+          docker/build-push-action
           sudo apt install jq -y 
           sudo jq --arg dataRoot "/home/runner/work/milabench/milabench" '. + { "data-root": $dataRoot }' "/etc/docker/daemon.json"
           cat /etc/docker/daemon.json
