@@ -1,7 +1,7 @@
 # FROM ubuntu:22.04
 
 # For cuda-gdb
-FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
+FROM nvidia/cuda:12.1.0-devel-ubuntu22.04
 
 # Arguments
 # ---------
@@ -41,7 +41,7 @@ COPY . /milabench/milabench/
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update -y &&\
-    apt-get install -y --no-install-recommends git build-essential curl python3 python-is-python3 python3-pip &&\
+    apt-get install -y --no-install-recommends git build-essential curl python3.10 python-is-python3 python3-pip &&\
     curl -o /etc/apt/trusted.gpg.d/mellanox.asc https://content.mellanox.com/ofed/RPM-GPG-KEY-Mellanox &&\
     curl -o /etc/apt/sources.list.d/mellanox.list https://linux.mellanox.com/public/repo/mlnx_ofed/${MOFED_VERSION}/ubuntu22.04/mellanox_mlnx_ofed.list &&\
     apt-get update -y &&\
