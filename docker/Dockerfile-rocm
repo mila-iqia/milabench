@@ -44,15 +44,6 @@ RUN apt-get update &&\
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
-# Install Python
-# --------------
-
-# Install anaconda because milabench will need it later anyway
-RUN curl https://repo.anaconda.com/miniconda/Miniconda3-py39_23.1.0-1-Linux-x86_64.sh -o ~/miniconda.sh && \
-    /bin/bash ~/miniconda.sh -b -p $CONDA_PATH && rm ~/miniconda.sh
-ENV PATH=$CONDA_PATH/bin:$PATH
-
-
 # Install Milabench
 # -----------------
 
