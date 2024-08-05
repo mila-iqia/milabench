@@ -40,7 +40,7 @@ COPY . /milabench/milabench/
 # build-essential: for rust
 
 RUN apt-get update &&\
-    apt-get install -y git build-essential curl python3.10 &&\
+    apt-get install -y git build-essential curl python3.10 python-is-python3 python3-pip &&\
     apt-get clean &&\
     rm -rf /var/lib/apt/lists/*
 
@@ -50,11 +50,11 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 # Install Milabench
 # -----------------
 
-RUN python3 -m pip install -U pip            &&\
-    python3 -m pip install -U setuptools     &&\
-    python3 -m pip install -U poetry         &&\
-    python3 -m pip install -e /milabench/milabench/ &&\
-    python3 -m pip cache purge
+RUN python -m pip install -U pip            &&\
+    python -m pip install -U setuptools     &&\
+    python -m pip install -U poetry         &&\
+    python -m pip install -e /milabench/milabench/ &&\
+    python -m pip cache purge
 
 
 # Prepare bench
@@ -64,6 +64,6 @@ RUN python3 -m pip install -U pip            &&\
 ENV PIP_DEFAULT_TIMEOUT=800
 
 RUN milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
-    python3 -m pip cache purge
+    python -m pip cache purge
 
 CMD ["milabench", "run"]
