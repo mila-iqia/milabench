@@ -55,7 +55,7 @@ jobs:
           # The images are still on github registry
           docker info
           sudo apt install jq -y 
-          sudo jq --arg dataRoot "/home/runner/work/milabench/milabench" '. + { "data-root": $dataRoot }' "/etc/docker/daemon.json"
+          sudo jq --arg dataRoot "/home/runner/work/milabench/milabench" '. + { "data-root": $dataRoot }' "/etc/docker/daemon.json" > /etc/docker/daemon.json
           cat /etc/docker/daemon.json
           sudo systemctl stop docker.service
           sudo systemctl stop docker.socket
