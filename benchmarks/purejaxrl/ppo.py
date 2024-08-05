@@ -15,6 +15,8 @@ from wrappers import (
     NormalizeVecReward,
     ClipAction,
 )
+from benchmate.metrics import give_push
+import time
 
 
 class ActorCritic(nn.Module):
@@ -67,6 +69,7 @@ class Transition(NamedTuple):
 
 
 def make_train(config):
+    metric_pusher = give_push()
     config["NUM_UPDATES"] = (
         config["TOTAL_TIMESTEPS"] // config["NUM_STEPS"] // config["NUM_ENVS"]
     )
@@ -89,7 +92,7 @@ def make_train(config):
         )
         return config["LR"] * frac
 
-    def train(rng):
+    def train(rng, start_time):
         # INIT NETWORK
         network = ActorCritic(
             env.action_space(env_params).shape[0], activation=config["ACTIVATION"]
@@ -259,21 +262,19 @@ def make_train(config):
             train_state = update_state[0]
             metric = traj_batch.info
             rng = update_state[-1]
-            if config.get("DEBUG"):
 
-                def callback(info):
-                    return_values = info["returned_episode_returns"][
-                        info["returned_episode"]
-                    ]
-                    timesteps = (
-                        info["timestep"][info["returned_episode"]] * config["NUM_ENVS"]
-                    )
-                    for t in range(len(timesteps)):
-                        print(
-                            f"global step={timesteps[t]}, episodic return={return_values[t]}"
-                        )
+            def callback(info, start_time):
+                return_values = info["returned_episode_returns"][
+                    info["returned_episode"]
+                ].mean()
+                timesteps = (
+                    info["timestep"][info["returned_episode"]] * config["NUM_ENVS"]
+                ).mean()
+                tsps = timesteps / (time.perf_counter() - start_time)
+                metric_pusher(progress=tsps.item(), units="steps/s")
+                metric_pusher(returns=return_values.item())
 
-                jax.debug.callback(callback, metric)
+            jax.debug.callback(callback, metric, start_time)
 
             runner_state = (train_state, env_state, last_obs, rng)
             return runner_state, metric
@@ -288,12 +289,12 @@ def make_train(config):
     return train
 
 
-if __name__ == "__main__":
+def main():
     config = {
         "LR": 3e-4,
         "NUM_ENVS": 2048,
         "NUM_STEPS": 10,
-        "TOTAL_TIMESTEPS": 5e5,
+        "TOTAL_TIMESTEPS": 5e7,
         "UPDATE_EPOCHS": 4,
         "NUM_MINIBATCHES": 32,
         "GAMMA": 0.99,
@@ -306,8 +307,12 @@ if __name__ == "__main__":
         "ENV_NAME": "hopper",
         "ANNEAL_LR": False,
         "NORMALIZE_ENV": True,
-        "DEBUG": False,
     }
     rng = jax.random.PRNGKey(30)
     train_jit = jax.jit(make_train(config))
-    out = train_jit(rng)
+    compiled_fn = train_jit.lower(rng, 0.0).compile()
+    out = compiled_fn(rng, time.perf_counter())
+
+
+if __name__ == "__main__":
+    main()

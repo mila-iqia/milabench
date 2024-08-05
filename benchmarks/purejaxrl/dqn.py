@@ -14,6 +14,8 @@ from flax.training.train_state import TrainState
 from gymnax.wrappers.purerl import FlattenObservationWrapper, LogWrapper
 import gymnax
 import flashbax as fbx
+from benchmate.metrics import give_push
+import time
 
 
 class QNetwork(nn.Module):
@@ -46,6 +48,7 @@ class CustomTrainState(TrainState):
 def make_train(config):
 
     config["NUM_UPDATES"] = config["TOTAL_TIMESTEPS"] // config["NUM_ENVS"]
+    metric_pusher = give_push()
 
     basic_env, env_params = gymnax.make(config["ENV_NAME"])
     env = FlattenObservationWrapper(basic_env)
@@ -58,7 +61,7 @@ def make_train(config):
         env.step, in_axes=(0, 0, 0, None)
     )(jax.random.split(rng, n_envs), env_state, action, env_params)
 
-    def train(rng):
+    def train(rng, start_time):
 
         # INIT ENV
         rng, _rng = jax.random.split(rng)
@@ -223,11 +226,18 @@ def make_train(config):
                 "returns": info["returned_episode_returns"].mean(),
             }
 
-            def callback(metrics):
-                if metrics["timesteps"] % 10000 == 0:
-                    print(metrics)
+            def callback(metrics, start_time):
+                if metrics["timesteps"] % 1000 == 0:
+                    current_time = time.perf_counter()
+                    tsps = metrics["timesteps"] / (current_time - start_time)
+                    ups = metrics["updates"] / (current_time - start_time)
+                    metric_pusher(progress=tsps.item(), units="steps/s")
+                    metric_pusher(update_progress=ups.item(), units="updates/s")
+                    metric_pusher(
+                        returns=metrics["returns"].item(), loss=metrics["loss"].item()
+                    )
 
-            jax.debug.callback(callback, metrics)
+            jax.debug.callback(callback, metrics, start_time)
 
             runner_state = (train_state, buffer_state, env_state, obs, rng)
 
@@ -270,8 +280,9 @@ def main():
 
     rng = jax.random.PRNGKey(config["SEED"])
     rngs = jax.random.split(rng, config["NUM_SEEDS"])
-    train_vjit = jax.jit(jax.vmap(make_train(config)))
-    outs = jax.block_until_ready(train_vjit(rngs))
+    train_vjit = jax.jit(jax.vmap(make_train(config), in_axes=(0, None)))
+    compiled_fn = train_vjit.lower(rngs, 0.0).compile()
+    outs = jax.block_until_ready(compiled_fn(rngs, time.perf_counter()))
 
 
 if __name__ == "__main__":

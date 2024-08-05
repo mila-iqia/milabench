@@ -4,23 +4,30 @@
 # clone_subtree in the benchfile.py, in which case this file can simply
 # be deleted.
 
-import time
-import random
-
-from benchmate.observer import BenchObserver
-import voir
-from voir import give
-
-
-def criterion(*args, **kwargs):
-    return random.normalvariate(0, 1)
+import argparse
 
 
 def main():
+    parser = argparse.ArgumentParser(description="PureJaxRL")
+    parser.add_argument(
+        "-b",
+        "--benchmark",
+        type=str,
+        choices=["dqn", "ppo"],
+        default="dqn",
+        help="Benchmark to run",
+    )
+    args = parser.parse_args()
+    if args.benchmark == "dqn":
+        from benchmarks.purejaxrl.dqn import main
 
-    for i in voir.iterate("train", range(100), report_batch=True, batch_size=64):
-        give(loss=1 / (i + 1))
-        time.sleep(0.1)
+        main()
+    elif args.benchmark == "ppo":
+        from benchmarks.purejaxrl.ppo import main
+
+        main()
+    else:
+        raise ValueError(f"Unknown benchmark: {args.benchmark}")
 
 
 if __name__ == "__main__":
