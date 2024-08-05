@@ -58,6 +58,7 @@ jobs:
           sudo jq --arg dataRoot "/home/runner/work/milabench/milabench" '. + { "data-root": $dataRoot }' "/etc/docker/daemon.json"
           cat /etc/docker/daemon.json
           sudo systemctl restart docker
+          docker info
           docker image prune -f -a --filter "until=336h"
           docker system prune -f
 
