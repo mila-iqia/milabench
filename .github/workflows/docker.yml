@@ -44,6 +44,7 @@ jobs:
           remove-codeql: 'true'
           remove-haskell: 'true'
           remove-android: 'true'
+          build-mount-path: /home/runner/work/milabench/
           
       - name: Show all images
         run: |
@@ -56,7 +57,7 @@ jobs:
           docker image prune -f -a --filter "until=336h"
           docker system prune -f
           sudo apt install jq -y 
-          jq '. + { "data-root": "/home/runner/work/milabench/milabench/docker" }' /etc/docker/daemon.json > newconfig.json
+          jq '. + { "data-root": "/home/runner/work/milabench/docker" }' /etc/docker/daemon.json > newconfig.json
           sudo mv -f newconfig.json /etc/docker/daemon.json
           cat /etc/docker/daemon.json
           sudo systemctl stop docker.service
