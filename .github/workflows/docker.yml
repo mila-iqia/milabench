@@ -55,9 +55,8 @@ jobs:
           # The images are still on github registry
           docker image prune -f -a --filter "until=336h"
           docker system prune -f
-          docker info
           sudo apt install jq -y 
-          jq '. + { "data-root": "/home/runner/work/milabench/milabench" }' /etc/docker/daemon.json > newconfig.json
+          jq '. + { "data-root": "/home/runner/work/milabench/milabench/docker" }' /etc/docker/daemon.json > newconfig.json
           sudo mv -f newconfig.json /etc/docker/daemon.json
           cat /etc/docker/daemon.json
           sudo systemctl stop docker.service
