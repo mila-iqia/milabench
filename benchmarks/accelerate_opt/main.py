@@ -72,7 +72,6 @@ import torch
 import transformers
 from accelerate import Accelerator
 from accelerate.logging import get_logger
-from accelerate.utils import DummyOptim, DummyScheduler
 from accelerate.utils.dataclasses import InitProcessGroupKwargs
 from datasets import load_dataset
 from torch.utils.data import DataLoader
@@ -171,6 +170,7 @@ def main():
         )
 
     model_name = config["model_name"]
+    print("HERE")
     model_config = AutoConfig.from_pretrained(model_name)
     tokenizer = AutoTokenizer.from_pretrained(
         model_name,
@@ -229,7 +229,9 @@ def main():
     if is_prepare_phase:
         return
 
+    print("make model")
     model = AutoModelForCausalLM.from_config(model_config)
+    print("make model done")
 
     model.resize_token_embeddings(len(tokenizer))
 
@@ -270,12 +272,12 @@ def main():
     ]
     # New Code #
     # Creates Dummy Optimizer if `optimizer` was specified in the config file else creates Adam Optimizer
-    optimizer_cls = (
-        torch.optim.AdamW
-        if accelerator.state.deepspeed_plugin is None
-        or "optimizer" not in accelerator.state.deepspeed_plugin.deepspeed_config
-        else DummyOptim
-    )
+    if accelerator.state.deepspeed_plugin is None or "optimizer" not in accelerator.state.deepspeed_plugin.deepspeed_config:
+        optimizer_cls = torch.optim.AdamW
+    else:
+        from accelerate.utils import DummyOptim, DummyScheduler
+        optimizer_cls = DummyOptim
+
     optimizer = optimizer_cls(optimizer_grouped_parameters, lr=5e-5)
     # Scheduler and math around the number of training steps.
 
