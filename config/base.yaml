@@ -677,3 +677,19 @@ dinov2-giant-gpus:
     train.batch_size_per_gpu=32: true
     train.saveckp_freq=100: true
     train.num_workers=10: true
+
+
+_purejaxrl:
+  inherits: _defaults
+  definition: ../benchmarks/purejaxrl
+  plan:
+    method: per_gpu
+dqn:
+  inherits: _purejaxrl
+  argv:
+    --benchmark: dqn
+
+ppo:
+  inherits: _purejaxrl
+  argv:
+    --benchmark: ppo

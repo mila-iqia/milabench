@@ -1,7 +1,15 @@
-
-template:
+_purejaxrl:
   inherits: _defaults
   definition: .
-  install-variant: unpinned
   plan:
     method: per_gpu
+
+dqn:
+  inherits: _purejaxrl
+  argv:
+    --benchmark: dqn
+
+ppo:
+  inherits: _purejaxrl
+  argv:
+    --benchmark: ppo
