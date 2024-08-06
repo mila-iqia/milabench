@@ -21,7 +21,7 @@ class Config:
     stop: int = 20
 
     # Number of seconds between each gpu poll
-    gpu_poll: int = 3
+    gpu_poll: int = 0.5
 
 
 @configurable
@@ -33,6 +33,6 @@ def instrument_main(ov, options: Config):
 
     ov.require(
         log("value", "progress", "rate", "units", "loss", "gpudata", context="task"),
-        early_stop(n=options.stop, key="rate", task="train"),
+        # early_stop(n=options.stop, key="rate", task="train"),
         monitor_monogpu(poll_interval=options.gpu_poll),
     )

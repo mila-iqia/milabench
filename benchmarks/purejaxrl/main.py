@@ -5,27 +5,30 @@
 # be deleted.
 
 import argparse
+import argklass
+
+
+from dqn import add_dqn_command, main as dqn_main
+from ppo import add_ppo_command, main as ppo_main
 
 
 def main():
-    parser = argparse.ArgumentParser(description="PureJaxRL")
-    parser.add_argument(
-        "-b",
-        "--benchmark",
-        type=str,
-        choices=["dqn", "ppo"],
-        default="dqn",
-        help="Benchmark to run",
-    )
+    parser = argklass.ArgumentParser(description="PureJaxRL")
+    subparser = parser.add_subparsers(title="Benchmark", dest="benchmark")
+
+    add_dqn_command(subparser)
+    add_ppo_command(subparser)
+
+    bench = {
+        "dqn": dqn_main,
+        "ppo": ppo_main
+    }
+
     args = parser.parse_args()
-    if args.benchmark == "dqn":
-        from benchmarks.purejaxrl.dqn import main
 
-        main()
-    elif args.benchmark == "ppo":
-        from benchmarks.purejaxrl.ppo import main
+    if benchmark := bench.get(args.benchmark):
+        benchmark(args)
 
-        main()
     else:
         raise ValueError(f"Unknown benchmark: {args.benchmark}")
 

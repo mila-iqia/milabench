@@ -18,8 +18,8 @@ install:
 prepare:
 	milabench prepare $(MILABENCH_ARGS)
 
-tests: install prepare
-	milabench run $(MILABENCH_ARGS)
+tests:#  install prepare
+	CUDA_VISIBLE_DEVICES=0 milabench run $(MILABENCH_ARGS)
 
 single:
 	milabench run $(MILABENCH_ARGS) --select $(BENCH_NAME)-single

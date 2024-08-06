@@ -1,3 +1,6 @@
+from dataclasses import dataclass
+import time
+
 import jax
 import jax.numpy as jnp
 import flax.linen as nn
@@ -7,6 +10,8 @@ from flax.linen.initializers import constant, orthogonal
 from typing import Sequence, NamedTuple, Any
 from flax.training.train_state import TrainState
 import distrax
+from benchmate.metrics import give_push
+
 from wrappers import (
     LogWrapper,
     BraxGymnaxWrapper,
@@ -15,8 +20,8 @@ from wrappers import (
     NormalizeVecReward,
     ClipAction,
 )
-from benchmate.metrics import give_push
-import time
+
+
 
 
 class ActorCritic(nn.Module):
@@ -69,7 +74,9 @@ class Transition(NamedTuple):
 
 
 def make_train(config):
-    metric_pusher = give_push()
+    from benchmate.timings import StepTimer
+    step_timer = StepTimer(give_push())
+
     config["NUM_UPDATES"] = (
         config["TOTAL_TIMESTEPS"] // config["NUM_STEPS"] // config["NUM_ENVS"]
     )
@@ -92,7 +99,7 @@ def make_train(config):
         )
         return config["LR"] * frac
 
-    def train(rng, start_time):
+    def train(rng):
         # INIT NETWORK
         network = ActorCritic(
             env.action_space(env_params).shape[0], activation=config["ACTIVATION"]
@@ -263,18 +270,19 @@ def make_train(config):
             metric = traj_batch.info
             rng = update_state[-1]
 
-            def callback(info, start_time):
-                return_values = info["returned_episode_returns"][
-                    info["returned_episode"]
-                ].mean()
-                timesteps = (
-                    info["timestep"][info["returned_episode"]] * config["NUM_ENVS"]
-                ).mean()
-                tsps = timesteps / (time.perf_counter() - start_time)
-                metric_pusher(progress=tsps.item(), units="steps/s")
-                metric_pusher(returns=return_values.item())
+            metrics = {
+                "loss": loss_info,
+            }
 
-            jax.debug.callback(callback, metric, start_time)
+            def callback(info):
+                total_loss, (value_loss, loss_actor, entropy) = info["loss"]
+                loss = total_loss.mean().item()
+
+                step_timer.step(config["NUM_ENVS"] * config["NUM_STEPS"])
+                step_timer.log(loss=loss)
+                step_timer.end()
+                
+            jax.debug.callback(callback, metrics)
 
             runner_state = (train_state, env_state, last_obs, rng)
             return runner_state, metric
@@ -296,7 +304,7 @@ class Arguments:
     num_envs: int =  2048
     num_steps: int =  10
     total_timesteps: float = 50_000_000
-    upate_epochs: int =  4
+    update_epochs: int =  4
     num_minibatches: int = 32
     gamma: float = 0.99
     gae_lambda: float = 0.95
@@ -311,7 +319,7 @@ class Arguments:
 
 
 def add_ppo_command(subparser):
-    parser = subparsers.add_parser('dqn', help='RL dqn benchmark')
+    parser = subparser.add_parser('ppo', help='RL dqn benchmark')
     parser.add_arguments(Arguments)
 
 
@@ -339,8 +347,12 @@ def main(args: Arguments = None):
     }
     rng = jax.random.PRNGKey(30)
     train_jit = jax.jit(make_train(config))
-    compiled_fn = train_jit.lower(rng, 0.0).compile()
-    out = compiled_fn(rng, time.perf_counter())
+    compiled_fn = train_jit.lower(rng).compile()
+
+    from benchmate.monitor import bench_monitor
+
+    with bench_monitor():
+        out = compiled_fn(rng)
 
 
 if __name__ == "__main__":
