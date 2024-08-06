@@ -15,6 +15,8 @@ import tyro
 from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
 import torchcompat.core as acc
+from benchmate.metrics import give_push
+
 
 @dataclass
 class Args:
@@ -155,6 +157,8 @@ def main():
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
     args.num_iterations = args.total_timesteps // args.batch_size
     run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
+    metric_pusher = give_push()
+    
     if args.track:
         import wandb
 
@@ -340,7 +344,10 @@ def main():
         writer.add_scalar("losses/explained_variance", explained_var, global_step)
         print("SPS:", int(global_step / (time.time() - start_time)))
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
-
+        
+        metric_pusher(progress=int(global_step / (time.time() - start_time)), unit="steps/s")
+        metric_pusher(loss=loss.item(), avg_returns=np.average(avg_returns))
+        
     envs.close()
     writer.close()
 
