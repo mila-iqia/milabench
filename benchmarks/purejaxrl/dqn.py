@@ -255,27 +255,55 @@ def make_train(config):
     return train
 
 
+@dataclass
+class Arguments:
+    lr: float = 3e-4
+    num_envs: int =  2048
+    num_steps: int =  10
+    total_timesteps: float = 50_000_000
+    upate_epochs: int =  4
+    num_minibatches: int = 32
+    gamma: float = 0.99
+    gae_lambda: float = 0.95
+    clip_eps: float = 0.2
+    ent_coef: float = 0.0
+    vf_coef: float = 0.5
+    max_grad_norm: float = 0.5
+    activation: str = "tanh"
+    env_name: str = "hopper"
+    anneal_lr: bool = False
+    normalize_env: bool = True
+
+
+def add_ppo_command(subparser):
+    parser = subparsers.add_parser('dqn', help='RL dqn benchmark')
+    parser.add_arguments(Arguments)
+
+
+def main(args: Arguments = None):
+    if args is None:
+        args = Arguments()
+
+
 def main():
 
     config = {
-        "NUM_ENVS": 10,
-        "BUFFER_SIZE": 10000,
-        "BUFFER_BATCH_SIZE": 128,
-        "TOTAL_TIMESTEPS": 5e5,
-        "EPSILON_START": 1.0,
-        "EPSILON_FINISH": 0.05,
-        "EPSILON_ANNEAL_TIME": 25e4,
-        "TARGET_UPDATE_INTERVAL": 500,
-        "LR": 2.5e-4,
-        "LEARNING_STARTS": 10000,
-        "TRAINING_INTERVAL": 10,
-        "LR_LINEAR_DECAY": False,
-        "GAMMA": 0.99,
-        "TAU": 1.0,
-        "ENV_NAME": "CartPole-v1",
-        "SEED": 0,
-        "NUM_SEEDS": 1,
-        "PROJECT": "",
+        "LR": args.lr,
+        "NUM_ENVS": args.num_envs,
+        "NUM_STEPS": args.num_steps,
+        "TOTAL_TIMESTEPS": args.total_timesteps,
+        "UPDATE_EPOCHS": args.update_epochs,
+        "NUM_MINIBATCHES": args.num_minibatches,
+        "GAMMA": args.gamma,
+        "GAE_LAMBDA": args.gae_lambda,
+        "CLIP_EPS": args.clip_eps,
+        "ENT_COEF": args.ent_coef,
+        "VF_COEF": args.vf_coef,
+        "MAX_GRAD_NORM": args.max_grad_norm,
+        "ACTIVATION": args.activation,
+        "ENV_NAME": args.env_name,
+        "ANNEAL_LR": args.anneal_lr,
+        "NORMALIZE_ENV": args.normalize_env,
     }
 
     rng = jax.random.PRNGKey(config["SEED"])

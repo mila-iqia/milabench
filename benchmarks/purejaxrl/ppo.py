@@ -289,24 +289,53 @@ def make_train(config):
     return train
 
 
-def main():
+
+@dataclass
+class Arguments:
+    lr: float = 3e-4
+    num_envs: int =  2048
+    num_steps: int =  10
+    total_timesteps: float = 50_000_000
+    upate_epochs: int =  4
+    num_minibatches: int = 32
+    gamma: float = 0.99
+    gae_lambda: float = 0.95
+    clip_eps: float = 0.2
+    ent_coef: float = 0.0
+    vf_coef: float = 0.5
+    max_grad_norm: float = 0.5
+    activation: str = "tanh"
+    env_name: str = "hopper"
+    anneal_lr: bool = False
+    normalize_env: bool = True
+
+
+def add_ppo_command(subparser):
+    parser = subparsers.add_parser('dqn', help='RL dqn benchmark')
+    parser.add_arguments(Arguments)
+
+
+def main(args: Arguments = None):
+    if args is None:
+        args = Arguments()
+
     config = {
-        "LR": 3e-4,
-        "NUM_ENVS": 2048,
-        "NUM_STEPS": 10,
-        "TOTAL_TIMESTEPS": 5e7,
-        "UPDATE_EPOCHS": 4,
-        "NUM_MINIBATCHES": 32,
-        "GAMMA": 0.99,
-        "GAE_LAMBDA": 0.95,
-        "CLIP_EPS": 0.2,
-        "ENT_COEF": 0.0,
-        "VF_COEF": 0.5,
-        "MAX_GRAD_NORM": 0.5,
-        "ACTIVATION": "tanh",
-        "ENV_NAME": "hopper",
-        "ANNEAL_LR": False,
-        "NORMALIZE_ENV": True,
+        "LR": args.lr,
+        "NUM_ENVS": args.num_envs,
+        "NUM_STEPS": args.num_steps,
+        "TOTAL_TIMESTEPS": args.total_timesteps,
+        "UPDATE_EPOCHS": args.update_epochs,
+        "NUM_MINIBATCHES": args.num_minibatches,
+        "GAMMA": args.gamma,
+        "GAE_LAMBDA": args.gae_lambda,
+        "CLIP_EPS": args.clip_eps,
+        "ENT_COEF": args.ent_coef,
+        "VF_COEF": args.vf_coef,
+        "MAX_GRAD_NORM": args.max_grad_norm,
+        "ACTIVATION": args.activation,
+        "ENV_NAME": args.env_name,
+        "ANNEAL_LR": args.anneal_lr,
+        "NORMALIZE_ENV": args.normalize_env,
     }
     rng = jax.random.PRNGKey(30)
     train_jit = jax.jit(make_train(config))
