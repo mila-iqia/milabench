@@ -1,0 +1,15 @@
+_purejaxrl:
+  inherits: _defaults
+  definition: .
+  plan:
+    method: per_gpu
+
+dqn:
+  inherits: _purejaxrl
+  argv:
+    --benchmark: dqn
+
+ppo:
+  inherits: _purejaxrl
+  argv:
+    --benchmark: ppo

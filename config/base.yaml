@@ -635,3 +635,18 @@ llm-full-mp-nodes:
     - "len(nodes) >= ${num_machines}"
 
 
+_purejaxrl:
+  inherits: _defaults
+  definition: ../benchmarks/purejaxrl
+  plan:
+    method: per_gpu
+dqn:
+  inherits: _purejaxrl
+  argv:
+    --benchmark: dqn
+
+ppo:
+  inherits: _purejaxrl
+  argv:
+    --benchmark: ppo
+
