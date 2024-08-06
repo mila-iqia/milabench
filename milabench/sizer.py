@@ -339,16 +339,16 @@ def new_argument_resolver(pack):
     context = deepcopy(system_config)
 
     arch = context.get("arch", "cpu")
+    device_count_used = 1
+    device_count_system = len(get_gpu_info()["gpus"])
 
     if hasattr(pack, "config"):
-        device_count = len(pack.config.get("devices", [0]))
-    else:
-        device_count = len(get_gpu_info()["gpus"])
+        device_count_used = len(pack.config.get("devices", [0]))
+
+    if device_count_used <= 0:
+        device_count_used = 1
 
     ccl = {"hpu": "hccl", "cuda": "nccl", "rocm": "rccl", "xpu": "ccl", "cpu": "gloo"}
-
-    if device_count <= 0:
-        device_count = 1
 
     cpu_opt = CPUOptions()
     def auto(value, default):
@@ -363,7 +363,7 @@ def new_argument_resolver(pack):
     total_available = total_cpu - cpu_opt.reserved_cores
 
     context["cpu_count"] = total_available
-    context["cpu_per_gpu"] = total_available // device_count
+    context["cpu_per_gpu"] = total_available // device_count_system
     context["n_worker"] = clamp(context["cpu_per_gpu"])
 
     if cpu_opt.n_workers is not None:
