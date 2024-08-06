@@ -4,6 +4,8 @@ import socket
 from dataclasses import dataclass, field
 import sys
 from contextlib import contextmanager
+import ipaddress
+
 import psutil
 import yaml
 from voir.instruments.gpu import get_gpu_info
@@ -249,6 +251,21 @@ def get_remote_ip():
     return set(result)
 
 
+
+
+
+def is_loopback(address: str) -> bool:
+    try:
+        # Create an IP address object
+        ip = ipaddress.ip_address(address)
+        # Check if the address is a loopback address
+        return ip.is_loopback
+    except ValueError:
+        # If the address is invalid, return False
+        return False
+
+
+
 def _resolve_ip(ip):
     hostname = ip
     aliaslist = []
@@ -327,7 +344,9 @@ def resolve_addresses(nodes):
             or (hostname in ("localhost", socket.gethostname(), "127.0.0.1"))
             or (socket.gethostname().startswith(hostname))
             or len(ip_list.intersection(ipaddrlist)) > 0
+            or any([is_loopback(ip) for ip in ipaddrlist])
         )
+
         # cn-g005 cn-g005.server.mila.quebec
         # print(hostname, socket.gethostname())
         node["local"] = is_local

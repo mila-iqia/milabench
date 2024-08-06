@@ -95,21 +95,6 @@ else
 fi
 
 
-(
-    . $MILABENCH_WORDIR/env/bin/activate
-    pip show setuptools
-    pip show pip
-    pip install git+https://github.com/Delaunay/voir.git@patch-8
-)
-
-(
-    . $BENCHMARK_VENV/bin/activate
-    pip show setuptools
-    pip show pip
-    pip install git+https://github.com/Delaunay/voir.git@patch-8
-)
-
-
 if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     cd $MILABENCH_WORDIR
     

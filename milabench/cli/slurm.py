@@ -4,7 +4,7 @@ import socket
 import subprocess
 from coleo import tooled
 
-from ..system import get_gpu_capacity
+from ..system import get_gpu_capacity, is_loopback
 
 
 def gethostname(host):
@@ -15,26 +15,14 @@ def gethostname(host):
         return host
 
 
-def getip(ip):
-    # This does get a good IP for everything except the local node
-    
+def resolve_hostname(ip):
     hostname, _, iplist = socket.gethostbyaddr(ip)
-    if len(iplist) > 1:
-        print("Multiple IP found")
 
+    for ip in iplist:
+        if is_loopback(ip):
+            return hostname, True
 
-    from milabench.system import get_remote_ip
-
-    resolved = iplist[0]
-    if resolved.startswith("127.0"):
-        ips = get_remote_ip()
-        for ip in ips:
-            if "." in ip and not ip.startswith("127.0"):
-                return ip
-    
-        return resolved
-    
-    return resolved
+    return hostname, False
 
 
 @tooled
@@ -42,14 +30,17 @@ def cli_slurm_system():
     """Generate a system file based of slurm environment variables"""
 
     node_list = expand_node_list(os.getenv("SLURM_JOB_NODELIST", ""))
+    
 
     def make_node(i, ip):
+        hostname, local = resolve_hostname(ip)
+
         node = {
             "name": ip,
-            "ip": getip(ip),
+            "ip": hostname,
             "hostname": gethostname(ip),
             "user": getpass.getuser(),
-            "main": i == 0,
+            "main": local,
             "sshport": 22,
         }
 
@@ -59,9 +50,20 @@ def cli_slurm_system():
         return node
 
     # nvidia-smi --query-gpu=memory.total --format=csv
+
+    nodes = [make_node(i, ip) for i, ip in enumerate(node_list)]
+
+    # ensure there is a main
+    # either it is the local node or first node
+    for node in nodes:
+        if node.get("main", False):
+            break
+    else:
+        nodes[0]["main"] = True
+
     system = {
         "arch": "cuda",
-        "nodes": [make_node(i, ip) for i, ip in enumerate(node_list)],
+        "nodes": nodes,
     }
 
     capacity = get_gpu_capacity()
