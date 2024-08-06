@@ -169,7 +169,7 @@ def multipack_args(conf: Arguments):
                     "ip": f"192.168.0.{i + 10}" if i != 0 else "127.0.0.1",
                     "user": "username",
                     "main": i == 0,
-                    "port": 22,
+                    "sshport": 22,
                 }
                 for i in range(conf.nnodes)
             ],

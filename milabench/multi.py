@@ -83,6 +83,23 @@ def make_execution_plan(pack, step=0, repeat=1):
 
     return exec_plan
 
+async def copy_base_to_workers(setup):
+    # Note: when we use docker we do not need to install
+    # so this should be ignored
+    if is_main_local(setup) and is_multinode(setup):
+        print("Coping main setup from this node to worker")
+        # copy the main setup to the workers
+        # so it copies the bench venv already, no need for python
+        from milabench.remote import copy_folder
+        from milabench.system import SystemConfig
+
+        # we copy the entire content of base
+        #   FIXME: handle custom (venv, cache, data, etc...) directories
+        #  
+        copy_plan = copy_folder(setup, SystemConfig().base)
+        remote_task = asyncio.create_task(copy_plan.execute())
+        await asyncio.wait([remote_task])
+
 
 class MultiPackage:
     def __init__(self, packs):
@@ -140,6 +157,7 @@ class MultiPackage:
         remote_task = None
 
         if is_remote(setup):
+            print("Current node is outside of our system")
             # We are outside system, setup the main node first
             remote_plan = milabench_remote_install(setup, setup_for="main")
             remote_task = asyncio.create_task(remote_plan.execute())
@@ -148,14 +166,17 @@ class MultiPackage:
             # We do not install benchmarks on that node
             return
 
-        elif is_main_local(setup) and is_multinode(setup):
-            # We are the main node, setup workers
-            remote_plan = milabench_remote_install(setup, setup_for="worker")
-            remote_task = asyncio.create_task(remote_plan.execute())
+        # elif is_main_local(setup) and is_multinode(setup):
+        #     # this was executing install on the remote node but then it needed python to be available
+        #     # We are the main node, setup workers
+        #     remote_plan = milabench_remote_install(setup, setup_for="worker")
+        #     remote_task = asyncio.create_task(remote_plan.execute())
 
         # do the installation step
         with phase_lock("install"):
             await self.do_phase("install", remote_task, "checked_install")
+
+        await copy_base_to_workers(setup)
 
     async def do_prepare(self):
         setup = self.setup_pack()
@@ -168,12 +189,16 @@ class MultiPackage:
 
             return
 
-        elif is_main_local(setup) and is_multinode(setup):
-            remote_plan = milabench_remote_prepare(setup, run_for="worker")
-            remote_task = asyncio.create_task(remote_plan.execute())
+        # elif is_main_local(setup) and is_multinode(setup):
+        #     remote_plan = milabench_remote_prepare(setup, run_for="worker")
+        #     remote_task = asyncio.create_task(remote_plan.execute())
 
         with phase_lock("prepare"):
             await self.do_phase("prepare", remote_task, "prepare")
+
+        # Prepare is done on the main node
+        # copy the result there
+        await copy_base_to_workers(setup)
 
     async def do_run(self, repeat=1):
         setup = self.setup_pack()

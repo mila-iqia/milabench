@@ -231,7 +231,7 @@ def select_nodes(nodes, n):
     ranked = []
 
     for node in nodes:
-        if node["main"]:
+        if node.get("main", False):
             ranked.insert(0, node)
         else:
             ranked.append(node)
@@ -242,7 +242,7 @@ def select_nodes(nodes, n):
 def enumerate_rank(nodes):
     rank = 1
     for node in nodes:
-        if node["main"]:
+        if node.get("main", False):
             yield 0, node
         else:
             yield rank, node

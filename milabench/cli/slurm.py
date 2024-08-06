@@ -1,9 +1,28 @@
 import getpass
 import os
-
+import socket
+import subprocess
 from coleo import tooled
 
-from ..system import get_gpu_capacity
+from ..system import get_gpu_capacity, is_loopback
+
+
+def gethostname(host):
+    try:
+        return subprocess.check_output(["ssh", host, "cat", "/etc/hostname"], text=True).strip()
+    except:
+        print("Could not resolve hostname")
+        return host
+
+
+def resolve_hostname(ip):
+    hostname, _, iplist = socket.gethostbyaddr(ip)
+
+    for ip in iplist:
+        if is_loopback(ip):
+            return hostname, True
+
+    return hostname, False
 
 
 @tooled
@@ -11,13 +30,18 @@ def cli_slurm_system():
     """Generate a system file based of slurm environment variables"""
 
     node_list = expand_node_list(os.getenv("SLURM_JOB_NODELIST", ""))
+    
 
     def make_node(i, ip):
+        hostname, local = resolve_hostname(ip)
+
         node = {
             "name": ip,
-            "ip": ip,
+            "ip": hostname,
+            "hostname": gethostname(ip),
             "user": getpass.getuser(),
-            "main": i == 0,
+            "main": local,
+            "sshport": 22,
         }
 
         if i == 0:
@@ -26,9 +50,20 @@ def cli_slurm_system():
         return node
 
     # nvidia-smi --query-gpu=memory.total --format=csv
+
+    nodes = [make_node(i, ip) for i, ip in enumerate(node_list)]
+
+    # ensure there is a main
+    # either it is the local node or first node
+    for node in nodes:
+        if node.get("main", False):
+            break
+    else:
+        nodes[0]["main"] = True
+
     system = {
         "arch": "cuda",
-        "nodes": [make_node(i, ip) for i, ip in enumerate(node_list)],
+        "nodes": nodes,
     }
 
     capacity = get_gpu_capacity()

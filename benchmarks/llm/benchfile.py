@@ -1,7 +1,7 @@
 from milabench.pack import Package
 
 
-from milabench.commands import TorchrunAllGPU
+from milabench.commands import TorchrunAllGPU, TorchrunAllNodes, ForeachNode
 from milabench.pack import BasePackage
 from milabench.commands import SimpleCommand
 
@@ -15,7 +15,18 @@ class Torchtune(TorchrunAllGPU):
     #    return True
 
     def __init__(self, pack: BasePackage, *torchrun_args, **kwargs):
-        super().__init__(pack, *torchrun_args, module=False, **kwargs)
+        super().__init__(pack, "run", *torchrun_args, module=False, **kwargs)
+
+
+class TorchtuneAllNodes(TorchrunAllNodes):
+    def __init__(self, executor, *args, **kwargs) -> None:
+        base_exec = TorchrunAllNodes.make_base_executor(
+            Torchtune, 
+            executor,
+            *args, 
+            **kwargs
+        )
+        ForeachNode.__init__(self, base_exec)
 
 
 class Llm(Package):
@@ -31,7 +42,7 @@ class Llm(Package):
 
     def build_run_plan(self):
         exec = SimpleCommand(self)
-        return Torchtune(exec, "run").use_stdout()
+        return TorchtuneAllNodes(exec).use_stdout()
 
 
 __pack__ = Llm
