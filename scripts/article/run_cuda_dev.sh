@@ -99,6 +99,8 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     cd $MILABENCH_WORDIR
     
 
+    milabench prepare --system $MILABENCH_WORDIR/system.yaml "$@"
+    
     # milabench prepare "$@"
     #
     #   Run the benchmakrs

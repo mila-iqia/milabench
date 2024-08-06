@@ -70,9 +70,9 @@ def milabench_remote_sync(pack, worker):
 
 def should_run_for(worker, setup_for):
     if setup_for == "worker":
-        return not worker["main"]
+        return not worker.get("main", False)
 
-    return worker["main"]
+    return worker.get("main", False)
 
 
 def worker_commands(pack, worker_plan, setup_for="worker"):
@@ -178,7 +178,7 @@ def is_multinode(pack):
     count = 0
     nodes = pack.config["system"]["nodes"]
     for node in nodes:
-        if not node["main"]:
+        if not node.get("main", False):
             count += 1
     return count > 0
 
@@ -191,12 +191,12 @@ def is_remote(pack):
 def is_main_local(pack):
     """Only the local main can send remote commands to remote"""
     self = pack.config["system"]["self"]
-    return self is not None and self["local"] and self["main"]
+    return self is not None and self["local"] and self.get("main", False)
 
 
 def is_worker(pack):
     self = pack.config["system"]["self"]
-    return self is not None and (not self["main"])
+    return self is not None and (not self.get("main", False))
 
 
 def _sanity(pack, setup_for):

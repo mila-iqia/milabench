@@ -242,7 +242,7 @@ def select_nodes(nodes, n):
 def enumerate_rank(nodes):
     rank = 1
     for node in nodes:
-        if node["main"]:
+        if node.get("main", False):
             yield 0, node
         else:
             yield rank, node
