@@ -467,6 +467,11 @@ class SSHCommand(WrapperCommand):
         # the main node
         return False
 
+    def _load_env(self, node):
+        if node.get("env", None):
+            return node["env"]
+        return []
+
     def _argv(self, **kwargs) -> List:
         # No-op when executing on a local node
         if self.is_local():
@@ -478,12 +483,13 @@ class SSHCommand(WrapperCommand):
         host = f"{user}@{self.host}" if user else self.host
 
         argv = super()._argv(**kwargs)
-        argv.extend(["-oPasswordAuthentication=no"])
-        argv.extend(["-p", str(self.port)])
-
         if key:
-            argv.append(f"-i{key}")
+            # scp apparently needs `-i` to be first
+            argv.insert(1, f"-i{key}")
+        argv.append(f"-p{self.port}")
         argv.append(host)
+
+        argv.extend(self._load_env(node))
 
         return argv
 
@@ -495,21 +501,27 @@ class SCPCommand(SSHCommand, CmdCommand):
         self,
         pack: pack.BasePackage,
         host: str,
-        directory: str,
+        src: str,
         *scp_argv,
+        dest: str = None,
         user: str = None,
         key: str = None,
         **kwargs,
     ) -> None:
         super().__init__(pack, host, "-r", *scp_argv, user=user, key=key, **kwargs)
-        self.dir = directory
+        self.src = src
+        self.dest = dest if dest is not None else self.src
+
+    def _load_env(self, node):
+        del node
+        return []
 
     def _argv(self, **kwargs) -> List:
         argv = super()._argv(**kwargs)
 
         host = argv.pop()
-        argv.append(self.dir)
-        argv.append(f"{host}:{self.dir}")
+        argv.append(self.src)
+        argv.append(f"{host}:{self.dest}")
 
         return argv
 
@@ -927,6 +939,13 @@ class AccelerateLaunchCommand(SingleCmdCommand):
     def _argv(self, **_) -> List:
         manager, nodes = self._get_main_and_workers()
 
+        # Find local ip such that workers can connect to the port
+        for manager_ip in manager["ipaddrlist"]:
+            if ":" in manager_ip or manager_ip == "127.0.0.1":
+                continue
+            if all(str.isnumeric(n) for n in manager_ip.split(".")):
+                break
+
         num_machines = max(1, len(nodes) + 1)
 
         # Cant do that maybe this run is constrained
@@ -964,9 +983,9 @@ class AccelerateLaunchCommand(SingleCmdCommand):
             f"--machine_rank={self.rank}",
             f"--num_machines={num_machines}",
             *deepspeed_argv,
-            f"--gradient_accumulation_steps={self.pack.config.get('gradient_accumulation_steps', 1)}",
-            f"--num_cpu_threads_per_process={cpu_per_process}",
-            f"--main_process_ip={manager['ip']}",
+            f"--gradient_accumulation_steps={self.pack.config['gradient_accumulation_steps']}",
+            f"--num_cpu_threads_per_process={self.pack.config['argv']['--cpus_per_gpu']}",
+            f"--main_process_ip={manager_ip}",
             f"--main_process_port={manager['port']}",
             f"--num_processes={nproc}",
             *self.accelerate_argv,
