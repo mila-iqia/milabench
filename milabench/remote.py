@@ -2,16 +2,11 @@ from copy import deepcopy
 import os
 import sys
 
-import yaml
-
-from milabench.fs import XPath
-
 from . import ROOT_FOLDER
 from .commands import (
     CmdCommand,
     Command,
     ListCommand,
-    SCPCommand,
     SequenceCommand,
     SSHCommand,
     VoidCommand,

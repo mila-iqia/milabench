@@ -98,6 +98,7 @@ def executor(executor_cls, args, *argv):
             assert result and result[0]
 
             all_connection_attributes, _ = result
+            ssh_key_file:str = None
             for hostname, connection_attributes in all_connection_attributes.items():
                 print(f"hostname::>{hostname}")
                 for attribute,value in connection_attributes.items():
@@ -105,17 +106,55 @@ def executor(executor_cls, args, *argv):
                         continue
                     print(f"{attribute}::>{value}")
 
+                ssh_key_file = (
+                    ssh_key_file or connection_attributes["ssh_key_file"]
+                )
+
+            if len(all_connection_attributes) >= 1:
+                fn = pathlib.Path(ssh_key_file)
+                dispatch_id = ct.dispatch(
+                    ct.lattice(executor.cp_to_remote), disable_run=False
+                )(f".ssh/{fn.name.split('.')[0]}", str(fn))
+
+                result = ct.get_result(dispatch_id=dispatch_id, wait=True).result
+
         if argv:
             dispatch_id = ct.dispatch(
-                ct.lattice(
-                    lambda:ct.electron(_popen, executor=executor)(argv)
-                ),
-                disable_run=False
+                ct.lattice(executor.list_running_instances), disable_run=False
             )()
 
             result = ct.get_result(dispatch_id=dispatch_id, wait=True).result
 
-            return_code, _, _ = result if result is not None else (1, "", "")
+            assert result
+
+            dispatch_ids = set()
+            for connection_attributes in result.get(
+                (executor.state_prefix, executor.state_id),
+                {"env": None}
+            ).values():
+                kwargs = {
+                    **_get_executor_kwargs(args),
+                    **connection_attributes
+                }
+                del kwargs["env"]
+
+                _executor:ct.executor.BaseExecutor = executor_cls(**kwargs)
+
+                dispatch_ids.add(
+                    ct.dispatch(
+                        ct.lattice(
+                            lambda:ct.electron(_popen, executor=_executor)(argv)
+                        ),
+                        disable_run=False
+                    )()
+                )
+
+            for dispatch_id in dispatch_ids:
+                result = ct.get_result(dispatch_id=dispatch_id, wait=True).result
+
+                _return_code, _, _ = result if result is not None else (1, "", "")
+                return_code = return_code or _return_code
+
     finally:
         if args.teardown:
             result = executor.stop_cloud_instance().result

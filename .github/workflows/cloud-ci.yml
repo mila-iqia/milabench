@@ -36,7 +36,7 @@ jobs:
 
     env:
       MILABENCH_CONFIG: "config/standard.yaml"
-      MILABENCH_SYSTEM: "config/cloud-system.yaml"
+      MILABENCH_SYSTEM: "config/cloud-multinodes-system.yaml"
       MILABENCH_BASE: "output"
       MILABENCH_ARGS: ""
       MILABENCH_DASH: "no"
@@ -98,15 +98,18 @@ jobs:
 
       - name: install benchmarks
         run: |
-          poetry run milabench install --variant ${{ matrix.arch }}
+          poetry run milabench install --variant ${{ matrix.arch }} \
+            --exclude llm-full-mp-gpus,llm-full-mp-nodes,llm-lora-ddp-gpus,llm-lora-ddp-nodes,llm-lora-mp-gpus,llm-lora-single
 
       - name: prepare benchmarks
         run: |
-          poetry run milabench prepare
+          poetry run milabench prepare \
+            --exclude llm-full-mp-gpus,llm-full-mp-nodes,llm-lora-ddp-gpus,llm-lora-ddp-nodes,llm-lora-mp-gpus,llm-lora-single
 
       - name: run benchmarks
         run: |
-          poetry run milabench run
+          poetry run milabench run \
+            --exclude llm-full-mp-gpus,llm-full-mp-nodes,llm-lora-ddp-gpus,llm-lora-ddp-nodes,llm-lora-mp-gpus,llm-lora-single
 
       - name: Summary
         run: |
@@ -117,6 +120,11 @@ jobs:
           poetry run milabench report --push
         env:
           GITHUB_TOKEN: ${{ github.token }}
+
+      - name: DEBUG state file
+        if: always()
+        run: |
+          cat /tmp/milabench/covalent_venv/lib/python*/site-packages/covalent_azure_plugin/infra/*.tfstate
 
       - name: teardown cloud
         if: always()
@@ -130,7 +138,7 @@ jobs:
             --run-on ${{ matrix.run_on }} \
             --all
 
-      - name: debug logs
+      - name: DEBUG logs
         if: always()
         run: |
           cat ~/.cache/covalent/covalent_ui.log

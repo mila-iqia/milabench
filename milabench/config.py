@@ -150,6 +150,7 @@ def build_config(*config_files):
     for layer in _config_layers(config_files):
         all_configs = merge(all_configs, layer)
 
+    all_configs.setdefault("*", {})
     all_configs["*"]["hash"] = compute_config_hash(all_configs)
 
     all_configs = build_matrix_bench(all_configs)

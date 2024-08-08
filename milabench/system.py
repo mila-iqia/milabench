@@ -258,6 +258,10 @@ def _resolve_ip(ip):
     if not offline:
         # Resolve the IP
         try:
+            # Workaround error with `gethostbyaddr` on azure DNS (like
+            # `inmako.eastus2.cloudapp.azure.com`). A proper fix might be a
+            # correct network config in terraform.
+            # socket.herror: [Errno 1] Unknown host
             hostname, aliaslist, ipaddrlist = socket.gethostbyname_ex(ip)
             lazy_raise = None
         

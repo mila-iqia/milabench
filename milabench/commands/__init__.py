@@ -939,6 +939,13 @@ class AccelerateLaunchCommand(SingleCmdCommand):
     def _argv(self, **_) -> List:
         manager, nodes = self._get_main_and_workers()
 
+        # Find local ip such that workers can connect to the port
+        for manager_ip in manager["ipaddrlist"]:
+            if ":" in manager_ip or manager_ip == "127.0.0.1":
+                continue
+            if all(str.isnumeric(n) for n in manager_ip.split(".")):
+                break
+
         num_machines = max(1, len(nodes) + 1)
 
         # Cant do that maybe this run is constrained
@@ -976,9 +983,9 @@ class AccelerateLaunchCommand(SingleCmdCommand):
             f"--machine_rank={self.rank}",
             f"--num_machines={num_machines}",
             *deepspeed_argv,
-            f"--gradient_accumulation_steps={self.pack.config.get('gradient_accumulation_steps', 1)}",
-            f"--num_cpu_threads_per_process={cpu_per_process}",
-            f"--main_process_ip={manager['ip']}",
+            f"--gradient_accumulation_steps={self.pack.config['gradient_accumulation_steps']}",
+            f"--num_cpu_threads_per_process={self.pack.config['argv']['--cpus_per_gpu']}",
+            f"--main_process_ip={manager_ip}",
             f"--main_process_port={manager['port']}",
             f"--num_processes={nproc}",
             *self.accelerate_argv,
