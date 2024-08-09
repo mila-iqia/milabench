@@ -456,7 +456,7 @@ class SSHCommand(WrapperCommand):
         if localnode is not None:
             return (False
                 # The ip belongs to the local node
-                or self.host in localnode["ipaddrlist"]
+                or self.host in localnode.get("ipaddrlist", [])
                 # The hostname is the local node
                 or self.host == localnode["hostname"]  
             )

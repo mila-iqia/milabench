@@ -4,25 +4,9 @@ import socket
 import subprocess
 from coleo import tooled
 
-from ..system import get_gpu_capacity, is_loopback
+from ..system import get_gpu_capacity, is_loopback, resolve_hostname, gethostname
 
 
-def gethostname(host):
-    try:
-        return subprocess.check_output(["ssh", host, "cat", "/etc/hostname"], text=True).strip()
-    except:
-        print("Could not resolve hostname")
-        return host
-
-
-def resolve_hostname(ip):
-    hostname, _, iplist = socket.gethostbyaddr(ip)
-
-    for ip in iplist:
-        if is_loopback(ip):
-            return hostname, True
-
-    return hostname, False
 
 
 def make_node_list_from_slurm(node_list):

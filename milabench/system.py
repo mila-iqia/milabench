@@ -3,6 +3,7 @@ import os
 import socket
 from dataclasses import dataclass, field
 import sys
+import subprocess
 from contextlib import contextmanager
 import ipaddress
 
@@ -274,9 +275,6 @@ def get_remote_ip():
     return set(result)
 
 
-
-
-
 def is_loopback(address: str) -> bool:
     try:
         # Create an IP address object
@@ -344,7 +342,7 @@ def enable_offline(enabled):
     offline = old
 
 
-def resolve_addresses(nodes):
+def _resolve_addresses(nodes):
     # Note: it is possible for self to be none
     # if we are running milabench on a node that is not part of the system
     # in that case it should still work; the local is then going to
@@ -383,6 +381,46 @@ def resolve_addresses(nodes):
     if not offline:
         if self is not None and lazy_raise:
             raise RuntimeError("Could not resolve node ip") from lazy_raise
+
+    return self
+
+
+def gethostname(host):
+    try:
+        return subprocess.check_output(["ssh", host, "cat", "/etc/hostname"], text=True).strip()
+    except:
+        print("Could not resolve hostname")
+        return host
+
+
+def resolve_hostname(ip):
+    hostname, _, iplist = socket.gethostbyaddr(ip)
+
+    for ip in iplist:
+        if is_loopback(ip):
+            return hostname, True
+
+    return hostname, False
+
+
+def resolve_node_address(node):
+    hostname, local = resolve_hostname(node["ip"])
+
+    node["hostname"] = hostname
+    node["local"] = local
+
+    if local:
+        node["hostname"] = socket.gethostname()
+        
+    return local
+
+
+def resolve_addresses(nodes):
+    self = None
+    
+    for node in nodes:
+        if resolve_node_address(node):
+            self = node
 
     return self
 
