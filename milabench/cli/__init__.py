@@ -21,6 +21,7 @@ from .sql import cli_sqlsetup
 from .summary import cli_summary
 from .resolve import cli_resolve
 from .new import cli_new
+from .env import cli_env
 
 
 class Main:
@@ -94,6 +95,10 @@ class Main:
 
     def resolve():
         return cli_resolve()
+    
+    def env():
+        """Print milabench environment variables"""
+        cli_env()
 
 
 def main(argv=None):

@@ -2,10 +2,6 @@
 from dataclasses import dataclass
 import os
 
-from transformers import CLIPTextModel, CLIPTokenizer
-
-from diffusers import AutoencoderKL, UNet2DConditionModel, DDPMScheduler
-from datasets import load_dataset
 
 
 @dataclass
@@ -14,6 +10,7 @@ class TrainingConfig:
     dataset: str = "lambdalabs/naruto-blip-captions"
     revision: str = None
     variant: str = None
+    cache: str = None
 
 
 def main():
@@ -22,6 +19,16 @@ def main():
     parser = ArgumentParser()
     parser.add_arguments(TrainingConfig)
     args, _ = parser.parse_known_args()
+    # --
+
+    if args.cache:
+        os.environ["XDG_CACHE_HOME"] = str(args.cache)
+
+    # --
+    from transformers import CLIPTextModel, CLIPTokenizer
+    from diffusers import AutoencoderKL, UNet2DConditionModel, DDPMScheduler
+    from datasets import load_dataset
+
 
     _ = load_dataset(args.dataset)
 

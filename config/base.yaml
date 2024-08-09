@@ -402,6 +402,7 @@ _diffusion:
     --num_epochs: 5
     --batch_size: 32
     --num_workers: "auto({n_worker}, 8)"
+    --cache: "{milabench_cache}"
 
 diffusion-single:
   inherits: _diffusion
@@ -414,6 +415,8 @@ diffusion-gpus:
   num_machines: 1
 
 diffusion-nodes:
+  tags:
+    - multinode
   inherits: _diffusion
   num_machines: 2
   requires_capabilities:
@@ -463,7 +466,7 @@ dinov2-giant-single:
     method: per_gpu
 
   argv:
-    --config-file: src/dinov2/configs/train/vitg14.yaml
+    --config-file: "{benchmark_folder}/src/dinov2/configs/train/vitg14.yaml"
     # THOSE NEED TO BE LAST
     train.dataset_path=ImageNet:split=TRAIN:root={milabench_data}/FakeImageNet:extra={milabench_data}/FakeImageNet: true
     train.batch_size_per_gpu=32: true
@@ -473,7 +476,7 @@ dinov2-giant-single:
 dinov2-giant-gpus:
   inherits: _dinov2
   argv:
-    --config-file: src/dinov2/configs/train/vitg14.yaml
+    --config-file: "{benchmark_folder}/src/dinov2/configs/train/vitg14.yaml"
     # THOSE NEED TO BE LAST
     train.dataset_path=ImageNet:split=TRAIN:root={milabench_data}/FakeImageNet:extra={milabench_data}/FakeImageNet: true
     train.batch_size_per_gpu=32: true
@@ -481,12 +484,15 @@ dinov2-giant-gpus:
     train.num_workers=10: true
 
 dinov2-giant-nodes:
+  tags:
+    - multinode
+  max_duration: 3600
   inherits: _dinov2
   argv:
-    --config-file: src/dinov2/configs/train/vitg14.yaml
+    --config-file: "{benchmark_folder}/src/dinov2/configs/train/vitg14.yaml"
     # THOSE NEED TO BE LAST
-    train.dataset_path=ImageNet:split=TRAIN:root={milabench_data}/FakeImageNet:extra={milabench_data}/FakeImageNet: true
-    train.batch_size_per_gpu=32: true
+    train.dataset_path=ImageFolder:root={milabench_data}/FakeImageNet: true
+    train.batch_size_per_gpu=12: true
     train.saveckp_freq=100: true
     train.num_workers=10: true
 
@@ -546,6 +552,8 @@ llm-lora-ddp-gpus:
 
 
 llm-lora-ddp-nodes:
+  tags:
+    - multinode
   max_duration: 3600
   inherits: _llm
   plan:
@@ -612,6 +620,8 @@ llm-full-mp-gpus:
 
 
 llm-full-mp-nodes:
+  tags:
+    - multinode
   max_duration: 3600
   inherits: _llm
   plan:

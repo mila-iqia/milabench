@@ -485,7 +485,7 @@ class SSHCommand(WrapperCommand):
             argv.append(f"-i{key}")
         argv.append(host)
 
-        return argv
+        return argv # + ["env", "-i"]
 
 
 class SCPCommand(SSHCommand, CmdCommand):
@@ -872,7 +872,7 @@ class ActivatorCommand(SingleCmdCommand):
         super().__init__(pack, **kwargs)
 
     def _argv(self, **_) -> List:
-        return [f"{self.pack.dirs.code / 'activator'}", f"{self.pack.dirs.venv}"]
+        return [f"{self.pack.dirs.code / 'activator'}", f"{self.pack.dirs.venv}", f"{self.pack.dirs.cache}"]
 
 
 
@@ -894,9 +894,10 @@ class AccelerateAllNodes(ForeachNode):
         config = base.pack.config
 
         pack = self.make_new_node_pack(rank, node, base)
-    
+        executor = base.copy(pack)
+
         return DockerRunCommand(
-            AccelerateLaunchCommand(pack, rank=rank),
+            AccelerateLaunchCommand(executor, rank=rank, **self.options),
             config["system"].get("docker_image"),
         )
 
@@ -968,6 +969,8 @@ class AccelerateLaunchCommand(SingleCmdCommand):
             deepspeed_argv = []
     
         cpu_per_process = self.pack.resolve_argument('--cpus_per_gpu', 4)
+        main_port = option("torchrun.port", int, default=29400)
+
         return [
             # -- Run the command in the right venv
             # This could be inside the SSH Command
@@ -976,6 +979,7 @@ class AccelerateLaunchCommand(SingleCmdCommand):
             # inside a specifc venv
             activator_script(),
             f"{self.pack.dirs.venv}",
+            f"{self.pack.dirs.cache}",
             # --
             "accelerate",
             "launch",
@@ -987,7 +991,7 @@ class AccelerateLaunchCommand(SingleCmdCommand):
             f"--gradient_accumulation_steps={self.pack.config.get('gradient_accumulation_steps', 1)}",
             f"--num_cpu_threads_per_process={cpu_per_process}",
             f"--main_process_ip={manager['ip']}",
-            f"--main_process_port={manager['port']}",
+            f"--main_process_port={main_port}",
             f"--num_processes={nproc}",
             *self.accelerate_argv,
         ]

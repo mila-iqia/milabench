@@ -16,6 +16,21 @@ from .merge import merge
 system_global = contextvars.ContextVar("system", default=None)
 
 
+def get_gpu_capacity(strict=False):
+    try:
+        capacity = 1e24
+
+        for k, v in get_gpu_info()["gpus"].items():
+            capacity = min(v["memory"]["total"], capacity)
+
+        return int(capacity)
+    except:
+        print("GPU not available, defaulting to 0 MiB")
+        if strict:
+            raise
+        return 0
+
+
 def getenv(name, expected_type):
     value = os.getenv(name)
 
@@ -126,7 +141,7 @@ class SizerOptions:
     optimized: bool = defaultfield("sizer.optimized", int)
 
     # Set a target VRAM capacity to use
-    capacity: str = defaultfield("sizer.capacity", str)
+    capacity: str = defaultfield("sizer.capacity", str, None)
 
     # Save the batch size, VRM usage data to a scaling file
     save: str = defaultfield("sizer.save", str, None)
@@ -179,17 +194,17 @@ class Torchrun:
 
 @dataclass
 class Options:
-    sizer: SizerOptions
-    cpu: CPUOptions
-    dataset: DatasetConfig
-    dirs: Dirs
-    torchrun: Torchrun
+    sizer: SizerOptions = SizerOptions()
+    cpu: CPUOptions = CPUOptions() 
+    dataset: DatasetConfig = DatasetConfig()
+    dirs: Dirs = Dirs()
+    torchrun: Torchrun = Torchrun()
 
 
 @dataclass
 class GPUConfig:
     arch: str = defaultfield("gpu.arch", str, None)
-    capacity: str = None
+    capacity: str = defaultfield("gpu.capacity", str, str(get_gpu_capacity()))
 
 
 @dataclass
@@ -206,21 +221,29 @@ class Github:
     pat: str = defaultfield("github.path", str, None)
 
 
+def default_device():
+    try:
+        gpu_info = get_gpu_info()
+        return gpu_info["arch"]
+    except:
+        return "cpu"
+
+
 @dataclass
 class SystemConfig:
     """This is meant to be an exhaustive list of all the environment overrides"""
-    arch: str = defaultfield("gpu.arch", str, None)
-    sshkey: str = None
+    arch: str = defaultfield("gpu.arch", str, default_device())
+    sshkey: str = defaultfield("ssh", str, "~/.ssh/id_rsa")
     docker_image: str = None
     nodes: list[Nodes] = field(default_factory=list)
-    gpu: GPUConfig = None
-    options: Options = None
+    gpu: GPUConfig = GPUConfig()
+    options: Options = Options()
 
     base: str = defaultfield("base", str, None)
     config: str = defaultfield("config", str, None)
     dash: bool = defaultfield("dash", bool, 1)
     noterm: bool = defaultfield("noterm", bool, 0)
-    github: Github = None
+    github: Github = Github()
 
 
 def check_node_config(nodes):
@@ -362,21 +385,6 @@ def resolve_addresses(nodes):
             raise RuntimeError("Could not resolve node ip") from lazy_raise
 
     return self
-
-
-def get_gpu_capacity(strict=False):
-    try:
-        capacity = 0
-
-        for k, v in get_gpu_info()["gpus"].items():
-            capacity = min(v["memory"]["total"], capacity)
-
-        return int(capacity)
-    except:
-        print("GPU not available, defaulting to 0 MiB")
-        if strict:
-            raise
-        return 0
 
 
 def build_system_config(config_file, defaults=None, gpu=True):

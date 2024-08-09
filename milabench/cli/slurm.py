@@ -25,13 +25,7 @@ def resolve_hostname(ip):
     return hostname, False
 
 
-@tooled
-def cli_slurm_system():
-    """Generate a system file based of slurm environment variables"""
-
-    node_list = expand_node_list(os.getenv("SLURM_JOB_NODELIST", ""))
-    
-
+def make_node_list_from_slurm(node_list):
     def make_node(i, ip):
         hostname, local = resolve_hostname(ip)
 
@@ -60,6 +54,29 @@ def cli_slurm_system():
             break
     else:
         nodes[0]["main"] = True
+
+    return nodes
+
+
+@tooled
+def cli_slurm_system():
+    """Generate a system file based of slurm environment variables"""
+
+    node_list = expand_node_list(os.getenv("SLURM_JOB_NODELIST", ""))
+    
+    if len(node_list) > 0:
+        nodes = make_node_list_from_slurm(node_list)
+    else:
+        self = socket.gethostname()
+        nodes = [{
+            "name": self,
+            "ip": self,
+            "hostname": self,
+            "user": getpass.getuser(),
+            "main": True,
+            "sshport": 22,
+        }]
+
 
     system = {
         "arch": "cuda",
