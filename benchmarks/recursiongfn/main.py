@@ -102,7 +102,9 @@ class SEHTaskMonkeyPatch(SEHTask):
         return {"seh": model}
 
 
-def main(batch_size: int, num_workers: int, num_steps: int, layer_width: int, num_layers: int):
+def main(
+    batch_size: int, num_workers: int, num_steps: int, layer_width: int, num_layers: int
+):
     # This script runs on an A100 with 8 cpus and 32Gb memory, but the A100 is probably
     # overkill here. VRAM peaks at 6Gb and GPU usage peaks at 25%.
 
@@ -146,12 +148,22 @@ def main(batch_size: int, num_workers: int, num_steps: int, layer_width: int, nu
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description='Description of your program')
-    parser.add_argument('-b', '--batch_size', help='Batch Size', default=128)
-    parser.add_argument('-n', '--num_workers', help='Number of Workers', default=8)
-    parser.add_argument('-s', '--num_steps', help='Number of Training Steps', default=100)
-    parser.add_argument('-w', '--layer_width', help="Width of each policy hidden layer", default=128)
-    parser.add_argument('-l', '--num_layers', help="Number of hidden layers", default=4)
+    parser = argparse.ArgumentParser(description="Description of your program")
+    parser.add_argument("-b", "--batch_size", help="Batch Size", default=128)
+    parser.add_argument("-n", "--num_workers", help="Number of Workers", default=8)
+    parser.add_argument(
+        "-s", "--num_steps", help="Number of Training Steps", default=100
+    )
+    parser.add_argument(
+        "-w", "--layer_width", help="Width of each policy hidden layer", default=128
+    )
+    parser.add_argument("-l", "--num_layers", help="Number of hidden layers", default=4)
     args = parser.parse_args()
 
-    main(args.batch_size, args.num_workers, args.num_steps, args.layer_width, args.num_layers)
+    main(
+        args.batch_size,
+        args.num_workers,
+        args.num_steps,
+        args.layer_width,
+        args.num_layers,
+    )
