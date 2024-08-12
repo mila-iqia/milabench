@@ -29,11 +29,12 @@ class SEHFragTrainerMonkeyPatch(SEHFragTrainer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.batch_size = []
+        self.batch_size_in_nodes = []
 
         def batch_size(x):
-            return self.batch_size.pop()
-    
+            """Measures the batch size as the sum of all nodes in the batch."""
+            return self.batch_size_in_nodes.pop()
+
         self.observer = BenchObserver(
             accelerator.Event,
             earlystop=65,
@@ -44,7 +45,15 @@ class SEHFragTrainerMonkeyPatch(SEHFragTrainer):
 
     def _maybe_resolve_shared_buffer(self, *args, **kwargs):
         batch = super()._maybe_resolve_shared_buffer(*args, **kwargs)
-        self.batch_size.append(batch.batch_size)
+
+        # Accumulate the size of all graphs in the batch measured in nodes.
+        acc = 0
+        n = len(batch)
+        for i in range(n):
+            elem = batch[i]
+            acc += elem.x.shape[0]
+
+        self.batch_size_in_nodes.append(acc)
         return batch
 
     def step(self, loss: Tensor):
@@ -93,7 +102,7 @@ class SEHTaskMonkeyPatch(SEHTask):
         return {"seh": model}
 
 
-def main():
+def main(batch_size: int, num_workers: int, num_steps: int, layer_width: int, num_layers: int):
     # This script runs on an A100 with 8 cpus and 32Gb memory, but the A100 is probably
     # overkill here. VRAM peaks at 6Gb and GPU usage peaks at 25%.
 
@@ -103,7 +112,7 @@ def main():
     config.device = accelerator.fetch_device(0)  # This is your CUDA device.
     config.overwrite_existing_exp = True
 
-    config.num_training_steps = 100  # 1000 # Change this to train for longer
+    config.num_training_steps = num_steps  # Change this to train for longer.
     config.checkpoint_every = 5  # 500
     config.validate_every = 0
     config.num_final_gen_steps = 0
@@ -115,10 +124,10 @@ def main():
     config.replay.use = False
 
     # Things it may be fun to play with.
-    config.num_workers = 8
-    config.model.num_emb = 128
-    config.model.num_layers = 4
-    batch_size = 64
+    config.num_workers = num_workers
+    config.model.num_emb = layer_width
+    config.model.num_layers = num_layers
+    batch_size = batch_size
 
     if config.replay.use:
         config.algo.num_from_policy = 0
@@ -135,4 +144,14 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Description of your program')
+    parser.add_argument('-b', '--batch_size', help='Batch Size', default=128)
+    parser.add_argument('-n', '--num_workers', help='Number of Workers', default=8)
+    parser.add_argument('-s', '--num_steps', help='Number of Training Steps', default=100)
+    parser.add_argument('-w', '--layer_width', help="Width of each policy hidden layer", default=128)
+    parser.add_argument('-l', '--num_layers', help="Number of hidden layers", default=4)
+    args = parser.parse_args()
+
+    main(args.batch_size, args.num_workers, args.num_steps, args.layer_width, args.num_layers)
