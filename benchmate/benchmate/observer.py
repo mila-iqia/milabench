@@ -77,7 +77,7 @@ class BenchObserver:
     
     def loader(self, loader, custom_step=False):
         """Wrap a dataloader or an iterable which enable accurate measuring of time spent in the loop's body"""
-        if self.instance:
+        if self.instance is not None:
             return self.instance
         
         cls = TimedIterator
