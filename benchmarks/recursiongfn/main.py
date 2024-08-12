@@ -3,25 +3,25 @@
 # clone_subtree in the benchfile.py, in which case this file can simply
 # be deleted.
 
-import os
-from pathlib import Path
 import datetime
+import os
 import random
 import time
-import torch
-from torch import Tensor
-import torch.nn as nn
-from torch.utils.data import DataLoader, Dataset
+from pathlib import Path
 from typing import Callable
 
-from gflownet.tasks.seh_frag import SEHTask, SEHFragTrainer
-from gflownet.models import bengio2021flow
-from gflownet.utils.misc import get_worker_device
-from gflownet.config import Config, init_empty
-from gflownet.utils.conditioning import TemperatureConditional
 import numpy as np
-
+import torch
+import torch.nn as nn
 import torchcompat.core as accelerator
+from gflownet.config import Config, init_empty
+from gflownet.models import bengio2021flow
+from gflownet.tasks.seh_frag import SEHFragTrainer, SEHTask
+from gflownet.utils.conditioning import TemperatureConditional
+from gflownet.utils.misc import get_worker_device
+from torch import Tensor
+from torch.utils.data import DataLoader, Dataset
+
 from benchmate.observer import BenchObserver
 
 
@@ -35,11 +35,11 @@ class SEHFragTrainerMonkeyPatch(SEHFragTrainer):
             return x.batch_size
 
         self.observer = BenchObserver(
-          accelerator.Event,
-          earlystop=65,
-          batch_size_fn=batch_size,
-          raise_stop_program=False,
-          stdout=True,
+            accelerator.Event,
+            earlystop=65,
+            batch_size_fn=batch_size,
+            raise_stop_program=False,
+            stdout=True,
         )
 
         # Need to cache result.
@@ -84,7 +84,7 @@ class SEHTaskMonkeyPatch(SEHTask):
         xdg_cache = os.environ["XDG_CACHE_HOME"]
         model = bengio2021flow.load_original_model(
             cache=True,
-            location=Path(os.path.join(xdg_cache, "bengio2021flow_proxy.pkl.gz"))
+            location=Path(os.path.join(xdg_cache, "bengio2021flow_proxy.pkl.gz")),
         )
         model.to(get_worker_device())
         model = self._wrap_model(model)
@@ -101,8 +101,8 @@ def main():
     config.device = accelerator.fetch_device(0)  # This is your CUDA device.
     config.overwrite_existing_exp = True
 
-    config.num_training_steps = 10 #1000 # Change this to train for longer
-    config.checkpoint_every = 5 #500
+    config.num_training_steps = 10  # 1000 # Change this to train for longer
+    config.checkpoint_every = 5  # 500
     config.validate_every = 0
     config.num_final_gen_steps = 0
     config.opt.lr_decay = 20_000
