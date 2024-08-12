@@ -29,25 +29,27 @@ class SEHFragTrainerMonkeyPatch(SEHFragTrainer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        def batch_size(x):
-            """Needs to convert x into correct format to access batch_size attr."""
-            x = self._maybe_resolve_shared_buffer(x, self.train_dl)
-            return x.batch_size
+        self.batch_size = []
 
+        def batch_size(x):
+            return self.batch_size.pop()
+    
         self.observer = BenchObserver(
             accelerator.Event,
             earlystop=65,
             batch_size_fn=batch_size,
             raise_stop_program=False,
-            stdout=True,
+            stdout=False,
         )
 
-        # Need to cache result.
-        self.train_dl = self.build_training_data_loader()
+    def _maybe_resolve_shared_buffer(self, *args, **kwargs):
+        batch = super()._maybe_resolve_shared_buffer(*args, **kwargs)
+        self.batch_size.append(batch.batch_size)
+        return batch
 
     def step(self, loss: Tensor):
         original_output = super().step(loss)
-        self.observer.record_loss(original_output)
+        self.observer.record_loss(loss)
         return original_output
 
     def build_training_data_loader(self) -> DataLoader:
@@ -101,7 +103,7 @@ def main():
     config.device = accelerator.fetch_device(0)  # This is your CUDA device.
     config.overwrite_existing_exp = True
 
-    config.num_training_steps = 10  # 1000 # Change this to train for longer
+    config.num_training_steps = 100  # 1000 # Change this to train for longer
     config.checkpoint_every = 5  # 500
     config.validate_every = 0
     config.num_final_gen_steps = 0
@@ -127,7 +129,6 @@ def main():
 
     # This may need to be adjusted if the batch_size is made bigger
     config.mp_buffer_size = 32 * 1024**2  # 32Mb
-
     trial = SEHFragTrainerMonkeyPatch(config, print_config=False)
     trial.run()
     trial.terminate()

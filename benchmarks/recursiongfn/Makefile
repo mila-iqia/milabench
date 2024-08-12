@@ -18,7 +18,7 @@ install:
 prepare:
 	milabench prepare $(MILABENCH_ARGS)
 
-tests: install prepare
+tests: # install prepare
 	milabench run $(MILABENCH_ARGS)
 
 single:
