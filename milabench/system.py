@@ -84,8 +84,6 @@ def option(name, etype, default=None):
     system = system_global.get()
     if system:
         options = system.get("options", dict())
-    else:
-        warn_no_config()
 
     frags = name.split(".")
     env_name = as_environment_variable(name)
@@ -394,14 +392,20 @@ def gethostname(host):
 
 
 def resolve_hostname(ip):
-    hostname, _, iplist = socket.gethostbyaddr(ip)
+    try:
+        hostname, _, iplist = socket.gethostbyaddr(ip)
 
-    for ip in iplist:
-        if is_loopback(ip):
-            return hostname, True
+        for ip in iplist:
+            if is_loopback(ip):
+                return hostname, True
 
-    return hostname, False
+        return hostname, False
 
+    except:
+        if offline:
+            return ip, False
+
+        raise
 
 def resolve_node_address(node):
     hostname, local = resolve_hostname(node["ip"])
@@ -410,6 +414,8 @@ def resolve_node_address(node):
     node["local"] = local
 
     if local:
+        # `gethostbyaddr` returns `cn-d003` but we want `cn-d003.server.mila.quebec`
+        # else torchrun does not recognize the main node
         node["hostname"] = socket.gethostname()
         
     return local

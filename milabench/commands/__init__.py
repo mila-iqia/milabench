@@ -872,7 +872,7 @@ class ActivatorCommand(SingleCmdCommand):
         super().__init__(pack, **kwargs)
 
     def _argv(self, **_) -> List:
-        return [f"{self.pack.dirs.code / 'activator'}", f"{self.pack.dirs.venv}", f"{self.pack.dirs.cache}"]
+        return [activator_script(), f"{self.pack.dirs.venv}", f"{self.pack.dirs.cache}"]
 
 
 
