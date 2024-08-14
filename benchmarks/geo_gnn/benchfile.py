@@ -3,7 +3,7 @@ from milabench.pack import Package
 
 class Dimenet(Package):
     # Requirements file installed by install(). It can be empty or absent.
-    base_requirements = "requirements.in"
+    base_requirements = ["requirements-pre.in", "requirements.in"]
 
     # The preparation script called by prepare(). It must be executable,
     # but it can be any type of script. It can be empty or absent.
@@ -21,8 +21,6 @@ class Dimenet(Package):
         return super().make_env()
 
     async def install(self):
-        # Need to install torch before installing torch-cluster.
-        await self.pip_install("torch")
         await super().install()  # super() call installs the requirements
 
     async def prepare(self):

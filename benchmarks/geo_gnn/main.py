@@ -56,21 +56,50 @@ def parser():
         help="number of workers for data loading",
     )
     parser.add_argument(
-        "--3d",
-        type=bool,
+        "--use3d",
         action="store_true",
         default=False,
         help="Use 3D coordinates with data",
     )
+    parser.add_argument(
+        "--root",
+        type=str,
+        default=os.environ["MILABENCH_DIR_DATA"],
+        help="Dataset path",
+    )
     return parser
+
+
+def train_degree(train_dataset):
+    from torch_geometric.utils import degree
+
+    # Compute the maximum in-degree in the training data.
+    max_degree = -1
+    for data in train_dataset:
+        d = degree(data.edge_index[1], num_nodes=data.num_nodes, dtype=torch.long)
+        max_degree = max(max_degree, int(d.max()))
+
+    # Compute the in-degree histogram tensor
+    deg = torch.zeros(max_degree + 1, dtype=torch.long)
+    for data in train_dataset:
+        d = degree(data.edge_index[1], num_nodes=data.num_nodes, dtype=torch.long)
+        deg += torch.bincount(d, minlength=deg.numel())
+
+    return deg
 
 
 def main():
     args = parser().parse_args()
 
-    observer = BenchObserver(batch_size_fn=lambda batch: 1)
+    def batch_size(x):
+        print(type(x))
+        return 1
 
-    train_dataset = PCQM4Mv2Subset(args.num_samples, os.environ["MILABENCH_DIR_DATA"])
+    observer = BenchObserver(batch_size_fn=batch_size)
+
+    train_dataset = PCQM4Mv2Subset(args.num_samples, args.root)
+
+    info = models[args.model](args, degree=lambda: train_degree(train_dataset))
 
     print(train_dataset.mean().shape)
 
@@ -91,8 +120,6 @@ def main():
         **dataloader_kwargs
     )
 
-    info = models[args.model](args)
-
     device = accelerator.fetch_device(0)
     model = info.model.to(device)
 
@@ -111,15 +138,15 @@ def main():
     num_batches = len(train_loader)
     for epoch in range(1, args.epochs + 1):
         model.train()
-        loss_acc = 0
 
         for step, batch in enumerate(observer.iterate(train_loader)):
+            # DataBatch(x=[229, 9], edge_index=[2, 476], edge_attr=[476, 3], y=[16], pos=[229, 3], smiles=[16], batch=[229], ptr=[17])
             batch = batch.to(device)
-
-            if args.3d:
-                molecule_repr = model(batch.x, batch.pos, batch.batch)
+            
+            if args.use3d:
+                molecule_repr = model(z=batch.x, pos=batch.pos, batch=batch.batch)
             else:
-                molecule_repr = model(batch.x, batch.batch)
+                molecule_repr = model(x=batch.x, batch=batch.batch, edge_index=batch.edge_index)
 
             pred = molecule_repr.squeeze()
 
@@ -133,16 +160,14 @@ def main():
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            loss_acc += loss.cpu().detach().item()
 
             lr_scheduler.step(epoch - 1 + step / num_batches)
 
-            observer.record_loss(loss.item())
+            observer.record_loss(loss)
 
-        loss_acc /= num_batches
         lr_scheduler.step()
 
-        print("Epoch: {}\nLoss: {}".format(epoch, loss_acc))
+        print("Epoch: {}\nLoss: {}".format(epoch))
 
 
 if __name__ == "__main__":

@@ -11,12 +11,12 @@ def register_model(fn):
 
 
 @register_model
-def DimeNet(args):
+def DimeNet(args, **extras):
     return NS(
         category="3d",
         model=_DimeNet(
             hidden_channels=64,
-            out_channels=1,
+            out_channels=2,
             num_blocks=6,
             num_bilinear=8,
             num_spherical=7,
@@ -31,11 +31,23 @@ def DimeNet(args):
 
 
 @register_model
-def PNA(args):
+def PNA(args, degree):
     return NS(
         category="2d",
         model=_PNA(
-            hidden_channels=64,
-            # TODO: Need help to know what parameters to use.
+            # Basic GCNN setup
+            in_channels=1, 
+            # out_channels=75,
+            # edge_dim=50, 
+            towers=5, 
+            # pre_layers=1, 
+            # post_layers=1,
+            hidden_channels=75,
+            num_layers=64,
+            # https://pytorch-geometric.readthedocs.io/en/latest/generated/torch_geometric.nn.conv.PNAConv.html
+            aggregators=['mean', 'min', 'max', 'std'],
+            scalers=['identity', 'amplification', 'attenuation'],
+            # Histogram of in-degrees of nodes in the training set, used by scalers to normalize
+            deg=degree(),
         ),
     )

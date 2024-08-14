@@ -12,8 +12,10 @@ from ..log import DataReporter, TerminalFormatter, TextReporter
 @dataclass
 class Arguments:
     force: bool = False
+    update: bool = False
     shorttrace:  bool = False
     variant: str = None
+
 # fmt: on
 
 
@@ -22,13 +24,16 @@ def arguments():
     # Force install
     force: Option & bool = False
 
+    # Update package
+    update: Option & bool = False
+
     # On error show full stacktrace
     shorttrace: Option & bool = False
 
     # Install variant
     variant: Option & str = None
 
-    return Arguments(force, shorttrace, variant)
+    return Arguments(force, update, shorttrace, variant)
 
 
 @tooled
@@ -39,10 +44,13 @@ def cli_install(args=None):
 
     overrides = {"*": {"install_variant": args.variant}} if args.variant else {}
 
-    if args.force:
-        mp = get_multipack(run_name="install.{time}", overrides=overrides)
-        for pack in mp.packs.values():
+    
+    mp = get_multipack(run_name="install.{time}", overrides=overrides)
+    for pack in mp.packs.values():
+        if args.force or args.update:
             pack.install_mark_file.rm()
+        
+        if args.force:
             pack.dirs.venv.rm()
 
     mp = get_multipack(run_name="install.{time}", overrides=overrides)
