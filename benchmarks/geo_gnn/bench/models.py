@@ -11,12 +11,16 @@ def register_model(fn):
 
 
 @register_model
-def DimeNet(args, **extras):
+def DimeNet(args, sample, **extras):
+    # The directional message passing neural network (DimeNet) from the “Directional Message Passing for Molecular Graphs” paper. 
+    # DimeNet transforms messages based on the angle between them in a rotation-equivariant fashion.
+    batch_size, out_channels = sample.y.shape
+
     return NS(
         category="3d",
         model=_DimeNet(
             hidden_channels=64,
-            out_channels=2,
+            out_channels=out_channels,
             num_blocks=6,
             num_bilinear=8,
             num_spherical=7,
@@ -31,18 +35,23 @@ def DimeNet(args, **extras):
 
 
 @register_model
-def PNA(args, degree):
+def PNA(args, sample, degree):
+    # The Graph Neural Network from the “Principal Neighbourhood Aggregation for Graph Nets” paper, 
+    # using the PNAConv operator for message passing.
+    
+    out_channels = 1
+    if hasattr(sample.y, "shape") and len(sample.y.shape) > 1:
+        out_channels = sample.y.shape[-1]
+
+    _, in_channels = sample.x.shape
+
     return NS(
         category="2d",
         model=_PNA(
             # Basic GCNN setup
-            in_channels=1, 
-            # out_channels=75,
-            # edge_dim=50, 
-            towers=5, 
-            # pre_layers=1, 
-            # post_layers=1,
-            hidden_channels=75,
+            in_channels=in_channels, 
+            out_channels=out_channels,
+            hidden_channels=64,
             num_layers=64,
             # https://pytorch-geometric.readthedocs.io/en/latest/generated/torch_geometric.nn.conv.PNAConv.html
             aggregators=['mean', 'min', 'max', 'std'],

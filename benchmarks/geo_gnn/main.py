@@ -7,6 +7,7 @@ import torch.optim as optim
 import torchcompat.core as accelerator
 from bench.models import models
 from pcqm4m_subset import PCQM4Mv2Subset
+from torch_geometric.datasets import QM9
 from torch_geometric.loader import DataLoader
 
 from benchmate.observer import BenchObserver
@@ -88,24 +89,37 @@ def train_degree(train_dataset):
     return deg
 
 
+def mean(self):
+    import numpy as np
+    return np.mean([self.get(i).y for i in range(len(self))])
+
+def std(self):
+    import numpy as np
+    return np.std([self.get(i).y for i in range(len(self))])
+
+
 def main():
     args = parser().parse_args()
 
     def batch_size(x):
-        print(type(x))
-        return 1
+        shape = x.y.shape
+        return shape[0]
 
     observer = BenchObserver(batch_size_fn=batch_size)
 
-    train_dataset = PCQM4Mv2Subset(args.num_samples, args.root)
+    # train_dataset = PCQM4Mv2Subset(args.num_samples, args.root)
+    train_dataset = QM9(args.root)
 
-    info = models[args.model](args, degree=lambda: train_degree(train_dataset))
+    sample = train_dataset[0]
 
-    print(train_dataset.mean().shape)
+    info = models[args.model](args, 
+                              sample=sample, 
+                              degree=lambda: train_degree(train_dataset),
+    )
 
     TRAIN_mean, TRAIN_std = (
-        train_dataset.mean().item(),
-        train_dataset.std().item(),
+        mean(train_dataset).item(),
+        std(train_dataset).item(),
     )
     print("Train mean: {}\tTrain std: {}".format(TRAIN_mean, TRAIN_std))
 
@@ -140,16 +154,23 @@ def main():
         model.train()
 
         for step, batch in enumerate(observer.iterate(train_loader)):
-            # DataBatch(x=[229, 9], edge_index=[2, 476], edge_attr=[476, 3], y=[16], pos=[229, 3], smiles=[16], batch=[229], ptr=[17])
+            # QM9            => DataBatch(x=[290, 11], edge_index=[2, 602], edge_attr=[602, 4], y=[16, 19], pos=[290, 3], z=[290], smiles=[16], name=[16], idx=[16], batch=[290], ptr=[17])
+            # PCQM4Mv2Subset => DataBatch(x=[229,  9], edge_index=[2, 476], edge_attr=[476, 3], y=[16],     pos=[229, 3],          smiles=[16],                      batch=[229], ptr=[17])
             batch = batch.to(device)
             
             if args.use3d:
-                molecule_repr = model(z=batch.x, pos=batch.pos, batch=batch.batch)
+                molecule_repr = model(z=batch.z, pos=batch.pos, batch=batch.batch)
             else:
-                molecule_repr = model(x=batch.x, batch=batch.batch, edge_index=batch.edge_index)
+                molecule_repr = model(x=batch.x, batch=batch.batch, edge_index=batch.edge_index, batch_size=batch_size(batch))
 
             pred = molecule_repr.squeeze()
 
+            # Dimenet   : pred: torch.Size([ 16, 19])
+            # PNA       : pred: torch.Size([292, 19]) <= (with x=batch.x) WTF !? 292 = batch.x.shape[0]
+            # batch     :       torch.Size([ 16, 19])
+            # print(molecule_repr.shape)
+            # print(batch.y.shape)
+            
             B = pred.size()[0]
             y = batch.y.view(B, -1)
             # normalize

@@ -20,7 +20,7 @@ prepare:
 	milabench prepare $(MILABENCH_ARGS)
 
 tests: # install 
-	milabench run $(MILABENCH_ARGS) --select dimenet
+	milabench run $(MILABENCH_ARGS) --select pna
 
 single:
 	milabench run $(MILABENCH_ARGS) --select $(BENCH_NAME)-single
