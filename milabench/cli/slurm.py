@@ -62,6 +62,9 @@ def cli_slurm_system():
         }]
 
 
+    from milabench.system import resolve_addresses
+    resolve_addresses(nodes)
+
     system = {
         "arch": "cuda",
         "nodes": nodes,

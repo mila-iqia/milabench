@@ -370,7 +370,7 @@ def _resolve_addresses(nodes):
         # print(hostname, socket.gethostname())
         node["local"] = is_local
 
-        if is_local:
+        if is_local and self is None:
             self = node
             node["ipaddrlist"] = list(set(list(ip_list) + list(ipaddrlist)))
 
@@ -399,7 +399,7 @@ def resolve_hostname(ip):
             if is_loopback(ip):
                 return hostname, True
 
-        return hostname, False
+        return hostname, hostname == socket.gethostname()
 
     except:
         if offline:

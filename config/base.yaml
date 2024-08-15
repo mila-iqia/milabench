@@ -654,12 +654,13 @@ _geo_gnn:
   # FIXME: torch cluster is laging behind pytorch
   # we are forced to use torch==2.3 instead of torch==2.4
   install_group: gnn
+  group: gnn
   definition: ../benchmarks/geo_gnn
   plan:
     method: per_gpu
 
 dimenet:
-  inherits: inherits
+  inherits: _geo_gnn
   argv:
     --model: 'DimeNet'
     --num-samples: 10000
@@ -670,6 +671,7 @@ recursiongfn:
   inherits: _defaults
   definition: ../benchmarks/recursiongfn
   install_group: gnn
+  group: gnn
   plan:
     method: per_gpu
 
