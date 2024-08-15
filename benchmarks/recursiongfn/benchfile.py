@@ -1,6 +1,9 @@
 from milabench.pack import Package
 
 
+URL = "https://github.com/recursionpharma/gflownet"
+BRANCH = "bengioe-mila-demo"
+
 class Recursiongfn(Package):
     # Requirements file installed by install(). It can be empty or absent.
     base_requirements = "requirements.in"
@@ -14,13 +17,13 @@ class Recursiongfn(Package):
     main_script = "main.py"
 
     # You can remove the functions below if you don't need to modify them.
-
-    def make_env(self):
-        # Return a dict of environment variables for prepare_script and
-        # main_script.
-        return super().make_env()
+    def clone(self):
+        gflownet = self.dirs.code / "gflownet"
+        if not gflownet.exists():
+            gflownet.clone_subtree(URL, BRANCH)
 
     async def install(self):
+        # self.clone()
         await super().install()  # super() call installs the requirements
 
     async def prepare(self):
