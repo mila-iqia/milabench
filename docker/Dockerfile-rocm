@@ -70,7 +70,6 @@ RUN python -m pip install -U pip            &&\
 ENV PIP_DEFAULT_TIMEOUT=800
 
 RUN milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
-    milabench prepare --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
     python -m pip cache purge
 
 CMD ["milabench", "run"]
