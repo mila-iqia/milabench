@@ -407,6 +407,9 @@ class Package(BasePackage):
             input_files: A list of inputs to piptools compile
             constraint: The constraint file
         """
+        if working_dir is None:
+            working_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    
         ivar = self.config.get("install_variant", None)
 
         if ivar == "unpinned":
