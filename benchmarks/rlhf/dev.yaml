@@ -1,0 +1,53 @@
+
+rlhf:
+  inherits: _defaults
+  definition: .
+  install-variant: unpinned
+  install_group: torch
+  plan:
+    method: per_gpu
+
+  argv:
+    --output_dir: models/minimal/ppo
+    --per_device_train_batch_size: 1
+    --gradient_accumulation_steps: 1
+    --total_episodes: 30000
+    --model_name_or_path: meta-llama/Llama-2-7b-chat-hf
+    --sft_model_path: meta-llama/Llama-2-7b-chat-hf
+    --reward_model_path: cleanrl/EleutherAI_pythia-1b-deduped__reward__tldr
+    --non_eos_penalty: true
+    --stop_token: eos
+    --response_length: 53
+    --sanity_check: true
+
+
+
+# """
+# python examples/scripts/ppo/ppo_tldr.py \
+#     --learning_rate 3e-6 \
+#     --output_dir models/minimal/ppo \
+#     --per_device_train_batch_size 1 \
+#     --gradient_accumulation_steps 64 \
+#     --total_episodes 30000 \
+#     --model_name_or_path EleutherAI/pythia-1b-deduped \
+#     --sft_model_path cleanrl/EleutherAI_pythia-1b-deduped__sft__tldr \
+#     --reward_model_path cleanrl/EleutherAI_pythia-1b-deduped__reward__tldr \
+#     --non_eos_penalty \
+#     --stop_token eos \
+#     --response_length 53 \
+#     --sanity_check
+
+# accelerate launch --config_file examples/accelerate_configs/deepspeed_zero2.yaml \
+#     examples/scripts/ppo/ppo_tldr.py \
+#     --output_dir models/minimal/ppo_tldr \
+#     --learning_rate 3e-6 \
+#     --per_device_train_batch_size 16 \
+#     --gradient_accumulation_steps 4 \
+#     --total_episodes 1000000 \
+#     --model_name_or_path EleutherAI/pythia-1b-deduped \
+#     --sft_model_path cleanrl/EleutherAI_pythia-1b-deduped__sft__tldr \
+#     --reward_model_path cleanrl/EleutherAI_pythia-1b-deduped__reward__tldr \
+#     --local_rollout_forward_batch_size 16 \
+#     --non_eos_penalty \
+#     --stop_token eos
+# """

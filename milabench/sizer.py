@@ -381,6 +381,7 @@ def new_argument_resolver(pack):
     context["milabench_runs"] = dirs.get('runs', "")
     context["milabench_cache"] = dirs.get('cache', "")
     context["milabench_name"] = pack.config.get("name", None)
+    context["benchmark_folder"] = pack.config.get('definition', None)
 
     def auto_eval(arg):
         newvalue = str(arg).format(**context)

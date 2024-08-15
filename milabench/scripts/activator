@@ -3,5 +3,11 @@
 venv="$1"
 shift
 
+cache="$1"
+shift
+
+echo "$cache"
+export XDG_CACHE_HOME=$cache
+
 source "$venv"/bin/activate
 exec "$@"

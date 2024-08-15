@@ -4,8 +4,6 @@ from accelerate import Accelerator
 
 import math
 import random
-from contextlib import nullcontext
-from pathlib import Path
 
 import numpy as np
 import torch
@@ -14,7 +12,6 @@ import torch.utils.checkpoint
 from accelerate import Accelerator
 from datasets import load_dataset
 from torchvision import transforms
-from tqdm.auto import tqdm
 from transformers import CLIPTextModel, CLIPTokenizer
 
 from diffusers import AutoencoderKL, DDPMScheduler, UNet2DConditionModel
@@ -44,6 +41,7 @@ class Arguments:
     lr_scheduler: str = "constant"
     lr_warmup_steps: int = 500
     epochs: int = 10
+    cache: str = None
 
 
 def models(accelerator, args: Arguments):
