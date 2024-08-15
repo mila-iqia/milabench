@@ -5,7 +5,7 @@ endif
 
 export MILABENCH_BASE
 
-BENCH_NAME=torch_ppo_atari_envpool
+BENCH_NAME=torchatari
 MILABENCH_CONFIG=dev.yaml
 MILABENCH_ARGS=--config $(MILABENCH_CONFIG) --base $(MILABENCH_BASE)
 
