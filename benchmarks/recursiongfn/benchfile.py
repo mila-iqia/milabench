@@ -1,8 +1,8 @@
 from milabench.pack import Package
 
 
-URL = "https://github.com/recursionpharma/gflownet"
-BRANCH = "bengioe-mila-demo"
+URL = "https://github.com/Delaunay/gflownet/"
+BRANCH = "milabench"
 
 class Recursiongfn(Package):
     # Requirements file installed by install(). It can be empty or absent.

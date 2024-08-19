@@ -107,8 +107,8 @@ def main():
 
     observer = BenchObserver(batch_size_fn=batch_size)
 
-    # train_dataset = PCQM4Mv2Subset(args.num_samples, args.root)
-    train_dataset = QM9(args.root)
+    train_dataset = PCQM4Mv2Subset(args.num_samples, args.root)
+    # train_dataset = QM9(args.root)
 
     sample = train_dataset[0]
 
