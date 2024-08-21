@@ -256,8 +256,8 @@ class MultiPackage:
         for ig, (reqs, packs) in groups.items():
             if len(packs) < len(reqs):
                 if len(set(p.config["group"] for p in packs)) > 1:
-                    raise Exception(
-                        f"Install group '{ig}' contains benchmarks that have more than"
+                    print(
+                        f"WARNING: Install group '{ig}' contains benchmarks that have more than"
                         " one requirements file. Please isolate such benchmarks in their"
                         " own install_group."
                     )
