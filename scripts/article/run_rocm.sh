@@ -31,7 +31,7 @@ install_prepare() {
     # Override/add package to milabench venv here
     #
     which pip
-    # pip install ...
+    pip uninstall pynvml
 
     (
         . $BENCHMARK_VENV/bin/activate
@@ -41,7 +41,8 @@ install_prepare() {
         #
         which pip
         pip uninstall torch torchvision torchaudio
-        pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.0
+        pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.1
+        pip uninstall pynvml
     )
 
     #

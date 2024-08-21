@@ -83,6 +83,7 @@ def huggingface_main(args, model, config):
     # we just instantiate an untrained one
     println("Model")
     device = accelerator.fetch_device(0)
+    print(device)
 
     if args.pretrained:
         model = LlamaForCausalLM.from_pretrained(config["_name_or_path"]).to(device=device)
@@ -93,7 +94,7 @@ def huggingface_main(args, model, config):
     pipeline = transformers.pipeline(
         "text-generation",
         model=model,
-        torch_dtype=torch.float16,
+        torch_dtype=torch.bfloat16,
         # device_map="cuda",
         tokenizer=tokenizer,
         device=device,
