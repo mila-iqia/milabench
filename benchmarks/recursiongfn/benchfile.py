@@ -23,7 +23,7 @@ class Recursiongfn(Package):
             gflownet.clone_subtree(URL, BRANCH)
 
     async def install(self):
-        # self.clone()
+        self.clone()
         await super().install()  # super() call installs the requirements
 
     async def prepare(self):

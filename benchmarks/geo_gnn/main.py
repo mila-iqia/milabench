@@ -107,10 +107,10 @@ def main():
 
     observer = BenchObserver(batch_size_fn=batch_size)
 
-    train_dataset = PCQM4Mv2Subset(args.num_samples, args.root)
-    # train_dataset = QM9(args.root)
+    # train_dataset = PCQM4Mv2Subset(args.num_samples, args.root)
+    train_dataset = QM9(args.root)
 
-    sample = train_dataset[0]
+    sample = next(iter(train_dataset))
 
     info = models[args.model](args, 
                               sample=sample, 
@@ -137,8 +137,6 @@ def main():
     device = accelerator.fetch_device(0)
     model = info.model.to(device)
 
-    print(model)
-
     criterion = nn.L1Loss()
 
     # set up optimizer
@@ -159,7 +157,13 @@ def main():
             batch = batch.to(device)
             
             if args.use3d:
-                molecule_repr = model(z=batch.z, pos=batch.pos, batch=batch.batch)
+                
+                if hasattr(batch, "z"):
+                    z = batch.z
+                else:
+                    z = batch.batch
+                
+                molecule_repr = model(z=z, pos=batch.pos, batch=batch.batch)
             else:
                 molecule_repr = model(x=batch.x, batch=batch.batch, edge_index=batch.edge_index, batch_size=batch_size(batch))
 
