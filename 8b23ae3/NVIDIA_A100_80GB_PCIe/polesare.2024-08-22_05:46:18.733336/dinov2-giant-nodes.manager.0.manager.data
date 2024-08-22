@@ -1,0 +1,1515 @@
+{"event": "config", "data": {"system": {"arch": "cuda", "sshkey": null, "nodes": [{"aliaslist": [], "hostname": "rulingflea.eastus2.cloudapp.azure.com", "ip": "rulingflea.eastus2.cloudapp.azure.com", "ipaddrlist": ["172.203.104.62", "fe80::222:48ff:fe52:2544%eth0", "00:00:00:00:00:00", "00:22:48:52:25:44", "127.0.0.1", "10.0.1.5", "::1"], "key": "/home/runner/.ssh/covalent-azure-task-a100-2138a0_giteruta/id_rsa.covalent.rulingflea.pem", "local": true, "main": true, "name": "manager", "port": 5000, "user": "ubuntu"}, {"aliaslist": [], "hostname": "cosmicwerewolf.eastus2.cloudapp.azure.com", "ip": "cosmicwerewolf.eastus2.cloudapp.azure.com", "ipaddrlist": ["172.203.104.60"], "key": "/home/runner/.ssh/covalent-azure-task-a100-2138a0_giteruta/id_rsa.covalent.rulingflea.pem", "local": false, "main": false, "name": "node1", "user": "ubuntu"}], "cloud_profiles": {"azure__a100": {"disk_size": 512, "location": "eastus2", "size": "Standard_NC24ads_A100_v4", "username": "ubuntu"}, "azure__a100_x2": {"disk_size": 512, "location": "eastus2", "size": "Standard_NC48ads_A100_v4", "username": "ubuntu"}, "azure__a10_x2": {"disk_size": 512, "location": "eastus2", "size": "Standard_NV72ads_A10_v5", "username": "ubuntu"}}, "self": {"aliaslist": [], "hostname": "rulingflea.eastus2.cloudapp.azure.com", "ip": "rulingflea.eastus2.cloudapp.azure.com", "ipaddrlist": ["172.203.104.62", "fe80::222:48ff:fe52:2544%eth0", "00:00:00:00:00:00", "00:22:48:52:25:44", "127.0.0.1", "10.0.1.5", "::1"], "key": "/home/runner/.ssh/covalent-azure-task-a100-2138a0_giteruta/id_rsa.covalent.rulingflea.pem", "local": true, "main": true, "name": "manager", "port": 5000, "user": "ubuntu"}}, "dirs": {"base": "/home/runner/work/milabench/milabench/output", "venv": "/home/runner/work/milabench/milabench/output/venv/torch", "data": "/home/runner/work/milabench/milabench/output/data", "runs": "/home/runner/work/milabench/milabench/output/runs", "extra": "/home/runner/work/milabench/milabench/output/extra/dinov2-giant-nodes", "cache": "/home/runner/work/milabench/milabench/output/cache"}, "group": "dinov2-giant-nodes", "install_group": "torch", "install_variant": "cuda", "run_name": "polesare.2024-08-22_05:46:18.733336", "enabled": true, "capabilities": {"nodes": 1}, "max_duration": 600, "voir": {"options": {"stop": 60, "interval": "1s"}}, "validation": {"usage": {"gpu_load_threshold": 0.5, "gpu_mem_threshold": 0.5}}, "config_base": "/home/runner/work/milabench/milabench/config", "config_file": "/home/runner/work/milabench/milabench/config/base.yaml", "hash": "9373fdd8d1c99ffd1399f2e75463c483", "definition": "/home/runner/work/milabench/milabench/benchmarks/dinov2", "num_machines": 2, "plan": {"method": "njobs", "n": 1}, "argv": {"--output-dir": "{milabench_extra}/output", "--no-resume": true, "--config-file": "src/dinov2/configs/train/vitg14.yaml", "train.dataset_path=ImageNet:split=TRAIN:root={milabench_data}/FakeImageNet:extra={milabench_data}/FakeImageNet": true, "train.batch_size_per_gpu=32": true, "train.saveckp_freq=100": true, "train.num_workers=10": true}, "tags": [], "requires_capabilities": ["len(nodes) >= 2"], "name": "dinov2-giant-nodes", "tag": ["dinov2-giant-nodes", "manager", "0", "manager"], "job-number": 0, "devices": [0]}, "pipe": null}
+{"event": "meta", "data": {"cpu": {"count": 24, "brand": "AMD EPYC 7V13 64-Core Processor"}, "os": {"sysname": "Linux", "nodename": "rulingflea", "release": "6.5.0-1025-azure", "version": "#26~22.04.1-Ubuntu SMP Thu Jul 11 22:33:04 UTC 2024", "machine": "x86_64"}, "accelerators": {"arch": "cuda", "gpus": {"0": {"minor_number": "0", "device": 0, "product": "NVIDIA A100 80GB PCIe", "memory": {"used": 764.4375, "total": 81920.0}, "utilization": {"compute": 0.1, "memory": 0}, "temperature": 54.0, "power": 84.442, "selection_variable": "CUDA_VISIBLE_DEVICES"}}}, "date": 1724305714.858105, "milabench": {"tag": "8b23ae3", "commit": "8b23ae3169efda5d3ae186d407b6c35580b2b777", "date": "2024-08-22 04:13:50 +0000"}, "pytorch": {"torch": "2.4.0+cu121", "compiler": "GCC 9.3", "cpp": "C++ Version: 201703", "intel": "Intel(R) oneAPI Math Kernel Library Version 2022.2-Product Build 20220804 for Intel(R) 64 architecture applications", "mkl": "OpenMP 201511 (a.k.a. OpenMP 4.5)", "openmp": "OpenMP 201511 (a.k.a. OpenMP 4.5)", "lapack": "LAPACK is enabled (usually provided by MKL)", "nnpack": "NNPACK is enabled", "cpu": "CPU capability usage: AVX2", "build_settings": {"BLAS_INFO": "mkl", "BUILD_TYPE": "Release", "CUDA_VERSION": "12.1", "CUDNN_VERSION": "9.1.0", "CXX_COMPILER": "/opt/rh/devtoolset-9/root/usr/bin/c++", "CXX_FLAGS": "-D_GLIBCXX_USE_CXX11_ABI=0 -fabi-version=11 -fvisibility-inlines-hidden -DUSE_PTHREADPOOL -DNDEBUG -DUSE_KINETO -DLIBKINETO_NOROCTRACER -DUSE_FBGEMM -DUSE_PYTORCH_QNNPACK -DUSE_XNNPACK -DSYMBOLICATE_MOBILE_DEBUG_HANDLE -O2 -fPIC -Wall -Wextra -Werror=return-type -Werror=non-virtual-dtor -Werror=bool-operation -Wnarrowing -Wno-missing-field-initializers -Wno-type-limits -Wno-array-bounds -Wno-unknown-pragmas -Wno-unused-parameter -Wno-unused-function -Wno-unused-result -Wno-strict-overflow -Wno-strict-aliasing -Wno-stringop-overflow -Wsuggest-override -Wno-psabi -Wno-error=pedantic -Wno-error=old-style-cast -Wno-missing-braces -fdiagnostics-color=always -faligned-new -Wno-unused-but-set-variable -Wno-maybe-uninitialized -fno-math-errno -fno-trapping-math -Werror=format -Wno-stringop-overflow", "LAPACK_INFO": "mkl", "PERF_WITH_AVX": "1", "PERF_WITH_AVX2": "1", "PERF_WITH_AVX512": "1", "TORCH_VERSION": "2.4.0", "USE_CUDA": "ON", "USE_CUDNN": "ON", "USE_CUSPARSELT": "1", "USE_EXCEPTION_PTR": "1", "USE_GFLAGS": "OFF", "USE_GLOG": "OFF", "USE_GLOO": "ON", "USE_MKL": "ON", "USE_MKLDNN": "ON", "USE_MPI": "OFF", "USE_NCCL": "1", "USE_NNPACK": "ON", "USE_OPENMP": "ON", "USE_ROCM": "OFF", "USE_ROCM_KERNEL_ASSERT": "OFF"}}}, "pipe": null}
+{"event": "start", "data": {"command": ["/home/runner/work/milabench/milabench/output/venv/torch/bin/voir", "--config", "/home/runner/work/milabench/milabench/output/extra/dinov2-giant-nodes/voirconf-dinov2-giant-nodes.manager.0.manager-0efae956f1553a76c1e03985181900f5.json", "/home/runner/work/milabench/milabench/benchmarks/dinov2/main.py", "--output-dir", "/home/runner/work/milabench/milabench/output/extra/dinov2-giant-nodes/output", "--no-resume", "--config-file", "src/dinov2/configs/train/vitg14.yaml", "train.dataset_path=ImageNet:split=TRAIN:root=/home/runner/work/milabench/milabench/output/data/FakeImageNet:extra=/home/runner/work/milabench/milabench/output/data/FakeImageNet", "train.batch_size_per_gpu=32", "train.saveckp_freq=100", "train.num_workers=10"], "time": 1724305714.8734798}, "pipe": null}
+{"event": "line", "data": "/home/runner/work/milabench/milabench/output/venv/torch/lib/python3.10/site-packages/xformers/ops/fmha/flash.py:211: FutureWarning: `torch.library.impl_abstract` was renamed to `torch.library.register_fake`. Please use that instead; we will remove `torch.library.impl_abstract` in a future version of PyTorch.\n", "pipe": "stderr"}
+{"event": "line", "data": "  @torch.library.impl_abstract(\"xformers_flash::flash_fwd\")\n", "pipe": "stderr"}
+{"event": "line", "data": "/home/runner/work/milabench/milabench/output/venv/torch/lib/python3.10/site-packages/xformers/ops/fmha/flash.py:344: FutureWarning: `torch.library.impl_abstract` was renamed to `torch.library.register_fake`. Please use that instead; we will remove `torch.library.impl_abstract` in a future version of PyTorch.\n", "pipe": "stderr"}
+{"event": "line", "data": "  @torch.library.impl_abstract(\"xformers_flash::flash_bwd\")\n", "pipe": "stderr"}
+{"event": "phase", "data": {"name": "init"}, "pipe": "data"}
+{"event": "phase", "data": {"name": "parse_args"}, "pipe": "data"}
+{"event": "phase", "data": {"name": "load_script"}, "pipe": "data"}
+{"event": "line", "data": "/home/runner/work/milabench/milabench/benchmarks/dinov2/src/dinov2/layers/swiglu_ffn.py:43: UserWarning: xFormers is available (SwiGLU)\n", "pipe": "stderr"}
+{"event": "line", "data": "  warnings.warn(\"xFormers is available (SwiGLU)\")\n", "pipe": "stderr"}
+{"event": "line", "data": "/home/runner/work/milabench/milabench/benchmarks/dinov2/src/dinov2/layers/attention.py:27: UserWarning: xFormers is available (Attention)\n", "pipe": "stderr"}
+{"event": "line", "data": "  warnings.warn(\"xFormers is available (Attention)\")\n", "pipe": "stderr"}
+{"event": "line", "data": "/home/runner/work/milabench/milabench/benchmarks/dinov2/src/dinov2/layers/block.py:33: UserWarning: xFormers is available (Block)\n", "pipe": "stderr"}
+{"event": "line", "data": "  warnings.warn(\"xFormers is available (Block)\")\n", "pipe": "stderr"}
+{"event": "line", "data": "/home/runner/work/milabench/milabench/output/venv/torch/lib/python3.10/site-packages/codefind/registry.py:46: FutureWarning: `torch.distributed.reduce_op` is deprecated, please use `torch.distributed.ReduceOp` instead\n", "pipe": "stderr"}
+{"event": "line", "data": "  if isinstance(obj, types.FunctionType):\n", "pipe": "stderr"}
+{"event": "phase", "data": {"name": "run_script"}, "pipe": "data"}
+{"event": "line", "data": "I20240822 05:48:39 29470 dinov2 config.py:59] git:\n", "pipe": "stdout"}
+{"event": "line", "data": "  sha: e1277af2ba9496fbadf7aec6eba56e8d882d1e35, status: clean, branch: HEAD\n", "pipe": "stdout"}
+{"event": "line", "data": "\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:48:39 29470 dinov2 config.py:60] config_file: src/dinov2/configs/train/vitg14.yaml\n", "pipe": "stdout"}
+{"event": "line", "data": "eval: \n", "pipe": "stdout"}
+{"event": "line", "data": "eval_only: False\n", "pipe": "stdout"}
+{"event": "line", "data": "no_resume: True\n", "pipe": "stdout"}
+{"event": "line", "data": "opts: ['train.dataset_path=ImageNet:split=TRAIN:root=/home/runner/work/milabench/milabench/output/data/FakeImageNet:extra=/home/runner/work/milabench/milabench/output/data/FakeImageNet', 'train.batch_size_per_gpu=32', 'train.saveckp_freq=100', 'train.num_workers=10', 'train.output_dir=/home/runner/work/milabench/milabench/output/extra/dinov2-giant-nodes/output']\n", "pipe": "stdout"}
+{"event": "line", "data": "output_dir: /home/runner/work/milabench/milabench/output/extra/dinov2-giant-nodes/output\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:48:39 29470 dinov2 config.py:26] sqrt scaling learning rate; base: 0.0002, new: 3.535533905932738e-05\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:48:39 29470 dinov2 config.py:33] MODEL:\n", "pipe": "stdout"}
+{"event": "line", "data": "  WEIGHTS: ''\n", "pipe": "stdout"}
+{"event": "line", "data": "compute_precision:\n", "pipe": "stdout"}
+{"event": "line", "data": "  grad_scaler: true\n", "pipe": "stdout"}
+{"event": "line", "data": "  teacher:\n", "pipe": "stdout"}
+{"event": "line", "data": "    backbone:\n", "pipe": "stdout"}
+{"event": "line", "data": "      sharding_strategy: SHARD_GRAD_OP\n", "pipe": "stdout"}
+{"event": "line", "data": "      mixed_precision:\n", "pipe": "stdout"}
+{"event": "line", "data": "        param_dtype: fp16\n", "pipe": "stdout"}
+{"event": "line", "data": "        reduce_dtype: fp16\n", "pipe": "stdout"}
+{"event": "line", "data": "        buffer_dtype: fp32\n", "pipe": "stdout"}
+{"event": "line", "data": "    dino_head:\n", "pipe": "stdout"}
+{"event": "line", "data": "      sharding_strategy: SHARD_GRAD_OP\n", "pipe": "stdout"}
+{"event": "line", "data": "      mixed_precision:\n", "pipe": "stdout"}
+{"event": "line", "data": "        param_dtype: fp16\n", "pipe": "stdout"}
+{"event": "line", "data": "        reduce_dtype: fp16\n", "pipe": "stdout"}
+{"event": "line", "data": "        buffer_dtype: fp32\n", "pipe": "stdout"}
+{"event": "line", "data": "    ibot_head:\n", "pipe": "stdout"}
+{"event": "line", "data": "      sharding_strategy: SHARD_GRAD_OP\n", "pipe": "stdout"}
+{"event": "line", "data": "      mixed_precision:\n", "pipe": "stdout"}
+{"event": "line", "data": "        param_dtype: fp16\n", "pipe": "stdout"}
+{"event": "line", "data": "        reduce_dtype: fp16\n", "pipe": "stdout"}
+{"event": "line", "data": "        buffer_dtype: fp32\n", "pipe": "stdout"}
+{"event": "line", "data": "  student:\n", "pipe": "stdout"}
+{"event": "line", "data": "    backbone:\n", "pipe": "stdout"}
+{"event": "line", "data": "      sharding_strategy: SHARD_GRAD_OP\n", "pipe": "stdout"}
+{"event": "line", "data": "      mixed_precision:\n", "pipe": "stdout"}
+{"event": "line", "data": "        param_dtype: fp16\n", "pipe": "stdout"}
+{"event": "line", "data": "        reduce_dtype: fp16\n", "pipe": "stdout"}
+{"event": "line", "data": "        buffer_dtype: fp32\n", "pipe": "stdout"}
+{"event": "line", "data": "    dino_head:\n", "pipe": "stdout"}
+{"event": "line", "data": "      sharding_strategy: SHARD_GRAD_OP\n", "pipe": "stdout"}
+{"event": "line", "data": "      mixed_precision:\n", "pipe": "stdout"}
+{"event": "line", "data": "        param_dtype: fp16\n", "pipe": "stdout"}
+{"event": "line", "data": "        reduce_dtype: fp32\n", "pipe": "stdout"}
+{"event": "line", "data": "        buffer_dtype: fp32\n", "pipe": "stdout"}
+{"event": "line", "data": "    ibot_head:\n", "pipe": "stdout"}
+{"event": "line", "data": "      sharding_strategy: SHARD_GRAD_OP\n", "pipe": "stdout"}
+{"event": "line", "data": "      mixed_precision:\n", "pipe": "stdout"}
+{"event": "line", "data": "        param_dtype: fp16\n", "pipe": "stdout"}
+{"event": "line", "data": "        reduce_dtype: fp32\n", "pipe": "stdout"}
+{"event": "line", "data": "        buffer_dtype: fp32\n", "pipe": "stdout"}
+{"event": "line", "data": "dino:\n", "pipe": "stdout"}
+{"event": "line", "data": "  loss_weight: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "  head_n_prototypes: 131072\n", "pipe": "stdout"}
+{"event": "line", "data": "  head_bottleneck_dim: 384\n", "pipe": "stdout"}
+{"event": "line", "data": "  head_nlayers: 3\n", "pipe": "stdout"}
+{"event": "line", "data": "  head_hidden_dim: 2048\n", "pipe": "stdout"}
+{"event": "line", "data": "  koleo_loss_weight: 0.1\n", "pipe": "stdout"}
+{"event": "line", "data": "ibot:\n", "pipe": "stdout"}
+{"event": "line", "data": "  loss_weight: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "  mask_sample_probability: 0.5\n", "pipe": "stdout"}
+{"event": "line", "data": "  mask_ratio_min_max:\n", "pipe": "stdout"}
+{"event": "line", "data": "  - 0.1\n", "pipe": "stdout"}
+{"event": "line", "data": "  - 0.5\n", "pipe": "stdout"}
+{"event": "line", "data": "  separate_head: true\n", "pipe": "stdout"}
+{"event": "line", "data": "  head_n_prototypes: 131072\n", "pipe": "stdout"}
+{"event": "line", "data": "  head_bottleneck_dim: 256\n", "pipe": "stdout"}
+{"event": "line", "data": "  head_nlayers: 3\n", "pipe": "stdout"}
+{"event": "line", "data": "  head_hidden_dim: 2048\n", "pipe": "stdout"}
+{"event": "line", "data": "train:\n", "pipe": "stdout"}
+{"event": "line", "data": "  batch_size_per_gpu: 32\n", "pipe": "stdout"}
+{"event": "line", "data": "  dataset_path: ImageNet:split=TRAIN:root=/home/runner/work/milabench/milabench/output/data/FakeImageNet:extra=/home/runner/work/milabench/milabench/output/data/FakeImageNet\n", "pipe": "stdout"}
+{"event": "line", "data": "  output_dir: /home/runner/work/milabench/milabench/output/extra/dinov2-giant-nodes/output\n", "pipe": "stdout"}
+{"event": "line", "data": "  saveckp_freq: 100\n", "pipe": "stdout"}
+{"event": "line", "data": "  seed: 0\n", "pipe": "stdout"}
+{"event": "line", "data": "  num_workers: 10\n", "pipe": "stdout"}
+{"event": "line", "data": "  OFFICIAL_EPOCH_LENGTH: 1250\n", "pipe": "stdout"}
+{"event": "line", "data": "  cache_dataset: true\n", "pipe": "stdout"}
+{"event": "line", "data": "  centering: sinkhorn_knopp\n", "pipe": "stdout"}
+{"event": "line", "data": "student:\n", "pipe": "stdout"}
+{"event": "line", "data": "  arch: vit_giant2\n", "pipe": "stdout"}
+{"event": "line", "data": "  patch_size: 14\n", "pipe": "stdout"}
+{"event": "line", "data": "  drop_path_rate: 0.4\n", "pipe": "stdout"}
+{"event": "line", "data": "  layerscale: 1.0e-05\n", "pipe": "stdout"}
+{"event": "line", "data": "  drop_path_uniform: true\n", "pipe": "stdout"}
+{"event": "line", "data": "  pretrained_weights: ''\n", "pipe": "stdout"}
+{"event": "line", "data": "  ffn_layer: swiglufused\n", "pipe": "stdout"}
+{"event": "line", "data": "  block_chunks: 4\n", "pipe": "stdout"}
+{"event": "line", "data": "  qkv_bias: true\n", "pipe": "stdout"}
+{"event": "line", "data": "  proj_bias: true\n", "pipe": "stdout"}
+{"event": "line", "data": "  ffn_bias: true\n", "pipe": "stdout"}
+{"event": "line", "data": "  num_register_tokens: 0\n", "pipe": "stdout"}
+{"event": "line", "data": "  interpolate_antialias: false\n", "pipe": "stdout"}
+{"event": "line", "data": "  interpolate_offset: 0.1\n", "pipe": "stdout"}
+{"event": "line", "data": "teacher:\n", "pipe": "stdout"}
+{"event": "line", "data": "  momentum_teacher: 0.994\n", "pipe": "stdout"}
+{"event": "line", "data": "  final_momentum_teacher: 1\n", "pipe": "stdout"}
+{"event": "line", "data": "  warmup_teacher_temp: 0.04\n", "pipe": "stdout"}
+{"event": "line", "data": "  teacher_temp: 0.07\n", "pipe": "stdout"}
+{"event": "line", "data": "  warmup_teacher_temp_epochs: 30\n", "pipe": "stdout"}
+{"event": "line", "data": "optim:\n", "pipe": "stdout"}
+{"event": "line", "data": "  epochs: 500\n", "pipe": "stdout"}
+{"event": "line", "data": "  weight_decay: 0.04\n", "pipe": "stdout"}
+{"event": "line", "data": "  weight_decay_end: 0.2\n", "pipe": "stdout"}
+{"event": "line", "data": "  base_lr: 0.0002\n", "pipe": "stdout"}
+{"event": "line", "data": "  lr: 3.535533905932738e-05\n", "pipe": "stdout"}
+{"event": "line", "data": "  warmup_epochs: 80\n", "pipe": "stdout"}
+{"event": "line", "data": "  min_lr: 1.0e-06\n", "pipe": "stdout"}
+{"event": "line", "data": "  clip_grad: 3.0\n", "pipe": "stdout"}
+{"event": "line", "data": "  freeze_last_layer_epochs: 1\n", "pipe": "stdout"}
+{"event": "line", "data": "  scaling_rule: sqrt_wrt_1024\n", "pipe": "stdout"}
+{"event": "line", "data": "  patch_embed_lr_mult: 0.2\n", "pipe": "stdout"}
+{"event": "line", "data": "  layerwise_decay: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "  adamw_beta1: 0.9\n", "pipe": "stdout"}
+{"event": "line", "data": "  adamw_beta2: 0.999\n", "pipe": "stdout"}
+{"event": "line", "data": "crops:\n", "pipe": "stdout"}
+{"event": "line", "data": "  global_crops_scale:\n", "pipe": "stdout"}
+{"event": "line", "data": "  - 0.32\n", "pipe": "stdout"}
+{"event": "line", "data": "  - 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "  local_crops_number: 8\n", "pipe": "stdout"}
+{"event": "line", "data": "  local_crops_scale:\n", "pipe": "stdout"}
+{"event": "line", "data": "  - 0.05\n", "pipe": "stdout"}
+{"event": "line", "data": "  - 0.32\n", "pipe": "stdout"}
+{"event": "line", "data": "  global_crops_size: 224\n", "pipe": "stdout"}
+{"event": "line", "data": "  local_crops_size: 98\n", "pipe": "stdout"}
+{"event": "line", "data": "evaluation:\n", "pipe": "stdout"}
+{"event": "line", "data": "  eval_period_iterations: 12500\n", "pipe": "stdout"}
+{"event": "line", "data": "\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:48:39 29470 dinov2 vision_transformer.py:125] using SwiGLU layer as FFN\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:48:59 29470 dinov2 vision_transformer.py:125] using SwiGLU layer as FFN\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:19 29470 dinov2 ssl_meta_arch.py:43] OPTIONS -- architecture : embed_dim: 1536\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:19 29470 dinov2 ssl_meta_arch.py:58] OPTIONS -- DINO\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:19 29470 dinov2 ssl_meta_arch.py:60] OPTIONS -- DINO -- loss_weight: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:19 29470 dinov2 ssl_meta_arch.py:61] OPTIONS -- DINO -- head_n_prototypes: 131072\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:19 29470 dinov2 ssl_meta_arch.py:62] OPTIONS -- DINO -- head_bottleneck_dim: 384\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:19 29470 dinov2 ssl_meta_arch.py:63] OPTIONS -- DINO -- head_hidden_dim: 2048\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:19 29470 dinov2 ssl_meta_arch.py:75] OPTIONS -- DINO -- applying KOLEO regularization\n", "pipe": "stdout"}
+{"event": "line", "data": "W20240822 05:49:19 29470 py.warnings warnings.py:109] /home/runner/work/milabench/milabench/output/venv/torch/lib/python3.10/site-packages/torch/nn/utils/weight_norm.py:134: FutureWarning: `torch.nn.utils.weight_norm` is deprecated in favor of `torch.nn.utils.parametrizations.weight_norm`.\n", "pipe": "stdout"}
+{"event": "line", "data": "  WeightNorm.apply(module, name, dim)\n", "pipe": "stdout"}
+{"event": "line", "data": "\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:20 29470 dinov2 ssl_meta_arch.py:85] OPTIONS -- IBOT\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:20 29470 dinov2 ssl_meta_arch.py:86] OPTIONS -- IBOT -- loss_weight: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:20 29470 dinov2 ssl_meta_arch.py:87] OPTIONS -- IBOT masking -- ibot_mask_ratio_tuple: [0.1, 0.5]\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:20 29470 dinov2 ssl_meta_arch.py:88] OPTIONS -- IBOT masking -- ibot_mask_sample_probability: 0.5\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:20 29470 dinov2 ssl_meta_arch.py:96] OPTIONS -- IBOT -- loss_weight: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:20 29470 dinov2 ssl_meta_arch.py:97] OPTIONS -- IBOT -- head_n_prototypes: 131072\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:20 29470 dinov2 ssl_meta_arch.py:98] OPTIONS -- IBOT -- head_bottleneck_dim: 256\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:20 29470 dinov2 ssl_meta_arch.py:99] OPTIONS -- IBOT -- head_hidden_dim: 2048\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:21 29470 dinov2 ssl_meta_arch.py:121] Student and Teacher are built: they are both vit_giant2 network.\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 ssl_meta_arch.py:391] DISTRIBUTED FSDP -- preparing model for distributed training\n", "pipe": "stdout"}
+{"event": "line", "data": "W20240822 05:49:22 29470 py.warnings warnings.py:109] /home/runner/work/milabench/milabench/output/venv/torch/lib/python3.10/site-packages/torch/distributed/fsdp/wrap.py:99: UserWarning: FSDP will not all-gather parameters for containers that do not implement forward: BlockChunk(\n", "pipe": "stdout"}
+{"event": "line", "data": "  (0-9): 10 x NestedTensorBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "    (norm1): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (attn): MemEffAttention(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (qkv): Linear(in_features=1536, out_features=4608, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (attn_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (proj): Linear(in_features=1536, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (proj_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (ls1): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "    (drop_path1): DropPath()\n", "pipe": "stdout"}
+{"event": "line", "data": "    (norm2): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (mlp): SwiGLUFFNFused(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (w12): Linear(in_features=1536, out_features=8192, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (w3): Linear(in_features=4096, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (ls2): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "    (drop_path2): DropPath()\n", "pipe": "stdout"}
+{"event": "line", "data": "  )\n", "pipe": "stdout"}
+{"event": "line", "data": ")\n", "pipe": "stdout"}
+{"event": "line", "data": "  return fsdp_fn(module, **kwargs)\n", "pipe": "stdout"}
+{"event": "line", "data": "\n", "pipe": "stdout"}
+{"event": "line", "data": "W20240822 05:49:22 29470 py.warnings warnings.py:109] /home/runner/work/milabench/milabench/output/venv/torch/lib/python3.10/site-packages/torch/distributed/fsdp/_init_utils.py:440: UserWarning: FSDP is switching to use `NO_SHARD` instead of ShardingStrategy.SHARD_GRAD_OP since the world size is 1.\n", "pipe": "stdout"}
+{"event": "line", "data": "  warnings.warn(\n", "pipe": "stdout"}
+{"event": "line", "data": "\n", "pipe": "stdout"}
+{"event": "line", "data": "W20240822 05:49:22 29470 py.warnings warnings.py:109] /home/runner/work/milabench/milabench/output/venv/torch/lib/python3.10/site-packages/torch/distributed/fsdp/wrap.py:99: UserWarning: FSDP will not all-gather parameters for containers that do not implement forward: BlockChunk(\n", "pipe": "stdout"}
+{"event": "line", "data": "  (0-9): 10 x Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "  (10-19): 10 x NestedTensorBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "    (norm1): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (attn): MemEffAttention(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (qkv): Linear(in_features=1536, out_features=4608, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (attn_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (proj): Linear(in_features=1536, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (proj_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (ls1): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "    (drop_path1): DropPath()\n", "pipe": "stdout"}
+{"event": "line", "data": "    (norm2): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (mlp): SwiGLUFFNFused(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (w12): Linear(in_features=1536, out_features=8192, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (w3): Linear(in_features=4096, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (ls2): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "    (drop_path2): DropPath()\n", "pipe": "stdout"}
+{"event": "line", "data": "  )\n", "pipe": "stdout"}
+{"event": "line", "data": ")\n", "pipe": "stdout"}
+{"event": "line", "data": "  return fsdp_fn(module, **kwargs)\n", "pipe": "stdout"}
+{"event": "line", "data": "\n", "pipe": "stdout"}
+{"event": "line", "data": "W20240822 05:49:22 29470 py.warnings warnings.py:109] /home/runner/work/milabench/milabench/output/venv/torch/lib/python3.10/site-packages/torch/distributed/fsdp/wrap.py:99: UserWarning: FSDP will not all-gather parameters for containers that do not implement forward: BlockChunk(\n", "pipe": "stdout"}
+{"event": "line", "data": "  (0-19): 20 x Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "  (20-29): 10 x NestedTensorBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "    (norm1): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (attn): MemEffAttention(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (qkv): Linear(in_features=1536, out_features=4608, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (attn_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (proj): Linear(in_features=1536, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (proj_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (ls1): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "    (drop_path1): DropPath()\n", "pipe": "stdout"}
+{"event": "line", "data": "    (norm2): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (mlp): SwiGLUFFNFused(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (w12): Linear(in_features=1536, out_features=8192, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (w3): Linear(in_features=4096, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (ls2): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "    (drop_path2): DropPath()\n", "pipe": "stdout"}
+{"event": "line", "data": "  )\n", "pipe": "stdout"}
+{"event": "line", "data": ")\n", "pipe": "stdout"}
+{"event": "line", "data": "  return fsdp_fn(module, **kwargs)\n", "pipe": "stdout"}
+{"event": "line", "data": "\n", "pipe": "stdout"}
+{"event": "line", "data": "W20240822 05:49:22 29470 py.warnings warnings.py:109] /home/runner/work/milabench/milabench/output/venv/torch/lib/python3.10/site-packages/torch/distributed/fsdp/wrap.py:99: UserWarning: FSDP will not all-gather parameters for containers that do not implement forward: BlockChunk(\n", "pipe": "stdout"}
+{"event": "line", "data": "  (0-29): 30 x Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "  (30-39): 10 x NestedTensorBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "    (norm1): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (attn): MemEffAttention(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (qkv): Linear(in_features=1536, out_features=4608, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (attn_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (proj): Linear(in_features=1536, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (proj_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (ls1): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "    (drop_path1): DropPath()\n", "pipe": "stdout"}
+{"event": "line", "data": "    (norm2): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (mlp): SwiGLUFFNFused(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (w12): Linear(in_features=1536, out_features=8192, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (w3): Linear(in_features=4096, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (ls2): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "    (drop_path2): DropPath()\n", "pipe": "stdout"}
+{"event": "line", "data": "  )\n", "pipe": "stdout"}
+{"event": "line", "data": ")\n", "pipe": "stdout"}
+{"event": "line", "data": "  return fsdp_fn(module, **kwargs)\n", "pipe": "stdout"}
+{"event": "line", "data": "\n", "pipe": "stdout"}
+{"event": "line", "data": "W20240822 05:49:22 29470 py.warnings warnings.py:109] /home/runner/work/milabench/milabench/output/venv/torch/lib/python3.10/site-packages/torch/distributed/fsdp/wrap.py:99: UserWarning: FSDP will not all-gather parameters for containers that do not implement forward: BlockChunk(\n", "pipe": "stdout"}
+{"event": "line", "data": "  (0-9): 10 x NestedTensorBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "    (norm1): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (attn): MemEffAttention(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (qkv): Linear(in_features=1536, out_features=4608, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (attn_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (proj): Linear(in_features=1536, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (proj_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (ls1): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "    (drop_path1): Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "    (norm2): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (mlp): SwiGLUFFNFused(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (w12): Linear(in_features=1536, out_features=8192, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (w3): Linear(in_features=4096, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (ls2): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "    (drop_path2): Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "  )\n", "pipe": "stdout"}
+{"event": "line", "data": ")\n", "pipe": "stdout"}
+{"event": "line", "data": "  return fsdp_fn(module, **kwargs)\n", "pipe": "stdout"}
+{"event": "line", "data": "\n", "pipe": "stdout"}
+{"event": "line", "data": "W20240822 05:49:22 29470 py.warnings warnings.py:109] /home/runner/work/milabench/milabench/output/venv/torch/lib/python3.10/site-packages/torch/distributed/fsdp/wrap.py:99: UserWarning: FSDP will not all-gather parameters for containers that do not implement forward: BlockChunk(\n", "pipe": "stdout"}
+{"event": "line", "data": "  (0-9): 10 x Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "  (10-19): 10 x NestedTensorBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "    (norm1): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (attn): MemEffAttention(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (qkv): Linear(in_features=1536, out_features=4608, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (attn_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (proj): Linear(in_features=1536, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (proj_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (ls1): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "    (drop_path1): Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "    (norm2): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (mlp): SwiGLUFFNFused(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (w12): Linear(in_features=1536, out_features=8192, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (w3): Linear(in_features=4096, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (ls2): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "    (drop_path2): Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "  )\n", "pipe": "stdout"}
+{"event": "line", "data": ")\n", "pipe": "stdout"}
+{"event": "line", "data": "  return fsdp_fn(module, **kwargs)\n", "pipe": "stdout"}
+{"event": "line", "data": "\n", "pipe": "stdout"}
+{"event": "line", "data": "W20240822 05:49:22 29470 py.warnings warnings.py:109] /home/runner/work/milabench/milabench/output/venv/torch/lib/python3.10/site-packages/torch/distributed/fsdp/wrap.py:99: UserWarning: FSDP will not all-gather parameters for containers that do not implement forward: BlockChunk(\n", "pipe": "stdout"}
+{"event": "line", "data": "  (0-19): 20 x Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "  (20-29): 10 x NestedTensorBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "    (norm1): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (attn): MemEffAttention(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (qkv): Linear(in_features=1536, out_features=4608, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (attn_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (proj): Linear(in_features=1536, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (proj_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (ls1): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "    (drop_path1): Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "    (norm2): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (mlp): SwiGLUFFNFused(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (w12): Linear(in_features=1536, out_features=8192, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (w3): Linear(in_features=4096, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (ls2): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "    (drop_path2): Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "  )\n", "pipe": "stdout"}
+{"event": "line", "data": ")\n", "pipe": "stdout"}
+{"event": "line", "data": "  return fsdp_fn(module, **kwargs)\n", "pipe": "stdout"}
+{"event": "line", "data": "\n", "pipe": "stdout"}
+{"event": "line", "data": "W20240822 05:49:22 29470 py.warnings warnings.py:109] /home/runner/work/milabench/milabench/output/venv/torch/lib/python3.10/site-packages/torch/distributed/fsdp/wrap.py:99: UserWarning: FSDP will not all-gather parameters for containers that do not implement forward: BlockChunk(\n", "pipe": "stdout"}
+{"event": "line", "data": "  (0-29): 30 x Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "  (30-39): 10 x NestedTensorBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "    (norm1): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (attn): MemEffAttention(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (qkv): Linear(in_features=1536, out_features=4608, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (attn_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (proj): Linear(in_features=1536, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (proj_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (ls1): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "    (drop_path1): Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "    (norm2): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (mlp): SwiGLUFFNFused(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (w12): Linear(in_features=1536, out_features=8192, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "      (w3): Linear(in_features=4096, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (ls2): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "    (drop_path2): Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "  )\n", "pipe": "stdout"}
+{"event": "line", "data": ")\n", "pipe": "stdout"}
+{"event": "line", "data": "  return fsdp_fn(module, **kwargs)\n", "pipe": "stdout"}
+{"event": "line", "data": "\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 train.py:303] Model:\n", "pipe": "stdout"}
+{"event": "line", "data": "SSLMetaArch2(\n", "pipe": "stdout"}
+{"event": "line", "data": "  (dino_loss): DINOLoss()\n", "pipe": "stdout"}
+{"event": "line", "data": "  (koleo_loss): KoLeoLoss(\n", "pipe": "stdout"}
+{"event": "line", "data": "    (pdist): PairwiseDistance()\n", "pipe": "stdout"}
+{"event": "line", "data": "  )\n", "pipe": "stdout"}
+{"event": "line", "data": "  (ibot_patch_loss): iBOTPatchLoss()\n", "pipe": "stdout"}
+{"event": "line", "data": "  (student): ModuleDict(\n", "pipe": "stdout"}
+{"event": "line", "data": "    (backbone): FullyShardedDataParallel(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (_fsdp_wrapped_module): DinoVisionTransformer(\n", "pipe": "stdout"}
+{"event": "line", "data": "        (patch_embed): PatchEmbed(\n", "pipe": "stdout"}
+{"event": "line", "data": "          (proj): Conv2d(3, 1536, kernel_size=(14, 14), stride=(14, 14))\n", "pipe": "stdout"}
+{"event": "line", "data": "          (norm): Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "        )\n", "pipe": "stdout"}
+{"event": "line", "data": "        (blocks): ModuleList(\n", "pipe": "stdout"}
+{"event": "line", "data": "          (0): FullyShardedDataParallel(\n", "pipe": "stdout"}
+{"event": "line", "data": "            (_fsdp_wrapped_module): BlockChunk(\n", "pipe": "stdout"}
+{"event": "line", "data": "              (0-9): 10 x NestedTensorBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "                (norm1): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                (attn): MemEffAttention(\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (qkv): Linear(in_features=1536, out_features=4608, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (attn_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (proj): Linear(in_features=1536, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (proj_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "                )\n", "pipe": "stdout"}
+{"event": "line", "data": "                (ls1): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "                (drop_path1): DropPath()\n", "pipe": "stdout"}
+{"event": "line", "data": "                (norm2): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                (mlp): SwiGLUFFNFused(\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (w12): Linear(in_features=1536, out_features=8192, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (w3): Linear(in_features=4096, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                )\n", "pipe": "stdout"}
+{"event": "line", "data": "                (ls2): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "                (drop_path2): DropPath()\n", "pipe": "stdout"}
+{"event": "line", "data": "              )\n", "pipe": "stdout"}
+{"event": "line", "data": "            )\n", "pipe": "stdout"}
+{"event": "line", "data": "          )\n", "pipe": "stdout"}
+{"event": "line", "data": "          (1): FullyShardedDataParallel(\n", "pipe": "stdout"}
+{"event": "line", "data": "            (_fsdp_wrapped_module): BlockChunk(\n", "pipe": "stdout"}
+{"event": "line", "data": "              (0-9): 10 x Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "              (10-19): 10 x NestedTensorBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "                (norm1): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                (attn): MemEffAttention(\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (qkv): Linear(in_features=1536, out_features=4608, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (attn_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (proj): Linear(in_features=1536, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (proj_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "                )\n", "pipe": "stdout"}
+{"event": "line", "data": "                (ls1): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "                (drop_path1): DropPath()\n", "pipe": "stdout"}
+{"event": "line", "data": "                (norm2): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                (mlp): SwiGLUFFNFused(\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (w12): Linear(in_features=1536, out_features=8192, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (w3): Linear(in_features=4096, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                )\n", "pipe": "stdout"}
+{"event": "line", "data": "                (ls2): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "                (drop_path2): DropPath()\n", "pipe": "stdout"}
+{"event": "line", "data": "              )\n", "pipe": "stdout"}
+{"event": "line", "data": "            )\n", "pipe": "stdout"}
+{"event": "line", "data": "          )\n", "pipe": "stdout"}
+{"event": "line", "data": "          (2): FullyShardedDataParallel(\n", "pipe": "stdout"}
+{"event": "line", "data": "            (_fsdp_wrapped_module): BlockChunk(\n", "pipe": "stdout"}
+{"event": "line", "data": "              (0-19): 20 x Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "              (20-29): 10 x NestedTensorBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "                (norm1): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                (attn): MemEffAttention(\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (qkv): Linear(in_features=1536, out_features=4608, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (attn_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (proj): Linear(in_features=1536, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (proj_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "                )\n", "pipe": "stdout"}
+{"event": "line", "data": "                (ls1): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "                (drop_path1): DropPath()\n", "pipe": "stdout"}
+{"event": "line", "data": "                (norm2): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                (mlp): SwiGLUFFNFused(\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (w12): Linear(in_features=1536, out_features=8192, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (w3): Linear(in_features=4096, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                )\n", "pipe": "stdout"}
+{"event": "line", "data": "                (ls2): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "                (drop_path2): DropPath()\n", "pipe": "stdout"}
+{"event": "line", "data": "              )\n", "pipe": "stdout"}
+{"event": "line", "data": "            )\n", "pipe": "stdout"}
+{"event": "line", "data": "          )\n", "pipe": "stdout"}
+{"event": "line", "data": "          (3): FullyShardedDataParallel(\n", "pipe": "stdout"}
+{"event": "line", "data": "            (_fsdp_wrapped_module): BlockChunk(\n", "pipe": "stdout"}
+{"event": "line", "data": "              (0-29): 30 x Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "              (30-39): 10 x NestedTensorBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "                (norm1): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                (attn): MemEffAttention(\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (qkv): Linear(in_features=1536, out_features=4608, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (attn_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (proj): Linear(in_features=1536, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (proj_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "                )\n", "pipe": "stdout"}
+{"event": "line", "data": "                (ls1): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "                (drop_path1): DropPath()\n", "pipe": "stdout"}
+{"event": "line", "data": "                (norm2): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                (mlp): SwiGLUFFNFused(\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (w12): Linear(in_features=1536, out_features=8192, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (w3): Linear(in_features=4096, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                )\n", "pipe": "stdout"}
+{"event": "line", "data": "                (ls2): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "                (drop_path2): DropPath()\n", "pipe": "stdout"}
+{"event": "line", "data": "              )\n", "pipe": "stdout"}
+{"event": "line", "data": "            )\n", "pipe": "stdout"}
+{"event": "line", "data": "          )\n", "pipe": "stdout"}
+{"event": "line", "data": "        )\n", "pipe": "stdout"}
+{"event": "line", "data": "        (norm): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (head): Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "      )\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (dino_head): FullyShardedDataParallel(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (_fsdp_wrapped_module): DINOHead(\n", "pipe": "stdout"}
+{"event": "line", "data": "        (mlp): Sequential(\n", "pipe": "stdout"}
+{"event": "line", "data": "          (0): Linear(in_features=1536, out_features=2048, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "          (1): GELU(approximate='none')\n", "pipe": "stdout"}
+{"event": "line", "data": "          (2): Linear(in_features=2048, out_features=2048, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "          (3): GELU(approximate='none')\n", "pipe": "stdout"}
+{"event": "line", "data": "          (4): Linear(in_features=2048, out_features=384, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        )\n", "pipe": "stdout"}
+{"event": "line", "data": "        (last_layer): Linear(in_features=384, out_features=131072, bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "      )\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (ibot_head): FullyShardedDataParallel(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (_fsdp_wrapped_module): DINOHead(\n", "pipe": "stdout"}
+{"event": "line", "data": "        (mlp): Sequential(\n", "pipe": "stdout"}
+{"event": "line", "data": "          (0): Linear(in_features=1536, out_features=2048, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "          (1): GELU(approximate='none')\n", "pipe": "stdout"}
+{"event": "line", "data": "          (2): Linear(in_features=2048, out_features=2048, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "          (3): GELU(approximate='none')\n", "pipe": "stdout"}
+{"event": "line", "data": "          (4): Linear(in_features=2048, out_features=256, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        )\n", "pipe": "stdout"}
+{"event": "line", "data": "        (last_layer): Linear(in_features=256, out_features=131072, bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "      )\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "  )\n", "pipe": "stdout"}
+{"event": "line", "data": "  (teacher): ModuleDict(\n", "pipe": "stdout"}
+{"event": "line", "data": "    (backbone): FullyShardedDataParallel(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (_fsdp_wrapped_module): DinoVisionTransformer(\n", "pipe": "stdout"}
+{"event": "line", "data": "        (patch_embed): PatchEmbed(\n", "pipe": "stdout"}
+{"event": "line", "data": "          (proj): Conv2d(3, 1536, kernel_size=(14, 14), stride=(14, 14))\n", "pipe": "stdout"}
+{"event": "line", "data": "          (norm): Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "        )\n", "pipe": "stdout"}
+{"event": "line", "data": "        (blocks): ModuleList(\n", "pipe": "stdout"}
+{"event": "line", "data": "          (0): FullyShardedDataParallel(\n", "pipe": "stdout"}
+{"event": "line", "data": "            (_fsdp_wrapped_module): BlockChunk(\n", "pipe": "stdout"}
+{"event": "line", "data": "              (0-9): 10 x NestedTensorBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "                (norm1): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                (attn): MemEffAttention(\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (qkv): Linear(in_features=1536, out_features=4608, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (attn_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (proj): Linear(in_features=1536, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (proj_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "                )\n", "pipe": "stdout"}
+{"event": "line", "data": "                (ls1): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "                (drop_path1): Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "                (norm2): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                (mlp): SwiGLUFFNFused(\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (w12): Linear(in_features=1536, out_features=8192, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (w3): Linear(in_features=4096, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                )\n", "pipe": "stdout"}
+{"event": "line", "data": "                (ls2): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "                (drop_path2): Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "              )\n", "pipe": "stdout"}
+{"event": "line", "data": "            )\n", "pipe": "stdout"}
+{"event": "line", "data": "          )\n", "pipe": "stdout"}
+{"event": "line", "data": "          (1): FullyShardedDataParallel(\n", "pipe": "stdout"}
+{"event": "line", "data": "            (_fsdp_wrapped_module): BlockChunk(\n", "pipe": "stdout"}
+{"event": "line", "data": "              (0-9): 10 x Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "              (10-19): 10 x NestedTensorBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "                (norm1): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                (attn): MemEffAttention(\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (qkv): Linear(in_features=1536, out_features=4608, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (attn_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (proj): Linear(in_features=1536, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (proj_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "                )\n", "pipe": "stdout"}
+{"event": "line", "data": "                (ls1): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "                (drop_path1): Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "                (norm2): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                (mlp): SwiGLUFFNFused(\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (w12): Linear(in_features=1536, out_features=8192, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (w3): Linear(in_features=4096, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                )\n", "pipe": "stdout"}
+{"event": "line", "data": "                (ls2): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "                (drop_path2): Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "              )\n", "pipe": "stdout"}
+{"event": "line", "data": "            )\n", "pipe": "stdout"}
+{"event": "line", "data": "          )\n", "pipe": "stdout"}
+{"event": "line", "data": "          (2): FullyShardedDataParallel(\n", "pipe": "stdout"}
+{"event": "line", "data": "            (_fsdp_wrapped_module): BlockChunk(\n", "pipe": "stdout"}
+{"event": "line", "data": "              (0-19): 20 x Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "              (20-29): 10 x NestedTensorBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "                (norm1): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                (attn): MemEffAttention(\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (qkv): Linear(in_features=1536, out_features=4608, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (attn_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (proj): Linear(in_features=1536, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (proj_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "                )\n", "pipe": "stdout"}
+{"event": "line", "data": "                (ls1): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "                (drop_path1): Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "                (norm2): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                (mlp): SwiGLUFFNFused(\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (w12): Linear(in_features=1536, out_features=8192, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (w3): Linear(in_features=4096, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                )\n", "pipe": "stdout"}
+{"event": "line", "data": "                (ls2): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "                (drop_path2): Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "              )\n", "pipe": "stdout"}
+{"event": "line", "data": "            )\n", "pipe": "stdout"}
+{"event": "line", "data": "          )\n", "pipe": "stdout"}
+{"event": "line", "data": "          (3): FullyShardedDataParallel(\n", "pipe": "stdout"}
+{"event": "line", "data": "            (_fsdp_wrapped_module): BlockChunk(\n", "pipe": "stdout"}
+{"event": "line", "data": "              (0-29): 30 x Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "              (30-39): 10 x NestedTensorBlock(\n", "pipe": "stdout"}
+{"event": "line", "data": "                (norm1): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                (attn): MemEffAttention(\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (qkv): Linear(in_features=1536, out_features=4608, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (attn_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (proj): Linear(in_features=1536, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (proj_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "                )\n", "pipe": "stdout"}
+{"event": "line", "data": "                (ls1): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "                (drop_path1): Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "                (norm2): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                (mlp): SwiGLUFFNFused(\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (w12): Linear(in_features=1536, out_features=8192, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                  (w3): Linear(in_features=4096, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "                )\n", "pipe": "stdout"}
+{"event": "line", "data": "                (ls2): LayerScale()\n", "pipe": "stdout"}
+{"event": "line", "data": "                (drop_path2): Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "              )\n", "pipe": "stdout"}
+{"event": "line", "data": "            )\n", "pipe": "stdout"}
+{"event": "line", "data": "          )\n", "pipe": "stdout"}
+{"event": "line", "data": "        )\n", "pipe": "stdout"}
+{"event": "line", "data": "        (norm): LayerNorm((1536,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (head): Identity()\n", "pipe": "stdout"}
+{"event": "line", "data": "      )\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (dino_head): FullyShardedDataParallel(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (_fsdp_wrapped_module): DINOHead(\n", "pipe": "stdout"}
+{"event": "line", "data": "        (mlp): Sequential(\n", "pipe": "stdout"}
+{"event": "line", "data": "          (0): Linear(in_features=1536, out_features=2048, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "          (1): GELU(approximate='none')\n", "pipe": "stdout"}
+{"event": "line", "data": "          (2): Linear(in_features=2048, out_features=2048, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "          (3): GELU(approximate='none')\n", "pipe": "stdout"}
+{"event": "line", "data": "          (4): Linear(in_features=2048, out_features=384, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        )\n", "pipe": "stdout"}
+{"event": "line", "data": "        (last_layer): Linear(in_features=384, out_features=131072, bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "      )\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (ibot_head): FullyShardedDataParallel(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (_fsdp_wrapped_module): DINOHead(\n", "pipe": "stdout"}
+{"event": "line", "data": "        (mlp): Sequential(\n", "pipe": "stdout"}
+{"event": "line", "data": "          (0): Linear(in_features=1536, out_features=2048, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "          (1): GELU(approximate='none')\n", "pipe": "stdout"}
+{"event": "line", "data": "          (2): Linear(in_features=2048, out_features=2048, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "          (3): GELU(approximate='none')\n", "pipe": "stdout"}
+{"event": "line", "data": "          (4): Linear(in_features=2048, out_features=256, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        )\n", "pipe": "stdout"}
+{"event": "line", "data": "        (last_layer): Linear(in_features=256, out_features=131072, bias=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "      )\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "  )\n", "pipe": "stdout"}
+{"event": "line", "data": ")\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:54] chunked fsdp\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] cls_token: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] pos_embed: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] mask_token: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] patch_embed.proj.weight: lr_multiplier: 0.2, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] patch_embed.proj.bias: lr_multiplier: 0.2, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.0.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.0.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.0.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.0.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.0.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.0.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.0.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.0.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.0.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.0.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.0.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.0.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.0.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.0.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.1.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.1.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.1.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.1.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.1.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.1.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.1.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.1.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.1.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.1.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.1.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.1.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.1.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.1.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.2.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.2.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.2.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.2.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.2.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.2.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.2.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.2.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.2.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.2.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.2.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.2.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.2.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.2.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.3.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.3.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.3.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.3.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.3.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.3.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.3.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.3.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.3.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.3.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.3.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.3.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.3.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.3.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.4.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.4.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.4.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.4.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.4.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.4.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.4.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.4.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.4.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.4.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.4.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.4.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.4.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.4.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.5.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.5.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.5.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.5.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.5.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.5.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.5.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.5.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.5.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.5.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.5.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.5.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.5.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.5.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.6.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.6.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.6.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.6.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.6.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.6.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.6.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.6.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.6.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.6.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.6.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.6.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.6.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.6.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.7.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.7.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.7.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.7.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.7.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.7.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.7.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.7.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.7.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.7.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.7.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.7.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.7.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.7.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.8.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.8.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.8.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.8.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.8.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.8.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.8.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.8.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.8.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.8.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.8.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.8.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.8.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.8.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.9.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.9.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.9.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.9.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.9.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.9.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.9.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.9.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.9.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.9.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.9.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.9.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.9.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.0.9.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.10.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.10.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.10.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.10.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.10.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.10.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.10.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.10.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.10.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.10.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.10.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.10.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.10.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.10.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.11.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.11.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.11.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.11.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.11.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.11.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.11.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.11.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.11.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.11.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.11.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.11.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.11.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.11.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.12.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.12.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.12.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.12.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.12.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.12.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.12.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.12.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.12.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.12.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.12.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.12.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.12.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.12.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.13.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.13.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.13.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.13.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.13.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.13.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.13.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.13.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.13.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.13.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.13.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.13.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.13.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.13.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.14.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.14.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.14.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.14.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.14.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.14.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.14.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.14.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.14.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.14.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.14.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.14.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.14.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.14.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.15.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.15.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.15.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.15.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.15.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.15.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.15.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.15.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.15.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.15.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.15.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.15.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.15.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.15.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.16.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.16.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.16.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.16.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.16.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.16.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.16.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.16.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.16.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.16.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.16.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.16.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.16.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.16.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.17.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.17.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.17.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.17.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.17.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.17.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.17.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.17.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.17.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.17.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.17.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.17.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.17.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.17.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.18.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.18.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.18.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.18.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.18.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.18.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.18.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.18.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.18.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.18.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.18.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.18.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.18.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.18.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.19.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.19.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.19.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.19.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.19.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.19.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.19.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.19.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.19.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.19.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.19.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.19.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.19.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.1.19.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.20.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.20.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.20.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.20.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.20.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.20.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.20.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.20.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.20.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.20.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.20.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.20.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.20.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.20.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.21.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.21.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.21.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.21.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.21.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.21.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.21.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.21.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.21.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.21.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.21.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.21.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.21.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.21.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.22.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.22.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.22.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.22.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.22.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.22.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.22.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.22.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.22.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.22.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.22.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.22.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.22.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.22.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.23.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.23.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.23.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.23.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.23.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.23.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.23.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.23.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.23.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.23.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.23.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.23.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.23.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.23.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.24.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.24.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.24.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.24.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.24.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.24.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.24.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.24.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.24.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.24.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.24.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.24.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.24.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.24.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.25.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.25.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.25.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.25.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.25.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.25.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.25.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.25.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.25.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.25.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.25.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.25.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.25.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.25.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.26.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.26.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.26.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.26.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.26.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.26.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.26.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.26.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.26.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.26.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.26.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.26.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.26.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.26.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.27.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.27.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.27.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.27.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.27.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.27.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.27.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.27.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.27.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.27.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.27.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.27.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.27.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.27.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.28.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.28.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.28.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.28.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.28.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.28.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.28.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.28.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.28.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.28.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.28.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.28.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.28.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.28.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.29.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.29.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.29.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.29.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.29.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.29.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.29.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.29.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.29.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.29.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.29.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.29.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.29.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.2.29.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.30.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.30.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.30.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.30.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.30.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.30.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.30.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.30.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.30.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.30.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.30.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.30.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.30.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.30.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.31.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.31.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.31.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.31.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.31.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.31.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.31.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.31.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.31.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.31.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.31.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.31.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.31.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.31.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.32.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.32.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.32.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.32.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.32.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.32.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.32.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.32.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.32.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.32.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.32.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.32.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.32.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.32.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.33.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.33.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.33.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.33.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.33.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.33.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.33.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.33.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.33.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.33.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.33.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.33.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.33.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.33.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.34.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.34.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.34.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.34.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.34.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.34.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.34.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.34.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.34.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.34.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.34.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.34.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.34.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.34.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.35.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.35.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.35.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.35.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.35.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.35.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.35.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.35.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.35.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.35.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.35.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.35.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.35.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.35.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.36.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.36.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.36.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.36.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.36.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.36.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.36.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.36.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.36.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.36.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.36.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.36.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.36.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.36.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.37.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.37.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.37.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.37.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.37.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.37.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.37.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.37.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.37.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.37.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.37.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.37.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.37.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.37.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.38.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.38.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.38.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.38.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.38.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.38.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.38.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.38.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.38.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.38.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.38.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.38.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.38.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.38.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.39.norm1.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.39.norm1.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.39.attn.qkv.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.39.attn.qkv.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.39.attn.proj.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.39.attn.proj.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.39.ls1.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.39.norm2.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.39.norm2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.39.mlp.w12.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.39.mlp.w12.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.39.mlp.w3.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.39.mlp.w3.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] blocks.3.39.ls2.gamma: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] norm.weight: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] norm.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 ssl_meta_arch.py:378] fusing param groups\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:64] else code branch\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] mlp.0.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] mlp.0.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] mlp.2.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] mlp.2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] mlp.4.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] mlp.4.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] last_layer.weight_g: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] last_layer.weight_v: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 ssl_meta_arch.py:378] fusing param groups\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:64] else code branch\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] mlp.0.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] mlp.0.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] mlp.2.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] mlp.2.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] mlp.4.weight: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] mlp.4.bias: lr_multiplier: 1.0, wd_multiplier: 0.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] last_layer.weight_g: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 param_groups.py:87] last_layer.weight_v: lr_multiplier: 1.0, wd_multiplier: 1.0\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 ssl_meta_arch.py:378] fusing param groups\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 train.py:102] Schedulers ready.\n", "pipe": "stdout"}
+{"event": "line", "data": "W20240822 05:49:22 29470 py.warnings warnings.py:109] /home/runner/work/milabench/milabench/output/venv/torch/lib/python3.10/site-packages/torch/distributed/fsdp/fully_sharded_data_parallel.py:689: FutureWarning: FSDP.state_dict_type() and FSDP.set_state_dict_type() are being deprecated. Please use APIs, get_state_dict() and set_state_dict(), which can support different parallelisms, FSDP1, FSDP2, DDP. API doc: https://pytorch.org/docs/stable/distributed.checkpoint.html#torch.distributed.checkpoint.state_dict.get_state_dict .Tutorial: https://pytorch.org/tutorials/recipes/distributed_checkpoint_recipe.html .\n", "pipe": "stdout"}
+{"event": "line", "data": "  warnings.warn(\n", "pipe": "stdout"}
+{"event": "line", "data": "\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 fvcore.common.checkpoint checkpoint.py:148] No checkpoint found. Initializing model from scratch\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 augmentations.py:34] ###################################\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 augmentations.py:35] Using data augmentation parameters:\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 augmentations.py:36] global_crops_scale: [0.32, 1.0]\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 augmentations.py:37] local_crops_scale: [0.05, 0.32]\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 augmentations.py:38] local_crops_number: 8\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 augmentations.py:39] global_crops_size: 224\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 augmentations.py:40] local_crops_size: 98\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 augmentations.py:41] ###################################\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 loaders.py:84] using dataset: \"ImageNet:split=TRAIN:root=/home/runner/work/milabench/milabench/output/data/FakeImageNet:extra=/home/runner/work/milabench/milabench/output/data/FakeImageNet\"\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 loaders.py:89] # of dataset samples: 1,920\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 loaders.py:122] sampler: sharded infinite\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 loaders.py:206] using PyTorch data loader\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 loaders.py:221] infinite data loader\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:22 29470 dinov2 train.py:217] Starting training from iteration 0\n", "pipe": "stdout"}
+{"event": "data", "data": {"progress": [0, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1520.375, 81920.0], "load": 0.0, "temperature": 51.0, "power": 78.133}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1520.375, 81920.0], "load": 0.0, "temperature": 49.0, "power": 77.163}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1520.375, 81920.0], "load": 0.0, "temperature": 48.0, "power": 76.237}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1520.375, 81920.0], "load": 0.0, "temperature": 47.0, "power": 75.679}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1520.375, 81920.0], "load": 0.0, "temperature": 46.0, "power": 74.784}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1520.375, 81920.0], "load": 0.0, "temperature": 46.0, "power": 74.236}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1520.375, 81920.0], "load": 0.0, "temperature": 45.0, "power": 73.224}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1520.375, 81920.0], "load": 0.0, "temperature": 44.0, "power": 72.849}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1520.375, 81920.0], "load": 0.0, "temperature": 43.0, "power": 72.35}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1520.375, 81920.0], "load": 0.0, "temperature": 43.0, "power": 72.148}}}, "pipe": "data"}
+{"event": "line", "data": "W20240822 05:49:26 29470 py.warnings warnings.py:109] /home/runner/work/milabench/milabench/benchmarks/dinov2/src/dinov2/loss/koleo_loss.py:43: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.\n", "pipe": "stdout"}
+{"event": "line", "data": "  with torch.cuda.amp.autocast(enabled=False):\n", "pipe": "stdout"}
+{"event": "line", "data": "\n", "pipe": "stdout"}
+{"event": "line", "data": "I20240822 05:49:27 29470 dinov2 helpers.py:102] Training  [     0/625000]  eta: 37 days, 2:05:22  lr: 0.0000 (0.0000)  wd: 0.0400 (0.0400)  mom: 0.9940 (0.9940)  last_layer_lr: 0.0000 (0.0000)  current_batch_size: 32.0000 (32.0000)  total_loss: 15.4906 (15.4906)  dino_local_crops_loss: 10.5893 (10.5893)  dino_global_crops_loss: 1.3237 (1.3237)  koleo_loss: 0.5913 (0.5913)  ibot_loss: 2.9863 (2.9863)  time: 5.126917  data: 1.753492  max mem: 46188\n", "pipe": "stdout"}
+{"event": "data", "data": {"progress": [1, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "line", "data": "W20240822 05:49:28 29470 py.warnings warnings.py:109] /home/runner/work/milabench/milabench/benchmarks/dinov2/src/dinov2/loss/koleo_loss.py:43: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.\n", "pipe": "stdout"}
+{"event": "line", "data": "  with torch.cuda.amp.autocast(enabled=False):\n", "pipe": "stdout"}
+{"event": "line", "data": "\n", "pipe": "stdout"}
+{"event": "data", "data": {"progress": [2, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [3, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [4, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [5, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [6, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [20820.375, 81920.0], "load": 0.45, "temperature": 42.0, "power": 77.96}}}, "pipe": "data"}
+{"event": "data", "data": {"progress": [7, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [8, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [9, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [10, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "line", "data": "I20240822 05:49:40 29470 dinov2 helpers.py:102] Training  [    10/625000]  eta: 11 days, 17:47:19  lr: 0.0000 (0.0000)  wd: 0.0400 (0.0400)  mom: 0.9940 (0.9940)  last_layer_lr: 0.0000 (0.0000)  current_batch_size: 32.0000 (32.0000)  total_loss: 15.4949 (15.4939)  dino_local_crops_loss: 10.5893 (10.5893)  dino_global_crops_loss: 1.3237 (1.3237)  koleo_loss: 0.5947 (0.5944)  ibot_loss: 2.9866 (2.9866)  time: 1.623129  data: 0.159788  max mem: 55695\n", "pipe": "stdout"}
+{"event": "data", "data": {"progress": [11, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [12, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [13, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [14, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [15, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [16, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [17, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [70876.375, 81920.0], "load": 0.99, "temperature": 51.0, "power": 326.464}}}, "pipe": "data"}
+{"event": "data", "data": {"progress": [18, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [19, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [20, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "line", "data": "I20240822 05:49:53 29470 dinov2 helpers.py:102] Training  [    20/625000]  eta: 10 days, 14:32:41  lr: 0.0000 (0.0000)  wd: 0.0400 (0.0400)  mom: 0.9940 (0.9940)  last_layer_lr: 0.0000 (0.0000)  current_batch_size: 32.0000 (32.0000)  total_loss: 15.4917 (15.4932)  dino_local_crops_loss: 10.5893 (10.5893)  dino_global_crops_loss: 1.3237 (1.3237)  koleo_loss: 0.5928 (0.5936)  ibot_loss: 2.9867 (2.9866)  time: 1.283190  data: 0.000360  max mem: 55695\n", "pipe": "stdout"}
+{"event": "data", "data": {"progress": [21, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [22, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [23, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [24, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [25, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [26, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [27, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [28, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [70876.375, 81920.0], "load": 1.0, "temperature": 54.0, "power": 289.038}}}, "pipe": "data"}
+{"event": "data", "data": {"progress": [29, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [30, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "line", "data": "I20240822 05:50:05 29470 dinov2 helpers.py:102] Training  [    30/625000]  eta: 10 days, 2:53:45  lr: 0.0000 (0.0000)  wd: 0.0400 (0.0400)  mom: 0.9940 (0.9940)  last_layer_lr: 0.0000 (0.0000)  current_batch_size: 32.0000 (32.0000)  total_loss: 15.4941 (15.4942)  dino_local_crops_loss: 10.5893 (10.5893)  dino_global_crops_loss: 1.3237 (1.3237)  koleo_loss: 0.5947 (0.5946)  ibot_loss: 2.9867 (2.9867)  time: 1.275959  data: 0.000320  max mem: 55701\n", "pipe": "stdout"}
+{"event": "data", "data": {"progress": [31, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [32, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [33, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [34, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [35, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [36, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [37, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [38, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [39, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [74548.375, 81920.0], "load": 1.0, "temperature": 58.0, "power": 252.397}}}, "pipe": "data"}
+{"event": "data", "data": {"progress": [40, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "line", "data": "I20240822 05:50:18 29470 dinov2 helpers.py:102] Training  [    40/625000]  eta: 9 days, 19:46:50  lr: 0.0000 (0.0000)  wd: 0.0400 (0.0400)  mom: 0.9940 (0.9940)  last_layer_lr: 0.0000 (0.0000)  current_batch_size: 32.0000 (32.0000)  total_loss: 15.4951 (15.4943)  dino_local_crops_loss: 10.5893 (10.5893)  dino_global_crops_loss: 1.3237 (1.3237)  koleo_loss: 0.5952 (0.5946)  ibot_loss: 2.9870 (2.9868)  time: 1.244739  data: 0.001039  max mem: 55701\n", "pipe": "stdout"}
+{"event": "data", "data": {"progress": [41, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [42, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [43, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [44, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [45, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [46, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [47, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [48, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [49, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [50, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "line", "data": "I20240822 05:50:30 29470 dinov2 helpers.py:102] Training  [    50/625000]  eta: 9 days, 15:18:22  lr: 0.0000 (0.0000)  wd: 0.0400 (0.0400)  mom: 0.9940 (0.9940)  last_layer_lr: 0.0000 (0.0000)  current_batch_size: 32.0000 (32.0000)  total_loss: 15.4945 (15.4937)  dino_local_crops_loss: 10.5893 (10.5893)  dino_global_crops_loss: 1.3237 (1.3237)  koleo_loss: 0.5952 (0.5941)  ibot_loss: 2.9866 (2.9867)  time: 1.229018  data: 0.001057  max mem: 55701\n", "pipe": "stdout"}
+{"event": "data", "data": {"progress": [51, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [74548.375, 81920.0], "load": 1.0, "temperature": 61.0, "power": 344.82}}}, "pipe": "data"}
+{"event": "data", "data": {"progress": [52, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [53, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [54, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [55, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [56, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [57, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [58, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [59, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [60, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "line", "data": "I20240822 05:50:42 29470 dinov2 helpers.py:102] Training  [    60/625000]  eta: 9 days, 12:22:32  lr: 0.0000 (0.0000)  wd: 0.0400 (0.0400)  mom: 0.9940 (0.9940)  last_layer_lr: 0.0000 (0.0000)  current_batch_size: 32.0000 (32.0000)  total_loss: 15.4934 (15.4937)  dino_local_crops_loss: 10.5893 (10.5893)  dino_global_crops_loss: 1.3237 (1.3237)  koleo_loss: 0.5947 (0.5941)  ibot_loss: 2.9864 (2.9866)  time: 1.228216  data: 0.000372  max mem: 55701\n", "pipe": "stdout"}
+{"event": "data", "data": {"progress": [61, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [62, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [74548.375, 81920.0], "load": 1.0, "temperature": 63.0, "power": 300.981}}}, "pipe": "data"}
+{"event": "data", "data": {"progress": [63, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [64, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [65, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.49061381816864, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.49903404712677, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.491689324378967, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.502565026283264, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.500015497207642, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.48555052280426, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.498068928718567, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.484538912773132, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.48864495754242, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.497765898704529, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.494898200035095, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.491166114807129, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.496337294578552, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.47983705997467, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.494967579841614, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.499101161956787, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.50106394290924, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.491435408592224, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.487937927246094, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.49126660823822, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.4896719455719, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.498015284538269, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.495141386985779, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.492737412452698, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.492495775222778, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.500630974769592, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.492936491966248, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.503260254859924, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.494056344032288, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.500496745109558, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.494998812675476, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.488799929618835, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.480105519294739, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.498956203460693, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.501333475112915, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.495406866073608, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.49624788761139, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.494539260864258, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.499639868736267, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.497482180595398, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.493170022964478, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.498262524604797, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.497061848640442, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.479471564292908, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.47793447971344, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.494060635566711, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.489710092544556, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.482787132263184, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.498455166816711, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.491924405097961, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.503198266029358, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.494077205657959, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.494398951530457, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.495848774909973, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.492866158485413, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.5024973154068, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.489529728889465, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.479486465454102, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.500227570533752, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.492541670799255, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.493394255638123, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.497794151306152, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.492567658424377, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.497173070907593, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 15.489971041679382, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 13.071948875467527, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [1, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 52.409382323849016, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [2, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 52.15493962750991, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [3, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 52.16155548661985, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [4, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 48.952085800601076, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [5, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 49.6581437336391, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [6, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 49.60905598419741, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [7, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 49.562075060233525, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [8, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 49.603780380882114, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [9, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 49.53559435475931, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [10, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 49.48069095236702, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [11, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 49.47644643592041, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [12, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 49.50120937536409, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [13, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 49.59077921448981, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [14, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 49.53806094539832, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [15, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 49.4422647206797, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [16, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 49.474079348689926, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [17, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 49.44344904572337, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [18, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 49.37530289329134, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [19, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 49.45353675869404, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [20, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 49.39704639791847, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [21, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 49.42729769131621, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [22, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 49.266103374546915, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [23, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 49.39604114125839, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [24, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 49.427209155980215, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [25, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 51.883211710614695, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [26, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 51.956479234225434, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [27, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 51.96649566129796, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [28, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 51.75774019527221, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [29, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 51.80778525888032, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [30, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 51.999719117728155, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [31, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 51.93643223512457, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [32, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 51.932656175957376, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [33, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 51.862215666288925, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [34, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 52.10627259389829, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [35, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 52.12426916980234, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [36, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 52.013725270965175, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [37, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 52.10033862517147, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [38, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 52.04487536341913, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [39, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 52.1425322835103, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [40, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 51.51955203397321, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [41, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 52.19332459674931, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [42, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 52.05027995411767, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [43, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 52.13623750325051, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [44, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 52.26272994931306, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [45, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 52.21222889576327, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [46, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 52.25338017740643, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [47, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 52.20740926029081, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [48, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 52.155448081062346, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [49, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 52.066086812827116, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [50, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 52.082674172253455, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [51, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 52.063413755919576, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [52, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 52.15726925625196, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [53, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 52.086228872704226, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [54, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 52.10439283974049, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [55, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 51.99839885301383, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [56, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 52.07185265722002, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [57, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 52.07229743010428, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [58, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 51.947573265540015, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [59, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 51.93495569974668, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [60, 60]}, "pipe": "data"}
+{"event": "data", "data": {"rate": 51.99841432447773, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [61, 60]}, "pipe": "data"}
+{"event": "stop", "data": null, "pipe": "data"}
+{"event": "data", "data": {"rate": 52.12023776836374, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "early_stop", "progress": [62, 60]}, "pipe": "data"}
+{"event": "end", "data": {"command": ["/home/runner/work/milabench/milabench/output/venv/torch/bin/voir", "--config", "/home/runner/work/milabench/milabench/output/extra/dinov2-giant-nodes/voirconf-dinov2-giant-nodes.manager.0.manager-0efae956f1553a76c1e03985181900f5.json", "/home/runner/work/milabench/milabench/benchmarks/dinov2/main.py", "--output-dir", "/home/runner/work/milabench/milabench/output/extra/dinov2-giant-nodes/output", "--no-resume", "--config-file", "src/dinov2/configs/train/vitg14.yaml", "train.dataset_path=ImageNet:split=TRAIN:root=/home/runner/work/milabench/milabench/output/data/FakeImageNet:extra=/home/runner/work/milabench/milabench/output/data/FakeImageNet", "train.batch_size_per_gpu=32", "train.saveckp_freq=100", "train.num_workers=10"], "time": 1724305848.5141263, "return_code": -15}, "pipe": null}
