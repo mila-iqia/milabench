@@ -1,7 +1,7 @@
 from milabench.pack import Package
 
 
-class Torch_ppo_atari_envpool(Package):
+class Torchatari(Package):
     # Requirements file installed by install(). It can be empty or absent.
     base_requirements = "requirements.in"
 
@@ -28,4 +28,4 @@ class Torch_ppo_atari_envpool(Package):
 
 
 
-__pack__ = Torch_ppo_atari_envpool
+__pack__ = Torchatari

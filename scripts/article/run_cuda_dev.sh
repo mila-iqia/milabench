@@ -26,7 +26,7 @@ export MILABENCH_SYSTEM="$MILABENCH_WORDIR/system.yaml"
 if [ -z "${MILABENCH_DIRS_VENV}" ]; then
     export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
 else
-    export BENCHMARK_VENV="$MILABENCH_DIRS_VENV"
+    export BENCHMARK_VENV="$MILABENCH_DIRS_VENV/"'${install_group}'
 fi
 
 if [ -z "${MILABENCH_PREPARE}" ]; then
@@ -63,8 +63,9 @@ install_prepare() {
     . $MILABENCH_WORDIR/env/bin/activate
     pip install -e $MILABENCH_SOURCE
 
-    # milabench pin --variant cuda --from-scratch "$@" 
-
+    # need torch for pinning
+    pip install torch
+    milabench pin --variant cuda --from-scratch "$@" 
 
     milabench slurm_system > $MILABENCH_WORDIR/system.yaml
 
@@ -78,8 +79,9 @@ install_prepare() {
     # pip install -e $MILABENCH_WORDIR/torchcompat
 
     (
-        . $BENCHMARK_VENV/bin/activate
-        which pip
+        echo "Pass"
+        # . $BENCHMARK_VENV/bin/activate
+        # which pip
         #pip install -e $MILABENCH_WORDIR/voir
         # pip install -e $MILABENCH_WORDIR/torchcompat
         # pip install torch torchvision torchaudio
@@ -99,7 +101,7 @@ install_prepare() {
 
 module load cuda/12.3.2
 
-if [ ! -d "$BENCHMARK_VENV" ]; then
+if [ ! -d "$MILABENCH_VENV" ]; then
     install_prepare 
 else
     echo "Reusing previous install"

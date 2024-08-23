@@ -5,13 +5,13 @@
 
 import datetime
 import os
-import random
-import time
 from pathlib import Path
 from typing import Callable
 
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), "gflownet", "src"))
+
 import numpy as np
-import torch
 import torch.nn as nn
 import torchcompat.core as accelerator
 from gflownet.config import Config, init_empty

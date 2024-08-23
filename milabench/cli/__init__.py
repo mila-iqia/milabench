@@ -22,7 +22,7 @@ from .summary import cli_summary
 from .resolve import cli_resolve
 from .new import cli_new
 from .env import cli_env
-
+from .prepare_run import cli_prepare_run
 
 class Main:
     def new():
@@ -99,6 +99,9 @@ class Main:
     def env():
         """Print milabench environment variables"""
         cli_env()
+
+    def prepare_run():
+        cli_prepare_run()
 
 
 def main(argv=None):

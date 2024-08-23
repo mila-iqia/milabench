@@ -30,9 +30,6 @@ class TimmBenchmarkPack(Package):
                 "https://github.com/huggingface/pytorch-image-models", BRANCH
             )
 
-        # Install TIMM first
-        # await self.pip_install("-e", str(timm))
-
         # install the rest, which might override what TIMM specified
         await super().install()
 

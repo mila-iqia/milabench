@@ -331,6 +331,23 @@ class MemoryUsageExtractor(ValidationLayer):
                 yaml.dump(newdata, file)
 
 
+def arch_to_device(arch):
+    device_types = [
+        "cpu", 
+        "cuda", 
+        "ipu", 
+        "xpu", 
+        "mkldnn", 
+        "opengl", "opencl", "ideep", "hip", "ve", 
+        "fpga", "maia", "xla", "lazy", "vulkan", "mps", "meta",
+        "hpu", "mtia", "privateuseone"
+    ]
+    arch_to_device = {t:t for t in device_types}
+    arch_to_device["rocm"] = "cuda"
+    return arch_to_device.get(arch, "cpu")
+
+
+
 def new_argument_resolver(pack):
     system_config = system_global.get()
     if system_config is None:
@@ -349,6 +366,7 @@ def new_argument_resolver(pack):
         device_count_used = 1
 
     ccl = {"hpu": "hccl", "cuda": "nccl", "rocm": "rccl", "xpu": "ccl", "cpu": "gloo"}
+
 
     cpu_opt = CPUOptions()
     def auto(value, default):
@@ -370,6 +388,7 @@ def new_argument_resolver(pack):
         context["n_worker"] = cpu_opt.n_workers
 
     context["arch"] = arch
+    context["device_name"] = arch_to_device(arch)
     context["ccl"] = ccl.get(arch, "gloo")
     
     context["milabench_base"] = option("base", str, default="")

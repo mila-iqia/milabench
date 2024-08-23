@@ -106,7 +106,7 @@ _timm:
   argv:
     --amp: true
     --amp-dtype: bfloat16
-    --device: '{arch}'
+    --device: '{device_name}'
     --val-split: ''
     --data-dir: "{milabench_data}"
     --dataset: "FakeImageNet"
@@ -648,3 +648,52 @@ llm-full-mp-nodes:
     - "len(nodes) >= ${num_machines}"
 
 
+_geo_gnn:
+  inherits: _defaults
+  definition: .
+  # FIXME: torch cluster is laging behind pytorch
+  # we are forced to use torch==2.3 instead of torch==2.4
+  install_group: gnn
+  group: geo_gnn
+  definition: ../benchmarks/geo_gnn
+  plan:
+    method: per_gpu
+
+dimenet:
+  inherits: _geo_gnn
+  argv:
+    --model: 'DimeNet'
+    --num-samples: 10000
+    --use3d: True
+
+
+recursiongfn:
+  inherits: _defaults
+  definition: ../benchmarks/recursiongfn
+  install_group: gnn
+  group: recursiongfn_gnn
+  plan:
+    method: per_gpu
+
+  argv:
+    --batch_size: 128
+    --num_workers: 8
+    --num_steps: 100
+    --layer_width: 128
+    --num_layers: 4
+
+
+torchatari:
+  inherits: _defaults
+  definition: ../benchmarks/torchatari
+  install_group: torch
+  plan:
+    method: per_gpu
+
+  argv:
+    --num-minibatches: 16
+    --update-epochs: 4
+    --num-steps: 128
+    --num-envs: auto({cpu_per_gpu}, 128)
+    --total-timesteps: 1000000
+    --env-id: Breakout-v5

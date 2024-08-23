@@ -14,8 +14,14 @@ def register_model(fn):
 def DimeNet(args, sample, **extras):
     # The directional message passing neural network (DimeNet) from the “Directional Message Passing for Molecular Graphs” paper. 
     # DimeNet transforms messages based on the angle between them in a rotation-equivariant fashion.
-    batch_size, out_channels = sample.y.shape
-
+    
+    # PCQM4Mv2Subset: Data(x=[18, 9], edge_index=[2, 40], edge_attr=[40, 3], y=3.0476751256, pos=[18, 3], smiles='Cc1ccc([C@H]2[CH]c3cnccc3[N]C2=O)cc1')
+    # QM9:            Data(x=[5, 11], edge_index=[2, 8], edge_attr=[8, 4], y=[1, 19], pos=[5, 3], z=[5], smiles='[H]C([H])([H])[H]', name='gdb_1', idx=[1])
+    try:
+        batch_size, out_channels = sample.y.shape
+    except:
+        out_channels = 1
+    
     return NS(
         category="3d",
         model=_DimeNet(

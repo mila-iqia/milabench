@@ -1,11 +1,16 @@
 #!/usr/bin/env python
 
 import os
-from gflownet.models.bengio2021flow import load_original_model
+
 from pathlib import Path
+
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), "gflownet", "src"))
 
 
 if __name__ == "__main__":
+    from gflownet.models.bengio2021flow import load_original_model
+    
     # If you need the whole configuration:
     # config = json.loads(os.environ["MILABENCH_CONFIG"])
     print("+ Full environment:\n{}\n***".format(os.environ))

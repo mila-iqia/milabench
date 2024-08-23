@@ -126,9 +126,10 @@ def milabench_remote_setup_plan(pack, setup_for="worker") -> SequenceCommand:
     copy = []
     node_packs = []
 
-    copy_source = copy_folder (INSTALL_FOLDER)
+    copy_source = copy_folder(pack, INSTALL_FOLDER, setup_for)
 
     install = []
+
     for i, node in enumerate(nodes):
         if should_run_for(node, setup_for):
             install.append(pip_install_milabench(node_packs[i], node, INSTALL_FOLDER))
