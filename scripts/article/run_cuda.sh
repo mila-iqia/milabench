@@ -19,6 +19,8 @@ else
     export MILABENCH_CONFIG="$MILABENCH_SOURCE/config/standard.yaml"
 fi
 
+ARGS="$@"
+
 install_prepare() {
     mkdir -p $MILABENCH_WORDIR
     cd $MILABENCH_WORDIR
@@ -41,7 +43,7 @@ install_prepare() {
     #
     # Install milabench's benchmarks in their venv
     #
-    milabench install "$@"
+    milabench install $ARGS
 
     which pip
 
@@ -58,7 +60,7 @@ install_prepare() {
 
     #
     #   Generate/download datasets, download models etc...
-    milabench prepare "$@"
+    milabench prepare $ARGS
 }
 
 module load cuda/12.3.2
