@@ -57,7 +57,7 @@ def main():
     ignore_pattern = "*.safetensors"
 
     if config.get("safetensors", False):
-        ignore_pattern = "consolidated.*.pth"
+        ignore_pattern = "*consolidated.*.pth"
 
     download_args = [
         "download",
