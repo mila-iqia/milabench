@@ -39,7 +39,6 @@ def main():
             images = i['images']
             conversation = i['texts']
             prompt = apply_chat_template(conversation)
-            print(prompt)
             inputs = processor(text=prompt, images=images, return_tensors="pt").to(device)
 
             # Forward pass
