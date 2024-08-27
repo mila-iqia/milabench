@@ -1,0 +1,261 @@
+{"event": "config", "data": {"system": {"arch": "cuda", "sshkey": null, "nodes": [{"aliaslist": [], "hostname": "pumpedgull.eastus2.cloudapp.azure.com", "ip": "pumpedgull.eastus2.cloudapp.azure.com", "ipaddrlist": ["00:00:00:00:00:00", "60:45:bd:7e:f7:58", "172.172.8.216", "127.0.0.1", "fe80::6245:bdff:fe7e:f758%eth0", "10.0.1.4", "::1"], "key": "/home/runner/.ssh/covalent-azure-task-a100-d935c7_zikabufe/id_rsa.covalent.pumpedgull.pem", "local": true, "main": true, "name": "manager", "port": 5000, "user": "ubuntu"}], "cloud_profiles": {"azure__a10": {"disk_size": 512, "location": "eastus2", "size": "Standard_NV36ads_A10_v5", "username": "ubuntu"}, "azure__a100": {"disk_size": 512, "location": "eastus2", "size": "Standard_NC24ads_A100_v4", "username": "ubuntu"}, "azure__a100_x2": {"disk_size": 512, "location": "eastus2", "size": "Standard_NC48ads_A100_v4", "username": "ubuntu"}, "azure__a100_x4": {"disk_size": 512, "location": "eastus2", "size": "Standard_NC96ads_A100_v4", "username": "ubuntu"}, "azure__a10_x2": {"disk_size": 512, "location": "eastus2", "size": "Standard_NV72ads_A10_v5", "username": "ubuntu"}}, "self": {"aliaslist": [], "hostname": "pumpedgull.eastus2.cloudapp.azure.com", "ip": "pumpedgull.eastus2.cloudapp.azure.com", "ipaddrlist": ["00:00:00:00:00:00", "60:45:bd:7e:f7:58", "172.172.8.216", "127.0.0.1", "fe80::6245:bdff:fe7e:f758%eth0", "10.0.1.4", "::1"], "key": "/home/runner/.ssh/covalent-azure-task-a100-d935c7_zikabufe/id_rsa.covalent.pumpedgull.pem", "local": true, "main": true, "name": "manager", "port": 5000, "user": "ubuntu"}}, "dirs": {"base": "/home/runner/work/milabench/milabench/output", "venv": "/home/runner/work/milabench/milabench/output/venv/torch", "data": "/home/runner/work/milabench/milabench/output/data", "runs": "/home/runner/work/milabench/milabench/output/runs", "extra": "/home/runner/work/milabench/milabench/output/extra/llm", "cache": "/home/runner/work/milabench/milabench/output/cache"}, "group": "llm", "install_group": "torch", "install_variant": "cuda", "run_name": "lofilano.2024-08-27_20:14:51.193380", "enabled": true, "capabilities": {"nodes": 1}, "max_duration": 800, "voir": {"options": {"stop": 30, "interval": "1s"}}, "validation": {"usage": {"gpu_load_threshold": 0.5, "gpu_mem_threshold": 0.5}}, "config_base": "/home/runner/work/milabench/milabench/config", "config_file": "/home/runner/work/milabench/milabench/config/standard.yaml", "hash": "7f37c5a1671d3f013c81a485148ad6c6", "definition": "/home/runner/work/milabench/milabench/benchmarks/llama", "tags": ["inference", "llm", "nlp"], "plan": {"method": "per_gpu"}, "weight": 1.0, "name": "llama", "tag": ["llama", "D0"], "device": 0, "devices": [0], "env": {"CUDA_VISIBLE_DEVICES": "0"}}, "pipe": null}
+{"event": "meta", "data": {"cpu": {"count": 24, "brand": "AMD EPYC 7V13 64-Core Processor"}, "os": {"sysname": "Linux", "nodename": "pumpedgull", "release": "6.5.0-1025-azure", "version": "#26~22.04.1-Ubuntu SMP Thu Jul 11 22:33:04 UTC 2024", "machine": "x86_64"}, "accelerators": {"arch": "cuda", "gpus": {"0": {"minor_number": "0", "device": 0, "product": "NVIDIA A100 80GB PCIe", "memory": {"used": 764.4375, "total": 81920.0}, "utilization": {"compute": 0.0, "memory": 0}, "temperature": 42.0, "power": 48.045, "selection_variable": "CUDA_VISIBLE_DEVICES"}}}, "date": 1724789704.874545, "milabench": {"tag": "0c2f3ef", "commit": "0c2f3efe51ecff797c823c1907b4a7445090d2b1", "date": "2024-08-27 19:52:42 +0000"}, "pytorch": {"torch": "2.4.0+cu121", "compiler": "GCC 9.3", "cpp": "C++ Version: 201703", "intel": "Intel(R) oneAPI Math Kernel Library Version 2022.2-Product Build 20220804 for Intel(R) 64 architecture applications", "mkl": "OpenMP 201511 (a.k.a. OpenMP 4.5)", "openmp": "OpenMP 201511 (a.k.a. OpenMP 4.5)", "lapack": "LAPACK is enabled (usually provided by MKL)", "nnpack": "NNPACK is enabled", "cpu": "CPU capability usage: AVX2", "build_settings": {"BLAS_INFO": "mkl", "BUILD_TYPE": "Release", "CUDA_VERSION": "12.1", "CUDNN_VERSION": "9.1.0", "CXX_COMPILER": "/opt/rh/devtoolset-9/root/usr/bin/c++", "CXX_FLAGS": "-D_GLIBCXX_USE_CXX11_ABI=0 -fabi-version=11 -fvisibility-inlines-hidden -DUSE_PTHREADPOOL -DNDEBUG -DUSE_KINETO -DLIBKINETO_NOROCTRACER -DUSE_FBGEMM -DUSE_PYTORCH_QNNPACK -DUSE_XNNPACK -DSYMBOLICATE_MOBILE_DEBUG_HANDLE -O2 -fPIC -Wall -Wextra -Werror=return-type -Werror=non-virtual-dtor -Werror=bool-operation -Wnarrowing -Wno-missing-field-initializers -Wno-type-limits -Wno-array-bounds -Wno-unknown-pragmas -Wno-unused-parameter -Wno-unused-function -Wno-unused-result -Wno-strict-overflow -Wno-strict-aliasing -Wno-stringop-overflow -Wsuggest-override -Wno-psabi -Wno-error=pedantic -Wno-error=old-style-cast -Wno-missing-braces -fdiagnostics-color=always -faligned-new -Wno-unused-but-set-variable -Wno-maybe-uninitialized -fno-math-errno -fno-trapping-math -Werror=format -Wno-stringop-overflow", "LAPACK_INFO": "mkl", "PERF_WITH_AVX": "1", "PERF_WITH_AVX2": "1", "PERF_WITH_AVX512": "1", "TORCH_VERSION": "2.4.0", "USE_CUDA": "ON", "USE_CUDNN": "ON", "USE_CUSPARSELT": "1", "USE_EXCEPTION_PTR": "1", "USE_GFLAGS": "OFF", "USE_GLOG": "OFF", "USE_GLOO": "ON", "USE_MKL": "ON", "USE_MKLDNN": "ON", "USE_MPI": "OFF", "USE_NCCL": "1", "USE_NNPACK": "ON", "USE_OPENMP": "ON", "USE_ROCM": "OFF", "USE_ROCM_KERNEL_ASSERT": "OFF"}}}, "pipe": null}
+{"event": "start", "data": {"command": ["python", "/home/runner/work/milabench/milabench/benchmarks/llama/main.py", "--cache", "/home/runner/work/milabench/milabench/output/cache"], "time": 1724789704.8831391}, "pipe": null}
+{"event": "line", "data": "Dataset\n", "pipe": "stderr"}
+{"event": "line", "data": "Tokenizer\n", "pipe": "stderr"}
+{"event": "line", "data": "You are using the default legacy behaviour of the <class 'transformers.models.llama.tokenization_llama_fast.LlamaTokenizerFast'>. This is expected, and simply means that the `legacy` (previous) behavior will be used so nothing changes for you. If you want to use the new behaviour, set `legacy=False`. This should only be set if you understand what it means, and thoroughly read the reason why this was added as explained in https://github.com/huggingface/transformers/pull/24565 - if you loaded a llama tokenizer from a GGUF file you can ignore this message.\n", "pipe": "stderr"}
+{"event": "line", "data": "Model\n", "pipe": "stderr"}
+{"event": "line", "data": "Pipeline\n", "pipe": "stderr"}
+{"event": "line", "data": "Starting\n", "pipe": "stderr"}
+{"event": "line", "data": "Truncation was not explicitly activated but `max_length` is provided a specific value, please use `truncation=True` to explicitly truncate examples to max length. Defaulting to 'longest_first' truncation strategy. If you encode pairs of sequences (GLUE-style) with the tokenizer you can select this strategy more precisely by providing a specific strategy to `truncation`.\n", "pipe": "stderr"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789772.7566214, "gpudata": {"0": {"memory": [27214.375, 81920.0], "load": 0.95, "temperature": 46.0, "power": 242.789}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789772.7566214, "process": {"pid": 30976, "load": 0.0, "num": 8, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 62596359.0, "write_chars": 19176.0, "memory": [1502519296.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789776.7771766, "gpudata": {"0": {"memory": [27414.375, 81920.0], "load": 0.96, "temperature": 48.0, "power": 240.912}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789776.7771766, "process": {"pid": 30976, "load": 0.0, "num": 8, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 62648599.0, "write_chars": 19942.0, "memory": [1502715904.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =9.64314866065979, total / elapsed =208.02334077703082 in_token_count =10 out_token_count =1996\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 208.02334077703082, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789780.7936673, "gpudata": {"0": {"memory": [27538.375, 81920.0], "load": 0.95, "temperature": 50.0, "power": 242.368}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789780.7936673, "process": {"pid": 30976, "load": 0.0, "num": 0, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 62700816.0, "write_chars": 21014.0, "memory": [1502912512.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =5.421905755996704, total / elapsed =364.4475003672862 in_token_count =186 out_token_count =1790\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 364.4475003672862, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789784.8063326, "gpudata": {"0": {"memory": [27538.375, 81920.0], "load": 0.96, "temperature": 51.0, "power": 238.403}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789784.8063326, "process": {"pid": 30976, "load": 0.0, "num": 0, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 62753033.0, "write_chars": 21780.0, "memory": [1503109120.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789788.8240595, "gpudata": {"0": {"memory": [27538.375, 81920.0], "load": 0.96, "temperature": 53.0, "power": 240.705}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789788.8240595, "process": {"pid": 30976, "load": 0.0, "num": 8, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 62805214.0, "write_chars": 22851.0, "memory": [1503305728.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =6.907438516616821, total / elapsed =284.1863876569767 in_token_count =122 out_token_count =1841\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 284.1863876569767, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789792.8416908, "gpudata": {"0": {"memory": [27538.375, 81920.0], "load": 0.95, "temperature": 54.0, "power": 243.937}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789792.8416908, "process": {"pid": 30976, "load": 0.0, "num": 8, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 62857422.0, "write_chars": 23922.0, "memory": [1503305728.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789796.861903, "gpudata": {"0": {"memory": [27538.375, 81920.0], "load": 0.96, "temperature": 56.0, "power": 249.875}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789796.861903, "process": {"pid": 30976, "load": 0.0, "num": 8, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 62909641.0, "write_chars": 24688.0, "memory": [1503502336.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =6.769559621810913, total / elapsed =314.4960852609309 in_token_count =128 out_token_count =2001\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 314.4960852609309, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789800.8824694, "gpudata": {"0": {"memory": [27538.375, 81920.0], "load": 0.96, "temperature": 57.0, "power": 255.885}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789800.8824694, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 62961857.0, "write_chars": 25755.0, "memory": [1509990400.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789804.9026313, "gpudata": {"0": {"memory": [27538.375, 81920.0], "load": 0.95, "temperature": 58.0, "power": 257.114}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789804.9026313, "process": {"pid": 30976, "load": 0.0, "num": 0, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 63014071.0, "write_chars": 26523.0, "memory": [1509990400.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =9.520355939865112, total / elapsed =213.0172456586464 in_token_count =7 out_token_count =2021\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 213.0172456586464, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789808.9189708, "gpudata": {"0": {"memory": [27570.375, 81920.0], "load": 0.96, "temperature": 60.0, "power": 255.854}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789808.9189708, "process": {"pid": 30976, "load": 0.0, "num": 0, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 63066306.0, "write_chars": 27592.0, "memory": [1510187008.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =3.8159689903259277, total / elapsed =579.9313373903975 in_token_count =257 out_token_count =1956\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 579.9313373903975, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =1.7766838073730469, total / elapsed =1248.9560555408839 in_token_count =341 out_token_count =1878\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 1248.9560555408839, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789812.934226, "gpudata": {"0": {"memory": [27628.375, 81920.0], "load": 0.96, "temperature": 61.0, "power": 258.891}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789812.934226, "process": {"pid": 30976, "load": 0.0, "num": 0, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 63118538.0, "write_chars": 28664.0, "memory": [1510383616.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789816.9511003, "gpudata": {"0": {"memory": [27628.375, 81920.0], "load": 0.96, "temperature": 62.0, "power": 258.213}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789816.9511003, "process": {"pid": 30976, "load": 0.0, "num": 8, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 63170755.0, "write_chars": 29735.0, "memory": [1510383616.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =7.491341829299927, total / elapsed =289.5342449221404 in_token_count =96 out_token_count =2073\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 289.5342449221404, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789820.9648356, "gpudata": {"0": {"memory": [27628.375, 81920.0], "load": 0.96, "temperature": 63.0, "power": 263.557}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789820.9648356, "process": {"pid": 30976, "load": 0.0, "num": 8, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 63222981.0, "write_chars": 30501.0, "memory": [1510383616.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789824.9812028, "gpudata": {"0": {"memory": [27628.375, 81920.0], "load": 0.95, "temperature": 64.0, "power": 258.49}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789824.9812028, "process": {"pid": 30976, "load": 0.0, "num": 8, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 63275365.0, "write_chars": 31571.0, "memory": [1510383616.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789828.9972398, "gpudata": {"0": {"memory": [27628.375, 81920.0], "load": 0.96, "temperature": 65.0, "power": 265.078}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789828.9972398, "process": {"pid": 30976, "load": 0.0, "num": 0, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 63327759.0, "write_chars": 32335.0, "memory": [1510383616.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =9.54013466835022, total / elapsed =201.4646613298146 in_token_count =6 out_token_count =1916\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 201.4646613298146, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789833.01225, "gpudata": {"0": {"memory": [27628.375, 81920.0], "load": 0.96, "temperature": 66.0, "power": 260.761}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789833.01225, "process": {"pid": 30976, "load": 0.0, "num": 0, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 63379992.0, "write_chars": 33403.0, "memory": [1510580224.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =3.8358078002929688, total / elapsed =527.9200902207185 in_token_count =254 out_token_count =1771\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 527.9200902207185, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "You seem to be using the pipelines sequentially on GPU. In order to maximize efficiency please use a dataset\n", "pipe": "stderr"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =3.1778805255889893, total / elapsed =650.7481899800863 in_token_count =283 out_token_count =1785\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 650.7481899800863, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789837.0290506, "gpudata": {"0": {"memory": [27628.375, 81920.0], "load": 0.96, "temperature": 67.0, "power": 263.332}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789837.0290506, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 63432392.0, "write_chars": 34576.0, "memory": [1510580224.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =3.832577705383301, total / elapsed =528.8868630511635 in_token_count =257 out_token_count =1770\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 528.8868630511635, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789841.048107, "gpudata": {"0": {"memory": [27628.375, 81920.0], "load": 0.95, "temperature": 67.0, "power": 273.958}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789841.048107, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 63484802.0, "write_chars": 35650.0, "memory": [1510580224.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789845.0681267, "gpudata": {"0": {"memory": [27628.375, 81920.0], "load": 0.95, "temperature": 68.0, "power": 270.557}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789845.0681267, "process": {"pid": 30976, "load": 0.0, "num": 0, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 63537188.0, "write_chars": 36719.0, "memory": [1510580224.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789849.0858636, "gpudata": {"0": {"memory": [27628.375, 81920.0], "load": 0.96, "temperature": 69.0, "power": 266.057}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789849.0858636, "process": {"pid": 30976, "load": 0.0, "num": 0, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 63589617.0, "write_chars": 37485.0, "memory": [1510580224.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =9.581419706344604, total / elapsed =206.85869743160958 in_token_count =6 out_token_count =1976\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 206.85869743160958, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =1.5574374198913574, total / elapsed =1349.0108643636931 in_token_count =350 out_token_count =1751\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 1349.0108643636931, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789853.1028433, "gpudata": {"0": {"memory": [27672.375, 81920.0], "load": 0.97, "temperature": 70.0, "power": 267.805}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789853.1028433, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 63642042.0, "write_chars": 38866.0, "memory": [1510776832.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =3.0646896362304688, total / elapsed =746.2419596957891 in_token_count =288 out_token_count =1999\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 746.2419596957891, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789857.1230524, "gpudata": {"0": {"memory": [27672.375, 81920.0], "load": 0.94, "temperature": 70.0, "power": 274.184}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789857.1230524, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 63694480.0, "write_chars": 39940.0, "memory": [1510776832.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789861.1423547, "gpudata": {"0": {"memory": [27672.375, 81920.0], "load": 0.96, "temperature": 71.0, "power": 269.893}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789861.1423547, "process": {"pid": 30976, "load": 0.0, "num": 0, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 63746911.0, "write_chars": 40708.0, "memory": [1510776832.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =9.50126600265503, total / elapsed =209.97201840707524 in_token_count =8 out_token_count =1987\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 209.97201840707524, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789865.1594505, "gpudata": {"0": {"memory": [27672.375, 81920.0], "load": 0.96, "temperature": 72.0, "power": 269.887}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789865.1594505, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 63799316.0, "write_chars": 41474.0, "memory": [1510776832.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =1.211272954940796, total / elapsed =1819.573359588241 in_token_count =364 out_token_count =1840\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 1819.573359588241, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789869.1769786, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 72.0, "power": 279.439}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789869.1769786, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 63851730.0, "write_chars": 42852.0, "memory": [1510973440.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789873.1969488, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 73.0, "power": 279.462}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789873.1969488, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 63904133.0, "write_chars": 43620.0, "memory": [1510973440.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =9.508309125900269, total / elapsed =204.6630977424967 in_token_count =8 out_token_count =1938\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 204.6630977424967, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =1.6856567859649658, total / elapsed =1217.3296587331795 in_token_count =345 out_token_count =1707\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 1217.3296587331795, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789877.2160013, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 73.0, "power": 284.33}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789877.2160013, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 63956533.0, "write_chars": 44691.0, "memory": [1510973440.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789881.2363248, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 74.0, "power": 280.649}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789881.2363248, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 64008948.0, "write_chars": 45766.0, "memory": [1510973440.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =6.8932578563690186, total / elapsed =293.0399590570405 in_token_count =123 out_token_count =1897\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 293.0399590570405, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789885.2558746, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.95, "temperature": 74.0, "power": 289.704}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789885.2558746, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 64061367.0, "write_chars": 46840.0, "memory": [1510973440.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789889.2748, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 75.0, "power": 287.384}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789889.2748, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 64113803.0, "write_chars": 47608.0, "memory": [1510973440.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =9.507159233093262, total / elapsed =211.20925302380513 in_token_count =7 out_token_count =2001\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 211.20925302380513, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789893.292918, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 75.0, "power": 290.017}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789893.292918, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 64166230.0, "write_chars": 48364.0, "memory": [1510973440.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789897.3114078, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 75.0, "power": 289.014}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789897.3114078, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 64218650.0, "write_chars": 49434.0, "memory": [1510973440.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =7.5852367877960205, total / elapsed =254.30979334799298 in_token_count =92 out_token_count =1837\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 254.30979334799298, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789901.3288343, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 75.0, "power": 281.758}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789901.3288343, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 64271085.0, "write_chars": 50202.0, "memory": [1510973440.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789905.3473003, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 76.0, "power": 289.042}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789905.3473003, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 64323514.0, "write_chars": 51278.0, "memory": [1511170048.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =5.981130361557007, total / elapsed =347.2587745871026 in_token_count =163 out_token_count =1914\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 347.2587745871026, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789909.364557, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.95, "temperature": 76.0, "power": 291.553}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789909.364557, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 64375935.0, "write_chars": 52351.0, "memory": [1511170048.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =5.398686170578003, total / elapsed =396.02227883735236 in_token_count =187 out_token_count =1951\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 396.02227883735236, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789913.383223, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 76.0, "power": 294.876}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789913.383223, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 64428362.0, "write_chars": 53423.0, "memory": [1511170048.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789917.39602, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 76.0, "power": 284.041}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789917.39602, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 64480791.0, "write_chars": 54187.0, "memory": [1511170048.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =6.992370367050171, total / elapsed =286.5980911771147 in_token_count =118 out_token_count =1886\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 286.5980911771147, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789921.4145136, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.95, "temperature": 77.0, "power": 294.865}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789921.4145136, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 64533218.0, "write_chars": 55252.0, "memory": [1511170048.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789925.4330962, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 77.0, "power": 281.016}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789925.4330962, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 64585653.0, "write_chars": 56020.0, "memory": [1511170048.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =9.507067918777466, total / elapsed =207.63499502313863 in_token_count =7 out_token_count =1967\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 207.63499502313863, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789929.450998, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 77.0, "power": 287.464}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789929.450998, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 64638082.0, "write_chars": 56788.0, "memory": [1511170048.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789933.4692774, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 77.0, "power": 295.04}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789933.4692774, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 64690509.0, "write_chars": 57858.0, "memory": [1511170048.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =7.588149547576904, total / elapsed =266.86348065539056 in_token_count =92 out_token_count =1933\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 266.86348065539056, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789937.4873857, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.95, "temperature": 77.0, "power": 296.983}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789937.4873857, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 64742938.0, "write_chars": 58931.0, "memory": [1511170048.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789941.506918, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 77.0, "power": 296.449}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789941.506918, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 64795365.0, "write_chars": 59699.0, "memory": [1511366656.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =9.436096906661987, total / elapsed =198.49308655124574 in_token_count =10 out_token_count =1863\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 198.49308655124574, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789945.5228581, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 78.0, "power": 295.739}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789945.5228581, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 64847786.0, "write_chars": 60463.0, "memory": [1511366656.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =3.403402805328369, total / elapsed =561.4968633768937 in_token_count =274 out_token_count =1637\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 561.4968633768937, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789949.532341, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 78.0, "power": 300.256}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789949.532341, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 64900199.0, "write_chars": 61538.0, "memory": [1511366656.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =3.5028624534606934, total / elapsed =588.0904624059101 in_token_count =270 out_token_count =1790\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 588.0904624059101, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789953.550212, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 79.0, "power": 288.529}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789953.550212, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 64952634.0, "write_chars": 62913.0, "memory": [1511563264.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =4.8052895069122314, total / elapsed =388.11397259567116 in_token_count =214 out_token_count =1651\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 388.11397259567116, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789957.5675385, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 78.0, "power": 301.7}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789957.5675385, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 65005069.0, "write_chars": 63677.0, "memory": [1511563264.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789961.5873485, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 79.0, "power": 298.286}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789961.5873485, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 65057492.0, "write_chars": 64750.0, "memory": [1511563264.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789965.6055453, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 79.0, "power": 296.366}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789965.6055453, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 65109915.0, "write_chars": 65518.0, "memory": [1511563264.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =9.40474271774292, total / elapsed =207.98017114384473 in_token_count =12 out_token_count =1944\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 207.98017114384473, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789969.6235852, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 79.0, "power": 304.516}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789969.6235852, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 65162344.0, "write_chars": 66592.0, "memory": [1511563264.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =6.29868483543396, total / elapsed =319.908052656388 in_token_count =149 out_token_count =1866\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 319.908052656388, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789973.6431177, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 79.0, "power": 294.018}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789973.6431177, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 65214773.0, "write_chars": 67360.0, "memory": [1511563264.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789977.6612797, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 79.0, "power": 296.563}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789977.6612797, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 65267194.0, "write_chars": 68429.0, "memory": [1511563264.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =7.15523099899292, total / elapsed =285.38561512373343 in_token_count =111 out_token_count =1931\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 285.38561512373343, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789981.679119, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 78.0, "power": 301.579}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789981.679119, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 65319623.0, "write_chars": 69504.0, "memory": [1511563264.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789985.6975453, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 78.0, "power": 295.896}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789985.6975453, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 65372040.0, "write_chars": 70268.0, "memory": [1511563264.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =9.491117715835571, total / elapsed =203.9801905280194 in_token_count =7 out_token_count =1929\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 203.9801905280194, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789989.7139482, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 78.0, "power": 304.773}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789989.7139482, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 65424457.0, "write_chars": 71036.0, "memory": [1511563264.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =3.2775485515594482, total / elapsed =611.7376961650276 in_token_count =279 out_token_count =1726\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 611.7376961650276, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724789993.7238634, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 78.0, "power": 300.756}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789993.7238634, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 65476884.0, "write_chars": 72107.0, "memory": [1511759872.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789997.741892, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 78.0, "power": 301.601}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724789997.741892, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 65529305.0, "write_chars": 73181.0, "memory": [1511759872.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724790001.7552965, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 78.0, "power": 300.062}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724790001.7552965, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 65581752.0, "write_chars": 73945.0, "memory": [1511759872.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =9.496742010116577, total / elapsed =215.0211091156022 in_token_count =7 out_token_count =2035\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 215.0211091156022, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "line", "data": "elapsed =1.682931661605835, total / elapsed =1325.0686589805782 in_token_count =345 out_token_count =1885\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 1325.0686589805782, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724790005.7708328, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 78.0, "power": 302.186}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724790005.7708328, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 65633850.0, "write_chars": 75324.0, "memory": [1511956480.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724790009.7888837, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.96, "temperature": 78.0, "power": 288.833}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724790009.7888837, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 65685950.0, "write_chars": 76092.0, "memory": [1511956480.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =7.268786191940308, total / elapsed =281.33995773152793 in_token_count =106 out_token_count =1939\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 281.33995773152793, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724790013.8068995, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.95, "temperature": 78.0, "power": 303.916}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724790013.8068995, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 65738054.0, "write_chars": 77168.0, "memory": [1511956480.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724790017.825279, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.95, "temperature": 78.0, "power": 292.662}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724790017.825279, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 65790139.0, "write_chars": 77936.0, "memory": [1511956480.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =9.24433970451355, total / elapsed =205.6393491329442 in_token_count =18 out_token_count =1883\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 205.6393491329442, "units": "Tok/s"}, "pipe": "data"}
+{"event": "line", "data": "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "main", "time": 1724790021.8433135, "gpudata": {"0": {"memory": [27718.375, 81920.0], "load": 0.97, "temperature": 79.0, "power": 299.578}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1724790021.8433135, "process": {"pid": 30976, "load": 0.0, "num": 16, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 65842219.0, "write_chars": 79003.0, "memory": [1511956480.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "elapsed =4.7292258739471436, total / elapsed =442.9900486549302 in_token_count =217 out_token_count =1878\n", "pipe": "stderr"}
+{"event": "data", "data": {"task": "train", "rate": 442.9900486549302, "units": "Tok/s"}, "pipe": "data"}
+{"event": "end", "data": {"command": ["python", "/home/runner/work/milabench/milabench/benchmarks/llama/main.py", "--cache", "/home/runner/work/milabench/milabench/output/cache"], "time": 1724790026.9797266, "return_code": 0}, "pipe": null}
