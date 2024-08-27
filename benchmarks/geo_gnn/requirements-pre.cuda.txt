@@ -4,7 +4,10 @@
 #
 #    pip-compile --output-file=benchmarks/geo_gnn/requirements-pre.cuda.txt .pin/tmp-constraints-cuda-geo_gnn.txt benchmarks/geo_gnn/requirements-pre.in
 #
+--extra-index-url https://pypi.ngc.nvidia.com
 --extra-index-url https://download.pytorch.org/whl/cu121
+--find-links https://data.pyg.org/whl/torch-2.3.0+cu121.html
+--trusted-host pypi.ngc.nvidia.com
 
 filelock==3.15.4
     # via
@@ -49,7 +52,7 @@ nvidia-cuda-runtime-cu12==12.1.105
     # via
     #   -c .pin/../.pin/constraints-cuda-gnn.txt
     #   torch
-nvidia-cudnn-cu12==9.1.0.70
+nvidia-cudnn-cu12==8.9.2.26
     # via
     #   -c .pin/../.pin/constraints-cuda-gnn.txt
     #   torch
@@ -87,11 +90,11 @@ sympy==1.13.2
     # via
     #   -c .pin/../.pin/constraints-cuda-gnn.txt
     #   torch
-torch==2.4.0+cu121
+torch==2.3.1+cu121
     # via
     #   -c .pin/../.pin/constraints-cuda-gnn.txt
     #   -r benchmarks/geo_gnn/requirements-pre.in
-triton==3.0.0
+triton==2.3.1
     # via
     #   -c .pin/../.pin/constraints-cuda-gnn.txt
     #   torch

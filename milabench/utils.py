@@ -114,7 +114,7 @@ def relativize(pth, working_dir):
         return pth
 
 
-def make_constraints_file(pth, constraints, working_dir):
+def make_constraints_file(pth, constraints, working_dir, requirements=tuple()):
     if constraints:
         constraint_file = XPath(working_dir) / XPath(pth)
         os.makedirs(constraint_file.parent, exist_ok=True)
@@ -122,7 +122,10 @@ def make_constraints_file(pth, constraints, working_dir):
             # We prefix the constraint with ../ because we are creating a constraint
             # file in ./.pin/,but containing constraints with paths relative to ./
             tfile.write(
-                "\n".join([f"-c ../{relativize(c, working_dir)}" for c in constraints])
+                "\n".join([f"-c ../{relativize(c, working_dir)}" for c in constraints]) + "\n"
+            )
+            tfile.write(
+                "\n".join([f"-r ../{relativize(r, working_dir)}" for r in requirements]) + "\n"
             )
         return (constraint_file,)
     else:

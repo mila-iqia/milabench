@@ -4,7 +4,10 @@
 #
 #    pip-compile --output-file=benchmarks/llama/requirements.cuda.txt .pin/tmp-constraints-cuda-llm.txt benchmarks/llama/requirements.in
 #
+--extra-index-url https://pypi.ngc.nvidia.com
 --extra-index-url https://download.pytorch.org/whl/cu121
+--find-links https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+--trusted-host pypi.ngc.nvidia.com
 
 aiohappyeyeballs==2.4.0
     # via
@@ -98,7 +101,7 @@ huggingface-hub==0.24.6
     #   datasets
     #   tokenizers
     #   transformers
-idna==3.7
+idna==3.8
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   requests
@@ -183,6 +186,10 @@ nvidia-cusparse-cu12==12.1.0.106
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   nvidia-cusolver-cu12
     #   torch
+nvidia-ml-py==12.560.30
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   voir
 nvidia-nccl-cu12==2.20.5
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
@@ -200,7 +207,7 @@ omegaconf==2.3.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   voir
-ovld==0.3.8
+ovld==0.3.9
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   voir
@@ -230,10 +237,6 @@ pygments==2.18.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   rich
-pynvml==11.5.3
-    # via
-    #   -c .pin/../.pin/constraints-cuda-torch.txt
-    #   voir
 python-dateutil==2.9.0.post0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
@@ -263,7 +266,7 @@ requests==2.32.3
     #   datasets
     #   huggingface-hub
     #   transformers
-rich==13.7.1
+rich==13.8.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   voir
@@ -304,7 +307,7 @@ tqdm==4.66.5
     #   datasets
     #   huggingface-hub
     #   transformers
-transformers==4.44.1
+transformers==4.44.2
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -r benchmarks/llama/requirements.in
@@ -330,7 +333,7 @@ varname==0.10.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   giving
-voir==0.2.18
+voir==0.2.19
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -c .pin/../constraints/cuda.txt

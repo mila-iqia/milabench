@@ -31,7 +31,7 @@ install_prepare() {
 
     if [ -z "${MILABENCH_SOURCE}" ]; then
         if [ ! -d "$MILABENCH_WORDIR/milabench" ]; then
-            git clone https://github.com/mila-iqia/milabench.git
+            git clone https://github.com/mila-iqia/milabench.git -b staging
         fi
         export MILABENCH_SOURCE="$MILABENCH_WORDIR/milabench"
     fi

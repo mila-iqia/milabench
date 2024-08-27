@@ -232,7 +232,7 @@ class MultiPackage:
                     await pack.message_error(exc)
 
     async def do_pin(
-        self, pip_compile_args, constraints: list = tuple(), from_scratch=False
+        self, pip_compile_args, constraints: list = tuple(), from_scratch=False, requirements: list = tuple()
     ):
         groups = defaultdict(dict)
         for pack in self.packs.values():
@@ -240,11 +240,13 @@ class MultiPackage:
             igrp = pack.config["install_group"]
             ivar = pack.config["install_variant"]
             ivar_constraints: XPath = here.parent / "constraints" / f"{ivar}.txt"
+            
             base_reqs = pack.requirements_map().keys()
             if ivar_constraints.exists():
                 constraints = {ivar_constraints, *constraints}
-            groups[igrp].update({req: pack for req in base_reqs})
 
+            groups[igrp].update({req: pack for req in base_reqs})
+            
         for constraint in constraints:
             print("Using constraint file:", constraint)
 
@@ -264,11 +266,20 @@ class MultiPackage:
 
         for ig, (reqs, packs) in groups.items():
             packs = list(packs)
+            pack0 = packs[0]
+
+            ivar = pack.config["install_variant"]
+            ivar_requirements: XPath = here.parent / "constraints" / "extra" / f"{ig}.{ivar}.txt"
+
+            if ivar_requirements.exists():
+                reqs.add(ivar_requirements)
+            
             if len(packs) == 1:
                 (pack,) = packs
                 await pack.pin(
                     pip_compile_args=pip_compile_args,
                     constraints=constraints,
+                    requirements=requirements
                 )
             else:
                 pack0 = packs[0]
@@ -278,7 +289,7 @@ class MultiPackage:
 
                 constraint_path = pindir / "tmp-constraints.txt"
                 constraint_files = make_constraints_file(
-                    constraint_path, constraints, str(here.parent)
+                    constraint_path, constraints, str(here.parent), requirements=requirements
                 )
 
                 ig_constraint_path = pindir / f"constraints-{ivar}-{ig}.txt"
@@ -303,6 +314,7 @@ class MultiPackage:
                         pip_compile_args=pip_compile_args,
                         constraints=new_constraints,
                         working_dir=here.parent,
+                        requirements=requirements
                     )
 
     async def count_runs(self, repeat):

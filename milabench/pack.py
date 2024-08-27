@@ -398,6 +398,7 @@ class Package(BasePackage):
         input_files: Sequence = tuple(),
         constraints: Sequence = tuple(),
         working_dir=None,
+        requirements: Sequence = tuple(),
     ):
         """Pin versions to requirements file.
 
@@ -429,7 +430,10 @@ class Package(BasePackage):
             grp = self.config["group"]
             constraint_path = XPath(".pin") / f"tmp-constraints-{ivar}-{grp}.txt"
             constraint_files = make_constraints_file(
-                constraint_path, constraints, working_dir
+                constraint_path, 
+                constraints, 
+                working_dir,
+                requirements=requirements,
             )
             current_input_files = constraint_files + (base_reqs, *input_files)
 
