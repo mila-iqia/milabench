@@ -385,7 +385,13 @@ def _resolve_addresses(nodes):
 
 def gethostname(host):
     try:
-        return subprocess.check_output(["ssh", host, "cat", "/etc/hostname"], text=True).strip()
+        #             "-oCheckHostIP=no",
+        # "-oPasswordAuthentication=no",
+        return subprocess.check_output([
+            "ssh",  
+            "-oCheckHostIP=no", 
+            "-oPasswordAuthentication=no", 
+            "-oStrictHostKeyChecking=no", host, "cat", "/etc/hostname"], text=True).strip()
     except:
         print("Could not resolve hostname")
         return host
