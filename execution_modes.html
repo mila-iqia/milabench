@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Milabench processes overview &mdash; milabench  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            milabench
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Install and use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="recipes.html">Running Milabench</a></li>
+<li class="toctree-l1"><a class="reference internal" href="new_benchmarks.html">Creating a new benchmark</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docker.html">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dev-usage.html">Using milabench (DEVELOPERS)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sizer.html">Scaling</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">milabench</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Milabench processes overview</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/execution_modes.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="milabench-processes-overview">
+<h1>Milabench processes overview<a class="headerlink" href="#milabench-processes-overview" title="Link to this heading"></a></h1>
+<ul>
+<li><p>milabench main process
+* gather metrics from benchmark processes, save them to file
+* manages the benchmarks (timeout etc…)</p>
+<ul>
+<li><p>if <code class="docutils literal notranslate"><span class="pre">per_gpu</span></code> is used, milabench will launch one process per GPU (sets <code class="docutils literal notranslate"><span class="pre">CUDA_VISIBLE_DEVCES</span></code>)
+* each processes log their GPU data
+* might spawn a monitor process</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>will init pynvml</p></li>
+</ul>
+</div></blockquote>
+<ul class="simple">
+<li><p>dataloader will also spawn process workers
+* usually not using GPU</p></li>
+</ul>
+</li>
+<li><p>if <code class="docutils literal notranslate"><span class="pre">njobs</span></code> is used, milabench will launch a single process (torchrun)
+* torchrun in turn will spawn one process per GPU</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>RANK 0 is used for logging</p></li>
+<li><p>RANK 0 might spawn a monitor process
+* will init pynvml</p></li>
+<li><p>dataloader will also spawn process workers
+* usually not using GPU</p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</li>
+</ul>
+<section id="plan">
+<h2>Plan<a class="headerlink" href="#plan" title="Link to this heading"></a></h2>
+<section id="per-gpu">
+<h3>per_gpu<a class="headerlink" href="#per-gpu" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">per_gpu</span></code>: used for mono gpu benchmarks, spawn one process per gpu and run the same benchmark</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">_torchvision</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">inherits</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">_defaults</span>
+<span class="w">  </span><span class="nt">definition</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">../benchmarks/torchvision</span>
+<span class="w">  </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">torchvision</span>
+<span class="w">  </span><span class="nt">install_group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">torch</span>
+<span class="w">  </span><span class="nt">plan</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">method</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">per_gpu</span>
+</pre></div>
+</div>
+<p>Milabench will essentially execute something akin to below.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;---&quot;</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;fp16&quot;</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;====&quot;</span>
+<span class="nb">time</span><span class="w"> </span><span class="o">(</span>
+<span class="w">  </span><span class="nv">CUDA_VISIBLE_DEVICES</span><span class="o">=</span><span class="m">0</span><span class="w"> </span><span class="nv">$SRC</span>/milabench/benchmarks/flops/activator<span class="w"> </span><span class="nv">$BASE</span>/venv/torch<span class="w"> </span><span class="nv">$SRC</span>/milabench/benchmarks/flops/main.py<span class="w"> </span>--number<span class="w"> </span><span class="m">30</span><span class="w"> </span>--repeat<span class="w"> </span><span class="m">90</span><span class="w"> </span>--m<span class="w"> </span><span class="m">8192</span><span class="w"> </span>--n<span class="w"> </span><span class="m">8192</span><span class="w"> </span>--dtype<span class="w"> </span>fp16<span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="nv">CUDA_VISIBLE_DEVICES</span><span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="nv">$SRC</span>/milabench/benchmarks/flops/activator<span class="w"> </span><span class="nv">$BASE</span>/venv/torch<span class="w"> </span><span class="nv">$SRC</span>/milabench/benchmarks/flops/main.py<span class="w"> </span>--number<span class="w"> </span><span class="m">30</span><span class="w"> </span>--repeat<span class="w"> </span><span class="m">90</span><span class="w"> </span>--m<span class="w"> </span><span class="m">8192</span><span class="w"> </span>--n<span class="w"> </span><span class="m">8192</span><span class="w"> </span>--dtype<span class="w"> </span>fp16<span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="nv">CUDA_VISIBLE_DEVICES</span><span class="o">=</span><span class="m">2</span><span class="w"> </span><span class="nv">$SRC</span>/milabench/benchmarks/flops/activator<span class="w"> </span><span class="nv">$BASE</span>/venv/torch<span class="w"> </span><span class="nv">$SRC</span>/milabench/benchmarks/flops/main.py<span class="w"> </span>--number<span class="w"> </span><span class="m">30</span><span class="w"> </span>--repeat<span class="w"> </span><span class="m">90</span><span class="w"> </span>--m<span class="w"> </span><span class="m">8192</span><span class="w"> </span>--n<span class="w"> </span><span class="m">8192</span><span class="w"> </span>--dtype<span class="w"> </span>fp16<span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="nv">CUDA_VISIBLE_DEVICES</span><span class="o">=</span><span class="m">3</span><span class="w"> </span><span class="nv">$SRC</span>/milabench/benchmarks/flops/activator<span class="w"> </span><span class="nv">$BASE</span>/venv/torch<span class="w"> </span><span class="nv">$SRC</span>/milabench/benchmarks/flops/main.py<span class="w"> </span>--number<span class="w"> </span><span class="m">30</span><span class="w"> </span>--repeat<span class="w"> </span><span class="m">90</span><span class="w"> </span>--m<span class="w"> </span><span class="m">8192</span><span class="w"> </span>--n<span class="w"> </span><span class="m">8192</span><span class="w"> </span>--dtype<span class="w"> </span>fp16<span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="nv">CUDA_VISIBLE_DEVICES</span><span class="o">=</span><span class="m">4</span><span class="w"> </span><span class="nv">$SRC</span>/milabench/benchmarks/flops/activator<span class="w"> </span><span class="nv">$BASE</span>/venv/torch<span class="w"> </span><span class="nv">$SRC</span>/milabench/benchmarks/flops/main.py<span class="w"> </span>--number<span class="w"> </span><span class="m">30</span><span class="w"> </span>--repeat<span class="w"> </span><span class="m">90</span><span class="w"> </span>--m<span class="w"> </span><span class="m">8192</span><span class="w"> </span>--n<span class="w"> </span><span class="m">8192</span><span class="w"> </span>--dtype<span class="w"> </span>fp16<span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="nv">CUDA_VISIBLE_DEVICES</span><span class="o">=</span><span class="m">5</span><span class="w"> </span><span class="nv">$SRC</span>/milabench/benchmarks/flops/activator<span class="w"> </span><span class="nv">$BASE</span>/venv/torch<span class="w"> </span><span class="nv">$SRC</span>/milabench/benchmarks/flops/main.py<span class="w"> </span>--number<span class="w"> </span><span class="m">30</span><span class="w"> </span>--repeat<span class="w"> </span><span class="m">90</span><span class="w"> </span>--m<span class="w"> </span><span class="m">8192</span><span class="w"> </span>--n<span class="w"> </span><span class="m">8192</span><span class="w"> </span>--dtype<span class="w"> </span>fp16<span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="nv">CUDA_VISIBLE_DEVICES</span><span class="o">=</span><span class="m">6</span><span class="w"> </span><span class="nv">$SRC</span>/milabench/benchmarks/flops/activator<span class="w"> </span><span class="nv">$BASE</span>/venv/torch<span class="w"> </span><span class="nv">$SRC</span>/milabench/benchmarks/flops/main.py<span class="w"> </span>--number<span class="w"> </span><span class="m">30</span><span class="w"> </span>--repeat<span class="w"> </span><span class="m">90</span><span class="w"> </span>--m<span class="w"> </span><span class="m">8192</span><span class="w"> </span>--n<span class="w"> </span><span class="m">8192</span><span class="w"> </span>--dtype<span class="w"> </span>fp16<span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="nv">CUDA_VISIBLE_DEVICES</span><span class="o">=</span><span class="m">7</span><span class="w"> </span><span class="nv">$SRC</span>/milabench/benchmarks/flops/activator<span class="w"> </span><span class="nv">$BASE</span>/venv/torch<span class="w"> </span><span class="nv">$SRC</span>/milabench/benchmarks/flops/main.py<span class="w"> </span>--number<span class="w"> </span><span class="m">30</span><span class="w"> </span>--repeat<span class="w"> </span><span class="m">90</span><span class="w"> </span>--m<span class="w"> </span><span class="m">8192</span><span class="w"> </span>--n<span class="w"> </span><span class="m">8192</span><span class="w"> </span>--dtype<span class="w"> </span>fp16<span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="nb">wait</span>
+<span class="o">)</span>
+</pre></div>
+</div>
+</section>
+<section id="njobs">
+<h3>njobs<a class="headerlink" href="#njobs" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">njobs</span></code> used to launch a single jobs that can see all the gpus.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">_torchvision_ddp</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">inherits</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">_defaults</span>
+<span class="w">  </span><span class="nt">definition</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">../benchmarks/torchvision_ddp</span>
+<span class="w">  </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">torchvision</span>
+<span class="w">  </span><span class="nt">install_group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">torch</span>
+<span class="w">  </span><span class="nt">plan</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">method</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">njobs</span>
+<span class="w">    </span><span class="nt">n</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+</pre></div>
+</div>
+<p>Milabench will essentially execute something akin to below.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;---&quot;</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;lightning-gpus&quot;</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;==============&quot;</span>
+<span class="nb">time</span><span class="w"> </span><span class="o">(</span>
+<span class="w">  </span><span class="nv">$BASE</span>/venv/torch/bin/benchrun<span class="w"> </span>--nnodes<span class="o">=</span><span class="m">1</span><span class="w"> </span>--rdzv-backend<span class="o">=</span>c10d<span class="w"> </span>--rdzv-endpoint<span class="o">=</span><span class="m">127</span>.0.0.1:29400<span class="w"> </span>--master-addr<span class="o">=</span><span class="m">127</span>.0.0.1<span class="w"> </span>--master-port<span class="o">=</span><span class="m">29400</span><span class="w"> </span>--nproc-per-node<span class="o">=</span><span class="m">8</span><span class="w"> </span>--no-python<span class="w"> </span>--<span class="w"> </span>python<span class="w"> </span><span class="nv">$SRC</span>/milabench/benchmarks/lightning/main.py<span class="w"> </span>--epochs<span class="w"> </span><span class="m">10</span><span class="w"> </span>--num-workers<span class="w"> </span><span class="m">8</span><span class="w"> </span>--loader<span class="w"> </span>pytorch<span class="w"> </span>--data<span class="w"> </span><span class="nv">$BASE</span>/data/FakeImageNet<span class="w"> </span>--model<span class="w"> </span>resnet152<span class="w"> </span>--batch-size<span class="w"> </span><span class="m">16</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="nb">wait</span>
+<span class="o">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Mila IDT.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
