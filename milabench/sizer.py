@@ -398,7 +398,7 @@ def new_argument_resolver(pack):
     total_available = total_cpu - cpu_opt.reserved_cores
 
     context["cpu_count"] = total_available
-    context["cpu_per_gpu"] = total_available // device_count_system
+    context["cpu_per_gpu"] = total_available // max(device_count_system, 1)
     context["n_worker"] = clamp(context["cpu_per_gpu"])
 
     if cpu_opt.n_workers is not None:
