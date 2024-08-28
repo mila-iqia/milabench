@@ -3,7 +3,10 @@ import os
 import socket
 from dataclasses import dataclass, field
 import sys
+import subprocess
 from contextlib import contextmanager
+import ipaddress
+
 import psutil
 import yaml
 from voir.instruments.gpu import get_gpu_info
@@ -12,6 +15,21 @@ from .fs import XPath
 from .merge import merge
 
 system_global = contextvars.ContextVar("system", default=None)
+
+
+def get_gpu_capacity(strict=False):
+    try:
+        capacity = 1e24
+
+        for k, v in get_gpu_info()["gpus"].items():
+            capacity = min(v["memory"]["total"], capacity)
+
+        return int(capacity)
+    except:
+        print("GPU not available, defaulting to 0 MiB")
+        if strict:
+            raise
+        return 0
 
 
 def getenv(name, expected_type):
@@ -66,8 +84,6 @@ def option(name, etype, default=None):
     system = system_global.get()
     if system:
         options = system.get("options", dict())
-    else:
-        warn_no_config()
 
     frags = name.split(".")
     env_name = as_environment_variable(name)
@@ -124,7 +140,7 @@ class SizerOptions:
     optimized: bool = defaultfield("sizer.optimized", int)
 
     # Set a target VRAM capacity to use
-    capacity: str = defaultfield("sizer.capacity", str)
+    capacity: str = defaultfield("sizer.capacity", str, None)
 
     # Save the batch size, VRM usage data to a scaling file
     save: str = defaultfield("sizer.save", str, None)
@@ -177,17 +193,17 @@ class Torchrun:
 
 @dataclass
 class Options:
-    sizer: SizerOptions
-    cpu: CPUOptions
-    dataset: DatasetConfig
-    dirs: Dirs
-    torchrun: Torchrun
+    sizer: SizerOptions = SizerOptions()
+    cpu: CPUOptions = CPUOptions() 
+    dataset: DatasetConfig = DatasetConfig()
+    dirs: Dirs = Dirs()
+    torchrun: Torchrun = Torchrun()
 
 
 @dataclass
 class GPUConfig:
     arch: str = defaultfield("gpu.arch", str, None)
-    capacity: str = None
+    capacity: str = defaultfield("gpu.capacity", str, str(get_gpu_capacity()))
 
 
 @dataclass
@@ -204,21 +220,29 @@ class Github:
     pat: str = defaultfield("github.path", str, None)
 
 
+def default_device():
+    try:
+        gpu_info = get_gpu_info()
+        return gpu_info["arch"]
+    except:
+        return "cpu"
+
+
 @dataclass
 class SystemConfig:
     """This is meant to be an exhaustive list of all the environment overrides"""
-    arch: str = defaultfield("gpu.arch", str, None)
-    sshkey: str = None
+    arch: str = defaultfield("gpu.arch", str, default_device())
+    sshkey: str = defaultfield("ssh", str, "~/.ssh/id_rsa")
     docker_image: str = None
     nodes: list[Nodes] = field(default_factory=list)
-    gpu: GPUConfig = None
-    options: Options = None
+    gpu: GPUConfig = GPUConfig()
+    options: Options = Options()
 
     base: str = defaultfield("base", str, None)
     config: str = defaultfield("config", str, None)
     dash: bool = defaultfield("dash", bool, 1)
     noterm: bool = defaultfield("noterm", bool, 0)
-    github: Github = None
+    github: Github = Github()
 
 
 def check_node_config(nodes):
@@ -247,6 +271,18 @@ def get_remote_ip():
                 result.append(address.address)
 
     return set(result)
+
+
+def is_loopback(address: str) -> bool:
+    try:
+        # Create an IP address object
+        ip = ipaddress.ip_address(address)
+        # Check if the address is a loopback address
+        return ip.is_loopback
+    except ValueError:
+        # If the address is invalid, return False
+        return False
+
 
 
 def _resolve_ip(ip):
@@ -304,7 +340,7 @@ def enable_offline(enabled):
     offline = old
 
 
-def resolve_addresses(nodes):
+def _resolve_addresses(nodes):
     # Note: it is possible for self to be none
     # if we are running milabench on a node that is not part of the system
     # in that case it should still work; the local is then going to
@@ -327,12 +363,14 @@ def resolve_addresses(nodes):
             or (hostname in ("localhost", socket.gethostname(), "127.0.0.1"))
             or (socket.gethostname().startswith(hostname))
             or len(ip_list.intersection(ipaddrlist)) > 0
+            or any([is_loopback(ip) for ip in ipaddrlist])
         )
+
         # cn-g005 cn-g005.server.mila.quebec
         # print(hostname, socket.gethostname())
         node["local"] = is_local
 
-        if is_local:
+        if is_local and self is None:
             self = node
             node["ipaddrlist"] = list(set(list(ip_list) + list(ipaddrlist)))
 
@@ -345,19 +383,64 @@ def resolve_addresses(nodes):
     return self
 
 
-def get_gpu_capacity(strict=False):
+def gethostname(host):
     try:
-        capacity = 0
-
-        for k, v in get_gpu_info()["gpus"].items():
-            capacity = min(v["memory"]["total"], capacity)
-
-        return int(capacity)
+        #             "-oCheckHostIP=no",
+        # "-oPasswordAuthentication=no",
+        return subprocess.check_output([
+            "ssh",  
+            "-oCheckHostIP=no", 
+            "-oPasswordAuthentication=no", 
+            "-oStrictHostKeyChecking=no", host, "cat", "/etc/hostname"], text=True).strip()
     except:
-        print("GPU not available, defaulting to 0 MiB")
-        if strict:
-            raise
-        return 0
+        print("Could not resolve hostname")
+        return host
+
+
+def resolve_hostname(ip):
+    try:
+        hostname, _, iplist = socket.gethostbyaddr(ip)
+
+        for ip in iplist:
+            if is_loopback(ip):
+                return hostname, True
+
+        return hostname, hostname == socket.gethostname()
+
+    except:
+        if offline:
+            return ip, False
+
+        raise
+
+def resolve_node_address(node):
+    hostname, local = resolve_hostname(node["ip"])
+
+    node["hostname"] = hostname
+    node["local"] = local
+
+    if local:
+        # `gethostbyaddr` returns `cn-d003` but we want `cn-d003.server.mila.quebec`
+        # else torchrun does not recognize the main node
+        node["hostname"] = socket.gethostname()
+        
+    return local
+
+
+def resolve_addresses(nodes):
+    if offline:
+        for n in nodes:
+            n["hostname"] = n["ip"]
+    
+        return nodes[0]
+
+    self = None
+    
+    for node in nodes:
+        if resolve_node_address(node):
+            self = node
+
+    return self
 
 
 def build_system_config(config_file, defaults=None, gpu=True):

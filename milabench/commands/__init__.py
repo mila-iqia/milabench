@@ -456,7 +456,7 @@ class SSHCommand(WrapperCommand):
         if localnode is not None:
             return (False
                 # The ip belongs to the local node
-                or self.host in localnode["ipaddrlist"]
+                or self.host in localnode.get("ipaddrlist", [])
                 # The hostname is the local node
                 or self.host == localnode["hostname"]  
             )
@@ -485,7 +485,7 @@ class SSHCommand(WrapperCommand):
             argv.append(f"-i{key}")
         argv.append(host)
 
-        return argv
+        return argv # + ["env", "-i"]
 
 
 class SCPCommand(SSHCommand, CmdCommand):
@@ -577,16 +577,24 @@ class TorchrunAllGPU(WrapperCommand):
         return []
 
 
+def node_address(node):
+    """Favour Hostname as it is the most consistent name across machines"""
+    host = node.get("hostname")
+    ip = node.get("ip")
+    return host or ip
+
+
 class ForeachNode(ListCommand):
     def __init__(self, executor: Command, **kwargs) -> None:
         super().__init__(None, **kwargs)
         self.options.update(kwargs)
         self.executor = executor
+        self.base_tags = self.executor.pack.config["tag"]
 
     def make_new_node_pack(self, rank, node, base) -> "BasePackage":
         """Make a new environment/config for the run"""
         config = base.pack.config
-        tags = [*config["tag"], node["name"]]
+        tags = [*self.base_tags, node["name"]]
 
         # Workers do not send training data
         # tag it as such so validation can ignore this pack
@@ -630,10 +638,10 @@ class ForeachNode(ListCommand):
                 )
 
             worker = SSHCommand(
-                host=node["ip"],
+                host=node_address(node),
                 user=node["user"],
                 key=key,
-                port=node.get("port", 22),
+                port=node.get("sshport", 22),
                 executor=self.make_new_node_executor(rank, node, self.executor),
                 **options
             )
@@ -653,31 +661,43 @@ class ForeachNode(ListCommand):
 
 class TorchrunAllNodes(ForeachNode):
     """executes torchrun on multiple machines"""
-    def __init__(self, executor: Command, **kwargs) -> None:
 
+    @staticmethod
+    def make_base_executor(cls, executor, *args, **kwargs):
         config = executor.pack.config
         max_num = config.get("num_machines", 1)
-        self.nodes = select_nodes(config["system"]["nodes"], max_num)
+        nodes = select_nodes(config["system"]["nodes"], max_num)
 
-        main = self.nodes[0]
+        main = nodes[0]
 
         # node[port] is for SSH
-        main_host = main["ip"]
+        main_host = node_address(main)
         # add them as option so we could tweak them if necessary
         main_port = option("torchrun.port", int, default=29400)
         backend = option("torchrun.backend", str, default="c10d")
 
         main_addr = f"{main_host}:{main_port}"
-        base_exec = TorchrunAllGPU(
+
+        config = executor.pack.config
+
+        return cls(
             executor,
-            f"--nnodes={len(self.nodes)}",
+            f"--nnodes={len(nodes)}",
             f"--rdzv-backend={backend}",
             f"--rdzv-endpoint={main_addr}",
-            f"--master-addr={main_host}",
-            f"--master-port={main_port}",
+            # f"--master-addr={main_host}",
+            # f"--master-port={main_port}",
+            *args,
             **kwargs
         )
 
+    def __init__(self, executor: Command, *args, **kwargs) -> None:
+        base_exec = TorchrunAllNodes.make_base_executor(
+            TorchrunAllGPU, 
+            executor,
+            *args, 
+            **kwargs
+        )
         super().__init__(base_exec)
 
 
@@ -852,7 +872,7 @@ class ActivatorCommand(SingleCmdCommand):
         super().__init__(pack, **kwargs)
 
     def _argv(self, **_) -> List:
-        return [f"{self.pack.dirs.code / 'activator'}", f"{self.pack.dirs.venv}"]
+        return [activator_script(), f"{self.pack.dirs.venv}", f"{self.pack.dirs.cache}"]
 
 
 
@@ -874,9 +894,10 @@ class AccelerateAllNodes(ForeachNode):
         config = base.pack.config
 
         pack = self.make_new_node_pack(rank, node, base)
-    
+        executor = base.copy(pack)
+
         return DockerRunCommand(
-            AccelerateLaunchCommand(pack, rank=rank),
+            AccelerateLaunchCommand(executor, rank=rank, **self.options),
             config["system"].get("docker_image"),
         )
 
@@ -948,6 +969,8 @@ class AccelerateLaunchCommand(SingleCmdCommand):
             deepspeed_argv = []
     
         cpu_per_process = self.pack.resolve_argument('--cpus_per_gpu', 4)
+        main_port = option("torchrun.port", int, default=29400)
+
         return [
             # -- Run the command in the right venv
             # This could be inside the SSH Command
@@ -956,6 +979,7 @@ class AccelerateLaunchCommand(SingleCmdCommand):
             # inside a specifc venv
             activator_script(),
             f"{self.pack.dirs.venv}",
+            f"{self.pack.dirs.cache}",
             # --
             "accelerate",
             "launch",
@@ -967,7 +991,7 @@ class AccelerateLaunchCommand(SingleCmdCommand):
             f"--gradient_accumulation_steps={self.pack.config.get('gradient_accumulation_steps', 1)}",
             f"--num_cpu_threads_per_process={cpu_per_process}",
             f"--main_process_ip={manager['ip']}",
-            f"--main_process_port={manager['port']}",
+            f"--main_process_port={main_port}",
             f"--num_processes={nproc}",
             *self.accelerate_argv,
         ]

@@ -141,7 +141,7 @@ def get_base_defaults(base, arch="none", run_name="none"):
                     {
                         "name": "local",
                         "ip": "127.0.0.1",
-                        "port": 8123,
+                        "sshport": 22,
                         "user": user,
                         "main": True,
                     }

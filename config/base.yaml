@@ -106,7 +106,7 @@ _timm:
   argv:
     --amp: true
     --amp-dtype: bfloat16
-    --device: '{arch}'
+    --device: '{device_name}'
     --val-split: ''
     --data-dir: "{milabench_data}"
     --dataset: "FakeImageNet"
@@ -402,6 +402,7 @@ _diffusion:
     --num_epochs: 5
     --batch_size: 32
     --num_workers: "auto({n_worker}, 8)"
+    --cache: "{milabench_cache}"
 
 diffusion-single:
   inherits: _diffusion
@@ -414,6 +415,8 @@ diffusion-gpus:
   num_machines: 1
 
 diffusion-nodes:
+  tags:
+    - multinode
   inherits: _diffusion
   num_machines: 2
   requires_capabilities:
@@ -429,7 +432,7 @@ _lightning:
     --loader: pytorch
     --data: "{milabench_data}/FakeImageNet"
     --model: resnet152
-    --batch-size: 16
+    --batch-size: 256
 
 lightning:
   inherits: _lightning
@@ -463,7 +466,7 @@ dinov2-giant-single:
     method: per_gpu
 
   argv:
-    --config-file: src/dinov2/configs/train/vitg14.yaml
+    --config-file: "{benchmark_folder}/src/dinov2/configs/train/vitg14.yaml"
     # THOSE NEED TO BE LAST
     train.dataset_path=ImageNet:split=TRAIN:root={milabench_data}/FakeImageNet:extra={milabench_data}/FakeImageNet: true
     train.batch_size_per_gpu=32: true
@@ -473,7 +476,7 @@ dinov2-giant-single:
 dinov2-giant-gpus:
   inherits: _dinov2
   argv:
-    --config-file: src/dinov2/configs/train/vitg14.yaml
+    --config-file: "{benchmark_folder}/src/dinov2/configs/train/vitg14.yaml"
     # THOSE NEED TO BE LAST
     train.dataset_path=ImageNet:split=TRAIN:root={milabench_data}/FakeImageNet:extra={milabench_data}/FakeImageNet: true
     train.batch_size_per_gpu=32: true
@@ -481,12 +484,16 @@ dinov2-giant-gpus:
     train.num_workers=10: true
 
 dinov2-giant-nodes:
+  enabled: false
+  tags:
+    - multinode
+  max_duration: 3600
   inherits: _dinov2
   argv:
-    --config-file: src/dinov2/configs/train/vitg14.yaml
+    --config-file: "{benchmark_folder}/src/dinov2/configs/train/vitg14.yaml"
     # THOSE NEED TO BE LAST
-    train.dataset_path=ImageNet:split=TRAIN:root={milabench_data}/FakeImageNet:extra={milabench_data}/FakeImageNet: true
-    train.batch_size_per_gpu=32: true
+    train.dataset_path=ImageFolder:root={milabench_data}/FakeImageNet: true
+    train.batch_size_per_gpu=12: true
     train.saveckp_freq=100: true
     train.num_workers=10: true
 
@@ -546,6 +553,9 @@ llm-lora-ddp-gpus:
 
 
 llm-lora-ddp-nodes:
+  tags:
+    - multinode
+  max_duration: 3600
   inherits: _llm
   plan:
     method: njobs
@@ -611,6 +621,9 @@ llm-full-mp-gpus:
 
 
 llm-full-mp-nodes:
+  tags:
+    - multinode
+  max_duration: 3600
   inherits: _llm
   plan:
     method: njobs
@@ -635,3 +648,52 @@ llm-full-mp-nodes:
     - "len(nodes) >= ${num_machines}"
 
 
+_geo_gnn:
+  inherits: _defaults
+  definition: .
+  # FIXME: torch cluster is laging behind pytorch
+  # we are forced to use torch==2.3 instead of torch==2.4
+  install_group: gnn
+  group: geo_gnn
+  definition: ../benchmarks/geo_gnn
+  plan:
+    method: per_gpu
+
+dimenet:
+  inherits: _geo_gnn
+  argv:
+    --model: 'DimeNet'
+    --num-samples: 10000
+    --use3d: True
+
+
+recursiongfn:
+  inherits: _defaults
+  definition: ../benchmarks/recursiongfn
+  install_group: gnn
+  group: recursiongfn_gnn
+  plan:
+    method: per_gpu
+
+  argv:
+    --batch_size: 128
+    --num_workers: 8
+    --num_steps: 100
+    --layer_width: 128
+    --num_layers: 4
+
+
+torchatari:
+  inherits: _defaults
+  definition: ../benchmarks/torchatari
+  install_group: torch
+  plan:
+    method: per_gpu
+
+  argv:
+    --num-minibatches: 16
+    --update-epochs: 4
+    --num-steps: 128
+    --num-envs: auto({cpu_per_gpu}, 128)
+    --total-timesteps: 1000000
+    --env-id: Breakout-v5

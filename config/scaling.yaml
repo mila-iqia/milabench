@@ -2,9 +2,10 @@ bert-fp16:
   arg: --batch-size
   model:
     1: 4108.75 MiB
+    2: 475.0 MiB
     4: 1840.375 MiB
     8: 8614.75 MiB
-    16: 14254.75 MiB
+    16: 475.0 MiB
     32: 24604.75 MiB
     40: 34157.9375 MiB
     64: 47212.375 MiB
@@ -16,9 +17,10 @@ bert-fp32:
   arg: --batch-size
   model:
     1: 4206.75 MiB
+    2: 475.0 MiB
     4: 6652.375 MiB
     8: 10240.75 MiB
-    16: 17646.75 MiB
+    16: 475.0 MiB
     24: 28007.9375 MiB
     32: 31568.75 MiB
     64: 61196.375 MiB
@@ -28,9 +30,10 @@ bert-tf32:
   arg: --batch-size
   model:
     1: 4204.75 MiB
+    2: 475.0 MiB
     4: 6654.375 MiB
     8: 10242.75 MiB
-    16: 17648.75 MiB
+    16: 475.0 MiB
     24: 28009.9375 MiB
     32: 31570.75 MiB
     64: 61198.375 MiB
@@ -40,9 +43,10 @@ bert-tf32-fp16:
   arg: --batch-size
   model:
     1: 4108.75 MiB
+    2: 475.0 MiB
     4: 1840.375 MiB
     8: 8614.75 MiB
-    16: 14254.75 MiB
+    16: 475.0 MiB
     32: 24604.75 MiB
     40: 34157.9375 MiB
     64: 47212.375 MiB
@@ -75,6 +79,7 @@ convnext_large-fp32:
   model:
     1: 3268.75 MiB
     2: 3480.375 MiB
+    4: 2060.75 MiB
     8: 5824.75 MiB
     16: 8774.75 MiB
     32: 14548.75 MiB
@@ -91,7 +96,7 @@ convnext_large-tf32:
     1: 3268.75 MiB
     2: 3480.375 MiB
     8: 5824.75 MiB
-    16: 8774.75 MiB
+    16: 1768.75 MiB
     32: 14548.75 MiB
     64: 26274.75 MiB
     72: 33081.9375 MiB
@@ -156,6 +161,37 @@ davit_large-multi:
     288: 65910.375 MiB
     328: 81742.75 MiB
   optimized: 128
+diffusion-gpus:
+  arg: --batch_size
+  model:
+    1: 23082 MiB
+    2: 21818.75 MiB
+    4: 23478.75 MiB
+    8: 26500.75 MiB
+    16: 36436.75 MiB
+    32: 57808 MiB
+    48: 80698 MiB
+  optimized: 32
+diffusion-nodes:
+  arg: --batch_size
+  model:
+    1: 21686.75 MiB
+    2: 21930.75 MiB
+    4: 23510.75 MiB
+diffusion-single:
+  arg: --batch_size
+  model:
+    1: 21654.75 MiB
+    2: 21818.75 MiB
+    4: 23478.75 MiB
+dimenet: {}
+dinov2-giant-gpus:
+  arg: train.batch_size_per_gpu={batch_size}
+  model:
+    32: 69614 MiB
+  optimized: 32
+dinov2-giant-single:
+  arg: train.batch_size_per_gpu={batch_size}
 dlrm: {}
 focalnet:
   arg: --batch-size
@@ -178,7 +214,37 @@ focalnet:
   optimized: 128
 fp16: {}
 fp32: {}
+lightning:
+  arg: --batch-size
+lightning-gpus:
+  arg: --batch-size
+  model:
+    1: 4542 MiB
+    2: 1158.75 MiB
+    4: 1156.75 MiB
+    8: 1260.75 MiB
+    16: 4150.75 MiB
+    128: 15858 MiB
+  optimized: 16
 llama: {}
+llm-full-mp-gpus:
+  arg: batch_size={batch_size}
+llm-full-mp-nodes:
+  arg: batch_size={batch_size}
+llm-lora-ddp-gpus:
+  arg: batch_size={batch_size}
+  model:
+    1: 12418.75 MiB
+llm-lora-ddp-nodes:
+  arg: batch_size={batch_size}
+llm-lora-mp-gpus:
+  arg: batch_size={batch_size}
+llm-lora-single:
+  arg: batch_size={batch_size}
+  model:
+    1: 23196.75 MiB
+    2: 27694.75 MiB
+    16: 45076.75 MiB
 opt-1_3b:
   arg: --per_gpu_batch_size
   model:
@@ -189,19 +255,25 @@ opt-1_3b-multinode:
   model:
     1: 42126 MiB
   optimized: 1
-opt-6_7b: {}
+opt-6_7b:
+  arg: --per_gpu_batch_size
 opt-6_7b-multinode:
   arg: --per_gpu_batch_size
   model:
     1: 55380 MiB
   optimized: 1
+recursiongfn:
+  arg: --batch_size
+  model:
+    2: 1134.75 MiB
+    4: 1140.75 MiB
 reformer:
   arg: --batch-size
   model:
     1: 1916.75 MiB
     4: 3004.375 MiB
     8: 4512.75 MiB
-    16: 7486.75 MiB
+    16: 7082.75 MiB
     24: 10470.75 MiB
     32: 13454.75 MiB
     64: 25408.75 MiB
@@ -215,9 +287,10 @@ regnet_y_128gf:
   arg: --batch-size
   model:
     1: 6876.75 MiB
+    2: 475.0 MiB
     4: 9062.375 MiB
     8: 8524.75 MiB
-    16: 11426.75 MiB
+    16: 1234.75 MiB
     24: 18523.9375 MiB
     32: 18324.75 MiB
     56: 31165.9375 MiB
@@ -248,7 +321,14 @@ resnet152:
     576: 58588.375 MiB
     640: 81354.75 MiB
   optimized: 128
-resnet152-ddp: {}
+resnet152-ddp:
+  arg: --batch-size
+resnet152-ddp-gpus:
+  arg: --batch-size
+  model:
+    1: 2084.75 MiB
+    2: 2122.75 MiB
+    4: 2260.75 MiB
 resnet152-multi:
   arg: --batch-size
   model:
@@ -294,7 +374,8 @@ resnet50:
     1552: 81146.75 MiB
     1560: 81590.75 MiB
   optimized: 64
-resnet50-noio: {}
+resnet50-noio:
+  arg: --batch-size
 rwkv:
   arg: --micro_bsz
   model:
@@ -317,9 +398,10 @@ super-slomo:
   arg: --train_batch_size
   model:
     1: 3016.75 MiB
+    2: 3506.75 MiB
     4: 5884.375 MiB
     8: 10288.75 MiB
-    16: 18718.75 MiB
+    16: 16914.75 MiB
     24: 29777.9375 MiB
     32: 33934.375 MiB
     56: 61837.9375 MiB
@@ -333,11 +415,17 @@ t5:
     2: 6384.375 MiB
     4: 10620.375 MiB
     8: 18684.75 MiB
-    16: 35448.75 MiB
+    16: 33990.75 MiB
     24: 54479.9375 MiB
     32: 66760.375 MiB
   optimized: 128
 tf32: {}
+torchatari:
+  arg: --num-steps
+  model:
+    1: 1124.75 MiB
+    2: 1138.75 MiB
+    4: 1166.75 MiB
 whisper:
   arg: --batch-size
   model:
@@ -354,28 +442,3 @@ whisper:
     128: 71634.375 MiB
     144: 80412.75 MiB
   optimized: 128
-
-
-diffusion-gpus:
-  arg: --batch_size
-  model:
-    1: 23082 MiB
-    16: 37778 MiB
-    32: 57808 MiB
-    48: 80698 MiB
-  optimized: 32
-
-
-lightning-gpus:
-  arg: --batch-size
-  model:
-    1: 4542 MiB
-    16: 5692 MiB
-    128: 15858 MiB
-  optimized: 16
-
-dinov2-giant-gpus:
-  arg: train.batch_size_per_gpu={batch_size}
-  model:
-    32: 69614 MiB
-  optimized: 32

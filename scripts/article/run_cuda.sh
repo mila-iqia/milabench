@@ -31,7 +31,7 @@ install_prepare() {
 
     if [ -z "${MILABENCH_SOURCE}" ]; then
         if [ ! -d "$MILABENCH_WORDIR/milabench" ]; then
-            git clone https://github.com/mila-iqia/milabench.git
+            git clone https://github.com/mila-iqia/milabench.git -b staging
         fi
         export MILABENCH_SOURCE="$MILABENCH_WORDIR/milabench"
     fi
@@ -40,10 +40,12 @@ install_prepare() {
 
     pip install -e $MILABENCH_SOURCE
 
+    milabench slurm_system > $MILABENCH_WORDIR/system.yaml
+
     #
     # Install milabench's benchmarks in their venv
     #
-    milabench install $ARGS
+    milabench install --system $MILABENCH_WORDIR/system.yaml $ARGS
 
     which pip
 
@@ -60,7 +62,7 @@ install_prepare() {
 
     #
     #   Generate/download datasets, download models etc...
-    milabench prepare $ARGS
+    milabench prepare --system $MILABENCH_WORDIR/system.yaml $ARGS
 }
 
 module load cuda/12.3.2
@@ -78,7 +80,7 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
 
     #
     #   Run the benchmakrs
-    milabench run "$@"
+    milabench run --system $MILABENCH_WORDIR/system.yaml "$@"
 
     #
     #   Display report

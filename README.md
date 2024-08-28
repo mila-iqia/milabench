@@ -39,7 +39,7 @@ It will include all of the necessary data
     docker run -it --rm --ipc=host --gpus=all      \
           -v $(pwd)/results:/milabench/envs/runs   \
           $MILABENCH_IMAGE                         \
-          milabench run
+          bash -c "milabench prepare && milabench run"
 
     =================
     Benchmark results

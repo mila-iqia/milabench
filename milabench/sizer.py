@@ -261,20 +261,37 @@ class MemoryUsageExtractor(ValidationLayer):
         self.max_usage = float("-inf")
 
         config = self.memory.setdefault(self.benchname, dict())
-        scalingarg = config.get("arg", None)
+        template = config.get("arg", None)
 
-        if scalingarg is None:
+        if template is None:
             self.benchname = None
             return
+        
+        placeholder = "{batch_size}" 
+        argstart = template.replace(placeholder, "")
 
+        is_template = False
         found = None
         for i, arg in enumerate(argv):
-            if arg.endswith(scalingarg):
+            if arg.endswith(template):
                 found = i
+                break
+            
+            # 
+            if arg.startswith(argstart):
+                found = i
+                is_template = True
                 break
 
         if found:
-            self.batch_size = int(argv[found + 1])
+            if is_template:
+                arg = argv[found]
+                value = arg.replace(argstart, "")
+                self.batch_size = int(value)
+            else:
+                self.batch_size = int(argv[found + 1])
+        else:
+            print("Count not find batch_size argument")
 
     def on_data(self, entry):
         if self.filepath is None:
@@ -331,6 +348,23 @@ class MemoryUsageExtractor(ValidationLayer):
                 yaml.dump(newdata, file)
 
 
+def arch_to_device(arch):
+    device_types = [
+        "cpu", 
+        "cuda", 
+        "ipu", 
+        "xpu", 
+        "mkldnn", 
+        "opengl", "opencl", "ideep", "hip", "ve", 
+        "fpga", "maia", "xla", "lazy", "vulkan", "mps", "meta",
+        "hpu", "mtia", "privateuseone"
+    ]
+    arch_to_device = {t:t for t in device_types}
+    arch_to_device["rocm"] = "cuda"
+    return arch_to_device.get(arch, "cpu")
+
+
+
 def new_argument_resolver(pack):
     system_config = system_global.get()
     if system_config is None:
@@ -339,16 +373,17 @@ def new_argument_resolver(pack):
     context = deepcopy(system_config)
 
     arch = context.get("arch", "cpu")
+    device_count_used = 1
+    device_count_system = len(get_gpu_info()["gpus"])
 
     if hasattr(pack, "config"):
-        device_count = len(pack.config.get("devices", [0]))
-    else:
-        device_count = len(get_gpu_info()["gpus"])
+        device_count_used = len(pack.config.get("devices", [0]))
+
+    if device_count_used <= 0:
+        device_count_used = 1
 
     ccl = {"hpu": "hccl", "cuda": "nccl", "rocm": "rccl", "xpu": "ccl", "cpu": "gloo"}
 
-    if device_count <= 0:
-        device_count = 1
 
     cpu_opt = CPUOptions()
     def auto(value, default):
@@ -363,13 +398,14 @@ def new_argument_resolver(pack):
     total_available = total_cpu - cpu_opt.reserved_cores
 
     context["cpu_count"] = total_available
-    context["cpu_per_gpu"] = total_available // device_count
+    context["cpu_per_gpu"] = total_available // max(device_count_system, 1)
     context["n_worker"] = clamp(context["cpu_per_gpu"])
 
     if cpu_opt.n_workers is not None:
         context["n_worker"] = cpu_opt.n_workers
 
     context["arch"] = arch
+    context["device_name"] = arch_to_device(arch)
     context["ccl"] = ccl.get(arch, "gloo")
     
     context["milabench_base"] = option("base", str, default="")
@@ -381,6 +417,7 @@ def new_argument_resolver(pack):
     context["milabench_runs"] = dirs.get('runs', "")
     context["milabench_cache"] = dirs.get('cache', "")
     context["milabench_name"] = pack.config.get("name", None)
+    context["benchmark_folder"] = pack.config.get('definition', None)
 
     def auto_eval(arg):
         newvalue = str(arg).format(**context)
