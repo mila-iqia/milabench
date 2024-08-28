@@ -174,8 +174,16 @@ diffusion-gpus:
   optimized: 32
 diffusion-nodes:
   arg: --batch_size
+  model:
+    1: 21686.75 MiB
+    2: 21930.75 MiB
+    4: 23510.75 MiB
 diffusion-single:
   arg: --batch_size
+  model:
+    1: 21654.75 MiB
+    2: 21818.75 MiB
+    4: 23478.75 MiB
 dimenet: {}
 dinov2-giant-gpus:
   arg: train.batch_size_per_gpu={batch_size}
@@ -225,12 +233,18 @@ llm-full-mp-nodes:
   arg: batch_size={batch_size}
 llm-lora-ddp-gpus:
   arg: batch_size={batch_size}
+  model:
+    1: 12418.75 MiB
 llm-lora-ddp-nodes:
   arg: batch_size={batch_size}
 llm-lora-mp-gpus:
   arg: batch_size={batch_size}
 llm-lora-single:
   arg: batch_size={batch_size}
+  model:
+    1: 23196.75 MiB
+    2: 27694.75 MiB
+    16: 45076.75 MiB
 opt-1_3b:
   arg: --per_gpu_batch_size
   model:
@@ -250,6 +264,9 @@ opt-6_7b-multinode:
   optimized: 1
 recursiongfn:
   arg: --batch_size
+  model:
+    2: 1134.75 MiB
+    4: 1140.75 MiB
 reformer:
   arg: --batch-size
   model:
@@ -308,6 +325,10 @@ resnet152-ddp:
   arg: --batch-size
 resnet152-ddp-gpus:
   arg: --batch-size
+  model:
+    1: 2084.75 MiB
+    2: 2122.75 MiB
+    4: 2260.75 MiB
 resnet152-multi:
   arg: --batch-size
   model:
@@ -401,6 +422,10 @@ t5:
 tf32: {}
 torchatari:
   arg: --num-steps
+  model:
+    1: 1124.75 MiB
+    2: 1138.75 MiB
+    4: 1166.75 MiB
 whisper:
   arg: --batch-size
   model:
