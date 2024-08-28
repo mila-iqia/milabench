@@ -273,14 +273,14 @@ class MemoryUsageExtractor(ValidationLayer):
         is_template = False
         found = None
         for i, arg in enumerate(argv):
+            if arg.endswith(template):
+                found = i
+                break
+            
             # 
             if arg.startswith(argstart):
                 found = i
                 is_template = True
-                break
-        
-            if arg.endswith(template):
-                found = i
                 break
 
         if found:

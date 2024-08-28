@@ -428,6 +428,12 @@ def resolve_node_address(node):
 
 
 def resolve_addresses(nodes):
+    if offline:
+        for n in nodes:
+            n["hostname"] = n["ip"]
+    
+        return nodes[0]
+
     self = None
     
     for node in nodes:
