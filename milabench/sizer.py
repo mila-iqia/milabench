@@ -261,20 +261,37 @@ class MemoryUsageExtractor(ValidationLayer):
         self.max_usage = float("-inf")
 
         config = self.memory.setdefault(self.benchname, dict())
-        scalingarg = config.get("arg", None)
+        template = config.get("arg", None)
 
-        if scalingarg is None:
+        if template is None:
             self.benchname = None
             return
+        
+        placeholder = "{batch_size}" 
+        argstart = template.replace(placeholder, "")
 
+        is_template = False
         found = None
         for i, arg in enumerate(argv):
-            if arg.endswith(scalingarg):
+            # 
+            if arg.startswith(argstart):
+                found = i
+                is_template = True
+                break
+        
+            if arg.endswith(template):
                 found = i
                 break
 
         if found:
-            self.batch_size = int(argv[found + 1])
+            if is_template:
+                arg = argv[found]
+                value = arg.replace(argstart, "")
+                self.batch_size = int(value)
+            else:
+                self.batch_size = int(argv[found + 1])
+        else:
+            print("Count not find batch_size argument")
 
     def on_data(self, entry):
         if self.filepath is None:
