@@ -271,15 +271,17 @@ class MultiPackage:
             ivar = pack.config["install_variant"]
             ivar_requirements: XPath = here.parent / "constraints" / "extra" / f"{ig}.{ivar}.txt"
 
+            all_requirements = requirements
             if ivar_requirements.exists():
                 reqs.add(ivar_requirements)
-            
+                all_requirements = list(requirements) + [ivar_requirements]
+
             if len(packs) == 1:
                 (pack,) = packs
                 await pack.pin(
                     pip_compile_args=pip_compile_args,
                     constraints=constraints,
-                    requirements=requirements
+                    requirements=all_requirements
                 )
             else:
                 pack0 = packs[0]
@@ -314,7 +316,7 @@ class MultiPackage:
                         pip_compile_args=pip_compile_args,
                         constraints=new_constraints,
                         working_dir=here.parent,
-                        requirements=requirements
+                        requirements=all_requirements
                     )
 
     async def count_runs(self, repeat):

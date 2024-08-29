@@ -6,7 +6,7 @@ import os
 
 @dataclass
 class TrainingConfig:
-    model: str = "runwayml/stable-diffusion-v1-5"
+    model: str = "stabilityai/stable-diffusion-2"
     dataset: str = "lambdalabs/naruto-blip-captions"
     revision: str = None
     variant: str = None
@@ -28,7 +28,6 @@ def main():
     from transformers import CLIPTextModel, CLIPTokenizer
     from diffusers import AutoencoderKL, UNet2DConditionModel, DDPMScheduler
     from datasets import load_dataset
-
 
     _ = load_dataset(args.dataset)
 

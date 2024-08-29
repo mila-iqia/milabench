@@ -31,7 +31,7 @@ install_prepare() {
 
     if [ -z "${MILABENCH_SOURCE}" ]; then
         if [ ! -d "$MILABENCH_WORDIR/milabench" ]; then
-            git clone https://github.com/mila-iqia/milabench.git -b staging
+            git clone https://github.com/mila-iqia/milabench.git
         fi
         export MILABENCH_SOURCE="$MILABENCH_WORDIR/milabench"
     fi
@@ -45,6 +45,7 @@ install_prepare() {
     #
     # Install milabench's benchmarks in their venv
     #
+    # milabench pin --variant cuda --from-scratch $ARGS 
     milabench install --system $MILABENCH_WORDIR/system.yaml $ARGS
 
     which pip
