@@ -658,6 +658,7 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
                     self.global_step += 1
 
                     loss_to_log = running_loss.item()
+                    self.log_loss(loss_to_log)
                     pbar.update(1)
                     pbar.set_description(
                         f"{curr_epoch + 1}|{self.global_step}|Loss: {loss_to_log}"
@@ -714,6 +715,35 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
         destroy_process_group()
 
 
+    def log_loss(self, loss):
+        pass
+
+
+def prepare_voir(recipe):
+    from benchmate.observer import BenchObserver
+    from benchmate.monitor import bench_monitor
+
+    def batch_size(x):
+        bs, token = x["tokens"].shape
+        return bs * token
+
+    observer = BenchObserver(
+        earlystop=30,
+        raise_stop_program=True,
+        batch_size_fn=batch_size,
+        stdout=True
+    )
+
+    def on_loss(loss):
+        observer.record_loss(loss)
+        observer.step()
+
+    recipe._dataloader = observer.loader(recipe._dataloader, custom_step=True)
+    recipe.log_loss = on_loss
+
+    return observer, bench_monitor
+
+
 @config.parse
 def recipe_main(cfg: DictConfig) -> None:
     """
@@ -738,7 +768,13 @@ def recipe_main(cfg: DictConfig) -> None:
 
     recipe = FullFinetuneRecipeDistributed(cfg=cfg)
     recipe.setup(cfg=cfg)
-    recipe.train()
+    from voir.phase import StopProgram
+    try:
+        _, monitor = prepare_voir(recipe)
+        with monitor():
+            recipe.train()
+    except StopProgram:
+        print("early stopping")
     recipe.cleanup()
 
 
