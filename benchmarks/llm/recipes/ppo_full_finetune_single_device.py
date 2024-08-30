@@ -165,8 +165,8 @@ class PPOFullFinetuneRecipeSingleDevice(FTRecipeInterface):
         ref_policy_state_dict = ref_policy_checkpointer.load_checkpoint()
 
         # load reward and value model checkpoints
-        value_model_checkpoint_dict = self._value_checkpointer.load_checkpoint()
-        reward_model_state_dict = reward_checkpointer.load_checkpoint()
+        value_model_checkpoint_dict = {training.MODEL_KEY: None} # self._value_checkpointer.load_checkpoint()
+        reward_model_state_dict = {training.MODEL_KEY: None} # reward_checkpointer.load_checkpoint()
 
         # update recipe state
         # ``_setup_model`` handles initialization and loading the state dict. This method
@@ -435,16 +435,16 @@ class PPOFullFinetuneRecipeSingleDevice(FTRecipeInterface):
         # a classifier model, this function should just ensure
         # output.weight appears in the state_dict and the model's parameters,
         # and removes output.bias from the state dict if found
-        training.update_state_dict_for_classifier(
-            reward_model_state_dict, reward_model.named_parameters()
-        )
-        reward_model.load_state_dict(reward_model_state_dict)
+        #training.update_state_dict_for_classifier(
+        #    reward_model_state_dict, reward_model.named_parameters()
+        #)
+        #reward_model.load_state_dict(reward_model_state_dict)
 
         # same as above
-        training.update_state_dict_for_classifier(
-            value_model_state_dict, value_model.named_parameters()
-        )
-        value_model.load_state_dict(value_model_state_dict)
+        #training.update_state_dict_for_classifier(
+        #    value_model_state_dict, value_model.named_parameters()
+        #)
+        #value_model.load_state_dict(value_model_state_dict)
 
         # Validate models were loaded in with the expected dtype.
         training.validate_expected_param_dtype(
@@ -1066,6 +1066,33 @@ class PPOFullFinetuneRecipeSingleDevice(FTRecipeInterface):
     def cleanup(self, **kwargs) -> None:
         self._metric_logger.close()
 
+    def log_loss(self, loss):
+        pass
+
+def prepare_voir(recipe):
+    from benchmate.observer import BenchObserver
+    from benchmate.monitor import bench_monitor
+
+    def batch_size(x):
+        bs, token = x["tokens"].shape
+        return bs * token
+
+    observer = BenchObserver(
+        earlystop=30,
+        raise_stop_program=True,
+        batch_size_fn=batch_size,
+        stdout=True
+    )
+
+    def on_loss(loss):
+        observer.record_loss(loss)
+        observer.step()
+
+    recipe._dataloader = observer.loader(recipe._dataloader, custom_step=True)
+    recipe.log_loss = on_loss
+
+    return observer, bench_monitor
+
 
 @config.parse
 def recipe_main(cfg: DictConfig) -> None:
@@ -1079,7 +1106,13 @@ def recipe_main(cfg: DictConfig) -> None:
     config.log_config(recipe_name="PPOFullFinetuneRecipeSingleDevice", cfg=cfg)
     recipe = PPOFullFinetuneRecipeSingleDevice(cfg=cfg)
     recipe.setup(cfg=cfg)
-    recipe.train()
+    from voir.phase import StopProgram
+    try:
+        _, monitor = prepare_voir(recipe)
+        with monitor():
+            recipe.train()
+    except StopProgram:
+        print("early stopping")
     recipe.cleanup()
 
 

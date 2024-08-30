@@ -714,7 +714,6 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
             self._metric_logger.close()
         destroy_process_group()
 
-
     def log_loss(self, loss):
         pass
 

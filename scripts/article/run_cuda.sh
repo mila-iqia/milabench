@@ -79,6 +79,10 @@ fi
 if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     cd $MILABENCH_WORDIR
 
+    # milabench pin --variant cuda --from-scratch $ARGS 
+
+    # milabench install --system $MILABENCH_WORDIR/system.yaml --force "$@"
+
     #
     #   Run the benchmakrs
     milabench run --system $MILABENCH_WORDIR/system.yaml "$@"
