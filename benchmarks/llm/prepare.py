@@ -5,9 +5,9 @@ import os
 
 from omegaconf import OmegaConf
 from argklass import ArgumentParser
-from torchtune._cli.tune import TuneCLIParser
-
 from benchmate.ux import long_action
+
+from torchtune._cli.tune import TuneCLIParser
 
 
 @dataclass

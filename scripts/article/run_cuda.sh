@@ -45,7 +45,7 @@ install_prepare() {
     #
     # Install milabench's benchmarks in their venv
     #
-    # milabench pin --variant cuda --from-scratch $ARGS 
+    milabench pin --variant cuda --from-scratch $ARGS 
     milabench install --system $MILABENCH_WORDIR/system.yaml $ARGS
 
     which pip
