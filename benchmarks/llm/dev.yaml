@@ -204,4 +204,36 @@ llm-qlora-single:
     repo_id="meta-llama/Meta-Llama-3.1-8B": true
     batch_size=8: true
     gradient_accumulation_steps=8: true
-    
+
+
+#
+#
+#
+
+
+#
+# There are multiple issues when loading the pretrained model
+#   - reward model has missing weights
+#   - 
+llm-rlhf-single:
+  inherits: _llm
+  plan:
+    method: per_gpu
+  argv:
+    "{milabench_code}/recipes/ppo_full_finetune_single_device.py": true
+    --config: "{milabench_code}/configs/mistral_ppo.yaml"
+    epochs=1: true
+    output_dir={milabench_extra}/output: true
+    tokenizer.path={milabench_data}/mistral_7B/tokenizer.model: true
+    checkpointer.checkpoint_dir={milabench_data}/mistral_7B: true
+    ref_policy_checkpointer.checkpoint_dir={milabench_data}/mistral_7B: true
+    value_checkpointer.checkpoint_dir={milabench_data}/mistral_7B: true
+    reward_checkpointer.checkpoint_dir={milabench_data}/mistral_7B: true
+    checkpointer.output_dir={milabench_data}/mistral_7B: true
+    metric_logger.log_dir={milabench_extra}/metrics: true
+    repo_id="mistralai/Mistral-7B-Instruct-v0.2": true
+    safetensors=true: true
+    batch_size=64: true
+    num_steps=10000: true
+    ppo_epochs=2: true
+    ppo_batch_size=32: true

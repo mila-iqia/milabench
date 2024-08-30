@@ -26,10 +26,16 @@ def retrieve_git_versions(tag="<tag>", commit="<commit>", date="<date>"):
     }
 
 
+def version_file():
+    return os.path.join(ROOT, "milabench", "_version.py")
+
 def read_previous():
     info = ["<tag>", "<commit>", "<date>"]
-
-    with open(os.path.join(ROOT, "milabench", "_version.py"), "r") as file:
+    
+    if not os.path.exists(version_file()):
+        return info
+    
+    with open(version_file(), "r") as file:
         for line in file.readlines():
             if "tag" in line:
                 _, v = line.split("=")
@@ -49,7 +55,7 @@ def read_previous():
 def update_version_file():
     version_info = retrieve_git_versions(*read_previous())
 
-    with open(os.path.join(ROOT, "milabench", "_version.py"), "w") as file:
+    with open(version_file(), "w") as file:
         file.write('"""')
         file.write("This file is generated, do not modify")
         file.write('"""\n\n')

@@ -5,9 +5,9 @@ import os
 
 from omegaconf import OmegaConf
 from argklass import ArgumentParser
-from torchtune._cli.tune import TuneCLIParser
-
 from benchmate.ux import long_action
+
+from torchtune._cli.tune import TuneCLIParser
 
 
 @dataclass
@@ -82,6 +82,11 @@ def main():
 
     if "qlora" in config.get("model", {}).get("_component_", ""):
         load_model(args.recipe, config)
+
+    outdir = config.get("output_dir")
+    if outdir:
+        for path in ["policy", "value"]:
+            os.makedirs(os.path.join(outdir, path), exist_ok=True)
 
 
 if __name__ == "__main__":

@@ -394,9 +394,8 @@ _diffusion:
   inherits: _defaults
   definition: ../benchmarks/diffusion
   install_group: torch
-  plan:
-    method: njobs
-    n: 1
+  tags:
+    - diffusion
   
   argv:
     --num_epochs: 5
@@ -408,10 +407,13 @@ diffusion-single:
   inherits: _diffusion
   num_machines: 1
   plan:
-    method: njobs
+    method: per_gpu
 
 diffusion-gpus:
   inherits: _diffusion
+  plan:
+    method: njobs
+    n: 1
   num_machines: 1
 
 diffusion-nodes:
@@ -426,6 +428,8 @@ _lightning:
   inherits: _defaults
   definition: ../benchmarks/lightning
   install_group: torch
+  tags:
+    - lightning
   argv:
     --epochs: 10
     --num-workers: "auto({n_worker}, 8)"
@@ -452,6 +456,9 @@ _dinov2:
   definition: ../benchmarks/dinov2
   install_group: torch
   num_machines: 1
+  tags:
+    - image
+    - transformer
   plan:
     method: njobs
     n: 1
@@ -505,7 +512,9 @@ _llm:
   voir:
     options:
       stop: 30
-  
+  tags:
+    - nlp
+    - llm
   max_duration: 1200
   num_machines: 1
   inherits: _defaults
@@ -517,7 +526,6 @@ llm-lora-single:
   inherits: _llm
   plan:
     method: per_gpu
-
   argv:
     "{milabench_code}/recipes/lora_finetune_single_device.py": true
     --config: "{milabench_code}/configs/llama3_8B_lora_single_device.yaml"
@@ -648,9 +656,35 @@ llm-full-mp-nodes:
     - "len(nodes) >= ${num_machines}"
 
 
+
+llm-rlhf-single:
+  inherits: _llm
+  plan:
+    method: per_gpu
+  argv:
+    "{milabench_code}/recipes/ppo_full_finetune_single_device.py": true
+    --config: "{milabench_code}/configs/mistral_ppo.yaml"
+    epochs=1: true
+    output_dir={milabench_extra}/output: true
+    tokenizer.path={milabench_data}/mistral_7B/tokenizer.model: true
+    checkpointer.checkpoint_dir={milabench_data}/mistral_7B: true
+    ref_policy_checkpointer.checkpoint_dir={milabench_data}/mistral_7B: true
+    value_checkpointer.checkpoint_dir={milabench_data}/mistral_7B: true
+    reward_checkpointer.checkpoint_dir={milabench_data}/mistral_7B: true
+    checkpointer.output_dir={milabench_data}/mistral_7B: true
+    metric_logger.log_dir={milabench_extra}/metrics: true
+    repo_id="mistralai/Mistral-7B-Instruct-v0.2": true
+    safetensors=true: true
+    batch_size=64: true
+    num_steps=10000: true
+    ppo_epochs=2: true
+    ppo_batch_size=32: true
+
+
 _geo_gnn:
   inherits: _defaults
-  definition: .
+  tags:
+    - graph
   # FIXME: torch cluster is laging behind pytorch
   # we are forced to use torch==2.3 instead of torch==2.4
   install_group: gnn
@@ -672,6 +706,8 @@ recursiongfn:
   definition: ../benchmarks/recursiongfn
   install_group: gnn
   group: recursiongfn_gnn
+  tags:
+    - graph
   plan:
     method: per_gpu
 
@@ -689,7 +725,8 @@ torchatari:
   install_group: torch
   plan:
     method: per_gpu
-
+  tags:
+    - rl
   argv:
     --num-minibatches: 16
     --update-epochs: 4

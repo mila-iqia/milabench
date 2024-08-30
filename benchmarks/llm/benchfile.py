@@ -6,6 +6,10 @@ from milabench.pack import BasePackage
 from milabench.commands import SimpleCommand
 
 
+URL = "https://github.com/pytorch/torchtune.git"
+BRANCH = "a83eeff0079a73ee04a11e8fc2573ed8f671b231"
+
+
 class Torchtune(TorchrunAllGPU):
     @property
     def executable(self):
@@ -39,6 +43,14 @@ class Llm(Package):
 
     async def install(self):
         await super().install()  # super() call installs the requirements
+
+        # Clone the right version of torchtune
+        tune = self.dirs.code / "tune"
+        if not tune.exists():
+            tune.clone_subtree(URL, BRANCH)
+
+        # make an editable install
+        await self.pip_install("-e", str(tune))
 
     def build_run_plan(self):
         exec = SimpleCommand(self)
