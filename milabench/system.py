@@ -294,7 +294,11 @@ def _resolve_ip(ip):
     if not offline:
         # Resolve the IP
         try:
-            hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(ip)
+            # Workaround error with `gethostbyaddr` on azure DNS (like
+            # `inmako.eastus2.cloudapp.azure.com`). A proper fix might be a
+            # correct network config in terraform.
+            # socket.herror: [Errno 1] Unknown host
+            hostname, aliaslist, ipaddrlist = socket.gethostbyname_ex(ip)
             lazy_raise = None
         
         except socket.herror as err:
@@ -362,6 +366,10 @@ def _resolve_addresses(nodes):
             ("127.0.0.1" in ipaddrlist)
             or (hostname in ("localhost", socket.gethostname(), "127.0.0.1"))
             or (socket.gethostname().startswith(hostname))
+            # Tmp workaround until networking on azure allows to associate the
+            # local hostname (`hostname.split(".")[0]`) with the public fqdn
+            # (hostname.split(".")[0].*.cloudapp.azure.com)
+            or (hostname.split(".")[0] == socket.gethostname())
             or len(ip_list.intersection(ipaddrlist)) > 0
             or any([is_loopback(ip) for ip in ipaddrlist])
         )
@@ -399,13 +407,23 @@ def gethostname(host):
 
 def resolve_hostname(ip):
     try:
-        hostname, _, iplist = socket.gethostbyaddr(ip)
+        # Workaround error with `gethostbyaddr` on azure DNS (like
+        # `inmako.eastus2.cloudapp.azure.com`). A proper fix might be a
+        # correct network config in terraform.
+        # socket.herror: [Errno 1] Unknown host
+        hostname, _, iplist = socket.gethostbyname_ex(ip)
 
         for ip in iplist:
             if is_loopback(ip):
                 return hostname, True
 
-        return hostname, hostname == socket.gethostname()
+        return hostname, (
+            hostname == socket.gethostname()
+            # Tmp workaround until networking on azure allows to associate the
+            # local hostname (`hostname.split(".")[0]`) with the public fqdn
+            # (hostname.split(".")[0].*.cloudapp.azure.com)
+            or (hostname.split(".")[0] == socket.gethostname())
+        )
 
     except:
         if offline:
@@ -460,9 +478,9 @@ def build_system_config(config_file, defaults=None, gpu=True):
             config = yaml.safe_load(cf)
 
     if defaults:
-        config = merge(defaults, config)
+        config["system"] = merge(defaults["system"], config["system"])
 
-    system = config.get("system", {})
+    system = config["system"]
     system_global.set(system)
 
     # capacity is only required if batch resizer is enabled
