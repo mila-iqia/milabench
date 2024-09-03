@@ -55,18 +55,25 @@ def generate_model(
         model_parallel_size=1
     ):
     try:
+        os.environ["MASTER_ADDR"] = "localhost"
+        os.environ["MASTER_PORT"] = "12355"
+
         torch.distributed.init_process_group(rank=rank, world_size=model_parallel_size)
         fairscale.nn.model_parallel.initialize.initialize_model_parallel(model_parallel_size)
+
         conn.send(os.getpid())
         while not conn.poll():
             time.sleep(0.1)
         conn.recv()
+
         params = json.loads(params_path.read_text())
         model = llama.model.Transformer(ModelArgs(**params))
         torch.save(model.state_dict(), params_path.with_name(f"consolidated.{rank:02}.pth"))
+
     except Exception as e:
         conn.send(e)
         raise
+
     finally:
         conn.close()
 
@@ -101,7 +108,7 @@ def main():
     config = OmegaConf.merge(base, cli)
 
     repo_id = config["repo_id"]
-    hf_token = os.getenv("HUGGING_FACE_TOKEN", None)
+    hf_token = os.getenv("MILABENCH_HF_TOKEN", None)
     output_dir = config["checkpointer"]["output_dir"]
 
     ignore_patterns = ["*.safetensors", "*consolidated.*.pth"]
