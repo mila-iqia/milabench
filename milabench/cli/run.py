@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 from coleo import Option, tooled
 
+from milabench.remote import is_remote
 from milabench.utils import validation_layers
 
 from ..common import (
@@ -63,22 +64,27 @@ def arguments():
     return Arguments(run_name, repeat, fulltrace, report, dash, noterm, validations)
 
 
-
 def _fetch_arch(mp):
     try:
         arch = next(iter(mp.packs.values())).config["system"]["arch"]
     except StopIteration:
         print("no selected bench")
         return None
-    
+
+
+def _fetch_first_pack(mp):
+    try:
+        return next(iter(mp.packs.values()))
+    except StopIteration:
+        print("no selected bench")
+        return None
+
 
 @tooled
 def cli_run(args=None):
     """Run the benchmarks."""
     if args is None:
         args = arguments()
-
-    layers = validation_names(args.validations)
 
     dash_class = {
         "short": ShortDashFormatter,
@@ -87,7 +93,13 @@ def cli_run(args=None):
     }.get(args.dash, None)
 
     mp = get_multipack(run_name=args.run_name)
+    first_pack = _fetch_first_pack(mp)
     arch = _fetch_arch(mp)
+
+    layers = validation_names(args.validations)
+    if is_remote(first_pack):
+        # Remote execution will never send back rates
+        layers.remove("ensure_rate")
 
     # Initialize the backend here so we can retrieve GPU stats
     init_arch(arch)

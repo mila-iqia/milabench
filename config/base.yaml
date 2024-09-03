@@ -10,6 +10,8 @@ _defaults:
       gpu_load_threshold: 0.5
       gpu_mem_threshold: 0.5
 
+  num_machines: 1
+
 _torchvision:
   inherits: _defaults
   definition: ../benchmarks/torchvision
@@ -25,7 +27,6 @@ _torchvision:
     --num-workers: "auto({n_worker}, 8)"
     --loader: pytorch
     --data: "{milabench_data}/FakeImageNet"
-
 
 _torchvision_ddp:
   inherits: _defaults
@@ -112,7 +113,6 @@ _timm:
     --dataset: "FakeImageNet"
     --workers: "auto({n_worker}, 8)"
 
-
 _accelerate_opt:
   inherits: _defaults
   tags:
@@ -148,7 +148,6 @@ _accelerate_opt:
   # Accelerate Args
   use_deepspeed: true
   num_machines: 1
-
 
 fp16:
   inherits: _flops
@@ -389,7 +388,6 @@ brax:
     --num-minibatches: 32
     --num-envs: 8192
 
-
 _diffusion:
   inherits: _defaults
   definition: ../benchmarks/diffusion
@@ -532,7 +530,6 @@ _llm:
   definition: ../benchmarks/llm
   install_group: torch
 
-
 llm-lora-single:
   inherits: _llm
   plan:
@@ -549,7 +546,6 @@ llm-lora-single:
     repo_id="meta-llama/Meta-Llama-3.1-8B": true
     batch_size=8: true
     gradient_accumulation_steps=8: true
-
 
 llm-lora-ddp-gpus:
   inherits: _llm
@@ -569,7 +565,6 @@ llm-lora-ddp-gpus:
     repo_id="meta-llama/Meta-Llama-3.1-8B": true
     batch_size=8: true
     gradient_accumulation_steps=8: true
-
 
 llm-lora-ddp-nodes:
   tags:
@@ -596,7 +591,6 @@ llm-lora-ddp-nodes:
   num_machines: 2
   requires_capabilities:
     - "len(nodes) >= ${num_machines}"
-
 
 llm-lora-mp-gpus:
   inherits: _llm
@@ -742,7 +736,6 @@ torchatari:
     --num-envs: auto({cpu_per_gpu}, 128)
     --total-timesteps: 1000000
     --env-id: Breakout-v5
-
 
 llava-single:
   inherits: _defaults
