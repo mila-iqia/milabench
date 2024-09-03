@@ -478,11 +478,10 @@ class SSHCommand(WrapperCommand):
         host = f"{user}@{self.host}" if user else self.host
 
         argv = super()._argv(**kwargs)
-        argv.extend(["-oPasswordAuthentication=no"])
-        argv.extend(["-p", str(self.port)])
-
         if key:
-            argv.append(f"-i{key}")
+            # scp apparently needs `-i` to be first
+            argv.insert(1, f"-i{key}")
+        argv.append(f"-p{self.port}")
         argv.append(host)
 
         return argv # + ["env", "-i"]
@@ -495,21 +494,23 @@ class SCPCommand(SSHCommand, CmdCommand):
         self,
         pack: pack.BasePackage,
         host: str,
-        directory: str,
+        src: str,
         *scp_argv,
+        dest: str = None,
         user: str = None,
         key: str = None,
         **kwargs,
     ) -> None:
         super().__init__(pack, host, "-r", *scp_argv, user=user, key=key, **kwargs)
-        self.dir = directory
+        self.src = src
+        self.dest = dest if dest is not None else self.src
 
     def _argv(self, **kwargs) -> List:
         argv = super()._argv(**kwargs)
 
         host = argv.pop()
-        argv.append(self.dir)
-        argv.append(f"{host}:{self.dir}")
+        argv.append(self.src)
+        argv.append(f"{host}:{self.dest}")
 
         return argv
 
@@ -671,7 +672,9 @@ class TorchrunAllNodes(ForeachNode):
         main = nodes[0]
 
         # node[port] is for SSH
-        main_host = node_address(main)
+        # use internal ip if available such that workers can connect to the port
+        main_host = main.get("internal_ip", node_address(main))
+
         # add them as option so we could tweak them if necessary
         main_port = option("torchrun.port", int, default=29400)
         backend = option("torchrun.backend", str, default="c10d")
@@ -948,6 +951,9 @@ class AccelerateLaunchCommand(SingleCmdCommand):
     def _argv(self, **_) -> List:
         manager, nodes = self._get_main_and_workers()
 
+        # use internal ip if available such that workers can connect to the port
+        manager_ip = manager.get("internal_ip", node_address(manager))
+
         num_machines = max(1, len(nodes) + 1)
 
         # Cant do that maybe this run is constrained
@@ -990,7 +996,7 @@ class AccelerateLaunchCommand(SingleCmdCommand):
             *deepspeed_argv,
             f"--gradient_accumulation_steps={self.pack.config.get('gradient_accumulation_steps', 1)}",
             f"--num_cpu_threads_per_process={cpu_per_process}",
-            f"--main_process_ip={manager['ip']}",
+            f"--main_process_ip={manager_ip}",
             f"--main_process_port={main_port}",
             f"--num_processes={nproc}",
             *self.accelerate_argv,
