@@ -394,9 +394,8 @@ _diffusion:
   inherits: _defaults
   definition: ../benchmarks/diffusion
   install_group: torch
-  plan:
-    method: njobs
-    n: 1
+  tags:
+    - diffusion
   
   argv:
     --num_epochs: 5
@@ -408,10 +407,13 @@ diffusion-single:
   inherits: _diffusion
   num_machines: 1
   plan:
-    method: njobs
+    method: per_gpu
 
 diffusion-gpus:
   inherits: _diffusion
+  plan:
+    method: njobs
+    n: 1
   num_machines: 1
 
 diffusion-nodes:
@@ -426,6 +428,8 @@ _lightning:
   inherits: _defaults
   definition: ../benchmarks/lightning
   install_group: torch
+  tags:
+    - lightning
   argv:
     --epochs: 10
     --num-workers: "auto({n_worker}, 8)"
@@ -452,6 +456,9 @@ _dinov2:
   definition: ../benchmarks/dinov2
   install_group: torch
   num_machines: 1
+  tags:
+    - image
+    - transformer
   plan:
     method: njobs
     n: 1
@@ -505,7 +512,9 @@ _llm:
   voir:
     options:
       stop: 30
-  
+  tags:
+    - nlp
+    - llm
   max_duration: 1200
   num_machines: 1
   inherits: _defaults
@@ -517,7 +526,6 @@ llm-lora-single:
   inherits: _llm
   plan:
     method: per_gpu
-
   argv:
     "{milabench_code}/recipes/lora_finetune_single_device.py": true
     --config: "{milabench_code}/configs/llama3_8B_lora_single_device.yaml"
@@ -664,6 +672,10 @@ ppo:
 
 _geo_gnn:
   inherits: _defaults
+  tags:
+    - graph
+  # FIXME: torch cluster is laging behind pytorch
+  # we are forced to use torch==2.3 instead of torch==2.4
   install_group: gnn
   group: geo_gnn
   definition: ../benchmarks/geo_gnn
@@ -682,6 +694,8 @@ recursiongfn:
   definition: ../benchmarks/recursiongfn
   install_group: gnn
   group: recursiongfn_gnn
+  tags:
+    - graph
   plan:
     method: per_gpu
 
@@ -698,7 +712,8 @@ torchatari:
   install_group: torch
   plan:
     method: per_gpu
-
+  tags:
+    - rl
   argv:
     --num-minibatches: 16
     --update-epochs: 4
