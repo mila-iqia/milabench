@@ -655,6 +655,20 @@ llm-full-mp-nodes:
   requires_capabilities:
     - "len(nodes) >= ${num_machines}"
 
+_purejaxrl:
+  inherits: _defaults
+  definition: ../benchmarks/purejaxrl
+  plan:
+    method: per_gpu
+dqn:
+  inherits: _purejaxrl
+  argv:
+    --benchmark: dqn
+
+ppo:
+  inherits: _purejaxrl
+  argv:
+    --benchmark: ppo
 
 _geo_gnn:
   inherits: _defaults
@@ -675,7 +689,6 @@ dimenet:
     --num-samples: 10000
     --use3d: True
 
-
 recursiongfn:
   inherits: _defaults
   definition: ../benchmarks/recursiongfn
@@ -692,7 +705,6 @@ recursiongfn:
     --num_steps: 100
     --layer_width: 128
     --num_layers: 4
-
 
 torchatari:
   inherits: _defaults
