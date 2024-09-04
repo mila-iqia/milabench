@@ -3,8 +3,8 @@ from milabench.commands import TorchrunAllNodes, TorchrunAllGPU, ListCommand
 
 
 SOURCE_DIR = "src"
-REPO_URL = "https://github.com/facebookresearch/dinov2"
-BRANCH = "e1277af2ba9496fbadf7aec6eba56e8d882d1e35"
+REPO_URL = "https://github.com/Delaunay/dinov2"
+BRANCH = "451bc15a084f42cc97c21e3bc0be9e9158f9049c"
 
 
 class Dinov2(Package):
@@ -28,7 +28,8 @@ class Dinov2(Package):
     def make_env(self):
         # Return a dict of environment variables for prepare_script and
         # main_script.
-        return super().make_env()
+        env = super().make_env()
+        return env
 
     async def install(self):
         await super().install()

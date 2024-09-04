@@ -19,6 +19,8 @@ else
     export MILABENCH_CONFIG="$MILABENCH_SOURCE/config/standard.yaml"
 fi
 
+ARGS="$@"
+
 install_prepare() {
     mkdir -p $MILABENCH_WORDIR
     cd $MILABENCH_WORDIR
@@ -38,10 +40,13 @@ install_prepare() {
 
     pip install -e $MILABENCH_SOURCE
 
+    milabench slurm_system > $MILABENCH_WORDIR/system.yaml
+
     #
     # Install milabench's benchmarks in their venv
     #
-    milabench install "$@"
+    # milabench pin --variant cuda --from-scratch $ARGS 
+    milabench install --system $MILABENCH_WORDIR/system.yaml $ARGS
 
     which pip
 
@@ -58,7 +63,7 @@ install_prepare() {
 
     #
     #   Generate/download datasets, download models etc...
-    milabench prepare "$@"
+    milabench prepare --system $MILABENCH_WORDIR/system.yaml $ARGS
 }
 
 module load cuda/12.3.2
@@ -76,7 +81,7 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
 
     #
     #   Run the benchmakrs
-    milabench run "$@"
+    milabench run --system $MILABENCH_WORDIR/system.yaml "$@"
 
     #
     #   Display report

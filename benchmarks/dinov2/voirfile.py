@@ -26,11 +26,30 @@ class Config:
     gpu_poll: int = 3
 
 
+def populate_slurm():
+    import json
+    import os
+
+    config = json.loads(os.environ["MILABENCH_CONFIG"])
+
+    nodes = [n["name"] for n in config["system"]["nodes"]]
+
+    env = {
+        "SLURM_JOB_ID": "123",
+        "SLURM_JOB_NUM_NODES": "2",
+        "SLURM_JOB_NODELIST": ",".join(nodes),
+        "SLURM_NTASKS": str(len(config["system"]["nodes"])),
+        "SLURM_PROCID":  "2",   # RANK
+        "SLURM_LOCALID": "1",   # Local RANK
+    }
+
+
 @configurable
 def instrument_main(ov, options: Config):
+    import os
+
     yield ov.phases.init
 
-    import os
     import sys
     sys.path.append(os.path.dirname(__file__) + "/src/")
 
