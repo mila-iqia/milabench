@@ -172,7 +172,7 @@ class Sizer:
             return argv
 
         newsize = self.size(benchmark, capacity)
- 
+
         if newsize is None:
             return argv
 
@@ -181,10 +181,10 @@ class Sizer:
         argname = config.get("arg")
         if argname is None:
             return argv
-        
+
         # placeholder replace
         #   train.batch_size_per_gpu={batch_size}
-        placeholder = "{batch_size}" 
+        placeholder = "{batch_size}"
         if placeholder in argname:
             newval = argname.format(batch_size=str(newsize))
 
@@ -193,7 +193,7 @@ class Sizer:
                     break
             else:
                 return argv + [newval]
-            
+
             argv[i] = newval
             return argv
 
@@ -230,7 +230,7 @@ def scale_argv(pack, argv):
     sizer = batch_sizer()
 
     system = system_global.get()
-    
+
     if system:
         capacity = system.get("gpu", dict()).get("capacity")
         return sizer.argv(pack, capacity, argv)
@@ -266,8 +266,8 @@ class MemoryUsageExtractor(ValidationLayer):
         if template is None:
             self.benchname = None
             return
-        
-        placeholder = "{batch_size}" 
+
+        placeholder = "{batch_size}"
         argstart = template.replace(placeholder, "")
 
         is_template = False
@@ -276,8 +276,8 @@ class MemoryUsageExtractor(ValidationLayer):
             if arg.endswith(template):
                 found = i
                 break
-            
-            # 
+
+            #
             if arg.startswith(argstart):
                 found = i
                 is_template = True
@@ -350,12 +350,12 @@ class MemoryUsageExtractor(ValidationLayer):
 
 def arch_to_device(arch):
     device_types = [
-        "cpu", 
-        "cuda", 
-        "ipu", 
-        "xpu", 
-        "mkldnn", 
-        "opengl", "opencl", "ideep", "hip", "ve", 
+        "cpu",
+        "cuda",
+        "ipu",
+        "xpu",
+        "mkldnn",
+        "opengl", "opencl", "ideep", "hip", "ve",
         "fpga", "maia", "xla", "lazy", "vulkan", "mps", "meta",
         "hpu", "mtia", "privateuseone"
     ]
@@ -384,7 +384,6 @@ def new_argument_resolver(pack):
 
     ccl = {"hpu": "hccl", "cuda": "nccl", "rocm": "rccl", "xpu": "ccl", "cpu": "gloo"}
 
-
     cpu_opt = CPUOptions()
     def auto(value, default):
         if cpu_opt.enabled:
@@ -407,7 +406,7 @@ def new_argument_resolver(pack):
     context["arch"] = arch
     context["device_name"] = arch_to_device(arch)
     context["ccl"] = ccl.get(arch, "gloo")
-    
+
     context["milabench_base"] = option("base", str, default="")
     dirs = vars(pack.dirs)
     context["milabench_venv"] = dirs.get('venv', "")
