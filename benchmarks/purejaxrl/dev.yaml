@@ -1,0 +1,28 @@
+_purejaxrl:
+  inherits: _defaults
+  definition: .
+  install-variant: unpinned
+  install_group: torch
+  plan:
+    method: per_gpu
+
+dqn:
+  inherits: _purejaxrl
+  argv:
+    dqn: true
+    --num_envs: auto({cpu_per_gpu}, 128)
+    --buffer_batch_size: 128
+    --env_name: CartPole-v1
+    --training_interval: 10
+    --learning_starts: 10000
+
+ppo:
+  inherits: _purejaxrl
+  argv:
+    ppo: true
+    --num_envs: auto({cpu_per_gpu}, 128)
+    --num_steps: 10
+    --num_minibatches: 32
+    --update_epochs: 4
+    --env_name: hopper
+    --total_timesteps: 200000
