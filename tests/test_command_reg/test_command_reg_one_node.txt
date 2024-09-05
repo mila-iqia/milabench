@@ -492,14 +492,14 @@ echo "---"
 echo "dqn"
 echo "==="
 time (
-  CUDA_VISIBLE_DEVICES=0 python $SRC/milabench/benchmarks/purejaxrl/main.py --benchmark dqn &
-  CUDA_VISIBLE_DEVICES=1 python $SRC/milabench/benchmarks/purejaxrl/main.py --benchmark dqn &
-  CUDA_VISIBLE_DEVICES=2 python $SRC/milabench/benchmarks/purejaxrl/main.py --benchmark dqn &
-  CUDA_VISIBLE_DEVICES=3 python $SRC/milabench/benchmarks/purejaxrl/main.py --benchmark dqn &
-  CUDA_VISIBLE_DEVICES=4 python $SRC/milabench/benchmarks/purejaxrl/main.py --benchmark dqn &
-  CUDA_VISIBLE_DEVICES=5 python $SRC/milabench/benchmarks/purejaxrl/main.py --benchmark dqn &
-  CUDA_VISIBLE_DEVICES=6 python $SRC/milabench/benchmarks/purejaxrl/main.py --benchmark dqn &
-  CUDA_VISIBLE_DEVICES=7 python $SRC/milabench/benchmarks/purejaxrl/main.py --benchmark dqn &
+  CUDA_VISIBLE_DEVICES=0 python $SRC/milabench/benchmarks/purejaxrl/main.py dqn --num_envs 128 --buffer_batch_size 128 --env_name CartPole-v1 --training_interval 10 &
+  CUDA_VISIBLE_DEVICES=1 python $SRC/milabench/benchmarks/purejaxrl/main.py dqn --num_envs 128 --buffer_batch_size 128 --env_name CartPole-v1 --training_interval 10 &
+  CUDA_VISIBLE_DEVICES=2 python $SRC/milabench/benchmarks/purejaxrl/main.py dqn --num_envs 128 --buffer_batch_size 128 --env_name CartPole-v1 --training_interval 10 &
+  CUDA_VISIBLE_DEVICES=3 python $SRC/milabench/benchmarks/purejaxrl/main.py dqn --num_envs 128 --buffer_batch_size 128 --env_name CartPole-v1 --training_interval 10 &
+  CUDA_VISIBLE_DEVICES=4 python $SRC/milabench/benchmarks/purejaxrl/main.py dqn --num_envs 128 --buffer_batch_size 128 --env_name CartPole-v1 --training_interval 10 &
+  CUDA_VISIBLE_DEVICES=5 python $SRC/milabench/benchmarks/purejaxrl/main.py dqn --num_envs 128 --buffer_batch_size 128 --env_name CartPole-v1 --training_interval 10 &
+  CUDA_VISIBLE_DEVICES=6 python $SRC/milabench/benchmarks/purejaxrl/main.py dqn --num_envs 128 --buffer_batch_size 128 --env_name CartPole-v1 --training_interval 10 &
+  CUDA_VISIBLE_DEVICES=7 python $SRC/milabench/benchmarks/purejaxrl/main.py dqn --num_envs 128 --buffer_batch_size 128 --env_name CartPole-v1 --training_interval 10 &
   wait
 )
 
@@ -507,14 +507,14 @@ echo "---"
 echo "ppo"
 echo "==="
 time (
-  CUDA_VISIBLE_DEVICES=0 python $SRC/milabench/benchmarks/purejaxrl/main.py --benchmark ppo &
-  CUDA_VISIBLE_DEVICES=1 python $SRC/milabench/benchmarks/purejaxrl/main.py --benchmark ppo &
-  CUDA_VISIBLE_DEVICES=2 python $SRC/milabench/benchmarks/purejaxrl/main.py --benchmark ppo &
-  CUDA_VISIBLE_DEVICES=3 python $SRC/milabench/benchmarks/purejaxrl/main.py --benchmark ppo &
-  CUDA_VISIBLE_DEVICES=4 python $SRC/milabench/benchmarks/purejaxrl/main.py --benchmark ppo &
-  CUDA_VISIBLE_DEVICES=5 python $SRC/milabench/benchmarks/purejaxrl/main.py --benchmark ppo &
-  CUDA_VISIBLE_DEVICES=6 python $SRC/milabench/benchmarks/purejaxrl/main.py --benchmark ppo &
-  CUDA_VISIBLE_DEVICES=7 python $SRC/milabench/benchmarks/purejaxrl/main.py --benchmark ppo &
+  CUDA_VISIBLE_DEVICES=0 python $SRC/milabench/benchmarks/purejaxrl/main.py ppo --num_envs 128 --num_steps 10 --num_minibatches 32 --update_epochs 4 --env_name hopper --total_timesteps 200000 &
+  CUDA_VISIBLE_DEVICES=1 python $SRC/milabench/benchmarks/purejaxrl/main.py ppo --num_envs 128 --num_steps 10 --num_minibatches 32 --update_epochs 4 --env_name hopper --total_timesteps 200000 &
+  CUDA_VISIBLE_DEVICES=2 python $SRC/milabench/benchmarks/purejaxrl/main.py ppo --num_envs 128 --num_steps 10 --num_minibatches 32 --update_epochs 4 --env_name hopper --total_timesteps 200000 &
+  CUDA_VISIBLE_DEVICES=3 python $SRC/milabench/benchmarks/purejaxrl/main.py ppo --num_envs 128 --num_steps 10 --num_minibatches 32 --update_epochs 4 --env_name hopper --total_timesteps 200000 &
+  CUDA_VISIBLE_DEVICES=4 python $SRC/milabench/benchmarks/purejaxrl/main.py ppo --num_envs 128 --num_steps 10 --num_minibatches 32 --update_epochs 4 --env_name hopper --total_timesteps 200000 &
+  CUDA_VISIBLE_DEVICES=5 python $SRC/milabench/benchmarks/purejaxrl/main.py ppo --num_envs 128 --num_steps 10 --num_minibatches 32 --update_epochs 4 --env_name hopper --total_timesteps 200000 &
+  CUDA_VISIBLE_DEVICES=6 python $SRC/milabench/benchmarks/purejaxrl/main.py ppo --num_envs 128 --num_steps 10 --num_minibatches 32 --update_epochs 4 --env_name hopper --total_timesteps 200000 &
+  CUDA_VISIBLE_DEVICES=7 python $SRC/milabench/benchmarks/purejaxrl/main.py ppo --num_envs 128 --num_steps 10 --num_minibatches 32 --update_epochs 4 --env_name hopper --total_timesteps 200000 &
   wait
 )
 
