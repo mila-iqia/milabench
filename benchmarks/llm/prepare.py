@@ -7,12 +7,14 @@ import os
 from pathlib import Path
 import time
 
-import llama3.llama.model
+import llama.model
 import fairscale.nn.model_parallel
 from omegaconf import OmegaConf
 from argklass import ArgumentParser
+import torch
 import torch.distributed
 from torchtune._cli.tune import TuneCLIParser
+from transformers import LlamaConfig, LlamaForCausalLM
 
 from benchmate.ux import long_action
 
@@ -24,7 +26,7 @@ class Arguments:
 
 
 @dataclass
-class ModelArgs(llama3.llama.model.ModelArgs):
+class ModelArgs(llama.model.ModelArgs):
     use_scaled_rope: bool = True
 
 
@@ -60,7 +62,7 @@ def generate_model(
             time.sleep(0.1)
         conn.recv()
         params = json.loads(params_path.read_text())
-        model = llama3.llama.model.Transformer(ModelArgs(**params))
+        model = llama.model.Transformer(ModelArgs(**params))
         torch.save(model.state_dict(), params_path.with_name(f"consolidated.{rank:02}.pth"))
     except Exception as e:
         conn.send(e)
@@ -102,10 +104,7 @@ def main():
     hf_token = os.getenv("HUGGING_FACE_TOKEN", None)
     output_dir = config["checkpointer"]["output_dir"]
 
-    ignore_patterns = ["*.safetensors", "original/consolidated.*.pth"]
-
-    if config.get("safetensors", False):
-        ignore_pattern = "*consolidated.*.pth"
+    ignore_patterns = ["*.safetensors", "*consolidated.*.pth"]
 
     download_args = [
         "download",
@@ -120,7 +119,7 @@ def main():
             []
         )
     ]
-    
+
     if hf_token is not None:
         download_args.extend([
             "--hf-token",
@@ -133,9 +132,19 @@ def main():
     args = parser.parse_args(download_args)
     parser.run(args)
 
-    if not config.get("safetensors", False):
+    if config.get("safetensors", False):
+        params_path = args.output_dir / "config.json"
+        model = LlamaForCausalLM(LlamaConfig(**json.loads(params_path.read_text())))
+        # Avoid saving this as part of the config.
+        del model.config._name_or_path
+        model.config.torch_dtype = torch.float16
+        model.save_pretrained(str(args.output_dir), safe_serialization=True)
+
+    else:
+        # Note that at the time of writing torchtune doesn't support multi-*.pth
+        # files loading
         params_path = next(args.output_dir.glob("**/params.json"))
-        model_parallel_size = 8 if repo_id.split("-")[-1].lower() == "70b" else 1
+        model_parallel_size = len(config["checkpointer"]["checkpoint_files"])
         pipes = [multiprocessing.Pipe() for _ in range(model_parallel_size)]
         processes = [
             multiprocessing.Process(

@@ -40,7 +40,7 @@ class Llm(Package):
     prepare_script = "prepare.py"
 
     async def install(self):
-        llama3_dir = (XPath(__file__).resolve().parent / "llama3")
+        llama3_dir = XPath(__file__).resolve().parent
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_dir = XPath(tmp_dir)
             tmp_dir.clone_subtree(
