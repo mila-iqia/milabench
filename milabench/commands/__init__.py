@@ -941,7 +941,7 @@ class AccelerateLaunchCommand(SingleCmdCommand):
         self.rank = rank
 
     def _get_main_and_workers(self):
-        max_num = self.pack.config["num_machines"]
+        max_num = self.pack.config.get("num_machines", 1)
         nodes = select_nodes(self.pack.config["system"]["nodes"], max_num)
         return nodes[0], nodes[1:]
 

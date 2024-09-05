@@ -1,8 +1,7 @@
-# This is the script run by milabench run (by default)
+#!/usr/bin/env python
 
-import time
+from dataclasses import dataclass
 
-import numpy as np
 import torch
 from accelerate import Accelerator
 from accelerate.utils import set_seed
@@ -12,7 +11,9 @@ from torch.utils.data import DataLoader
 from torch.utils.data.dataloader import default_collate
 from transformers import AutoProcessor, LlavaForConditionalGeneration
 
+import argklass
 from benchmate.observer import BenchObserver
+import torchcompat.core as compat
 
 
 def apply_chat_template(texts):
@@ -34,30 +35,45 @@ def custom_collate(batch):
         return default_collate(batch)
 
 
+@dataclass
+class Arguments:
+    batch_size: int = 10
+    epochs: int = 10
+    seed: int = 42
+    num_workers: int = 5
+    gradient_accumulation_steps: int = 1
+
+
 def main():
+    parser = argklass.ArgumentParser(description="llava")
+    parser.add_arguments(Arguments)
+    args = parser.parse_args()
+
     accelerator = Accelerator(
         mixed_precision="no",
-        gradient_accumulation_steps=4,
+        gradient_accumulation_steps=args.gradient_accumulation_steps,
         log_with="all",
         project_dir="logs",
     )
 
-    set_seed(42)
-    batch_size = 1  # Set to 1 for now, but can be easily changed
-    num_epochs = 1
+    set_seed(args.seed)
 
     # Load LLaVA model and processor with device_map="auto"
     model = LlavaForConditionalGeneration.from_pretrained(
         "llava-hf/llava-1.5-7b-hf",
-        torch_dtype=torch.float32,  # Change to float32
-        device_map="auto",
+        torch_dtype=torch.bfloat16,
+        device_map=compat.device_type,
     )
     processor = AutoProcessor.from_pretrained("llava-hf/llava-1.5-7b-hf")
 
     # Load dataset and create DataLoader
     dataset = load_dataset("HuggingFaceM4/the_cauldron", "aokvqa")["train"]
     dataloader = DataLoader(
-        dataset, batch_size=batch_size, shuffle=True, collate_fn=custom_collate
+        dataset, 
+        batch_size=args.batch_size, 
+        shuffle=True, 
+        collate_fn=custom_collate,
+        num_workers=args.num_workers
     )
 
     def batch_size_fn(batch):
@@ -68,13 +84,14 @@ def main():
         )
 
     observer = BenchObserver(
-        batch_size_fn=batch_size_fn, earlystop=70, raise_stop_program=True
+        batch_size_fn=batch_size_fn, earlystop=70, raise_stop_program=True,
+        stdout=True,
     )
     optimizer = observer.optimizer(torch.optim.AdamW(model.parameters(), lr=5e-5))
     model, optimizer, dataloader = accelerator.prepare(model, optimizer, dataloader)
 
-    for epoch in range(num_epochs):
-        for batch in observer.iterate(dataloader):
+    for epoch in range(args.epochs):
+        for i, batch in enumerate(observer.iterate(dataloader)):
             images = batch["images"][0]  # Access the first item in the list of images
             texts = batch["texts"]
             prompt = apply_chat_template(texts)
@@ -93,7 +110,11 @@ def main():
                 )
                 for k, v in inputs.items()
             }
+
+            inputs["labels"] = inputs["input_ids"]
+
             outputs = model(**inputs)
+  
             loss = outputs.loss
             accelerator.backward(loss)
 
@@ -111,4 +132,11 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    from voir.phase import StopProgram
+    from benchmate.monitor import bench_monitor
+
+    try:
+        with bench_monitor():
+            main()
+    except StopProgram:
+        pass

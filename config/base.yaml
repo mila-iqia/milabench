@@ -732,3 +732,36 @@ torchatari:
     --num-envs: auto({cpu_per_gpu}, 128)
     --total-timesteps: 1000000
     --env-id: Breakout-v5
+
+
+llava-single:
+  inherits: _defaults
+  definition: ../benchmarks/llava
+  install_group: torch
+  plan:
+    method: per_gpu
+
+  tags:
+    - llm
+  argv:
+    --batch_size: 1
+    --num_workers: 4
+    --gradient_accumulation_steps: 1
+
+llava-gpus:
+  # This OOM
+  enabled: false
+
+  inherits: _defaults
+  definition: ../benchmarks/llava
+  install_group: torch
+  plan:
+    method: njobs
+    n: 1
+
+  tags:
+    - llm
+  argv:
+    --batch_size: 1
+    --num_workers: 4
+    --gradient_accumulation_steps: 1

@@ -6,7 +6,6 @@
 #
 --extra-index-url https://pypi.ngc.nvidia.com
 --extra-index-url https://download.pytorch.org/whl/cu121
---find-links https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 --trusted-host pypi.ngc.nvidia.com
 
 absl-py==2.1.0
@@ -173,7 +172,7 @@ isort==5.13.2
     # via pylint
 itsdangerous==2.2.0
     # via flask
-jax[cuda12]==0.4.31
+jax==0.4.31
     # via
     #   -r benchmarks/purejaxrl/requirements.in
     #   brax
@@ -188,10 +187,6 @@ jax[cuda12]==0.4.31
     #   optax
     #   orbax-checkpoint
     #   rlax
-jax-cuda12-pjrt==0.4.31
-    # via jax-cuda12-plugin
-jax-cuda12-plugin[with-cuda]==0.4.31
-    # via jax
 jaxlib==0.4.31
     # via
     #   brax
@@ -291,50 +286,33 @@ numpy==2.1.1
     #   trimesh
 nvidia-cublas-cu12==12.1.3.1
     # via
-    #   jax-cuda12-plugin
     #   nvidia-cudnn-cu12
     #   nvidia-cusolver-cu12
     #   torch
 nvidia-cuda-cupti-cu12==12.1.105
-    # via
-    #   jax-cuda12-plugin
-    #   torch
-nvidia-cuda-nvcc-cu12==12.6.68
-    # via jax-cuda12-plugin
+    # via torch
 nvidia-cuda-nvrtc-cu12==12.1.105
     # via torch
 nvidia-cuda-runtime-cu12==12.1.105
-    # via
-    #   jax-cuda12-plugin
-    #   torch
+    # via torch
 nvidia-cudnn-cu12==9.1.0.70
-    # via
-    #   jax-cuda12-plugin
-    #   torch
+    # via torch
 nvidia-cufft-cu12==11.0.2.54
-    # via
-    #   jax-cuda12-plugin
-    #   torch
+    # via torch
 nvidia-curand-cu12==10.3.2.106
     # via torch
 nvidia-cusolver-cu12==11.4.5.107
-    # via
-    #   jax-cuda12-plugin
-    #   torch
+    # via torch
 nvidia-cusparse-cu12==12.1.0.106
     # via
-    #   jax-cuda12-plugin
     #   nvidia-cusolver-cu12
     #   torch
 nvidia-ml-py==12.560.30
     # via voir
 nvidia-nccl-cu12==2.20.5
-    # via
-    #   jax-cuda12-plugin
-    #   torch
+    # via torch
 nvidia-nvjitlink-cu12==12.6.68
     # via
-    #   jax-cuda12-plugin
     #   nvidia-cusolver-cu12
     #   nvidia-cusparse-cu12
 nvidia-nvtx-cu12==12.1.105
@@ -514,7 +492,7 @@ voir==0.2.19
     # via
     #   -c .pin/../constraints/cuda.txt
     #   -r benchmarks/purejaxrl/requirements.in
-wandb==0.17.8
+wandb==0.17.9
     # via navix
 werkzeug==3.0.4
     # via flask
