@@ -493,7 +493,6 @@ dinov2-giant-gpus:
     train.num_workers=10: true
 
 dinov2-giant-nodes:
-  enabled: false
   tags:
     - multinode
   max_duration: 3600
@@ -501,7 +500,7 @@ dinov2-giant-nodes:
   argv:
     --config-file: "{benchmark_folder}/src/dinov2/configs/train/vitg14.yaml"
     # THOSE NEED TO BE LAST
-    train.dataset_path=ImageFolder:root={milabench_data}/FakeImageNet: true
+    train.dataset_path=ImageNet:split=TRAIN:root={milabench_data}/FakeImageNet:extra={milabench_data}/FakeImageNet: true
     train.batch_size_per_gpu=12: true
     train.saveckp_freq=100: true
     train.num_workers=10: true
