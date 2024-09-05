@@ -394,10 +394,11 @@ _diffusion:
   inherits: _defaults
   definition: ../benchmarks/diffusion
   install_group: torch
+  tags:
+    - diffusion
   plan:
-    method: njobs
-    n: 1
-  
+    method: per_gpu
+
   argv:
     --num_epochs: 5
     --batch_size: 32
@@ -408,10 +409,13 @@ diffusion-single:
   inherits: _diffusion
   num_machines: 1
   plan:
-    method: njobs
+    method: per_gpu
 
 diffusion-gpus:
   inherits: _diffusion
+  plan:
+    method: njobs
+    n: 1
   num_machines: 1
 
 diffusion-nodes:
@@ -426,6 +430,8 @@ _lightning:
   inherits: _defaults
   definition: ../benchmarks/lightning
   install_group: torch
+  tags:
+    - lightning
   argv:
     --epochs: 10
     --num-workers: "auto({n_worker}, 8)"
@@ -452,6 +458,9 @@ _dinov2:
   definition: ../benchmarks/dinov2
   install_group: torch
   num_machines: 1
+  tags:
+    - image
+    - transformer
   plan:
     method: njobs
     n: 1
@@ -505,7 +514,9 @@ _llm:
   voir:
     options:
       stop: 30
-  
+  tags:
+    - nlp
+    - llm
   max_duration: 1200
   num_machines: 1
   inherits: _defaults
@@ -517,7 +528,6 @@ llm-lora-single:
   inherits: _llm
   plan:
     method: per_gpu
-
   argv:
     "{milabench_code}/recipes/lora_finetune_single_device.py": true
     --config: "{milabench_code}/configs/llama3_8B_lora_single_device.yaml"
@@ -647,10 +657,36 @@ llm-full-mp-nodes:
   requires_capabilities:
     - "len(nodes) >= ${num_machines}"
 
+_purejaxrl:
+  inherits: _defaults
+  definition: ../benchmarks/purejaxrl
+  plan:
+    method: per_gpu
+
+dqn:
+  inherits: _purejaxrl
+  argv:
+    dqn: true
+    --num_envs: auto({cpu_per_gpu}, 128)
+    --buffer_batch_size: 128
+    --env_name: CartPole-v1
+    --training_interval: 10
+
+ppo:
+  inherits: _purejaxrl
+  argv:
+    ppo: true
+    --num_envs: auto({cpu_per_gpu}, 128)
+    --num_steps: 10
+    --num_minibatches: 32
+    --update_epochs: 4
+    --env_name: hopper
+    --total_timesteps: 200000
 
 _geo_gnn:
   inherits: _defaults
-  definition: .
+  tags:
+    - graph
   # FIXME: torch cluster is laging behind pytorch
   # we are forced to use torch==2.3 instead of torch==2.4
   install_group: gnn
@@ -666,12 +702,13 @@ dimenet:
     --num-samples: 10000
     --use3d: True
 
-
 recursiongfn:
   inherits: _defaults
   definition: ../benchmarks/recursiongfn
   install_group: gnn
   group: recursiongfn_gnn
+  tags:
+    - graph
   plan:
     method: per_gpu
 
@@ -682,14 +719,14 @@ recursiongfn:
     --layer_width: 128
     --num_layers: 4
 
-
 torchatari:
   inherits: _defaults
   definition: ../benchmarks/torchatari
   install_group: torch
   plan:
     method: per_gpu
-
+  tags:
+    - rl
   argv:
     --num-minibatches: 16
     --update-epochs: 4
