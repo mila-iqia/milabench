@@ -21,7 +21,7 @@ from diffusers.optimization import get_scheduler
 
 @dataclass
 class Arguments:
-    model: str = "runwayml/stable-diffusion-v1-5"
+    model: str = "benjamin-paine/stable-diffusion-v1-5"
     dataset: str = "lambdalabs/naruto-blip-captions"
     batch_size: int = 16
     num_workers: int = 8
