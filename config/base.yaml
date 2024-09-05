@@ -508,6 +508,7 @@ _llm:
   
   max_duration: 1200
   num_machines: 1
+  model_parallel_size: 1
   inherits: _defaults
   definition: ../benchmarks/llm
   install_group: torch
@@ -598,6 +599,7 @@ llm-lora-mp-gpus:
     batch_size=8: true
     gradient_accumulation_steps=1: true
 
+  model_parallel_size: 8
 
 llm-full-mp-gpus:
   inherits: _llm
@@ -619,6 +621,7 @@ llm-full-mp-gpus:
     batch_size=2: true
     gradient_accumulation_steps=1: true
 
+  model_parallel_size: 8
 
 llm-full-mp-nodes:
   tags:
@@ -644,6 +647,7 @@ llm-full-mp-nodes:
     gradient_accumulation_steps=1: true
 
   num_machines: 2
+  model_parallel_size: 8
   requires_capabilities:
     - "len(nodes) >= ${num_machines}"
 
