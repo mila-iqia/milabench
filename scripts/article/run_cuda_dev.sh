@@ -3,6 +3,7 @@
 set -ex
 
 # export MILABENCH_SOURCE=$HOME/milabench
+# export SLURM_NODELIST=cn-d[003-004]
 #
 # # put those on the shared drived 
 # export MILABENCH_DIRS_DATA=/home/mila/d/delaunap/scratch/milabench/data

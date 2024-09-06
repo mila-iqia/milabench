@@ -236,10 +236,10 @@ def make_dataframe(summary, compare=None, weights=None, query=None):
     def sort_by(key):
         """Group similar runs together"""
         if weights:
-            return weights[key]["group"]
+            return weights.get(key, {}).get("group", key)
 
         if summary:
-            return summary[key]["group"]
+            return summary.get(key, {}).get("group", key)
 
         return key
 
