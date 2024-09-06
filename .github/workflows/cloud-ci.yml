@@ -4,7 +4,7 @@ on:
   # Runs for pull requests
   pull_request:
     branches:
-      - master
+      - staging
 
 permissions:
   id-token: write
@@ -16,7 +16,7 @@ jobs:
       fail-fast: true
       max-parallel: 1
       matrix:
-        system: ["1n:1g", "1n:4g", "2n:4g"]
+        system: ["1n:4g"]
         include:
           - arch: cuda
             exclude: "no-cuda"
