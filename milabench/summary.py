@@ -8,6 +8,26 @@ from .utils import error_guard
 from .syslog import syslog
 
 
+def node_count(config):
+    max_num = config.get("num_machines", 1)
+    return max_num
+
+
+def local_gpu(config):
+    method = config.get("plan", {"method": "per_gpu"}).get("method")
+
+    if method == "njobs":
+        devices = config.get("devices", [])
+        return len(devices)
+    else:
+        return 1
+
+
+def ngpu(pack):
+    return node_count(pack) * local_gpu(pack)
+
+
+
 def aggregate(run_data):
     """Group all the data inside a dictionary of lists"""
     omnibus = defaultdict(list)
@@ -21,6 +41,7 @@ def aggregate(run_data):
 
         if event == "config":
             config = entry["data"]
+            omnibus["ngpu"] = [ngpu(config)]
 
         elif event == "data":
             data = dict(entry["data"])
@@ -207,6 +228,7 @@ def _summarize(group, query=tuple([])) -> Summary:
         "name": config["name"],
         "group": config["group"],
         "n": len(agg["success"]),
+        "ngpu": sum(agg["ngpu"]) / len(agg["ngpu"]),
         "successes": sum(agg["success"]),
         "failures": sum(not x for x in agg["success"]),
         "train_rate": _metrics(agg["train_rate"]),

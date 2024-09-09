@@ -23,6 +23,7 @@ from benchmate.ux import long_action
 class Arguments:
     recipe: str
     config: str = None
+    no_pretrained: bool = False
 
 
 @dataclass
@@ -98,47 +99,7 @@ def load_model(recipe, cfg):
         recipe.save_checkpoint(0)
 
 
-def main():
-    parser = ArgumentParser()
-    parser.add_arguments(Arguments)
-    args, rest = parser.parse_known_args()
-
-    cli = OmegaConf.from_cli()
-    base = OmegaConf.load(args.config)
-    config = OmegaConf.merge(base, cli)
-
-    repo_id = config["repo_id"]
-    hf_token = os.getenv("MILABENCH_HF_TOKEN", None)
-    output_dir = config["checkpointer"]["output_dir"]
-
-    ignore_patterns = ["*.safetensors", "*consolidated.*.pth"]
-
-    download_args = [
-        "download",
-        repo_id,
-        "--output-dir",
-        output_dir,
-        *sum(
-            [
-                ["--ignore-patterns", ignore_pattern]
-                for ignore_pattern in ignore_patterns
-            ], 
-            []
-        )
-    ]
-
-    if hf_token is not None:
-        download_args.extend([
-            "--hf-token",
-            hf_token,
-        ])
-    else:
-        print("No HF token found...")
-
-    parser = MyParser()
-    args = parser.parse_args(download_args)
-    parser.run(args)
-
+def generate_weights(args, config):
     if config.get("safetensors", False):
         params_path = args.output_dir / "config.json"
         model = LlamaForCausalLM(LlamaConfig(**json.loads(params_path.read_text())))
@@ -177,6 +138,66 @@ def main():
             conn.send(True)
             p.join()
 
+
+def main():
+    parser = ArgumentParser()
+    parser.add_arguments(Arguments)
+    args, rest = parser.parse_known_args()
+
+    cli = OmegaConf.from_cli()
+    base = OmegaConf.load(args.config)
+    config = OmegaConf.merge(base, cli)
+
+    repo_id = config["repo_id"]
+    hf_token = os.getenv("MILABENCH_HF_TOKEN", None)
+    output_dir = config["checkpointer"]["output_dir"]
+
+    #
+    huggingface_format = config.get("safetensors", False)
+    pretrained = not args.no_pretrained
+
+    if not pretrained:
+        # if we will generate the weights do not download anyweights
+        ignore_patterns = ["*.safetensors", "*consolidated.*.pth"]
+
+    elif huggingface_format:
+        # Ignore original weights
+        ignore_patterns = ["*consolidated.*.pth"]
+
+    else:
+        # Ignore hugging face weights
+        ignore_patterns = ["*.safetensors"]
+
+    download_args = [
+        "download",
+        repo_id,
+        "--output-dir",
+        output_dir,
+        *sum(
+            [
+                ["--ignore-patterns", ignore_pattern]
+                for ignore_pattern in ignore_patterns
+            ], 
+            []
+        )
+    ]
+
+    if hf_token is not None:
+        download_args.extend([
+            "--hf-token",
+            hf_token,
+        ])
+    else:
+        print("No HF token found...")
+
+    # Download Huggingface repo
+    parser = MyParser()
+    args = parser.parse_args(download_args)
+    parser.run(args)
+
+    if not pretrained:
+        generate_weights(args, config)
+    
     if "qlora" in config.get("model", {}).get("_component_", ""):
         load_model(args.recipe, config)
 

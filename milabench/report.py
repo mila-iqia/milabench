@@ -24,6 +24,7 @@ def _make_row(summary, compare, config, query=None):
     row = {
         "n": nan,
         "fail": nan,
+        "ngpu": summary["ngpu"],
         "perf": nan,
         "std%": nan,
         "sem%": nan,
@@ -194,15 +195,18 @@ def _report_pergpu(entries, measure="50"):
 
 
 columns_order = {
-    "fail": 1,
-    "n": 2,
-    "perf": 3,
-    "perf_adj": 4,
-    "sem%": 5,
-    "std%": 6,
-    "peak_memory": 7,
-    "score": 8,
-    "weight": 9,
+    n: i for i, n in enumerate([
+        "fail",
+        "n",
+        "ngpu",
+        "perf",
+        "perf_adj",
+        "sem%",
+        "std%",
+        "peak_memory",
+        "score",
+        "weight",
+    ])
 }
 
 
@@ -375,6 +379,7 @@ def make_report(
 _formatters = {
     "fail": "{:4.0f}".format,
     "n": "{:3.0f}".format,
+    "ngpu": "{:4.0f}".format,
     "std": "{:10.2f}".format,
     "iqr": "{:10.2f}".format,
     "perf": "{:10.2f}".format,

@@ -263,8 +263,8 @@ def _get_multipack(
         )
 
 
-def _parse_report(pth):
-    with pth.open() as f:
+def _parse_report(pth, open=lambda x: x.open()):
+    with open(pth) as f:
         lines = f.readlines()
         data = []
         good_lines = 0

@@ -373,6 +373,14 @@ time (
 )
 
 echo "---"
+echo "diffusion-nodes"
+echo "==============="
+time (
+  $SRC/milabench/milabench/scripts/activator $BASE/venv/torch $BASE/cache accelerate launch --mixed_precision=bf16 --dynamo_backend=no --machine_rank=0 --num_machines=1 --multi_gpu --gradient_accumulation_steps=1 --num_cpu_threads_per_process=4 --main_process_ip=127.0.0.1 --main_process_port=29400 --num_processes=8 $SRC/milabench/benchmarks/diffusion/main.py --num_epochs 5 --batch_size 32 --num_workers 8 --cache $BASE/cache &
+  wait
+)
+
+echo "---"
 echo "lightning"
 echo "========="
 time (
@@ -415,14 +423,6 @@ echo "dinov2-giant-gpus"
 echo "================="
 time (
   $BASE/venv/torch/bin/benchrun --nnodes=1 --rdzv-backend=c10d --rdzv-endpoint=127.0.0.1:29400 --nproc-per-node=8 --no-python -- python $SRC/milabench/benchmarks/dinov2/main.py --output-dir $BASE/extra/dinov2-giant-gpus/output --no-resume --config-file $SRC/milabench/benchmarks/dinov2/src/dinov2/configs/train/vitg14.yaml train.dataset_path=ImageNet:split=TRAIN:root=$BASE/data/FakeImageNet:extra=$BASE/data/FakeImageNet train.batch_size_per_gpu=32 train.saveckp_freq=100 train.num_workers=10 &
-  wait
-)
-
-echo "---"
-echo "dinov2-giant-nodes"
-echo "=================="
-time (
-  $BASE/venv/torch/bin/benchrun --nnodes=1 --rdzv-backend=c10d --rdzv-endpoint=127.0.0.1:29400 --nproc-per-node=8 --no-python -- python $SRC/milabench/benchmarks/dinov2/main.py --output-dir $BASE/extra/dinov2-giant-nodes/output --no-resume --config-file $SRC/milabench/benchmarks/dinov2/src/dinov2/configs/train/vitg14.yaml train.dataset_path=ImageNet:split=TRAIN:root=$BASE/data/FakeImageNet:extra=$BASE/data/FakeImageNet train.batch_size_per_gpu=12 train.saveckp_freq=100 train.num_workers=10 &
   wait
 )
 

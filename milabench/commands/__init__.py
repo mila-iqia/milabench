@@ -521,7 +521,7 @@ class TorchrunAllGPU(WrapperCommand):
         # use absolute paths to avoid issues
 
         self.binfolder = executor.pack.config["dirs"]["venv"]
-        self.module=module
+        self.module = module
 
         # benchrun is a wrapper around torchrun
         # which insert voir file descritor
