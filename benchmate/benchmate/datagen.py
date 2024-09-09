@@ -15,29 +15,35 @@ from tqdm import tqdm
 def write(args):
     import torchvision.transforms as transforms
 
-    offset, outdir, size = args
+    offset, outdir, prefix, size = args
 
     img = torch.randn(*size)
     target = offset % 1000  # torch.randint(0, 1000, size=(1,), dtype=torch.long)[0]
     img = transforms.ToPILImage()(img)
-
     class_val = int(target)
-    image_name = f"{offset}.jpeg"
+
+    # Some benches need filenames to match those of imagenet:
+    # https://github.com/facebookresearch/dinov2/blob/e1277af2ba9496fbadf7aec6eba56e8d882d1e35/dinov2/data/datasets/image_net.py#L40-L43
+    if not prefix:  # train
+        image_name = f"{class_val}_{offset}"
+    else:           # val, test
+        image_name = f"{prefix}{int(offset):08d}"
 
     path = os.path.join(outdir, str(class_val))
     os.makedirs(path, exist_ok=True)
 
-    image_path = os.path.join(path, image_name)
+    image_path = os.path.join(path, f"{image_name}.JPEG")
     img.save(image_path)
 
 
-def generate(image_size, n, outdir, start=0):
+def generate(image_size, n, outdir, prefix="", start=0):
     work_items = []
     for i in range(n):
         work_items.append(
             [
                 start + i,
                 outdir,
+                prefix,
                 image_size,
             ]
         )
@@ -67,12 +73,20 @@ def generate_sets(root, sets, shape):
     for split, count in sets.items():
         current_count = total_images.get(split, 0)
 
+        # Some benches need filenames to match those of imagenet:
+        # https://github.com/facebookresearch/dinov2/blob/e1277af2ba9496fbadf7aec6eba56e8d882d1e35/dinov2/data/datasets/image_net.py#L40-L43
+        if split == "train":
+            prefix = ""
+        else:  # split in (val, test):
+            prefix = f"ILSVRC2012_{split}_"
+
         if current_count < count:
             print(f"Generating {split} (current {current_count}) (target: {count})")
             generate(
                 shape,
                 count - current_count,
                 os.path.join(root, split),
+                prefix=prefix,
                 start=current_count,
             )
 
@@ -123,6 +137,12 @@ def generate_fakeimagenet(args=None):
     }
 
     generate_sets(dest, size_spec, args.image_size)
+
+    labels = set([int(entry.name) for entry in Path(dest).glob("*/*/")])
+    with open(os.path.join(dest, "labels.txt"), "wt") as _f:
+        # class_id,class_name
+        _f.writelines([f"{l},{l}\n" for l in sorted(labels)])
+
     print("Done!")
 
 

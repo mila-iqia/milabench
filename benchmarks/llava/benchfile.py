@@ -1,14 +1,8 @@
 from milabench.pack import Package
-from milabench.commands import TorchrunAllNodes, TorchrunAllGPU, ListCommand
+from milabench.commands import AccelerateAllNodes
 
 
-SOURCE_DIR = "src"
-# Fix https://github.com/facebookresearch/dinov2/pull/281
-REPO_URL = "https://github.com/Delaunay/dinov2"
-BRANCH = "451bc15a084f42cc97c21e3bc0be9e9158f9049c"
-
-
-class Dinov2(Package):
+class Llava(Package):
     # Requirements file installed by install(). It can be empty or absent.
     base_requirements = "requirements.in"
 
@@ -22,34 +16,27 @@ class Dinov2(Package):
 
     # You can remove the functions below if you don't need to modify them.
 
-    @property
-    def working_directory(self):
-        return self.dirs.code / SOURCE_DIR
-
     def make_env(self):
         # Return a dict of environment variables for prepare_script and
         # main_script.
-        env = super().make_env()
-        return env
+        return super().make_env()
 
     async def install(self):
-        await super().install()
-
-        source_destination = self.dirs.code / SOURCE_DIR
-        if not source_destination.exists():
-            source_destination.clone_subtree(
-                REPO_URL, BRANCH
-            )
+        await super().install()  # super() call installs the requirements
 
     async def prepare(self):
         await super().prepare()  # super() call executes prepare_script
 
     def build_run_plan(self):
-        # self.config is not the right config for this
-        plan = super().build_run_plan()
+        from milabench.commands import PackCommand
 
-        return TorchrunAllNodes(plan).use_stdout()
+        main = self.dirs.code / self.main_script
+        plan = PackCommand(self, *self.argv, lazy=True)
+        
+        if False:
+            plan = VoirCommand(plan, cwd=main.parent)
+
+        return AccelerateAllNodes(plan).use_stdout()
 
 
-
-__pack__ = Dinov2
+__pack__ = Llava

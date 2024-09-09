@@ -8,9 +8,30 @@ from .utils import error_guard
 from .syslog import syslog
 
 
+def node_count(config):
+    max_num = config.get("num_machines", 1)
+    return max_num
+
+
+def local_gpu(config):
+    method = config.get("plan", {"method": "per_gpu"}).get("method")
+
+    if method == "njobs":
+        devices = config.get("devices", [])
+        return len(devices)
+    else:
+        return 1
+
+
+def ngpu(pack):
+    return node_count(pack) * local_gpu(pack)
+
+
+
 def aggregate(run_data):
     """Group all the data inside a dictionary of lists"""
     omnibus = defaultdict(list)
+    meta = None
     config = None
     start = None
     end = None
@@ -21,6 +42,10 @@ def aggregate(run_data):
 
         if event == "config":
             config = entry["data"]
+            omnibus["ngpu"] = [ngpu(config)]
+
+        if event == "meta":
+            meta = entry["data"]
 
         elif event == "data":
             data = dict(entry["data"])
@@ -82,6 +107,7 @@ def aggregate(run_data):
         "start": start,
         "end": end,
         "data": omnibus,
+        "meta": meta
     }
 
 
@@ -181,6 +207,7 @@ class Summary:
     gpu_load: dict[str, dict[str, Stats]]
     weight: float
     enabled: bool
+    meta: dict[str]
 
 
 @error_guard(None)
@@ -200,13 +227,16 @@ def _summarize(group, query=tuple([])) -> Summary:
         per_gpu[device].append(tr)
 
     config = group["config"]
+    meta = group["meta"]
 
     additional = augment(group, query)
 
     return {
+        "meta": meta,
         "name": config["name"],
         "group": config["group"],
         "n": len(agg["success"]),
+        "ngpu": sum(agg["ngpu"]) / len(agg["ngpu"]),
         "successes": sum(agg["success"]),
         "failures": sum(not x for x in agg["success"]),
         "train_rate": _metrics(agg["train_rate"]),

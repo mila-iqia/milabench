@@ -391,6 +391,12 @@ class Package(BasePackage):
         if is_editable_install():
             await install_benchmate(self)
 
+    # def ngpu(self):
+    #     devices = self.pack.config.get("devices", [])
+    #     local = len(devices)
+
+
+
     async def pin(
         self,
         clear_previous: bool = True,

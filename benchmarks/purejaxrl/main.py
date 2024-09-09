@@ -4,7 +4,6 @@
 # clone_subtree in the benchfile.py, in which case this file can simply
 # be deleted.
 
-import argparse
 import argklass
 
 

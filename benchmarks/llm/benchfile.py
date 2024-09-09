@@ -1,3 +1,5 @@
+import tempfile
+from milabench.fs import XPath
 from milabench.pack import Package
 
 
@@ -38,6 +40,28 @@ class Llm(Package):
     prepare_script = "prepare.py"
 
     async def install(self):
+        llama3_dir = XPath(__file__).resolve().parent
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_dir = XPath(tmp_dir)
+            tmp_dir.clone_subtree(
+                "https://github.com/meta-llama/llama3.git",
+                "11817d47e1ba7a4959b025eb1ca308572e0e3963",
+            )
+            tmp_dir.merge_into(
+                llama3_dir,
+                manifest="\n".join(
+                    [
+                        "/llama/",
+                        "/requirements.txt",
+                    ]
+                )
+            )
+        # Fix conflict with tiktoken. As we only need llama/model.py, we don't
+        # need to care about a compatible tiktoken for the llama3 module
+        requirements = (llama3_dir / "requirements.txt").read_text().splitlines()
+        requirements = [l for l in requirements if not l.startswith("tiktoken==")]
+        (llama3_dir / "requirements.txt").write_text("\n".join(requirements))
+
         await super().install()  # super() call installs the requirements
 
     def build_run_plan(self):

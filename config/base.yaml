@@ -422,6 +422,9 @@ diffusion-nodes:
   tags:
     - multinode
   inherits: _diffusion
+  plan:
+    method: njobs
+    n: 1
   num_machines: 2
   requires_capabilities:
     - "len(nodes) >= ${num_machines}"
@@ -484,6 +487,9 @@ dinov2-giant-single:
 
 dinov2-giant-gpus:
   inherits: _dinov2
+  plan:
+    method: njobs
+    n: 1
   argv:
     --config-file: "{benchmark_folder}/src/dinov2/configs/train/vitg14.yaml"
     # THOSE NEED TO BE LAST
@@ -494,6 +500,9 @@ dinov2-giant-gpus:
 
 dinov2-giant-nodes:
   enabled: false
+  plan:
+    method: njobs
+    n: 1
   tags:
     - multinode
   max_duration: 3600
@@ -501,7 +510,7 @@ dinov2-giant-nodes:
   argv:
     --config-file: "{benchmark_folder}/src/dinov2/configs/train/vitg14.yaml"
     # THOSE NEED TO BE LAST
-    train.dataset_path=ImageFolder:root={milabench_data}/FakeImageNet: true
+    train.dataset_path=ImageNet:split=TRAIN:root={milabench_data}/FakeImageNet:extra={milabench_data}/FakeImageNet: true
     train.batch_size_per_gpu=12: true
     train.saveckp_freq=100: true
     train.num_workers=10: true
@@ -603,11 +612,11 @@ llm-lora-mp-gpus:
     tokenizer.path={milabench_data}/llama3_70B/original/tokenizer.model: true
     checkpointer.checkpoint_dir={milabench_data}/llama3_70B: true
     checkpointer.output_dir={milabench_data}/llama3_70B/: true
+    safetensors=true: true
     metric_logger.log_dir={milabench_extra}/metrics: true
     repo_id="meta-llama/Meta-Llama-3.1-70B": true
     batch_size=8: true
     gradient_accumulation_steps=1: true
-
 
 llm-full-mp-gpus:
   inherits: _llm
@@ -628,7 +637,6 @@ llm-full-mp-gpus:
     safetensors=true: true
     batch_size=2: true
     gradient_accumulation_steps=1: true
-
 
 llm-full-mp-nodes:
   tags:
@@ -734,3 +742,36 @@ torchatari:
     --num-envs: auto({cpu_per_gpu}, 128)
     --total-timesteps: 1000000
     --env-id: Breakout-v5
+
+
+llava-single:
+  inherits: _defaults
+  definition: ../benchmarks/llava
+  install_group: torch
+  plan:
+    method: per_gpu
+
+  tags:
+    - llm
+  argv:
+    --batch_size: 1
+    --num_workers: 4
+    --gradient_accumulation_steps: 1
+
+llava-gpus:
+  # This OOM
+  enabled: false
+
+  inherits: _defaults
+  definition: ../benchmarks/llava
+  install_group: torch
+  plan:
+    method: njobs
+    n: 1
+
+  tags:
+    - llm
+  argv:
+    --batch_size: 1
+    --num_workers: 4
+    --gradient_accumulation_steps: 1

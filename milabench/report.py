@@ -24,6 +24,7 @@ def _make_row(summary, compare, config, query=None):
     row = {
         "n": nan,
         "fail": nan,
+        "ngpu": summary.get("ngpu", 0),
         "perf": nan,
         "std%": nan,
         "sem%": nan,
@@ -162,6 +163,12 @@ class Outputter:
         self.text("-" * len(title))
         self.html(H.h2(title))
 
+    def subsection(self, title):
+        self.text("")
+        self.text(title)
+        self.text("^" * len(title))
+        self.html(H.h3(title))
+
     def title(self, title):
         self._html(f"<html><head><title>{title}</title></head><body>")
         self.html(H.h2(title))
@@ -194,15 +201,18 @@ def _report_pergpu(entries, measure="50"):
 
 
 columns_order = {
-    "fail": 1,
-    "n": 2,
-    "perf": 3,
-    "perf_adj": 4,
-    "sem%": 5,
-    "std%": 6,
-    "peak_memory": 7,
-    "score": 8,
-    "weight": 9,
+    n: i for i, n in enumerate([
+        "fail",
+        "n",
+        "ngpu",
+        "perf",
+        "perf_adj",
+        "sem%",
+        "std%",
+        "peak_memory",
+        "score",
+        "weight",
+    ])
 }
 
 
@@ -236,10 +246,10 @@ def make_dataframe(summary, compare=None, weights=None, query=None):
     def sort_by(key):
         """Group similar runs together"""
         if weights:
-            return weights[key]["group"]
+            return weights.get(key, {}).get("group", key)
 
         if summary:
-            return summary[key]["group"]
+            return summary.get(key, {}).get("group", key)
 
         return key
 
@@ -277,6 +287,57 @@ def normalize_dataframe(df):
     return df[columns]
 
 
+def get_meta(summary):
+    try:
+        for summary in summary.values():
+            if meta := summary.get("meta"):
+                return meta
+    except:
+        return {}
+
+
+def print_meta(out, meta):
+    out.section("System")
+
+    for k, v in meta.items():
+        
+        if k == "accelerators":
+            gpus = v["gpus"]
+            n = len(gpus)
+            _, gpu = gpus.popitem()
+            stats = {
+                "n": n,
+                "product": gpu.get("product", "NA"),
+                "memory": gpu.get("memory", {}).get("total", 0)
+            }
+            out.subsection(k)
+            out.print(Table(stats))
+
+        elif isinstance(v, dict):
+            v.pop("build_settings", None)
+            out.subsection(k)
+            out.print(Table(v))
+
+
+def short_meta(out, meta):
+    stats = {}
+    for k, v in meta.items():
+        if k == "accelerators":
+            gpus = v["gpus"]
+            n = len(gpus)
+            _, gpu = gpus.popitem()
+            stats["product"] = gpu.get("product", "NA")
+            stats["n_gpu"] = n
+            stats["memory"] = str(gpu.get("memory", {}).get("total", 0))
+
+        if k == "cpu":
+            stats["cpu"] = v["brand"]
+            stats["n_cpu"] = v ["count"]
+
+    out.section("System")
+    out.print(Table(stats))
+
+
 @error_guard({})
 def make_report(
     summary: dict[str, Summary],
@@ -293,6 +354,7 @@ def make_report(
     if weights is None:
         weights = dict()
 
+    meta = get_meta(summary)
     df = make_dataframe(summary, compare, weights)
     out = Outputter(stdout=stream, html=html)
 
@@ -303,6 +365,11 @@ def make_report(
             out.print(f"Source: {source}")
 
     out.title(title or "Benchmark results")
+
+    if meta:
+        short_meta(out, meta)
+
+    out.section("Breakdown")
 
     # Reorder columns
     out.print(normalize_dataframe(df))
@@ -368,13 +435,14 @@ def make_report(
                     H.div["collapsible"](lines),
                 )
             )
-
+        
     out.finalize()
 
 
 _formatters = {
     "fail": "{:4.0f}".format,
     "n": "{:3.0f}".format,
+    "ngpu": "{:4.0f}".format,
     "std": "{:10.2f}".format,
     "iqr": "{:10.2f}".format,
     "perf": "{:10.2f}".format,

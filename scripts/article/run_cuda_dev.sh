@@ -3,6 +3,7 @@
 set -ex
 
 # export MILABENCH_SOURCE=$HOME/milabench
+# export SLURM_NODELIST=cn-d[003-004]
 #
 # # put those on the shared drived 
 # export MILABENCH_DIRS_DATA=/home/mila/d/delaunap/scratch/milabench/data
@@ -115,12 +116,14 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
 
     # milabench prepare --system $MILABENCH_WORDIR/system.yaml "$@"
     
+    # milabench install --system $MILABENCH_WORDIR/system.yaml --force "$@"
+
     # milabench prepare "$@"
     #
     #   Run the benchmakrs
-    milabench run --system $MILABENCH_WORDIR/system.yaml "$@"
+    # milabench run --system $MILABENCH_WORDIR/system.yaml "$@"
 
     #
     #   Display report
-    milabench report --runs $MILABENCH_WORDIR/results/runs
+    # milabench report --runs $MILABENCH_WORDIR/results/runs
 fi

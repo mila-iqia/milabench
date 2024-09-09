@@ -45,7 +45,8 @@ install_prepare() {
     #
     # Install milabench's benchmarks in their venv
     #
-    # milabench pin --variant cuda --from-scratch $ARGS 
+    pip install torch
+    milabench pin --variant cuda --from-scratch $ARGS 
     milabench install --system $MILABENCH_WORDIR/system.yaml $ARGS
 
     which pip
@@ -78,6 +79,12 @@ fi
 
 if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     cd $MILABENCH_WORDIR
+
+    # milabench pin --variant cuda --system $MILABENCH_WORDIR/system.yaml --from-scratch
+
+    # milabench install --system $MILABENCH_WORDIR/system.yaml --force $ARGS
+    
+    # milabench prepare --system $MILABENCH_WORDIR/system.yaml $ARGS
 
     #
     #   Run the benchmakrs

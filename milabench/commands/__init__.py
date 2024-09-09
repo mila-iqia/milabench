@@ -521,7 +521,7 @@ class TorchrunAllGPU(WrapperCommand):
         # use absolute paths to avoid issues
 
         self.binfolder = executor.pack.config["dirs"]["venv"]
-        self.module=module
+        self.module = module
 
         # benchrun is a wrapper around torchrun
         # which insert voir file descritor
@@ -941,7 +941,7 @@ class AccelerateLaunchCommand(SingleCmdCommand):
         self.rank = rank
 
     def _get_main_and_workers(self):
-        max_num = self.pack.config["num_machines"]
+        max_num = self.pack.config.get("num_machines", 1)
         nodes = select_nodes(self.pack.config["system"]["nodes"], max_num)
         return nodes[0], nodes[1:]
 

@@ -376,14 +376,7 @@ echo "---"
 echo "diffusion-nodes"
 echo "==============="
 time (
-  CUDA_VISIBLE_DEVICES=0 $SRC/milabench/benchmarks/diffusion/main.py --num_epochs 5 --batch_size 32 --num_workers 8 --cache $BASE/cache &
-  CUDA_VISIBLE_DEVICES=1 $SRC/milabench/benchmarks/diffusion/main.py --num_epochs 5 --batch_size 32 --num_workers 8 --cache $BASE/cache &
-  CUDA_VISIBLE_DEVICES=2 $SRC/milabench/benchmarks/diffusion/main.py --num_epochs 5 --batch_size 32 --num_workers 8 --cache $BASE/cache &
-  CUDA_VISIBLE_DEVICES=3 $SRC/milabench/benchmarks/diffusion/main.py --num_epochs 5 --batch_size 32 --num_workers 8 --cache $BASE/cache &
-  CUDA_VISIBLE_DEVICES=4 $SRC/milabench/benchmarks/diffusion/main.py --num_epochs 5 --batch_size 32 --num_workers 8 --cache $BASE/cache &
-  CUDA_VISIBLE_DEVICES=5 $SRC/milabench/benchmarks/diffusion/main.py --num_epochs 5 --batch_size 32 --num_workers 8 --cache $BASE/cache &
-  CUDA_VISIBLE_DEVICES=6 $SRC/milabench/benchmarks/diffusion/main.py --num_epochs 5 --batch_size 32 --num_workers 8 --cache $BASE/cache &
-  CUDA_VISIBLE_DEVICES=7 $SRC/milabench/benchmarks/diffusion/main.py --num_epochs 5 --batch_size 32 --num_workers 8 --cache $BASE/cache &
+  $SRC/milabench/milabench/scripts/activator $BASE/venv/torch $BASE/cache accelerate launch --mixed_precision=bf16 --dynamo_backend=no --machine_rank=0 --num_machines=1 --multi_gpu --gradient_accumulation_steps=1 --num_cpu_threads_per_process=4 --main_process_ip=127.0.0.1 --main_process_port=29400 --num_processes=8 $SRC/milabench/benchmarks/diffusion/main.py --num_epochs 5 --batch_size 32 --num_workers 8 --cache $BASE/cache &
   wait
 )
 
@@ -468,7 +461,7 @@ echo "---"
 echo "llm-lora-mp-gpus"
 echo "================"
 time (
-  $BASE/venv/torch/bin/tune run --nnodes=1 --rdzv-backend=c10d --rdzv-endpoint=127.0.0.1:29400 --nproc-per-node=8 -- $SRC/milabench/benchmarks/llm/recipes/lora_finetune_distributed.py --config $SRC/milabench/benchmarks/llm/configs/llama3_70B_lora.yaml epochs=1 output_dir=$BASE/extra/llm-lora-mp-gpus/output tokenizer.path=$BASE/data/llama3_70B/original/tokenizer.model checkpointer.checkpoint_dir=$BASE/data/llama3_70B checkpointer.output_dir=$BASE/data/llama3_70B/ metric_logger.log_dir=$BASE/extra/llm-lora-mp-gpus/metrics repo_id="meta-llama/Meta-Llama-3.1-70B" batch_size=8 gradient_accumulation_steps=1 &
+  $BASE/venv/torch/bin/tune run --nnodes=1 --rdzv-backend=c10d --rdzv-endpoint=127.0.0.1:29400 --nproc-per-node=8 -- $SRC/milabench/benchmarks/llm/recipes/lora_finetune_distributed.py --config $SRC/milabench/benchmarks/llm/configs/llama3_70B_lora.yaml epochs=1 output_dir=$BASE/extra/llm-lora-mp-gpus/output tokenizer.path=$BASE/data/llama3_70B/original/tokenizer.model checkpointer.checkpoint_dir=$BASE/data/llama3_70B checkpointer.output_dir=$BASE/data/llama3_70B/ safetensors=true metric_logger.log_dir=$BASE/extra/llm-lora-mp-gpus/metrics repo_id="meta-llama/Meta-Llama-3.1-70B" batch_size=8 gradient_accumulation_steps=1 &
   wait
 )
 
@@ -560,6 +553,21 @@ time (
   CUDA_VISIBLE_DEVICES=5 python $SRC/milabench/benchmarks/torchatari/main.py --num-minibatches 16 --update-epochs 4 --num-steps 128 --num-envs 128 --total-timesteps 1000000 --env-id Breakout-v5 &
   CUDA_VISIBLE_DEVICES=6 python $SRC/milabench/benchmarks/torchatari/main.py --num-minibatches 16 --update-epochs 4 --num-steps 128 --num-envs 128 --total-timesteps 1000000 --env-id Breakout-v5 &
   CUDA_VISIBLE_DEVICES=7 python $SRC/milabench/benchmarks/torchatari/main.py --num-minibatches 16 --update-epochs 4 --num-steps 128 --num-envs 128 --total-timesteps 1000000 --env-id Breakout-v5 &
+  wait
+)
+
+echo "---"
+echo "llava-single"
+echo "============"
+time (
+  CUDA_VISIBLE_DEVICES=0 $SRC/milabench/benchmarks/llava/main.py --batch_size 1 --num_workers 4 --gradient_accumulation_steps 1 &
+  CUDA_VISIBLE_DEVICES=1 $SRC/milabench/benchmarks/llava/main.py --batch_size 1 --num_workers 4 --gradient_accumulation_steps 1 &
+  CUDA_VISIBLE_DEVICES=2 $SRC/milabench/benchmarks/llava/main.py --batch_size 1 --num_workers 4 --gradient_accumulation_steps 1 &
+  CUDA_VISIBLE_DEVICES=3 $SRC/milabench/benchmarks/llava/main.py --batch_size 1 --num_workers 4 --gradient_accumulation_steps 1 &
+  CUDA_VISIBLE_DEVICES=4 $SRC/milabench/benchmarks/llava/main.py --batch_size 1 --num_workers 4 --gradient_accumulation_steps 1 &
+  CUDA_VISIBLE_DEVICES=5 $SRC/milabench/benchmarks/llava/main.py --batch_size 1 --num_workers 4 --gradient_accumulation_steps 1 &
+  CUDA_VISIBLE_DEVICES=6 $SRC/milabench/benchmarks/llava/main.py --batch_size 1 --num_workers 4 --gradient_accumulation_steps 1 &
+  CUDA_VISIBLE_DEVICES=7 $SRC/milabench/benchmarks/llava/main.py --batch_size 1 --num_workers 4 --gradient_accumulation_steps 1 &
   wait
 )
 

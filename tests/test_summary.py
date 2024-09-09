@@ -93,3 +93,30 @@ def test_summary_full(runs_folder):
     summary = make_summary(reports)
 
     make_report(summary, None)
+
+
+
+def _read_reports_zip(folder):
+    from milabench.common import XPath, _parse_report
+    import zipfile
+
+    with zipfile.ZipFile(folder, "r") as archive:
+        all_data = {}
+
+        for member in archive.namelist():
+            if member.endswith(".data"):
+                all_data[str(member)] = _parse_report(member, open=archive.open)
+
+    return all_data
+
+
+def test_summary_full_zip(runs_folder):
+    import os
+    from milabench.common import make_report, make_summary
+
+    scenario = os.path.join(runs_folder, "8GPUs.zip")
+
+    reports = _read_reports_zip(scenario)
+    summary = make_summary(reports)
+
+    make_report(summary, None)
