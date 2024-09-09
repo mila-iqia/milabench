@@ -1,3 +1,4 @@
+import os
 from milabench.pack import Package
 
 from milabench.commands import AccelerateAllNodes
@@ -26,9 +27,12 @@ class Diffusion(Package):
     def build_run_plan(self):
         from milabench.commands import PackCommand
 
+        if "HF_TOKEN" in os.environ or "MILABENCH_HF_TOKEN" in os.environ:
+            os.environ["HF_TOKEN"] = os.environ.get("HF_TOKEN", os.environ["MILABENCH_HF_TOKEN"])
+
         main = self.dirs.code / self.main_script
         plan = PackCommand(self, *self.argv, lazy=True)
-        
+
         if False:
             plan = VoirCommand(plan, cwd=main.parent)
 
