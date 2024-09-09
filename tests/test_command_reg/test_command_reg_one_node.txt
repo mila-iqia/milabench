@@ -373,21 +373,6 @@ time (
 )
 
 echo "---"
-echo "diffusion-nodes"
-echo "==============="
-time (
-  CUDA_VISIBLE_DEVICES=0 $SRC/milabench/benchmarks/diffusion/main.py --num_epochs 5 --batch_size 32 --num_workers 8 --cache $BASE/cache &
-  CUDA_VISIBLE_DEVICES=1 $SRC/milabench/benchmarks/diffusion/main.py --num_epochs 5 --batch_size 32 --num_workers 8 --cache $BASE/cache &
-  CUDA_VISIBLE_DEVICES=2 $SRC/milabench/benchmarks/diffusion/main.py --num_epochs 5 --batch_size 32 --num_workers 8 --cache $BASE/cache &
-  CUDA_VISIBLE_DEVICES=3 $SRC/milabench/benchmarks/diffusion/main.py --num_epochs 5 --batch_size 32 --num_workers 8 --cache $BASE/cache &
-  CUDA_VISIBLE_DEVICES=4 $SRC/milabench/benchmarks/diffusion/main.py --num_epochs 5 --batch_size 32 --num_workers 8 --cache $BASE/cache &
-  CUDA_VISIBLE_DEVICES=5 $SRC/milabench/benchmarks/diffusion/main.py --num_epochs 5 --batch_size 32 --num_workers 8 --cache $BASE/cache &
-  CUDA_VISIBLE_DEVICES=6 $SRC/milabench/benchmarks/diffusion/main.py --num_epochs 5 --batch_size 32 --num_workers 8 --cache $BASE/cache &
-  CUDA_VISIBLE_DEVICES=7 $SRC/milabench/benchmarks/diffusion/main.py --num_epochs 5 --batch_size 32 --num_workers 8 --cache $BASE/cache &
-  wait
-)
-
-echo "---"
 echo "lightning"
 echo "========="
 time (

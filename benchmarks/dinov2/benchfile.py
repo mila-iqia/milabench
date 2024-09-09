@@ -4,8 +4,8 @@ from milabench.commands import TorchrunAllNodes, TorchrunAllGPU, ListCommand
 
 SOURCE_DIR = "src"
 # Fix https://github.com/facebookresearch/dinov2/pull/281
-REPO_URL = "https://github.com/pathologywatch/dinov2"
-BRANCH = "733d285dccf407ebd2c0e97f899d67206ede44a5"
+REPO_URL = "https://github.com/Delaunay/dinov2"
+BRANCH = "451bc15a084f42cc97c21e3bc0be9e9158f9049c"
 
 
 class Dinov2(Package):

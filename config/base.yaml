@@ -419,9 +419,13 @@ diffusion-gpus:
   num_machines: 1
 
 diffusion-nodes:
+  enabled: false
   tags:
     - multinode
   inherits: _diffusion
+  plan:
+    method: njobs
+    n: 1
   num_machines: 2
   requires_capabilities:
     - "len(nodes) >= ${num_machines}"
@@ -484,6 +488,9 @@ dinov2-giant-single:
 
 dinov2-giant-gpus:
   inherits: _dinov2
+  plan:
+    method: njobs
+    n: 1
   argv:
     --config-file: "{benchmark_folder}/src/dinov2/configs/train/vitg14.yaml"
     # THOSE NEED TO BE LAST
@@ -493,6 +500,9 @@ dinov2-giant-gpus:
     train.num_workers=10: true
 
 dinov2-giant-nodes:
+  plan:
+    method: njobs
+    n: 1
   tags:
     - multinode
   max_duration: 3600
