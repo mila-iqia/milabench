@@ -31,6 +31,7 @@ def ngpu(pack):
 def aggregate(run_data):
     """Group all the data inside a dictionary of lists"""
     omnibus = defaultdict(list)
+    meta = None
     config = None
     start = None
     end = None
@@ -42,6 +43,9 @@ def aggregate(run_data):
         if event == "config":
             config = entry["data"]
             omnibus["ngpu"] = [ngpu(config)]
+
+        if event == "meta":
+            meta = entry["data"]
 
         elif event == "data":
             data = dict(entry["data"])
@@ -103,6 +107,7 @@ def aggregate(run_data):
         "start": start,
         "end": end,
         "data": omnibus,
+        "meta": meta
     }
 
 
@@ -202,6 +207,7 @@ class Summary:
     gpu_load: dict[str, dict[str, Stats]]
     weight: float
     enabled: bool
+    meta: dict[str]
 
 
 @error_guard(None)
@@ -221,10 +227,12 @@ def _summarize(group, query=tuple([])) -> Summary:
         per_gpu[device].append(tr)
 
     config = group["config"]
+    meta = group["meta"]
 
     additional = augment(group, query)
 
     return {
+        "meta": meta,
         "name": config["name"],
         "group": config["group"],
         "n": len(agg["success"]),
