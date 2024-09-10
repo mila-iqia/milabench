@@ -1,5 +1,5 @@
 
-rlhf_:
+_rlhf:
   inherits: _defaults
   definition: .
   install-variant: unpinned
@@ -17,13 +17,12 @@ rlhf_:
 
 
 rlhf-single:
-  inherits: rlhf_
+  inherits: _rlhf
   plan:
     method: per_gpu
 
-
 rlhf-gpus:
-  inherits: rlhf_
+  inherits: _rlhf
   plan:
     method: njobs
     n: 1
