@@ -80,7 +80,8 @@ fi
 if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     cd $MILABENCH_WORDIR
 
-    # milabench pin --variant cuda --system $MILABENCH_WORDIR/system.yaml --from-scratch
+    pip install xformers torch
+    milabench pin --variant cuda  --from-scratch
 
     # milabench install --system $MILABENCH_WORDIR/system.yaml --force $ARGS
     
@@ -88,9 +89,9 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
 
     #
     #   Run the benchmakrs
-    milabench run --system $MILABENCH_WORDIR/system.yaml "$@"
+    # milabench run --system $MILABENCH_WORDIR/system.yaml "$@"
 
     #
     #   Display report
-    milabench report --runs $MILABENCH_WORDIR/results/runs
+    # milabench report --runs $MILABENCH_WORDIR/results/runs
 fi
