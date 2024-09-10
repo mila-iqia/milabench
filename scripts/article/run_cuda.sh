@@ -77,21 +77,22 @@ else
 fi
 
 
+export MILABENCH_CONFIG=/home/mila/d/delaunap/milabench/benchmarks/rlhf/dev.yaml
+
 if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     cd $MILABENCH_WORDIR
 
-    pip install xformers torch
-    milabench pin --variant cuda  --from-scratch
+    . $MILABENCH_WORDIR/env/bin/activate
 
+    # milabench pin --variant cuda  --from-scratch
     # milabench install --system $MILABENCH_WORDIR/system.yaml --force $ARGS
-    
     # milabench prepare --system $MILABENCH_WORDIR/system.yaml $ARGS
 
     #
     #   Run the benchmakrs
-    # milabench run --system $MILABENCH_WORDIR/system.yaml "$@"
+    milabench run --system $MILABENCH_WORDIR/system.yaml $ARGS
 
     #
     #   Display report
-    # milabench report --runs $MILABENCH_WORDIR/results/runs
+    milabench report --runs $MILABENCH_WORDIR/results/runs
 fi
