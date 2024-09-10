@@ -81,10 +81,6 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
 
     . $MILABENCH_WORDIR/env/bin/activate
 
-    # milabench pin --variant cuda  --from-scratch
-    # milabench install --system $MILABENCH_WORDIR/system.yaml --force $ARGS
-    # milabench prepare --system $MILABENCH_WORDIR/system.yaml $ARGS
-
     #
     #   Run the benchmakrs
     milabench run --system $MILABENCH_WORDIR/system.yaml $ARGS

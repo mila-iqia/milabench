@@ -35,6 +35,8 @@ def main():
     observer = BenchObserver(batch_size_fn=lambda batch: 1)
     criterion = observer.criterion(criterion)
     device = accelerator.fetch_device(0) # <= This is your cuda device
+
+    # Change this to use torch run
     args = arg_parser()
     num_gpus = len(args.devices)
     mp.set_start_method('spawn')

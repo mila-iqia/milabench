@@ -1,6 +1,11 @@
 from milabench.pack import Package
 
 
+
+BRANCH = "3081b0ad7b9651373ccef40c1d46b62f46cb7146"
+URL = "https://github.com/facebookresearch/jepa.git"
+
+
 class Vjepa(Package):
     # Requirements file installed by install(). It can be empty or absent.
     base_requirements = "requirements.in"
@@ -21,6 +26,10 @@ class Vjepa(Package):
         return super().make_env()
 
     async def install(self):
+        vjepa = self.dirs.code / "jepa"
+        if not vjepa.exists():
+            vjepa.clone_subtree(URL, BRANCH)
+
         await super().install()  # super() call installs the requirements
 
     async def prepare(self):
