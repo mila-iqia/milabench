@@ -76,9 +76,6 @@ else
     . $MILABENCH_WORDIR/env/bin/activate
 fi
 
-
-export MILABENCH_CONFIG=/home/mila/d/delaunap/milabench/benchmarks/rlhf/dev.yaml
-
 if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     cd $MILABENCH_WORDIR
 

@@ -777,7 +777,7 @@ llava-gpus:
     --gradient_accumulation_steps: 1
 
 
-rlhf_:
+_rlhf:
   inherits: _defaults
   definition: ../benchmarks/rlhf
   install-variant: unpinned
@@ -796,12 +796,12 @@ rlhf_:
     --bf16: true
 
 rlhf-single:
-  inherits: rlhf_
+  inherits: _rlhf
   plan:
     method: per_gpu
 
 rlhf-gpus:
-  inherits: rlhf_
+  inherits: _rlhf
   plan:
     method: njobs
     n: 1
