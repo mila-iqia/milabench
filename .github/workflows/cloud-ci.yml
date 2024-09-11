@@ -1,0 +1,204 @@
+name: cloud-tests
+
+on:
+  # Runs for pull requests
+  pull_request:
+    branches:
+      - staging
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  cloud-tests:
+    strategy:
+      fail-fast: true
+      max-parallel: 1
+      matrix:
+        system: ["1n:4g"]
+        include:
+          - arch: cuda
+            exclude: "no-cuda"
+          # - arch: rocm
+          #   exclude : "no-rocm"
+
+    runs-on: ubuntu-latest
+    environment: cloud-ci
+
+    # Cancel previous jobs if a new version was pushed
+    concurrency:
+      group: "${{ github.ref }}-${{ matrix.arch }}-${{ matrix.system }}"
+      cancel-in-progress: true
+
+    defaults:
+      run:
+        shell: bash -el {0}
+
+    env:
+      MILABENCH_CONFIG: "config/standard.yaml"
+      MILABENCH_SYSTEM: "config/cloud-multinodes-system.yaml"
+      MILABENCH_BASE: "../output"
+      MILABENCH_ARGS: ""
+      MILABENCH_DASH: "no"
+      MILABENCH_HF_TOKEN: ${{ secrets.HUGGING_FACE_TOKEN }}
+      ARM_TENANT_ID: "${{ secrets.ARM_TENANT_ID }}"
+      ARM_SUBSCRIPTION_ID: "${{ secrets.ARM_SUBSCRIPTION_ID }}"
+      AZURE_CORE_OUTPUT: none
+      _MULTI_GPUS: "diffusion-gpus,dinov2-giant-gpus,lightning-gpus,llava-gpus,resnet152-ddp-gpus,llm-full-mp-gpus,llm-lora-ddp-gpus,llm-lora-mp-gpus"
+      _MULTI_NODES: "multinode"
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ github.token }}
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.10'
+
+      # Follow
+      # https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/guides/service_principal_client_secret
+      # to generate a clientId as well as a clientSecret
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: |
+            {
+              "clientId": "${{ secrets.ARM_CLIENT_ID }}",
+              "clientSecret": "${{ secrets.ARM_CLIENT_SECRET }}",
+              "subscriptionId": "${{ secrets.ARM_SUBSCRIPTION_ID }}",
+              "tenantId": "${{ secrets.ARM_TENANT_ID }}"
+            }
+
+      - name: dependencies
+        run: |
+          python -m pip install -U pip
+          python -m pip install -U poetry
+          poetry lock --no-update
+          poetry install
+
+      - name: setup cloud credentials
+        run: |
+          mkdir -p ~/.aws
+          mkdir -p ~/.ssh/covalent
+          echo "${{ secrets.COVALENT_EC2_EXECUTOR_KEYPAIR }}" >~/.ssh/covalent/covalent-ec2-executor-keypair.pem
+          echo "[default]" >~/.aws/credentials
+          echo "aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID }}" >>~/.aws/credentials
+          echo "aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >>~/.aws/credentials
+          chmod -R a-rwx,u+rwX ~/.aws ~/.ssh
+
+      - name: start covalent server
+        run: |
+          poetry run -- python3 -m milabench.scripts.covalent serve start --develop
+
+      - name: setup cloud
+        run: |
+          nodes=$(echo "${{ matrix.system }}" | cut -d":" -f1)
+          gpus=$(echo "${{ matrix.system }}" | cut -d":" -f2)
+          case "$nodes" in
+            "1n")
+              MILABENCH_SYSTEM="config/cloud-system.yaml"
+              EXCLUDE="$EXCLUDE,$_MULTI_NODES"
+              ;;
+            "2n")
+              MILABENCH_SYSTEM="config/cloud-multinodes-system.yaml"
+              SELECT="$SELECT,$_MULTI_NODES"
+              EXCLUDE="$EXCLUDE,$_MULTI_GPUS"
+              ;;
+            *)
+              exit 1
+              ;;
+          esac
+          case "$gpus" in
+            "1g")
+              RUN_ON="azure__a100"
+              EXCLUDE="$EXCLUDE,$_MULTI_GPUS,$_MULTI_NODES"
+              ;;
+            "2g")
+              RUN_ON="azure__a100_x2"
+              SELECT="$SELECT,$_MULTI_GPUS"
+              ;;
+            "4g")
+              RUN_ON="azure__a100_x4"
+              SELECT="$SELECT,$_MULTI_GPUS"
+              ;;
+            *)
+              exit 1
+              ;;
+          esac
+
+          if [[ -z "$(echo "$SELECT" | cut -d"," -f1)" ]]
+          then
+            SELECT="$(echo "$SELECT" | cut -d"," -f2-)"
+          fi
+
+          if [[ -z "$(echo "$EXCLUDE" | cut -d"," -f1)" ]]
+          then
+            EXCLUDE="$(echo "$EXCLUDE" | cut -d"," -f2-)"
+          fi
+
+          if [[ ! -z "$SELECT" ]]
+          then
+            SELECT="--select $SELECT"
+          fi
+
+          if [[ ! -z "$EXCLUDE" ]]
+          then
+            EXCLUDE="--exclude $EXCLUDE"
+          fi
+
+          echo "RUN_ON=$RUN_ON" >>$GITHUB_ENV
+
+          poetry run milabench cloud \
+            --setup \
+            --run-on $RUN_ON \
+            --system "$MILABENCH_SYSTEM" >$MILABENCH_SYSTEM.$RUN_ON
+
+          echo "MILABENCH_SYSTEM=$MILABENCH_SYSTEM.$RUN_ON" >>$GITHUB_ENV
+          echo "SELECT=$SELECT" >>$GITHUB_ENV
+          echo "EXCLUDE=$EXCLUDE" >>$GITHUB_ENV
+
+      - name: install benchmarks
+        run: |
+          poetry run milabench install --variant ${{ matrix.arch }} $SELECT $EXCLUDE
+
+      - name: prepare benchmarks
+        run: |
+          poetry run milabench prepare $SELECT $EXCLUDE
+
+      - name: run benchmarks
+        run: |
+          poetry run milabench run $SELECT $EXCLUDE
+
+      - name: Summary
+        run: |
+          git config credential.${{ github.server_url }}.username ${{ github.actor }}
+          git config credential.helper '!f() { test "$1" = get && echo "password=$GITHUB_TOKEN"; }; f'
+          git config --global user.email "github@ci.com"
+          git config --global user.name "GitHub CI"
+          poetry run milabench report --push
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: DEBUG state file
+        if: always()
+        run: |
+          cat /tmp/milabench/covalent_venv/lib/python*/site-packages/covalent_azure_plugin/infra/*.tfstate
+
+      - name: teardown cloud
+        if: always()
+        run: |
+          if [[ -f "${MILABENCH_SYSTEM%.*}" ]]
+          then
+            export MILABENCH_SYSTEM=${MILABENCH_SYSTEM%.*}
+          fi
+          poetry run milabench cloud \
+            --teardown \
+            --run-on $RUN_ON \
+            --all
+
+      - name: DEBUG logs
+        if: always()
+        run: |
+          cat ~/.cache/covalent/covalent_ui.log

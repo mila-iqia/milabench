@@ -8,7 +8,7 @@ from filelock import FileLock, Timeout
 from voir.instruments.gpu import get_gpu_info
 
 from .capability import is_system_capable
-from .commands import NJobs, PerGPU
+from .commands import ListCommand, NJobs, PerGPU
 from .config import set_run_count
 from .fs import XPath
 from .config import get_base_folder
@@ -17,6 +17,7 @@ from .remote import (
     is_main_local,
     is_multinode,
     is_remote,
+    milabench_remote_config,
     milabench_remote_install,
     milabench_remote_prepare,
     milabench_remote_run,
@@ -90,13 +91,17 @@ async def copy_base_to_workers(setup):
         print("Coping main setup from this node to worker")
         # copy the main setup to the workers
         # so it copies the bench venv already, no need for python
-        from milabench.remote import copy_folder
-        from milabench.system import SystemConfig
+        from milabench.remote import INSTALL_FOLDER, copy_folder
 
         # we copy the entire content of base
         #   FIXME: handle custom (venv, cache, data, etc...) directories
         #  
-        copy_plan = copy_folder(setup, SystemConfig().base)
+        copy_plan = ListCommand(
+            *[
+                copy_folder(setup, _dir)
+                for _dir in [str(INSTALL_FOLDER), str(setup.dirs.base)]
+            ]
+        )
         remote_task = asyncio.create_task(copy_plan.execute())
         await asyncio.wait([remote_task])
 
@@ -120,7 +125,10 @@ class MultiPackage:
                 "dirs": pack.config["dirs"],
                 "config_base": pack.config["config_base"],
                 "config_file": pack.config["config_file"],
+                "plan": pack.config["plan"],
                 "system": pack.config["system"],
+                "hash": pack.config["hash"],
+                "install_variant": pack.config["install_variant"],
             }
         )
 
@@ -158,6 +166,14 @@ class MultiPackage:
 
         if is_remote(setup):
             print("Current node is outside of our system")
+
+            await asyncio.wait(
+                [
+                    asyncio.create_task(t.execute())
+                    for t in milabench_remote_config(setup, self.packs)
+                ]
+            )
+
             # We are outside system, setup the main node first
             remote_plan = milabench_remote_install(setup, setup_for="main")
             remote_task = asyncio.create_task(remote_plan.execute())
@@ -183,6 +199,13 @@ class MultiPackage:
         remote_task = None
 
         if is_remote(setup):
+            await asyncio.wait(
+                [
+                    asyncio.create_task(t.execute())
+                    for t in milabench_remote_config(setup, self.packs)
+                ]
+            )
+
             remote_plan = milabench_remote_prepare(setup, run_for="main")
             remote_task = asyncio.create_task(remote_plan.execute())
             await asyncio.wait([remote_task])
@@ -204,6 +227,13 @@ class MultiPackage:
         setup = self.setup_pack()
 
         if is_remote(setup):
+            await asyncio.wait(
+                [
+                    asyncio.create_task(t.execute())
+                    for t in milabench_remote_config(setup, self.packs)
+                ]
+            )
+
             # if we are not on the main node right now
             # ssh to the main node and launch milabench
             remote_plan = milabench_remote_run(setup)
@@ -221,6 +251,17 @@ class MultiPackage:
                         continue
 
                     exec_plan = make_execution_plan(pack, index, repeat)
+
+                    # Generate and copy run phase config files (in particular
+                    # voirconf-* from VoirCommand)
+                    list(exec_plan.commands())
+                    await copy_base_to_workers(
+                        setup.copy(
+                            {
+                                "tag": pack.config["tag"]+["nolog"],
+                            }
+                        )
+                    )
 
                     print(repr(exec_plan))
                     await exec_plan.execute("run", timeout=True, timeout_delay=600)
