@@ -76,16 +76,23 @@ else
     . $MILABENCH_WORDIR/env/bin/activate
 fi
 
+
+export MILABENCH_CONFIG=/home/mila/d/delaunap/milabench/benchmarks/vjepa/dev.yaml
+
 if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     cd $MILABENCH_WORDIR
 
     . $MILABENCH_WORDIR/env/bin/activate
 
+    # milabench pin --variant cuda --from-scratch $ARGS 
+    # milabench install --system $MILABENCH_WORDIR/system.yaml $ARGS
+    milabench prepare --system $MILABENCH_WORDIR/system.yaml $ARGS
+    
     #
     #   Run the benchmakrs
     milabench run --system $MILABENCH_WORDIR/system.yaml $ARGS
 
     #
     #   Display report
-    milabench report --runs $MILABENCH_WORDIR/results/runs
+    # milabench report --runs $MILABENCH_WORDIR/results/runs
 fi

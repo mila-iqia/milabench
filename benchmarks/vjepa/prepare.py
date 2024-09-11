@@ -36,14 +36,19 @@ if __name__ == "__main__":
 
     csv_file = os.path.join(dest, "video_metainfo.csv")
     
-    num_videos = 50  # Change this to generate more or fewer videos
+    num_videos = 500  # Change this to generate more or fewer videos
+
+    for i in range(num_videos):
+        output_file = os.path.join(dest, f"{i + 1}.mp4")
+        if not os.path.exists(output_file):
+            generate_random_video(output_file=output_file, width=640, height=480, num_frames=300, fps=30)
 
     with open(csv_file, mode='w', newline='') as file:
-        writer = csv.writer(file)
-        for i in range(1, num_videos + 1):
-            output_file = os.path.join(dest, f"{i}.mp4")
-            generate_random_video(output_file=output_file, width=640, height=480, num_frames=300, fps=30)
-            writer.writerow([output_file, 0])
+        # CSV separated by space genius
+        writer = csv.writer(file, delimiter=" ")
+        for file in os.listdir(dest):
+            if file.endswith(".mp4"):
+                writer.writerow([os.path.join(dest, file), 0])
 
     print(f"Generated {num_videos} videos and created {csv_file}")
 

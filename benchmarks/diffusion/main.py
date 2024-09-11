@@ -229,6 +229,12 @@ def prepare_voir():
     return observer, bench_monitor
 
 def main():
+    # ---
+    import resource
+    hard, _ = resource.getrlimit(resource.RLIMIT_NOFILE)
+    resource.setrlimit(resource.RLIMIT_NOFILE, (hard, hard))
+    # ---
+
     from benchmate.metrics import StopProgram
 
     observer, monitor = prepare_voir()

@@ -35,6 +35,12 @@ class Vjepa(Package):
     async def prepare(self):
         await super().prepare()  # super() call executes prepare_script
 
+    def build_run_plan(self):
+        from milabench.commands import TorchrunAllNodes
+        
+        # self.config is not the right config for this
+        plan = super().build_run_plan()
 
+        return TorchrunAllNodes(plan).use_stdout()
 
 __pack__ = Vjepa

@@ -1,8 +1,20 @@
 
-vjepa:
+
+_vjepa:
   inherits: _defaults
   definition: .
   install-variant: unpinned
   install_group: torch
+
+
+vjepa-single:
+  inherits: _vjepa
   plan:
     method: per_gpu
+
+
+vjepa-gpus:
+  inherits: _vjepa
+  plan:
+    method: njobs
+    n: 1
