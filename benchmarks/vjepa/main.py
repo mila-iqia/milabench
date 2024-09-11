@@ -161,7 +161,7 @@ def _main(args, resume_preempt=False):
     world_size, rank = init_distributed()
     logger.info(f'Initialized (rank/world-size) {rank}/{world_size}')
 
-    device = acc.fetch_device(int(os.getenv("LOCAL_RANK"), 0))
+    device = acc.fetch_device(int(os.getenv("LOCAL_RANK", 0)))
     acc.set_device(device)
         
     # -- log/checkpointing paths
@@ -600,13 +600,19 @@ def _main(args, resume_preempt=False):
 
 
 def main():
+    from argparse import ArgumentParser
     import torchcompat.core as acc
     from benchmate.monitor import bench_monitor
     from voir.phase import StopProgram
     import yaml
-    import json
 
-    mlbench = json.loads(os.environ["MILABENCH_CONFIG"])
+    parser = ArgumentParser()
+    parser.add_argument("--dataset", help="path to the csv that list all videos", type=str)
+    parser.add_argument("--output", help="path to an output directory", type=str)
+    args = parser.parse_args()
+
+    # relying on environment variables is annoying in multinode setups
+    # mlbench = json.loads(os.environ["MILABENCH_CONFIG"])
 
     configfile = os.path.join(os.path.dirname(__file__), 'config', 'vith16.yaml')
     params = None
@@ -614,11 +620,8 @@ def main():
         params = yaml.load(y_file, Loader=yaml.FullLoader)
         logger.info('loaded params...')
 
-    params["data"]["datasets"] = [
-        os.path.join(mlbench["dirs"]["data"], "FakeVideo", "video_metainfo.csv")
-    ]
-
-    params["logging"]["folder"] = os.path.join(mlbench["dirs"]["extra"])
+    params["data"]["datasets"] = [args.dataset]
+    params["logging"]["folder"] = args.output
 
     gpu_per_nodes = int(os.getenv("LOCAL_WORLD_SIZE", 1))
     total_gpu = int(os.getenv("WORLD_SIZE", 1))
@@ -626,7 +629,6 @@ def main():
 
     params["nodes"] = nnodes
     params["tasks_per_node"] = gpu_per_nodes
-
 
     if os.getenv("RANK", -1) != -1:
         acc.init_process_group()
@@ -638,7 +640,10 @@ def main():
         pass
 
     finally:
-        acc.destroy_process_group()
+        if os.getenv("RANK", -1) != -1:
+            acc.destroy_process_group()
+    
+    sys.exit(0)
 
 if __name__ == "__main__":
     main()

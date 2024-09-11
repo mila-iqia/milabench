@@ -44,9 +44,13 @@ def _smuggle_monitor(poll_interval=10, worker_init=None, **monitors):
     data_file = SmuggleWriter(sys.stdout)
     def mblog(data):
         nonlocal data_file
-        if data_file is not None:
-            print(json.dumps(data), file=data_file)
 
+        if data_file is not None:
+            try:
+                print(json.dumps(data), file=data_file)
+            except ValueError:
+                print("Is bench ending?, ignoring ValueError")
+    
     def get():
         t = time.time()
         entries = []
