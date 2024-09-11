@@ -103,6 +103,11 @@ def main():
             inputs = processor(
                 text=prompt, images=image, return_tensors="pt", padding=True
             )
+
+            labels = inputs["input_ids"].clone()
+            labels[labels == processor.tokenizer.pad_token_id] = -100
+            inputs["labels"] = labels
+
             inputs = {
                 k: v.to(
                     accelerator.device,
