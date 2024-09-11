@@ -609,6 +609,9 @@ def main():
     parser = ArgumentParser()
     parser.add_argument("--dataset", help="path to the csv that list all videos", type=str)
     parser.add_argument("--output", help="path to an output directory", type=str)
+    parser.add_argument("--batch_size", type=int, default=24)
+    parser.add_argument("--num_frames", type=int, default=16)
+    parser.add_argument("--num_workers", type=int, default=12)
     args = parser.parse_args()
 
     # relying on environment variables is annoying in multinode setups
@@ -621,6 +624,10 @@ def main():
         logger.info('loaded params...')
 
     params["data"]["datasets"] = [args.dataset]
+    params["data"]["batch_size"] = args.batch_size
+    params["data"]["num_frames"] = args.num_frames
+    params["data"]["num_workers"] = args.num_workers
+
     params["logging"]["folder"] = args.output
 
     gpu_per_nodes = int(os.getenv("LOCAL_WORLD_SIZE", 1))

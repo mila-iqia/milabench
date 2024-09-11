@@ -8,6 +8,8 @@ export MILABENCH_BASE="$MILABENCH_WORDIR/results"
 
 export MILABENCH_VENV="$MILABENCH_WORDIR/env"
 export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
+export MILABENCH_SIZER_SAVE="$MILABENCH_WORDIR/scaling.yaml"
+
 
 if [ -z "${MILABENCH_PREPARE}" ]; then
     export MILABENCH_PREPARE=0
@@ -85,7 +87,7 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     . $MILABENCH_WORDIR/env/bin/activate
 
     # milabench pin --variant cuda --from-scratch $ARGS 
-    milabench install --system $MILABENCH_WORDIR/system.yaml $ARGS --force
+    # milabench install --system $MILABENCH_WORDIR/system.yaml $ARGS --force
     # milabench prepare --system $MILABENCH_WORDIR/system.yaml $ARGS
     
     #
@@ -94,5 +96,5 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
 
     #
     #   Display report
-    # milabench report --runs $MILABENCH_WORDIR/results/runs
+    milabench report --runs $MILABENCH_WORDIR/results/runs
 fi

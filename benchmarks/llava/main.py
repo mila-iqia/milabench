@@ -116,8 +116,6 @@ def main():
                 for k, v in inputs.items()
             }
 
-            inputs["labels"] = inputs["input_ids"]
-
             outputs = model(**inputs)
   
             loss = outputs.loss

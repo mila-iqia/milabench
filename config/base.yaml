@@ -56,6 +56,7 @@ _flops:
     - diagnostic
     - flops
     - monogpu
+    - nobatch
   
   argv:
     --number: 10
@@ -72,6 +73,7 @@ llama:
     - llm
     - inference
     - monogpu
+    - nobatch
 
   voir:
     options:
@@ -713,10 +715,7 @@ _geo_gnn:
   tags:
     - monogpu
     - graph
-  # FIXME: torch cluster is laging behind pytorch
-  # we are forced to use torch==2.3 instead of torch==2.4
-  install_group: gnn
-  group: geo_gnn
+  install_group: torch
   definition: ../benchmarks/geo_gnn
   plan:
     method: per_gpu
@@ -733,8 +732,7 @@ dimenet:
 recursiongfn:
   inherits: _defaults
   definition: ../benchmarks/recursiongfn
-  install_group: gnn
-  group: recursiongfn_gnn
+  install_group: torch
   tags:
     - graph
     - monogpu
@@ -838,6 +836,9 @@ _vjepa:
   definition: ../benchmarks/vjepa
   tags:
     - video
+  argv:
+    --batch_size: 24
+    --num_workers: "auto({n_worker}, 12)"
 
 vjepa-single:
   inherits: _vjepa
