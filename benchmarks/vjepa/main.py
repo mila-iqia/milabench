@@ -266,7 +266,8 @@ def _main(args, resume_preempt=False):
     def get_batch_size(batch):
         # Tuple[[[Tensor]], [Tesnor], [Tensor]]
         udata, _, _ = batch
-        print(udata[0][0].shape)
+
+        # torch.Size([24, 3, 16, 224, 224])
         return udata[0][0].shape[0]
     
     from benchmate.observer import BenchObserver

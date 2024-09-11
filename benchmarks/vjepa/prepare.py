@@ -29,6 +29,7 @@ if __name__ == "__main__":
     import csv
     import os
     import tqdm
+    import multiprocessing
 
     sys.path.append(os.path.dirname(__file__) + "/jepa/")
     data_directory = os.environ["MILABENCH_DIR_DATA"]
@@ -37,13 +38,19 @@ if __name__ == "__main__":
 
     csv_file = os.path.join(dest, "video_metainfo.csv")
     
-    num_videos = 500  # Change this to generate more or fewer videos
+    num_videos = 1000  # Change this to generate more or fewer videos
     num_frames = 300
 
-    for i in tqdm.tqdm(range(num_videos)):
+    def gen_video(i):
         output_file = os.path.join(dest, f"{i + 1}.mp4")
         if not os.path.exists(output_file):
             generate_random_video(output_file=output_file, width=640, height=480, num_frames=num_frames, fps=30)
+        
+    n_worker = min(multiprocessing.cpu_count(), 16)
+
+    with multiprocessing.Pool(n_worker) as pool:
+        for _ in tqdm.tqdm(pool.imap_unordered(gen_video, range(num_videos)), total=num_videos):
+            pass
 
     with open(csv_file, mode='w', newline='') as file:
         # CSV separated by space genius
