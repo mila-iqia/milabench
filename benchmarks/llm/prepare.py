@@ -23,7 +23,6 @@ from benchmate.ux import long_action
 class Arguments:
     recipe: str
     config: str = None
-    no_pretrained: bool = False
 
 
 @dataclass
@@ -100,12 +99,19 @@ def load_model(recipe, cfg):
 
 
 def generate_weights(args, config):
+    is_done:Path = args.output_dir / "generated"
+    if is_done.exists():
+        print(f"{args.output_dir}/['*.safetensors'] or ['*consolidated.*.pth'] already generated")
+        return
+
     if config.get("safetensors", False):
         params_path = args.output_dir / "config.json"
         model = LlamaForCausalLM(LlamaConfig(**json.loads(params_path.read_text())))
         # Avoid saving this as part of the config.
         del model.config._name_or_path
-        model.config.torch_dtype = torch.float16
+        # Even if model if loaded with a config.torch_dtype == bf16, model.dtype
+        # seams to be f32. Force model.dtype to be bf16
+        model.to(model.config.torch_dtype)
         model.save_pretrained(str(args.output_dir), safe_serialization=True)
 
     else:
@@ -138,6 +144,8 @@ def generate_weights(args, config):
             conn.send(True)
             p.join()
 
+    is_done.touch()
+
 
 def main():
     parser = ArgumentParser()
@@ -154,7 +162,7 @@ def main():
 
     #
     huggingface_format = config.get("safetensors", False)
-    pretrained = not args.no_pretrained
+    pretrained = not config.get("no_pretrained", False)
 
     if not pretrained:
         # if we will generate the weights do not download anyweights

@@ -3,6 +3,7 @@ import sys
 
 from coleo import run_cli
 
+from .cloud import cli_cloud
 from .compare import cli_compare
 from .dev import cli_dev
 from .install import cli_install
@@ -44,6 +45,10 @@ class Main:
     def pin():
         """Pin the benchmarks' dependencies."""
         return cli_pin()
+
+    def cloud():
+        """Setup cloud instances."""
+        cli_cloud()
 
     def dev():
         """Create a shell in a benchmark's environment for development."""
