@@ -1,16 +1,20 @@
+from copy import deepcopy
 import io
 import json
 import os
 import re
 import runpy
+import subprocess
 import sys
 import traceback
 from dataclasses import dataclass, field
 from datetime import datetime
 
 from coleo import Option, default, tooled
+import git
 from omegaconf import OmegaConf
 from voir.instruments.gpu import deduce_backend, select_backend
+from milabench import ROOT_FOLDER
 
 from milabench.alt_async import proceed
 from milabench.utils import available_layers, blabla, multilogger
@@ -210,6 +214,13 @@ def _get_multipack(
     if args.config is None:
         sys.exit("Error: CONFIG argument not provided and no $MILABENCH_CONFIG")
 
+    if args.system is None:
+        args.system = os.environ.get("MILABENCH_SYSTEM", None)
+
+    if args.system is None:
+        if XPath(f"{args.config}.system").exists():
+            args.system = f"{args.config}.system"
+
     if args.select:
         args.select = set(args.select.split(","))
 
@@ -259,7 +270,7 @@ def _get_multipack(
         return selected_config
     else:
         return MultiPackage(
-            {name: get_pack(defn) for name, defn in selected_config.items()}
+            {name: get_pack(deepcopy(defn)) for name, defn in selected_config.items()}
         )
 
 
@@ -301,6 +312,129 @@ def _read_reports(*runs):
                 all_data[str(pth)] = _parse_report(pth)
 
     return all_data
+
+
+def _filter_reports(**reports):
+    _reports = {}
+
+    for k, report in reports.items():
+        config = next(iter(e for e in report if e["event"] == "config"), None)
+        if config is None:
+            continue
+
+        if config["data"]["name"] != "remote":
+            _reports[k] = report
+
+    return _reports
+
+
+def _push_reports(reports_repo, runs):
+    _SVG_COLORS = {
+        "pass": "blue",
+        "partial": "yellow",
+        "failure": "red",
+    }
+    import milabench.scripts.badges as badges
+
+    try:
+        reports_repo = git.Repo(str(reports_repo))
+    except (git.exc.InvalidGitRepositoryError, git.exc.NoSuchPathError):
+        _repo = git.Repo(ROOT_FOLDER)
+        repo_url = next(iter(_r.url for _r in _repo.remotes if _r.name == "origin"), None)
+        reports_repo = git.Repo.clone_from(repo_url, str(reports_repo), branch="reports")
+        config_reader = _repo.config_reader()
+        config_writer = reports_repo.config_writer()
+        for section in config_reader.sections():
+            if not section.startswith("credential"):
+                continue
+            for option in config_reader.options(section):
+                if not option.strip("_") == option:
+                    continue
+                for value in config_reader.get_values(section, option):
+                    config_writer.add_value(section, option, value)
+                config_writer.write()
+
+    device_reports = {}
+    for run in runs:
+        reports = _read_reports(run)
+        reports = list(_filter_reports(**reports).values())
+
+        if not reports:
+            continue
+
+        meta = [e["data"] for _r in reports for e in _r if e["event"] == "meta"]
+
+        for gpu in (_ for _meta in meta for _ in _meta["accelerators"]["gpus"].values()):
+            device = gpu["product"].replace(" ", "_")
+            break
+        else:
+            for _meta in meta:
+                device = _meta["cpu"]["brand"].replace(" ", "_")
+                break
+
+        build = meta[0]["milabench"]["tag"]
+        reports_dir = XPath(reports_repo.working_tree_dir) / build
+
+        run = XPath(run)
+        try:
+            run.copy(reports_dir / device / run.name)
+        except FileExistsError:
+            pass
+
+        for _f in (reports_dir / device / run.name).glob("*.stderr"):
+            _f.unlink()
+
+        device_reports.setdefault((device, build), set())
+        device_reports[(device, build)].update(
+            (reports_dir / device).glob("*/")
+        )
+
+    for (device, build), reports in device_reports.items():
+        reports_dir = XPath(reports_repo.working_tree_dir) / build
+        reports = _read_reports(*reports)
+        reports = _filter_reports(**reports)
+        summary = make_summary(reports)
+
+        successes = [s["successes"] for s in summary.values()]
+        failures = [s["failures"] for s in summary.values()]
+
+        if sum(successes) == 0:
+            text = "failure"
+        elif any(failures):
+            text = "partial"
+        else:
+            text = "pass"
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m", badges.__name__,
+                "--left-text", device,
+                "--right-text", text,
+                "--right-color", _SVG_COLORS[text],
+            ],
+            capture_output=True,
+            check=True
+        )
+        if result.returncode == 0:
+            (reports_dir / device / "badge.svg").write_text(result.stdout.decode("utf8"))
+
+        with open(str(reports_dir / device / "README.md"), "wt") as _f:
+            _f.write("```\n")
+            make_report(summary, stream=_f)
+            _f.write("```\n")
+
+        for cmd, _kwargs in (
+            (["git", "pull"], {"check": True}),
+            (["git", "add", build], {"check": True}),
+            (["git", "commit", "-m", build], {"check": False}),
+            (["git", "push"], {"check": True})
+        ):
+            subprocess.run(
+                cmd,
+                cwd=reports_repo.working_tree_dir,
+                **_kwargs
+            )
 
 
 def _error_report(reports):

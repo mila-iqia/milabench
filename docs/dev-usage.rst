@@ -97,3 +97,16 @@ milabench compare
 ~~~~~~~~~~~~~~~~~
 
 TODO.
+
+Using milabench on the cloud
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Milabench uses `Terraform <https://developer.hashicorp.com/terraform>`_ through
+`Covalent <https://docs.covalent.xyz/>`_. To add support for a new cloud
+platform you will need to develop a new clovalent plugin with it's Terraform
+config. An example is the
+`covalent-azure-plugin <https://github.com/satyaog/covalent-azure-plugin/tree/feature/milabench>`_.
+The interesting parts would be:
+
+* `Terraform provider's related plugin arguments <https://github.com/satyaog/covalent-azure-plugin/blob/feature/milabench/covalent_azure_plugin/azure.py>`_
+* `Terraform provider's configuration <https://github.com/satyaog/covalent-azure-plugin/blob/feature/milabench/covalent_azure_plugin/infra/main.tf>`_
