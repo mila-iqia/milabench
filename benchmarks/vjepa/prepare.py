@@ -22,12 +22,13 @@ def generate_random_video(output_file, width=640, height=480, num_frames=300, fp
         video_writer.write(frame)
 
     video_writer.release()
-    print(f"Video file '{output_file}' has been generated.")
+
 
 if __name__ == "__main__":
     import sys
     import csv
     import os
+    import tqdm
 
     sys.path.append(os.path.dirname(__file__) + "/jepa/")
     data_directory = os.environ["MILABENCH_DIR_DATA"]
@@ -37,16 +38,17 @@ if __name__ == "__main__":
     csv_file = os.path.join(dest, "video_metainfo.csv")
     
     num_videos = 500  # Change this to generate more or fewer videos
+    num_frames = 300
 
-    for i in range(num_videos):
+    for i in tqdm.tqdm(range(num_videos)):
         output_file = os.path.join(dest, f"{i + 1}.mp4")
         if not os.path.exists(output_file):
-            generate_random_video(output_file=output_file, width=640, height=480, num_frames=300, fps=30)
+            generate_random_video(output_file=output_file, width=640, height=480, num_frames=num_frames, fps=30)
 
     with open(csv_file, mode='w', newline='') as file:
         # CSV separated by space genius
         writer = csv.writer(file, delimiter=" ")
-        for file in os.listdir(dest):
+        for file in tqdm.tqdm(os.listdir(dest)):
             if file.endswith(".mp4"):
                 writer.writerow([os.path.join(dest, file), 0])
 

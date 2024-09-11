@@ -266,6 +266,7 @@ def _main(args, resume_preempt=False):
     def get_batch_size(batch):
         # Tuple[[[Tensor]], [Tesnor], [Tensor]]
         udata, _, _ = batch
+        print(udata[0][0].shape)
         return udata[0][0].shape[0]
     
     from benchmate.observer import BenchObserver
@@ -612,10 +613,6 @@ def main():
         params = yaml.load(y_file, Loader=yaml.FullLoader)
         logger.info('loaded params...')
 
-
-    print(json.dumps(mlbench, indent=2))
-    print(params)
-
     params["data"]["datasets"] = [
         os.path.join(mlbench["dirs"]["data"], "FakeVideo", "video_metainfo.csv")
     ]
@@ -639,7 +636,8 @@ def main():
     except StopProgram:
         pass
 
-    acc.destroy_process_group()
+    finally:
+        acc.destroy_process_group()
 
 if __name__ == "__main__":
     main()

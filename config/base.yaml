@@ -369,25 +369,6 @@ focalnet:
   argv:
     --model: focalnet_base_lrf
 
-super-slomo:
-  inherits: _defaults
-  tags:
-    - vision
-    - video-interpolation
-    - unet
-    - convnet
-    - monogpu
-  definition: ../benchmarks/super-slomo
-  group: super-slomo
-  install_group: torch
-  plan:
-    method: per_gpu
-  argv:
-    --train_batch_size: 64
-    --dataset_root: "{milabench_data}/FakeImageNet"
-    --loader: pytorch
-    --num_workers: "auto({n_worker}, 8)"
-
 brax:
   inherits: _defaults
   tags:
@@ -823,7 +804,6 @@ llava-gpus:
 _rlhf:
   inherits: _defaults
   definition: ../benchmarks/rlhf
-  install-variant: unpinned
   install_group: torch
   plan:
     method: per_gpu
@@ -846,6 +826,28 @@ rlhf-single:
 
 rlhf-gpus:
   inherits: _rlhf
+  tags:
+    - multigpu
+  plan:
+    method: njobs
+    n: 1
+
+_vjepa:
+  inherits: _defaults
+  install_group: torch
+  definition: ../benchmarks/vjepa
+  tags:
+    - video
+
+vjepa-single:
+  inherits: _vjepa
+  tags:
+    - monogpu
+  plan:
+    method: per_gpu
+
+vjepa-gpus:
+  inherits: _vjepa
   tags:
     - multigpu
   plan:
