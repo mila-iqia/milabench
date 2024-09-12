@@ -37,9 +37,15 @@ if __name__ == "__main__":
     os.makedirs(dest, exist_ok=True)
 
     csv_file = os.path.join(dest, "video_metainfo.csv")
-    
+
     num_videos = 1000  # Change this to generate more or fewer videos
     num_frames = 300
+  
+    # Make the generation faster for the CI
+    if overrides := os.getenv("MILABENCH_TESTING_PREPARE"):
+        num1, num2 = overrides.split(",")
+        num_videos = int(num1)
+        num_frames = int(num2)
 
     def gen_video(i):
         output_file = os.path.join(dest, f"{i + 1}.mp4")

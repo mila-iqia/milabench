@@ -14,7 +14,7 @@ OVERSIZED_BENCHMARKS = {
     "llm-lora-ddp-nodes",
     "llm-lora-mp-gpus",
     "llm-full-mp-gpus",
-    "llm-full-mp-nodes"
+    "llm-full-mp-nodes",
 }
 
 def run_cli(*args, expected_code=0, msg=None):
