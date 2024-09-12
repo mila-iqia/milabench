@@ -583,14 +583,14 @@ echo "---"
 echo "vjepa-single"
 echo "============"
 time (
-  CUDA_VISIBLE_DEVICES=0 python $SRC/milabench/benchmarks/vjepa/main.py --batch_size 24 --num_workers 12 &
-  CUDA_VISIBLE_DEVICES=1 python $SRC/milabench/benchmarks/vjepa/main.py --batch_size 24 --num_workers 12 &
-  CUDA_VISIBLE_DEVICES=2 python $SRC/milabench/benchmarks/vjepa/main.py --batch_size 24 --num_workers 12 &
-  CUDA_VISIBLE_DEVICES=3 python $SRC/milabench/benchmarks/vjepa/main.py --batch_size 24 --num_workers 12 &
-  CUDA_VISIBLE_DEVICES=4 python $SRC/milabench/benchmarks/vjepa/main.py --batch_size 24 --num_workers 12 &
-  CUDA_VISIBLE_DEVICES=5 python $SRC/milabench/benchmarks/vjepa/main.py --batch_size 24 --num_workers 12 &
-  CUDA_VISIBLE_DEVICES=6 python $SRC/milabench/benchmarks/vjepa/main.py --batch_size 24 --num_workers 12 &
-  CUDA_VISIBLE_DEVICES=7 python $SRC/milabench/benchmarks/vjepa/main.py --batch_size 24 --num_workers 12 &
+  CUDA_VISIBLE_DEVICES=0 python $SRC/milabench/benchmarks/vjepa/main.py --batch_size 24 --num_workers 12 --dataset $BASE/data/FakeVideo/video_metainfo.csv --output $BASE/extra/vjepa-single &
+  CUDA_VISIBLE_DEVICES=1 python $SRC/milabench/benchmarks/vjepa/main.py --batch_size 24 --num_workers 12 --dataset $BASE/data/FakeVideo/video_metainfo.csv --output $BASE/extra/vjepa-single &
+  CUDA_VISIBLE_DEVICES=2 python $SRC/milabench/benchmarks/vjepa/main.py --batch_size 24 --num_workers 12 --dataset $BASE/data/FakeVideo/video_metainfo.csv --output $BASE/extra/vjepa-single &
+  CUDA_VISIBLE_DEVICES=3 python $SRC/milabench/benchmarks/vjepa/main.py --batch_size 24 --num_workers 12 --dataset $BASE/data/FakeVideo/video_metainfo.csv --output $BASE/extra/vjepa-single &
+  CUDA_VISIBLE_DEVICES=4 python $SRC/milabench/benchmarks/vjepa/main.py --batch_size 24 --num_workers 12 --dataset $BASE/data/FakeVideo/video_metainfo.csv --output $BASE/extra/vjepa-single &
+  CUDA_VISIBLE_DEVICES=5 python $SRC/milabench/benchmarks/vjepa/main.py --batch_size 24 --num_workers 12 --dataset $BASE/data/FakeVideo/video_metainfo.csv --output $BASE/extra/vjepa-single &
+  CUDA_VISIBLE_DEVICES=6 python $SRC/milabench/benchmarks/vjepa/main.py --batch_size 24 --num_workers 12 --dataset $BASE/data/FakeVideo/video_metainfo.csv --output $BASE/extra/vjepa-single &
+  CUDA_VISIBLE_DEVICES=7 python $SRC/milabench/benchmarks/vjepa/main.py --batch_size 24 --num_workers 12 --dataset $BASE/data/FakeVideo/video_metainfo.csv --output $BASE/extra/vjepa-single &
   wait
 )
 
@@ -598,7 +598,7 @@ echo "---"
 echo "vjepa-gpus"
 echo "=========="
 time (
-  $BASE/venv/torch/bin/benchrun --nnodes=1 --rdzv-backend=static --rdzv-endpoint=127.0.0.1:29400 --master-addr=127.0.0.1 --master-port=29400 --local-ranks-filter=0 --nproc-per-node=8 --no-python -- python $SRC/milabench/benchmarks/vjepa/main.py --batch_size 24 --num_workers 12 &
+  $BASE/venv/torch/bin/benchrun --nnodes=1 --rdzv-backend=static --rdzv-endpoint=127.0.0.1:29400 --master-addr=127.0.0.1 --master-port=29400 --local-ranks-filter=0 --nproc-per-node=8 --no-python -- python $SRC/milabench/benchmarks/vjepa/main.py --batch_size 24 --num_workers 12 --dataset $BASE/data/FakeVideo/video_metainfo.csv --output $BASE/extra/vjepa-gpus &
   wait
 )
 

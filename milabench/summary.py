@@ -236,7 +236,8 @@ def _summarize(group, query=tuple([])) -> Summary:
         "name": config["name"],
         "group": config["group"],
         "n": len(agg["success"]),
-        "ngpu": sum(agg["ngpu"]) / len(agg["ngpu"]),
+        # In case of failure it is possible ngpu is 0 or 1
+        "ngpu": max(agg["ngpu"]),
         "successes": sum(agg["success"]),
         "failures": sum(not x for x in agg["success"]),
         "train_rate": _metrics(agg["train_rate"]),
