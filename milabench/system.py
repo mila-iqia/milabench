@@ -1,11 +1,11 @@
 import contextvars
+import ipaddress
 import os
 import socket
-from dataclasses import dataclass, field
-import sys
 import subprocess
+import sys
 from contextlib import contextmanager
-import ipaddress
+from dataclasses import dataclass, field
 
 import psutil
 import yaml
@@ -193,11 +193,11 @@ class Torchrun:
 
 @dataclass
 class Options:
-    sizer: SizerOptions = SizerOptions()
-    cpu: CPUOptions = CPUOptions() 
-    dataset: DatasetConfig = DatasetConfig()
-    dirs: Dirs = Dirs()
-    torchrun: Torchrun = Torchrun()
+    sizer: SizerOptions = field(default_factory=SizerOptions)
+    cpu: CPUOptions = field(default_factory=CPUOptions)
+    dataset: DatasetConfig = field(default_factory=DatasetConfig)
+    dirs: Dirs = field(default_factory=Dirs)
+    torchrun: Torchrun = field(default_factory=Torchrun)
 
 
 @dataclass
@@ -231,18 +231,19 @@ def default_device():
 @dataclass
 class SystemConfig:
     """This is meant to be an exhaustive list of all the environment overrides"""
+
     arch: str = defaultfield("gpu.arch", str, default_device())
     sshkey: str = defaultfield("ssh", str, "~/.ssh/id_rsa")
     docker_image: str = None
     nodes: list[Nodes] = field(default_factory=list)
-    gpu: GPUConfig = GPUConfig()
-    options: Options = Options()
+    gpu: GPUConfig = field(default_factory=GPUConfig)
+    options: Options = field(default_factory=Options)
 
     base: str = defaultfield("base", str, None)
     config: str = defaultfield("config", str, None)
     dash: bool = defaultfield("dash", bool, 1)
     noterm: bool = defaultfield("noterm", bool, 0)
-    github: Github = Github()
+    github: Github = field(default_factory=Github)
 
 
 def check_node_config(nodes):
