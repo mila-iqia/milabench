@@ -15,17 +15,11 @@ OVERSIZED_BENCHMARKS = {
     "llm-lora-mp-gpus",
     "llm-full-mp-gpus",
     "llm-full-mp-nodes",
-    # "vjepa-single",
-    # "vjepa-gpus",
-    # "rlhf-single",
-    # "rlhf-gpus",
-
 }
 
 
 OVERSIZED_INSTALL_BENCHMARKS = {
-    "dqn",
-    "ppo",
+
 }
 
 def run_cli(*args, expected_code=0, msg=None):
@@ -125,7 +119,9 @@ def test_milabench(monkeypatch, bench, module_tmp_dir, standard_config):
                 run_cli("run", *args, "--no-report", "--select", bench, "--run-name", str(bench))
 
 
-    # import shutil
+    import shutil
+    import tempfile
+    shutil.rmtree(tempfile.gettempdir(), ignore_errors=True)
     # shutil.rmtree(module_tmp_dir)
 
 

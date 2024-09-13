@@ -304,7 +304,9 @@ def print_meta(out, meta):
         if k == "accelerators":
             gpus = v["gpus"]
             n = len(gpus)
-            _, gpu = gpus.popitem()
+            gpu = {}
+            if n > 0:
+                _, gpu = gpus.popitem()
             stats = {
                 "n": n,
                 "product": gpu.get("product", "NA"),
@@ -325,7 +327,9 @@ def short_meta(out, meta):
         if k == "accelerators":
             gpus = v["gpus"]
             n = len(gpus)
-            _, gpu = gpus.popitem()
+            gpu = {}
+            if n > 0:
+                _, gpu = gpus.popitem()
             stats["product"] = gpu.get("product", "NA")
             stats["n_gpu"] = n
             stats["memory"] = str(gpu.get("memory", {}).get("total", 0))
