@@ -35,6 +35,7 @@ class PCQM4Mv2Subset(PCQM4Mv2):
             "smiles": str,
             "pos": dict(dtype=torch.float32, size=(-1, 3)),
             "y": float,
+            "z": dict(dtype=torch.long, size=(-1,)),
         }
 
         self.from_smiles = from_smiles or _from_smiles
@@ -49,12 +50,10 @@ class PCQM4Mv2Subset(PCQM4Mv2):
         ]
 
     def download(self):
-        print(self.raw_paths)
         if all(os.path.exists(path) for path in self.raw_paths):
             return
 
         # Download 2d graphs
-        print(self.raw_dir)
         super().download()
 
         # Download 3D coordinates
@@ -77,6 +76,9 @@ class PCQM4Mv2Subset(PCQM4Mv2):
             data.y = y
             data.pos = torch.tensor(
                 extra.GetConformer().GetPositions(), dtype=torch.float
+            )
+            data.z = torch.tensor(
+                [atom.GetAtomicNum() for atom in extra.GetAtoms()], dtype=torch.long
             )
 
             data_list.append(data)
@@ -104,4 +106,5 @@ class PCQM4Mv2Subset(PCQM4Mv2):
     def serialize(self, data: BaseData) -> Dict[str, Any]:
         rval = super().serialize(data)
         rval["pos"] = data.pos
+        rval["z"] = data.z
         return rval

@@ -9,6 +9,7 @@ from bench.models import models
 from pcqm4m_subset import PCQM4Mv2Subset
 from torch_geometric.datasets import QM9
 from torch_geometric.loader import DataLoader
+from torch_geometric.nn import global_max_pool
 
 from benchmate.observer import BenchObserver
 
@@ -102,26 +103,25 @@ def main():
     args = parser().parse_args()
 
     def batch_size(x):
-        shape = x.y.shape
-        return shape[0]
+        # assert len(x.batch.unique()) == int(x.batch[-1] - x.batch[0] + 1)
+        return int(x.batch[-1] - x.batch[0] + 1)
 
     observer = BenchObserver(batch_size_fn=batch_size)
 
-    # train_dataset = PCQM4Mv2Subset(args.num_samples, args.root)
-    train_dataset = QM9(args.root)
+    train_dataset = PCQM4Mv2Subset(args.num_samples, args.root)
 
     sample = next(iter(train_dataset))
 
-    info = models[args.model](args, 
-                              sample=sample, 
-                              degree=lambda: train_degree(train_dataset),
+    info = models[args.model](
+        args,
+        sample=sample,
+        degree=lambda: train_degree(train_dataset),
     )
 
     TRAIN_mean, TRAIN_std = (
         mean(train_dataset).item(),
         std(train_dataset).item(),
     )
-    print("Train mean: {}\tTrain std: {}".format(TRAIN_mean, TRAIN_std))
 
     DataLoaderClass = DataLoader
     dataloader_kwargs = {}
@@ -131,7 +131,7 @@ def main():
         batch_size=args.batch_size,
         shuffle=True,
         num_workers=args.num_workers,
-        **dataloader_kwargs
+        **dataloader_kwargs,
     )
 
     device = accelerator.fetch_device(0)
@@ -148,33 +148,26 @@ def main():
     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs)
 
     num_batches = len(train_loader)
-    for epoch in range(1, args.epochs + 1):
-        model.train()
+    loader = observer.loader(train_loader)
 
-        for step, batch in enumerate(observer.iterate(train_loader)):
-            # QM9            => DataBatch(x=[290, 11], edge_index=[2, 602], edge_attr=[602, 4], y=[16, 19], pos=[290, 3], z=[290], smiles=[16], name=[16], idx=[16], batch=[290], ptr=[17])
-            # PCQM4Mv2Subset => DataBatch(x=[229,  9], edge_index=[2, 476], edge_attr=[476, 3], y=[16],     pos=[229, 3],          smiles=[16],                      batch=[229], ptr=[17])
+    model.train()  # No eval ever.
+    for epoch in range(1, args.epochs + 1):
+        for step, batch in enumerate(loader):
             batch = batch.to(device)
-            
+
             if args.use3d:
-                
-                if hasattr(batch, "z"):
-                    z = batch.z
-                else:
-                    z = batch.batch
-                
-                molecule_repr = model(z=z, pos=batch.pos, batch=batch.batch)
+                molecule_repr = model(z=batch.z, pos=batch.pos, batch=batch.batch)
             else:
-                molecule_repr = model(x=batch.x, batch=batch.batch, edge_index=batch.edge_index, batch_size=batch_size(batch))
+                molecule_repr = model(
+                    x=batch.x.type(torch.float),
+                    batch=batch.batch,
+                    edge_index=batch.edge_index,
+                    batch_size=batch_size(batch),
+                )
+                molecule_repr = global_max_pool(molecule_repr, batch.batch)
 
             pred = molecule_repr.squeeze()
 
-            # Dimenet   : pred: torch.Size([ 16, 19])
-            # PNA       : pred: torch.Size([292, 19]) <= (with x=batch.x) WTF !? 292 = batch.x.shape[0]
-            # batch     :       torch.Size([ 16, 19])
-            # print(molecule_repr.shape)
-            # print(batch.y.shape)
-            
             B = pred.size()[0]
             y = batch.y.view(B, -1)
             # normalize
@@ -192,7 +185,8 @@ def main():
 
         lr_scheduler.step()
 
-        print("Epoch: {}\nLoss: {}".format(epoch))
+        if loader.is_done():
+            break
 
 
 if __name__ == "__main__":
