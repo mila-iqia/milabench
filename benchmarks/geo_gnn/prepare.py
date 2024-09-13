@@ -12,7 +12,7 @@ def parser():
         "--num-samples",
         type=int,
         help="Number of samples to process in the dataset",
-        default=10000,
+        default=100000,
     )
     parser.add_argument(
         "--root",

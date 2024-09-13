@@ -1,3 +1,15 @@
+pna:
+  inherits: _defaults
+  definition: .
+  install-variant: cuda
+  install_group: torch
+  plan:
+    method: per_gpu
+  argv:
+    --model: 'PNA'
+    --num-samples: 100000
+    --batch-size: 4096
+
 dimenet:
   inherits: _defaults
   definition: .
@@ -9,14 +21,4 @@ dimenet:
     --model: 'DimeNet'
     --num-samples: 10000
     --use3d: True
-
-pna:
-  inherits: _defaults
-  definition: .
-  install-variant: cuda
-  install_group: torch
-  plan:
-    method: per_gpu
-  argv:
-    --model: 'PNA'
-    --num-samples: 10000
+    --batch-size: 512
