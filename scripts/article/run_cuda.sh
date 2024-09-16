@@ -42,7 +42,8 @@ install_prepare() {
 
     pip install -e $MILABENCH_SOURCE
 
-    milabench slurm_system > $MILABENCH_WORDIR/system.yaml
+
+    # milabench slurm_system > $MILABENCH_WORDIR/system.yaml
 
     #
     # Install milabench's benchmarks in their venv
