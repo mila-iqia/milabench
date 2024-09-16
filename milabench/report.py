@@ -304,7 +304,9 @@ def print_meta(out, meta):
         if k == "accelerators":
             gpus = v["gpus"]
             n = len(gpus)
-            _, gpu = gpus.popitem()
+            gpu = {}
+            if n > 0:
+                _, gpu = gpus.popitem()
             stats = {
                 "n": n,
                 "product": gpu.get("product", "NA"),
@@ -325,7 +327,9 @@ def short_meta(out, meta):
         if k == "accelerators":
             gpus = v["gpus"]
             n = len(gpus)
-            _, gpu = gpus.popitem()
+            gpu = {}
+            if n > 0:
+                _, gpu = gpus.popitem()
             stats["product"] = gpu.get("product", "NA")
             stats["n_gpu"] = n
             stats["memory"] = str(gpu.get("memory", {}).get("total", 0))
@@ -486,21 +490,32 @@ def pandas_to_string(df, formatters=_formatters):
 
     columns = df.columns.tolist()
 
-    sep = " | "
-    lines = []
+    # Compute column size
     col_size = defaultdict(int)
-
     for index, row in df.iterrows():
-        line = [f"{index:<30}"]
+        col_size["bench"] = max(col_size["bench"], len(index))
         for col, val in zip(columns, row):
             fmt = formatters.get(col)
-
             if fmt is not None:
                 val = fmt(val)
                 col_size[col] = max(col_size[col], len(val))
+
+    # Generate report
+    sep = " | "
+    lines = []
+    for index, row in df.iterrows():
+        size = col_size["bench"]
+        line = [f"{index:<{size}}"]
+
+        for col, val in zip(columns, row):
+            fmt = formatters.get(col)
+            if fmt is not None:
+                val = fmt(val)
             else:
                 val = str(val)
 
+            size = col_size[col]
+            val = f"{val:>{size}}"
             line.append(val)
 
         lines.append(sep.join(line))
@@ -509,7 +524,8 @@ def pandas_to_string(df, formatters=_formatters):
         size = col_size[col]
         return f"{col:>{size}}"
 
-    header = sep.join([f"{'bench':<30}"] + [fmtcol(col) for col in columns])
+    size = col_size["bench"]
+    header = sep.join([f"{'bench':<{size}}"] + [fmtcol(col) for col in columns])
 
     return "\n".join([header] + lines)
 

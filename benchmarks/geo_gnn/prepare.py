@@ -12,7 +12,7 @@ def parser():
         "--num-samples",
         type=int,
         help="Number of samples to process in the dataset",
-        default=10000,
+        default=100000,
     )
     parser.add_argument(
         "--root",
@@ -26,7 +26,4 @@ def parser():
 if __name__ == "__main__":
     args, _ = parser().parse_known_args()
 
-    # TODO: Handle argument for the number of samples
-    train_dataset = QM9(args.root)
-    # dataset = PCQM4Mv2Subset(args.num_samples, root=args.root)
-
+    dataset = PCQM4Mv2Subset(args.num_samples, root=args.root)

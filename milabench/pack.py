@@ -349,6 +349,7 @@ class Package(BasePackage):
             # building an image, but it is overall nicer for development to use
             # the default cache).
             env["XDG_CACHE_HOME"] = str(self.dirs.cache)
+
         return env
 
     def full_env(self, env={}):

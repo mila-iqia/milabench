@@ -11,8 +11,8 @@ import flax
 import optax
 import flax.linen as nn
 from flax.training.train_state import TrainState
-from gymnax.wrappers.purerl import FlattenObservationWrapper, LogWrapper
 import gymnax
+from gymnax.wrappers.purerl import FlattenObservationWrapper, LogWrapper
 import flashbax as fbx
 
 from benchmate.metrics import give_push

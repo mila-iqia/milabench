@@ -239,7 +239,8 @@ def select_nodes(nodes, n):
         else:
             ranked.append(node)
 
-    return ranked[: max(1, min(n, len(ranked)))]
+    selected = ranked[: max(1, min(n, len(ranked)))]
+    return selected
 
 
 def enumerate_rank(nodes):

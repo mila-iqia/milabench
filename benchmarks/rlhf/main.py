@@ -17,8 +17,9 @@ from trl.trainer.utils import SIMPLE_QUERY_CHAT_TEMPLATE
 
 
 class PPOv2TrainerIntrumented(PPOv2Trainer):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, config: PPOv2Config, *args, **kwargs):
+        config.report_to = []
+        super().__init__(config, *args, **kwargs)
 
         def batch_size_fn(batch):
             x, y = batch['input_ids'].shape
@@ -45,6 +46,7 @@ class PPOv2TrainerIntrumented(PPOv2Trainer):
 
 
 def main():
+
     parser = HfArgumentParser((PPOv2Config, ModelConfig))
     config, model_config = parser.parse_args_into_dataclasses()
     # remove output_dir if exists

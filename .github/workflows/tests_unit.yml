@@ -16,6 +16,12 @@ on:
   # Allow manual triggers
   workflow_dispatch:
 
+env:
+  XDG_CACHE_HOME: /home/runner/work/milabench/cache
+  XDG_DATA_HOME: /home/runner/work/milabench/data
+  XDG_CONFIG_HOME: /home/runner/work/milabench/config
+  XDG_STATE_HOME: /home/runner/work/milabench/state
+
 
 jobs:
   tests:
@@ -27,6 +33,15 @@ jobs:
       cancel-in-progress: true
 
     steps:
+      - uses: easimon/maximize-build-space@master
+        with:
+          remove-dotnet: 'true'
+          remove-codeql: 'true'
+          remove-haskell: 'true'
+          remove-android: 'true'
+          build-mount-path: /home/runner/work/milabench/
+          root-reserve-mb: 20000
+
       - uses: actions/checkout@v3
 
       - uses: actions/setup-python@v5
@@ -35,24 +50,25 @@ jobs:
 
       - name: dependencies
         run: |
+          cd /home/runner/work/milabench/milabench
+          pip install virtualenv
+          virtualenv ./env
+          source ./env/bin/activate
+          #
           pip install -U pip
           pip install poetry
-          poetry env use python3.10
-          source $(poetry env info -p)/bin/activate
+          poetry export --dev -f requirements.txt --output requirements-dev.txt
           #
           # poetry doesnot work when installing those !?
           #
           pip install antlr4-python3-runtime==4.9.3
           pip install -e .
           pip install -e benchmate
-          #
-          #
-          #
-          poetry install --with dev
+          pip install coverage pytest-regressions pytest-cov pytest
 
       - name: Simple Template
         run: |
-          source $(poetry env info -p)/bin/activate
+          source ./env/bin/activate
           milabench new --name simplebench --template simple
           cd benchmarks/simplebench
           make tests
@@ -61,7 +77,7 @@ jobs:
         
       - name: Voir Template
         run: |
-          source $(poetry env info -p)/bin/activate
+          source ./env/bin/activate
           milabench new --name  voirbench --template voir
           cd benchmarks/voirbench
           make tests
@@ -74,10 +90,10 @@ jobs:
 
       - name: tests
         env:
-          MILABENCH_HF_TOKEN: ${{ secrets.HUGGING_FACE_TOKEN}}
+          HUGGING_FACE_TOKEN: ${{ secrets.HUGGING_FACE_TOKEN}}
         run: |
-          source $(poetry env info -p)/bin/activate
-          coverage run --source=milabench -m pytest --ignore=tests/integration tests/ 
+          source ./env/bin/activate
+          coverage run --source=milabench -m pytest --ignore=tests/integration tests/ -vv -x
           coverage report -m
           coverage xml
 

@@ -1,0 +1,32 @@
+
+
+_vjepa:
+  inherits: _defaults
+  definition: .
+  install-variant: unpinned
+  install_group: torch
+
+  argv:
+    --dataset: "{milabench_data}/FakeVideo/video_metainfo.csv"
+    --output: "{milabench_extra}"
+
+vjepa-single:
+  inherits: _vjepa
+  plan:
+    method: per_gpu
+
+vjepa-gpus:
+  inherits: _vjepa
+  plan:
+    method: njobs
+    n: 1
+
+vjepa-nodes:
+  inherits: _vjepa
+  plan:
+    method: njobs
+    n: 1
+  
+  num_machines: 2
+  requires_capabilities:
+    - "len(nodes) >= ${num_machines}"

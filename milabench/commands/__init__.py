@@ -674,8 +674,12 @@ class TorchrunAllNodes(ForeachNode):
         main_host = node_address(main)
         # add them as option so we could tweak them if necessary
         main_port = option("torchrun.port", int, default=29400)
-        backend = option("torchrun.backend", str, default="c10d")
+        backend = option("torchrun.backend", str, default="static")
+        filters = option("torchrun.local_ranks_filder", str, default="0")
 
+        if backend == "c10d":
+            print("Warning: c10d can select the wrong node for RANK=0")
+    
         main_addr = f"{main_host}:{main_port}"
 
         config = executor.pack.config
@@ -685,12 +689,27 @@ class TorchrunAllNodes(ForeachNode):
             f"--nnodes={len(nodes)}",
             f"--rdzv-backend={backend}",
             f"--rdzv-endpoint={main_addr}",
-            # f"--master-addr={main_host}",
-            # f"--master-port={main_port}",
+            f"--master-addr={main_host}",
+            f"--master-port={main_port}",
+            f"--local-ranks-filter={filters}",
             *args,
             **kwargs
         )
 
+    def make_new_node_executor(self, rank, node, base):
+        """Make a new environment and create a new executor for the node"""
+        executor: TorchrunAllGPU = super().make_new_node_executor(rank, node, base)
+
+        # Specify the node rank so rank 0 is consistently on the local node
+        new_args = list(executor.wrapper_argv) +  [
+            f"--node-rank={rank}", 
+            f"--local-addr={node['ip']}",    
+            f"--rdzv-conf=rank={rank}",
+        ]
+        executor.wrapper_argv = new_args
+
+        return executor
+    
     def __init__(self, executor: Command, *args, **kwargs) -> None:
         base_exec = TorchrunAllNodes.make_base_executor(
             TorchrunAllGPU, 

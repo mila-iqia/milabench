@@ -378,3 +378,27 @@ rwkv:
 dlrm:
   enabled: true
   weight: 1.0
+
+super-slomo:
+  enabled: false
+  weight: 1.0
+
+
+super-slomo:
+  inherits: _defaults
+  tags:
+    - vision
+    - video-interpolation
+    - unet
+    - convnet
+    - monogpu
+  definition: ../benchmarks/super-slomo
+  group: super-slomo
+  install_group: torch
+  plan:
+    method: per_gpu
+  argv:
+    --train_batch_size: 64
+    --dataset_root: "{milabench_data}/FakeImageNet"
+    --loader: pytorch
+    --num_workers: "auto({n_worker}, 8)"

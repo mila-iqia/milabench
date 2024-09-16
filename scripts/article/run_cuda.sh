@@ -8,6 +8,8 @@ export MILABENCH_BASE="$MILABENCH_WORDIR/results"
 
 export MILABENCH_VENV="$MILABENCH_WORDIR/env"
 export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
+export MILABENCH_SIZER_SAVE="$MILABENCH_WORDIR/scaling.yaml"
+
 
 if [ -z "${MILABENCH_PREPARE}" ]; then
     export MILABENCH_PREPARE=0
@@ -40,13 +42,14 @@ install_prepare() {
 
     pip install -e $MILABENCH_SOURCE
 
+
     milabench slurm_system > $MILABENCH_WORDIR/system.yaml
 
     #
     # Install milabench's benchmarks in their venv
     #
-    pip install torch
-    milabench pin --variant cuda --from-scratch $ARGS 
+    # pip install torch
+    # milabench pin --variant cuda --from-scratch $ARGS 
     milabench install --system $MILABENCH_WORDIR/system.yaml $ARGS
 
     which pip
@@ -81,9 +84,10 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
 
     . $MILABENCH_WORDIR/env/bin/activate
 
-    # milabench pin --variant cuda  --from-scratch
+
+    # pip install torch
+    # milabench pin --variant cuda --from-scratch $ARGS 
     # milabench install --system $MILABENCH_WORDIR/system.yaml --force $ARGS
-    # milabench prepare --system $MILABENCH_WORDIR/system.yaml $ARGS
 
     #
     #   Run the benchmakrs

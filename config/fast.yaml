@@ -1,0 +1,33 @@
+#
+# Configuration for fast testing, single node
+#
+# - Flops: check that the GPUs are performing according to spec
+# - Multi GPU: checks that GPUs can talk to each other
+#
+
+include:
+  - base.yaml
+
+fp16:
+  enabled: true
+  weight: 1.0
+
+bf16:
+  enabled: true
+  weight: 1.0
+
+tf32:
+  enabled: true
+  weight: 1.0
+
+fp32:
+  enabled: true
+  weight: 1.0
+
+lightning-gpus:
+  enabled: True
+  weight: 1.0
+
+llm-lora-ddp-nodes:
+  enabled: True
+  weight: 1.0

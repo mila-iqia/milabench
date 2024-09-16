@@ -14,7 +14,12 @@ OVERSIZED_BENCHMARKS = {
     "llm-lora-ddp-nodes",
     "llm-lora-mp-gpus",
     "llm-full-mp-gpus",
-    "llm-full-mp-nodes"
+    "llm-full-mp-nodes",
+}
+
+
+OVERSIZED_INSTALL_BENCHMARKS = {
+
 }
 
 def run_cli(*args, expected_code=0, msg=None):
@@ -88,6 +93,9 @@ def test_milabench(monkeypatch, bench, module_tmp_dir, standard_config):
 
     monkeypatch.setenv("MILABENCH_GPU_ARCH", "cuda")
     
+    if bench in OVERSIZED_INSTALL_BENCHMARKS:
+        return
+
     with filecount_inc(module_tmp_dir, "install"):
         run_cli("install", *args, "--select", bench)
 
@@ -109,6 +117,12 @@ def test_milabench(monkeypatch, bench, module_tmp_dir, standard_config):
         with filecount_inc(module_tmp_dir, bench):
             with assume_gpu(8):
                 run_cli("run", *args, "--no-report", "--select", bench, "--run-name", str(bench))
+
+
+    import shutil
+    import tempfile
+    shutil.rmtree(tempfile.gettempdir(), ignore_errors=True)
+    # shutil.rmtree(module_tmp_dir)
 
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))

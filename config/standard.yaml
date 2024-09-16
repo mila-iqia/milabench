@@ -69,10 +69,6 @@ focalnet:
   enabled: true
   weight: 2.0
 
-super-slomo:
-  enabled: true
-  weight: 1.0
-
 fp16:
   enabled: true
   weight: 0.0
@@ -93,11 +89,30 @@ brax:
   enabled: true
   weight: 1.0
 
+# Diffusion
+diffusion-single:
+  enabled: true
+  weight: 1.0
+
 diffusion-gpus:
   enabled: True
   weight: 1.0
 
+diffusion-nodes:
+  enabled: true
+  weight: 1.0
+
+# lightning
+lightning:
+  enabled: true
+  weight: 1.0
+
 lightning-gpus:
+  enabled: True
+  weight: 1.0
+
+# dinov2
+dinov2-giant-single:
   enabled: True
   weight: 1.0
 
@@ -105,8 +120,11 @@ dinov2-giant-gpus:
   enabled: True
   weight: 1.0
 
-# LLM
+dinov2-giant-nodes:
+  enabled: false
+  weight: 1.0
 
+# LLM
 llm-lora-single:
   enabled: True
   weight: 1.0
@@ -129,6 +147,60 @@ llm-full-mp-gpus:
 
 llm-full-mp-nodes:
   enabled: True
+  weight: 1.0
+
+resnet152-ddp-gpus:
+  enabled: true
+  weight: 0.0
+
+# purejaxrl
+dqn:
+  enabled: true
+  weight: 1.0
+
+ppo:
+  enabled: true
+  weight: 1.0
+  
+# Geo
+dimenet:
+  enabled: true
+  weight: 1.0
+
+recursiongfn:
+  enabled: true
+  weight: 1.0
+
+# torchatari
+torchatari:
+  enabled: True
+  weight: 1.0
+
+# llava
+llava-single:
+  enabled: true
+  weight: 1.0
+
+llava-gpus:     # This OOM
+  enabled: false
+  weight: 1.0
+
+# rlhf
+rlhf-single:
+  enabled: True
+  weight: 1.0
+
+rlhf-gpus:
+  enabled: true
+  weight: 1.0
+
+# vjepa
+vjepa-single:
+  enabled: true
+  weight: 1.0
+
+vjepa-gpus:
+  enabled: true
   weight: 1.0
 
 ##################
