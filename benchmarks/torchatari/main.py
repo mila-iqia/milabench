@@ -97,7 +97,12 @@ class RecordEpisodeStatistics(gym.Wrapper):
         return observations
 
     def step(self, action):
-        observations, rewards, dones, infos = super().step(action)
+        # np, np, np, np, dict
+        data = super().step(action)
+        
+        # FIXME: make sure this is valid
+        observations, rewards, terminated, truncated, infos = data
+
         self.episode_returns += infos["reward"]
         self.episode_lengths += 1
         self.returned_episode_returns[:] = self.episode_returns
@@ -109,7 +114,7 @@ class RecordEpisodeStatistics(gym.Wrapper):
         return (
             observations,
             rewards,
-            dones,
+            terminated,
             infos,
         )
 
@@ -211,7 +216,10 @@ def main():
     # TRY NOT TO MODIFY: start the game
     global_step = 0
     start_time = time.time()
-    next_obs = torch.Tensor(envs.reset()).to(device)
+    state, _ = envs.reset()
+
+    # print(type(a), type(b))
+    next_obs = torch.Tensor(state).to(device)
     next_done = torch.zeros(args.num_envs).to(device)
     iterations = range(1, args.num_iterations + 1)
 
