@@ -272,6 +272,29 @@ def make_dataframe(summary, compare=None, weights=None, query=None):
             for key in all_keys
         }
     ).transpose()
+    
+    return df
+
+
+@error_guard({})
+def make_report(
+    summary,
+    compare=None,
+    html=None,
+    compare_gpus=False,
+    price=None,
+    title=None,
+    sources=None,
+    errdata=None,
+    weights=None,
+):
+    if weights is None:
+        weights = dict()
+
+    df = make_dataframe(summary, compare, weights)
+
+    # Reorder columns
+    df = df[sorted(df.columns, key=lambda k: columns_order.get(k, 0))]
 
     # Reorder columns
     df = df[sorted(df.columns, key=lambda k: columns_order.get(k, 2000))]
