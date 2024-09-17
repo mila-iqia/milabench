@@ -55,7 +55,9 @@ bert-tf32-fp16:
     112: 81140.75 MiB
   optimized: 128
 bf16: {}
-brax: {}
+brax: 
+  args: --batch-size
+
 convnext_large-fp16:
   arg: --batch-size
   model:
@@ -184,7 +186,8 @@ diffusion-single:
     1: 21654.75 MiB
     2: 21818.75 MiB
     4: 23478.75 MiB
-dimenet: {}
+dimenet:
+  arg: --batch-size
 dinov2-giant-gpus:
   arg: train.batch_size_per_gpu={batch_size}
   model:
@@ -192,6 +195,9 @@ dinov2-giant-gpus:
   optimized: 32
 dinov2-giant-single:
   arg: train.batch_size_per_gpu={batch_size}
+dinov2-giant-nodes:
+  arg: train.batch_size_per_gpu={batch_size}
+
 dlrm: {}
 focalnet:
   arg: --batch-size
@@ -442,7 +448,6 @@ whisper:
     128: 71634.375 MiB
     144: 80412.75 MiB
   optimized: 128
-
 
 llava-single:
   arg: --batch_size

@@ -732,6 +732,9 @@ dimenet:
     --model: 'DimeNet'
     --num-samples: 10000
     --use3d: True
+    --batch-size: 16
+    --num-workers: "auto({n_worker}, 0)"
+
 
 recursiongfn:
   inherits: _defaults
@@ -745,7 +748,7 @@ recursiongfn:
 
   argv:
     --batch_size: 128
-    --num_workers: 8
+    --num_workers: "auto({n_worker}, 8)"
     --num_steps: 100
     --layer_width: 128
     --num_layers: 4
@@ -779,7 +782,7 @@ _llava:
     - monogpu
   argv:
     --batch_size: 1
-    --num_workers: 4
+    --num_workers: "auto({n_worker}, 4)"
     --gradient_accumulation_steps: 1
 
 llava-single:
@@ -788,7 +791,7 @@ llava-single:
     method: per_gpu
   argv:
     --batch_size: 1
-    --num_workers: 4
+    --num_workers: "auto({n_worker}, 4)"
     --gradient_accumulation_steps: 1
 
 llava-gpus:
@@ -800,7 +803,7 @@ llava-gpus:
     n: 1
   argv:
     --batch_size: 1
-    --num_workers: 4
+    --num_workers: "auto({n_worker}, 4)"
     --gradient_accumulation_steps: 1
 
 
