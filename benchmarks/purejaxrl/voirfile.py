@@ -32,7 +32,7 @@ def instrument_main(ov, options: Config):
         ov.require(dash)
 
     ov.require(
-        log("value", "progress", "rate", "units", "loss", "gpudata", context="task"),
+        log("value", "progress", "rate", "units", "loss", "gpudata", "memory_peak", "cpudata", context="task"),
         # early_stop(n=options.stop, key="rate", task="train"),
         monitor_monogpu(poll_interval=options.gpu_poll),
     )

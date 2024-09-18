@@ -707,7 +707,8 @@ dqn:
   argv:
     dqn: true
     --num_envs: auto({cpu_per_gpu}, 128)
-    --buffer_batch_size: 128
+    --buffer_size: 131072
+    --buffer_batch_size: 65536
     --env_name: CartPole-v1
     --training_interval: 10
 
@@ -720,7 +721,7 @@ ppo:
     --num_minibatches: 32
     --update_epochs: 4
     --env_name: hopper
-    --total_timesteps: 200000
+    --total_timesteps: 2000000
 
 _geo_gnn:
   inherits: _defaults
@@ -880,3 +881,16 @@ cleanrljax:
   definition: ../benchmarks/cleanrl_jax
   plan:
     method: per_gpu
+  
+  # args.batch_size     = int(args.num_envs * args.num_steps)
+  # args.minibatch_size = int(args.batch_size // args.num_minibatches)
+  # args.num_iterations = args.total_timesteps // args.batch_size
+  # --total_timesteps
+  # --num_steps
+  # --num_minibatches
+
+  argv:
+    --num_envs: auto({cpu_per_gpu}, 128)
+    --num_steps: 128
+    --num_minibatches: 4
+    --total_timesteps: 10000000

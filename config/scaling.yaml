@@ -59,6 +59,9 @@ brax:
   arg: --batch-size
   model:
     1024: 4912.25 MiB
+cleanrljax:
+  arg: --num_steps
+  optimized: 128
 convnext_large-fp16:
   arg: --batch-size
   model:
@@ -219,7 +222,12 @@ dinov2-giant-single:
     32: 74544.25 MiB
 dlrm: {}
 dqn:
-  arg: --buffer_size
+  arg: --buffer_batch_size
+  model:
+    1024: 81.81005859375 MiB
+    2048: 83.40380859375 MiB
+    32768: 131.21630859375 MiB
+    65536: 182.21630859375 MiB
   optimized: 128
 focalnet:
   arg: --batch-size
@@ -331,15 +339,16 @@ opt-6_7b-multinode:
     1: 55380 MiB
   optimized: 1
 ppo:
-  arg: --num_minibatches
+  arg: --num_steps
   model:
-    1: 62426.25 MiB
-    2: 62426.25 MiB
-    4: 62426.25 MiB
-    16: 62426.25 MiB
-    32: 62426.25 MiB
-    64: 62426.25 MiB
-    128: 62426.25 MiB
+    8: 80.791748046875 MiB
+    16: 80.916748046875 MiB
+    32: 81.166748046875 MiB
+    64: 81.666748046875 MiB
+    128: 82.666748046875 MiB
+    1024: 96.666748046875 MiB
+    2048: 132.484619140625 MiB
+    4096: 205.328369140625 MiB
   optimized: 32
 recursiongfn:
   arg: --batch_size
@@ -535,8 +544,9 @@ torchatari:
   arg: --num-steps
   model:
     1: 1124.75 MiB
-    2: 1138.75 MiB
-    4: 1166.75 MiB
+    1024: 20176.25 MiB
+    2048: 39020.25 MiB
+    4096: 76708.25 MiB
 vjepa-gpus:
   arg: --batch_size
   model:

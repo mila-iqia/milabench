@@ -248,7 +248,8 @@ class MemoryUsageExtractor(ValidationLayer):
         self.scaling = None
         self.benchname = None
         self.batch_size = 0
-        self.max_usage = float("-inf")
+        self.max_usage = float("-inf")  # Usage from the gpu monitor
+        self.peak_usage = float("-inf") # Usage provided by the bench itself (for jax)
         self.early_stopped = False
 
     def on_start(self, entry):
@@ -259,6 +260,7 @@ class MemoryUsageExtractor(ValidationLayer):
         self.benchname = entry.pack.config["name"]
         self.batch_size = None
         self.max_usage = float("-inf")
+        self.peak_usage = float("-inf")
 
         config = self.memory.setdefault(self.benchname, dict())
         template = config.get("arg", None)
@@ -300,6 +302,11 @@ class MemoryUsageExtractor(ValidationLayer):
         if entry.data is None:
             return
 
+        memorypeak = entry.data.get("memory_peak")
+        if memorypeak is not None:
+            self.peak_usage = max(memorypeak, self.peak_usage)
+            return
+
         gpudata = entry.data.get("gpudata")
         if gpudata is not None:
             current_usage = []
@@ -312,6 +319,11 @@ class MemoryUsageExtractor(ValidationLayer):
     def on_stop(self, entry):
         self.early_stopped = True
 
+    def max_memory_usage(self):
+        if self.peak_usage != float("-inf"):
+            return self.peak_usage
+        return self.max_usage
+
     def on_end(self, entry):
         if self.filepath is None:
             return
@@ -319,7 +331,7 @@ class MemoryUsageExtractor(ValidationLayer):
         if (
             self.benchname is None
             or self.batch_size is None
-            or self.max_usage == float("-inf")
+            or self.max_memory_usage() == float("-inf")
         ):
             return
 
@@ -328,12 +340,13 @@ class MemoryUsageExtractor(ValidationLayer):
         if rc == 0 or self.early_stopped:
             config = self.memory.setdefault(self.benchname, dict())
             model = config.setdefault("model", dict())
-            model[self.batch_size] = f"{self.max_usage} MiB"
+            model[self.batch_size] = f"{self.max_memory_usage()} MiB"
             config["model"] = dict(sorted(model.items(), key=lambda x: x[0]))
 
         self.benchname = None
         self.batch_size = None
         self.max_usage = float("-inf")
+        self.peak_usage = float("-inf")
 
     def report(self, *args):
         if self.filepath is not None:

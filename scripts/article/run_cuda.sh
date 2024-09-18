@@ -94,23 +94,14 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
 
     ARGS="--select resnet50-noio,brax,lightning,dinov2-giant-single,dinov2-giant-gpus,llm-lora-ddp-gpus,llm-lora-ddp-nodes,llm-lora-mp-gpus,llm-full-mp-gpus,llm-full-mp-nodes,dqn,ppo,dimenet,llava-single,rlhf-single,rlhf-gpus,vjepa-single,vjepa-gpus"
 
-    # MEMORY_CAPACITY=("4Go" "8Go" "16Go" "32Go" "64Go" "80Go")
-    # MILABENCH_SIZER_MULTIPLE=16
-    # MILABENCH_SIZER_CAPACITY="$CAPACITY"
-
-    MEMORY_CAPACITY=("2" "4" "16" "32" "64" "128")
-
-    # "dqn" "ppo" "torchatari"
-    # BENCHES=("dqn" "ppo" "torchatari" "cleanrljax")
-    BENCHES=("dqn")
-    #
+    MEMORY_CAPACITY=("4Go" "8Go" "16Go" "32Go" "64Go" "80Go")
+    
     #   Run the benchmakrs 
-    for BENCH in "${BENCHES[@]}"; do
-        for CAPACITY in "${MEMORY_CAPACITY[@]}"; do
-            export MILABENCH_SIZER_AUTO=1
-            export MILABENCH_SIZER_BATCH_SIZE=$CAPACITY
-            milabench run --run-name "$BENCH.bs$CAPACITY.{time}" --system $MILABENCH_WORDIR/system.yaml --select $BENCH --exclude lightning-gpus
-        done
+    for CAPACITY in "${MEMORY_CAPACITY[@]}"; do
+        export MILABENCH_SIZER_AUTO=1
+        export MILABENCH_SIZER_MULTIPLE=8
+        export MILABENCH_SIZER_BATCH_SIZE=$CAPACITY
+        milabench run --run-name "c$CAPACITY.{time}" --system $MILABENCH_WORDIR/system.yaml $ARGS || true
     done
 
     #
