@@ -42,7 +42,14 @@ def list_missing_batch_resizer():
         else:
             add_bench(k, tags)
 
-    print(",".join(missing_benches))
+
+
+    b = [f"\"{b}\"" for b in missing_benches]
+
+    
+
+
+    print(" ".join(b))
 
 
 if __name__ == "__main__":

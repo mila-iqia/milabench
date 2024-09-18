@@ -209,6 +209,11 @@ resnet50:
   
 resnet50-noio:
   inherits: _torchvision
+  voir:
+    options:
+      stop: 1000
+      interval: "1s"
+
   tags:
     - vision
     - classification
@@ -372,12 +377,15 @@ focalnet:
     --model: focalnet_base_lrf
 
 brax:
+  # Brax requires very specific sizes to work
+  # so the resizer is not capable of handling resizing this bench
   inherits: _defaults
   tags:
     - rl
     - jax
     - multigpu
     - gym
+    - nobatch
   definition: ../benchmarks/brax
   group: brax
   install_group: torch

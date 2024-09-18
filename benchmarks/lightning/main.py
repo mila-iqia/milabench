@@ -40,7 +40,7 @@ def prepare_voir():
 
     observer = BenchObserver(
         accelerator.Event, 
-        earlystop=65,
+        earlystop=100,
         batch_size_fn=lambda x: len(x[0]),
         raise_stop_program=False,
         stdout=True,
@@ -73,8 +73,6 @@ def main():
 
     model = TorchvisionLightning(model)
 
-    
-   
     accelerator.set_enable_tf32(True)
 
     observer, monitor = prepare_voir()
@@ -91,10 +89,10 @@ def main():
         enable_checkpointing=False,
         enable_progress_bar=False,
         reload_dataloaders_every_n_epochs=1,
-        max_steps=100
+        max_steps=120
     )
 
-    with monitor():
+    with monitor(poll_interval=0.1):
         trainer.fit(model=model, train_dataloaders=loader)
     print("finished: ", rank)
 

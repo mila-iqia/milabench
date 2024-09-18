@@ -17,7 +17,7 @@ from voir.instruments.monitor import monitor
 
 
 @instrument_definition
-def monitor_monogpu(ov, poll_interval=10, arch=None):
+def monitor_monogpu(ov, poll_interval=1, arch=None):
     return monitor(
         ov,
         poll_interval=poll_interval,
@@ -28,7 +28,7 @@ def monitor_monogpu(ov, poll_interval=10, arch=None):
 
 
 @instrument_definition
-def monitor_node(ov, poll_interval=10, arch=None):
+def monitor_node(ov, poll_interval=1, arch=None):
     return monitor(
         ov,
         poll_interval=poll_interval,

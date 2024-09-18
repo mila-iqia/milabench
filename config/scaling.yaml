@@ -55,9 +55,10 @@ bert-tf32-fp16:
     112: 81140.75 MiB
   optimized: 128
 bf16: {}
-brax: 
-  args: --batch-size
-
+brax:
+  arg: --batch-size
+  model:
+    1024: 4912.25 MiB
 convnext_large-fp16:
   arg: --batch-size
   model:
@@ -191,14 +192,26 @@ dimenet:
 dinov2-giant-gpus:
   arg: train.batch_size_per_gpu={batch_size}
   model:
+    1: 32240.25 MiB
+    2: 32252.25 MiB
+    4: 32404.25 MiB
+    16: 38350.25 MiB
     32: 69614 MiB
   optimized: 32
-dinov2-giant-single:
-  arg: train.batch_size_per_gpu={batch_size}
 dinov2-giant-nodes:
   arg: train.batch_size_per_gpu={batch_size}
-
+dinov2-giant-single:
+  arg: train.batch_size_per_gpu={batch_size}
+  model:
+    1: 20682.25 MiB
+    2: 20682.25 MiB
+    4: 20682.25 MiB
+    16: 52748.25 MiB
+    32: 74544.25 MiB
 dlrm: {}
+dqn:
+  arg: --buffer_batch_size
+  optimized: 128
 focalnet:
   arg: --batch-size
   model:
@@ -222,6 +235,14 @@ fp16: {}
 fp32: {}
 lightning:
   arg: --batch-size
+  model:
+    1: 1054.25 MiB
+    2: 1054.25 MiB
+    4: 1856.25 MiB
+    16: 4728.25 MiB
+    32: 6352.25 MiB
+    64: 1856.25 MiB
+    128: 14818.25 MiB
 lightning-gpus:
   arg: --batch-size
   model:
@@ -233,18 +254,47 @@ lightning-gpus:
     128: 15858 MiB
   optimized: 16
 llama: {}
+llava-gpus:
+  arg: --batch_size
+  optimized: 1
+llava-single:
+  arg: --batch_size
+  optimized: 1
 llm-full-mp-gpus:
   arg: batch_size={batch_size}
+  model:
+    1: 48964.25 MiB
+    2: 49214.25 MiB
+    4: 51310.25 MiB
+    16: 81536.25 MiB
 llm-full-mp-nodes:
   arg: batch_size={batch_size}
+  model:
+    1: 37340.25 MiB
+    2: 38112.25 MiB
+    4: 39110.25 MiB
+    16: 80638.25 MiB
 llm-lora-ddp-gpus:
   arg: batch_size={batch_size}
   model:
     1: 12418.75 MiB
+    2: 19026.25 MiB
+    4: 25464.25 MiB
+    16: 55834.25 MiB
+    32: 80268.25 MiB
 llm-lora-ddp-nodes:
   arg: batch_size={batch_size}
+  model:
+    2: 17202.25 MiB
+    4: 23956.25 MiB
+    16: 59730.25 MiB
+    32: 68932.25 MiB
 llm-lora-mp-gpus:
   arg: batch_size={batch_size}
+  model:
+    2: 38166.25 MiB
+    4: 43464.25 MiB
+    16: 77116.25 MiB
 llm-lora-single:
   arg: batch_size={batch_size}
   model:
@@ -268,6 +318,9 @@ opt-6_7b-multinode:
   model:
     1: 55380 MiB
   optimized: 1
+ppo:
+  arg: --num_minibatches
+  optimized: 32
 recursiongfn:
   arg: --batch_size
   model:
@@ -382,6 +435,18 @@ resnet50:
   optimized: 64
 resnet50-noio:
   arg: --batch-size
+  model:
+    1: 1594.25 MiB
+    2: 1652.25 MiB
+    4: 1854.25 MiB
+    16: 3052.25 MiB
+    32: 4690.25 MiB
+rlhf-gpus:
+  arg: --per_device_train_batch_size
+  optimized: 64
+rlhf-single:
+  arg: --per_device_train_batch_size
+  optimized: 64
 rwkv:
   arg: --micro_bsz
   model:
@@ -432,6 +497,12 @@ torchatari:
     1: 1124.75 MiB
     2: 1138.75 MiB
     4: 1166.75 MiB
+vjepa-gpus:
+  arg: --batch_size
+  optimized: 24
+vjepa-single:
+  arg: --batch_size
+  optimized: 24
 whisper:
   arg: --batch-size
   model:
@@ -447,36 +518,4 @@ whisper:
     104: 62409.9375 MiB
     128: 71634.375 MiB
     144: 80412.75 MiB
-  optimized: 128
-
-llava-single:
-  arg: --batch_size
-  optimized: 1
-
-llava-gpus:
-  arg: --batch_size
-  optimized: 1
-
-rlhf-single:
-  arg: --per_device_train_batch_size
-  optimized: 64
-
-rlhf-gpus:
-  arg: --per_device_train_batch_size
-  optimized: 64
-
-vjepa-single:
-  arg: --batch_size
-  optimized: 24
-
-vjepa-gpus:
-  arg: --batch_size
-  optimized: 24
-
-ppo:
-  arg: --num_minibatches
-  optimized: 32
-
-dqn:
-  arg: --buffer_batch_size
   optimized: 128
