@@ -38,3 +38,27 @@ system:
       size: Standard_NV72ads_A10_v5
       location: eastus2
       disk_size: 512
+    slurm__a100_x1:
+      address: localhost
+      bashrc_path: "{bashrc_path}"
+      remote_workdir: "scratch/cov-{job_uuid}-workdir"
+      use_srun: null
+      options:
+        ntasks-per-node: 1
+        gpus-per-task: a100l:1
+        cpus-per-task: 6
+        time: "3:0:0"
+        mem: 32000
+        partition: unkillable
+    slurm__a100_x4:
+      address: localhost
+      bashrc_path: "{bashrc_path}"
+      remote_workdir: "scratch/cov-{job_uuid}-workdir"
+      use_srun: null
+      options:
+        ntasks-per-node: 1
+        gpus-per-task: a100l:4
+        cpus-per-task: 24
+        time: "3:0:0"
+        mem: 128000
+        partition: short-unkillable

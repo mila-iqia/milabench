@@ -102,7 +102,7 @@ Create a cloud system configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Add a ``cloud_profiles`` section to the ``system`` configuration which lists the
-supported cloud profiles.
+supported cloud and slurm profiles.
 
 .. notes::
 
@@ -150,14 +150,95 @@ Run milabench on the cloud
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 1. | Initialize the cloud instances
-   | ``milabench cloud --system {{SYSTEM_CONFIG.YAML}} --setup --run-on {{PROFILE}} >{{SYSTEM_CLOUD_CONFIG.YAML}}``
+   | ``milabench cloud --setup --system {{SYSTEM_CONFIG.YAML}} --run-on {{PROFILE}} >{{SYSTEM_CLOUD_CONFIG.YAML}}``
 
 2. | Prepare, install and run milabench
    | ``milabench [prepare|install|run] --system {{SYSTEM_CLOUD_CONFIG.YAML}}``
 
 3. | Destroy the cloud instances
-   | ``milabench teardown --system {{SYSTEM_CLOUD_CONFIG.YAML}} --run-on {{PROFILE}}``
+   | ``milabench cloud --teardown --system {{SYSTEM_CLOUD_CONFIG.YAML}} --run-on {{PROFILE}}``
    | or
-   | ``milabench teardown --system {{SYSTEM_CLOUD_CONFIG.YAML}} --run-on {{PLATFORM}} --all``
+   | ``milabench cloud --teardown --system {{SYSTEM_CLOUD_CONFIG.YAML}} --run-on {{PLATFORM}} --all``
    | to destroy not just a single cloud instance but all instances on a
    specified platform that were instanced from the current local machine
+
+
+Use milabench on slurm
+~~~~~~~~~~~~~~~~~~~~~~
+
+
+Create a slurm system configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Add a ``cloud_profiles`` section to the ``system`` configuration which lists the
+supported cloud and slurm profiles.
+
+.. notes::
+
+  Nodes that should be created on the cloud should have the ``1.1.1.1`` ip
+  address placeholder. Other ip addresses will be used as-is and no cloud
+  instance will be created for that node
+
+.. notes::
+
+  A cloud profile entry needs to start with a covalent plugin (e.g. `slurm`). To
+  define multiple profiles on the same cloud platform, use the form
+  ``{PLATFORM}__{PROFILE_NAME}`` (e.g. ``slurm__profile``). All cloud profile
+  attributes will be used as is as argument for the target covalent plugin
+
+.. code-block:: yaml
+
+  system:
+    nodes:
+      - name: manager
+        # Use 1.1.1.1 as an ip placeholder
+        ip: 1.1.1.1
+        main: true
+        user: <username>
+      - name: node1
+        ip: 1.1.1.1
+        main: false
+        user: <username>
+  
+    # Cloud instances profiles
+    cloud_profiles:
+      # The cloud platform to use in the form of {PLATFORM} or
+      # {PLATFORM}__{PROFILE_NAME}
+      slurm:
+        username: usename
+        address: localhost
+        ssh_key_file: ssh_key_file
+        # bashrc_path will be replaced by the content of
+        # milabench/scripts/covalent/covalent_bashrc.sh
+        bashrc_path: "{bashrc_path}"
+        # job_uuid will be replaced by the generated job's uuid
+        remote_workdir: "cov-{job_uuid}-workdir"
+        use_srun: null
+        options:
+          ntasks-per-node: 1
+          cpus-per-task: 1
+          time: "0:30:0"
+          mem: 1000
+
+
+Run milabench on slurm
+^^^^^^^^^^^^^^^^^^^^^^
+
+1. | Initialize the slurm instances
+   | ``milabench cloud --setup --system {{SYSTEM_CONFIG.YAML}} --run-on {{PROFILE}} >{{SYSTEM_SLURM_CONFIG.YAML}}``
+
+2. | Prepare, install and run milabench
+   | ``milabench [prepare|install|run] --system {{SYSTEM_SLURM_CONFIG.YAML}}``
+
+3. | Destroy the slurm instances
+   | ``milabench cloud --teardown --system {{SYSTEM_SLURM_CONFIG.YAML}} --run-on {{PROFILE}}``
+
+.. notes::
+
+  Because the milabench's path is expected to be the same on local machine and
+  the remote machine, it's currently necessary to run the commands from the
+  slurm cluster. As the ``milabench cloud --[setup|teardown]`` commands requires
+  a covalent server to run and to avoid overloading the login nodes resources,
+  it's preferable to request a cpu compute node which will host to the covalent
+  server. An allocation with minimal resources like ``--nodes 1 --cpus-per-task
+  1 --mem 2000`` should be enough.

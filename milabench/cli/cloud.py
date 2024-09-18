@@ -60,29 +60,33 @@ def manage_cloud(pack, run_on, action="setup"):
         "private_ip":(lambda v: ("internal_ip",v)),
         "username":(lambda v: ("user",v)),
         "ssh_key_file":(lambda v: ("key",v)),
-        # "env":(lambda v: ("env",[".", v, ";", "conda", "activate", "milabench", "&&"])),
+        "env":(lambda v: ("env",[".", v, "milabench", "&&"])),
+        "slurm_job_id":(lambda v: ("slurm_job_id",v)),
     }
-    plan_params = deepcopy(pack.config["system"]["cloud_profiles"][run_on])
+    plan_params = pack.config["system"]["cloud_profiles"][run_on]
     run_on, *profile = run_on.split("__")
     profile = profile[0] if profile else ""
     default_state_prefix = profile or run_on
     default_state_id = "_".join((pack.config["hash"][:6], blabla()))
 
-    local_base = pack.dirs.base.absolute()
-    local_data_dir = _get_common_dir(ROOT_FOLDER.parent, local_base.parent)
-    if local_data_dir is None:
-        local_data_dir = local_base.parent
-    remote_data_dir = XPath("/data") / local_data_dir.name
+    plan_params["state_prefix"] = plan_params.get("state_prefix", default_state_prefix)
+    plan_params["state_id"] = plan_params.get("state_id", default_state_id)
+    plan_params["keep_alive"] = None
+
+    # local_base = pack.dirs.base.absolute()
+    # local_data_dir = _get_common_dir(ROOT_FOLDER.parent, local_base.parent)
+    # if local_data_dir is None:
+    #     local_data_dir = local_base.parent
+    # remote_data_dir = XPath("/data") / local_data_dir.name
+
+    plan_params_copy = deepcopy(plan_params)
 
     nodes = iter(enumerate(pack.config["system"]["nodes"]))
     for i, n in nodes:
-        if n["ip"] != "1.1.1.1":
+        if n["ip"] != "1.1.1.1" and action == _SETUP:
             continue
 
-        plan_params["state_prefix"] = plan_params.get("state_prefix", default_state_prefix)
-        plan_params["state_id"] = plan_params.get("state_id", default_state_id)
-        plan_params["cluster_size"] = max(len(pack.config["system"]["nodes"]), i + 1)
-        plan_params["keep_alive"] = None
+        plan_params_copy["cluster_size"] = max(len(pack.config["system"]["nodes"]), i + 1)
 
         import milabench.scripts.covalent as cv
 
@@ -101,17 +105,17 @@ def manage_cloud(pack, run_on, action="setup"):
             "-m", cv.__name__,
             run_on,
             f"--{action}",
-            *_flatten_cli_args(**plan_params)
+            *_flatten_cli_args(**plan_params_copy)
         ]
-        if action == _SETUP:
-            cmd += [
-                "--",
-                "bash", "-c",
-                _or_sudo(f"mkdir -p '{local_data_dir.parent}'") +
-                " && " + _or_sudo(f"chmod a+rwX '{local_data_dir.parent}'") +
-                f" && mkdir -p '{remote_data_dir}'"
-                f" && ln -sfT '{remote_data_dir}' '{local_data_dir}'"
-            ]
+        # if action == _SETUP:
+        #     cmd += [
+        #         "--",
+        #         "bash", "-c",
+        #         _or_sudo(f"mkdir -p '{local_data_dir.parent}'") +
+        #         " && " + _or_sudo(f"chmod a+rwX '{local_data_dir.parent}'") +
+        #         f" && mkdir -p '{remote_data_dir}'"
+        #         f" && ln -sfT '{remote_data_dir}' '{local_data_dir}'"
+        #     ]
         p = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
@@ -154,6 +158,9 @@ def manage_cloud(pack, run_on, action="setup"):
                 stdout,
                 stderr
             )
+
+        if action == _TEARDOWN:
+            break
 
     return pack.config["system"]
 
