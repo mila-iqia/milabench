@@ -733,17 +733,22 @@ _geo_gnn:
   plan:
     method: per_gpu
 
+pna:
+  inherits: _geo_gnn
+  argv:
+    --model: 'PNA'
+    --num-samples: 100000
+    --batch-size: 4096
+    --num-workers: "auto({n_worker}, 0)"
+
 dimenet:
   inherits: _geo_gnn
-  tags:
-    - monogpu
   argv:
     --model: 'DimeNet'
     --num-samples: 10000
     --use3d: True
     --batch-size: 16
     --num-workers: "auto({n_worker}, 0)"
-
 
 recursiongfn:
   inherits: _defaults
