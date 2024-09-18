@@ -28,3 +28,14 @@ system:
       instance_type: t2.micro
       volume_size: 8
       region: us-east-2
+    slurm:
+      # covalent-slurm-plugin args
+      address: localhost
+      bashrc_path: "{bashrc_path}"
+      remote_workdir: "scratch/cov-{job_uuid}-workdir"
+      use_srun: null
+      options:
+        ntasks-per-node: 1
+        cpus-per-task: 1
+        time: "0:30:0"
+        mem: 1000

@@ -1,3 +1,4 @@
+import getpass
 import json
 import pathlib
 import subprocess
@@ -16,9 +17,9 @@ def get_venv(venv:pathlib.Path) -> dict:
     return json.loads(env)
 
 
-def run_in_module_venv(module_main:str, check_if_module:str, argv:list=None):
+def get_module_venv(module_main:str, check_if_module:str):
     module = pathlib.Path(module_main).resolve().parent
-    cache_dir = pathlib.Path(f"/tmp/milabench/{module.name}_venv")
+    cache_dir = pathlib.Path(f"/tmp/{getpass.getuser()}/milabench/{module.name}_venv")
     python3 = str(cache_dir / "bin/python3")
     try:
         subprocess.run([python3, "-c", check_if_module], check=True,
@@ -38,7 +39,9 @@ def run_in_module_venv(module_main:str, check_if_module:str, argv:list=None):
             str(module / "requirements.txt")
         ], stdout=sys.stderr, check=True)
         subprocess.run([python3, "-c", check_if_module], check=True, stdout=sys.stderr)
-    return subprocess.call(
-        [python3, module_main, *argv],
-        env=get_venv(cache_dir)
-    )
+    return python3, get_venv(cache_dir)
+
+
+def run_in_module_venv(module_main:str, check_if_module:str, argv:list=None):
+    python3, env = get_module_venv(module_main, check_if_module)
+    return subprocess.call([python3, module_main, *argv], env=env)

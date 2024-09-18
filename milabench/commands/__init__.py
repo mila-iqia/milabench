@@ -450,6 +450,11 @@ class SSHCommand(WrapperCommand):
                 return n
         return {}
 
+    def _load_env(self, node):
+        if node.get("env", None):
+            return node["env"]
+        return []
+
     def is_local(self):
         localnode = self.pack.config["system"]["self"]
 
@@ -484,7 +489,7 @@ class SSHCommand(WrapperCommand):
         argv.append(f"-p{self.port}")
         argv.append(host)
 
-        return argv # + ["env", "-i"]
+        return argv + self._load_env(node)
 
 
 class SCPCommand(SSHCommand, CmdCommand):
@@ -504,6 +509,10 @@ class SCPCommand(SSHCommand, CmdCommand):
         super().__init__(pack, host, "-r", *scp_argv, user=user, key=key, **kwargs)
         self.src = src
         self.dest = dest if dest is not None else self.src
+
+    def _load_env(self, node):
+        del node
+        return []
 
     def _argv(self, **kwargs) -> List:
         argv = super()._argv(**kwargs)
