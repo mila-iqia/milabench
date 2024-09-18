@@ -88,9 +88,9 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     # milabench prepare --system $MILABENCH_WORDIR/system.yaml $ARGS
 
     # pip install torch
-    # milabench pin --variant cuda --from-scratch $ARGS 
-    # milabench install --system $MILABENCH_WORDIR/system.yaml --force $ARGS
-    # milabench prepare --system $MILABENCH_WORDIR/system.yaml $ARGS
+    milabench pin --variant cuda --from-scratch $ARGS 
+    milabench install --system $MILABENCH_WORDIR/system.yaml --force $ARGS
+    milabench prepare --system $MILABENCH_WORDIR/system.yaml $ARGS
 
     ARGS="--select resnet50-noio,brax,lightning,dinov2-giant-single,dinov2-giant-gpus,llm-lora-ddp-gpus,llm-lora-ddp-nodes,llm-lora-mp-gpus,llm-full-mp-gpus,llm-full-mp-nodes,dqn,ppo,dimenet,llava-single,rlhf-single,rlhf-gpus,vjepa-single,vjepa-gpus"
 
