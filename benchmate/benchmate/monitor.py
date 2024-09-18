@@ -49,7 +49,8 @@ def _smuggle_monitor(poll_interval=10, worker_init=None, **monitors):
             try:
                 print(json.dumps(data), file=data_file)
             except ValueError:
-                print("Is bench ending?, ignoring ValueError")
+                pass
+                # print("Is bench ending?, ignoring ValueError")
     
     def get():
         t = time.time()

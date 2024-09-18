@@ -90,17 +90,21 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     # pip install torch
     # milabench pin --variant cuda --from-scratch $ARGS 
     # milabench install --system $MILABENCH_WORDIR/system.yaml --force $ARGS
+    # milabench prepare --system $MILABENCH_WORDIR/system.yaml $ARGS
+
     ARGS="--select resnet50-noio,brax,lightning,dinov2-giant-single,dinov2-giant-gpus,llm-lora-ddp-gpus,llm-lora-ddp-nodes,llm-lora-mp-gpus,llm-full-mp-gpus,llm-full-mp-nodes,dqn,ppo,dimenet,llava-single,rlhf-single,rlhf-gpus,vjepa-single,vjepa-gpus"
 
     # MEMORY_CAPACITY=("4Go" "8Go" "16Go" "32Go" "64Go" "80Go")
     # MILABENCH_SIZER_MULTIPLE=16
     # MILABENCH_SIZER_CAPACITY="$CAPACITY"
 
-    MEMORY_CAPACITY=("1" "2" "4" "16" "32" "64" "128")
+    MEMORY_CAPACITY=("2" "4" "16" "32" "64" "128")
 
-    BENCHES=("dqn" "ppo" "dimenet" "llava-single" "rlhf-single" "rlhf-gpus" "vjepa-single" "vjepa-gpus")
+    # "dqn" "ppo" "torchatari"
+    # BENCHES=("dqn" "ppo" "torchatari" "cleanrljax")
+    BENCHES=("dqn")
     #
-    #   Run the benchmakrs
+    #   Run the benchmakrs 
     for BENCH in "${BENCHES[@]}"; do
         for CAPACITY in "${MEMORY_CAPACITY[@]}"; do
             export MILABENCH_SIZER_AUTO=1

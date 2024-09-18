@@ -181,14 +181,23 @@ diffusion-nodes:
     1: 21686.75 MiB
     2: 21930.75 MiB
     4: 23510.75 MiB
+    16: 40054.25 MiB
+    32: 61512.25 MiB
 diffusion-single:
   arg: --batch_size
   model:
     1: 21654.75 MiB
     2: 21818.75 MiB
     4: 23478.75 MiB
+    16: 33850.25 MiB
+    32: 55354.25 MiB
 dimenet:
   arg: --batch-size
+  model:
+    2: 452.6875 MiB
+    4: 1604.25 MiB
+    64: 12274.25 MiB
+    128: 13002.25 MiB
 dinov2-giant-gpus:
   arg: train.batch_size_per_gpu={batch_size}
   model:
@@ -210,7 +219,7 @@ dinov2-giant-single:
     32: 74544.25 MiB
 dlrm: {}
 dqn:
-  arg: --buffer_batch_size
+  arg: --buffer_size
   optimized: 128
 focalnet:
   arg: --batch-size
@@ -259,6 +268,9 @@ llava-gpus:
   optimized: 1
 llava-single:
   arg: --batch_size
+  model:
+    2: 15168.25 MiB
+    4: 72362.25 MiB
   optimized: 1
 llm-full-mp-gpus:
   arg: batch_size={batch_size}
@@ -320,12 +332,24 @@ opt-6_7b-multinode:
   optimized: 1
 ppo:
   arg: --num_minibatches
+  model:
+    1: 62426.25 MiB
+    2: 62426.25 MiB
+    4: 62426.25 MiB
+    16: 62426.25 MiB
+    32: 62426.25 MiB
+    64: 62426.25 MiB
+    128: 62426.25 MiB
   optimized: 32
 recursiongfn:
   arg: --batch_size
   model:
     2: 1134.75 MiB
     4: 1140.75 MiB
+    16: 1830.25 MiB
+    32: 1342.25 MiB
+    64: 4410.25 MiB
+    128: 9160.25 MiB
 reformer:
   arg: --batch-size
   model:
@@ -443,9 +467,25 @@ resnet50-noio:
     32: 4690.25 MiB
 rlhf-gpus:
   arg: --per_device_train_batch_size
+  model:
+    1: 13448.25 MiB
+    2: 13594.25 MiB
+    4: 13686.25 MiB
+    16: 14606.25 MiB
+    32: 17918.25 MiB
+    64: 24374.25 MiB
+    128: 25830.25 MiB
   optimized: 64
 rlhf-single:
   arg: --per_device_train_batch_size
+  model:
+    1: 8590.25 MiB
+    2: 8650.25 MiB
+    4: 8822.25 MiB
+    16: 9694.25 MiB
+    32: 12952.25 MiB
+    64: 19422.25 MiB
+    128: 32442.25 MiB
   optimized: 64
 rwkv:
   arg: --micro_bsz
@@ -499,9 +539,20 @@ torchatari:
     4: 1166.75 MiB
 vjepa-gpus:
   arg: --batch_size
+  model:
+    2: 28896.25 MiB
+    4: 30784.25 MiB
+    16: 52722.25 MiB
+    32: 76372.25 MiB
   optimized: 24
 vjepa-single:
   arg: --batch_size
+  model:
+    1: 6644.25 MiB
+    2: 18984.25 MiB
+    4: 11860.25 MiB
+    16: 45516.25 MiB
+    32: 70586.25 MiB
   optimized: 24
 whisper:
   arg: --batch-size
