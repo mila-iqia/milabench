@@ -39,6 +39,7 @@ def arguments():
         "--tags",
         type=str,
         help="Tags defined in run names",
+        nargs="+",
         default=default_tags(),
     )
     return parser.parse_args()  # Arguments()

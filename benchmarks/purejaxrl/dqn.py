@@ -50,7 +50,9 @@ def make_train(config):
     config["NUM_UPDATES"] = config["TOTAL_TIMESTEPS"] // config["NUM_ENVS"]
 
     from benchmate.timings import StepTimer
+    from benchmate.jaxmem import memory_peak_fetcher
     step_timer = StepTimer(give_push())
+    fetch_memory_peak = memory_peak_fetcher()
 
     basic_env, env_params = gymnax.make(config["ENV_NAME"])
     env = FlattenObservationWrapper(basic_env)
@@ -238,6 +240,7 @@ def make_train(config):
                     
                     step_timer.step(delta.item())
                     step_timer.log(returns=returns, loss=loss)
+                    step_timer.log(memory_peak=fetch_memory_peak(), units="MiB")
                     step_timer.end()
 
             jax.debug.callback(callback, metrics)
@@ -258,12 +261,49 @@ def make_train(config):
     return train
 
 
+# When using nvidia-smi to monitor memory
+#   arg: --buffer_size
+#   model:
+#     256: 61900.25 MiB
+#     1000: 61900.25 MiB
+#     10000: 61900.25 MiB
+
+# dqn:
+#   arg: --num_envs
+#   model:
+#     2: 61900.25 MiB
+#     4: 61900.25 MiB
+#     16: 61900.25 MiB
+#     32: 61900.25 MiB
+#     64: 61900.25 MiB
+#     128: 61900.25 MiB
+
+#   arg: --total_timesteps
+#   model:
+#     32768: 61900.25 MiB
+#     65536: 61900.25 MiB
+
+# When using Jax to monitor memory
+
+# dqn.D0 [stdout] Device: cuda:0
+# dqn.D0 [stdout]   num_allocs: 0.0006799697875976562 MiB
+# dqn.D0 [stdout]   bytes_in_use: 0.915771484375 MiB
+# dqn.D0 [stdout]   peak_bytes_in_use: 80.41552734375 MiB
+# dqn.D0 [stdout]   largest_alloc_size: 16.07958984375 MiB
+# dqn.D0 [stdout]   bytes_limit: 60832.359375 MiB
+# dqn.D0 [stdout]   bytes_reserved: 0.0 MiB
+# dqn.D0 [stdout]   peak_bytes_reserved: 0.0 MiB
+# dqn.D0 [stdout]   largest_free_block_bytes: 0.0 MiB
+# dqn.D0 [stdout]   pool_bytes: 60832.359375 MiB
+# dqn.D0 [stdout]   peak_pool_bytes: 60832.359375 MiB
+
+
 @dataclass
 class Arguments:
-    num_envs: int = 10
-    buffer_size: int = 10000
+    num_envs: int = 10                  # No impact on memory
+    buffer_size: int = 10000            # No impact on memory
     buffer_batch_size: int = 128
-    total_timesteps: int = 100_000
+    total_timesteps: int = 100_000      # No impact on memory
     epsilon_start: float =  1.0
     epsilon_finish: float = 0.05
     epsilon_anneal_time: int = 25e4

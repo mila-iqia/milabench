@@ -85,6 +85,9 @@ def run():
 
     args = parser.parse_args()
 
+    # args.num_envs = (args.batch_size * args.num_minibatches)  
+
+
     train(
         environment=envs.get_environment(env_name=args.env),
         num_timesteps=args.num_timesteps,
