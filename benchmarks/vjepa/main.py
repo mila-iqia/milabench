@@ -598,7 +598,6 @@ def _main(args, resume_preempt=False):
                 save_checkpoint(epoch + 1, save_every_path)
 
 
-
 def main():
     from argparse import ArgumentParser
     import torchcompat.core as acc
@@ -649,8 +648,10 @@ def main():
     finally:
         if os.getenv("RANK", -1) != -1:
             acc.destroy_process_group()
-    
-    sys.exit(0)
+
+    return 0
 
 if __name__ == "__main__":
+    # Do not exit here, let voir finish it's work or the SystemExit exception
+    # will be reported
     main()
