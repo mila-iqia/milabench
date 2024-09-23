@@ -68,6 +68,7 @@ def generate_model(
 
         params = json.loads(params_path.read_text())
         model = llama.model.Transformer(ModelArgs(**params))
+        model.to(torch.bfloat16)
         torch.save(model.state_dict(), params_path.with_name(f"consolidated.{rank:02}.pth"))
 
     except Exception as e:
@@ -117,11 +118,12 @@ def generate_weights(args, config):
     else:
         # Note that at the time of writing torchtune doesn't support multi-*.pth
         # files loading
+        ctx = multiprocessing.get_context("spawn")
         params_path = next(args.output_dir.glob("**/params.json"))
         model_parallel_size = len(config["checkpointer"]["checkpoint_files"])
-        pipes = [multiprocessing.Pipe() for _ in range(model_parallel_size)]
+        pipes = [ctx.Pipe() for _ in range(model_parallel_size)]
         processes = [
-            multiprocessing.Process(
+            ctx.Process(
                 target=generate_model,
                 args=[conn, params_path, rank, model_parallel_size]
             )
@@ -162,9 +164,9 @@ def main():
 
     #
     huggingface_format = config.get("safetensors", False)
-    pretrained = not config.get("no_pretrained", False)
+    untrained = config.get("untrained", False)
 
-    if not pretrained:
+    if untrained:
         # if we will generate the weights do not download anyweights
         ignore_patterns = ["*.safetensors", "*consolidated.*.pth"]
 
@@ -203,7 +205,7 @@ def main():
     args = parser.parse_args(download_args)
     parser.run(args)
 
-    if not pretrained:
+    if untrained:
         generate_weights(args, config)
     
     if "qlora" in config.get("model", {}).get("_component_", ""):
