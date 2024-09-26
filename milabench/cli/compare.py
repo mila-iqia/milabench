@@ -15,6 +15,7 @@ class Arguments:
     last    : int = None
     metric  : str = "train_rate"
     stat    : str = "median"
+    filter  : str = None
 # fmt: on
 
 
@@ -23,13 +24,15 @@ def arguments():
     # [positional: ?]
     folder: Option = None
 
+    filter: Option & str = None
+
     last: Option & int = None
 
     metric: Option & str = "train_rate"
 
     stat: Option & str = "median"
 
-    return Arguments(folder, last, metric, stat)
+    return Arguments(folder, last, metric, stat, filter)
 
 
 @tooled
@@ -66,7 +69,7 @@ def cli_compare(args=None):
         if base is not None:
             args.folder = os.path.join(base, "runs")
 
-    runs = fetch_runs(args.folder)
+    runs = fetch_runs(args.folder, args.filter)
 
     for run in runs:
         all_data = _read_reports(run.path)
