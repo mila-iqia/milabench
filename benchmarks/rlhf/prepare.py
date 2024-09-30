@@ -11,7 +11,7 @@ from transformers import (
 from datasets import load_dataset
 from trl import ModelConfig
 from trl.trainer.ppov2_trainer import PPOv2Config
-from trl.trainer.utils import SIMPLE_CHAT_TEMPLATE
+from trl.trainer.utils import SIMPLE_QUERY_CHAT_TEMPLATE
 
 
 if __name__ == "__main__":
@@ -30,7 +30,7 @@ if __name__ == "__main__":
     tokenizer.add_special_tokens({"pad_token": "[PAD]"})
 
     if tokenizer.chat_template is None:
-        tokenizer.chat_template = SIMPLE_CHAT_TEMPLATE
+        tokenizer.chat_template = SIMPLE_QUERY_CHAT_TEMPLATE
     
     value_model = AutoModelForSequenceClassification.from_pretrained(
         config.reward_model_path, 
