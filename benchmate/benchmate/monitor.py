@@ -126,6 +126,7 @@ def monogpu_monitor(*args, **kwargs):
         yield log
 
 
+
 @contextmanager
 def bench_monitor(*args, **kwargs):
     if int(os.getenv("RANK", -1)) == -1:
