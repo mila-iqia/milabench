@@ -49,7 +49,7 @@ install_prepare() {
     # Install milabench's benchmarks in their venv
     #
     # pip install torch
-    # milabench pin --variant cuda --from-scratch $ARGS 
+    milabench pin --variant cuda --from-scratch $ARGS 
     milabench install --system $MILABENCH_WORDIR/system.yaml $ARGS
 
     which pip
@@ -84,8 +84,19 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
 
     . $MILABENCH_WORDIR/env/bin/activate
 
-    milabench install --system $MILABENCH_WORDIR/system.yaml
-    # milabench prepare --system $MILABENCH_WORDIR/system.yaml $ARGS
+    # pip install torch
+    # milabench pin --variant cuda --from-scratch 
+    # rm -rf $MILABENCH_WORDIR/results/venv/
+    # rm -rf $MILABENCH_WORDIR/results/extra
+    # milabench install --system $MILABENCH_WORDIR/system.yaml
+    milabench prepare --system $MILABENCH_WORDIR/system.yaml $ARGS
+
+    (
+        . $BENCHMARK_VENV/bin/activate
+        which pip
+        # pip uninstall torchao -y
+        # pip install torchao --no-input
+    )
 
     # pip install torch
     # milabench pin --variant cuda --from-scratch 
