@@ -1,0 +1,53 @@
+system:
+  # Nodes list
+  nodes:
+      # Alias used to reference the node
+    - name: manager
+      # Use 1.1.1.1 as an ip placeholder
+      ip: 1.1.1.1
+      port: 5000
+      # Use this node as the master node or not
+      main: true
+      # User to use in remote milabench operations
+      user: user
+
+    - name: node1
+      ip: 1.1.1.1
+      main: false
+      user: username
+
+  # Cloud instances profiles
+  cloud_profiles:
+    azure__a100:
+      username: ubuntu
+      size: Standard_NC24ads_A100_v4
+      location: eastus2
+      disk_size: 512
+    azure__a100_x2:
+      username: ubuntu
+      size: Standard_NC48ads_A100_v4
+      location: eastus2
+      disk_size: 512
+    azure__a100_x4:
+      username: ubuntu
+      size: Standard_NC96ads_A100_v4
+      location: eastus2
+      disk_size: 512
+    azure__a10_x2:
+      username: ubuntu
+      size: Standard_NV72ads_A10_v5
+      location: eastus2
+      disk_size: 512
+    slurm__a100_x2:
+      address: localhost
+      bashrc_path: "{bashrc_path}"
+      remote_workdir: "scratch/cov-{job_uuid}-workdir"
+      use_srun: null
+      options:
+        ntasks-per-node: 1
+        gpus-per-task: a100l:2
+        cpus-per-task: 12
+        time: "3:0:0"
+        mem: 64000
+        partition: short-unkillable
+        nodelist: cn-g[001-029]
