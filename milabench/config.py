@@ -11,6 +11,8 @@ from .merge import merge
 config_global = contextvars.ContextVar("config", default=None)
 execution_count = (0, 0)
 
+_MONITOR_TAGS = {"monogpu", "multigpu", "multinode"}
+
 
 def set_run_count(total_run, total_bench):
     global execution_count
@@ -79,6 +81,13 @@ def finalize_config(name, bench_config):
         if not pack.is_absolute():
             pack = (XPath(bench_config["config_base"]) / pack).resolve()
             bench_config["definition"] = str(pack)
+
+    if not name.startswith("_") and name != "*":
+        _tags = set(bench_config["tags"])
+        _monitor_tags = _tags & _MONITOR_TAGS
+        assert len(_monitor_tags) == 1, (
+            f"Bench {name} should have exactly one monitor tag. Found {_monitor_tags}"
+        )
 
     bench_config["tag"] = [bench_config["name"]]
 

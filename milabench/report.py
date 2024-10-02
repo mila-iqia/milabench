@@ -342,6 +342,35 @@ def short_meta(out, meta):
     out.print(Table(stats))
 
 
+def to_latex(df):
+    from dataclasses import dataclass
+    from .system import option
+
+    default_columns = [
+        "ngpu",
+        "perf",
+        "sem%",
+        "std%"
+    ]
+
+    @dataclass
+    class LatexTable:
+        output: str = option("latex.output", str, None)
+        columns: str = option("latex.columns", str, ",".join(default_columns))
+    
+    options = LatexTable()
+
+    columns = options.columns.split(",")
+
+    df = df[columns]
+
+    if options.output is not None:
+        with open(options.output, "w") as fp:
+            txt = df.to_latex(formatters=_formatters, escape=False)
+            txt = txt.replace("%", "\%").replace("_", "\_")
+            fp.write(txt)
+
+
 @error_guard({})
 def make_report(
     summary: dict[str, Summary],
@@ -376,7 +405,10 @@ def make_report(
     out.section("Breakdown")
 
     # Reorder columns
-    out.print(normalize_dataframe(df))
+    normalized = normalize_dataframe(df)
+    out.print(normalized)
+
+    to_latex(normalized)
 
     out.section("Scores")
 

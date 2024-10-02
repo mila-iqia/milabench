@@ -27,7 +27,6 @@ _torchvision:
     --loader: pytorch
     --data: "{milabench_data}/FakeImageNet"
 
-
 _torchvision_ddp:
   inherits: _defaults
   definition: ../benchmarks/torchvision_ddp
@@ -119,7 +118,6 @@ _timm:
     --dataset: "FakeImageNet"
     --workers: "auto({n_worker}, 8)"
 
-
 _accelerate_opt:
   inherits: _defaults
   tags:
@@ -155,7 +153,6 @@ _accelerate_opt:
   # Accelerate Args
   use_deepspeed: true
   num_machines: 1
-
 
 fp16:
   inherits: _flops
@@ -398,7 +395,6 @@ brax:
     --num-minibatches: 32
     --num-envs: 8192
 
-
 _diffusion:
   inherits: _defaults
   definition: ../benchmarks/diffusion
@@ -551,13 +547,13 @@ _llm:
   definition: ../benchmarks/llm
   install_group: torch
 
-
 llm-lora-single:
   inherits: _llm
   tags:
     - monogpu
   plan:
     method: per_gpu
+
   argv:
     "{milabench_code}/recipes/lora_finetune_single_device.py": true
     --config: "{milabench_code}/configs/llama3_8B_lora_single_device.yaml"
@@ -618,7 +614,6 @@ llm-lora-ddp-nodes:
   num_machines: 2
   requires_capabilities:
     - "len(nodes) >= ${num_machines}"
-
 
 llm-lora-mp-gpus:
   inherits: _llm
@@ -793,7 +788,6 @@ _llava:
     method: per_gpu
   tags:
     - llm
-    - monogpu
   argv:
     --batch_size: 1
     --num_workers: "auto({n_worker}, 4)"
@@ -801,6 +795,8 @@ _llava:
 
 llava-single:
   inherits: _llava
+  tags:
+    - monogpu
   plan:
     method: per_gpu
   argv:
@@ -828,7 +824,6 @@ _rlhf:
   plan:
     method: per_gpu
   tags:
-    - monogpu
     - rl
     - rlhf
     - llm
@@ -842,6 +837,8 @@ _rlhf:
 
 rlhf-single:
   inherits: _rlhf
+  tags:
+    - monogpu
   plan:
     method: per_gpu
 
@@ -884,6 +881,8 @@ cleanrljax:
   inherits: _defaults
   install_group: torch
   definition: ../benchmarks/cleanrl_jax
+  tags:
+    - monogpu
   plan:
     method: per_gpu
   

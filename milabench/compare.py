@@ -21,14 +21,22 @@ def retrieve_datetime_from_name(date):
             pass
 
 
-def fetch_runs(folder):
+def fetch_runs(folder, filter):
+    import fnmatch
+
     runs = []
+    ignored = 0
     for run in os.listdir(folder):
+        if filter is not None and (not fnmatch.fnmatch(run, filter)):
+            ignored += 1
+            continue
+
         pth = os.path.join(folder, run)
         if not os.path.isdir(pth):
             continue
         if "." in run:
-            name, date = run.split(".", maxsplit=1)
+            name, fractional_seconds = run.rsplit(".", maxsplit=1)
+            name, date = name.rsplit(".", maxsplit=1)
             date = retrieve_datetime_from_name(date)
         else:
             name = run
@@ -39,6 +47,8 @@ def fetch_runs(folder):
         out = _Output(pth, name, date)
         runs.append(out)
 
+    if ignored > 0:
+        print(f"Ignoring run {ignored} runs because of filter {filter}")
     runs.sort(key=lambda out: out.date)
     return runs
 
