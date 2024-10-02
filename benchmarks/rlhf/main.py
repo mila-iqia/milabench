@@ -13,7 +13,7 @@ from transformers import (
 
 from trl import ModelConfig
 from trl.trainer.ppov2_trainer import PPOv2Config, PPOv2Trainer
-from trl.trainer.utils import SIMPLE_QUERY_CHAT_TEMPLATE
+from trl.trainer.utils import SIMPLE_CHAT_TEMPLATE
 
 
 class PPOv2TrainerIntrumented(PPOv2Trainer):
@@ -62,7 +62,7 @@ def main():
     )
     tokenizer.add_special_tokens({"pad_token": "[PAD]"})
     if tokenizer.chat_template is None:
-        tokenizer.chat_template = SIMPLE_QUERY_CHAT_TEMPLATE
+        tokenizer.chat_template = SIMPLE_CHAT_TEMPLATE
     value_model = AutoModelForSequenceClassification.from_pretrained(
         config.reward_model_path, trust_remote_code=model_config.trust_remote_code, num_labels=1
     )
