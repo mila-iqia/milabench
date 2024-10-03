@@ -38,7 +38,7 @@ install_prepare() {
         export MILABENCH_SOURCE="$MILABENCH_WORDIR/milabench"
     fi
 
-    git clone https://github.com/huggingface/optimum-habana.git
+    git clone https://github.com/huggingface/optimum-habana.git -b v1.13.2
 
     # wget -nv https://vault.habana.ai/artifactory/gaudi-installer/1.15.1/habanalabs-installer.sh
     # wget -nv https://vault.habana.ai/artifactory/gaudi-installer/1.16.1/habanalabs-installer.sh
@@ -65,11 +65,11 @@ install_prepare() {
     (
         . $BENCHMARK_VENV/bin/activate
         which pip
-        pip install -e $MILABENCH_WORDIR/optimum-habana
+        pip install --no-deps -e $MILABENCH_WORDIR/optimum-habana 
 
         # Override dependencies for HPU
         # benchmarks need pytorch
-        pip uninstall torch torchvision torchaudio
+        pip uninstall torch torchvision torchaudio -y
         export HABANALABS_VIRTUAL_DIR=$BENCHMARK_VENV
         ./habanalabs-installer.sh install -t dependencies --venv -y
         ./habanalabs-installer.sh install -t pytorch --venv -y
@@ -97,6 +97,9 @@ fi
 
 if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     cd $MILABENCH_WORDIR
+
+    # python -c "import torch; print(torch.__version__)"
+    # milabench prepare $ARGS
 
     #
     #   Run the benchmakrs
