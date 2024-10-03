@@ -1,4 +1,5 @@
 import contextvars
+import hashlib
 from copy import deepcopy
 
 import yaml
@@ -74,6 +75,16 @@ def resolve_inheritance(bench_config, all_configs):
     return bench_config
 
 
+def compute_config_hash(config):
+    config = deepcopy(config)
+    for entry in config:
+        config[entry]["dirs"] = {}
+        config[entry]["config_base"] = ""
+        config[entry]["config_file"] = ""
+        config[entry]["run_name"] = ""
+    return hashlib.md5(str(config).encode("utf8")).hexdigest()
+
+
 def finalize_config(name, bench_config):
     bench_config["name"] = name
     if "definition" in bench_config:
@@ -147,6 +158,9 @@ def build_config(*config_files):
     all_configs = {}
     for layer in _config_layers(config_files):
         all_configs = merge(all_configs, layer)
+
+    all_configs.setdefault("*", {})
+    all_configs["*"]["hash"] = compute_config_hash(all_configs)
 
     all_configs = build_matrix_bench(all_configs)
 
