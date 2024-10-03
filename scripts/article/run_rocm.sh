@@ -37,7 +37,8 @@ install_prepare() {
     #
     # Install milabench's benchmarks in their venv
     #
-    milabench pin --variant rocm --from-scratch $ARGS 
+    # pip install torch --index-url https://download.pytorch.org/whl/rocm6.1
+    # milabench pin --variant rocm --from-scratch $ARGS 
     milabench install $ARGS 
 
     #
@@ -77,7 +78,7 @@ install_prepare() {
         # takes forever to compile
         # https://github.com/ROCm/xformers
         pip install -v -U --no-build-isolation --no-deps git+https://github.com/ROCm/xformers.git@develop#egg=xformers
-        pip install -v -U --no-build-isolation --no-deps git+https://github.com/ROCm/flash-attention.git
+        pip install -v -U --no-build-isolation --no-deps git+https://github.com/ROCm/flash-attention.git 
     )
 
     #
