@@ -48,13 +48,6 @@ install_prepare() {
     . $MILABENCH_WORDIR/env/bin/activate
     pip install -e $MILABENCH_SOURCE
 
-
-    #
-    # Install milabench's benchmarks in their venv
-    #
-    milabench pin --variant hpu --from-scratch $ARGS 
-    milabench install $ARGS
-
     which pip
 
     # Override dependencies for HPU
@@ -62,6 +55,12 @@ install_prepare() {
     export HABANALABS_VIRTUAL_DIR=$MILABENCH_VENV
     ./habanalabs-installer.sh install -t dependencies --venv -y
     ./habanalabs-installer.sh install -t pytorch --venv -y
+
+    #
+    # Install milabench's benchmarks in their venv
+    #
+    milabench pin --variant hpu --from-scratch $ARGS 
+    milabench install $ARGS
 
     (
         . $BENCHMARK_VENV/bin/activate
