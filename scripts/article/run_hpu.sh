@@ -9,13 +9,21 @@ set -ex
 export MILABENCH_GPU_ARCH=hpu
 export MILABENCH_WORDIR="$(pwd)/$MILABENCH_GPU_ARCH"
 export MILABENCH_BASE="$MILABENCH_WORDIR/results"
-export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/standard.yaml"
 export MILABENCH_VENV="$MILABENCH_WORDIR/env"
 export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
+
+
+if [ -z "${MILABENCH_SOURCE}" ]; then
+    export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/standard.yaml"
+else
+    export MILABENCH_CONFIG="$MILABENCH_SOURCE/config/standard.yaml"
+fi
 
 if [ -z "${MILABENCH_PREPARE}" ]; then
     export MILABENCH_PREPARE=0
 fi
+
+ARGS="$@"
 
 install_prepare() {
     mkdir -p $MILABENCH_WORDIR
@@ -23,21 +31,29 @@ install_prepare() {
 
     virtualenv $MILABENCH_WORDIR/env
 
-    git clone https://github.com/mila-iqia/milabench.git
+    if [ -z "${MILABENCH_SOURCE}" ]; then
+        if [ ! -d "$MILABENCH_WORDIR/milabench" ]; then
+            git clone https://github.com/mila-iqia/milabench.git
+        fi
+        export MILABENCH_SOURCE="$MILABENCH_WORDIR/milabench"
+    fi
+
     git clone https://github.com/huggingface/optimum-habana.git
 
     # wget -nv https://vault.habana.ai/artifactory/gaudi-installer/1.15.1/habanalabs-installer.sh
-    wget -nv https://vault.habana.ai/artifactory/gaudi-installer/1.16.1/habanalabs-installer.sh
+    # wget -nv https://vault.habana.ai/artifactory/gaudi-installer/1.16.1/habanalabs-installer.sh
+    wget -nv https://vault.habana.ai/artifactory/gaudi-installer/1.17.1/habanalabs-installer.sh
     chmod +x habanalabs-installer.sh
 
     . $MILABENCH_WORDIR/env/bin/activate
-    pip install -e $MILABENCH_WORDIR/milabench
+    pip install -e $MILABENCH_SOURCE
 
 
     #
     # Install milabench's benchmarks in their venv
     #
-    milabench install
+    milabench pin --variant hpu --from-scratch $ARGS 
+    milabench install $ARGS
 
     which pip
 
@@ -52,25 +68,24 @@ install_prepare() {
         which pip
         pip install -e $MILABENCH_WORDIR/optimum-habana
 
-        (
-            cd $MILABENCH_WORDIR/milabench/benchmarks/dlrm/dlrm;
-            git remote add me https://github.com/Delaunay/dlrm.git
-            git fetch me
-            git checkout me/main
-        )
-
         # Override dependencies for HPU
         # benchmarks need pytorch
         pip uninstall torch torchvision torchaudio
         export HABANALABS_VIRTUAL_DIR=$BENCHMARK_VENV
         ./habanalabs-installer.sh install -t dependencies --venv -y
         ./habanalabs-installer.sh install -t pytorch --venv -y
+
+        if [ -z "${MILABENCH_HF_TOKEN}" ]; then
+            echo "Missing token"
+        else
+            huggingface-cli login --token $MILABENCH_HF_TOKEN
+        fi
     )
 
     #
     #   Generate/download datasets, download models etc...
     #
-    milabench prepare
+    milabench prepare $ARGS
 }
 
 if [ ! -d "$MILABENCH_WORDIR" ]; then
@@ -86,7 +101,7 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
 
     #
     #   Run the benchmakrs
-    milabench run "$@"
+    milabench run $ARGS
 
     #
     #   Display report
