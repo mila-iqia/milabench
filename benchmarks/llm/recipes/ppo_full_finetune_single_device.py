@@ -17,8 +17,7 @@ from omegaconf import DictConfig, ListConfig
 from torch import nn
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader, DistributedSampler
-from torchtune import config, modules, training, utils
-from torchtune.data import padded_collate
+from torchtune import config, modules, utils
 from torchtune.datasets import ConcatDataset
 from torchtune.modules import rlhf
 from torchtune.modules.rlhf import PPOStats, Trajectory
@@ -107,7 +106,7 @@ class PPOFullFinetuneRecipeSingleDevice(FTRecipeInterface):
     def __init__(self, cfg: DictConfig) -> None:
 
         self._device = utils.get_device(device=cfg.device)
-        self._dtype = training.get_dtype(cfg.dtype, device=self._device)
+        self._dtype = utils.get_dtype(cfg.dtype, device=self._device)
 
         # Disable for fp16, as we haven't validated "full" fp16 with this recipe, nor
         # enabled necessary features such as gradient scaling.
@@ -123,7 +122,7 @@ class PPOFullFinetuneRecipeSingleDevice(FTRecipeInterface):
 
         # These are public properties which are updated by the checkpoint loader
         # when ``resume_from_checkpoint`` is `True` or validated in tests
-        self.seed = training.set_seed(seed=cfg.seed)
+        self.seed = utils.set_seed(seed=cfg.seed)
         # manually setting up a generator for the recipe
         self._rng = torch.Generator(self._device).manual_seed(self.seed)
         self._total_steps = 0
@@ -178,15 +177,15 @@ class PPOFullFinetuneRecipeSingleDevice(FTRecipeInterface):
             self._value_model,
             self._reward_model,
             self._ref_policy_model,
-        ) = self._setup_models(
+        ) = self._setup_model(
             cfg_model=cfg.policy_model,
             cfg_reward_value_model=cfg.reward_and_value_model,
             enable_activation_checkpointing=cfg.enable_activation_checkpointing,
             compile_model=self._model_compile,
-            policy_state_dict=policy_model_checkpoint_dict[training.MODEL_KEY],
-            ref_policy_state_dict=ref_policy_state_dict[training.MODEL_KEY],
-            value_model_state_dict=value_model_checkpoint_dict[training.MODEL_KEY],
-            reward_model_state_dict=reward_model_state_dict[training.MODEL_KEY],
+            policy_state_dict=policy_model_checkpoint_dict[utils.MODEL_KEY],
+            ref_policy_state_dict=ref_policy_state_dict[utils.MODEL_KEY],
+            value_model_state_dict=value_model_checkpoint_dict[utils.MODEL_KEY],
+            reward_model_state_dict=reward_model_state_dict[utils.MODEL_KEY],
         )
 
         # setup tokenizer
@@ -199,7 +198,7 @@ class PPOFullFinetuneRecipeSingleDevice(FTRecipeInterface):
             cfg_optimizer=cfg.optimizer,
             optimizer_in_bwd=cfg.optimizer_in_bwd,
             opt_state_dict=(
-                policy_model_checkpoint_dict[training.OPT_KEY]
+                policy_model_checkpoint_dict[utils.OPT_KEY]
                 if self._resume_from_checkpoint
                 else None
             ),
@@ -349,10 +348,7 @@ class PPOFullFinetuneRecipeSingleDevice(FTRecipeInterface):
         value_cfg: DictConfig,
         reward_cfg: DictConfig,
     ) -> Tuple[
-        training.Checkpointer,
-        training.Checkpointer,
-        training.Checkpointer,
-        training.Checkpointer,
+        utils.Checkpointer, utils.Checkpointer, utils.Checkpointer, utils.Checkpointer
     ]:
         """
         Sets up checkpointers for policy, reference policy, value, and reward models.
@@ -398,7 +394,7 @@ class PPOFullFinetuneRecipeSingleDevice(FTRecipeInterface):
             reward_checkpointer,
         )
 
-    def _setup_models(
+    def _setup_model(
         self,
         cfg_model: DictConfig,
         cfg_reward_value_model: DictConfig,
@@ -413,49 +409,53 @@ class PPOFullFinetuneRecipeSingleDevice(FTRecipeInterface):
         Sets up the policy model, reference policy model, reward model, and value model.
         """
 
-        with training.set_default_dtype(self._dtype), self._device:
+        with utils.set_default_dtype(self._dtype), self._device:
             policy_model = config.instantiate(cfg_model)
             ref_policy_model = config.instantiate(cfg_model)
             reward_model = config.instantiate(cfg_reward_value_model)
             value_model = config.instantiate(cfg_reward_value_model)
 
         if enable_activation_checkpointing:
-            training.set_activation_checkpointing(
-                policy_model, auto_wrap_policy={modules.TransformerSelfAttentionLayer}
+            utils.set_activation_checkpointing(
+                policy_model, auto_wrap_policy={modules.TransformerDecoderLayer}
             )
-            training.set_activation_checkpointing(
-                value_model, auto_wrap_policy={modules.TransformerSelfAttentionLayer}
+            utils.set_activation_checkpointing(
+                value_model, auto_wrap_policy={modules.TransformerDecoderLayer}
             )
 
         policy_model.load_state_dict(policy_state_dict)
         ref_policy_model.load_state_dict(ref_policy_state_dict)
 
-        # since we should be loading a classifier checkpoint into
-        # a classifier model, this function should just ensure
-        # output.weight appears in the state_dict and the model's parameters,
-        # and removes output.bias from the state dict if found
-        training.update_state_dict_for_classifier(
-            reward_model_state_dict, reward_model.named_parameters()
+        reward_missing, reward_unexpected = reward_model.load_state_dict(
+            reward_model_state_dict, strict=False
         )
-        reward_model.load_state_dict(reward_model_state_dict)
+        value_missing, value_unexpected = value_model.load_state_dict(
+            value_model_state_dict, strict=False
+        )
 
-        # same as above
-        training.update_state_dict_for_classifier(
-            value_model_state_dict, value_model.named_parameters()
-        )
-        value_model.load_state_dict(value_model_state_dict)
+        # some extra validation for HF classifier checkpoints with a `score.bias` present
+        assert (
+            reward_missing == value_missing == []
+        ), f"Missing keys in reward ({reward_missing}) and value model ({value_missing}) state dicts."
+
+        if reward_unexpected or value_unexpected:
+            # the only unexpected keys should be when pre-trained HF models were saved with
+            # bias=True in final classification layers. This happens when training a reward model with TRL.
+            assert (
+                reward_unexpected == value_unexpected == ["output.bias"]
+            ), f"Unexpected keys in reward ({reward_unexpected}) and value model ({value_unexpected}) state dicts."
 
         # Validate models were loaded in with the expected dtype.
-        training.validate_expected_param_dtype(
+        utils.validate_expected_param_dtype(
             value_model.named_parameters(), dtype=self._dtype
         )
-        training.validate_expected_param_dtype(
+        utils.validate_expected_param_dtype(
             reward_model.named_parameters(), dtype=self._dtype
         )
-        training.validate_expected_param_dtype(
+        utils.validate_expected_param_dtype(
             value_model.named_parameters(), dtype=self._dtype
         )
-        training.validate_expected_param_dtype(
+        utils.validate_expected_param_dtype(
             ref_policy_model.named_parameters(), dtype=self._dtype
         )
 
@@ -497,8 +497,8 @@ class PPOFullFinetuneRecipeSingleDevice(FTRecipeInterface):
             value_model.compile(backend=backend)
 
         if self._device.type == "cuda":
-            memory_stats = training.get_memory_stats(device=self._device)
-            training.log_memory_stats(memory_stats)
+            memory_stats = utils.get_memory_stats(device=self._device)
+            utils.log_memory_stats(memory_stats)
 
         return policy_model, value_model, reward_model, ref_policy_model
 
@@ -518,17 +518,17 @@ class PPOFullFinetuneRecipeSingleDevice(FTRecipeInterface):
                 )
             }
             # Register optimizer step hooks on the models to run optimizer in backward.
-            training.register_optim_in_bwd_hooks(
+            utils.register_optim_in_bwd_hooks(
                 model=self._policy_model, optim_dict=optim_dict
             )
-            training.register_optim_in_bwd_hooks(
+            utils.register_optim_in_bwd_hooks(
                 model=self._value_model, optim_dict=optim_dict
             )
             # Create a wrapper for checkpoint save/load of optimizer states when running in backward.
-            self._optim_ckpt_wrapper = training.create_optim_in_bwd_wrapper(
+            self._optim_ckpt_wrapper = utils.create_optim_in_bwd_wrapper(
                 model=self._policy_model, optim_dict=optim_dict
             )
-            self._optim_ckpt_wrapper = training.create_optim_in_bwd_wrapper(
+            self._optim_ckpt_wrapper = utils.create_optim_in_bwd_wrapper(
                 model=self._value_model, optim_dict=optim_dict
             )
             # Load optimizer states. If optimizer states are being restored in an optimizer in backward
@@ -582,9 +582,7 @@ class PPOFullFinetuneRecipeSingleDevice(FTRecipeInterface):
             sampler=sampler,
             batch_size=batch_size,
             collate_fn=partial(
-                padded_collate,
-                pad_direction="left",
-                keys_to_pad=["tokens", "labels"],
+                rlhf.left_padded_collate,
                 padding_idx=self._tokenizer.pad_id,
             ),
             drop_last=True,
@@ -599,27 +597,25 @@ class PPOFullFinetuneRecipeSingleDevice(FTRecipeInterface):
         Save state dict to file. The recipe save_checkpoint method is responsible for
         correctly creating the checkpoint dict and passing to the checkpointer.
         """
-        policy_ckpt_dict = {training.MODEL_KEY: self._policy_model.state_dict()}
-        value_ckpt_dict = {training.MODEL_KEY: self._value_model.state_dict()}
+        policy_ckpt_dict = {utils.MODEL_KEY: self._policy_model.state_dict()}
+        value_ckpt_dict = {utils.MODEL_KEY: self._value_model.state_dict()}
 
         # if training is in-progress, checkpoint the optimizer state and rng state as well
         if is_intermediate_checkpoint:
             policy_ckpt_dict.update(
                 {
-                    training.SEED_KEY: self.seed,
-                    training.EPOCHS_KEY: self._epochs_run,
-                    training.TOTAL_EPOCHS_KEY: self._total_epochs,
-                    training.MAX_STEPS_KEY: self._total_steps,
-                    training.STEPS_KEY: self._steps_run,
-                    training.RNG_KEY: self._rng.get_state(),
+                    utils.SEED_KEY: self.seed,
+                    utils.EPOCHS_KEY: self._epochs_run,
+                    utils.TOTAL_EPOCHS_KEY: self._total_epochs,
+                    utils.MAX_STEPS_KEY: self._total_steps,
+                    utils.STEPS_KEY: self._steps_run,
+                    utils.RNG_KEY: self._rng.get_state(),
                 }
             )
             if not self._optimizer_in_bwd:
-                policy_ckpt_dict[training.OPT_KEY] = self._optimizer.state_dict()
+                policy_ckpt_dict[utils.OPT_KEY] = self._optimizer.state_dict()
             else:
-                policy_ckpt_dict[
-                    training.OPT_KEY
-                ] = self._optim_ckpt_wrapper.state_dict()
+                policy_ckpt_dict[utils.OPT_KEY] = self._optim_ckpt_wrapper.state_dict()
 
         self._policy_checkpointer.save_checkpoint(
             policy_ckpt_dict,
@@ -641,20 +637,20 @@ class PPOFullFinetuneRecipeSingleDevice(FTRecipeInterface):
         # warn the user and overwrite.
         try:
             if (
-                self.seed != ckpt_dict[training.SEED_KEY]
-                or self._total_steps != ckpt_dict[training.MAX_STEPS_KEY]
-                or self._total_epochs != ckpt_dict[training.TOTAL_EPOCHS_KEY]
+                self.seed != ckpt_dict[utils.SEED_KEY]
+                or self._total_steps != ckpt_dict[utils.MAX_STEPS_KEY]
+                or self._total_epochs != ckpt_dict[utils.TOTAL_EPOCHS_KEY]
             ):
                 warn(
                     message="""Configured value for seed, total_steps, or total_epochs
                     does not match the value stored in checkpoint."""
                 )
-            self.seed = training.set_seed(seed=ckpt_dict[training.SEED_KEY])
-            self._rng.set_state(ckpt_dict[training.RNG_KEY])
-            self._steps_run = ckpt_dict[training.STEPS_KEY]
-            self._total_steps = ckpt_dict[training.MAX_STEPS_KEY]
-            self._total_epochs = ckpt_dict[training.TOTAL_EPOCHS_KEY]
-            self._epochs_run = ckpt_dict[training.EPOCHS_KEY]
+            self.seed = utils.set_seed(seed=ckpt_dict[utils.SEED_KEY])
+            self._rng.set_state(ckpt_dict[utils.RNG_KEY])
+            self._steps_run = ckpt_dict[utils.STEPS_KEY]
+            self._total_steps = ckpt_dict[utils.MAX_STEPS_KEY]
+            self._total_epochs = ckpt_dict[utils.TOTAL_EPOCHS_KEY]
+            self._epochs_run = ckpt_dict[utils.EPOCHS_KEY]
 
         except KeyError as e:
             raise KeyError from e(
@@ -744,7 +740,7 @@ class PPOFullFinetuneRecipeSingleDevice(FTRecipeInterface):
 
         # step 5.1 the scores from the reward model are the logits for the last non-padding token in
         # each (query, truncated-response) pair
-        seq_lens = training.get_unmasked_sequence_lengths(response_padding_masks)
+        seq_lens = utils.get_unmasked_sequence_lengths(response_padding_masks)
         scores = scores[torch.arange(batch_size), seq_lens + context_length].squeeze(-1)
 
         # step 5.2 if configured, apply any penalties for sequences without EOS tokens
@@ -832,7 +828,7 @@ class PPOFullFinetuneRecipeSingleDevice(FTRecipeInterface):
             self._sampler.set_epoch(curr_epoch)
 
             for _, batch in enumerate(self._dataloader):
-                batch = batch["tokens"].to(self._device)
+                batch = batch.to(self._device)
                 _, context_length = batch.shape
 
                 # step 1. generate the trajectory using:
@@ -1036,7 +1032,7 @@ class PPOFullFinetuneRecipeSingleDevice(FTRecipeInterface):
             "response_lengths": trajectory.seq_lens.float().mean(),
         }
         if self._device.type == "cuda" and self._log_peak_memory_stats:
-            log_dict.update(training.get_memory_stats(device=self._device))
+            log_dict.update(utils.get_memory_stats(device=self._device))
 
         self._metric_logger.log_dict(log_dict, step=self.global_step)
 
