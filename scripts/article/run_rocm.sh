@@ -6,10 +6,16 @@ export MILABENCH_GPU_ARCH=rocm
 export MILABENCH_WORDIR="$(pwd)/$MILABENCH_GPU_ARCH"
 
 export MILABENCH_BASE="$MILABENCH_WORDIR/results"
-export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/standard.yaml"
 export MILABENCH_VENV="$MILABENCH_WORDIR/env"
 export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
 
+if [ -z "${MILABENCH_SOURCE}" ]; then
+    export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/standard.yaml"
+else
+    export MILABENCH_CONFIG="$MILABENCH_SOURCE/config/standard.yaml"
+fi
+
+ARGS="$@"
 
 install_prepare() {
     mkdir -p $MILABENCH_WORDIR
@@ -17,15 +23,22 @@ install_prepare() {
 
     virtualenv $MILABENCH_WORDIR/env
 
-    git clone https://github.com/mila-iqia/milabench.git
+    if [ -z "${MILABENCH_SOURCE}" ]; then
+        if [ ! -d "$MILABENCH_WORDIR/milabench" ]; then
+            git clone https://github.com/mila-iqia/milabench.git
+        fi
+        export MILABENCH_SOURCE="$MILABENCH_WORDIR/milabench"
+    fi
 
     . $MILABENCH_WORDIR/env/bin/activate
-    pip install -e $MILABENCH_WORDIR/milabench
+    pip install -e $MILABENCH_SOURCE
 
+    
     #
     # Install milabench's benchmarks in their venv
     #
-    milabench install
+    milabench pin --variant rocm --from-scratch $ARGS 
+    milabench install $ARGS 
 
     #
     # Override/add package to milabench venv here
@@ -36,13 +49,19 @@ install_prepare() {
     (
         . $BENCHMARK_VENV/bin/activate
 
+        if [ -z "${MILABENCH_HF_TOKEN}" ]; then
+            echo "Missing token"
+        else
+            huggingface-cli login --token $MILABENCH_HF_TOKEN
+        fi
+
         #
         # Override/add package to the benchmark venv here
         #
         which pip
-        pip uninstall torch torchvision torchaudio
-        pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.1
-        pip uninstall pynvml
+        # pip uninstall torch torchvision torchaudio -y
+        # pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.1
+        # pip uninstall pynvml
 
         # sudo apt-get install lld
         # https://github.com/ROCm/jax/releases/tag/rocm-jaxlib-v0.4.30
@@ -64,7 +83,7 @@ install_prepare() {
     #
     #   Generate/download datasets, download models etc...
     #
-    milabench prepare
+    milabench prepare $ARGS 
 }
 
 if [ ! -d "$MILABENCH_WORDIR" ]; then
@@ -78,7 +97,7 @@ cd $MILABENCH_WORDIR
 
 #
 #   Run the benchmakrs
-milabench run "$@"
+milabench run $ARGS 
 
 #
 #   Display report
