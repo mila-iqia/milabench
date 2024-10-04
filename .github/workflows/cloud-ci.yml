@@ -45,7 +45,7 @@ jobs:
       ARM_TENANT_ID: "${{ secrets.ARM_TENANT_ID }}"
       ARM_SUBSCRIPTION_ID: "${{ secrets.ARM_SUBSCRIPTION_ID }}"
       AZURE_CORE_OUTPUT: none
-      _MULTI_GPUS: "diffusion-gpus,dinov2-giant-gpus,lightning-gpus,llava-gpus,resnet152-ddp-gpus,llm-full-mp-gpus,llm-lora-ddp-gpus,llm-lora-mp-gpus"
+      _MULTI_GPUS: "multigpu"
       _MULTI_NODES: "multinode"
 
     steps:
@@ -113,7 +113,7 @@ jobs:
           case "$gpus" in
             "1g")
               RUN_ON="azure__a100"
-              EXCLUDE="$EXCLUDE,$_MULTI_GPUS,$_MULTI_NODES"
+              EXCLUDE="$EXCLUDE,$_MULTI_GPUS"
               ;;
             "2g")
               RUN_ON="azure__a100_x2"
@@ -159,6 +159,12 @@ jobs:
           echo "SELECT=$SELECT" >>$GITHUB_ENV
           echo "EXCLUDE=$EXCLUDE" >>$GITHUB_ENV
 
+      - name: DEBUG covalent logs
+        if: always()
+        run: |
+          cat ~/.cache/covalent/covalent_ui.log
+          echo >~/.cache/covalent/covalent_ui.log
+
       - name: install benchmarks
         run: |
           poetry run milabench install --variant ${{ matrix.arch }} $SELECT $EXCLUDE
@@ -184,21 +190,18 @@ jobs:
       - name: DEBUG state file
         if: always()
         run: |
-          cat /tmp/milabench/covalent_venv/lib/python*/site-packages/covalent_azure_plugin/infra/*.tfstate
+          cat /tmp/runner/milabench/covalent_venv/lib/python*/site-packages/covalent_azure_plugin/infra/*.tfstate
 
       - name: teardown cloud
         if: always()
         run: |
-          if [[ -f "${MILABENCH_SYSTEM%.*}" ]]
-          then
-            export MILABENCH_SYSTEM=${MILABENCH_SYSTEM%.*}
-          fi
           poetry run milabench cloud \
             --teardown \
             --run-on $RUN_ON \
             --all
 
-      - name: DEBUG logs
+      - name: DEBUG covalent logs
         if: always()
         run: |
           cat ~/.cache/covalent/covalent_ui.log
+          echo >~/.cache/covalent/covalent_ui.log
