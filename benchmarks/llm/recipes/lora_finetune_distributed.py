@@ -16,6 +16,7 @@ from warnings import warn
 
 import torch
 from omegaconf import DictConfig, ListConfig
+import torchcompat.core as acc
 
 from torch import nn
 from torch.distributed import destroy_process_group, init_process_group
@@ -108,7 +109,7 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
     """
 
     def __init__(self, cfg: DictConfig) -> None:
-        self._device = accelerator.fetch_device(int(os.getenv("HABANA_VISIBLE_MODULES", "0").split(",")[0]))
+        self._device = acc.fetch_device(int(os.getenv("LOCAL_RANK", "0")))
         self._dtype = utils.get_dtype(cfg.dtype, device=self._device)
 
         if self._dtype == torch.float16:
@@ -428,7 +429,7 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
             # Initialize empty modules on all non-zero ranks
             param_init_fn=(
                 lambda module: module.to_empty(
-                    device=torch.device("cuda"), recurse=False
+                    device=self._device, recurse=False
                 )
                 if not self._is_rank_zero
                 else None
@@ -773,7 +774,7 @@ def recipe_main(cfg: DictConfig) -> None:
             "If using tune CLI, please specify --nnodes 1 and --nproc_per_node [num_gpus]"
         )
     os.environ["TORCH_NCCL_AVOID_RECORD_STREAMS"] = "1"
-    init_process_group(backend="gloo" if cfg.device == "cpu" else "nccl")
+    acc.init_process_group()
 
     config.log_config(recipe_name="LoRAFinetuneRecipeDistributed", cfg=cfg)
 

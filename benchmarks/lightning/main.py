@@ -8,7 +8,7 @@ import torch.nn.functional as F
 import lightning as L
 import torchvision.models as torchvision_models
 
-import torchcompat.core as accelerator
+
 from benchmate.dataloader import imagenet_dataloader, dataloader_arguments
 
 
@@ -37,7 +37,7 @@ class TorchvisionLightning(L.LightningModule):
 def prepare_voir():
     from benchmate.observer import BenchObserver
     from benchmate.monitor import bench_monitor
-
+    import torchcompat.core as accelerator
     observer = BenchObserver(
         accelerator.Event, 
         earlystop=100,
@@ -68,6 +68,7 @@ def main():
     world_size = int(os.getenv("WORLD_SIZE", 1))
     local_world_size = int(os.getenv("LOCAL_WORLD_SIZE", 1))
 
+    import torchcompat.core as accelerator
     n = accelerator.device_count()
     nnodes = world_size // local_world_size
 

@@ -475,14 +475,19 @@ def _main(args, resume_preempt=False):
                     scaler.unscale_(optimizer)
                 else:
                     loss.backward()
+                
                 if (epoch > warmup) and (clip_grad is not None):
                     _enc_norm = torch.nn.utils.clip_grad_norm_(encoder.parameters(), clip_grad)
                     _pred_norm = torch.nn.utils.clip_grad_norm_(predictor.parameters(), clip_grad)
+                
+                acc.mark_step()
                 if mixed_precision:
                     scaler.step(optimizer)
                     scaler.update()
                 else:
                     optimizer.step()
+                acc.mark_step()
+                    
                 grad_stats = grad_logger(encoder.named_parameters())
                 grad_stats.global_norm = float(_enc_norm)
                 grad_stats_pred = grad_logger(predictor.named_parameters())
@@ -506,7 +511,8 @@ def _main(args, resume_preempt=False):
                     grad_stats_pred,
                     optim_stats,
                 )
-            (loss, loss_jepa, loss_reg, _new_lr, _new_wd, grad_stats, grad_stats_pred, optim_stats,), gpu_etime_ms = gpu_timer(train_step)
+            loss, loss_jepa, loss_reg, _new_lr, _new_wd, grad_stats, grad_stats_pred, optim_stats = train_step()
+            
             iter_elapsed_time_ms = (time.time() - itr_start_time) * 1000.
             loss_meter.update(loss)
             input_var = float(AllReduce.apply(clips.view(clips.shape[0], -1).var(dim=1).mean(dim=0)))
@@ -515,7 +521,7 @@ def _main(args, resume_preempt=False):
             input_var_min_meter.update(input_var_min)
             jepa_loss_meter.update(loss_jepa)
             reg_loss_meter.update(loss_reg)
-            gpu_time_meter.update(gpu_etime_ms)
+            # gpu_time_meter.update(gpu_etime_ms)
             wall_time_meter.update(iter_elapsed_time_ms)
 
             observer.record_loss(loss)
@@ -530,7 +536,6 @@ def _main(args, resume_preempt=False):
                     loss_reg,
                     grad_stats.global_norm,
                     grad_stats_pred.global_norm,
-                    gpu_etime_ms,
                     iter_elapsed_time_ms)
                 if (itr % log_freq == 0) or np.isnan(loss) or np.isinf(loss):
                     logger.info(
@@ -637,7 +642,11 @@ def main():
     params["nodes"] = nnodes
     params["tasks_per_node"] = gpu_per_nodes
 
+    print("HERE", os.getenv("RANK", -1) )
     if os.getenv("RANK", -1) != -1:
+        print("INIT PROCESS GROUP HERE")
+        print(acc)
+        print(acc.init_process_group)
         acc.init_process_group()
 
     try:

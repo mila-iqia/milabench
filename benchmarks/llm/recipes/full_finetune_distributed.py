@@ -16,6 +16,7 @@ from warnings import warn
 import torch
 from omegaconf import DictConfig, ListConfig
 
+import torchcompat.core as acc
 from torch import nn
 from torch.distributed import init_process_group
 from torch.distributed.fsdp import (
@@ -98,7 +99,8 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
 
     def __init__(self, cfg: DictConfig) -> None:
 
-        self._device = accelerator.fetch_device(int(os.getenv("HABANA_VISIBLE_MODULES", "0").split(",")[0]))
+        import os
+        self._device = acc.fetch_device(int(os.getenv("LOCAL_RANK", "0")))
         self._dtype = utils.get_dtype(cfg.dtype, device=self._device)
 
         if self._dtype == torch.float16:
@@ -618,7 +620,8 @@ def recipe_main(cfg: DictConfig) -> None:
             "If using tune CLI, please specify --nnodes 1 and --nproc_per_node [num_gpus]"
         )
 
-    init_process_group(backend="gloo" if cfg.device == "cpu" else "nccl")
+    acc.init_process_group()
+
     if cfg.get("fsdp_cpu_offload", False):
         # Utilize all available CPU cores for intra-op parallelism. This provides ~2x
         # speed up when benchmarking fused AdamW on CPU
