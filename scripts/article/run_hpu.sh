@@ -59,7 +59,7 @@ install_prepare() {
     #
     # Install milabench's benchmarks in their venv
     #
-    milabench pin --variant hpu --from-scratch $ARGS 
+    # milabench pin --variant hpu --from-scratch $ARGS 
     milabench install $ARGS
 
     (
