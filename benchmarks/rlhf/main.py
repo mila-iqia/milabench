@@ -46,9 +46,13 @@ class PPOv2TrainerIntrumented(PPOv2Trainer):
 
 
 def main():
+    
 
     parser = HfArgumentParser((PPOv2Config, ModelConfig))
     config, model_config = parser.parse_args_into_dataclasses()
+    
+    import torchcompat.core
+    
     # remove output_dir if exists
     shutil.rmtree(config.output_dir, ignore_errors=True)
 

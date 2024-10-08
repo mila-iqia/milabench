@@ -8,7 +8,6 @@ import torch.nn.functional as F
 import lightning as L
 import torchvision.models as torchvision_models
 
-
 from benchmate.dataloader import imagenet_dataloader, dataloader_arguments
 
 
@@ -49,6 +48,12 @@ def prepare_voir():
     return observer, bench_monitor
 
 def main():
+    import torchcompat.core as accelerator
+    
+    rank = int(os.getenv("RANK", 0))
+    world_size = int(os.getenv("WORLD_SIZE", 1))
+    local_world_size = int(os.getenv("LOCAL_WORLD_SIZE", 1))
+    
     parser = argparse.ArgumentParser(description='simple distributed training job')
     parser.add_argument(
         "--epochs",
@@ -64,11 +69,6 @@ def main():
     args = parser.parse_args()
     model = getattr(torchvision_models, args.model)()
 
-    rank = int(os.getenv("RANK", 0))
-    world_size = int(os.getenv("WORLD_SIZE", 1))
-    local_world_size = int(os.getenv("LOCAL_WORLD_SIZE", 1))
-
-    import torchcompat.core as accelerator
     n = accelerator.device_count()
     nnodes = world_size // local_world_size
 
@@ -84,9 +84,9 @@ def main():
         accelerator="auto", 
         devices=n, 
         num_nodes=nnodes, 
-        strategy="ddp",
+        strategy="auto",
         max_epochs=args.epochs,
-        precision="16-mixed",
+        precision="bf16-mixed",
         enable_checkpointing=False,
         enable_progress_bar=False,
         reload_dataloaders_every_n_epochs=1,

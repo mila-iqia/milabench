@@ -95,11 +95,18 @@ else
 fi
 
 
+ (
+    . $BENCHMARK_VENV/bin/activate
+    pip install lightning-habana
+    pip install habana-media-loader
+    # pip install habana_dataloader
+ )
+
 if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     cd $MILABENCH_WORDIR
 
     # python -c "import torch; print(torch.__version__)"
-    milabench prepare $ARGS
+    # milabench prepare $ARGS
 
     #
     #   Run the benchmakrs
