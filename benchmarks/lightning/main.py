@@ -8,6 +8,13 @@ import torch.nn.functional as F
 import lightning as L
 import torchvision.models as torchvision_models
 
+# HPU fix
+os.environ["RANK"] = os.getenv("RANK","-1")
+os.environ["LOCAL_RANK"] = os.getenv("LOCAL_RANK","-1")
+os.environ["WORLD_SIZE"] = os.getenv("WORLD_SIZE", "1")
+os.environ["LOCAL_WORLD_SIZE"] = os.getenv("LOCAL_WORLD_SIZE", "1")
+
+
 from benchmate.dataloader import imagenet_dataloader, dataloader_arguments
 
 
@@ -48,8 +55,6 @@ def prepare_voir():
     return observer, bench_monitor
 
 def main():
-    import torchcompat.core as accelerator
-    
     rank = int(os.getenv("RANK", 0))
     world_size = int(os.getenv("WORLD_SIZE", 1))
     local_world_size = int(os.getenv("LOCAL_WORLD_SIZE", 1))
@@ -69,7 +74,10 @@ def main():
     args = parser.parse_args()
     model = getattr(torchvision_models, args.model)()
 
+    import torchcompat.core as accelerator
+  
     n = accelerator.device_count()
+    # n = local_world_size
     nnodes = world_size // local_world_size
 
     model = TorchvisionLightning(model)
@@ -78,6 +86,7 @@ def main():
 
     observer, monitor = prepare_voir()
     loader = observer.loader(imagenet_dataloader(args, model, rank, world_size))
+
 
     # train model
     trainer = L.Trainer(

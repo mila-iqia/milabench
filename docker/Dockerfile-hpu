@@ -19,6 +19,8 @@ RUN mkdir -p ${MILABENCH_WORDIR}
 RUN pip install virtualenv
 RUN virtualenv --system-site-packages $MILABENCH_VENV
 
+ARG CACHEBUST=1 
+RUN echo "$CACHEBUST"
 RUN git clone https://github.com/mila-iqia/milabench.git -b $MILABENCH_GPU_ARCH
 RUN $MILABENCH_VENV/bin/pip install -e milabench
 
@@ -28,10 +30,13 @@ RUN $MILABENCH_VENV/bin/pip uninstall torch torchvision torchaudio -y
 RUN sed -i 's/pic.numpy(force=True)/pic.numpy()/' /usr/local/lib/python3.10/dist-packages/torchvision/transforms/functional.py
 
 # This does not work
-RUN . $MILABENCH_VENV/bin/activate && milabench prepare --use-current-env --select "${BENCH}"
+# RUN . $MILABENCH_VENV/bin/activate && milabench prepare --use-current-env --select "${BENCH}"
 
 
-# docker build -f Dockerfile-hpu -t dockerfile-hpu . 
-# 
+
 # RUN . $MILABENCH_VENV/bin/activate && milabench run --use-current-env --select $BENCH
 # RUN huggingface-cli login --token $MILABENCH_HF_TOKEN
+
+# docker build --build-arg CACHEBUST=`git rev-parse hpu` -f Dockerfile-hpu -t dockerfile-hpu . 
+# docker run   -it   --runtime=habana   -e HABANA_VISIBLE_DEVICES=all   -e OMPI_MCA_btl_vader_single_copy_mechanism=none   --shm-size 50G   --cap-add=sys_nice   --net=host   dockerfile-hpu:latest   bash
+# . $MILABENCH_VENV/bin/activate && milabench prepare --use-current-env --select lightning && milabench run --use-current-env --select lightning
