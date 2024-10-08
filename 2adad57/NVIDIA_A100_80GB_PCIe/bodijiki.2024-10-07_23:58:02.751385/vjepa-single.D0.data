@@ -1,0 +1,333 @@
+{"event": "config", "data": {"system": {"arch": "cuda", "sshkey": null, "nodes": [{"env": [".", "~/.condaenvrc", "milabench", "&&"], "hostname": "fondladybug", "internal_ip": "10.0.1.4", "ip": "fondladybug.eastus2.cloudapp.azure.com", "key": "/home/runner/.ssh/covalent-azure-task-a100-4ed3f2_dipozeka/id_rsa.covalent.fondladybug.pem", "local": true, "main": true, "name": "manager", "port": 5000, "user": "ubuntu"}], "cloud_profiles": {"azure__a10": {"disk_size": 512, "location": "eastus2", "size": "Standard_NV36ads_A10_v5", "username": "ubuntu"}, "azure__a100": {"disk_size": 512, "keep_alive": null, "location": "eastus2", "size": "Standard_NC24ads_A100_v4", "state_id": "4ed3f2_dipozeka", "state_prefix": "a100", "username": "ubuntu"}, "azure__a100_x2": {"disk_size": 512, "location": "eastus2", "size": "Standard_NC48ads_A100_v4", "username": "ubuntu"}, "azure__a100_x4": {"disk_size": 512, "location": "eastus2", "size": "Standard_NC96ads_A100_v4", "username": "ubuntu"}, "azure__a10_x2": {"disk_size": 512, "location": "eastus2", "size": "Standard_NV72ads_A10_v5", "username": "ubuntu"}, "slurm__a100_x1": {"address": "localhost", "bashrc_path": "{bashrc_path}", "options": {"cpus-per-task": 6, "gpus-per-task": "a100l:1", "mem": 32000, "ntasks-per-node": 1, "partition": "unkillable", "time": "3:0:0"}, "remote_workdir": "scratch/cov-{job_uuid}-workdir", "use_srun": null}, "slurm__a100_x4": {"address": "localhost", "bashrc_path": "{bashrc_path}", "options": {"cpus-per-task": 24, "gpus-per-task": "a100l:4", "mem": 1000000, "ntasks-per-node": 1, "partition": "short-unkillable", "time": "3:0:0"}, "remote_workdir": "scratch/cov-{job_uuid}-workdir", "use_srun": null}}, "self": {"env": [".", "~/.condaenvrc", "milabench", "&&"], "hostname": "fondladybug", "internal_ip": "10.0.1.4", "ip": "fondladybug.eastus2.cloudapp.azure.com", "key": "/home/runner/.ssh/covalent-azure-task-a100-4ed3f2_dipozeka/id_rsa.covalent.fondladybug.pem", "local": true, "main": true, "name": "manager", "port": 5000, "user": "ubuntu"}}, "dirs": {"base": "/home/runner/work/milabench/output", "venv": "/home/runner/work/milabench/output/venv/torch", "data": "/home/runner/work/milabench/output/data", "runs": "/home/runner/work/milabench/output/runs", "extra": "/home/runner/work/milabench/output/extra/vjepa-single", "cache": "/home/runner/work/milabench/output/cache"}, "group": "vjepa-single", "install_group": "torch", "install_variant": "cuda", "run_name": "bodijiki.2024-10-07_23:58:02.751385", "enabled": true, "capabilities": {"nodes": 1}, "max_duration": 600, "voir": {"options": {"stop": 60, "interval": "1s"}}, "validation": {"usage": {"gpu_load_threshold": 0.5, "gpu_mem_threshold": 0.5}}, "num_machines": 1, "config_base": "/home/runner/work/milabench/milabench/config", "config_file": "/home/runner/work/milabench/milabench/config/standard.yaml", "hash": "b54e97ed747ccb6885f6d7601f7b63b2", "definition": "/home/runner/work/milabench/milabench/benchmarks/vjepa", "tags": ["monogpu", "video"], "argv": {"--batch_size": 24, "--num_workers": "auto({n_worker}, 12)", "--dataset": "{milabench_data}/FakeVideo/video_metainfo.csv", "--output": "{milabench_extra}"}, "plan": {"method": "per_gpu"}, "weight": 1.0, "name": "vjepa-single", "tag": ["vjepa-single", "D0"], "device": 0, "devices": [0], "env": {"CUDA_VISIBLE_DEVICES": "0"}}, "pipe": null}
+{"event": "meta", "data": {"cpu": {"count": 24, "brand": "AMD EPYC 7V13 64-Core Processor"}, "os": {"sysname": "Linux", "nodename": "fondladybug", "release": "6.5.0-1025-azure", "version": "#26~22.04.1-Ubuntu SMP Thu Jul 11 22:33:04 UTC 2024", "machine": "x86_64"}, "accelerators": {"arch": "cuda", "gpus": {"0": {"minor_number": "0", "device": 0, "product": "NVIDIA A100 80GB PCIe", "memory": {"used": 764.4375, "total": 81920.0}, "utilization": {"compute": 0.0, "memory": 0}, "temperature": 56.0, "power": 78.801, "selection_variable": "CUDA_VISIBLE_DEVICES"}}}, "date": 1728348211.295479, "milabench": {"tag": "2adad57", "commit": "2adad57c452e71e090481525cd223b70fc25761c", "date": "2024-10-07 16:59:03 +0000"}, "pytorch": {"torch": "2.4.0+cu121", "compiler": "GCC 9.3", "cpp": "C++ Version: 201703", "intel": "Intel(R) oneAPI Math Kernel Library Version 2022.2-Product Build 20220804 for Intel(R) 64 architecture applications", "mkl": "OpenMP 201511 (a.k.a. OpenMP 4.5)", "openmp": "OpenMP 201511 (a.k.a. OpenMP 4.5)", "lapack": "LAPACK is enabled (usually provided by MKL)", "nnpack": "NNPACK is enabled", "cpu": "CPU capability usage: AVX2", "build_settings": {"BLAS_INFO": "mkl", "BUILD_TYPE": "Release", "CUDA_VERSION": "12.1", "CUDNN_VERSION": "9.1.0", "CXX_COMPILER": "/opt/rh/devtoolset-9/root/usr/bin/c++", "CXX_FLAGS": "-D_GLIBCXX_USE_CXX11_ABI=0 -fabi-version=11 -fvisibility-inlines-hidden -DUSE_PTHREADPOOL -DNDEBUG -DUSE_KINETO -DLIBKINETO_NOROCTRACER -DUSE_FBGEMM -DUSE_PYTORCH_QNNPACK -DUSE_XNNPACK -DSYMBOLICATE_MOBILE_DEBUG_HANDLE -O2 -fPIC -Wall -Wextra -Werror=return-type -Werror=non-virtual-dtor -Werror=bool-operation -Wnarrowing -Wno-missing-field-initializers -Wno-type-limits -Wno-array-bounds -Wno-unknown-pragmas -Wno-unused-parameter -Wno-unused-function -Wno-unused-result -Wno-strict-overflow -Wno-strict-aliasing -Wno-stringop-overflow -Wsuggest-override -Wno-psabi -Wno-error=pedantic -Wno-error=old-style-cast -Wno-missing-braces -fdiagnostics-color=always -faligned-new -Wno-unused-but-set-variable -Wno-maybe-uninitialized -fno-math-errno -fno-trapping-math -Werror=format -Wno-stringop-overflow", "LAPACK_INFO": "mkl", "PERF_WITH_AVX": "1", "PERF_WITH_AVX2": "1", "PERF_WITH_AVX512": "1", "TORCH_VERSION": "2.4.0", "USE_CUDA": "ON", "USE_CUDNN": "ON", "USE_CUSPARSELT": "1", "USE_EXCEPTION_PTR": "1", "USE_GFLAGS": "OFF", "USE_GLOG": "OFF", "USE_GLOO": "ON", "USE_MKL": "ON", "USE_MKLDNN": "ON", "USE_MPI": "OFF", "USE_NCCL": "1", "USE_NNPACK": "ON", "USE_OPENMP": "ON", "USE_ROCM": "OFF", "USE_ROCM_KERNEL_ASSERT": "OFF"}}}, "pipe": null}
+{"event": "start", "data": {"command": ["/home/runner/work/milabench/output/venv/torch/bin/voir", "--config", "/home/runner/work/milabench/output/extra/vjepa-single/voirconf-vjepa-single.D0-0efae956f1553a76c1e03985181900f5.json", "/home/runner/work/milabench/milabench/benchmarks/vjepa/main.py", "--batch_size", "24", "--num_workers", "12", "--dataset", "/home/runner/work/milabench/output/data/FakeVideo/video_metainfo.csv", "--output", "/home/runner/work/milabench/output/extra/vjepa-single"], "time": 1728348211.311746}, "pipe": null}
+{"event": "phase", "data": {"name": "init"}, "pipe": "data"}
+{"event": "phase", "data": {"name": "parse_args"}, "pipe": "data"}
+{"event": "phase", "data": {"name": "load_script"}, "pipe": "data"}
+{"event": "phase", "data": {"name": "run_script"}, "pipe": "data"}
+{"event": "line", "data": "INFO:__main__:loaded params...\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:__main__:which_dtype='bfloat16'\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:root:SLURM vars not set (distributed training not available)\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:__main__:Initialized (rank/world-size) 0/1\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "main", "time": 1728348223.771153, "gpudata": {"0": {"memory": [769.5625, 81920.0], "load": 0.0, "temperature": 50.0, "power": 46.662}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1728348223.771153, "process": {"pid": 40768, "load": 0.0, "num": 14, "read_bytes": 0.0, "write_bytes": 155648.0, "read_chars": 35276381.0, "write_chars": 109594.0, "memory": [3079970816.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1728348234.788947, "gpudata": {"0": {"memory": [769.5625, 81920.0], "load": 0.0, "temperature": 47.0, "power": 45.113}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1728348234.788947, "process": {"pid": 40768, "load": 0.0, "num": 14, "read_bytes": 0.0, "write_bytes": 155648.0, "read_chars": 35481877.0, "write_chars": 110358.0, "memory": [3184603136.0, 232195870720]}}, "pipe": "data"}
+{"event": "line", "data": "INFO:root:MultiMaskWrapper(\n", "pipe": "stdout"}
+{"event": "line", "data": "  (backbone): VisionTransformer(\n", "pipe": "stdout"}
+{"event": "line", "data": "    (patch_embed): PatchEmbed3D(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (proj): Conv3d(3, 1280, kernel_size=(2, 16, 16), stride=(2, 16, 16))\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (blocks): ModuleList(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (0-31): 32 x Block(\n", "pipe": "stdout"}
+{"event": "line", "data": "        (norm1): LayerNorm((1280,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (attn): Attention(\n", "pipe": "stdout"}
+{"event": "line", "data": "          (qkv): Linear(in_features=1280, out_features=3840, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "          (attn_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "          (proj): Linear(in_features=1280, out_features=1280, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "          (proj_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        )\n", "pipe": "stdout"}
+{"event": "line", "data": "        (norm2): LayerNorm((1280,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (mlp): MLP(\n", "pipe": "stdout"}
+{"event": "line", "data": "          (fc1): Linear(in_features=1280, out_features=5120, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "          (act): GELU(approximate='none')\n", "pipe": "stdout"}
+{"event": "line", "data": "          (fc2): Linear(in_features=5120, out_features=1280, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "          (drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        )\n", "pipe": "stdout"}
+{"event": "line", "data": "      )\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (norm): LayerNorm((1280,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "  )\n", "pipe": "stdout"}
+{"event": "line", "data": ")\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:root:PredictorMultiMaskWrapper(\n", "pipe": "stdout"}
+{"event": "line", "data": "  (backbone): VisionTransformerPredictor(\n", "pipe": "stdout"}
+{"event": "line", "data": "    (predictor_embed): Linear(in_features=1280, out_features=384, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (mask_tokens): ParameterList(\n", "pipe": "stdout"}
+{"event": "line", "data": "        (0): Parameter containing: [torch.float32 of size 1x1x384 (cuda:0)]\n", "pipe": "stdout"}
+{"event": "line", "data": "        (1): Parameter containing: [torch.float32 of size 1x1x384 (cuda:0)]\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (predictor_blocks): ModuleList(\n", "pipe": "stdout"}
+{"event": "line", "data": "      (0-11): 12 x Block(\n", "pipe": "stdout"}
+{"event": "line", "data": "        (norm1): LayerNorm((384,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (attn): Attention(\n", "pipe": "stdout"}
+{"event": "line", "data": "          (qkv): Linear(in_features=384, out_features=1152, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "          (attn_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "          (proj): Linear(in_features=384, out_features=384, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "          (proj_drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        )\n", "pipe": "stdout"}
+{"event": "line", "data": "        (norm2): LayerNorm((384,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "        (mlp): MLP(\n", "pipe": "stdout"}
+{"event": "line", "data": "          (fc1): Linear(in_features=384, out_features=1536, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "          (act): GELU(approximate='none')\n", "pipe": "stdout"}
+{"event": "line", "data": "          (fc2): Linear(in_features=1536, out_features=384, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "          (drop): Dropout(p=0.0, inplace=False)\n", "pipe": "stdout"}
+{"event": "line", "data": "        )\n", "pipe": "stdout"}
+{"event": "line", "data": "      )\n", "pipe": "stdout"}
+{"event": "line", "data": "    )\n", "pipe": "stdout"}
+{"event": "line", "data": "    (predictor_norm): LayerNorm((384,), eps=1e-06, elementwise_affine=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "    (predictor_proj): Linear(in_features=384, out_features=1280, bias=True)\n", "pipe": "stdout"}
+{"event": "line", "data": "  )\n", "pipe": "stdout"}
+{"event": "line", "data": ")\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:root:Encoder number of parameters: 631648000\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:root:Predictor number of parameters: 22279808\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:__main__:Initializing basic multi-block mask\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:root:VideoDataset dataset created\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:root:VideoDataset unsupervised data loader created\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:__main__:iterations per epoch/dataest length: 300/41\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:root:Using AdamW\n", "pipe": "stdout"}
+{"event": "line", "data": "/home/runner/work/milabench/milabench/benchmarks/vjepa/jepa/app/vjepa/utils.py:209: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.\n", "pipe": "stderr"}
+{"event": "line", "data": "  scaler = torch.cuda.amp.GradScaler() if mixed_precision else None\n", "pipe": "stderr"}
+{"event": "line", "data": "INFO:__main__:Initializing loader...\n", "pipe": "stdout"}
+{"event": "data", "data": {"progress": [0, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "line", "data": "INFO:__main__:Epoch 1\n", "pipe": "stdout"}
+{"event": "line", "data": "/home/runner/work/milabench/milabench/benchmarks/vjepa/main.py:463: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.\n", "pipe": "stderr"}
+{"event": "line", "data": "  with acc.amp.autocast(dtype=dtype, enabled=mixed_precision):\n", "pipe": "stderr"}
+{"event": "line", "data": "/home/ubuntu/miniconda3/lib/python3.10/contextlib.py:103: FutureWarning: `torch.backends.cuda.sdp_kernel()` is deprecated. In the future, this context manager will be removed. Please see `torch.nn.attention.sdpa_kernel()` for the new context manager, with updated signature.\n", "pipe": "stderr"}
+{"event": "line", "data": "  self.gen = func(*args, **kwds)\n", "pipe": "stderr"}
+{"event": "line", "data": "INFO:__main__:[1,     0] loss: 0.849 | p0.849 r0.832 | input_var: 0.357 0.272 | masks: [392.0, 160.0] [wd: 4.00e-02] [lr: 2.00e-04] [mem: 3.68e+04] [gpu: 4907.1 ms][wall: 11399.1 ms]\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:__main__:[1,     0] first moment: 4.81e-06 [1.21e-07 6.71e-05] second moment: 2.46e-11 [1.04e-14 7.35e-10]\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:__main__:[1,     0] enc_grad_stats: f/l[3.28e-02 7.16e-03] mn/mx(7.16e-03, 3.67e-02) 0.00e+00\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:__main__:[1,     0] pred_grad_stats: f/l[9.57e-02 6.06e-02] mn/mx(7.95e-03, 3.79e-01) 0.00e+00\n", "pipe": "stdout"}
+{"event": "data", "data": {"progress": [1, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [2, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [3, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1728348245.803183, "gpudata": {"0": {"memory": [6370.375, 81920.0], "load": 0.0, "temperature": 45.0, "power": 65.299}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1728348245.803183, "process": {"pid": 40768, "load": 27.516666666666666, "num": 9, "read_bytes": 0.0, "write_bytes": 217088.0, "read_chars": 50450871954.0, "write_chars": 968205.0, "memory": [12315795456.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"progress": [4, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [5, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [6, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [7, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [8, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [9, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [10, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "line", "data": "INFO:__main__:[1,    10] loss: 0.610 | p0.610 r0.947 | input_var: 0.360 0.329 | masks: [354.9, 97.5] [wd: 4.00e-02] [lr: 2.00e-04] [mem: 4.28e+04] [gpu: 1436.2 ms][wall: 2035.1 ms]\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:__main__:[1,    10] first moment: 3.62e-06 [4.29e-08 2.52e-04] second moment: 4.40e-11 [1.04e-14 2.95e-09]\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:__main__:[1,    10] enc_grad_stats: f/l[3.90e-05 2.61e-05] mn/mx(2.41e-05, 7.08e-05) 0.00e+00\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:__main__:[1,    10] pred_grad_stats: f/l[4.13e-03 4.39e-03] mn/mx(3.29e-04, 3.46e-01) 0.00e+00\n", "pipe": "stdout"}
+{"event": "data", "data": {"progress": [11, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [12, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [13, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [14, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [15, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [16, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [17, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [18, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [19, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [20, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "line", "data": "INFO:__main__:[1,    20] loss: 0.514 | p0.514 r0.962 | input_var: 0.360 0.328 | masks: [363.4, 103.6] [wd: 4.00e-02] [lr: 2.01e-04] [mem: 4.74e+04] [gpu: 1279.3 ms][wall: 1597.6 ms]\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:__main__:[1,    20] first moment: 2.87e-06 [1.52e-08 2.77e-04] second moment: 5.87e-11 [1.03e-14 5.24e-09]\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:__main__:[1,    20] enc_grad_stats: f/l[6.33e-05 2.73e-05] mn/mx(2.67e-05, 1.16e-04) 0.00e+00\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:__main__:[1,    20] pred_grad_stats: f/l[2.29e-03 2.64e-03] mn/mx(2.12e-04, 3.22e-01) 0.00e+00\n", "pipe": "stdout"}
+{"event": "data", "data": {"progress": [21, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [22, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [23, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [24, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [25, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1728348269.8392053, "gpudata": {"0": {"memory": [51570.375, 81920.0], "load": 1.0, "temperature": 55.0, "power": 293.53}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1728348269.8392053, "process": {"pid": 40768, "load": 0.0, "num": 5, "read_bytes": 0.0, "write_bytes": 229376.0, "read_chars": 142663426091.0, "write_chars": 1032914.0, "memory": [19903250432.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"progress": [26, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [27, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [28, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [29, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [30, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "line", "data": "INFO:__main__:[1,    30] loss: 0.432 | p0.432 r0.968 | input_var: 0.360 0.331 | masks: [373.2, 102.7] [wd: 4.00e-02] [lr: 2.01e-04] [mem: 4.74e+04] [gpu: 1227.1 ms][wall: 1445.7 ms]\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:__main__:[1,    30] first moment: 2.08e-06 [5.47e-09 2.40e-04] second moment: 6.77e-11 [1.02e-14 6.70e-09]\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:__main__:[1,    30] enc_grad_stats: f/l[4.60e-05 1.43e-05] mn/mx(1.36e-05, 8.45e-05) 0.00e+00\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:__main__:[1,    30] pred_grad_stats: f/l[1.55e-03 1.91e-03] mn/mx(1.37e-04, 2.31e-01) 0.00e+00\n", "pipe": "stdout"}
+{"event": "data", "data": {"progress": [31, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [32, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [33, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [34, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [35, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [36, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [37, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [38, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [39, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [40, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "line", "data": "INFO:__main__:[1,    40] loss: 0.368 | p0.368 r0.971 | input_var: 0.360 0.331 | masks: [366.0, 102.6] [wd: 4.00e-02] [lr: 2.01e-04] [mem: 4.74e+04] [gpu: 1191.8 ms][wall: 1359.4 ms]\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:__main__:[1,    40] first moment: 1.08e-06 [2.08e-09 1.15e-04] second moment: 7.01e-11 [1.01e-14 7.33e-09]\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:__main__:[1,    40] enc_grad_stats: f/l[1.45e-04 3.42e-05] mn/mx(3.20e-05, 2.62e-04) 0.00e+00\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:__main__:[1,    40] pred_grad_stats: f/l[3.65e-03 2.27e-03] mn/mx(2.88e-04, 1.53e-01) 0.00e+00\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:__main__:Exhausted data loaders after 41. Refreshing...\n", "pipe": "stdout"}
+{"event": "data", "data": {"progress": [41, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.8485932946205139, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.735287606716156, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.6790499687194824, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.6422277688980103, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.6118489503860474, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.5847822427749634, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.5605177879333496, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.5390094518661499, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.5203722715377808, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.50385582447052, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.48897361755371094, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.47595345973968506, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.46139442920684814, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.44687420129776, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.43198394775390625, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.41743355989456177, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.4020755887031555, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.38609564304351807, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.3704029321670532, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.35500138998031616, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.3388357162475586, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.3231801390647888, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.3067014515399933, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.2916077673435211, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.2780711352825165, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.2634308934211731, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.2510386109352112, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.2388232946395874, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.22735092043876648, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.21657662093639374, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.2071155458688736, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.19820652902126312, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.18973073363304138, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.1822463721036911, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.17514359951019287, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.16878411173820496, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.16256815195083618, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.15637949109077454, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.1520826816558838, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.14742933213710785, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.1433698832988739, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.1043193003138327, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 21.423635257728048, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 21.662606837701013, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 22.869404959039144, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 22.97080314740942, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 22.635190832452984, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 23.365308990666854, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 21.777279335410178, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 21.46324933822521, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 20.096265987687193, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 20.45532576329802, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 21.084218804105873, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 21.67314979075679, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 22.74178151126754, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 21.47768312639419, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 23.623564327586386, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 21.45975401093333, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 23.211566114853618, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 20.74246565341489, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 20.90832000296065, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 18.7017428344848, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 20.33878737552698, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 20.747550469317723, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 23.163007331394365, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 22.097798222716964, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 21.710491880540175, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 22.328940980059794, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 22.15554044021696, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 20.851913424596514, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 19.364679198630384, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 20.59001286771078, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 21.715577929520464, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 22.33005176704048, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 22.649003006342728, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 23.024497138391624, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 19.37948736146103, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 22.178321110748005, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 21.257653687339236, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 23.153740943498924, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 21.741375737390793, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 22.754020185906434, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [41, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [42, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1728348293.8759356, "gpudata": {"0": {"memory": [56514.375, 81920.0], "load": 0.83, "temperature": 60.0, "power": 286.15}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1728348293.8759356, "process": {"pid": 40768, "load": 26.724999999999998, "num": 5, "read_bytes": 0.0, "write_bytes": 245760.0, "read_chars": 161933112868.0, "write_chars": 1045438.0, "memory": [19776307200.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"progress": [43, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [44, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [45, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [46, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [47, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [48, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [49, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [50, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "line", "data": "INFO:__main__:[1,    50] loss: 0.321 | p0.321 r0.973 | input_var: 0.360 0.329 | masks: [366.4, 107.3] [wd: 4.00e-02] [lr: 2.02e-04] [mem: 4.74e+04] [gpu: 1179.2 ms][wall: 1407.8 ms]\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:__main__:[1,    50] first moment: 7.08e-07 [1.41e-09 6.25e-05] second moment: 7.50e-11 [1.00e-14 7.62e-09]\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:__main__:[1,    50] enc_grad_stats: f/l[8.41e-05 1.06e-04] mn/mx(4.91e-05, 1.81e-04) 0.00e+00\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:__main__:[1,    50] pred_grad_stats: f/l[1.61e-02 8.68e-03] mn/mx(9.71e-04, 1.26e-01) 0.00e+00\n", "pipe": "stdout"}
+{"event": "data", "data": {"progress": [51, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [52, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [53, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [54, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [55, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [56, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [57, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [58, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [59, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [60, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "line", "data": "INFO:__main__:[1,    60] loss: 0.286 | p0.286 r0.973 | input_var: 0.360 0.330 | masks: [367.0, 107.5] [wd: 4.00e-02] [lr: 2.02e-04] [mem: 4.74e+04] [gpu: 1167.1 ms][wall: 1359.8 ms]\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:__main__:[1,    60] first moment: 6.34e-07 [8.84e-10 4.35e-05] second moment: 8.10e-11 [9.92e-15 7.77e-09]\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:__main__:[1,    60] enc_grad_stats: f/l[5.70e-05 7.20e-05] mn/mx(3.30e-05, 1.25e-04) 0.00e+00\n", "pipe": "stdout"}
+{"event": "line", "data": "INFO:__main__:[1,    60] pred_grad_stats: f/l[1.81e-02 9.73e-03] mn/mx(1.31e-03, 1.05e-01) 0.00e+00\n", "pipe": "stdout"}
+{"event": "data", "data": {"progress": [61, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [62, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [63, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [64, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1728348317.915501, "gpudata": {"0": {"memory": [56514.375, 81920.0], "load": 1.0, "temperature": 62.0, "power": 285.056}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1728348317.915501, "process": {"pid": 40768, "load": 18.604166666666668, "num": 21, "read_bytes": 0.0, "write_bytes": 262144.0, "read_chars": 263842251932.0, "write_chars": 1128065.0, "memory": [19752222720.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"progress": [65, 65], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.13995668292045593, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.13773825764656067, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.13389769196510315, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.13161683082580566, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.12932133674621582, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.12695996463298798, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.12442667037248611, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.12120930850505829, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.12056031823158264, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.11854160577058792, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.11737003922462463, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.11488103866577148, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.11281733959913254, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.11209774017333984, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.11082594841718674, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.1093340665102005, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.1069677323102951, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.10531742125749588, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.10391030460596085, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.10339643061161041, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.1020241528749466, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.10001923143863678, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.0985829159617424, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.09812574088573456, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 4.098721892897041, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 21.053889553176685, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 23.306528360022135, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 19.219369520845227, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 22.733474615859226, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 20.254462342140613, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 21.330229618281454, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 21.31357618474975, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 20.011621739553945, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 21.73857519057243, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 20.397536584128478, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 21.96084248461519, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 21.934423650728043, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 21.550963927938525, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 21.999747113909518, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 20.867746643597744, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 20.680993404651456, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 22.134922059198036, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 21.855838706471577, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 21.807236091880817, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 21.83873318286029, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 21.300716611022708, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 22.952230134024596, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 21.115415645306385, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [769.5625, 81920.0], "load": 0.0, "temperature": 52.0, "power": 46.779}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [769.5625, 81920.0], "load": 0.0, "temperature": 51.0, "power": 45.794}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [769.5625, 81920.0], "load": 0.0, "temperature": 50.0, "power": 46.498}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [769.5625, 81920.0], "load": 0.0, "temperature": 49.0, "power": 45.81}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [769.5625, 81920.0], "load": 0.0, "temperature": 47.0, "power": 44.806}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [769.5625, 81920.0], "load": 0.0, "temperature": 46.0, "power": 44.643}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [769.5625, 81920.0], "load": 0.0, "temperature": 45.0, "power": 44.657}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [6370.375, 81920.0], "load": 0.0, "temperature": 45.0, "power": 65.58}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [43054.375, 81920.0], "load": 1.0, "temperature": 52.0, "power": 321.177}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [56514.375, 81920.0], "load": 1.0, "temperature": 57.0, "power": 154.94}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [56514.375, 81920.0], "load": 1.0, "temperature": 60.0, "power": 301.096}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [56514.375, 81920.0], "load": 0.79, "temperature": 61.0, "power": 292.719}}}, "pipe": "data"}
+{"event": "phase", "data": {"name": "finalize"}, "pipe": "data"}
+{"event": "end", "data": {"command": ["/home/runner/work/milabench/output/venv/torch/bin/voir", "--config", "/home/runner/work/milabench/output/extra/vjepa-single/voirconf-vjepa-single.D0-0efae956f1553a76c1e03985181900f5.json", "/home/runner/work/milabench/milabench/benchmarks/vjepa/main.py", "--batch_size", "24", "--num_workers", "12", "--dataset", "/home/runner/work/milabench/output/data/FakeVideo/video_metainfo.csv", "--output", "/home/runner/work/milabench/output/extra/vjepa-single"], "time": 1728348395.2816164, "return_code": 0}, "pipe": null}

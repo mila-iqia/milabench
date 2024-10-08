@@ -1,0 +1,226 @@
+{"event": "config", "data": {"system": {"arch": "cuda", "sshkey": null, "nodes": [{"env": [".", "~/.condaenvrc", "milabench", "&&"], "hostname": "fondladybug", "internal_ip": "10.0.1.4", "ip": "fondladybug.eastus2.cloudapp.azure.com", "key": "/home/runner/.ssh/covalent-azure-task-a100-4ed3f2_dipozeka/id_rsa.covalent.fondladybug.pem", "local": true, "main": true, "name": "manager", "port": 5000, "user": "ubuntu"}], "cloud_profiles": {"azure__a10": {"disk_size": 512, "location": "eastus2", "size": "Standard_NV36ads_A10_v5", "username": "ubuntu"}, "azure__a100": {"disk_size": 512, "keep_alive": null, "location": "eastus2", "size": "Standard_NC24ads_A100_v4", "state_id": "4ed3f2_dipozeka", "state_prefix": "a100", "username": "ubuntu"}, "azure__a100_x2": {"disk_size": 512, "location": "eastus2", "size": "Standard_NC48ads_A100_v4", "username": "ubuntu"}, "azure__a100_x4": {"disk_size": 512, "location": "eastus2", "size": "Standard_NC96ads_A100_v4", "username": "ubuntu"}, "azure__a10_x2": {"disk_size": 512, "location": "eastus2", "size": "Standard_NV72ads_A10_v5", "username": "ubuntu"}, "slurm__a100_x1": {"address": "localhost", "bashrc_path": "{bashrc_path}", "options": {"cpus-per-task": 6, "gpus-per-task": "a100l:1", "mem": 32000, "ntasks-per-node": 1, "partition": "unkillable", "time": "3:0:0"}, "remote_workdir": "scratch/cov-{job_uuid}-workdir", "use_srun": null}, "slurm__a100_x4": {"address": "localhost", "bashrc_path": "{bashrc_path}", "options": {"cpus-per-task": 24, "gpus-per-task": "a100l:4", "mem": 1000000, "ntasks-per-node": 1, "partition": "short-unkillable", "time": "3:0:0"}, "remote_workdir": "scratch/cov-{job_uuid}-workdir", "use_srun": null}}, "self": {"env": [".", "~/.condaenvrc", "milabench", "&&"], "hostname": "fondladybug", "internal_ip": "10.0.1.4", "ip": "fondladybug.eastus2.cloudapp.azure.com", "key": "/home/runner/.ssh/covalent-azure-task-a100-4ed3f2_dipozeka/id_rsa.covalent.fondladybug.pem", "local": true, "main": true, "name": "manager", "port": 5000, "user": "ubuntu"}}, "dirs": {"base": "/home/runner/work/milabench/output", "venv": "/home/runner/work/milabench/output/venv/torch", "data": "/home/runner/work/milabench/output/data", "runs": "/home/runner/work/milabench/output/runs", "extra": "/home/runner/work/milabench/output/extra/llava-single", "cache": "/home/runner/work/milabench/output/cache"}, "group": "llava-single", "install_group": "torch", "install_variant": "cuda", "run_name": "bodijiki.2024-10-07_23:58:02.751385", "enabled": true, "capabilities": {"nodes": 1}, "max_duration": 600, "voir": {"options": {"stop": 60, "interval": "1s"}}, "validation": {"usage": {"gpu_load_threshold": 0.5, "gpu_mem_threshold": 0.5}}, "num_machines": 1, "config_base": "/home/runner/work/milabench/milabench/config", "config_file": "/home/runner/work/milabench/milabench/config/standard.yaml", "hash": "b54e97ed747ccb6885f6d7601f7b63b2", "definition": "/home/runner/work/milabench/milabench/benchmarks/llava", "plan": {"method": "per_gpu"}, "tags": ["llm", "monogpu"], "argv": {"--batch_size": 1, "--num_workers": "auto({n_worker}, 4)", "--gradient_accumulation_steps": 1}, "weight": 1.0, "name": "llava-single", "tag": ["llava-single", "D0"], "device": 0, "devices": [0], "env": {"CUDA_VISIBLE_DEVICES": "0"}}, "pipe": null}
+{"event": "meta", "data": {"cpu": {"count": 24, "brand": "AMD EPYC 7V13 64-Core Processor"}, "os": {"sysname": "Linux", "nodename": "fondladybug", "release": "6.5.0-1025-azure", "version": "#26~22.04.1-Ubuntu SMP Thu Jul 11 22:33:04 UTC 2024", "machine": "x86_64"}, "accelerators": {"arch": "cuda", "gpus": {"0": {"minor_number": "0", "device": 0, "product": "NVIDIA A100 80GB PCIe", "memory": {"used": 764.4375, "total": 81920.0}, "utilization": {"compute": 0.0, "memory": 0}, "temperature": 36.0, "power": 63.08, "selection_variable": "CUDA_VISIBLE_DEVICES"}}}, "date": 1728348030.931063, "milabench": {"tag": "2adad57", "commit": "2adad57c452e71e090481525cd223b70fc25761c", "date": "2024-10-07 16:59:03 +0000"}, "pytorch": {"torch": "2.4.0+cu121", "compiler": "GCC 9.3", "cpp": "C++ Version: 201703", "intel": "Intel(R) oneAPI Math Kernel Library Version 2022.2-Product Build 20220804 for Intel(R) 64 architecture applications", "mkl": "OpenMP 201511 (a.k.a. OpenMP 4.5)", "openmp": "OpenMP 201511 (a.k.a. OpenMP 4.5)", "lapack": "LAPACK is enabled (usually provided by MKL)", "nnpack": "NNPACK is enabled", "cpu": "CPU capability usage: AVX2", "build_settings": {"BLAS_INFO": "mkl", "BUILD_TYPE": "Release", "CUDA_VERSION": "12.1", "CUDNN_VERSION": "9.1.0", "CXX_COMPILER": "/opt/rh/devtoolset-9/root/usr/bin/c++", "CXX_FLAGS": "-D_GLIBCXX_USE_CXX11_ABI=0 -fabi-version=11 -fvisibility-inlines-hidden -DUSE_PTHREADPOOL -DNDEBUG -DUSE_KINETO -DLIBKINETO_NOROCTRACER -DUSE_FBGEMM -DUSE_PYTORCH_QNNPACK -DUSE_XNNPACK -DSYMBOLICATE_MOBILE_DEBUG_HANDLE -O2 -fPIC -Wall -Wextra -Werror=return-type -Werror=non-virtual-dtor -Werror=bool-operation -Wnarrowing -Wno-missing-field-initializers -Wno-type-limits -Wno-array-bounds -Wno-unknown-pragmas -Wno-unused-parameter -Wno-unused-function -Wno-unused-result -Wno-strict-overflow -Wno-strict-aliasing -Wno-stringop-overflow -Wsuggest-override -Wno-psabi -Wno-error=pedantic -Wno-error=old-style-cast -Wno-missing-braces -fdiagnostics-color=always -faligned-new -Wno-unused-but-set-variable -Wno-maybe-uninitialized -fno-math-errno -fno-trapping-math -Werror=format -Wno-stringop-overflow", "LAPACK_INFO": "mkl", "PERF_WITH_AVX": "1", "PERF_WITH_AVX2": "1", "PERF_WITH_AVX512": "1", "TORCH_VERSION": "2.4.0", "USE_CUDA": "ON", "USE_CUDNN": "ON", "USE_CUSPARSELT": "1", "USE_EXCEPTION_PTR": "1", "USE_GFLAGS": "OFF", "USE_GLOG": "OFF", "USE_GLOO": "ON", "USE_MKL": "ON", "USE_MKLDNN": "ON", "USE_MPI": "OFF", "USE_NCCL": "1", "USE_NNPACK": "ON", "USE_OPENMP": "ON", "USE_ROCM": "OFF", "USE_ROCM_KERNEL_ASSERT": "OFF"}}}, "pipe": null}
+{"event": "start", "data": {"command": ["/home/runner/work/milabench/milabench/benchmarks/llava/main.py", "--batch_size", "1", "--num_workers", "4", "--gradient_accumulation_steps", "1"], "time": 1728348030.9417045}, "pipe": null}
+{"event": "line", "data": "\rLoading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]", "pipe": "stderr"}
+{"event": "line", "data": "\rLoading checkpoint shards:  33%|\u2588\u2588\u2588\u258e      | 1/3 [00:03<00:07,  3.99s/it]", "pipe": "stderr"}
+{"event": "line", "data": "\rLoading checkpoint shards:  67%|\u2588\u2588\u2588\u2588\u2588\u2588\u258b   | 2/3 [00:05<00:02,  2.81s/it]", "pipe": "stderr"}
+{"event": "line", "data": "\rLoading checkpoint shards: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 3/3 [00:07<00:00,  2.26s/it]", "pipe": "stderr"}
+{"event": "line", "data": "\rLoading checkpoint shards: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 3/3 [00:07<00:00,  2.53s/it]\n", "pipe": "stderr"}
+{"event": "line", "data": "No overseer found\n", "pipe": "stdout"}
+{"event": "data", "data": {"progress": [0, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "line", "data": "We detected that you are passing `past_key_values` as a tuple and this is deprecated and will be removed in v4.43. Please use an appropriate `Cache` class (https://huggingface.co/docs/transformers/v4.41.3/en/internal/generation_utils#transformers.Cache)\n", "pipe": "stderr"}
+{"event": "data", "data": {"progress": [1, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [2, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [3, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [4, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [5, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [6, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [7, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [8, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [9, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [10, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1728348044.0372078, "gpudata": {"0": {"memory": [14762.375, 81920.0], "load": 0.0, "temperature": 35.0, "power": 62.803}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1728348044.0372078, "process": {"pid": 40310, "load": 0.08333333333333333, "num": 22, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 63059388.0, "write_chars": 6272630.0, "memory": [5288955904.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"progress": [11, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [12, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [13, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [14, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [15, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [16, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [17, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [18, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [19, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [20, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [21, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [22, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [23, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [24, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [25, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [26, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [27, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [28, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [29, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [30, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [31, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [32, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [33, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [34, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [35, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [36, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [37, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [38, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [39, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [40, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [41, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [42, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [43, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1728348059.0698168, "gpudata": {"0": {"memory": [72454.375, 81920.0], "load": 0.95, "temperature": 47.0, "power": 289.052}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "time": 1728348059.0698168, "process": {"pid": 40310, "load": 0.125, "num": 12, "read_bytes": 0.0, "write_bytes": 4096.0, "read_chars": 89471557.0, "write_chars": 34302168.0, "memory": [5797576704.0, 232195870720]}}, "pipe": "data"}
+{"event": "data", "data": {"progress": [44, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [45, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [46, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [47, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [48, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [49, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [50, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [51, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [52, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [53, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [54, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [55, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [56, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [57, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [58, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [59, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [60, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [61, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [62, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [63, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [64, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [65, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [66, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [67, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [68, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [69, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"progress": [70, 70], "task": "early_stop"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 3.5113868713378906, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.555596113204956, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.8721551895141602, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.871337890625, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 2.3482418060302734, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.4787545204162598, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.6559171676635742, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.813193440437317, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.4766361713409424, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.4837688207626343, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.5231969356536865, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.2022178173065186, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.5767543315887451, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.2796764373779297, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.5936254262924194, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.4913069009780884, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.8172816038131714, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.5308548212051392, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.315910816192627, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.9514141082763672, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.8541409969329834, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.845018982887268, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.7086714506149292, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.1558233499526978, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.9151877164840698, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.9671233892440796, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.4921449422836304, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.3500251770019531, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.3602155447006226, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.3476314544677734, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.6067020893096924, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.6991493701934814, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.1416118144989014, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.165014386177063, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.1482044458389282, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.249321460723877, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.1300655603408813, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.1717298030853271, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.4672271013259888, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.5445804595947266, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.485155463218689, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.2714217901229858, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.8690552711486816, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.5613638162612915, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.1975451707839966, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.291422724723816, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.5447330474853516, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.4639123678207397, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.5925010442733765, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.433241605758667, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.1753791570663452, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.1300491094589233, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.988963782787323, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.7172424793243408, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.5126980543136597, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.2860174179077148, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.5186735391616821, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.0059785842895508, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.5740100145339966, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.9836946129798889, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.3378844261169434, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.609535574913025, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.560377836227417, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.2368935346603394, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.1511067152023315, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.274536371231079, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.125980257987976, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.263458490371704, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 0.9373081922531128, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"loss": 1.1311111450195312, "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 0.8042449840962322, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2165887532472945, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.270637260639125, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2075644113237924, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.187591002196804, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2531500127722968, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.267537134830368, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2145328719723185, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.1898131187501813, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2772081128318815, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2802868340296625, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.230511460879499, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.217016467409425, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2532590874562, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2653963541415694, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2507766924270514, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.262640591612017, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.194433740597413, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.22268317092127, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.291883795168761, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.293762454325826, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2770063564806047, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2953422023334906, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2868655349166778, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2209594371255927, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.1987519291417836, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2040021660670703, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.216538374226464, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2269001078858617, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.264702753962314, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2751656174483426, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.1986926206513115, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2853831793482486, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.276815235206868, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.214322016941374, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2954554004041845, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2731371901560284, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.255470900446923, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2604670946754784, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.26215324017139, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2645715970005207, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.1969465205638232, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.1974260715805105, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.200560455240944, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2647763211995793, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.1864546439107593, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.270378619307988, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.1861316870808145, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2621112315603726, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.1910266599427395, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.257613952561308, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.197178829892307, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2010415854323933, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.261592733308192, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2669002470497888, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2231536623349273, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.290615077123712, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.282568112033079, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2827013619440075, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.220565412010163, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.210362599164625, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2867745668628583, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.1867142163117346, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.1566478762928663, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2752504507902445, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.1878802066147323, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2751284949776442, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.213604303504011, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.2741271194586457, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "data", "data": {"rate": 2.278956581732043, "units": "items/s", "task": "train"}, "pipe": "data"}
+{"event": "end", "data": {"command": ["/home/runner/work/milabench/milabench/benchmarks/llava/main.py", "--batch_size", "1", "--num_workers", "4", "--gradient_accumulation_steps", "1"], "time": 1728348076.7801495, "return_code": 0}, "pipe": null}
