@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from habana_frameworks.torch import hpu; hpu.init()
+
 import argparse
 import os
 
@@ -55,8 +57,6 @@ def prepare_voir():
     return observer, bench_monitor
 
 def main():
-    from habana_frameworks.torch import hpu; hpu.init()
-    
     rank = int(os.getenv("RANK", 0))
     world_size = int(os.getenv("WORLD_SIZE", 1))
     local_world_size = int(os.getenv("LOCAL_WORLD_SIZE", 1))
