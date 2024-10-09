@@ -76,8 +76,8 @@ def main():
 
     import torchcompat.core as accelerator
   
-    n = accelerator.device_count()
-    # n = local_world_size
+    # n = accelerator.device_count()
+    n = local_world_size
     nnodes = world_size // local_world_size
 
     model = TorchvisionLightning(model)
@@ -87,13 +87,12 @@ def main():
     observer, monitor = prepare_voir()
     loader = observer.loader(imagenet_dataloader(args, model, rank, world_size))
 
-
     # train model
     trainer = L.Trainer(
-        accelerator="auto", 
+        accelerator="hpu", 
         devices=n, 
         num_nodes=nnodes, 
-        strategy="auto",
+        strategy="ddp",
         max_epochs=args.epochs,
         precision="bf16-mixed",
         enable_checkpointing=False,
