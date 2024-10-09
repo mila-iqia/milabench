@@ -1,8 +1,8 @@
 
 
 
-# bench = rlhf-single
-bench = "lightning"
+bench = rlhf-gpus
+# bench = "lightning"
 lazy = 0
 
 hpu:
