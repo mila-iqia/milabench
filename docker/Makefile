@@ -6,7 +6,7 @@ bench = lightning
 
 hpu:
 	git add --all
-	git commit -m "-"
+	git commit -m "-" | true
 	git push origin hpu
 	docker rmi $(docker images --filter "dangling=true" -q --no-trunc) | true
 	# docker system prune -a -f
