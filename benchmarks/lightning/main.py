@@ -76,7 +76,7 @@ def main():
 
     import torchcompat.core as accelerator
   
-    # n = accelerator.device_count()
+    n = accelerator.device_count()
     n = local_world_size
     nnodes = world_size // local_world_size
 

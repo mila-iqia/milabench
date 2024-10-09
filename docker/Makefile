@@ -2,7 +2,7 @@
 
 
 # bench = rlhf-single
-bench = lightning
+bench = lightning -- exclude lightning-gpus
 
 hpu:
 	git add --all
