@@ -6,7 +6,7 @@ hpu:
 	git add --all
 	git commit -m "-"
 	git push origin hpu
-	docker rmi $(docker images --filter "dangling=true" -q --no-trunc)
+	docker rmi $(docker images --filter "dangling=true" -q --no-trunc) | true
 	# docker system prune -a -f
 	# docker image prune -a -f
 	docker build --build-arg CACHEBUST=`git rev-parse hpu` -f Dockerfile-hpu -t dockerfile-hpu . 
