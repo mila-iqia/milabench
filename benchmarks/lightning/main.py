@@ -87,17 +87,14 @@ def main():
     observer, monitor = prepare_voir()
     loader = observer.loader(imagenet_dataloader(args, model, rank, world_size))
 
-    # alueError: The `HPUAccelerator` can only be used with a `SingleHPUStrategy` or `HPUParallelStrategy`, found DDPStrategy.
-    
-    # from pytorch_lightning.strategies import HPUParallelStrategy
-    from lightning_habana import HPUParallelStrategy
+    # ValueError: The `HPUAccelerator` can only be used with a `SingleHPUStrategy` or `HPUParallelStrategy`, found DDPStrategy.
     
     # train model
     trainer = L.Trainer(
-        accelerator="hpu", 
+        accelerator="auto", 
         devices=n, 
         num_nodes=nnodes, 
-        strategy=HPUParallelStrategy(),
+        strategy="auto",
         max_epochs=args.epochs,
         precision="bf16-mixed",
         enable_checkpointing=False,
