@@ -10,13 +10,6 @@ import torch.nn.functional as F
 import lightning as L
 import torchvision.models as torchvision_models
 
-# HPU fix
-os.environ["RANK"] = os.getenv("RANK","-1")
-os.environ["LOCAL_RANK"] = os.getenv("LOCAL_RANK","-1")
-os.environ["WORLD_SIZE"] = os.getenv("WORLD_SIZE", "1")
-os.environ["LOCAL_WORLD_SIZE"] = os.getenv("LOCAL_WORLD_SIZE", "1")
-
-
 from benchmate.dataloader import imagenet_dataloader, dataloader_arguments
 
 
@@ -89,8 +82,6 @@ def main():
     observer, monitor = prepare_voir()
     loader = observer.loader(imagenet_dataloader(args, model, rank, world_size))
 
-    # ValueError: The `HPUAccelerator` can only be used with a `SingleHPUStrategy` or `HPUParallelStrategy`, found DDPStrategy.
-    
     # train model
     trainer = L.Trainer(
         accelerator="auto", 

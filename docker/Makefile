@@ -3,7 +3,7 @@
 
 # bench = rlhf-single
 bench = "lightning"
-lazy = 0
+lazy = 1
 
 hpu:
 	git add --all
