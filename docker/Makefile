@@ -11,5 +11,5 @@ hpu:
 	# docker system prune -a -f
 	# docker image prune -a -f
 	docker build --build-arg BENCH=$(bench) --build-arg CACHEBUST=`git rev-parse hpu` -f Dockerfile-hpu -t dockerfile-hpu . 
-	docker run   -it   --runtime=habana   -e HABANA_VISIBLE_DEVICES=all   -e OMPI_MCA_btl_vader_single_copy_mechanism=none --shm-size 50G   --cap-add=sys_nice   --net=host   dockerfile-hpu:latest bash -c '. $$MILABENCH_VENV/bin/activate && milabench prepare --use-current-env --select $(bench) && milabench run --use-current-env --select $(bench)'
+	docker run   -it   --runtime=habana   -e HABANA_VISIBLE_DEVICES=all   -e OMPI_MCA_btl_vader_single_copy_mechanism=none --shm-size 50G   --cap-add=sys_nice   --net=host   dockerfile-hpu:latest bash -c '. $$MILABENCH_VENV/bin/activate && milabench install --use-current-env --select $(bench) &&  milabench prepare --use-current-env --select $(bench) && milabench run --use-current-env --select $(bench)'
 
