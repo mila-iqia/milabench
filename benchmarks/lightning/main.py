@@ -89,7 +89,8 @@ def main():
 
     # alueError: The `HPUAccelerator` can only be used with a `SingleHPUStrategy` or `HPUParallelStrategy`, found DDPStrategy.
     
-    from pytorch_lightning.strategies import HPUParallelStrategy
+    # from pytorch_lightning.strategies import HPUParallelStrategy
+    from lightning_habana import HPUParallelStrategy
     
     # train model
     trainer = L.Trainer(
