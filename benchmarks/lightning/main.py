@@ -4,7 +4,7 @@
 import argparse
 import os
 
-os.environ["PT_HPU_LAZY_MODE"] = str(int(os.getenv("WORLD_SIZE", -1) <= 0))
+os.environ["PT_HPU_LAZY_MODE"] = str(int(int(os.getenv("WORLD_SIZE", -1)) <= 0))
 
 from habana_frameworks.torch import hpu; hpu.init()
 
