@@ -1,8 +1,8 @@
 
 
 
-# bench = rlhf-single
-bench = lightning
+bench = rlhf-single
+# bench = lightning
 
 hpu:
 	git add --all
