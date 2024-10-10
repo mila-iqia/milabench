@@ -6,6 +6,7 @@
 
 import argklass
 
+import torch  # This is a bit of a trick to make jax use torch's packaged libs
 
 from dqn import add_dqn_command, main as dqn_main
 from ppo import add_ppo_command, main as ppo_main

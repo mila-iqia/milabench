@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=benchmarks/torchvision_ddp/requirements.rocm.txt .pin/tmp-constraints-rocm-torchvision.txt benchmarks/torchvision_ddp/requirements.in
 #
---extra-index-url https://download.pytorch.org/whl/rocm6.0
+--extra-index-url https://download.pytorch.org/whl/rocm6.1
 
 antlr4-python3-runtime==4.9.3
     # via
@@ -14,15 +14,15 @@ asttokens==2.4.1
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   giving
-codefind==0.1.6
+codefind==0.1.7
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   ptera
-executing==1.2.0
+executing==2.1.0
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   varname
-filelock==3.15.4
+filelock==3.16.1
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   pytorch-triton-rocm
@@ -31,12 +31,12 @@ fsspec==2024.6.1
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   torch
-giving==0.4.2
+giving==0.4.3
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   ptera
     #   voir
-importlib-resources==6.4.3
+importlib-resources==6.4.5
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   torchcompat
@@ -68,11 +68,15 @@ numpy==1.26.4
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   torchvision
+nvidia-ml-py==12.560.30
+    # via
+    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   voir
 omegaconf==2.3.0
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   voir
-ovld==0.3.8
+ovld==0.3.9
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   voir
@@ -92,10 +96,6 @@ pygments==2.18.0
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   rich
-pynvml==11.5.3
-    # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
-    #   voir
 pytorch-triton-rocm==3.0.0
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
@@ -108,7 +108,7 @@ reactivex==4.0.4
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   giving
-rich==13.7.1
+rich==13.9.1
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   voir
@@ -116,11 +116,11 @@ six==1.16.0
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   asttokens
-sympy==1.13.2
+sympy==1.13.3
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   torch
-torch==2.4.0+rocm6.0
+torch==2.4.1+rocm6.1
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   -r benchmarks/torchvision_ddp/requirements.in
@@ -130,7 +130,7 @@ torchcompat==1.1.4
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   -c .pin/../constraints/rocm.txt
     #   -r benchmarks/torchvision_ddp/requirements.in
-torchvision==0.19.0+rocm6.0
+torchvision==0.19.1+rocm6.1
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   -r benchmarks/torchvision_ddp/requirements.in
@@ -142,8 +142,9 @@ typing-extensions==4.12.2
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   reactivex
+    #   rich
     #   torch
-varname==0.10.0
+varname==0.13.3
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   giving
