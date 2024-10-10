@@ -1,0 +1,24 @@
+_defaults:
+  max_duration: 600
+  voir:
+    options:
+      stop: 60
+      interval: "1s"
+
+test:
+  inherits: _defaults
+  group: simple
+  install_group: test
+  definition: ../../benchmarks/_templates/simple
+  plan:
+    method: njobs
+    n: 1
+
+testing:
+  inherits: _defaults
+  definition: ../../benchmarks/_templates/stdout
+  group: stdout
+  install_group: test
+  plan:
+    method: njobs
+    n: 1

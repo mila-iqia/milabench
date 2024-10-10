@@ -1,4 +1,5 @@
 import contextvars
+import hashlib
 from copy import deepcopy
 
 import yaml
@@ -10,8 +11,6 @@ from .merge import merge
 
 config_global = contextvars.ContextVar("config", default=None)
 execution_count = (0, 0)
-
-_MONITOR_TAGS = {"monogpu", "multigpu", "multinode"}
 
 
 def set_run_count(total_run, total_bench):
@@ -74,6 +73,16 @@ def resolve_inheritance(bench_config, all_configs):
     return bench_config
 
 
+def compute_config_hash(config):
+    config = deepcopy(config)
+    for entry in config:
+        config[entry]["dirs"] = {}
+        config[entry]["config_base"] = ""
+        config[entry]["config_file"] = ""
+        config[entry]["run_name"] = ""
+    return hashlib.md5(str(config).encode("utf8")).hexdigest()
+
+
 def finalize_config(name, bench_config):
     bench_config["name"] = name
     if "definition" in bench_config:
@@ -81,13 +90,6 @@ def finalize_config(name, bench_config):
         if not pack.is_absolute():
             pack = (XPath(bench_config["config_base"]) / pack).resolve()
             bench_config["definition"] = str(pack)
-
-    if not name.startswith("_") and name != "*":
-        _tags = set(bench_config["tags"])
-        _monitor_tags = _tags & _MONITOR_TAGS
-        assert len(_monitor_tags) == 1, (
-            f"Bench {name} should have exactly one monitor tag. Found {_monitor_tags}"
-        )
 
     bench_config["tag"] = [bench_config["name"]]
 
@@ -147,6 +149,9 @@ def build_config(*config_files):
     all_configs = {}
     for layer in _config_layers(config_files):
         all_configs = merge(all_configs, layer)
+
+    all_configs.setdefault("*", {})
+    all_configs["*"]["hash"] = compute_config_hash(all_configs)
 
     all_configs = build_matrix_bench(all_configs)
 

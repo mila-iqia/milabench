@@ -1,0 +1,41 @@
+system:
+  # Nodes list
+  nodes:
+      # Alias used to reference the node
+    - name: manager
+      # Use 1.1.1.1 as an ip placeholder
+      ip: 1.1.1.1
+      # Use this node as the master node or not
+      main: true
+      # User to use in remote milabench operations
+      user: user
+
+  # Cloud instances profiles
+  cloud_profiles:
+    # The cloud platform to use in the form of {PLATFORM}__{PROFILE_NAME}
+    azure:
+      # covalent-azure-plugin args
+      username: ubuntu
+      size: Standard_B1s
+      location: eastus2
+    azure__free:
+      username: ubuntu
+      size: Standard_B2ats_v2
+      location: eastus2
+    ec2:
+      # covalent-ec2-plugin args
+      username: ubuntu
+      instance_type: t2.micro
+      volume_size: 8
+      region: us-east-2
+    slurm:
+      # covalent-slurm-plugin args
+      address: localhost
+      bashrc_path: "{bashrc_path}"
+      remote_workdir: "scratch/cov-{job_uuid}-workdir"
+      use_srun: null
+      options:
+        ntasks-per-node: 1
+        cpus-per-task: 1
+        time: "0:30:0"
+        mem: 1000

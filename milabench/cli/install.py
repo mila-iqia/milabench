@@ -53,8 +53,6 @@ def cli_install(args=None):
         if args.force:
             pack.dirs.venv.rm()
 
-    mp = get_multipack(run_name="install.{time}", overrides=overrides)
-
     return run_with_loggers(
         mp.do_install(),
         loggers=[
