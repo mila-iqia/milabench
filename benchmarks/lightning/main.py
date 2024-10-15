@@ -4,9 +4,8 @@
 import argparse
 import os
 
+# FIXME this is HPU only
 os.environ["PT_HPU_LAZY_MODE"] = str(int(int(os.getenv("WORLD_SIZE", -1)) <= 0))
-
-from habana_frameworks.torch import hpu; hpu.init()
 
 import torch
 import torch.nn.functional as F

@@ -11,7 +11,7 @@ export MILABENCH_WORDIR="$(pwd)/$MILABENCH_GPU_ARCH"
 export MILABENCH_BASE="$MILABENCH_WORDIR/results"
 export MILABENCH_VENV="$MILABENCH_WORDIR/env"
 export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
-
+export PT_HPU_LAZY_MODE=0
 
 if [ -z "${MILABENCH_SOURCE}" ]; then
     export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/standard.yaml"
@@ -84,6 +84,8 @@ install_prepare() {
     #
     #   Generate/download datasets, download models etc...
     #
+    sed -i 's/pic.numpy(force=True)/pic.numpy()/' $BENCHMARK_VENV/lib/python3.10/dist-packages/torchvision/transforms/functional.py
+    sed -i 's/range(hpu.device_count())/range(len(available_modules))/' $BENCHMARK_VENV/lib/site-packages/habana_frameworks/torch/hpu/_utils.py
     milabench prepare $ARGS
 }
 
@@ -95,12 +97,17 @@ else
 fi
 
 
- (
+(
     . $BENCHMARK_VENV/bin/activate
     pip install lightning-habana
     pip install habana-media-loader
+    # git clone git@github.com:Delaunay/torchcompat.git
+    # git clone git@github.com:Delaunay/voir.git
+    pip install -e $MILABENCH_WORDIR/torchcompat
+    pip install -e $MILABENCH_WORDIR/voir
+    pip install -e $MILABENCH_WORDIR/optimum-habana
     # pip install habana_dataloader
- )
+)
 
 if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     cd $MILABENCH_WORDIR
