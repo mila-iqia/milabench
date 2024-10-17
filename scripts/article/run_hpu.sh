@@ -103,6 +103,7 @@ fi
     pip install habana-media-loader
     # git clone git@github.com:Delaunay/torchcompat.git
     # git clone git@github.com:Delaunay/voir.git
+    pip uninstall torchcompat voir -y
     pip install -e $MILABENCH_WORDIR/torchcompat
     pip install -e $MILABENCH_WORDIR/voir
     pip install -e $MILABENCH_WORDIR/optimum-habana

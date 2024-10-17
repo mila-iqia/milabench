@@ -45,6 +45,9 @@ from tqdm import tqdm
 log = utils.get_logger("DEBUG")
 
 
+HPU_UNSUPPORTED = False
+
+
 class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
     """
     Distributed LoRA finetuning recipe for dense transformer-based LLMs such as Llama2. This recipe supports
@@ -133,7 +136,11 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
 
         # These attributes constitute the recipe state and are updated by ``load_checkpoint``
         # when ``resume_from_checkpoint`` is ``True``
-        self.seed = utils.set_seed(seed=cfg.seed)
+        if HPU_UNSUPPORTED:
+            self.seed = utils.set_seed(seed=cfg.seed)
+        else:
+            self.seed = 1
+        
         self.epochs_run = 0
         self.total_epochs = cfg.epochs
         self.max_steps_per_epoch = cfg.max_steps_per_epoch
@@ -444,8 +451,9 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
                 model, auto_wrap_policy={modules.TransformerDecoderLayer}
             )
         if self._is_rank_zero:
-            memory_stats = utils.get_memory_stats(device=self._device)
-            utils.log_memory_stats(memory_stats)
+            if HPU_UNSUPPORTED:
+                memory_stats = utils.get_memory_stats(device=self._device)
+                utils.log_memory_stats(memory_stats)
 
         # synchronize before training begins
         torch.distributed.barrier()
@@ -705,7 +713,8 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
                             "tokens_per_second_per_gpu": num_tokens / time_per_step,
                         }
                         if self._log_peak_memory_stats:
-                            log_dict.update(utils.get_memory_stats(device=self._device))
+                            if HPU_UNSUPPORTED:
+                                log_dict.update(utils.get_memory_stats(device=self._device))
                         self._metric_logger.log_dict(
                             log_dict,
                             step=self.global_step,
