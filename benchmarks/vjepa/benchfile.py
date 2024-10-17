@@ -23,7 +23,9 @@ class Vjepa(Package):
     def make_env(self):
         # Return a dict of environment variables for prepare_script and
         # main_script.
-        return super().make_env()
+        env = super().make_env()
+        env["PT_HPU_LAZY_MODE"] = "0"
+        return env
 
     async def install(self):
         vjepa = self.dirs.code / "jepa"

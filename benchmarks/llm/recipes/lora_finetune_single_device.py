@@ -101,8 +101,9 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
     """
 
     def __init__(self, cfg: DictConfig) -> None:
-
-        self._device = utils.get_device(device=cfg.device)
+        import torchcompat.core as accelerator
+         
+        self._device = accelerator.fetch_device(int(os.getenv("HABANA_VISIBLE_MODULES", "0").split(",")[0]))
         # Reduced precision logic
         self._dtype = utils.get_dtype(cfg.dtype, device=self._device)
         # fp16 precision is explicitly disabled as it is not supported in this
@@ -528,7 +529,8 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
         """
         The core training loop.
         """
-
+        import torchcompat.core as accelerator
+        
         if self._model_compile:
             log.info(
                 "NOTE: torch.compile is enabled and model is compiled in first forward. Expect a relatively slow first iteration."
@@ -579,10 +581,13 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
                     loss = self._loss_fn(logits, labels) / self._gradient_accumulation_steps
                     running_loss += loss
                     loss.backward()
+                    accelerator.mark_step()
 
                     # Step with optimizer
                     if (idx + 1) % self._gradient_accumulation_steps == 0:
                         self._optimizer.step()
+                        accelerator.mark_step()
+                        
                         self._optimizer.zero_grad(set_to_none=True)
                         self._lr_scheduler.step()
                         # Update the number of steps when the weights are updated
