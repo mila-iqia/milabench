@@ -112,11 +112,16 @@ else
 fi
 
 
-milabench prepare $ARGS 
+(
+    . $BENCHMARK_VENV/bin/activate
+    pip install xformers --index-url https://download.pytorch.org/whl/rocm6.1
+)
+
+# milabench prepare $ARGS 
 
 #
 #   Run the benchmakrs
-milabench run $ARGS 
+milabench run $ARGS --system $MILABENCH_WORDIR/system.yaml
 
 #
 #   Display report
