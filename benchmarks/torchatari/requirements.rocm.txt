@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=benchmarks/torchatari/requirements.rocm.txt .pin/tmp-constraints-rocm-torchatari.txt benchmarks/torchatari/requirements.in
 #
---extra-index-url https://download.pytorch.org/whl/rocm6.0
+--extra-index-url https://download.pytorch.org/whl/rocm6.1
 
 absl-py==2.1.0
     # via
@@ -32,7 +32,7 @@ cloudpickle==3.0.0
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   gym
     #   gymnasium
-codefind==0.1.6
+codefind==0.1.7
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   ptera
@@ -52,7 +52,7 @@ envpool==0.8.4
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   -r benchmarks/torchatari/requirements.in
-executing==1.2.0
+executing==2.1.0
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   varname
@@ -60,7 +60,7 @@ farama-notifications==0.0.4
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   gymnasium
-filelock==3.15.4
+filelock==3.16.1
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   pytorch-triton-rocm
@@ -69,16 +69,16 @@ fsspec==2024.6.1
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   torch
-giving==0.4.2
+giving==0.4.3
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   ptera
     #   voir
-grpcio==1.65.5
+grpcio==1.66.2
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   tensorboard
-gym==0.23.1
+gym==0.26.2
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   -r benchmarks/torchatari/requirements.in
@@ -91,7 +91,7 @@ gymnasium==0.29.1
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   envpool
-importlib-resources==6.4.3
+importlib-resources==6.4.5
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   cantilever
@@ -134,15 +134,19 @@ numpy==1.26.4
     #   gym
     #   gymnasium
     #   tensorboard
+nvidia-ml-py==12.560.30
+    # via
+    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   voir
 omegaconf==2.3.0
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   voir
-optree==0.12.1
+optree==0.13.0
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   envpool
-ovld==0.3.8
+ovld==0.3.9
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   voir
@@ -151,7 +155,7 @@ packaging==24.1
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   envpool
     #   tensorboard
-protobuf==5.27.3
+protobuf==5.28.2
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   tensorboard
@@ -167,10 +171,6 @@ pygments==2.18.0
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   rich
-pynvml==11.5.3
-    # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
-    #   voir
 pytorch-triton-rocm==3.0.0
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
@@ -183,7 +183,7 @@ reactivex==4.0.4
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   giving
-rich==13.7.1
+rich==13.9.1
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   tyro
@@ -197,11 +197,11 @@ six==1.16.0
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   asttokens
     #   tensorboard
-sympy==1.13.2
+sympy==1.13.3
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   torch
-tensorboard==2.17.1
+tensorboard==2.18.0
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   -r benchmarks/torchatari/requirements.in
@@ -209,7 +209,7 @@ tensorboard-data-server==0.7.2
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   tensorboard
-torch==2.4.0+rocm6.0
+torch==2.4.1+rocm6.1
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   -r benchmarks/torchatari/requirements.in
@@ -218,7 +218,7 @@ torchcompat==1.1.4
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   -c .pin/../constraints/rocm.txt
     #   -r benchmarks/torchatari/requirements.in
-types-protobuf==5.27.0.20240626
+types-protobuf==5.28.0.20240924
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   envpool
@@ -229,22 +229,23 @@ typing-extensions==4.12.2
     #   gymnasium
     #   optree
     #   reactivex
+    #   rich
     #   torch
     #   tyro
-tyro==0.8.8
+tyro==0.8.11
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   -r benchmarks/torchatari/requirements.in
-varname==0.10.0
+varname==0.13.3
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   giving
-voir==0.2.17
+voir==0.2.19
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   -c .pin/../constraints/rocm.txt
     #   -r benchmarks/torchatari/requirements.in
-werkzeug==3.0.3
+werkzeug==3.0.4
     # via
     #   -c .pin/../.pin/constraints-rocm-torch.txt
     #   tensorboard

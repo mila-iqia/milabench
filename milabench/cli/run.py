@@ -23,6 +23,7 @@ from ..log import (
 from ..report import make_report
 from ..sizer import MemoryUsageExtractor
 from ..summary import make_summary
+from ..system import multirun, apply_system
 
 
 # fmt: off
@@ -72,12 +73,7 @@ def _fetch_arch(mp):
         return None
     
 
-@tooled
-def cli_run(args=None):
-    """Run the benchmarks."""
-    if args is None:
-        args = arguments()
-
+def run(mp, args, name):
     layers = validation_names(args.validations)
 
     dash_class = {
@@ -85,13 +81,7 @@ def cli_run(args=None):
         "long": LongDashFormatter,
         "no": None,
     }.get(args.dash, None)
-
-    mp = get_multipack(run_name=args.run_name)
-    arch = _fetch_arch(mp)
-
-    # Initialize the backend here so we can retrieve GPU stats
-    init_arch(arch)
-
+        
     success = run_with_loggers(
         mp.do_run(repeat=args.repeat),
         loggers=[
@@ -135,4 +125,28 @@ def cli_run(args=None):
                 errdata=reports and _error_report(reports),
             )
 
+    return success
+
+
+@tooled
+def cli_run(args=None):
+    """Run the benchmarks."""
+    if args is None:
+        args = arguments()
+
+    # Load the configuration and system
+    mp = get_multipack(run_name=args.run_name)
+    arch = _fetch_arch(mp)
+
+    # Initialize the backend here so we can retrieve GPU stats
+    init_arch(arch)
+    
+    success = 0
+    for name, conf in multirun():
+        with apply_system(conf):
+            # mark the run later so we can resume multirun more easily
+            run_name = name or args.run_name
+            mp = get_multipack(run_name=run_name)
+            success += run(mp, args, run_name)
+    
     return success
