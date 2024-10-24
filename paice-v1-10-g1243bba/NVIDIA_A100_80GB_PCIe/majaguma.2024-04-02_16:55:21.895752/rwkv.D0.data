@@ -1,0 +1,462 @@
+{"event": "config", "data": {"system": {"arch": "cuda", "sshkey": null, "nodes": [{"aliaslist": [], "hostname": "trustingspider.eastus2.cloudapp.azure.com", "ip": "trustingspider.eastus2.cloudapp.azure.com", "ipaddrlist": ["127.0.0.1", "10.0.1.4", "::1", "fe80::6245:bdff:fec0:7ec%eth0", "60:45:bd:c0:07:ec", "00:00:00:00:00:00"], "key": "/Users/satyaortiz-gagne/.ssh/covalent-azure-task-0-azure__a100-a6186297d965e74b5580bfc38354b9fb/id_rsa.covalent.trustingspider.pem", "local": true, "main": true, "name": "manager", "user": "ubuntu"}], "cloud_profiles": {"azure__a100": {"location": "eastus2", "size": "Standard_NC24ads_A100_v4", "username": "ubuntu"}}, "self": {"aliaslist": [], "hostname": "trustingspider.eastus2.cloudapp.azure.com", "ip": "trustingspider.eastus2.cloudapp.azure.com", "ipaddrlist": ["127.0.0.1", "10.0.1.4", "::1", "fe80::6245:bdff:fec0:7ec%eth0", "60:45:bd:c0:07:ec", "00:00:00:00:00:00"], "key": "/Users/satyaortiz-gagne/.ssh/covalent-azure-task-0-azure__a100-a6186297d965e74b5580bfc38354b9fb/id_rsa.covalent.trustingspider.pem", "local": true, "main": true, "name": "manager", "user": "ubuntu"}}, "dirs": {"base": "/Users/satyaortiz-gagne/travail/mila/milabench", "venv": "/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch", "data": "/Users/satyaortiz-gagne/travail/mila/milabench/data", "runs": "/Users/satyaortiz-gagne/travail/mila/milabench/runs", "extra": "/Users/satyaortiz-gagne/travail/mila/milabench/extra/rwkv", "cache": "/Users/satyaortiz-gagne/travail/mila/milabench/cache"}, "group": "rwkv", "install_group": "torch", "install_variant": "cuda", "run_name": "majaguma.2024-04-02_16:55:21.895752", "enabled": true, "capabilities": {"nodes": 1}, "max_duration": 600, "voir": {"options": {"stop": 60, "interval": "1s"}}, "validation": {"usage": {"gpu_load_threshold": 0.5, "gpu_mem_threshold": 0.5}}, "config_base": "/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/config", "config_file": "/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/config/standard.yaml", "hash": "b7a983fcf74c005cfc04d84913c69872", "definition": "/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/rwkv", "tags": ["llm", "rnn", "unsupported-rocm"], "plan": {"method": "per_gpu"}, "argv": {"--data_type": "dummy", "--ctx_len": 128, "--epoch_steps": 1000, "--epoch_count": 20, "--epoch_begin": 0, "--epoch_save": 0, "--micro_bsz": 16, "--n_layer": 12, "--n_embd": 768, "--pre_ffn": 0, "--head_qk": 0, "--lr_init": "6e-4", "--lr_final": "1e-5", "--warmup_steps": 0, "--beta1": 0.9, "--beta2": 0.99, "--adam_eps": "1e-8", "--accelerator": "gpu", "--devices": 1, "--precision": "tf32", "--strategy": "ddp_find_unused_parameters_false", "--grad_cp": 0, "--random_seed": 1234, "--enable_progress_bar": "False"}, "weight": 1.0, "name": "rwkv", "tag": ["rwkv", "D0"], "device": "0", "devices": ["0"], "env": {"CUDA_VISIBLE_DEVICES": "0"}}, "pipe": null}
+{"event": "meta", "data": {"cpu": {"count": 24, "brand": "AMD EPYC 7V13 64-Core Processor"}, "os": {"sysname": "Linux", "nodename": "trustingspider", "release": "6.5.0-1017-azure", "version": "#17~22.04.1-Ubuntu SMP Sat Mar  9 04:50:38 UTC 2024", "machine": "x86_64"}, "accelerators": {"arch": "cuda", "gpus": {"GPU-b19ad74c-adf3-683a-1bdd-0ce516ef4aae": {"device": "0", "product": "NVIDIA A100 80GB PCIe", "memory": {"used": 882.4375, "total": 81920.0}, "utilization": {"compute": 0, "memory": 0.010771942138671876}, "temperature": 45, "power": 72.501, "selection_variable": "CUDA_VISIBLE_DEVICES"}}}, "date": 1712079323.433281, "milabench": {"tag": "paice-v1-10-g1243bba", "commit": "1243bbae76bfc8105d553472dcfce834b54a723e", "date": "2024-04-02 12:02:23 -0400"}, "pytorch": {"torch": "2.1.0+cu118", "compiler": "GCC 9.3", "cpp": "C++ Version: 201703", "intel": "Intel(R) oneAPI Math Kernel Library Version 2022.2-Product Build 20220804 for Intel(R) 64 architecture applications", "mkl": "OpenMP 201511 (a.k.a. OpenMP 4.5)", "openmp": "OpenMP 201511 (a.k.a. OpenMP 4.5)", "lapack": "LAPACK is enabled (usually provided by MKL)", "nnpack": "NNPACK is enabled", "cpu": "CPU capability usage: AVX2", "build_settings": {"BLAS_INFO": "mkl", "BUILD_TYPE": "Release", "CUDA_VERSION": "11.8", "CUDNN_VERSION": "8.7.0", "CXX_COMPILER": "/opt/rh/devtoolset-9/root/usr/bin/c++", "CXX_FLAGS": "-D_GLIBCXX_USE_CXX11_ABI=0 -fabi-version=11 -fvisibility-inlines-hidden -DUSE_PTHREADPOOL -DNDEBUG -DUSE_KINETO -DLIBKINETO_NOROCTRACER -DUSE_FBGEMM -DUSE_QNNPACK -DUSE_PYTORCH_QNNPACK -DUSE_XNNPACK -DSYMBOLICATE_MOBILE_DEBUG_HANDLE -O2 -fPIC -Wall -Wextra -Werror=return-type -Werror=non-virtual-dtor -Werror=bool-operation -Wnarrowing -Wno-missing-field-initializers -Wno-type-limits -Wno-array-bounds -Wno-unknown-pragmas -Wno-unused-parameter -Wno-unused-function -Wno-unused-result -Wno-strict-overflow -Wno-strict-aliasing -Wno-stringop-overflow -Wno-psabi -Wno-error=pedantic -Wno-error=old-style-cast -Wno-invalid-partial-specialization -Wno-unused-private-field -Wno-aligned-allocation-unavailable -Wno-missing-braces -fdiagnostics-color=always -faligned-new -Wno-unused-but-set-variable -Wno-maybe-uninitialized -fno-math-errno -fno-trapping-math -Werror=format -Werror=cast-function-type -Wno-stringop-overflow", "LAPACK_INFO": "mkl", "PERF_WITH_AVX": "1", "PERF_WITH_AVX2": "1", "PERF_WITH_AVX512": "1", "TORCH_DISABLE_GPU_ASSERTS": "ON", "TORCH_VERSION": "2.1.0", "USE_CUDA": "ON", "USE_CUDNN": "ON", "USE_EXCEPTION_PTR": "1", "USE_GFLAGS": "OFF", "USE_GLOG": "OFF", "USE_MKL": "ON", "USE_MKLDNN": "ON", "USE_MPI": "OFF", "USE_NCCL": "1", "USE_NNPACK": "ON", "USE_OPENMP": "ON", "USE_ROCM": "OFF"}}}, "pipe": null}
+{"event": "start", "data": {"command": ["voir", "--config", "/Users/satyaortiz-gagne/travail/mila/milabench/extra/rwkv/voirconf-rwkv.D0-0efae956f1553a76c1e03985181900f5.json", "/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/rwkv/rwkv-v4neo/train.py", "--data_type", "dummy", "--ctx_len", "128", "--epoch_steps", "1000", "--epoch_count", "20", "--epoch_begin", "0", "--epoch_save", "0", "--micro_bsz", "16", "--n_layer", "12", "--n_embd", "768", "--pre_ffn", "0", "--head_qk", "0", "--lr_init", "6e-4", "--lr_final", "1e-5", "--warmup_steps", "0", "--beta1", "0.9", "--beta2", "0.99", "--adam_eps", "1e-8", "--accelerator", "gpu", "--devices", "1", "--precision", "tf32", "--strategy", "ddp_find_unused_parameters_false", "--grad_cp", "0", "--random_seed", "1234", "--enable_progress_bar", "False"], "time": 1712079323.4496007}, "pipe": null}
+{"event": "phase", "data": {"name": "init"}, "pipe": "data"}
+{"event": "phase", "data": {"name": "parse_args"}, "pipe": "data"}
+{"event": "phase", "data": {"name": "load_script"}, "pipe": "data"}
+{"event": "phase", "data": {"name": "run_script"}, "pipe": "data"}
+{"event": "line", "data": "[2024-04-02 17:35:25,680] [INFO] [real_accelerator.py:158:get_accelerator] Setting ds_accelerator to cuda (auto detect)\n", "pipe": "stdout"}
+{"event": "line", "data": "########## work in progress ##########\n", "pipe": "stderr"}
+{"event": "line", "data": "########## WARNING: GLOBAL SEED 1234 THIS WILL AFFECT MULTIGPU SAMPLING ##########\n", "pipe": "stdout"}
+{"event": "line", "data": "########## WARNING: GLOBAL SEED 1234 THIS WILL AFFECT MULTIGPU SAMPLING ##########\n", "pipe": "stdout"}
+{"event": "line", "data": "########## WARNING: GLOBAL SEED 1234 THIS WILL AFFECT MULTIGPU SAMPLING ##########\n", "pipe": "stdout"}
+{"event": "line", "data": "\n", "pipe": "stdout"}
+{"event": "line", "data": "Global seed set to 1234\n", "pipe": "stderr"}
+{"event": "line", "data": "\n", "pipe": "stderr"}
+{"event": "line", "data": "############################################################################\n", "pipe": "stderr"}
+{"event": "line", "data": "#\n", "pipe": "stderr"}
+{"event": "line", "data": "# RWKV-4 TF32 on 1x1 GPU, bsz 1x1x16=16, ddp_find_unused_parameters_false \n", "pipe": "stderr"}
+{"event": "line", "data": "#\n", "pipe": "stderr"}
+{"event": "line", "data": "# Data =  (dummy), ProjDir = /Users/satyaortiz-gagne/travail/mila/milabench/proj/rwkv/\n", "pipe": "stderr"}
+{"event": "line", "data": "#\n", "pipe": "stderr"}
+{"event": "line", "data": "# Epoch = 0 to 19 (will continue afterwards), save every 0 epoch\n", "pipe": "stderr"}
+{"event": "line", "data": "#\n", "pipe": "stderr"}
+{"event": "line", "data": "# Each \"epoch\" = 1000 steps, 16000 samples, 2048000 tokens\n", "pipe": "stderr"}
+{"event": "line", "data": "#\n", "pipe": "stderr"}
+{"event": "line", "data": "# Model = 12 n_layer, 768 n_embd, 128 ctx_len\n", "pipe": "stderr"}
+{"event": "line", "data": "#\n", "pipe": "stderr"}
+{"event": "line", "data": "# Adam = lr 0.0006 to 1e-05, warmup 0 steps, beta (0.9, 0.99), eps 1e-08\n", "pipe": "stderr"}
+{"event": "line", "data": "#\n", "pipe": "stderr"}
+{"event": "line", "data": "# Found torch 2.1.0+cu118, recommend 1.13.1+cu117 or newer\n", "pipe": "stderr"}
+{"event": "line", "data": "# Found deepspeed 0.12.2, recommend 0.7.0 (faster than newer versions)\n", "pipe": "stderr"}
+{"event": "line", "data": "# Found pytorch_lightning 1.9.5, recommend 1.9.1 or newer\n", "pipe": "stderr"}
+{"event": "line", "data": "#\n", "pipe": "stderr"}
+{"event": "line", "data": "############################################################################\n", "pipe": "stderr"}
+{"event": "line", "data": "\n", "pipe": "stderr"}
+{"event": "line", "data": "{'load_model': '', 'wandb': '', 'proj_dir': '/Users/satyaortiz-gagne/travail/mila/milabench/proj/rwkv/', 'random_seed': 1234, 'data_file': '', 'data_type': 'dummy', 'vocab_size': 0, 'ctx_len': 128, 'epoch_steps': 1000, 'epoch_count': 20, 'epoch_begin': 0, 'epoch_save': 0, 'micro_bsz': 16, 'n_layer': 12, 'n_embd': 768, 'dim_att': 768, 'dim_ffn': 3072, 'pre_ffn': 0, 'head_qk': 0, 'tiny_att_dim': 0, 'tiny_att_layer': -999, 'lr_init': 0.0006, 'lr_final': 1e-05, 'warmup_steps': 0, 'beta1': 0.9, 'beta2': 0.99, 'adam_eps': 1e-08, 'grad_cp': 0, 'my_pile_version': 1, 'my_pile_stage': 0, 'my_pile_shift': -1, 'my_pile_edecay': 0, 'layerwise_lr': 1, 'ds_bucket_mb': 200, 'my_img_version': 0, 'my_img_size': 0, 'my_img_bit': 0, 'my_img_clip': 'x', 'my_img_clip_scale': 1, 'my_img_l1_scale': 0, 'my_img_encoder': 'x', 'my_sample_len': 0, 'my_ffn_shift': 1, 'my_att_shift': 1, 'my_pos_emb': 0, 'load_partial': 0, 'magic_prime': 0, 'my_qa_mask': 0, 'my_testing': '', 'logger': False, 'enable_checkpointing': False, 'default_root_dir': None, 'gradient_clip_val': 1.0, 'gradient_clip_algorithm': None, 'num_nodes': 1, 'num_processes': None, 'devices': '1', 'gpus': None, 'auto_select_gpus': None, 'tpu_cores': None, 'ipus': None, 'enable_progress_bar': False, 'overfit_batches': 0.0, 'track_grad_norm': -1, 'check_val_every_n_epoch': 100000000000000000000, 'fast_dev_run': False, 'accumulate_grad_batches': None, 'max_epochs': -1, 'min_epochs': None, 'max_steps': -1, 'min_steps': None, 'max_time': None, 'limit_train_batches': None, 'limit_val_batches': None, 'limit_test_batches': None, 'limit_predict_batches': None, 'val_check_interval': None, 'log_every_n_steps': 100000000000000000000, 'accelerator': 'gpu', 'strategy': 'ddp_find_unused_parameters_false', 'sync_batchnorm': False, 'precision': 'tf32', 'enable_model_summary': True, 'num_sanity_val_steps': 0, 'resume_from_checkpoint': None, 'profiler': None, 'benchmark': None, 'reload_dataloaders_every_n_epochs': 0, 'auto_lr_find': False, 'replace_sampler_ddp': False, 'detect_anomaly': False, 'auto_scale_batch_size': False, 'plugins': None, 'amp_backend': None, 'amp_level': None, 'move_metrics_to_cpu': False, 'multiple_trainloader_mode': 'max_size_cycle', 'inference_mode': True, 'my_timestamp': '2024-04-02-17-35-27', 'betas': (0.9, 0.99), 'real_bsz': 16, 'run_name': '0 ctx128 L12 D768'}\n", "pipe": "stderr"}
+{"event": "line", "data": "\n", "pipe": "stderr"}
+{"event": "line", "data": "Building dummy data...\n", "pipe": "stderr"}
+{"event": "line", "data": "Building token list...\n", "pipe": "stderr"}
+{"event": "line", "data": "Data has 1620950 tokens, 13 vocab size.\n", "pipe": "stderr"}
+{"event": "line", "data": "RWKV_MY_TESTING \n", "pipe": "stdout"}
+{"event": "line", "data": "Using /mnt/Users/satyaortiz-gagne/travail/mila/milabench/cache/torch_extensions/py310_cu118 as PyTorch extensions root...\n", "pipe": "stderr"}
+{"event": "line", "data": "Detected CUDA files, patching ldflags\n", "pipe": "stderr"}
+{"event": "line", "data": "Emitting ninja build file /mnt/Users/satyaortiz-gagne/travail/mila/milabench/cache/torch_extensions/py310_cu118/wkv_128/build.ninja...\n", "pipe": "stderr"}
+{"event": "line", "data": "Building extension module wkv_128...\n", "pipe": "stderr"}
+{"event": "line", "data": "Allowing ninja to set a default number of workers... (overridable by setting the environment variable MAX_JOBS=N)\n", "pipe": "stderr"}
+{"event": "line", "data": "ninja: no work to do.\n", "pipe": "stdout"}
+{"event": "line", "data": "Loading extension module wkv_128...\n", "pipe": "stderr"}
+{"event": "line", "data": "\n", "pipe": "stdout"}
+{"event": "line", "data": "############################################################################\n", "pipe": "stdout"}
+{"event": "line", "data": "#\n", "pipe": "stdout"}
+{"event": "line", "data": "# Init model weight (slow for large models)...\n", "pipe": "stdout"}
+{"event": "line", "data": "#\n", "pipe": "stdout"}
+{"event": "line", "data": "############################################################################\n", "pipe": "stdout"}
+{"event": "line", "data": "\n", "pipe": "stdout"}
+{"event": "line", "data": "13    768   -0.0006 emb.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.0.att.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   1.0  blocks.0.att.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.0.att.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.0.att.output.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "3072  768   1.0  blocks.0.ffn.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.0.ffn.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   3072  0    blocks.0.ffn.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.1.att.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   1.0  blocks.1.att.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.1.att.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.1.att.output.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "3072  768   1.0  blocks.1.ffn.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.1.ffn.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   3072  0    blocks.1.ffn.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.2.att.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   1.0  blocks.2.att.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.2.att.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.2.att.output.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "3072  768   1.0  blocks.2.ffn.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.2.ffn.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   3072  0    blocks.2.ffn.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.3.att.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   1.0  blocks.3.att.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.3.att.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.3.att.output.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "3072  768   1.0  blocks.3.ffn.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.3.ffn.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   3072  0    blocks.3.ffn.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.4.att.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   1.0  blocks.4.att.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.4.att.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.4.att.output.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "3072  768   1.0  blocks.4.ffn.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.4.ffn.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   3072  0    blocks.4.ffn.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.5.att.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   1.0  blocks.5.att.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.5.att.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.5.att.output.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "3072  768   1.0  blocks.5.ffn.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.5.ffn.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   3072  0    blocks.5.ffn.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.6.att.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   1.0  blocks.6.att.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.6.att.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.6.att.output.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "3072  768   1.0  blocks.6.ffn.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.6.ffn.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   3072  0    blocks.6.ffn.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.7.att.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   1.0  blocks.7.att.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.7.att.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.7.att.output.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "3072  768   1.0  blocks.7.ffn.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.7.ffn.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   3072  0    blocks.7.ffn.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.8.att.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   1.0  blocks.8.att.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.8.att.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.8.att.output.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "3072  768   1.0  blocks.8.ffn.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.8.ffn.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   3072  0    blocks.8.ffn.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.9.att.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   1.0  blocks.9.att.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.9.att.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.9.att.output.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "3072  768   1.0  blocks.9.ffn.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.9.ffn.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   3072  0    blocks.9.ffn.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.10.att.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   1.0  blocks.10.att.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.10.att.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.10.att.output.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "3072  768   1.0  blocks.10.ffn.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.10.ffn.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   3072  0    blocks.10.ffn.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.11.att.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   1.0  blocks.11.att.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.11.att.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.11.att.output.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "3072  768   1.0  blocks.11.ffn.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   0    blocks.11.ffn.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   3072  0    blocks.11.ffn.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "13    768   0.5  head.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "GPU available: True (cuda), used: True\n", "pipe": "stderr"}
+{"event": "line", "data": "TPU available: False, using: 0 TPU cores\n", "pipe": "stderr"}
+{"event": "line", "data": "IPU available: False, using: 0 IPUs\n", "pipe": "stderr"}
+{"event": "line", "data": "HPU available: False, using: 0 HPUs\n", "pipe": "stderr"}
+{"event": "line", "data": "13    768   emb.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.0.ln1.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.0.ln1.bias\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.0.ln2.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.0.ln2.bias\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.0.ln0.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.0.ln0.bias\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.0.att.time_decay\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.0.att.time_first\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.0.att.time_mix_k\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.0.att.time_mix_v\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.0.att.time_mix_r\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.0.att.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.0.att.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.0.att.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.0.att.output.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.0.ffn.time_mix_k\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.0.ffn.time_mix_r\n", "pipe": "stdout"}
+{"event": "line", "data": "3072  768   blocks.0.ffn.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.0.ffn.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   3072  blocks.0.ffn.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.1.ln1.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.1.ln1.bias\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.1.ln2.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.1.ln2.bias\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.1.att.time_decay\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.1.att.time_first\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.1.att.time_mix_k\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.1.att.time_mix_v\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.1.att.time_mix_r\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.1.att.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.1.att.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.1.att.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.1.att.output.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.1.ffn.time_mix_k\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.1.ffn.time_mix_r\n", "pipe": "stdout"}
+{"event": "line", "data": "3072  768   blocks.1.ffn.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.1.ffn.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   3072  blocks.1.ffn.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.2.ln1.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.2.ln1.bias\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.2.ln2.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.2.ln2.bias\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.2.att.time_decay\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.2.att.time_first\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.2.att.time_mix_k\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.2.att.time_mix_v\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.2.att.time_mix_r\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.2.att.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.2.att.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.2.att.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.2.att.output.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.2.ffn.time_mix_k\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.2.ffn.time_mix_r\n", "pipe": "stdout"}
+{"event": "line", "data": "3072  768   blocks.2.ffn.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.2.ffn.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   3072  blocks.2.ffn.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.3.ln1.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.3.ln1.bias\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.3.ln2.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.3.ln2.bias\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.3.att.time_decay\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.3.att.time_first\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.3.att.time_mix_k\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.3.att.time_mix_v\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.3.att.time_mix_r\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.3.att.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.3.att.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.3.att.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.3.att.output.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.3.ffn.time_mix_k\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.3.ffn.time_mix_r\n", "pipe": "stdout"}
+{"event": "line", "data": "3072  768   blocks.3.ffn.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.3.ffn.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   3072  blocks.3.ffn.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.4.ln1.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.4.ln1.bias\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.4.ln2.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.4.ln2.bias\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.4.att.time_decay\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.4.att.time_first\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.4.att.time_mix_k\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.4.att.time_mix_v\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.4.att.time_mix_r\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.4.att.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.4.att.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.4.att.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.4.att.output.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.4.ffn.time_mix_k\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.4.ffn.time_mix_r\n", "pipe": "stdout"}
+{"event": "line", "data": "3072  768   blocks.4.ffn.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.4.ffn.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   3072  blocks.4.ffn.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.5.ln1.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.5.ln1.bias\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.5.ln2.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.5.ln2.bias\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.5.att.time_decay\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.5.att.time_first\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.5.att.time_mix_k\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.5.att.time_mix_v\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.5.att.time_mix_r\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.5.att.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.5.att.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.5.att.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.5.att.output.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.5.ffn.time_mix_k\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.5.ffn.time_mix_r\n", "pipe": "stdout"}
+{"event": "line", "data": "3072  768   blocks.5.ffn.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.5.ffn.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   3072  blocks.5.ffn.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.6.ln1.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.6.ln1.bias\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.6.ln2.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.6.ln2.bias\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.6.att.time_decay\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.6.att.time_first\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.6.att.time_mix_k\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.6.att.time_mix_v\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.6.att.time_mix_r\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.6.att.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.6.att.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.6.att.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.6.att.output.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.6.ffn.time_mix_k\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.6.ffn.time_mix_r\n", "pipe": "stdout"}
+{"event": "line", "data": "3072  768   blocks.6.ffn.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.6.ffn.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   3072  blocks.6.ffn.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.7.ln1.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.7.ln1.bias\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.7.ln2.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.7.ln2.bias\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.7.att.time_decay\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.7.att.time_first\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.7.att.time_mix_k\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.7.att.time_mix_v\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.7.att.time_mix_r\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.7.att.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.7.att.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.7.att.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.7.att.output.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.7.ffn.time_mix_k\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.7.ffn.time_mix_r\n", "pipe": "stdout"}
+{"event": "line", "data": "3072  768   blocks.7.ffn.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.7.ffn.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   3072  blocks.7.ffn.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.8.ln1.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.8.ln1.bias\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.8.ln2.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.8.ln2.bias\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.8.att.time_decay\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.8.att.time_first\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.8.att.time_mix_k\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.8.att.time_mix_v\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.8.att.time_mix_r\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.8.att.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.8.att.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.8.att.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.8.att.output.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.8.ffn.time_mix_k\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.8.ffn.time_mix_r\n", "pipe": "stdout"}
+{"event": "line", "data": "3072  768   blocks.8.ffn.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.8.ffn.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   3072  blocks.8.ffn.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.9.ln1.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.9.ln1.bias\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.9.ln2.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.9.ln2.bias\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.9.att.time_decay\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.9.att.time_first\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.9.att.time_mix_k\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.9.att.time_mix_v\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.9.att.time_mix_r\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.9.att.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.9.att.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.9.att.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.9.att.output.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.9.ffn.time_mix_k\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.9.ffn.time_mix_r\n", "pipe": "stdout"}
+{"event": "line", "data": "3072  768   blocks.9.ffn.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.9.ffn.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   3072  blocks.9.ffn.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.10.ln1.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.10.ln1.bias\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.10.ln2.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.10.ln2.bias\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.10.att.time_decay\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.10.att.time_first\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.10.att.time_mix_k\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.10.att.time_mix_v\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.10.att.time_mix_r\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.10.att.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.10.att.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.10.att.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.10.att.output.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.10.ffn.time_mix_k\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.10.ffn.time_mix_r\n", "pipe": "stdout"}
+{"event": "line", "data": "3072  768   blocks.10.ffn.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.10.ffn.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   3072  blocks.10.ffn.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.11.ln1.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.11.ln1.bias\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.11.ln2.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.11.ln2.bias\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.11.att.time_decay\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.11.att.time_first\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.11.att.time_mix_k\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.11.att.time_mix_v\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.11.att.time_mix_r\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.11.att.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.11.att.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.11.att.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.11.att.output.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.11.ffn.time_mix_k\n", "pipe": "stdout"}
+{"event": "line", "data": "768         blocks.11.ffn.time_mix_r\n", "pipe": "stdout"}
+{"event": "line", "data": "3072  768   blocks.11.ffn.key.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   768   blocks.11.ffn.receptance.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768   3072  blocks.11.ffn.value.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         ln_out.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "768         ln_out.bias\n", "pipe": "stdout"}
+{"event": "line", "data": "13    768   head.weight\n", "pipe": "stdout"}
+{"event": "line", "data": "[rank: 0] Global seed set to 1234\n", "pipe": "stderr"}
+{"event": "line", "data": "Initializing distributed: GLOBAL_RANK: 0, MEMBER: 1/1\n", "pipe": "stderr"}
+{"event": "line", "data": "----------------------------------------------------------------------------------------------------\n", "pipe": "stderr"}
+{"event": "line", "data": "distributed_backend=nccl\n", "pipe": "stderr"}
+{"event": "line", "data": "All distributed processes registered. Starting with 1 processes\n", "pipe": "stderr"}
+{"event": "line", "data": "----------------------------------------------------------------------------------------------------\n", "pipe": "stderr"}
+{"event": "line", "data": "\n", "pipe": "stderr"}
+{"event": "line", "data": "LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]\n", "pipe": "stderr"}
+{"event": "line", "data": "Installed CUDA version 11.5 does not match the version torch was compiled with 11.8 but since the APIs are compatible, accepting this combination\n", "pipe": "stdout"}
+{"event": "line", "data": "Using /mnt/Users/satyaortiz-gagne/travail/mila/milabench/cache/torch_extensions/py310_cu118 as PyTorch extensions root...\n", "pipe": "stderr"}
+{"event": "line", "data": "Detected CUDA files, patching ldflags\n", "pipe": "stderr"}
+{"event": "line", "data": "Emitting ninja build file /mnt/Users/satyaortiz-gagne/travail/mila/milabench/cache/torch_extensions/py310_cu118/fused_adam/build.ninja...\n", "pipe": "stderr"}
+{"event": "line", "data": "Building extension module fused_adam...\n", "pipe": "stderr"}
+{"event": "line", "data": "Allowing ninja to set a default number of workers... (overridable by setting the environment variable MAX_JOBS=N)\n", "pipe": "stderr"}
+{"event": "line", "data": "[1/2] /usr/bin/nvcc  -DTORCH_EXTENSION_NAME=fused_adam -DTORCH_API_INCLUDE_EXTENSION_H -DPYBIND11_COMPILER_TYPE=\\\"_gcc\\\" -DPYBIND11_STDLIB=\\\"_libstdcpp\\\" -DPYBIND11_BUILD_ABI=\\\"_cxxabi1011\\\" -I/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/deepspeed/ops/csrc/includes -I/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/deepspeed/ops/csrc/adam -isystem /Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/include -isystem /Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/include/torch/csrc/api/include -isystem /Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/include/TH -isystem /Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/include/THC -isystem /home/ubuntu/miniconda3/include/python3.10 -D_GLIBCXX_USE_CXX11_ABI=0 -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr -gencode=arch=compute_80,code=compute_80 -gencode=arch=compute_80,code=sm_80 --compiler-options '-fPIC' -O3 -DVERSION_GE_1_1 -DVERSION_GE_1_3 -DVERSION_GE_1_5 -lineinfo --use_fast_math -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_80,code=compute_80 -DBF16_AVAILABLE -U__CUDA_NO_BFLOAT16_OPERATORS__ -U__CUDA_NO_BFLOAT162_OPERATORS__ -std=c++17 -c /Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/deepspeed/ops/csrc/adam/multi_tensor_adam.cu -o multi_tensor_adam.cuda.o \n", "pipe": "stdout"}
+{"event": "line", "data": "FAILED: multi_tensor_adam.cuda.o \n", "pipe": "stdout"}
+{"event": "line", "data": "/usr/bin/nvcc  -DTORCH_EXTENSION_NAME=fused_adam -DTORCH_API_INCLUDE_EXTENSION_H -DPYBIND11_COMPILER_TYPE=\\\"_gcc\\\" -DPYBIND11_STDLIB=\\\"_libstdcpp\\\" -DPYBIND11_BUILD_ABI=\\\"_cxxabi1011\\\" -I/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/deepspeed/ops/csrc/includes -I/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/deepspeed/ops/csrc/adam -isystem /Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/include -isystem /Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/include/torch/csrc/api/include -isystem /Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/include/TH -isystem /Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/include/THC -isystem /home/ubuntu/miniconda3/include/python3.10 -D_GLIBCXX_USE_CXX11_ABI=0 -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr -gencode=arch=compute_80,code=compute_80 -gencode=arch=compute_80,code=sm_80 --compiler-options '-fPIC' -O3 -DVERSION_GE_1_1 -DVERSION_GE_1_3 -DVERSION_GE_1_5 -lineinfo --use_fast_math -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_80,code=compute_80 -DBF16_AVAILABLE -U__CUDA_NO_BFLOAT16_OPERATORS__ -U__CUDA_NO_BFLOAT162_OPERATORS__ -std=c++17 -c /Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/deepspeed/ops/csrc/adam/multi_tensor_adam.cu -o multi_tensor_adam.cuda.o \n", "pipe": "stdout"}
+{"event": "line", "data": "/usr/include/c++/11/bits/std_function.h:435:145: error: parameter packs not expanded with \u2018...\u2019:\n", "pipe": "stdout"}
+{"event": "line", "data": "  435 |         function(_Functor&& __f)\n", "pipe": "stdout"}
+{"event": "line", "data": "      |                                                                                                                                                 ^ \n", "pipe": "stdout"}
+{"event": "line", "data": "/usr/include/c++/11/bits/std_function.h:435:145: note:         \u2018_ArgTypes\u2019\n", "pipe": "stdout"}
+{"event": "line", "data": "/usr/include/c++/11/bits/std_function.h:530:146: error: parameter packs not expanded with \u2018...\u2019:\n", "pipe": "stdout"}
+{"event": "line", "data": "  530 |         operator=(_Functor&& __f)\n", "pipe": "stdout"}
+{"event": "line", "data": "      |                                                                                                                                                  ^ \n", "pipe": "stdout"}
+{"event": "line", "data": "/usr/include/c++/11/bits/std_function.h:530:146: note:         \u2018_ArgTypes\u2019\n", "pipe": "stdout"}
+{"event": "line", "data": "ninja: build stopped: subcommand failed.\n", "pipe": "stdout"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [1574.375, 81920.0], "load": 0.02, "temperature": 45, "power": 69.155}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [887.5625, 81920.0], "load": 0, "temperature": 44, "power": 48.303}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [2680.375, 81920.0], "load": 0, "temperature": 45, "power": 68.666}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [2680.375, 81920.0], "load": 0, "temperature": 45, "power": 68.472}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [2680.375, 81920.0], "load": 0, "temperature": 45, "power": 68.459}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [2680.375, 81920.0], "load": 0, "temperature": 45, "power": 68.667}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [2680.375, 81920.0], "load": 0, "temperature": 45, "power": 68.667}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [2680.375, 81920.0], "load": 0, "temperature": 45, "power": 68.569}}}, "pipe": "data"}
+{"event": "data", "data": {"task": "main", "gpudata": {"0": {"memory": [2680.375, 81920.0], "load": 0, "temperature": 45, "power": 68.667}}}, "pipe": "data"}
+{"event": "error", "data": {"type": "RuntimeError", "message": "Error building extension 'fused_adam'"}, "pipe": "data"}
+{"event": "line", "data": "Traceback (most recent call last):\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/utils/cpp_extension.py\", line 2100, in _run_ninja_build\n", "pipe": "stderr"}
+{"event": "line", "data": "    subprocess.run(\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/home/ubuntu/miniconda3/lib/python3.10/subprocess.py\", line 526, in run\n", "pipe": "stderr"}
+{"event": "line", "data": "    raise CalledProcessError(retcode, process.args,\n", "pipe": "stderr"}
+{"event": "line", "data": "subprocess.CalledProcessError: Command '['ninja', '-v']' returned non-zero exit status 1.\n", "pipe": "stderr"}
+{"event": "line", "data": "\n", "pipe": "stderr"}
+{"event": "line", "data": "The above exception was the direct cause of the following exception:\n", "pipe": "stderr"}
+{"event": "line", "data": "\n", "pipe": "stderr"}
+{"event": "line", "data": "Traceback (most recent call last):\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/bin/voir\", line 8, in <module>\n", "pipe": "stderr"}
+{"event": "line", "data": "    sys.exit(main())\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/voir/cli.py\", line 124, in main\n", "pipe": "stderr"}
+{"event": "line", "data": "    ov(sys.argv[1:] if argv is None else argv)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/voir/phase.py\", line 334, in __call__\n", "pipe": "stderr"}
+{"event": "line", "data": "    self._run(*args, **kwargs)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/voir/overseer.py\", line 242, in _run\n", "pipe": "stderr"}
+{"event": "line", "data": "    set_value(func())\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/voir/scriptutils.py\", line 37, in <lambda>\n", "pipe": "stderr"}
+{"event": "line", "data": "    return lambda: exec(mainsection, glb, glb)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/rwkv/rwkv-v4neo/train.py\", line 420, in <module>\n", "pipe": "stderr"}
+{"event": "line", "data": "    trainer.fit(model, data_loader)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/pytorch_lightning/trainer/trainer.py\", line 608, in fit\n", "pipe": "stderr"}
+{"event": "phase", "data": {"name": "finalize"}, "pipe": "data"}
+{"event": "line", "data": "    call._call_and_handle_interrupt(\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/pytorch_lightning/trainer/call.py\", line 36, in _call_and_handle_interrupt\n", "pipe": "stderr"}
+{"event": "line", "data": "    return trainer.strategy.launcher.launch(trainer_fn, *args, trainer=trainer, **kwargs)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/pytorch_lightning/strategies/launchers/subprocess_script.py\", line 88, in launch\n", "pipe": "stderr"}
+{"event": "line", "data": "    return function(*args, **kwargs)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/pytorch_lightning/trainer/trainer.py\", line 650, in _fit_impl\n", "pipe": "stderr"}
+{"event": "line", "data": "    self._run(model, ckpt_path=self.ckpt_path)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/pytorch_lightning/trainer/trainer.py\", line 1093, in _run\n", "pipe": "stderr"}
+{"event": "line", "data": "    self.strategy.setup(self)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/pytorch_lightning/strategies/ddp.py\", line 181, in setup\n", "pipe": "stderr"}
+{"event": "line", "data": "    self.setup_optimizers(trainer)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/pytorch_lightning/strategies/strategy.py\", line 142, in setup_optimizers\n", "pipe": "stderr"}
+{"event": "line", "data": "    self.optimizers, self.lr_scheduler_configs, self.optimizer_frequencies = _init_optimizers_and_lr_schedulers(\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/pytorch_lightning/core/optimizer.py\", line 180, in _init_optimizers_and_lr_schedulers\n", "pipe": "stderr"}
+{"event": "line", "data": "    optim_conf = model.trainer._call_lightning_module_hook(\"configure_optimizers\", pl_module=model)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/pytorch_lightning/trainer/trainer.py\", line 1356, in _call_lightning_module_hook\n", "pipe": "stderr"}
+{"event": "line", "data": "    output = fn(*args, **kwargs)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/rwkv/rwkv-v4neo/src/model.py\", line 606, in configure_optimizers\n", "pipe": "stderr"}
+{"event": "line", "data": "    return FusedAdam(\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/deepspeed/ops/adam/fused_adam.py\", line 94, in __init__\n", "pipe": "stderr"}
+{"event": "line", "data": "    fused_adam_cuda = FusedAdamBuilder().load()\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/deepspeed/ops/op_builder/builder.py\", line 452, in load\n", "pipe": "stderr"}
+{"event": "line", "data": "    return self.jit_load(verbose)\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/deepspeed/ops/op_builder/builder.py\", line 501, in jit_load\n", "pipe": "stderr"}
+{"event": "line", "data": "    op_module = load(name=self.name,\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/utils/cpp_extension.py\", line 1308, in load\n", "pipe": "stderr"}
+{"event": "line", "data": "    return _jit_compile(\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/utils/cpp_extension.py\", line 1710, in _jit_compile\n", "pipe": "stderr"}
+{"event": "line", "data": "    _write_ninja_file_and_build_library(\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/utils/cpp_extension.py\", line 1823, in _write_ninja_file_and_build_library\n", "pipe": "stderr"}
+{"event": "line", "data": "    _run_ninja_build(\n", "pipe": "stderr"}
+{"event": "line", "data": "  File \"/Users/satyaortiz-gagne/travail/mila/milabench/venv/torch/lib/python3.10/site-packages/torch/utils/cpp_extension.py\", line 2116, in _run_ninja_build\n", "pipe": "stderr"}
+{"event": "line", "data": "    raise RuntimeError(message) from e\n", "pipe": "stderr"}
+{"event": "line", "data": "RuntimeError: Error building extension 'fused_adam'\n", "pipe": "stderr"}
+{"event": "end", "data": {"command": ["voir", "--config", "/Users/satyaortiz-gagne/travail/mila/milabench/extra/rwkv/voirconf-rwkv.D0-0efae956f1553a76c1e03985181900f5.json", "/mnt/Users/satyaortiz-gagne/travail/mila/CODE/milabench/benchmarks/rwkv/rwkv-v4neo/train.py", "--data_type", "dummy", "--ctx_len", "128", "--epoch_steps", "1000", "--epoch_count", "20", "--epoch_begin", "0", "--epoch_save", "0", "--micro_bsz", "16", "--n_layer", "12", "--n_embd", "768", "--pre_ffn", "0", "--head_qk", "0", "--lr_init", "6e-4", "--lr_final", "1e-5", "--warmup_steps", "0", "--beta1", "0.9", "--beta2", "0.99", "--adam_eps", "1e-8", "--accelerator", "gpu", "--devices", "1", "--precision", "tf32", "--strategy", "ddp_find_unused_parameters_false", "--grad_cp", "0", "--random_seed", "1234", "--enable_progress_bar", "False"], "time": 1712079350.9924312, "return_code": 1}, "pipe": null}
