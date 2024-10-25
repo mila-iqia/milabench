@@ -75,7 +75,7 @@ install_prepare() {
 
         # https://github.com/ROCm/jax/releases/tag/rocm-jaxlib-v0.4.30
         pip install https://github.com/ROCm/jax/releases/download/rocm-jaxlib-v0.4.30/jaxlib-0.4.30+rocm611-cp310-cp310-manylinux2014_x86_64.whl
-        pip install https://github.com/ROCm/jax/archive/refs/tags/rocm-jaxlib-v0.4.30.tar.g
+        pip install https://github.com/ROCm/jax/archive/refs/tags/rocm-jaxlib-v0.4.30.tar.gz
 
         pip uninstall torch_cluster torch_scatter torch_sparse -y
         FORCE_ONLY_CUDA=1 pip install -U -v --use-pep517 --no-build-isolation git+https://github.com/rusty1s/pytorch_cluster.git
