@@ -37,7 +37,7 @@ multirun:
       matrix:
         sizer.auto: 1
         sizer.batch_size: [1, 2, 4, 8, 16, 32, 64, 128]
-        sizer.save: "scaling.yaml"
+        sizer.save: ["scaling.yaml"]
     
     # Matrix run
     - name: "c{sizer.capacity}_m{sizer.multiple}_w{cpu.n_workers}"
@@ -47,7 +47,7 @@ multirun:
         sizer.auto: 1
         sizer.capacity: [4Go, 8Go, 16Go, 32Go, 64Go, All]
         sizer.multiple: 8
-        sizer.save: "scaling.yaml"
+        sizer.save: ["scaling.yaml"]
 
     # Auto run
     - name: "auto"
@@ -55,4 +55,4 @@ multirun:
         cpu.auto: 1
         sizer.auto: 1
         sizer.multiple: 8
-        sizer.save: "scaling.yaml"
+        sizer.save: ["scaling.yaml"]

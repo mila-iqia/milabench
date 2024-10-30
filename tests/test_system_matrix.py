@@ -31,6 +31,9 @@ def test_apply_system_matrix():
                 for k, v in conf.items():
                     assert option(k, lambda x: x) == v
 
+
+                assert SizerOptions().save == option("sizer.save", lambda x: x)
+
     
     
 if __name__ == "__main__":

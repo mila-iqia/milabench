@@ -23,7 +23,7 @@ from ..log import (
 from ..report import make_report
 from ..sizer import MemoryUsageExtractor
 from ..summary import make_summary
-from ..system import multirun, apply_system
+from ..system import multirun, apply_system, SizerOptions, option
 
 
 # fmt: off
@@ -143,10 +143,12 @@ def cli_run(args=None):
     
     success = 0
     for name, conf in multirun():
+        run_name = name or args.run_name
+        
+        # Note that this function overrides the system config
+        mp = get_multipack(run_name=run_name)
+        
         with apply_system(conf):
-            # mark the run later so we can resume multirun more easily
-            run_name = name or args.run_name
-            mp = get_multipack(run_name=run_name)
             success += run(mp, args, run_name)
     
     return success
