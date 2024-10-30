@@ -72,7 +72,7 @@ install_prepare() {
 
 # module load cuda/12.3.2
 
-if [ ! -d "$MILABENCH_WORDIR/results" ]; then
+if [ ! -d "$MILABENCH_WORDIR/env" ]; then
     install_prepare 
 else
     echo "Reusing previous install"
@@ -105,3 +105,8 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     #   Display report
     milabench report --runs $MILABENCH_WORDIR/results/runs
 fi
+
+
+# rsync -av mila@172.29.171.42:~/rocm/results/cache ~/cuda/results/cache
+# rsync -av mila@172.29.171.42:~/rocm/results/data ~/cuda/results/data
+# rsync -av mila@172.29.171.42:~/rocm/results/cache ~/cuda/results/cache
