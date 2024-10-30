@@ -49,8 +49,8 @@ install_prepare() {
     # Install milabench's benchmarks in their venv
     #
     # pip install torch
-    milabench pin --variant cuda --from-scratch $ARGS 
-    milabench install --system $MILABENCH_WORDIR/system.yaml $ARGS
+    # milabench pin --variant cuda --from-scratch $ARGS 
+    milabench install # --system $MILABENCH_WORDIR/system.yaml $ARGS
 
     which pip
 
@@ -67,10 +67,10 @@ install_prepare() {
 
     #
     #   Generate/download datasets, download models etc...
-    milabench prepare --system $MILABENCH_WORDIR/system.yaml $ARGS
+    milabench prepare # --system $MILABENCH_WORDIR/system.yaml $ARGS
 }
 
-module load cuda/12.3.2
+# module load cuda/12.3.2
 
 if [ ! -d "$MILABENCH_WORDIR/results" ]; then
     install_prepare 
@@ -89,7 +89,7 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     # rm -rf $MILABENCH_WORDIR/results/venv/
     # rm -rf $MILABENCH_WORDIR/results/extra
     # milabench install --system $MILABENCH_WORDIR/system.yaml
-    milabench prepare --system $MILABENCH_WORDIR/system.yaml $ARGS
+    milabench prepare # --system $MILABENCH_WORDIR/system.yaml $ARGS
 
     (
         . $BENCHMARK_VENV/bin/activate
@@ -117,7 +117,7 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     #     milabench run --run-name "c$CAPACITY.{time}" --system $MILABENCH_WORDIR/system.yaml $ARGS || true
     # done
 
-    milabench run --system $MILABENCH_WORDIR/system.yaml $ARGS
+    milabench run # --system $MILABENCH_WORDIR/system.yaml $ARGS
 
     #
     #   Display report
