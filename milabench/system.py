@@ -456,12 +456,16 @@ def gethostname(host):
 def resolve_hostname(ip):
     try:
         hostname, _, iplist = socket.gethostbyaddr(ip)
-
+        
         for ip in iplist:
             if is_loopback(ip):
                 return hostname, True
 
-        return hostname, hostname == socket.gethostname()
+        # Dell has a weird hostname config
+        # csctmp-xe9680-12.hpc.local csctmp-xe9680-12
+        # print(hostname, socket.gethostname())
+        
+        return socket.gethostname(), hostname.startswith(socket.gethostname())
 
     except:
         if offline:

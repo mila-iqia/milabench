@@ -100,7 +100,7 @@ def worker_commands(pack, worker_plan, setup_for="worker"):
 def sshnode(node, cmd):
     host = node["ip"]
     user = node["user"]
-    port = node["sshport"]
+    port = node.get("sshport", 22)
     return SSHCommand(cmd, user=user, host=host, port=port)
 
 
@@ -124,7 +124,6 @@ def milabench_remote_setup_plan(pack, setup_for="worker") -> SequenceCommand:
 
     nodes = pack.config["system"]["nodes"]
     copy = []
-    node_packs = []
 
     copy_source = copy_folder(pack, INSTALL_FOLDER, setup_for)
 
@@ -132,7 +131,8 @@ def milabench_remote_setup_plan(pack, setup_for="worker") -> SequenceCommand:
 
     for i, node in enumerate(nodes):
         if should_run_for(node, setup_for):
-            install.append(pip_install_milabench(node_packs[i], node, INSTALL_FOLDER))
+            node_pack = worker_pack(pack, node)
+            install.append(pip_install_milabench(node_pack, node, INSTALL_FOLDER))
 
     return SequenceCommand(
         copy_source,

@@ -117,7 +117,9 @@ fi
     pip install xformers --index-url https://download.pytorch.org/whl/rocm6.1
 )
 
-# milabench prepare $ARGS 
+milabench install $ARGS --system $MILABENCH_WORDIR/system.yaml
+
+milabench prepare $ARGS --system $MILABENCH_WORDIR/system.yaml
 
 #
 #   Run the benchmakrs

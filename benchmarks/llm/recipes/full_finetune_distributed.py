@@ -97,7 +97,10 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
     """
 
     def __init__(self, cfg: DictConfig) -> None:
-
+        # import os
+        # import torchcompat.core as acc 
+        # self._device = acc.fetch_device(int(os.getenv("LOCAL_RANK", "0")))
+        
         self._device = utils.get_device(device=cfg.device)
         self._dtype = utils.get_dtype(cfg.dtype, device=self._device)
 
