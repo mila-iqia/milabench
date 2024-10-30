@@ -53,8 +53,7 @@ def to_octet(value: str) -> float:
 class Sizer:
     """Automatically scale the batch size to match GPU spec"""
 
-    def __init__(self, options=SizerOptions(), scaling_config=None):
-        self.options = options
+    def __init__(self, scaling_config=None):
         self.path = scaling_config
 
         if scaling_config is None:
@@ -62,6 +61,10 @@ class Sizer:
 
         with open(scaling_config, "r") as sconf:
             self.scaling_config = yaml.safe_load(sconf)
+            
+    @property
+    def options(self):
+        return SizerOptions()
 
     def benchscaling(self, benchmark):
         # key
@@ -165,6 +168,10 @@ class Sizer:
         return -1
 
     def argv(self, benchmark, capacity, argv):
+        newargv = self._argv(benchmark, capacity, argv)
+        return newargv
+        
+    def _argv(self, benchmark, capacity, argv):
         """Find the batch size and override it with a new value"""
 
         config = self.benchscaling(benchmark)
