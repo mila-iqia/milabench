@@ -26,6 +26,7 @@ def fetch_runs(folder, filter):
 
     runs = []
     ignored = 0
+    
     for run in os.listdir(folder):
         if filter is not None and (not fnmatch.fnmatch(run, filter)):
             ignored += 1
@@ -40,6 +41,7 @@ def fetch_runs(folder, filter):
             date = retrieve_datetime_from_name(date)
         else:
             name = run
+            date = None
 
         if date is None:
             date = datetime.fromtimestamp(os.path.getmtime(pth))

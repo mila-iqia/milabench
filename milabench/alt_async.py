@@ -190,6 +190,8 @@ def run(argv, setsid=None, process_accumulator=None, info={}, **kwargs):
             destroy(*mx.processes)
         yield entry
         
+    # mx.close()
+        
 
 def proceed(coro):
     loop = FeedbackEventLoop()

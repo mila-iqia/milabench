@@ -465,6 +465,7 @@ def resolve_hostname(ip):
         # csctmp-xe9680-12.hpc.local csctmp-xe9680-12
         # print(hostname, socket.gethostname())
         
+        print(ip, hostname.startswith(socket.gethostname()))
         return socket.gethostname(), hostname.startswith(socket.gethostname())
 
     except:

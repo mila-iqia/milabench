@@ -11,6 +11,7 @@ export ROCM_PATH="/opt/rocm"
 export MILABENCH_BASE="$MILABENCH_WORDIR/results"
 export MILABENCH_VENV="$MILABENCH_WORDIR/env"
 export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
+export MILABENCH_SIZER_SAVE="$MILABENCH_WORDIR/scaling.yaml"
 
 if [ -z "${MILABENCH_SOURCE}" ]; then
     export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/standard.yaml"
