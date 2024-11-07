@@ -94,7 +94,7 @@ def get_multipack(args = None, run_name=None, overrides={}):
         args = arguments()
 
     override = [
-        o if re.match(pattern=r"[.\w_-]+=", string=o) else f"={o}" for o in args.override
+        o if re.match(pattern=r"[.\w]+=", string=o) else f"={o}" for o in args.override
     ]
 
     override.extend(
