@@ -541,7 +541,7 @@ _llm:
   tags:
     - nlp
     - llm
-  max_duration: 1200
+  max_duration: 3600
   num_machines: 1
   inherits: _defaults
   definition: ../benchmarks/llm
@@ -640,6 +640,9 @@ llm-lora-mp-gpus:
     device={device_name}: true
   
 llm-full-mp-gpus:
+  voir:
+    options:
+      stop: 30
   inherits: _llm
   tags:
     - multigpu

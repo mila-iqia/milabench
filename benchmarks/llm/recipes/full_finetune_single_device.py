@@ -279,9 +279,9 @@ class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
             log.info("Compiling model with torch.compile...")
             backend = os.environ.get("TORCH_COMPILE_BACKEND", "inductor")
             model.compile(backend=backend)
-        if self._device.type == "cuda":
-            memory_stats = utils.get_memory_stats(device=self._device)
-            utils.log_memory_stats(memory_stats)
+        # if self._device.type == "cuda":
+        #     memory_stats = utils.get_memory_stats(device=self._device)
+        #     utils.log_memory_stats(memory_stats)
 
         return model
 
@@ -487,8 +487,8 @@ class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
                             ),
                             "tokens_per_second_per_gpu": num_tokens / time_per_step,
                         }
-                        if self._device.type == "cuda" and self._log_peak_memory_stats:
-                            log_dict.update(utils.get_memory_stats(device=self._device))
+                        # if self._device.type == "cuda" and self._log_peak_memory_stats:
+                        #     log_dict.update(utils.get_memory_stats(device=self._device))
                         self._metric_logger.log_dict(
                             log_dict,
                             step=self.global_step,

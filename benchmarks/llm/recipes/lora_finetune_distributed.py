@@ -452,8 +452,9 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
             )
         if self._is_rank_zero:
             if HPU_UNSUPPORTED:
-                memory_stats = utils.get_memory_stats(device=self._device)
-                utils.log_memory_stats(memory_stats)
+                pass
+                # memory_stats = utils.get_memory_stats(device=self._device)
+                # utils.log_memory_stats(memory_stats)
 
         # synchronize before training begins
         torch.distributed.barrier()
@@ -712,9 +713,9 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
                             "lr": self._optimizer.param_groups[0]["lr"],
                             "tokens_per_second_per_gpu": num_tokens / time_per_step,
                         }
-                        if self._log_peak_memory_stats:
-                            if HPU_UNSUPPORTED:
-                                log_dict.update(utils.get_memory_stats(device=self._device))
+                        # if self._log_peak_memory_stats:
+                        #     if HPU_UNSUPPORTED:
+                        #         log_dict.update(utils.get_memory_stats(device=self._device))
                         self._metric_logger.log_dict(
                             log_dict,
                             step=self.global_step,
