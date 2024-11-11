@@ -53,8 +53,8 @@ install_prepare() {
     # Override dependencies for HPU
     # milabench needs pyhlml
     export HABANALABS_VIRTUAL_DIR=$MILABENCH_VENV
-    ./habanalabs-installer.sh install -t dependencies --venv -y
-    ./habanalabs-installer.sh install -t pytorch --venv -y
+    ./habanalabs-installer.sh install -t dependencies --venv -y | true
+    ./habanalabs-installer.sh install -t pytorch --venv -y | true
 
     #
     # Install milabench's benchmarks in their venv
@@ -71,8 +71,8 @@ install_prepare() {
         # benchmarks need pytorch
         pip uninstall torch torchvision torchaudio -y
         export HABANALABS_VIRTUAL_DIR=$BENCHMARK_VENV
-        ./habanalabs-installer.sh install -t dependencies --venv -y
-        ./habanalabs-installer.sh install -t pytorch --venv -y
+        ./habanalabs-installer.sh install -t dependencies --venv -y | true
+        ./habanalabs-installer.sh install -t pytorch --venv -y | true
 
         if [ -z "${MILABENCH_HF_TOKEN}" ]; then
             echo "Missing token"
@@ -84,8 +84,8 @@ install_prepare() {
     #
     #   Generate/download datasets, download models etc...
     #
-    sed -i 's/pic.numpy(force=True)/pic.numpy()/' $BENCHMARK_VENV/lib/python3.10/dist-packages/torchvision/transforms/functional.py
-    sed -i 's/range(hpu.device_count())/range(len(available_modules))/' $BENCHMARK_VENV/lib/site-packages/habana_frameworks/torch/hpu/_utils.py
+    # sed -i 's/pic.numpy(force=True)/pic.numpy()/' $BENCHMARK_VENV/lib/python3.10/dist-packages/torchvision/transforms/functional.py
+    # sed -i 's/range(hpu.device_count())/range(len(available_modules))/' $BENCHMARK_VENV/lib/site-packages/habana_frameworks/torch/hpu/_utils.py
     milabench prepare $ARGS
 }
 
@@ -101,8 +101,8 @@ fi
     . $BENCHMARK_VENV/bin/activate
     pip install lightning-habana
     pip install habana-media-loader
-    # git clone git@github.com:Delaunay/torchcompat.git
-    # git clone git@github.com:Delaunay/voir.git
+    git clone https://github.com/Delaunay/torchcompat.git
+    git clone https://github.com/Delaunay/voir.git -b hpu
     pip uninstall torchcompat voir -y
     pip install -e $MILABENCH_WORDIR/torchcompat
     pip install -e $MILABENCH_WORDIR/voir
