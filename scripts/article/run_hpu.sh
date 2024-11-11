@@ -101,8 +101,8 @@ fi
     . $BENCHMARK_VENV/bin/activate
     pip install lightning-habana
     pip install habana-media-loader
-    git clone https://github.com/Delaunay/torchcompat.git
-    git clone https://github.com/Delaunay/voir.git -b hpu
+    # git clone https://github.com/Delaunay/torchcompat.git
+    # git clone https://github.com/Delaunay/voir.git -b hpu
     pip uninstall torchcompat voir -y
     pip install -e $MILABENCH_WORDIR/torchcompat
     pip install -e $MILABENCH_WORDIR/voir
@@ -114,11 +114,11 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     cd $MILABENCH_WORDIR
 
     # python -c "import torch; print(torch.__version__)"
-    # milabench prepare $ARGS
+    milabench prepare $ARGS --system $MILABENCH_WORDIR/system.yaml
 
     #
     #   Run the benchmakrs
-    milabench run $ARGS
+    milabench run $ARGS --system $MILABENCH_WORDIR/system.yaml
 
     #
     #   Display report

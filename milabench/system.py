@@ -328,7 +328,7 @@ def _fix_weird(hostname):
 
 # If true that means we cannot resolve the ip addresses
 # so we ignore errors
-offline = False
+offline = True
 
 
 @contextmanager

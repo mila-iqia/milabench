@@ -100,7 +100,7 @@ def worker_commands(pack, worker_plan, setup_for="worker"):
 def sshnode(node, cmd):
     host = node["ip"]
     user = node["user"]
-    port = node["sshport"]
+    port = node.get("sshport", 22)
     return SSHCommand(cmd, user=user, host=host, port=port)
 
 
