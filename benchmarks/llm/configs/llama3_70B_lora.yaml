@@ -23,7 +23,7 @@ tokenizer:
 
 safetensors: true
 checkpointer:
-  _component_: torchtune.utils.FullModelHFCheckpointer
+  _component_: torchtune.training.FullModelHFCheckpointer
   checkpoint_dir: /tmp/Meta-Llama-3.1-70B-Instruct/
   checkpoint_files: [
     model-00001-of-00030.safetensors,
@@ -90,7 +90,7 @@ gradient_accumulation_steps: 1
 # Logging
 output_dir: /tmp/lora_finetune_output
 metric_logger:
-  _component_: torchtune.utils.metric_logging.DiskLogger
+  _component_: torchtune.training.metric_logging.DiskLogger
   log_dir: ${output_dir}
 log_every_n_steps: 1
 log_peak_memory_stats: False
@@ -99,3 +99,4 @@ log_peak_memory_stats: False
 device: cuda
 dtype: bf16
 enable_activation_checkpointing: True
+enable_activation_offloading: True

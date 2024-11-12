@@ -624,7 +624,8 @@ llm-lora-mp-gpus:
     n: 1
 
   argv:
-    "{milabench_code}/recipes/lora_finetune_distributed.py": true
+    #"{milabench_code}/recipes/lora_finetune_distributed.py": true
+    tuneworkaroundrecipes/lora_finetune_distributed.py: true
     --config: "{milabench_code}/configs/llama3_70B_lora.yaml"
     epochs=1: true
     output_dir={milabench_extra}/output: true
@@ -646,7 +647,8 @@ llm-full-mp-gpus:
     n: 1
 
   argv:
-    "{milabench_code}/recipes/full_finetune_distributed.py": true
+    #"{milabench_code}/recipes/full_finetune_distributed.py": true
+    tuneworkaroundrecipes.full_finetune_distributed: true
     --config: "{milabench_code}/configs/llama3_70B_full.yaml"
     epochs=1: true
     output_dir={milabench_extra}/output: true
@@ -658,6 +660,8 @@ llm-full-mp-gpus:
     safetensors=true: true
     batch_size=2: true
     gradient_accumulation_steps=1: true
+
+
 
 llm-full-mp-nodes:
   tags:
