@@ -11,6 +11,8 @@ _defaults:
       gpu_load_threshold: 0.5
       gpu_mem_threshold: 0.5
 
+  num_machines: 1
+
 _torchvision:
   inherits: _defaults
   definition: ../benchmarks/torchvision
@@ -566,7 +568,7 @@ llm-lora-single:
     repo_id="meta-llama/Meta-Llama-3.1-8B": true
     batch_size=8: true
     gradient_accumulation_steps=8: true
-
+    untrained=True: true
 
 llm-lora-ddp-gpus:
   inherits: _llm
@@ -587,7 +589,7 @@ llm-lora-ddp-gpus:
     repo_id="meta-llama/Meta-Llama-3.1-8B": true
     batch_size=8: true
     gradient_accumulation_steps=8: true
-
+    untrained=True: true
 
 llm-lora-ddp-nodes:
   tags:
@@ -610,6 +612,7 @@ llm-lora-ddp-nodes:
     repo_id="meta-llama/Meta-Llama-3.1-8B": true
     batch_size=8: true
     gradient_accumulation_steps=8: true
+    untrained=True: true
 
   num_machines: 2
   requires_capabilities:
@@ -636,6 +639,7 @@ llm-lora-mp-gpus:
     repo_id="meta-llama/Meta-Llama-3.1-70B": true
     batch_size=8: true
     gradient_accumulation_steps=1: true
+    untrained=True: true
 
 llm-full-mp-gpus:
   inherits: _llm
@@ -658,6 +662,7 @@ llm-full-mp-gpus:
     safetensors=true: true
     batch_size=2: true
     gradient_accumulation_steps=1: true
+    untrained=True: true
 
 llm-full-mp-nodes:
   tags:
@@ -681,6 +686,7 @@ llm-full-mp-nodes:
     safetensors=true: true
     batch_size=2: true
     gradient_accumulation_steps=1: true
+    untrained=True: true
 
   num_machines: 2
   requires_capabilities:
