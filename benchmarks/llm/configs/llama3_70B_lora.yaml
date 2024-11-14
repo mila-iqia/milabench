@@ -14,8 +14,8 @@ model:
   lora_attn_modules: ['q_proj', 'k_proj', 'v_proj']
   apply_lora_to_mlp: False
   apply_lora_to_output: False
-  lora_rank: 16
-  lora_alpha: 32
+  lora_rank: 8 #16
+  lora_alpha: 16 #32
 
 tokenizer:
   _component_: torchtune.models.llama3.llama3_tokenizer
@@ -68,7 +68,7 @@ dataset:
   _component_: torchtune.datasets.alpaca_dataset
 seed: null
 shuffle: True
-batch_size: 2
+batch_size: 1 #2
 
 # Optimizer and Scheduler
 optimizer:

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
@@ -270,7 +272,6 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
 
         checkpoint_dict = self.load_checkpoint(cfg_checkpointer=cfg.checkpointer)
         self._compile = cfg.get("compile", False)
-
         self._model = self._setup_model(
             cfg_model=cfg.model,
             enable_activation_checkpointing=self._enable_activation_checkpointing,
@@ -453,15 +454,33 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
         with training.set_default_dtype(self._dtype), torch.device("meta"):
             model = config.instantiate(cfg_model)
 
+        if self._is_rank_zero:
+            log.info(
+                "model instantiated based on config on Rank 0 ..."
+            )
+
+
         set_trainable_params(model, get_adapter_params(model))
 
+        if self._is_rank_zero:
+            log.info(
+                "trainable parameters set..."
+            )
+
+
         if self._compile:
+            if self._is_rank_zero: log.info( str(self._is_rank_zero)+" "+"compiling..." )
+
             training.compile_model(model, verbose=self._is_rank_zero)
+            if self._is_rank_zero: log.info( str(self._is_rank_zero)+ " " + "done compiling" )
+
 
         if enable_activation_checkpointing:
+            if self._is_rank_zero: log.info( str(self._is_rank_zero)+" "+"setting activation checkpointing" )
             training.set_activation_checkpointing(
                 model, auto_wrap_policy={modules.TransformerSelfAttentionLayer}
             )
+            if self._is_rank_zero: log.info( str(self._is_rank_zero)+" "+"done setting activation checkpointing" )
 
         # For FSDP sharding
         fsdp_shard_conditions = [
@@ -470,6 +489,9 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
                 names_to_match=custom_sharded_layers,
             )
         ]
+
+        if self._is_rank_zero: log.info( str(self._is_rank_zero)+" "+"sharding model" )
+
         training.shard_model(
             model=model,
             shard_conditions=fsdp_shard_conditions,
@@ -477,7 +499,11 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
             reshard_after_forward=reshard_after_forward,
         )
 
+        if self._is_rank_zero: log.info( str(self._is_rank_zero)+" "+"done sharding model" )
+
         if lora_weights_state_dict:
+            if self._is_rank_zero: log.info( str(self._is_rank_zero)+" "+"loading state dict" )
+
             lora_missing, lora_unexpected = training.load_from_full_model_state_dict(
                 model,
                 lora_weights_state_dict,
@@ -485,24 +511,31 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
                 self._is_rank_zero,
                 cpu_offload=fsdp_cpu_offload,
             )
+            if self._is_rank_zero: log.info( str(self._is_rank_zero)+" "+"loaded state dict" )
+
         else:
             lora_missing, lora_unexpected = None, None
 
         # Initialize LoRA params and RoPE buffers
         with training.set_default_dtype(self._dtype), self._device:
             lora_device = "cpu" if fsdp_cpu_offload else self._device
-            for m in model.modules():
+            for i,m in enumerate(model.modules()):
                 if (
                     isinstance(m, LoRALinear) or isinstance(m, DoRALinear)
                 ) and not lora_weights_state_dict:
+
                     # lora may not be covered in state dict
                     # if finetune for the 1st time
                     m.lora_a.to_empty(device=lora_device)
                     m.lora_b.to_empty(device=lora_device)
                     m.initialize_parameters()
+
                 # RoPE is not covered in state dict
                 if hasattr(m, "rope_init"):
                     m.rope_init()
+
+        
+        if self._is_rank_zero: log.info( str(self._is_rank_zero)+" "+"load from full model state dict" )
 
         base_missing, base_unexpected = training.load_from_full_model_state_dict(
             model,
@@ -515,9 +548,15 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
         for m in model.modules():
             if hasattr(m, "initialize_dora_magnitude"):
                 is_dora = True
+                if self._is_rank_zero: log.info( str(self._is_rank_zero)+" "+"init dora" )
                 m.initialize_dora_magnitude()
+                if self._is_rank_zero: log.info( str(self._is_rank_zero)+" "+"done init dora" )
+                
         if is_dora:
+            if self._is_rank_zero: log.info( str(self._is_rank_zero)+" "+"load dora" )
             load_dora_magnitudes(model)
+            if self._is_rank_zero: log.info( str(self._is_rank_zero)+" "+"done load dora" )            
+        if self._is_rank_zero: log.info( str(self._is_rank_zero)+" "+"validate missing" )
         validate_missing_and_unexpected_for_lora(
             lora_attn_modules=self._lora_attn_modules,
             apply_lora_to_mlp=self._apply_lora_to_mlp,
@@ -527,14 +566,22 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
             lora_missing=lora_missing,
             lora_unexpected=lora_unexpected,
         )
+        if self._is_rank_zero: log.info( str(self._is_rank_zero)+" "+"done validate missing" )
+
+        if self._is_rank_zero: log.info( str(self._is_rank_zero)+" "+"validate no params" )
+
         # Ensure no params and buffers are on meta device
         training.validate_no_params_on_meta_device(model)
 
+        if self._is_rank_zero: log.info( str(self._is_rank_zero)+" "+"done validate no params" )
+
+
+        if self._is_rank_zero: log.info( str(self._is_rank_zero)+" "+"activation offload" )
         # activation offloading
         self.activations_handling_ctx = training.get_act_offloading_ctx_manager(
             model, enable_activation_offloading
         )
-
+        if self._is_rank_zero: log.info( str(self._is_rank_zero)+" "+"done activation offload" )
         # log
         if self._is_rank_zero:
             log.info(

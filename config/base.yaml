@@ -555,7 +555,7 @@ llm-lora-single:
     method: per_gpu
 
   argv:
-    "{milabench_code}/recipes/lora_finetune_single_device.py": true
+    tuneworkaroundrecipes/lora_finetune_single_device.py: true
     --config: "{milabench_code}/configs/llama3_8B_lora_single_device.yaml"
     epochs=1: true
     output_dir={milabench_extra}/output: true
@@ -576,7 +576,8 @@ llm-lora-ddp-gpus:
   tags:
     - multigpu
   argv:
-    "{milabench_code}/recipes/lora_finetune_distributed.py": true
+    #"{milabench_code}/recipes/lora_finetune_distributed.py": true
+    tuneworkaroundrecipes/lora_finetune_distributed.py: true
     --config: "{milabench_code}/configs/llama3_8B_lora_single_device.yaml"
     epochs=1: true
     output_dir={milabench_extra}/output: true
@@ -589,6 +590,8 @@ llm-lora-ddp-gpus:
     gradient_accumulation_steps=8: true
 
 
+
+
 llm-lora-ddp-nodes:
   tags:
     - multinode
@@ -599,7 +602,7 @@ llm-lora-ddp-nodes:
     n: 1
   
   argv:
-    "{milabench_code}/recipes/lora_finetune_distributed.py": true
+    tuneworkaroundrecipes/lora_finetune_distributed.py: true
     --config: "{milabench_code}/configs/llama3_8B_lora_single_device.yaml"
     epochs=1: true
     output_dir={milabench_extra}/output: true
@@ -638,6 +641,7 @@ llm-lora-mp-gpus:
     batch_size=8: true
     gradient_accumulation_steps=1: true
 
+
 llm-full-mp-gpus:
   inherits: _llm
   tags:
@@ -663,6 +667,34 @@ llm-full-mp-gpus:
 
 
 
+# This is a proxy test config to check llm-full-mp-gpus recipe on devices that don't have the memory
+# to run the 70B parameter model.
+# llm-full-mp-gpus:
+#   inherits: _llm
+#   tags:
+#     - multigpu
+#   plan:
+#     method: njobs
+#     n: 1
+
+#   argv:
+#     #"{milabench_code}/recipes/full_finetune_distributed.py": true
+#     tuneworkaroundrecipes.full_finetune_distributed.py: true
+#     --config: "{milabench_code}/configs/llama3_8B_full.yaml"
+#     epochs=1: true
+#     output_dir={milabench_extra}/output: true
+#     tokenizer.path={milabench_data}/llama3_8B/original/tokenizer.model: true
+#     checkpointer.checkpoint_dir={milabench_data}/llama3_8B/: true
+#     checkpointer.output_dir={milabench_data}/llama3_8B/: true
+#     metric_logger.log_dir={milabench_extra}/metrics: true
+#     repo_id="meta-llama/Meta-Llama-3.1-8B": true
+#     safetensors=true: true
+#     batch_size=2: true
+#     gradient_accumulation_steps=1: true
+
+
+
+
 llm-full-mp-nodes:
   tags:
     - multinode
@@ -673,7 +705,7 @@ llm-full-mp-nodes:
     n: 1
 
   argv:
-    "{milabench_code}/recipes/full_finetune_distributed.py": true
+    tuneworkaroundrecipes/full_finetune_distributed.py: true
     --config: "{milabench_code}/configs/llama3_70B_full.yaml"
     epochs=1: true
     output_dir={milabench_extra}/output: true
