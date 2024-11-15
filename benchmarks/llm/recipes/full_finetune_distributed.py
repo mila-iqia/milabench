@@ -1,3 +1,15 @@
+#!/usr/bin/env python3
+
+#  As of November 2024, the development of torchrun is very rapid.
+# This is the recipe based on torchrun recipe git commit e137afe (post release 0.3.1)
+# https://github.com/pytorch/torchtune/blob/7bfb3336446f0d874ab5d4595249839b735b7076/recipes/lora_finetune_distributed.py
+
+# Torchtune 0.2.1 recipe with device instrumenation (c) Mila
+# https://github.com/mila-iqia/milabench/blob/a60a3aae21e87e46bcce403620a3f56c12878554/benchmarks/llm/recipes/full_finetune_distributed.py
+
+# The instrumentation edits (c) AMD 
+
+
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
