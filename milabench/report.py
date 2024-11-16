@@ -417,12 +417,17 @@ def make_report(
             # This computes a weighted geometric mean
 
             # perf can be object np.float64 !?
-            perf = df[column].astype(float)
+            # success_ratio = 1 - row["fail"] / max(row["n"], 1)
+            
+            # score = (acc if acc > 0 else row["perf"]) * success_ratio
+            score = df[column].astype(float)
 
             weights = df["weight"] * df["enabled"].astype(int)
-            weight_total = np.sum(weights)
+            # if total weight is 0 ?
+            weight_total = np.sum(weights) 
 
-            logscore = np.sum(np.log(perf) * weights) / weight_total
+            # score cannot be 0
+            logscore = np.sum(np.log(score + 1) * weights) / weight_total
             return np.exp(logscore)
         except ZeroDivisionError:
             return 0
