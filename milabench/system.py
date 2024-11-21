@@ -406,6 +406,7 @@ def resolve_hostname(ip):
             if is_loopback(ip):
                 return hostname, True
 
+        return socket.gethostname(), hostname.startswith(socket.gethostname())
         return hostname, hostname == socket.gethostname()
 
     except:
