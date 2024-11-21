@@ -49,7 +49,7 @@ install_prepare() {
     # Install milabench's benchmarks in their venv
     #
     # pip install torch
-    milabench pin --variant cuda --from-scratch $ARGS 
+    # milabench pin --variant cuda --from-scratch $ARGS 
     milabench install --system $MILABENCH_WORDIR/system.yaml $ARGS
 
     which pip
@@ -70,9 +70,9 @@ install_prepare() {
     milabench prepare --system $MILABENCH_WORDIR/system.yaml $ARGS
 }
 
-module load cuda/12.3.2
+# module load cuda/12.3.2
 
-if [ ! -d "$MILABENCH_WORDIR/results" ]; then
+if [ ! -d "$MILABENCH_WORDIR/env" ]; then
     install_prepare 
 else
     echo "Reusing previous install"
@@ -89,8 +89,9 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     # pip install torch
     # milabench pin --variant cuda --from-scratch 
     # rm -rf $MILABENCH_WORDIR/results/venv/
-    # rm -rf $MILABENCH_WORDIR/results/extra
-    # milabench install --system $MILABENCH_WORDIR/system.yaml
+    rm -rf $MILABENCH_WORDIR/results/extra
+    
+    milabench install --system $MILABENCH_WORDIR/system.yaml
     milabench prepare --system $MILABENCH_WORDIR/system.yaml $ARGS
 
     (
@@ -100,28 +101,14 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
         # pip install torchao --no-input
     )
 
-    # pip install torch
-    # milabench pin --variant cuda --from-scratch 
-    # milabench install --system $MILABENCH_WORDIR/system.yaml --force $ARGS
-    # milabench prepare --system $MILABENCH_WORDIR/system.yaml $ARGS
-
-    # ARGS="--select resnet50-noio,brax,lightning,dinov2-giant-single,dinov2-giant-gpus,llm-lora-ddp-gpus,llm-lora-ddp-nodes,llm-lora-mp-gpus,llm-full-mp-gpus,llm-full-mp-nodes,dqn,ppo,dimenet,llava-single,rlhf-single,rlhf-gpus,vjepa-single,vjepa-gpus"
-
-    # MEMORY_CAPACITY=("4Go" "8Go" "16Go" "32Go" "64Go" "80Go")
-    # # MEMORY_CAPACITY=("2048" "4096" "8192")
-
-    # #   Run the benchmakrs 
-    # for CAPACITY in "${MEMORY_CAPACITY[@]}"; do
-    #     export MILABENCH_SIZER_AUTO=1
-    #     export MILABENCH_SIZER_MULTIPLE=8
-    #     export MILABENCH_SIZER_CAPACITY=$CAPACITY
-    #     # export MILABENCH_SIZER_BATCH_SIZE=$CAPACITY
-    #     milabench run --run-name "c$CAPACITY.{time}" --system $MILABENCH_WORDIR/system.yaml $ARGS || true
-    # done
-
     milabench run --system $MILABENCH_WORDIR/system.yaml $ARGS
 
     #
     #   Display report
     milabench report --runs $MILABENCH_WORDIR/results/runs
 fi
+
+
+# rsync -av mila@172.29.171.42:~/rocm/results/cache ~/cuda/results/cache
+# rsync -av mila@172.29.171.42:~/rocm/results/data ~/cuda/results/data
+# rsync -av mila@172.29.171.42:~/rocm/results/cache ~/cuda/results/cache

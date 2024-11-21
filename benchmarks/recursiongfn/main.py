@@ -92,11 +92,13 @@ class SEHTaskMonkeyPatch(SEHTask):
         self.num_cond_dim = self.temperature_conditional.encoding_size()
 
     def _load_task_models(self):
-        xdg_cache = os.environ["XDG_CACHE_HOME"]
+        xdg_cache = os.environ.get("XDG_CACHE_HOME")
         model = bengio2021flow.load_original_model(
             cache=True,
             location=Path(os.path.join(xdg_cache, "bengio2021flow_proxy.pkl.gz")),
         )
+        from benchmate.models import model_size
+        print(model_size(model))
         model.to(get_worker_device())
         model = self._wrap_model(model)
         return {"seh": model}

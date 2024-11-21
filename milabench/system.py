@@ -383,7 +383,7 @@ def _fix_weird(hostname):
 
 # If true that means we cannot resolve the ip addresses
 # so we ignore errors
-offline = False
+offline = True
 
 
 @contextmanager
@@ -461,12 +461,9 @@ def resolve_hostname(ip):
             if is_loopback(ip):
                 return hostname, True
 
-        # Dell has a weird hostname config
-        # csctmp-xe9680-12.hpc.local csctmp-xe9680-12
-        # print(hostname, socket.gethostname())
-        
-        print(ip, hostname.startswith(socket.gethostname()))
+        # FIXME
         return socket.gethostname(), hostname.startswith(socket.gethostname())
+        return hostname, hostname == socket.gethostname()
 
     except:
         if offline:

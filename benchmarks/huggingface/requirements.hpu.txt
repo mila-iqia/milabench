@@ -4,10 +4,6 @@
 #
 #    pip-compile --output-file=benchmarks/huggingface/requirements.hpu.txt .pin/tmp-constraints-hpu-hf.txt benchmarks/huggingface/requirements.in
 #
---extra-index-url https://pypi.ngc.nvidia.com
---find-links https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
---trusted-host pypi.ngc.nvidia.com
-
 antlr4-python3-runtime==4.9.3
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
@@ -16,7 +12,7 @@ asttokens==2.4.1
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   giving
-certifi==2024.6.2
+certifi==2024.8.30
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   requests
@@ -24,37 +20,37 @@ charset-normalizer==3.3.2
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   requests
-codefind==0.1.6
+codefind==0.1.7
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   ptera
-executing==1.2.0
+executing==2.1.0
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   varname
-filelock==3.15.4
+filelock==3.16.1
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   huggingface-hub
     #   torch
     #   transformers
     #   triton
-fsspec==2024.5.0
+fsspec==2024.6.1
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   huggingface-hub
     #   torch
-giving==0.4.2
+giving==0.4.3
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   ptera
     #   voir
-huggingface-hub==0.24.0
+huggingface-hub==0.25.1
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   tokenizers
     #   transformers
-idna==3.7
+idna==3.10
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   requests
@@ -104,7 +100,7 @@ nvidia-cuda-runtime-cu12==12.1.105
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   torch
-nvidia-cudnn-cu12==8.9.2.26
+nvidia-cudnn-cu12==9.1.0.70
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   torch
@@ -125,11 +121,15 @@ nvidia-cusparse-cu12==12.1.0.106
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   nvidia-cusolver-cu12
     #   torch
+nvidia-ml-py==12.560.30
+    # via
+    #   -c .pin/../.pin/constraints-hpu-torch.txt
+    #   voir
 nvidia-nccl-cu12==2.20.5
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   torch
-nvidia-nvjitlink-cu12==12.5.82
+nvidia-nvjitlink-cu12==12.6.77
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   nvidia-cusolver-cu12
@@ -142,7 +142,7 @@ omegaconf==2.3.0
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   voir
-ovld==0.3.5
+ovld==0.3.9
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   voir
@@ -151,6 +151,10 @@ packaging==24.1
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   huggingface-hub
     #   transformers
+pillow==10.4.0
+    # via
+    #   -c .pin/../.pin/constraints-hpu-torch.txt
+    #   -r benchmarks/huggingface/requirements.in
 psutil==5.9.8
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
@@ -163,11 +167,7 @@ pygments==2.18.0
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   rich
-pynvml==11.5.3
-    # via
-    #   -c .pin/../.pin/constraints-hpu-torch.txt
-    #   voir
-pyyaml==6.0.1
+pyyaml==6.0.2
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   huggingface-hub
@@ -177,7 +177,7 @@ reactivex==4.0.4
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   giving
-regex==2024.5.15
+regex==2024.9.11
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   transformers
@@ -186,11 +186,11 @@ requests==2.32.3
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   huggingface-hub
     #   transformers
-rich==13.7.1
+rich==13.9.1
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   voir
-safetensors==0.4.3
+safetensors==0.4.5
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   transformers
@@ -198,7 +198,7 @@ six==1.16.0
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   asttokens
-sympy==1.13.0
+sympy==1.13.3
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   torch
@@ -206,20 +206,21 @@ tokenizers==0.19.1
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   transformers
-torch==2.3.1
+torch==2.4.1
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   -r benchmarks/huggingface/requirements.in
-tqdm==4.66.4
+tqdm==4.66.5
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   huggingface-hub
     #   transformers
-transformers==4.42.4
+transformers==4.44.2
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
+    #   -c .pin/../constraints/hpu.txt
     #   -r benchmarks/huggingface/requirements.in
-triton==2.3.1
+triton==3.0.0
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   torch
@@ -228,12 +229,13 @@ typing-extensions==4.12.2
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   huggingface-hub
     #   reactivex
+    #   rich
     #   torch
-urllib3==1.26.19
+urllib3==2.2.3
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   requests
-varname==0.10.0
+varname==0.13.3
     # via
     #   -c .pin/../.pin/constraints-hpu-torch.txt
     #   giving

@@ -25,6 +25,17 @@ export TORCH_ROCM_ARCH_LIST="$GPU"
 export ROCM_TARGETS="$GPU"
 export PYTORCH_ROCM_ARCH="$GPU"
 
+if [ -z "${MILABENCH_SOURCE}" ]; then
+    export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/standard.yaml"
+else
+    export MILABENCH_CONFIG="$MILABENCH_SOURCE/config/standard.yaml"
+fi
+
+
+export GPU="$(/opt/rocm/lib/llvm/bin/amdgpu-arch | head -n 1)"
+export TORCH_ROCM_ARCH_LIST="$GPU"
+export ROCM_TARGETS="$GPU"
+export PYTORCH_ROCM_ARCH="$GPU"
 
 ARGS="$@"
 
@@ -112,7 +123,6 @@ else
     . $MILABENCH_WORDIR/env/bin/activate
 fi
 
-
 (
     . $BENCHMARK_VENV/bin/activate
     pip install xformers --index-url https://download.pytorch.org/whl/rocm6.1
@@ -125,6 +135,7 @@ fi
 #
 #   Run the benchmakrs
 milabench run $ARGS --system $MILABENCH_WORDIR/system.yaml
+
 
 #
 #   Display report

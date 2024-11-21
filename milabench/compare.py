@@ -28,6 +28,9 @@ def fetch_runs(folder, filter):
     ignored = 0
     
     for run in os.listdir(folder):
+        if run.startswith("install") or run.startswith("prepare"):
+            continue
+    
         if filter is not None and (not fnmatch.fnmatch(run, filter)):
             ignored += 1
             continue
