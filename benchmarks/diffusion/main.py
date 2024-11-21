@@ -57,6 +57,11 @@ def models(accelerator, args: Arguments):
     unet = UNet2DConditionModel.from_pretrained(
         args.model, subfolder="unet", revision=args.revision, variant=args.variant
     )
+    
+    from benchmate.models import model_size
+    print(model_size(unet))
+    print(model_size(encoder))
+    print(model_size(vae))
 
     vae.requires_grad_(False)
     encoder.requires_grad_(False)
