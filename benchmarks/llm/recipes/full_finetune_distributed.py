@@ -100,7 +100,6 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
     """
 
     def __init__(self, cfg: DictConfig) -> None:
-
         import os
         self._device = acc.fetch_device(int(os.getenv("LOCAL_RANK", "0")))
         self._dtype = utils.get_dtype(cfg.dtype, device=self._device)

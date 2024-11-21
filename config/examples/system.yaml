@@ -26,3 +26,33 @@ system:
       ip: 192.168.11.13
       main: false 
       user: username
+
+
+
+
+multirun:
+  runs:
+    # Force batch size to populate the sizing model
+    - name: "bs{sizer.batch_size}"
+      matrix:
+        sizer.auto: 1
+        sizer.batch_size: [1, 2, 4, 8, 16, 32, 64, 128]
+        sizer.save: ["scaling.yaml"]
+    
+    # Matrix run
+    - name: "c{sizer.capacity}_m{sizer.multiple}_w{cpu.n_workers}"
+      matrix:
+        cpu.auto: 1
+        cpu.n_workers: [2, 4, 8, 16, 32]
+        sizer.auto: 1
+        sizer.capacity: [4Go, 8Go, 16Go, 32Go, 64Go, All]
+        sizer.multiple: 8
+        sizer.save: ["scaling.yaml"]
+
+    # Auto run
+    - name: "auto"
+      matrix:
+        cpu.auto: 1
+        sizer.auto: 1
+        sizer.multiple: 8
+        sizer.save: ["scaling.yaml"]

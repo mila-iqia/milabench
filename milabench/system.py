@@ -1,4 +1,5 @@
 import contextvars
+from copy import deepcopy
 import ipaddress
 import os
 import socket
@@ -15,7 +16,7 @@ from .fs import XPath
 from .merge import merge
 
 system_global = contextvars.ContextVar("system", default=None)
-
+multirun_global = contextvars.ContextVar("multirun", default=None)
 
 def get_gpu_capacity(strict=False):
     try:
@@ -77,6 +78,60 @@ def _track_options(name, type, default, value):
 def as_environment_variable(name):
     frags = name.split(".")
     return "MILABENCH_" + "_".join(map(str.upper, frags))
+
+
+def multirun():
+    multirun = multirun_global.get()
+    
+    if multirun is None or len(multirun) == 0:
+        yield None, dict()
+        
+    runs = multirun.get("runs", dict())
+    
+    from .config import combine_args
+    import time
+    from types import SimpleNamespace
+    
+    def unflatten(dct):
+        result = {}
+        for k, v in dct.items():
+            l = result
+            frags = k.split(".")
+            for frag in frags[:-1]:
+                l = l.setdefault(frag, SimpleNamespace())
+            setattr(l, frags[-1], v)
+            
+        return result
+                
+    for run_matrix in runs:
+        arguments = run_matrix["matrix"]
+
+        for run in combine_args(arguments, dict()):
+            template_name = run_matrix["name"]
+            
+            ctx = unflatten(run)
+            ctx['time'] = int(time.time())
+            run_name = template_name.format(**ctx)
+            
+            yield run_name, run
+
+
+@contextmanager
+def apply_system(config: dict):
+    system = system_global.get()
+    old = deepcopy(system)
+    
+    for k, v in config.items():
+        frags = k.split(".")
+        
+        lookup = system.setdefault("options", {})
+        for f in frags[:-1]:
+            lookup = lookup.setdefault(f, {})
+        lookup[frags[-1]] = v
+        
+
+    yield    
+    system_global.set(old)
 
 
 def option(name, etype, default=None):
@@ -401,11 +456,12 @@ def gethostname(host):
 def resolve_hostname(ip):
     try:
         hostname, _, iplist = socket.gethostbyaddr(ip)
-
+        
         for ip in iplist:
             if is_loopback(ip):
                 return hostname, True
 
+        # FIXME
         return socket.gethostname(), hostname.startswith(socket.gethostname())
         return hostname, hostname == socket.gethostname()
 
@@ -465,6 +521,9 @@ def build_system_config(config_file, defaults=None, gpu=True):
         config = merge(defaults, config)
 
     system = config.get("system", {})
+    multirun = config.get("multirun", {})
+    
+    multirun_global.set(multirun)
     system_global.set(system)
 
     # capacity is only required if batch resizer is enabled

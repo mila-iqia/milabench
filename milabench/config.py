@@ -100,10 +100,14 @@ def combine_args(args, kwargs):
         yield kwargs
     else:
         key, values = args.popitem()
-        for value in values:
-            kwargs[key] = value
+        
+        try:
+            for value in values:
+                kwargs[key] = value
+                yield from combine_args(deepcopy(args), kwargs)
+        except:
+            kwargs[key] = values
             yield from combine_args(deepcopy(args), kwargs)
-
 
 def expand_matrix(name, bench_config):
     if "matrix" not in bench_config:

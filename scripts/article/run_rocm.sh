@@ -11,6 +11,7 @@ export ROCM_PATH="/opt/rocm"
 export MILABENCH_BASE="$MILABENCH_WORDIR/results"
 export MILABENCH_VENV="$MILABENCH_WORDIR/env"
 export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
+export MILABENCH_SIZER_SAVE="$MILABENCH_WORDIR/scaling.yaml"
 
 if [ -z "${MILABENCH_SOURCE}" ]; then
     export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/standard.yaml"
@@ -24,6 +25,17 @@ export TORCH_ROCM_ARCH_LIST="$GPU"
 export ROCM_TARGETS="$GPU"
 export PYTORCH_ROCM_ARCH="$GPU"
 
+if [ -z "${MILABENCH_SOURCE}" ]; then
+    export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/standard.yaml"
+else
+    export MILABENCH_CONFIG="$MILABENCH_SOURCE/config/standard.yaml"
+fi
+
+
+export GPU="$(/opt/rocm/lib/llvm/bin/amdgpu-arch | head -n 1)"
+export TORCH_ROCM_ARCH_LIST="$GPU"
+export ROCM_TARGETS="$GPU"
+export PYTORCH_ROCM_ARCH="$GPU"
 
 ARGS="$@"
 
@@ -75,7 +87,7 @@ install_prepare() {
 
         # https://github.com/ROCm/jax/releases/tag/rocm-jaxlib-v0.4.30
         pip install https://github.com/ROCm/jax/releases/download/rocm-jaxlib-v0.4.30/jaxlib-0.4.30+rocm611-cp310-cp310-manylinux2014_x86_64.whl
-        pip install https://github.com/ROCm/jax/archive/refs/tags/rocm-jaxlib-v0.4.30.tar.gz
+        pip install https://github.com/ROCm/jax/archive/refs/tags/rocm-jaxlib-v0.4.30.tar.g
 
         pip uninstall torch_cluster torch_scatter torch_sparse -y
         FORCE_ONLY_CUDA=1 pip install -U -v --use-pep517 --no-build-isolation git+https://github.com/rusty1s/pytorch_cluster.git
@@ -111,12 +123,19 @@ else
     . $MILABENCH_WORDIR/env/bin/activate
 fi
 
+(
+    . $BENCHMARK_VENV/bin/activate
+    pip install xformers --index-url https://download.pytorch.org/whl/rocm6.1
+)
 
-milabench prepare $ARGS 
+# milabench install $ARGS --system $MILABENCH_WORDIR/system.yaml
+
+# milabench prepare $ARGS --system $MILABENCH_WORDIR/system.yaml
 
 #
 #   Run the benchmakrs
-milabench run $ARGS 
+milabench run $ARGS --system $MILABENCH_WORDIR/system.yaml
+
 
 #
 #   Display report
