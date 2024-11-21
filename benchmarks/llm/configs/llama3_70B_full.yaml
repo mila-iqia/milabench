@@ -82,7 +82,7 @@ optimizer:
   foreach: False
   # Note: highly recommended to use fused=True optimizer flag
   # with CPU offload for faster optimizer step.
-  fused: False
+  fused: true
 
 loss:
   _component_: torch.nn.CrossEntropyLoss
@@ -94,9 +94,9 @@ gradient_accumulation_steps: 1
 device: cuda
 
 # Memory management
-enable_activation_checkpointing: false
-memory_efficient_fsdp_wrap: false
-fsdp_cpu_offload: false
+enable_activation_checkpointing: true
+memory_efficient_fsdp_wrap: true
+fsdp_cpu_offload: true
 
 # Reduced precision
 dtype: bf16
