@@ -201,10 +201,7 @@ def main():
     envs = RecordEpisodeStatistics(envs)
     assert isinstance(envs.action_space, gym.spaces.Discrete), "only discrete action space is supported"
 
-
-    from benchmate.models import model_size
     agent = Agent(envs).to(device)
-    print(model_size(agent))
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
 
     # ALGO Logic: Storage setup

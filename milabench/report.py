@@ -525,12 +525,12 @@ def pandas_to_string(df, formatters=_formatters):
     # Compute column size
     col_size = defaultdict(int)
     for index, row in df.iterrows():
-        col_size["bench"] = max(col_size["bench"], len(index), len("bench"))
+        col_size["bench"] = max(col_size["bench"], len(index))
         for col, val in zip(columns, row):
             fmt = formatters.get(col)
             if fmt is not None:
                 val = fmt(val)
-                col_size[col] = max(col_size[col], len(val), len(col))
+                col_size[col] = max(col_size[col], len(val))
 
     # Generate report
     sep = " | "

@@ -98,11 +98,6 @@ def make_train(config):
         init_x = jnp.zeros(env.observation_space(env_params).shape)
         network_params = network.init(_rng, init_x)
 
-
-        param_count = sum(x.size for x in jax.tree.leaves(network_params))
-        print("PARAM COUNT", param_count)
-        
-        
         def linear_schedule(count):
             frac = 1.0 - (count / config["NUM_UPDATES"])
             return config["LR"] * frac

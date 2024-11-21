@@ -32,9 +32,6 @@ async def execute(pack, *args, cwd=None, env={}, external=False, use_stdout=Fals
     sized_args = scale_argv(pack, args)
     final_args = resolve_argv(pack, sized_args)
 
-    if use_stdout:
-        exec_env["MILABENCH_USE_STDOUT"] = "1"
-
     return await run(
         final_args,
         **kwargs,
