@@ -84,15 +84,12 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
 
     . $MILABENCH_WORDIR/env/bin/activate
 
-
-
     # pip install torch
     # milabench pin --variant cuda --from-scratch 
     # rm -rf $MILABENCH_WORDIR/results/venv/
-    rm -rf $MILABENCH_WORDIR/results/extra
-    
-    milabench install --system $MILABENCH_WORDIR/system.yaml
-    milabench prepare --system $MILABENCH_WORDIR/system.yaml $ARGS
+    # rm -rf $MILABENCH_WORDIR/results/extra
+    # milabench install --system $MILABENCH_WORDIR/system.yaml
+    # milabench prepare --system $MILABENCH_WORDIR/system.yaml $ARGS
 
     (
         . $BENCHMARK_VENV/bin/activate
