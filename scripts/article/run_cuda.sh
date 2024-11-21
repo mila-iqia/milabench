@@ -9,7 +9,7 @@ export MILABENCH_BASE="$MILABENCH_WORDIR/results"
 export MILABENCH_VENV="$MILABENCH_WORDIR/env"
 export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
 export MILABENCH_SIZER_SAVE="$MILABENCH_WORDIR/scaling.yaml"
-
+    
 
 if [ -z "${MILABENCH_PREPARE}" ]; then
     export MILABENCH_PREPARE=0
@@ -83,6 +83,8 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     cd $MILABENCH_WORDIR
 
     . $MILABENCH_WORDIR/env/bin/activate
+
+
 
     # pip install torch
     # milabench pin --variant cuda --from-scratch 
