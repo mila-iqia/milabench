@@ -335,6 +335,8 @@ class Package(BasePackage):
             f"MILABENCH_DIR_{name.upper()}": path
             for name, path in self.config["dirs"].items()
         }
+        
+        env["MILABENCH_MANAGED"] = "1"
 
         env["OMP_NUM_THREADS"] = resolve_placeholder(self, "{cpu_per_gpu}")
 

@@ -117,6 +117,45 @@ It holds all the benchmark specific logs and metrics gathered by milabench.
 
   zip -r results.zip results
 
+
+Containers
+----------
+
+When using containers where some dependencies are already installed, we need to use a dummy virtualenv 
+so make milabench install its dependencies there, then the duplicate dependencies can be removed.
+
+.. code-block:: bash
+
+    podman run --rm --device nvidia.com/gpu=all --storage-opt ignore_chown_errors=true --security-opt=label=disable --ipc=host -it -e HOME=$HOME -e USER=$USER -v $HOME:$HOME  nvcr.io/nvidia/pytorch:24.02-py3
+
+    cd $HOME 
+    rm -rf env
+    pip install virtualenv
+    
+    # Create a virtual env with system packages to get the container's pytorch
+    virtualenv --system-site-packages env
+    source ./env/bin/activate
+    git clone https://github.com/mila-iqia/milabench.git
+    pip install -e milabench
+    
+    export MILABENCH_BASE="$HOME/results"
+    export MILABENCH_CONFIG="$HOME/milabench/config/standard.yaml"
+    export MILABENCH_GPU_ARCH=cuda
+
+    # This updates the requirements for cuda
+    # milabench pin --from-scratch --variant cuda -c constraints/cuda.txt
+    
+    # Install the new requirements (note: this will still install a new pytorch)
+    milabench install --use-current-env
+    
+    # uninstall pytorch that was installed in the venv
+    # so we use the system packages instead
+    pip uninstall torch torchvision torchaudio
+    
+    milabench prepare --use-current-env
+    milabench run --use-current-env
+
+
 Example Reports
 ---------------
 

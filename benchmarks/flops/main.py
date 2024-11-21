@@ -109,10 +109,11 @@ def main():
 
     log, monitor = setupvoir()
 
+    # FIXME
+    #with monitor:
     f(args.number, args.repeat, args.m, args.n, TERA, dtypes[args.dtype], log)
 
     monitor.stop()
-
 
 if __name__ == "__main__":
     main()
