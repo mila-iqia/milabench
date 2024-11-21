@@ -8,11 +8,17 @@ class FlopsBenchmarch(Package):
 
     def build_run_plan(self) -> "Command":
         import milabench.commands as cmd
-
-        pack = cmd.PackCommand(self, *self.argv, lazy=True)
-        # pack = cmd.VoirCommand(pack, cwd=main.parent)
-        pack = cmd.ActivatorCommand(pack)
-        return pack.use_stdout()
-
+        
+        use_stdout = True
+        
+        if use_stdout:
+            main = self.dirs.code / self.main_script
+            pack = cmd.PackCommand(self, *self.argv, lazy=True)
+            return pack.use_stdout()
+        else:
+            main = self.dirs.code / self.main_script
+            pack = cmd.PackCommand(self, *self.argv, lazy=True)
+            pack = cmd.VoirCommand(pack, cwd=main.parent)
+            return pack
 
 __pack__ = FlopsBenchmarch
