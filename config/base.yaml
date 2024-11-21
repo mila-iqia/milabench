@@ -348,7 +348,7 @@ reformer:
     - monogpu
   argv:
     --model: "Reformer"
-    --batch-size: 64
+    --batch-size: 32
 
 whisper:
   inherits: _hf
@@ -541,7 +541,7 @@ _llm:
   tags:
     - nlp
     - llm
-  max_duration: 1200
+  max_duration: 3600
   num_machines: 1
   inherits: _defaults
   definition: ../benchmarks/llm
@@ -566,6 +566,7 @@ llm-lora-single:
     repo_id="meta-llama/Meta-Llama-3.1-8B": true
     batch_size=8: true
     gradient_accumulation_steps=8: true
+    device={device_name}: true
 
 
 llm-lora-ddp-gpus:
@@ -587,7 +588,7 @@ llm-lora-ddp-gpus:
     repo_id="meta-llama/Meta-Llama-3.1-8B": true
     batch_size=8: true
     gradient_accumulation_steps=8: true
-
+    device={device_name}: true
 
 llm-lora-ddp-nodes:
   tags:
@@ -610,7 +611,7 @@ llm-lora-ddp-nodes:
     repo_id="meta-llama/Meta-Llama-3.1-8B": true
     batch_size=8: true
     gradient_accumulation_steps=8: true
-
+    device={device_name}: true
   num_machines: 2
   requires_capabilities:
     - "len(nodes) >= ${num_machines}"
@@ -636,8 +637,12 @@ llm-lora-mp-gpus:
     repo_id="meta-llama/Meta-Llama-3.1-70B": true
     batch_size=8: true
     gradient_accumulation_steps=1: true
-
+    device={device_name}: true
+  
 llm-full-mp-gpus:
+  voir:
+    options:
+      stop: 30
   inherits: _llm
   tags:
     - multigpu
@@ -658,7 +663,8 @@ llm-full-mp-gpus:
     safetensors=true: true
     batch_size=2: true
     gradient_accumulation_steps=1: true
-
+    device={device_name}: true
+  
 llm-full-mp-nodes:
   tags:
     - multinode
@@ -681,7 +687,8 @@ llm-full-mp-nodes:
     safetensors=true: true
     batch_size=2: true
     gradient_accumulation_steps=1: true
-
+    device={device_name}: true
+  
   num_machines: 2
   requires_capabilities:
     - "len(nodes) >= ${num_machines}"
@@ -781,6 +788,7 @@ torchatari:
     --env-id: Breakout-v5
 
 _llava:
+  max_duration: 3600
   inherits: _defaults
   definition: ../benchmarks/llava
   install_group: torch
