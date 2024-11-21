@@ -19,16 +19,21 @@ from .metrics import sumggle_push, give_push, file_push
 
 
 def auto_push():
+    # use_stdout = int(os.getenv("MILABENCH_USE_STDOUT", 0))
+    mb_managed = int(os.getenv("MILABENCH_MANAGED", 0))
+
     # Milabench managed: we need to push metrics to it
-    if int(os.getenv("MILABENCH_MANAGED", 0)) == 1:
-        
+    if mb_managed == 1:
         # Using voir, DATA_FD is defined as well
         ov = current_overseer.get()
         if ov is not None:
             return ov.give
-
+        
         # Not using Voir, using structured stdout
-        return sumggle_push()
+        if int(os.getenv("MILABENCH_USE_STDOUT", 0)) == 1:
+            return sumggle_push()
+
+        raise RuntimeError("Could not find something to push to")
 
     # Not using milabench; using stdout
     return file_push()
