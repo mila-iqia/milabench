@@ -107,15 +107,9 @@ def make_train(config):
         network = ActorCritic(
             env.action_space(env_params).shape[0], activation=config["ACTIVATION"]
         )
-        
-        
         rng, _rng = jax.random.split(rng)
         init_x = jnp.zeros(env.observation_space(env_params).shape)
         network_params = network.init(_rng, init_x)
-        
-        param_count = sum(x.size for x in jax.tree.leaves(network_params))
-        print("PARAM COUNT", param_count)
-        
         if config["ANNEAL_LR"]:
             tx = optax.chain(
                 optax.clip_by_global_norm(config["MAX_GRAD_NORM"]),

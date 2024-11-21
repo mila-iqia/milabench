@@ -13,7 +13,7 @@ from voir.instruments.gpu import gpu_monitor as gpu_monitor_fun, select_backend
 from voir.instruments.io import io_monitor
 from voir.instruments.network import network_monitor
 from voir.instruments.monitor import monitor
-from voir.helpers import current_overseer
+
 
 from .metrics import sumggle_push, give_push, file_push
 
@@ -64,10 +64,17 @@ def monitor_node(ov, poll_interval=1, arch=None):
 
 
 def _smuggle_monitor(poll_interval=10, worker_init=None, **monitors):
-    log = auto_push()
-    
+    # USE auto push
+    data_file = SmuggleWriter(sys.stdout)
     def mblog(data):
-        log(**data)
+        nonlocal data_file
+
+        if data_file is not None:
+            try:
+                print(json.dumps(data), file=data_file)
+            except ValueError:
+                pass
+                # print("Is bench ending?, ignoring ValueError")
     
     def get():
         t = time.time()
