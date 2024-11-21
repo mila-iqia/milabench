@@ -192,7 +192,7 @@ def is_remote(pack):
 def is_main_local(pack):
     """Only the local main can send remote commands to remote"""
     self = pack.config["system"]["self"]
-    return self is not None and self["local"] and self.get("main", False)
+    return self is not None and self.get("local", True) and self.get("main", False)
 
 
 def is_worker(pack):

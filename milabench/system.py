@@ -323,6 +323,7 @@ def get_remote_ip():
 
     for interface, address_list in addresses.items():
         for address in address_list:
+            # if address.family in (socket.AF_INET, socket.AF_INET6):
             if interface in stats and getattr(stats[interface], "isup"):
                 result.append(address.address)
 
@@ -339,46 +340,6 @@ def is_loopback(address: str) -> bool:
         # If the address is invalid, return False
         return False
 
-
-
-def _resolve_ip(ip):
-    hostname = ip
-    aliaslist = []
-    ipaddrlist = [ip]
-    lazy_raise = None
-
-    if not offline:
-        # Resolve the IP
-        try:
-            hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(ip)
-            lazy_raise = None
-        
-        except socket.herror as err:
-            lazy_raise = err
-
-        except socket.gaierror as err:
-            # Get Addr Info (GAI) Error
-            #
-            # When we are connecting to a node through a ssh proxy jump
-            # the node IPs/Hostnames are not available until we reach
-            # the first node inside the cluster
-            #
-            lazy_raise = err
-
-    return hostname, aliaslist, ipaddrlist, lazy_raise
-
-
-def _fix_weird(hostname):
-    if hostname.endswith(".server.mila.quebec.server.mila.quebec"):
-        print()
-        print("Hostname was extra long for no reason")
-        print(hostname, socket.gethostname())
-        print()
-
-        # why is this happening
-        hostname = hostname[: -len(".server.mila.quebec")]
-    
-    return hostname
 
 
 # If true that means we cannot resolve the ip addresses
@@ -406,29 +367,21 @@ def _resolve_addresses(nodes):
     ip_list = get_remote_ip()
 
     for node in nodes:
-        hostname, aliaslist, ipaddrlist, lazy_raise = _resolve_ip(node["ip"])
-
-        hostname = _fix_weird(hostname)
-
-        node["hostname"] = hostname
-        node["aliaslist"] = aliaslist
-        node["ipaddrlist"] = ipaddrlist
-
-        is_local = (
-            ("127.0.0.1" in ipaddrlist)
-            or (hostname in ("localhost", socket.gethostname(), "127.0.0.1"))
-            or (socket.gethostname().startswith(hostname))
-            or len(ip_list.intersection(ipaddrlist)) > 0
-            or any([is_loopback(ip) for ip in ipaddrlist])
-        )
-
-        # cn-g005 cn-g005.server.mila.quebec
-        # print(hostname, socket.gethostname())
+        ip = node["ip"]
+        
+        is_local = is_loopback(ip)
+        
+        if ip in ip_list:
+            is_local = True            
+        
         node["local"] = is_local
+        
+        if is_local:
+            node["hostname"] = socket.gethostname()
 
         if is_local and self is None:
             self = node
-            node["ipaddrlist"] = list(set(list(ip_list) + list(ipaddrlist)))
+            node["ipaddrlist"] = list(set(list(ip_list)))
 
     # if self is node we might be outisde the cluster
     # which explains why we could not resolve the IP of the nodes
