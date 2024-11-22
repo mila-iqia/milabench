@@ -115,7 +115,4 @@ We are working on validating it on more configurations and will update the above
     ------
     Failure rate:       0.38% (PASS)
     Score:            4175.57
- 
-   Errors
-   ------
-   1 errors, details in HTML report.
+
