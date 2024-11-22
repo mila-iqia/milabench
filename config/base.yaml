@@ -555,7 +555,7 @@ llm-lora-single:
     method: per_gpu
 
   argv:
-    "{milabench_code}/recipes/lora_finetune_single_device.py": true
+    tuneworkaroundrecipes/lora_finetune_single_device.py: true
     --config: "{milabench_code}/configs/llama3_8B_lora_single_device.yaml"
     epochs=1: true
     output_dir={milabench_extra}/output: true
@@ -577,7 +577,8 @@ llm-lora-ddp-gpus:
   tags:
     - multigpu
   argv:
-    "{milabench_code}/recipes/lora_finetune_distributed.py": true
+    #"{milabench_code}/recipes/lora_finetune_distributed.py": true
+    tuneworkaroundrecipes/lora_finetune_distributed.py: true
     --config: "{milabench_code}/configs/llama3_8B_lora_single_device.yaml"
     epochs=1: true
     output_dir={milabench_extra}/output: true
@@ -590,6 +591,8 @@ llm-lora-ddp-gpus:
     gradient_accumulation_steps=8: true
     device={device_name}: true
 
+
+
 llm-lora-ddp-nodes:
   tags:
     - multinode
@@ -600,7 +603,7 @@ llm-lora-ddp-nodes:
     n: 1
   
   argv:
-    "{milabench_code}/recipes/lora_finetune_distributed.py": true
+    tuneworkaroundrecipes/lora_finetune_distributed.py: true
     --config: "{milabench_code}/configs/llama3_8B_lora_single_device.yaml"
     epochs=1: true
     output_dir={milabench_extra}/output: true
@@ -625,7 +628,8 @@ llm-lora-mp-gpus:
     n: 1
 
   argv:
-    "{milabench_code}/recipes/lora_finetune_distributed.py": true
+    #"{milabench_code}/recipes/lora_finetune_distributed.py": true
+    tuneworkaroundrecipes/lora_finetune_distributed.py: true
     --config: "{milabench_code}/configs/llama3_70B_lora.yaml"
     epochs=1: true
     output_dir={milabench_extra}/output: true
@@ -651,7 +655,8 @@ llm-full-mp-gpus:
     n: 1
 
   argv:
-    "{milabench_code}/recipes/full_finetune_distributed.py": true
+    #"{milabench_code}/recipes/full_finetune_distributed.py": true
+    tuneworkaroundrecipes/full_finetune_distributed.py: true
     --config: "{milabench_code}/configs/llama3_70B_full.yaml"
     epochs=1: true
     output_dir={milabench_extra}/output: true
@@ -675,7 +680,7 @@ llm-full-mp-nodes:
     n: 1
 
   argv:
-    "{milabench_code}/recipes/full_finetune_distributed.py": true
+    tuneworkaroundrecipes/full_finetune_distributed.py: true
     --config: "{milabench_code}/configs/llama3_70B_full.yaml"
     epochs=1: true
     output_dir={milabench_extra}/output: true
