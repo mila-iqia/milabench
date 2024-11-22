@@ -53,9 +53,10 @@ def to_octet(value: str) -> float:
 class Sizer:
     """Automatically scale the batch size to match GPU spec"""
 
-    def __init__(self, scaling_config=None):
+    def __init__(self, sizer=None, scaling_config=option("sizer.config", etype=str)):
         self.path = scaling_config
-
+        self.sizer_override = sizer
+        
         if scaling_config is None:
             scaling_config = default_scaling_config
 
@@ -64,6 +65,8 @@ class Sizer:
             
     @property
     def options(self):
+        if self.sizer_override:
+            return self.sizer_override
         return SizerOptions()
 
     def benchscaling(self, benchmark):
@@ -252,7 +255,7 @@ class MemoryUsageExtractor(ValidationLayer):
     def __init__(self):
         
         self.filepath = option("sizer.save", str, None)
-        sizer = batch_sizer()
+        sizer = Sizer()
         self.memory = deepcopy(sizer.scaling_config)
         self.scaling = None
         self.benchname = None
