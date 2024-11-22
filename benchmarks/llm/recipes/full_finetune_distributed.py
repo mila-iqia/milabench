@@ -16,7 +16,6 @@ from warnings import warn
 import torch
 from omegaconf import DictConfig, ListConfig
 
-import torchcompat.core as acc
 from torch import nn
 from torch.distributed import init_process_group
 from torch.distributed.fsdp import (
@@ -38,8 +37,6 @@ from tqdm import tqdm
 
 
 log = utils.get_logger("DEBUG")
-
-HPU_UNSUPPORTED = False
 
 
 class FullFinetuneRecipeDistributed(FTRecipeInterface):
@@ -100,8 +97,8 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
     """
 
     def __init__(self, cfg: DictConfig) -> None:
-        import os
-        self._device = acc.fetch_device(int(os.getenv("LOCAL_RANK", "0")))
+
+        self._device = utils.get_device(device=cfg.device)
         self._dtype = utils.get_dtype(cfg.dtype, device=self._device)
 
         if self._dtype == torch.float16:
@@ -134,10 +131,7 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
 
         # These are public properties which are updated by the checkpoint loader
         # when ``resume_from_checkpoint`` is `True` or validated in tests
-        if HPU_UNSUPPORTED:
-            self.seed = utils.set_seed(seed=cfg.seed)
-        else:
-            self.seed = 1
+        self.seed = utils.set_seed(seed=cfg.seed)
         self.epochs_run = 0
         self.total_epochs = cfg.epochs
         self.max_steps_per_epoch = cfg.max_steps_per_epoch
@@ -357,10 +351,8 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
             )
 
         if self._is_rank_zero:
-            if HPU_UNSUPPORTED:
-                pass
-                #memory_stats = utils.get_memory_stats(device=self._device)
-                #utils.log_memory_stats(memory_stats)
+            memory_stats = utils.get_memory_stats(device=self._device)
+            utils.log_memory_stats(memory_stats)
 
         # synchronize before training begins
         torch.distributed.barrier()
@@ -421,7 +413,6 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
             dataset=ds,
             batch_size=batch_size,
             sampler=sampler,
-            # persistent_workers=True,
             collate_fn=partial(
                 utils.padded_collate,
                 padding_idx=self._tokenizer.pad_id,
@@ -552,14 +543,31 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
                         f"{curr_epoch+1}|{self.global_step}|Loss: {loss_to_log}"
                     )
 
+                    # Log per-step metrics
+                    if (
+                        self.global_step % self._log_every_n_steps == 0
+                        and self._is_rank_zero
+                    ):
+                        time_per_step = time.perf_counter() - t0
+                        log_dict = {
+                            "loss": loss_to_log,
+                            "lr": self._optimizer.param_groups[0]["lr"],
+                            "tokens_per_second_per_gpu": num_tokens / time_per_step,
+                        }
+                        if self._log_peak_memory_stats:
+                            log_dict.update(utils.get_memory_stats(device=self._device))
+                        self._metric_logger.log_dict(
+                            log_dict,
+                            step=self.global_step,
+                        )
+
                     # Reset running stats for the next step
                     running_loss = 0
                     num_tokens = 0
                     t0 = time.perf_counter()
-                    
-            print("HERE")
+
             self.epochs_run += 1
-            # self.save_checkpoint(epoch=curr_epoch)
+            self.save_checkpoint(epoch=curr_epoch)
 
     def cleanup(self) -> None:
         if self._is_rank_zero:
@@ -610,8 +618,7 @@ def recipe_main(cfg: DictConfig) -> None:
             "If using tune CLI, please specify --nnodes 1 and --nproc_per_node [num_gpus]"
         )
 
-    acc.init_process_group()
-
+    init_process_group(backend="gloo" if cfg.device == "cpu" else "nccl")
     if cfg.get("fsdp_cpu_offload", False):
         # Utilize all available CPU cores for intra-op parallelism. This provides ~2x
         # speed up when benchmarking fused AdamW on CPU
