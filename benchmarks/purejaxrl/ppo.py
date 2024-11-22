@@ -75,7 +75,10 @@ class Transition(NamedTuple):
 
 def make_train(config):
     from benchmate.timings import StepTimer
+    from benchmate.jaxmem import memory_peak_fetcher
+    
     step_timer = StepTimer(give_push())
+    fetch_memory_peak = memory_peak_fetcher()
 
     config["NUM_UPDATES"] = (
         config["TOTAL_TIMESTEPS"] // config["NUM_STEPS"] // config["NUM_ENVS"]
@@ -280,6 +283,7 @@ def make_train(config):
 
                 step_timer.step(config["NUM_ENVS"] * config["NUM_STEPS"])
                 step_timer.log(loss=loss)
+                step_timer.log(memory_peak=fetch_memory_peak(), units="MiB")
                 step_timer.end()
                 
             jax.debug.callback(callback, metrics)

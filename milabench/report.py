@@ -342,6 +342,35 @@ def short_meta(out, meta):
     out.print(Table(stats))
 
 
+def to_latex(df):
+    from dataclasses import dataclass
+    from .system import option
+
+    default_columns = [
+        "ngpu",
+        "perf",
+        "sem%",
+        "std%"
+    ]
+
+    @dataclass
+    class LatexTable:
+        output: str = option("latex.output", str, None)
+        columns: str = option("latex.columns", str, ",".join(default_columns))
+    
+    options = LatexTable()
+
+    columns = options.columns.split(",")
+
+    df = df[columns]
+
+    if options.output is not None:
+        with open(options.output, "w") as fp:
+            txt = df.to_latex(formatters=_formatters, escape=False)
+            txt = txt.replace("%", "\%").replace("_", "\_")
+            fp.write(txt)
+
+
 @error_guard({})
 def make_report(
     summary: dict[str, Summary],
@@ -376,7 +405,10 @@ def make_report(
     out.section("Breakdown")
 
     # Reorder columns
-    out.print(normalize_dataframe(df))
+    normalized = normalize_dataframe(df)
+    out.print(normalized)
+
+    to_latex(normalized)
 
     out.section("Scores")
 
@@ -385,12 +417,17 @@ def make_report(
             # This computes a weighted geometric mean
 
             # perf can be object np.float64 !?
-            perf = df[column].astype(float)
+            # success_ratio = 1 - row["fail"] / max(row["n"], 1)
+            
+            # score = (acc if acc > 0 else row["perf"]) * success_ratio
+            score = df[column].astype(float)
 
             weights = df["weight"] * df["enabled"].astype(int)
-            weight_total = np.sum(weights)
+            # if total weight is 0 ?
+            weight_total = np.sum(weights) 
 
-            logscore = np.sum(np.log(perf) * weights) / weight_total
+            # score cannot be 0
+            logscore = np.sum(np.log(score + 1) * weights) / weight_total
             return np.exp(logscore)
         except ZeroDivisionError:
             return 0
@@ -493,12 +530,12 @@ def pandas_to_string(df, formatters=_formatters):
     # Compute column size
     col_size = defaultdict(int)
     for index, row in df.iterrows():
-        col_size["bench"] = max(col_size["bench"], len(index))
+        col_size["bench"] = max(col_size["bench"], len(index), len("bench"))
         for col, val in zip(columns, row):
             fmt = formatters.get(col)
             if fmt is not None:
                 val = fmt(val)
-                col_size[col] = max(col_size[col], len(val))
+                col_size[col] = max(col_size[col], len(val), len(col))
 
     # Generate report
     sep = " | "

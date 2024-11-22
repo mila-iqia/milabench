@@ -1,14 +1,17 @@
 #!/usr/bin/env python
 
+
 import argparse
 import os
+
+# FIXME this is HPU only
+os.environ["PT_HPU_LAZY_MODE"] = str(int(int(os.getenv("WORLD_SIZE", -1)) <= 0))
 
 import torch
 import torch.nn.functional as F
 import lightning as L
 import torchvision.models as torchvision_models
 
-import torchcompat.core as accelerator
 from benchmate.dataloader import imagenet_dataloader, dataloader_arguments
 
 
@@ -37,10 +40,10 @@ class TorchvisionLightning(L.LightningModule):
 def prepare_voir():
     from benchmate.observer import BenchObserver
     from benchmate.monitor import bench_monitor
-
+    import torchcompat.core as accelerator
     observer = BenchObserver(
         accelerator.Event, 
-        earlystop=65,
+        earlystop=100,
         batch_size_fn=lambda x: len(x[0]),
         raise_stop_program=False,
         stdout=True,
@@ -49,6 +52,10 @@ def prepare_voir():
     return observer, bench_monitor
 
 def main():
+    rank = int(os.getenv("RANK", 0))
+    world_size = int(os.getenv("WORLD_SIZE", 1))
+    local_world_size = int(os.getenv("LOCAL_WORLD_SIZE", 1))
+    
     parser = argparse.ArgumentParser(description='simple distributed training job')
     parser.add_argument(
         "--epochs",
@@ -64,17 +71,14 @@ def main():
     args = parser.parse_args()
     model = getattr(torchvision_models, args.model)()
 
-    rank = int(os.getenv("RANK", 0))
-    world_size = int(os.getenv("WORLD_SIZE", 1))
-    local_world_size = int(os.getenv("LOCAL_WORLD_SIZE", 1))
-
+    import torchcompat.core as accelerator
+  
     n = accelerator.device_count()
+    n = local_world_size
     nnodes = world_size // local_world_size
 
     model = TorchvisionLightning(model)
 
-    
-   
     accelerator.set_enable_tf32(True)
 
     observer, monitor = prepare_voir()
@@ -85,16 +89,16 @@ def main():
         accelerator="auto", 
         devices=n, 
         num_nodes=nnodes, 
-        strategy="ddp",
+        strategy="auto",
         max_epochs=args.epochs,
-        precision="16-mixed",
+        precision="bf16-mixed",
         enable_checkpointing=False,
         enable_progress_bar=False,
         reload_dataloaders_every_n_epochs=1,
-        max_steps=100
+        max_steps=120
     )
 
-    with monitor():
+    with monitor(poll_interval=0.1):
         trainer.fit(model=model, train_dataloaders=loader)
     print("finished: ", rank)
 

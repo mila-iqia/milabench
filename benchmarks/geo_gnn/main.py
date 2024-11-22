@@ -78,14 +78,20 @@ def train_degree(train_dataset):
     # Compute the maximum in-degree in the training data.
     max_degree = -1
     for data in train_dataset:
-        d = degree(data.edge_index[1], num_nodes=data.num_nodes, dtype=torch.long)
-        max_degree = max(max_degree, int(d.max()))
+        try:
+            d = degree(data.edge_index[1], num_nodes=data.num_nodes, dtype=torch.long)
+            max_degree = max(max_degree, int(d.max()))
+        except TypeError:
+            pass
 
     # Compute the in-degree histogram tensor
     deg = torch.zeros(max_degree + 1, dtype=torch.long)
     for data in train_dataset:
-        d = degree(data.edge_index[1], num_nodes=data.num_nodes, dtype=torch.long)
-        deg += torch.bincount(d, minlength=deg.numel())
+        try:
+            d = degree(data.edge_index[1], num_nodes=data.num_nodes, dtype=torch.long)
+            deg += torch.bincount(d, minlength=deg.numel())
+        except TypeError:
+            pass
 
     return deg
 
@@ -109,13 +115,14 @@ def main():
     observer = BenchObserver(batch_size_fn=batch_size)
 
     train_dataset = PCQM4Mv2Subset(args.num_samples, args.root)
+    degree = train_degree(train_dataset)
 
     sample = next(iter(train_dataset))
 
     info = models[args.model](
         args,
         sample=sample,
-        degree=lambda: train_degree(train_dataset),
+        degree=lambda: degree,
     )
 
     TRAIN_mean, TRAIN_std = (

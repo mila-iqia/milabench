@@ -53,15 +53,21 @@ def to_octet(value: str) -> float:
 class Sizer:
     """Automatically scale the batch size to match GPU spec"""
 
-    def __init__(self, options=SizerOptions(), scaling_config=None):
-        self.options = options
+    def __init__(self, sizer=None, scaling_config=option("sizer.config", etype=str)):
         self.path = scaling_config
-
+        self.sizer_override = sizer
+        
         if scaling_config is None:
             scaling_config = default_scaling_config
 
         with open(scaling_config, "r") as sconf:
             self.scaling_config = yaml.safe_load(sconf)
+            
+    @property
+    def options(self):
+        if self.sizer_override:
+            return self.sizer_override
+        return SizerOptions()
 
     def benchscaling(self, benchmark):
         # key
@@ -165,6 +171,10 @@ class Sizer:
         return -1
 
     def argv(self, benchmark, capacity, argv):
+        newargv = self._argv(benchmark, capacity, argv)
+        return newargv
+        
+    def _argv(self, benchmark, capacity, argv):
         """Find the batch size and override it with a new value"""
 
         config = self.benchscaling(benchmark)
@@ -214,11 +224,12 @@ sizer_global = contextvars.ContextVar("sizer_global", default=None)
 
 
 def batch_sizer() -> Sizer:
-    sizer = sizer_global.get()
-    if sizer is None:
-        sizer_global.set(Sizer())
-        return batch_sizer()
-    return sizer
+    return Sizer()
+    # sizer = sizer_global.get()
+    # if sizer is None:
+    #     sizer_global.set(Sizer())
+    #     return batch_sizer()
+    # return sizer
 
 
 def get_batch_size(config, start_event):
@@ -242,13 +253,15 @@ class MemoryUsageExtractor(ValidationLayer):
     """Extract max memory usage per benchmark to populate the memory model"""
 
     def __init__(self):
-        sizer = batch_sizer()
-        self.filepath = sizer.options.save
+        
+        self.filepath = option("sizer.save", str, None)
+        sizer = Sizer()
         self.memory = deepcopy(sizer.scaling_config)
         self.scaling = None
         self.benchname = None
         self.batch_size = 0
-        self.max_usage = float("-inf")
+        self.max_usage = float("-inf")  # Usage from the gpu monitor
+        self.peak_usage = float("-inf") # Usage provided by the bench itself (for jax)
         self.early_stopped = False
 
     def on_start(self, entry):
@@ -259,6 +272,7 @@ class MemoryUsageExtractor(ValidationLayer):
         self.benchname = entry.pack.config["name"]
         self.batch_size = None
         self.max_usage = float("-inf")
+        self.peak_usage = float("-inf")
 
         config = self.memory.setdefault(self.benchname, dict())
         template = config.get("arg", None)
@@ -300,6 +314,11 @@ class MemoryUsageExtractor(ValidationLayer):
         if entry.data is None:
             return
 
+        memorypeak = entry.data.get("memory_peak")
+        if memorypeak is not None:
+            self.peak_usage = max(memorypeak, self.peak_usage)
+            return
+
         gpudata = entry.data.get("gpudata")
         if gpudata is not None:
             current_usage = []
@@ -312,6 +331,11 @@ class MemoryUsageExtractor(ValidationLayer):
     def on_stop(self, entry):
         self.early_stopped = True
 
+    def max_memory_usage(self):
+        if self.peak_usage != float("-inf"):
+            return self.peak_usage
+        return self.max_usage
+
     def on_end(self, entry):
         if self.filepath is None:
             return
@@ -319,7 +343,7 @@ class MemoryUsageExtractor(ValidationLayer):
         if (
             self.benchname is None
             or self.batch_size is None
-            or self.max_usage == float("-inf")
+            or self.max_memory_usage() == float("-inf")
         ):
             return
 
@@ -328,12 +352,13 @@ class MemoryUsageExtractor(ValidationLayer):
         if rc == 0 or self.early_stopped:
             config = self.memory.setdefault(self.benchname, dict())
             model = config.setdefault("model", dict())
-            model[self.batch_size] = f"{self.max_usage} MiB"
+            model[self.batch_size] = f"{self.max_memory_usage()} MiB"
             config["model"] = dict(sorted(model.items(), key=lambda x: x[0]))
 
         self.benchname = None
         self.batch_size = None
         self.max_usage = float("-inf")
+        self.peak_usage = float("-inf")
 
     def report(self, *args):
         if self.filepath is not None:

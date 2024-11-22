@@ -1,4 +1,5 @@
 import contextvars
+from copy import deepcopy
 import ipaddress
 import os
 import socket
@@ -15,7 +16,7 @@ from .fs import XPath
 from .merge import merge
 
 system_global = contextvars.ContextVar("system", default=None)
-
+multirun_global = contextvars.ContextVar("multirun", default=None)
 
 def get_gpu_capacity(strict=False):
     try:
@@ -77,6 +78,65 @@ def _track_options(name, type, default, value):
 def as_environment_variable(name):
     frags = name.split(".")
     return "MILABENCH_" + "_".join(map(str.upper, frags))
+
+
+def multirun():
+    multirun = multirun_global.get()
+    
+    if multirun is None or len(multirun) == 0:
+        yield None, dict()
+        
+    runs = multirun.get("runs", dict())
+    
+    from .config import combine_args
+    import time
+    from types import SimpleNamespace
+    
+    def unflatten(dct):
+        result = {}
+        for k, v in dct.items():
+            l = result
+            frags = k.split(".")
+            for frag in frags[:-1]:
+                l = l.setdefault(frag, SimpleNamespace())
+            setattr(l, frags[-1], v)
+            
+        return result
+                
+    for run_matrix in runs:
+        arguments = run_matrix["matrix"]
+
+        for run in combine_args(arguments, dict()):
+            template_name = run_matrix["name"]
+            
+            ctx = unflatten(run)
+            ctx['time'] = int(time.time())
+            run_name = template_name.format(**ctx)
+            
+            yield run_name, run
+
+
+@contextmanager
+def apply_system(config: dict):
+    system = system_global.get()
+    old = deepcopy(system)
+    
+    if system is None:
+        system = dict()
+        system_global.set(system)
+        system = system_global.get()
+    
+    for k, v in config.items():
+        frags = k.split(".")
+        
+        lookup = system.setdefault("options", {})
+        for f in frags[:-1]:
+            lookup = lookup.setdefault(f, {})
+        lookup[frags[-1]] = v
+        
+
+    yield    
+    system_global.set(old)
 
 
 def option(name, etype, default=None):
@@ -268,6 +328,7 @@ def get_remote_ip():
 
     for interface, address_list in addresses.items():
         for address in address_list:
+            # if address.family in (socket.AF_INET, socket.AF_INET6):
             if interface in stats and getattr(stats[interface], "isup"):
                 result.append(address.address)
 
@@ -286,49 +347,9 @@ def is_loopback(address: str) -> bool:
 
 
 
-def _resolve_ip(ip):
-    hostname = ip
-    aliaslist = []
-    ipaddrlist = [ip]
-    lazy_raise = None
-
-    if not offline:
-        # Resolve the IP
-        try:
-            hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(ip)
-            lazy_raise = None
-        
-        except socket.herror as err:
-            lazy_raise = err
-
-        except socket.gaierror as err:
-            # Get Addr Info (GAI) Error
-            #
-            # When we are connecting to a node through a ssh proxy jump
-            # the node IPs/Hostnames are not available until we reach
-            # the first node inside the cluster
-            #
-            lazy_raise = err
-
-    return hostname, aliaslist, ipaddrlist, lazy_raise
-
-
-def _fix_weird(hostname):
-    if hostname.endswith(".server.mila.quebec.server.mila.quebec"):
-        print()
-        print("Hostname was extra long for no reason")
-        print(hostname, socket.gethostname())
-        print()
-
-        # why is this happening
-        hostname = hostname[: -len(".server.mila.quebec")]
-    
-    return hostname
-
-
 # If true that means we cannot resolve the ip addresses
 # so we ignore errors
-offline = False
+offline = True
 
 
 @contextmanager
@@ -351,29 +372,21 @@ def _resolve_addresses(nodes):
     ip_list = get_remote_ip()
 
     for node in nodes:
-        hostname, aliaslist, ipaddrlist, lazy_raise = _resolve_ip(node["ip"])
-
-        hostname = _fix_weird(hostname)
-
-        node["hostname"] = hostname
-        node["aliaslist"] = aliaslist
-        node["ipaddrlist"] = ipaddrlist
-
-        is_local = (
-            ("127.0.0.1" in ipaddrlist)
-            or (hostname in ("localhost", socket.gethostname(), "127.0.0.1"))
-            or (socket.gethostname().startswith(hostname))
-            or len(ip_list.intersection(ipaddrlist)) > 0
-            or any([is_loopback(ip) for ip in ipaddrlist])
-        )
-
-        # cn-g005 cn-g005.server.mila.quebec
-        # print(hostname, socket.gethostname())
+        ip = node["ip"]
+        
+        is_local = is_loopback(ip)
+        
+        if ip in ip_list:
+            is_local = True            
+        
         node["local"] = is_local
+        
+        if is_local:
+            node["hostname"] = socket.gethostname()
 
         if is_local and self is None:
             self = node
-            node["ipaddrlist"] = list(set(list(ip_list) + list(ipaddrlist)))
+            node["ipaddrlist"] = list(set(list(ip_list)))
 
     # if self is node we might be outisde the cluster
     # which explains why we could not resolve the IP of the nodes
@@ -401,11 +414,13 @@ def gethostname(host):
 def resolve_hostname(ip):
     try:
         hostname, _, iplist = socket.gethostbyaddr(ip)
-
+        
         for ip in iplist:
             if is_loopback(ip):
                 return hostname, True
 
+        # FIXME
+        return socket.gethostname(), hostname.startswith(socket.gethostname())
         return hostname, hostname == socket.gethostname()
 
     except:
@@ -464,6 +479,9 @@ def build_system_config(config_file, defaults=None, gpu=True):
         config = merge(defaults, config)
 
     system = config.get("system", {})
+    multirun = config.get("multirun", {})
+    
+    multirun_global.set(multirun)
     system_global.set(system)
 
     # capacity is only required if batch resizer is enabled

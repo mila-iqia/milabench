@@ -27,7 +27,6 @@ _torchvision:
     --loader: pytorch
     --data: "{milabench_data}/FakeImageNet"
 
-
 _torchvision_ddp:
   inherits: _defaults
   definition: ../benchmarks/torchvision_ddp
@@ -67,7 +66,7 @@ llama:
   definition: ../benchmarks/llama
   group: llm
   install_group: torch
-  max_duration: 800
+  max_duration: 3600
   tags:
     - nlp
     - llm
@@ -119,7 +118,6 @@ _timm:
     --dataset: "FakeImageNet"
     --workers: "auto({n_worker}, 8)"
 
-
 _accelerate_opt:
   inherits: _defaults
   tags:
@@ -155,7 +153,6 @@ _accelerate_opt:
   # Accelerate Args
   use_deepspeed: true
   num_machines: 1
-
 
 fp16:
   inherits: _flops
@@ -209,6 +206,11 @@ resnet50:
   
 resnet50-noio:
   inherits: _torchvision
+  voir:
+    options:
+      stop: 500
+      interval: "1s"
+
   tags:
     - vision
     - classification
@@ -346,7 +348,7 @@ reformer:
     - monogpu
   argv:
     --model: "Reformer"
-    --batch-size: 64
+    --batch-size: 32
 
 whisper:
   inherits: _hf
@@ -372,12 +374,15 @@ focalnet:
     --model: focalnet_base_lrf
 
 brax:
+  # Brax requires very specific sizes to work
+  # so the resizer is not capable of handling resizing this bench
   inherits: _defaults
   tags:
     - rl
     - jax
     - multigpu
     - gym
+    - nobatch
   definition: ../benchmarks/brax
   group: brax
   install_group: torch
@@ -389,7 +394,6 @@ brax:
     --batch-size: 1024
     --num-minibatches: 32
     --num-envs: 8192
-
 
 _diffusion:
   inherits: _defaults
@@ -537,12 +541,11 @@ _llm:
   tags:
     - nlp
     - llm
-  max_duration: 1200
+  max_duration: 3600
   num_machines: 1
   inherits: _defaults
   definition: ../benchmarks/llm
   install_group: torch
-
 
 llm-lora-single:
   inherits: _llm
@@ -550,6 +553,7 @@ llm-lora-single:
     - monogpu
   plan:
     method: per_gpu
+
   argv:
     "{milabench_code}/recipes/lora_finetune_single_device.py": true
     --config: "{milabench_code}/configs/llama3_8B_lora_single_device.yaml"
@@ -562,6 +566,7 @@ llm-lora-single:
     repo_id="meta-llama/Meta-Llama-3.1-8B": true
     batch_size=8: true
     gradient_accumulation_steps=8: true
+    device={device_name}: true
 
 
 llm-lora-ddp-gpus:
@@ -583,7 +588,7 @@ llm-lora-ddp-gpus:
     repo_id="meta-llama/Meta-Llama-3.1-8B": true
     batch_size=8: true
     gradient_accumulation_steps=8: true
-
+    device={device_name}: true
 
 llm-lora-ddp-nodes:
   tags:
@@ -606,11 +611,10 @@ llm-lora-ddp-nodes:
     repo_id="meta-llama/Meta-Llama-3.1-8B": true
     batch_size=8: true
     gradient_accumulation_steps=8: true
-
+    device={device_name}: true
   num_machines: 2
   requires_capabilities:
     - "len(nodes) >= ${num_machines}"
-
 
 llm-lora-mp-gpus:
   inherits: _llm
@@ -633,8 +637,12 @@ llm-lora-mp-gpus:
     repo_id="meta-llama/Meta-Llama-3.1-70B": true
     batch_size=8: true
     gradient_accumulation_steps=1: true
-
+    device={device_name}: true
+  
 llm-full-mp-gpus:
+  voir:
+    options:
+      stop: 30
   inherits: _llm
   tags:
     - multigpu
@@ -655,7 +663,8 @@ llm-full-mp-gpus:
     safetensors=true: true
     batch_size=2: true
     gradient_accumulation_steps=1: true
-
+    device={device_name}: true
+  
 llm-full-mp-nodes:
   tags:
     - multinode
@@ -678,7 +687,8 @@ llm-full-mp-nodes:
     safetensors=true: true
     batch_size=2: true
     gradient_accumulation_steps=1: true
-
+    device={device_name}: true
+  
   num_machines: 2
   requires_capabilities:
     - "len(nodes) >= ${num_machines}"
@@ -690,6 +700,7 @@ _purejaxrl:
     - monogpu
     - gym
     - rl
+    - jax
   definition: ../benchmarks/purejaxrl
   plan:
     method: per_gpu
@@ -699,7 +710,8 @@ dqn:
   argv:
     dqn: true
     --num_envs: auto({cpu_per_gpu}, 128)
-    --buffer_batch_size: 128
+    --buffer_size: 131072
+    --buffer_batch_size: 65536
     --env_name: CartPole-v1
     --training_interval: 10
 
@@ -712,7 +724,7 @@ ppo:
     --num_minibatches: 32
     --update_epochs: 4
     --env_name: hopper
-    --total_timesteps: 200000
+    --total_timesteps: 2000000
 
 _geo_gnn:
   inherits: _defaults
@@ -724,14 +736,22 @@ _geo_gnn:
   plan:
     method: per_gpu
 
+pna:
+  inherits: _geo_gnn
+  argv:
+    --model: 'PNA'
+    --num-samples: 100000
+    --batch-size: 4096
+    --num-workers: "auto({n_worker}, 0)"
+
 dimenet:
   inherits: _geo_gnn
-  tags:
-    - monogpu
   argv:
     --model: 'DimeNet'
-    --num-samples: 10000
+    --num-samples: 100000
     --use3d: True
+    --batch-size: 16
+    --num-workers: "auto({n_worker}, 0)"
 
 recursiongfn:
   inherits: _defaults
@@ -745,7 +765,7 @@ recursiongfn:
 
   argv:
     --batch_size: 128
-    --num_workers: 8
+    --num_workers: "auto({n_worker}, 8)"
     --num_steps: 100
     --layer_width: 128
     --num_layers: 4
@@ -769,6 +789,7 @@ torchatari:
     --env-id: Breakout-v5
 
 _llava:
+  max_duration: 3600
   inherits: _defaults
   definition: ../benchmarks/llava
   install_group: torch
@@ -776,19 +797,20 @@ _llava:
     method: per_gpu
   tags:
     - llm
-    - monogpu
   argv:
     --batch_size: 1
-    --num_workers: 4
+    --num_workers: "auto({n_worker}, 4)"
     --gradient_accumulation_steps: 1
 
 llava-single:
   inherits: _llava
+  tags:
+    - monogpu
   plan:
     method: per_gpu
   argv:
     --batch_size: 1
-    --num_workers: 4
+    --num_workers: "auto({n_worker}, 4)"
     --gradient_accumulation_steps: 1
 
 llava-gpus:
@@ -800,7 +822,7 @@ llava-gpus:
     n: 1
   argv:
     --batch_size: 1
-    --num_workers: 4
+    --num_workers: "auto({n_worker}, 4)"
     --gradient_accumulation_steps: 1
 
 
@@ -811,7 +833,6 @@ _rlhf:
   plan:
     method: per_gpu
   tags:
-    - monogpu
     - rl
     - rlhf
     - llm
@@ -825,6 +846,8 @@ _rlhf:
 
 rlhf-single:
   inherits: _rlhf
+  tags:
+    - monogpu
   plan:
     method: per_gpu
 
@@ -862,3 +885,26 @@ vjepa-gpus:
   plan:
     method: njobs
     n: 1
+
+cleanrljax:
+  inherits: _defaults
+  install_group: torch
+  definition: ../benchmarks/cleanrl_jax
+  tags:
+    - monogpu
+    - jax
+  plan:
+    method: per_gpu
+  
+  # args.batch_size     = int(args.num_envs * args.num_steps)
+  # args.minibatch_size = int(args.batch_size // args.num_minibatches)
+  # args.num_iterations = args.total_timesteps // args.batch_size
+  # --total_timesteps
+  # --num_steps
+  # --num_minibatches
+
+  argv:
+    --num_envs: auto({cpu_per_gpu}, 128)
+    --num_steps: 128
+    --num_minibatches: 4
+    --total_timesteps: 10000000

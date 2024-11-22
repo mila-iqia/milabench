@@ -15,9 +15,32 @@ from voir.instruments.network import network_monitor
 from voir.instruments.monitor import monitor
 
 
+from .metrics import sumggle_push, give_push, file_push
+
+
+def auto_push():
+    # use_stdout = int(os.getenv("MILABENCH_USE_STDOUT", 0))
+    mb_managed = int(os.getenv("MILABENCH_MANAGED", 0))
+
+    # Milabench managed: we need to push metrics to it
+    if mb_managed == 1:
+        # Using voir, DATA_FD is defined as well
+        ov = current_overseer.get()
+        if ov is not None:
+            return ov.give
+        
+        # Not using Voir, using structured stdout
+        if int(os.getenv("MILABENCH_USE_STDOUT", 0)) == 1:
+            return sumggle_push()
+
+        raise RuntimeError("Could not find something to push to")
+
+    # Not using milabench; using stdout
+    return file_push()
+
 
 @instrument_definition
-def monitor_monogpu(ov, poll_interval=10, arch=None):
+def monitor_monogpu(ov, poll_interval=1, arch=None):
     return monitor(
         ov,
         poll_interval=poll_interval,
@@ -28,7 +51,7 @@ def monitor_monogpu(ov, poll_interval=10, arch=None):
 
 
 @instrument_definition
-def monitor_node(ov, poll_interval=10, arch=None):
+def monitor_node(ov, poll_interval=1, arch=None):
     return monitor(
         ov,
         poll_interval=poll_interval,
@@ -41,6 +64,7 @@ def monitor_node(ov, poll_interval=10, arch=None):
 
 
 def _smuggle_monitor(poll_interval=10, worker_init=None, **monitors):
+    # USE auto push
     data_file = SmuggleWriter(sys.stdout)
     def mblog(data):
         nonlocal data_file
@@ -49,7 +73,8 @@ def _smuggle_monitor(poll_interval=10, worker_init=None, **monitors):
             try:
                 print(json.dumps(data), file=data_file)
             except ValueError:
-                print("Is bench ending?, ignoring ValueError")
+                pass
+                # print("Is bench ending?, ignoring ValueError")
     
     def get():
         t = time.time()
