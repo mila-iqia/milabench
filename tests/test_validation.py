@@ -76,39 +76,46 @@ def test_planning_layer_per_gpu_bad(replayfolder, monkeypatch):
 
 def test_memory_tracking(replayfolder, config, tmp_path):
     import contextvars
-
-    from milabench.sizer import (
-        MemoryUsageExtractor,
-        Sizer,
-        SizerOptions,
-        sizer_global,
-        system_global,
-    )
-
-    ctx = contextvars.copy_context()
-
-    def update_ctx():
-        sizer = Sizer(
-            SizerOptions(
-                size=None,
-                autoscale=True,
-                multiple=8,
-            ),
-            config("scaling"),
+    import yaml
+    from milabench.system import apply_system, option
+    
+    conf = {
+        "gpu": {
+            "capacity": "41920 MiB"
+        },
+        "options": {
+            "sizer": {
+                "multiple": 8,
+                "autoscale": 1
+            }
+        }
+    }
+    
+    with apply_system(conf):
+        from milabench.sizer import (
+            MemoryUsageExtractor,
+            Sizer,
+            SizerOptions,
+            sizer_global,
+            system_global,
         )
-        sizer_global.set(sizer)
-        system_global.set({"gpu": {"capacity": "41920 MiB"}})
+        
+        layer = MemoryUsageExtractor()
+        with open(config("scaling"), "r") as sconf:
+            layer.memory = yaml.safe_load(sconf)
+            
+        layer.filepath = f"{tmp_path}/dummy"
 
-    ctx.run(update_ctx)
-    layer = ctx.run(lambda: MemoryUsageExtractor())
+        print(system_global.get())
+        # print(option("sizer.multiple", etype=int))
+        # print(option("sizer.config", etype=str))
+        # print(Sizer().scaling_config)
+        assert 123 not in layer.memory["benchio"]["model"]
 
-    layer.filepath = f"{tmp_path}/dummy"
+        replay_validation_scenario(replayfolder, layer, filename="usage")
 
-    assert 123 not in layer.memory["benchio"]["model"]
-
-    ctx.run(lambda: replay_validation_scenario(replayfolder, layer, filename="usage"))
-
-    assert 123 in layer.memory["benchio"]["model"]
+        # print(layer.memory)
+        assert 123 in layer.memory["benchio"]["model"]
 
 
 def test_exception_tracking(replayfolder, file_regression, capsys):

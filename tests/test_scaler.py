@@ -76,28 +76,27 @@ def fakeexec(pack):
 
 def test_scaler_enabled(multipack, config):
     from milabench.system import system_global
-    import contextvars
+    from milabench.system import apply_system
 
-    ctx = contextvars.copy_context()
-
-    def update_ctx():
-        sizer = Sizer(
-            SizerOptions(
-                size=None,
-                autoscale=True,
-                multiple=8,
-            ),
-            config("scaling"),
-        )
-        sizer_global.set(sizer)
-        system = system_global.get()
-        gpu = system.setdefault("gpu", dict())
-        gpu["capacity"] = "41920 MiB"
-
-    ctx.run(update_ctx)
+    conf = {
+        "gpu": {
+            "capacity": "41920 MiB"
+        },
+        "options": {
+            "sizer": {
+                "multiple": 8
+            }
+        }
+    }
 
     for k, pack in multipack.packs.items():
-        assert ctx.run(lambda: fakeexec(pack)) == ["--batch_size", "232"]
+        # Sizer is only enabled when config is applied
+        assert fakeexec(pack) == []
 
-        # Sizer is only enabled inside the context
+    with apply_system(conf):
+        for k, pack in multipack.packs.items():
+            fakeexec(pack) == ["--batch_size", "232"]
+
+    for k, pack in multipack.packs.items():
+        # Sizer is only enabled when config is applied
         assert fakeexec(pack) == []

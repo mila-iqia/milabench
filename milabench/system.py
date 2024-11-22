@@ -121,6 +121,11 @@ def apply_system(config: dict):
     system = system_global.get()
     old = deepcopy(system)
     
+    if system is None:
+        system = dict()
+        system_global.set(system)
+        system = system_global.get()
+    
     for k, v in config.items():
         frags = k.split(".")
         
