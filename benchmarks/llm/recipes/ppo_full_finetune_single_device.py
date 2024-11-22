@@ -496,9 +496,9 @@ class PPOFullFinetuneRecipeSingleDevice(FTRecipeInterface):
             ref_policy_model.compile(backend=backend)
             value_model.compile(backend=backend)
 
-        if self._device.type == "cuda":
-            memory_stats = utils.get_memory_stats(device=self._device)
-            utils.log_memory_stats(memory_stats)
+        # if self._device.type == "cuda":
+        #     memory_stats = utils.get_memory_stats(device=self._device)
+        #     utils.log_memory_stats(memory_stats)
 
         return policy_model, value_model, reward_model, ref_policy_model
 
@@ -1031,8 +1031,8 @@ class PPOFullFinetuneRecipeSingleDevice(FTRecipeInterface):
             "approx_policy_kl": ppo_stats.approx_policy_kls.mean(),
             "response_lengths": trajectory.seq_lens.float().mean(),
         }
-        if self._device.type == "cuda" and self._log_peak_memory_stats:
-            log_dict.update(utils.get_memory_stats(device=self._device))
+        # if self._device.type == "cuda" and self._log_peak_memory_stats:
+        #     log_dict.update(utils.get_memory_stats(device=self._device))
 
         self._metric_logger.log_dict(log_dict, step=self.global_step)
 

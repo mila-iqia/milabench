@@ -451,6 +451,11 @@ class SSHCommand(WrapperCommand):
         return {}
 
     def is_local(self):
+        local = self._is_local()
+        print("is_local", self.host, local)
+        return local
+
+    def _is_local(self):
         localnode = self.pack.config["system"]["self"]
 
         if localnode is not None:
@@ -581,7 +586,7 @@ def node_address(node):
     """Favour Hostname as it is the most consistent name across machines"""
     host = node.get("hostname")
     ip = node.get("ip")
-    return host or ip
+    return ip or hostname
 
 
 class ForeachNode(ListCommand):
@@ -637,6 +642,7 @@ class ForeachNode(ListCommand):
                     **self.options
                 )
 
+            print(rank, node, node_address(node))
             worker = SSHCommand(
                 host=node_address(node),
                 user=node["user"],

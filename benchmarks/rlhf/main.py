@@ -2,6 +2,7 @@
 
 import shutil
 
+import accelerate
 from accelerate import PartialState
 from datasets import load_dataset
 from transformers import (
@@ -15,10 +16,16 @@ from trl import ModelConfig
 from trl.trainer.ppov2_trainer import PPOv2Config, PPOv2Trainer
 from trl.trainer.utils import SIMPLE_QUERY_CHAT_TEMPLATE
 
+import torchcompat.core as compat
+
 
 class PPOv2TrainerIntrumented(PPOv2Trainer):
     def __init__(self, config: PPOv2Config, *args, **kwargs):
         config.report_to = []
+        
+        # FIXME: better way to monkeypatch this ?
+        # Use the compatibility accelerator class
+        accelerate.Accelerator = compat.accelerate.Accelerator
         super().__init__(config, *args, **kwargs)
 
         def batch_size_fn(batch):
@@ -46,9 +53,13 @@ class PPOv2TrainerIntrumented(PPOv2Trainer):
 
 
 def main():
+    
 
     parser = HfArgumentParser((PPOv2Config, ModelConfig))
     config, model_config = parser.parse_args_into_dataclasses()
+    
+    import torchcompat.core
+    
     # remove output_dir if exists
     shutil.rmtree(config.output_dir, ignore_errors=True)
 

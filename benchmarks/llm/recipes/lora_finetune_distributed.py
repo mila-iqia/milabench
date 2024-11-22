@@ -15,6 +15,7 @@ from warnings import warn
 
 import torch
 from omegaconf import DictConfig, ListConfig
+import torchcompat.core as acc
 
 from torch import nn
 from torch.distributed import destroy_process_group, init_process_group
@@ -42,6 +43,9 @@ from torchtune.training import DummyProfiler, PROFILER_KEY
 from tqdm import tqdm
 
 log = utils.get_logger("DEBUG")
+
+
+HPU_UNSUPPORTED = False
 
 
 class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
@@ -130,8 +134,8 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
     """
 
     def __init__(self, cfg: DictConfig) -> None:
-        self._device = utils.get_device(device=cfg.device)
-        self._dtype = training.get_dtype(cfg.dtype, device=self._device)
+        self._device = acc.fetch_device(int(os.getenv("LOCAL_RANK", "0")))
+        self._dtype = utils.get_dtype(cfg.dtype, device=self._device)
 
         if self._dtype == torch.float16:
             raise ValueError(
@@ -157,7 +161,7 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
 
         # These attributes constitute the recipe state and are updated by ``load_checkpoint``
         # when ``resume_from_checkpoint`` is ``True``
-        self.seed = training.set_seed(seed=cfg.seed)
+        self.seed = 1 # training.set_seed(seed=cfg.seed)
         self.epochs_run = 0
         self.total_epochs = cfg.epochs
         self.max_steps_per_epoch = cfg.max_steps_per_epoch
