@@ -53,8 +53,7 @@ def to_octet(value: str) -> float:
 class Sizer:
     """Automatically scale the batch size to match GPU spec"""
 
-    def __init__(self, options=SizerOptions(), scaling_config=None):
-        self.options = options
+    def __init__(self, scaling_config=None):
         self.path = scaling_config
 
         if scaling_config is None:
@@ -62,6 +61,10 @@ class Sizer:
 
         with open(scaling_config, "r") as sconf:
             self.scaling_config = yaml.safe_load(sconf)
+            
+    @property
+    def options(self):
+        return SizerOptions()
 
     def benchscaling(self, benchmark):
         # key
@@ -165,6 +168,10 @@ class Sizer:
         return -1
 
     def argv(self, benchmark, capacity, argv):
+        newargv = self._argv(benchmark, capacity, argv)
+        return newargv
+        
+    def _argv(self, benchmark, capacity, argv):
         """Find the batch size and override it with a new value"""
 
         config = self.benchscaling(benchmark)
@@ -214,11 +221,12 @@ sizer_global = contextvars.ContextVar("sizer_global", default=None)
 
 
 def batch_sizer() -> Sizer:
-    sizer = sizer_global.get()
-    if sizer is None:
-        sizer_global.set(Sizer())
-        return batch_sizer()
-    return sizer
+    return Sizer()
+    # sizer = sizer_global.get()
+    # if sizer is None:
+    #     sizer_global.set(Sizer())
+    #     return batch_sizer()
+    # return sizer
 
 
 def get_batch_size(config, start_event):
@@ -242,8 +250,9 @@ class MemoryUsageExtractor(ValidationLayer):
     """Extract max memory usage per benchmark to populate the memory model"""
 
     def __init__(self):
+        
+        self.filepath = option("sizer.save", str, None)
         sizer = batch_sizer()
-        self.filepath = sizer.options.save
         self.memory = deepcopy(sizer.scaling_config)
         self.scaling = None
         self.benchname = None
