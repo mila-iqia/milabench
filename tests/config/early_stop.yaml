@@ -1,0 +1,20 @@
+_defaults:
+  max_duration: 1
+  voir:
+    options:
+      stop: 10
+      interval: "1s"
+
+benchio:
+  inherits: _defaults
+  definition: ../yoshua-benchio
+  plan:
+    method: njobs
+    n: 1
+  tags:
+    - monogpu
+
+  argv:
+    --sleep: 60
+    --start: 1
+    --end: 11

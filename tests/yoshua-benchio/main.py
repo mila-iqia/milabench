@@ -30,9 +30,6 @@ def main():
 
     args = parser.parse_args()
 
-    if args.sleep is not None:
-        time.sleep(args.sleep)
-
     data = [[[i]] for i in range(args.start, args.end)]
 
     if args.bad:
@@ -40,6 +37,10 @@ def main():
 
     for [[x]] in voir.iterate("train", data, True):
         give(loss=1 / x)
+    give(rate=args.end - args.start)
+
+    if args.sleep is not None:
+        time.sleep(args.sleep)
 
 
 if __name__ == "__main__":
