@@ -139,6 +139,7 @@ async def execute_command(
                     # kill the underlying process which should force the coro to 
                     # return on next wait
                     pack = packs[timedout]
+                    await pack.send(event="stop", data=None)
                     await force_terminate_now(pack, max_delay)
 
                 # Grace period

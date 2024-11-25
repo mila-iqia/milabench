@@ -2,10 +2,13 @@ from contextlib import contextmanager
 import os
 
 import milabench.alt_async
+from milabench.commands import Command
 import milabench.commands.executors
 from milabench.testing import resolved_config
 
 import pytest
+
+TEST_FOLDER = os.path.dirname(__file__)
 
 # benchmark that cannot be prepared because they are too big
 OVERSIZED_BENCHMARKS = {
@@ -123,6 +126,23 @@ def test_milabench(monkeypatch, bench, module_tmp_dir, standard_config):
     import tempfile
     shutil.rmtree(tempfile.gettempdir(), ignore_errors=True)
     # shutil.rmtree(module_tmp_dir)
+
+
+def test_early_stop(monkeypatch):
+    args= [
+        "--base", "/tmp",
+        "--config", os.path.join(TEST_FOLDER, "config", "early_stop.yaml"),
+        "--use-current-env"
+    ]
+
+    _execute = Command.execute
+    async def _wrap(self, *args, timeout_delay=None, **kwargs):
+        del timeout_delay
+        return await _execute.__call__(self, *args, timeout_delay=1, **kwargs)
+
+    monkeypatch.setattr(Command, "execute", _wrap)
+
+    run_cli("run", *args, "--no-report")
 
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
