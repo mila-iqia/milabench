@@ -48,6 +48,11 @@
 <li class="toctree-l2"><a class="reference internal" href="#before-running-the-benchmarks">Before running the benchmarks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#run-milabench">Run milabench</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#reports">Reports</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#use-milabench-in-a-multi-nodes-system">Use milabench in a multi-nodes system</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#create-a-system-configuration-file">Create a system configuration file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#run-milabench-on-a-multi-nodes-system">Run milabench on a multi-nodes system</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="recipes.html">Running Milabench</a></li>
@@ -134,6 +139,52 @@ milabench<span class="w"> </span>run<span class="w"> </span>--repeat<span class=
 </pre></div>
 </div>
 <p>The report will also print out a score based on a weighting of the metrics, as defined in the file <code class="docutils literal notranslate"><span class="pre">$MILABENCH_CONFIG</span></code> points to.</p>
+</section>
+<section id="use-milabench-in-a-multi-nodes-system">
+<h2>Use milabench in a multi-nodes system<a class="headerlink" href="#use-milabench-in-a-multi-nodes-system" title="Link to this heading"></a></h2>
+<section id="create-a-system-configuration-file">
+<h3>Create a system configuration file<a class="headerlink" href="#create-a-system-configuration-file" title="Link to this heading"></a></h3>
+<p>Create a configuration file which contains the following structure:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">system</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># sshkey used in remote milabench operations</span>
+<span class="w">  </span><span class="nt">sshkey</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">~/.ssh/id_ed25519</span>
+
+<span class="w">  </span><span class="c1"># Nodes list</span>
+<span class="w">  </span><span class="nt">nodes</span><span class="p">:</span>
+<span class="w">      </span><span class="c1"># Alias used to reference the node</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">manager</span>
+<span class="w">      </span><span class="nt">ip</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">192.168.11.11</span>
+<span class="w">      </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5000</span>
+<span class="w">      </span><span class="c1"># Use this node as the master node or not</span>
+<span class="w">      </span><span class="nt">main</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">      </span><span class="c1"># User to use in remote milabench operations</span>
+<span class="w">      </span><span class="nt">user</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">manager</span>
+
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">node2</span>
+<span class="w">      </span><span class="nt">ip</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">192.168.11.12</span>
+<span class="w">      </span><span class="nt">main</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">      </span><span class="nt">user</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">username</span>
+
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">node3</span>
+<span class="w">      </span><span class="nt">ip</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">192.168.11.13</span>
+<span class="w">      </span><span class="nt">main</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">      </span><span class="nt">user</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">username</span>
+
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">node4</span>
+<span class="w">      </span><span class="nt">ip</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">192.168.11.14</span>
+<span class="w">      </span><span class="nt">main</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">      </span><span class="nt">user</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">username</span>
+</pre></div>
+</div>
+</section>
+<section id="run-milabench-on-a-multi-nodes-system">
+<h3>Run milabench on a multi-nodes system<a class="headerlink" href="#run-milabench-on-a-multi-nodes-system" title="Link to this heading"></a></h3>
+<div class="line-block">
+<div class="line">Set the <code class="docutils literal notranslate"><span class="pre">$MILABENCH_SYSTEM</span></code> environment variable or use the <code class="docutils literal notranslate"><span class="pre">--system</span></code>
+argument to identify the the system configuration file:</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">[prepare|install|run]</span> <span class="pre">--system</span> <span class="pre">config/system.yaml</span></code></div>
+</div>
+</section>
 </section>
 </section>
 

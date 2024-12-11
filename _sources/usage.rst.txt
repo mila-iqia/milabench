@@ -69,3 +69,53 @@ The following command will print out a report of the tests that ran, the metrics
     milabench report --runs $MILABENCH_BASE/runs/some_specific_run --html report.html
 
 The report will also print out a score based on a weighting of the metrics, as defined in the file ``$MILABENCH_CONFIG`` points to.
+
+
+Use milabench in a multi-nodes system
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+Create a system configuration file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Create a configuration file which contains the following structure:
+
+.. code-block:: yaml
+
+  system:
+    # sshkey used in remote milabench operations
+    sshkey: ~/.ssh/id_ed25519
+
+    # Nodes list
+    nodes:
+        # Alias used to reference the node
+      - name: manager
+        ip: 192.168.11.11
+        port: 5000
+        # Use this node as the master node or not
+        main: true
+        # User to use in remote milabench operations
+        user: manager
+
+      - name: node2
+        ip: 192.168.11.12
+        main: false
+        user: username
+
+      - name: node3
+        ip: 192.168.11.13
+        main: false 
+        user: username
+
+      - name: node4
+        ip: 192.168.11.14
+        main: false 
+        user: username
+
+
+Run milabench on a multi-nodes system
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+| Set the ``$MILABENCH_SYSTEM`` environment variable or use the ``--system``
+  argument to identify the the system configuration file:
+| ``milabench [prepare|install|run] --system config/system.yaml``
