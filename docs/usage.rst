@@ -116,8 +116,9 @@ Create a configuration file which contains the following structure:
 Create a slurm configuration file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-| To execute ``milabench`` in a slurm batch job, the generation of the system
-  configuration file can be automated with the ``milabench slurm_system`` command:
+| If ``milabench`` is executed in a slurm system, the generation of the
+  configuration file can be automated with the ``milabench slurm_system``
+  command:
 | ``milabench slurm_system > config/system.yaml``
 
 
