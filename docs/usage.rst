@@ -113,6 +113,14 @@ Create a configuration file which contains the following structure:
         user: username
 
 
+Create a system configuration file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+| To create a configuration file in a slurm system, the command ``milabench
+  slurm_system`` will look for available nodes and generate the configuration file
+| ``milabench slurm_system > config/system.yaml``
+
+
 Run milabench on a multi-nodes system
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
