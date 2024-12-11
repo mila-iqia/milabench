@@ -117,5 +117,5 @@ Run milabench on a multi-nodes system
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 | Set the ``$MILABENCH_SYSTEM`` environment variable or use the ``--system``
-  argument to identify the the system configuration file
+  argument to identify the the system configuration file:
 | ``milabench [prepare|install|run] --system config/system.yaml``
