@@ -1,6 +1,6 @@
 
 Install and use
----------------
+===============
 
 .. note::
 
@@ -23,7 +23,7 @@ This will install two commands, ``milabench`` and ``voir``.
 
 
 Before running the benchmarks
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------
 
 1. Set the ``$MILABENCH_BASE`` environment variable to the base directory in which all the code, virtual environments and data should be put.
 
@@ -37,7 +37,7 @@ If the machine has both NVIDIA/CUDA and AMD/ROCm GPUs, you may have to set the `
 
 
 Run milabench
-~~~~~~~~~~~~~
+-------------
 
 The following command will run the whole benchmark and will put the results in a new directory in ``$MILABENCH_BASE/runs`` (the path will be printed to stdout).
 
@@ -60,7 +60,7 @@ Here are a few useful options for ``milabench run``:
 
 
 Reports
-~~~~~~~
+-------
 
 The following command will print out a report of the tests that ran, the metrics and if there were any failures. It will also produce an HTML report that contains more detailed information about errors if there are any.
 
@@ -72,11 +72,11 @@ The report will also print out a score based on a weighting of the metrics, as d
 
 
 Use milabench in a multi-nodes system
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------
 
 
 Create a system configuration file
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Create a configuration file which contains the following structure:
 
@@ -113,8 +113,17 @@ Create a configuration file which contains the following structure:
         user: username
 
 
+Create a slurm system configuration file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+| If ``milabench`` is executed in a slurm system, the generation of the
+  configuration file can be automated with the ``milabench slurm_system``
+  command:
+| ``milabench slurm_system > config/system.yaml``
+
+
 Run milabench on a multi-nodes system
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 | Set the ``$MILABENCH_SYSTEM`` environment variable or use the ``--system``
   argument to identify the the system configuration file:
