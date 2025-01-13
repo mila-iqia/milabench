@@ -8,6 +8,7 @@ Preparing
 
    * NVIDIA
    * AMD
+   * Intel
 
 2. Create a milabench configuration for your RFP
    Milabench comes with a wide variety of benchmarks.
