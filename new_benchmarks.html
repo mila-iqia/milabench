@@ -7,7 +7,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Creating a new benchmark &mdash; milabench  documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
@@ -162,7 +162,7 @@ to install them during development (add <code class="docutils literal notranslat
 <h3>main.py<a class="headerlink" href="#main-py" title="Link to this heading"></a></h3>
 <p>This is the main script that will be benchmarked when you run <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">run</span></code>. It is run as <code class="docutils literal notranslate"><span class="pre">voir</span> <span class="pre">main.py</span> <span class="pre">ARGV...</span></code></p>
 <p>The template <code class="docutils literal notranslate"><span class="pre">main.py</span></code> demonstrates a simple loop that you can adapt to any script:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
     <span class="n">observer</span> <span class="o">=</span> <span class="n">BenchObserver</span><span class="p">(</span><span class="n">batch_size_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">batch</span><span class="p">:</span> <span class="mi">1</span><span class="p">)</span>
     <span class="n">criterion</span> <span class="o">=</span> <span class="n">observer</span><span class="o">.</span><span class="n">criterion</span><span class="p">(</span><span class="n">criterion</span><span class="p">)</span>
     <span class="n">optimizer</span> <span class="o">=</span> <span class="n">observer</span><span class="o">.</span><span class="n">optimizer</span><span class="p">(</span><span class="n">optimizer</span><span class="p">)</span>
@@ -256,11 +256,11 @@ milabench<span class="w"> </span>new<span class="w"> </span>--name<span class="w
 be found in ptera <a class="reference external" href="https://ptera.readthedocs.io/en/latest/guide.html#probing">documentation</a></p>
 <section id="wrap-a-return-value">
 <h3>Wrap a return value<a class="headerlink" href="#wrap-a-return-value" title="Link to this heading"></a></h3>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Wrapper</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Wrapper</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
 
-<span class="k">def</span> <span class="nf">wrap</span><span class="p">(</span><span class="n">original</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">wrap</span><span class="p">(</span><span class="n">original</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">Wrapper</span><span class="p">(</span><span class="n">original</span><span class="p">)</span>
 
 <span class="n">probe</span> <span class="o">=</span> <span class="n">ov</span><span class="o">.</span><span class="n">probe</span><span class="p">(</span><span class="s2">&quot;//my_optimizer_creator() as optimizer&quot;</span><span class="p">,</span> <span class="n">overridable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>

@@ -7,7 +7,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Milabench Overview &mdash; milabench  documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
@@ -254,7 +254,7 @@ the code that will be run and insert the necessary hooks to measure performance.
 The example below override the return value of the <code class="docutils literal notranslate"><span class="pre">dataloader()</span></code> function which is defined in the <code class="docutils literal notranslate"><span class="pre">__main__</span></code> module.
 It wraps the original object with a custom wrapper that will time the time between <code class="docutils literal notranslate"><span class="pre">__next__</span></code> calls.</p>
 <p>This allows milabench to integrate benchmarks from code coming from third parties without modifying the code directly.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">loader</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="n">loader</span><span class="p">):</span>
    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;received loader obj&quot;</span><span class="p">)</span>
    <span class="k">return</span> <span class="n">Wrapper</span><span class="p">(</span><span class="n">loader</span><span class="p">)</span>
 
