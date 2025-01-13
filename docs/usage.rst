@@ -29,9 +29,21 @@ Before running the benchmarks
 
 2. Set the ``$MILABENCH_CONFIG`` environment variable to the configuration file that represents the benchmark suite you want to run. Normally it should be set to ``config/standard.yaml``.
 
-3. ``milabench install``: Install the individual benchmarks in virtual environments.
+3. Setup huggingface access
 
-4. ``milabench prepare``: Download the datasets, weights, etc.
+   1. Request access to gated models
+  
+      - `Llama-2-7b <https://huggingface.co/meta-llama/Llama-2-7b>`_
+      - `Llama-3.1-8B <https://huggingface.co/meta-llama/Llama-3.1-8B>`_
+      - `Llama-3.1-70B <https://huggingface.co/meta-llama/Llama-3.1-70B>`_
+    
+   2. Create a new `read token <https://huggingface.co/settings/tokens/new?tokenType=read>`_ to download the models
+  
+   3. Add the token to your environment ``export MILABENCH_HF_TOKEN={your_token}``
+
+4. ``milabench install``: Install the individual benchmarks in virtual environments.
+
+5. ``milabench prepare``: Download the datasets, weights, etc.
 
 If the machine has both NVIDIA/CUDA and AMD/ROCm GPUs, you may have to set the ``MILABENCH_GPU_ARCH`` environment variable as well, to either ``cuda`` or ``rocm``.
 

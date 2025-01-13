@@ -1,34 +1,42 @@
 
 
-
+from collections import defaultdict
 from milabench.common import arguments, _get_multipack
 
 
-def cli_gated():
-    args = arguments()
+def cli_gated(args=None):
+    """Print instruction to get access to gated models"""
+
+    if args is None:
+        args = arguments()
 
     benchmarks = _get_multipack(args, return_config=True)
-    gated_bench = []
+    urls = defaultdict(list)
 
     for bench, config in benchmarks.items():
         tags = config.get("tags", [])
 
         if "gated" in tags and 'url' in config:
-            gated_bench.append((bench, config))
+            urls[config["url"]].append((bench, config))
 
-    if len(gated_bench) > 0:
-        print("benchmark use gated models or datasets")
-        print("You need to request permission to huggingface")
+
+    if len(urls) > 0:
+        #
+        #   This match the documentation in milabench/docs/usage.rst
+        #
+        print("#. Setup huggingface access: benchmark use gated models or datasets")
+        print("   You need to request permission to huggingface")
         print()
-        for bench, config in gated_bench:
-            print(f"{bench}")
-            print(f"    url: {config.get('url')}")
+        print("   1. Request access to gated models")
+        print()
+
+        for url, benches in urls.items():
+            names = ' '.join([k for k, _ in benches])
+            print(f"      - `{names} <{url}>`_")
 
         print()
-        print("Create a new token")
-        print("    - https://huggingface.co/settings/tokens/new?tokenType=read")
-        print("")
-        print("Add your token to your environment")
-        print("    export MILABENCH_HF_TOKEN={your_token}")
-        print("")
+        print("   2. Create a new `read token <https://huggingface.co/settings/tokens/new?tokenType=read>`_ to download the models")
+        print()
+        print("   3. Add the token to your environment ``export MILABENCH_HF_TOKEN={your_token}``")
+        print()
         print("Now you are ready to execute `milabench prepare`")
