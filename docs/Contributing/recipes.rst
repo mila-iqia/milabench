@@ -1,5 +1,5 @@
-Running Milabench
-=================
+Recipes
+=======
 
 Base Setup
 ----------
@@ -35,11 +35,9 @@ The current setup runs on 8xA100 SXM4 80Go.
 Note that some benchmarks do require more than 40Go of VRAM.
 One bench might be problematic; rwkv which requires nvcc but can be ignored.
 
-Recipes
--------
 
 Increase Runtime
-^^^^^^^^^^^^^^^^
+----------------
 
 For profiling it might be useful to run the benchmark for longer than the default configuration.
 You can update the yaml file (``config/base.yaml`` or ``config/standard.yaml``) to increase the runtime limits.
@@ -57,7 +55,7 @@ and ``voir.options.stop`` which represent the target number of observations mila
                                  # an observation is usually a batch forward/backward/optimizer.step (i.e one train step)
 
 One Env
-^^^^^^^
+-------
 
 If your are using a container with dependencies such as pytorch already installed,
 you can force milabench to use a single environment for everything.
@@ -69,17 +67,17 @@ you can force milabench to use a single environment for everything.
     milabench run --use-current-env --select bert-fp32 
 
 Batch resizer
-^^^^^^^^^^^^^
+-------------
 
 If the GPU you are using has lower VRAM automatic batch resizing could be enabled with the command below.
 Note that will not impact benchmarks that already use a batch of one, such as opt-6_7b and possibly opt-1_3b.
 
 .. code-block:: bash
 
-   MILABENCH_SIZER_AUTO=True milabench run
+   MILABENCH_SIZER_AUTO=1 milabench run
 
 Device Select
-^^^^^^^^^^^^^
+-------------
 
 To run on a subset of GPUs (note that by default milabench will try to use all the GPUs all the time
 which might make a run take a bit longer, reducing the number of visible devices to 2 might make experimentation faster)
@@ -89,7 +87,7 @@ which might make a run take a bit longer, reducing the number of visible devices
    CUDA_VISIBLE_DEVICES=0,1,2,3 milabench run 
 
 Update Package
-^^^^^^^^^^^^^^
+--------------
 
 To update pytorch to use a newer version of cuda (milabench creates a separate environment for benchmarks)
 
@@ -100,7 +98,7 @@ To update pytorch to use a newer version of cuda (milabench creates a separate e
    pip install -U torch torchvision torchaudio
 
 Arguments
-^^^^^^^^^
+---------
 
 If environment variables are troublesome, the values can also be passed as arguments.
 
@@ -116,6 +114,18 @@ It holds all the benchmark specific logs and metrics gathered by milabench.
 .. code-block:: bash
 
   zip -r results.zip results
+
+
+Run a benchmark without milabench
+---------------------------------
+
+.. code-block:: bash
+
+   milabench dev {benchname}  # will open bash with the benchmark venv sourced 
+
+   # alternatively
+
+   source $MILABENCH_BASE/venv/torch/bin/activate
 
 
 Containers
@@ -306,6 +316,7 @@ Example Reports
 
 Issues
 ------
+
 .. code-block:: txt
   
     > Traceback (most recent call last):

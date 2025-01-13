@@ -2,18 +2,41 @@
 Welcome to milabench's documentation!
 =====================================
 
+
+.. toctree::
+   :caption: News
+   :maxdepth: 1
+
+   Welcome/Features
+   Welcome/Roadmap
+   Welcome/Changelog
+
+
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Getting Started
 
-   usage.rst
-   recipes.rst
-   new_benchmarks.rst
+   GettingStarted/usage.rst
+   GettingStarted/docker.rst
+   
 
-   docker.rst
-   dev-usage.rst
-   reference.rst
-   sizer.rst
+.. toctree::
+   :caption: Contributing
+   :maxdepth: 1
+
+   Contributing/overview
+   Contributing/design
+   Contributing/new_benchmarks
+   Contributing/sizer
+   Contributing/dev-usage
+   Contributing/recipes
+
+
+.. toctree::
+   :caption: API
+   :maxdepth: 1
+
+   ref-pack.rst
 
 
 Indices and tables
