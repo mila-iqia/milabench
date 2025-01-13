@@ -130,7 +130,7 @@ We recommend the following constraint:
 
 .. code-block:: text
 
-   export MILABENCH_SIZER_AUTO=true
+   export MILABENCH_SIZER_AUTO=1
    export MILABENCH_SIZER_MULTIPLE=8
 
 
