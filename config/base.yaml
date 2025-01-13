@@ -67,12 +67,14 @@ llama:
   group: llm
   install_group: torch
   max_duration: 3600
+  url: https://huggingface.co/meta-llama/Llama-2-7b/tree/main
   tags:
     - nlp
     - llm
     - inference
     - monogpu
     - nobatch
+    - gated
 
   voir:
     options:
@@ -541,6 +543,8 @@ _llm:
   tags:
     - nlp
     - llm
+    - gated
+
   max_duration: 3600
   num_machines: 1
   inherits: _defaults
@@ -549,6 +553,7 @@ _llm:
 
 llm-lora-single:
   inherits: _llm
+  url: https://huggingface.co/meta-llama/Llama-3.1-8B
   tags:
     - monogpu
   plan:
@@ -574,8 +579,11 @@ llm-lora-ddp-gpus:
   plan:
     method: njobs
     n: 1
+
+  url: https://huggingface.co/meta-llama/Llama-3.1-8B
   tags:
     - multigpu
+
   argv:
     "{milabench_code}/recipes/lora_finetune_distributed.py": true
     --config: "{milabench_code}/configs/llama3_8B_lora_single_device.yaml"
@@ -599,6 +607,7 @@ llm-lora-ddp-nodes:
     method: njobs
     n: 1
   
+  url: https://huggingface.co/meta-llama/Llama-3.1-8B
   argv:
     "{milabench_code}/recipes/lora_finetune_distributed.py": true
     --config: "{milabench_code}/configs/llama3_8B_lora_single_device.yaml"
@@ -618,6 +627,7 @@ llm-lora-ddp-nodes:
 
 llm-lora-mp-gpus:
   inherits: _llm
+  url: https://huggingface.co/meta-llama/Llama-3.1-70B
   tags:
     - multigpu
   plan:
@@ -644,6 +654,8 @@ llm-full-mp-gpus:
     options:
       stop: 30
   inherits: _llm
+
+  url: https://huggingface.co/meta-llama/Llama-3.1-70B
   tags:
     - multigpu
   plan:
@@ -666,6 +678,7 @@ llm-full-mp-gpus:
     device={device_name}: true
   
 llm-full-mp-nodes:
+  url: https://huggingface.co/meta-llama/Llama-3.1-70B
   tags:
     - multinode
   max_duration: 3600
