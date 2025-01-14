@@ -4,18 +4,31 @@ import socket
 import subprocess
 from coleo import tooled
 
-from ..system import get_gpu_capacity, is_loopback, resolve_hostname, gethostname
+from ..system import get_gpu_capacity
+from ..network import resolve_ip
 
 
+def gethostname(host):
+    try:
+        #             "-oCheckHostIP=no",
+        # "-oPasswordAuthentication=no",
+        return subprocess.check_output([
+            "ssh",  
+            "-oCheckHostIP=no", 
+            "-oPasswordAuthentication=no", 
+            "-oStrictHostKeyChecking=no", host, "cat", "/etc/hostname"], text=True).strip()
+    except:
+        print("Could not resolve hostname")
+        return host
 
 
 def make_node_list_from_slurm(node_list):
     def make_node(i, ip):
-        hostname, local = resolve_hostname(ip)
+        hostname, real_ip, local = resolve_ip(ip)
 
         node = {
             "name": ip,
-            "ip": hostname,
+            "ip": real_ip,
             "hostname": gethostname(ip),
             "user": getpass.getuser(),
             "main": local,

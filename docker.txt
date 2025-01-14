@@ -1,0 +1,16 @@
+
+
+
+
+
+    podman build -f docker/Dockerfile-cuda -t milabenchdev .
+
+
+
+
+    podman pull ghcr.io/mila-iqia/milabench:cuda-nightly
+
+
+
+    podman run --rm -it -v "$(pwd):/mnt" milabench:cuda-nightly bash
+

@@ -1,9 +1,6 @@
 import contextvars
 from copy import deepcopy
-import ipaddress
 import os
-import socket
-import subprocess
 import sys
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -14,6 +11,7 @@ from voir.instruments.gpu import get_gpu_info
 
 from .fs import XPath
 from .merge import merge
+from .network import resolve_addresses
 
 system_global = contextvars.ContextVar("system", default=None)
 multirun_global = contextvars.ContextVar("multirun", default=None)
@@ -316,149 +314,6 @@ def check_node_config(nodes):
             assert field in node, f"The `{field}` of the node `{name}` is missing"
 
 
-def get_remote_ip():
-    """Get all the ip of all the network interfaces"""
-    if offline:
-        return set()
-
-    addresses = psutil.net_if_addrs()
-    stats = psutil.net_if_stats()
-
-    result = []
-
-    for interface, address_list in addresses.items():
-        for address in address_list:
-            # if address.family in (socket.AF_INET, socket.AF_INET6):
-            if interface in stats and getattr(stats[interface], "isup"):
-                result.append(address.address)
-
-    return set(result)
-
-
-def is_loopback(address: str) -> bool:
-    try:
-        # Create an IP address object
-        ip = ipaddress.ip_address(address)
-        # Check if the address is a loopback address
-        return ip.is_loopback
-    except ValueError:
-        # If the address is invalid, return False
-        return False
-
-
-
-# If true that means we cannot resolve the ip addresses
-# so we ignore errors
-offline = True
-
-
-@contextmanager
-def enable_offline(enabled):
-    global offline
-    old = offline
-
-    offline = enabled
-    yield
-    offline = old
-
-
-def _resolve_addresses(nodes):
-    # Note: it is possible for self to be none
-    # if we are running milabench on a node that is not part of the system
-    # in that case it should still work; the local is then going to
-    # ssh into the main node which will dispatch the work to the other nodes
-    self = None
-    lazy_raise = None
-    ip_list = get_remote_ip()
-
-    for node in nodes:
-        ip = node["ip"]
-        
-        is_local = is_loopback(ip)
-        
-        if ip in ip_list:
-            is_local = True            
-        
-        node["local"] = is_local
-        
-        if is_local:
-            node["hostname"] = socket.gethostname()
-
-        if is_local and self is None:
-            self = node
-            node["ipaddrlist"] = list(set(list(ip_list)))
-
-    # if self is node we might be outisde the cluster
-    # which explains why we could not resolve the IP of the nodes
-    if not offline:
-        if self is not None and lazy_raise:
-            raise RuntimeError("Could not resolve node ip") from lazy_raise
-
-    return self
-
-
-def gethostname(host):
-    try:
-        #             "-oCheckHostIP=no",
-        # "-oPasswordAuthentication=no",
-        return subprocess.check_output([
-            "ssh",  
-            "-oCheckHostIP=no", 
-            "-oPasswordAuthentication=no", 
-            "-oStrictHostKeyChecking=no", host, "cat", "/etc/hostname"], text=True).strip()
-    except:
-        print("Could not resolve hostname")
-        return host
-
-
-def resolve_hostname(ip):
-    try:
-        hostname, _, iplist = socket.gethostbyaddr(ip)
-        
-        for ip in iplist:
-            if is_loopback(ip):
-                return hostname, True
-
-        # FIXME
-        return socket.gethostname(), hostname.startswith(socket.gethostname())
-        return hostname, hostname == socket.gethostname()
-
-    except:
-        if offline:
-            return ip, False
-
-        raise
-
-def resolve_node_address(node):
-    hostname, local = resolve_hostname(node["ip"])
-
-    node["hostname"] = hostname
-    node["local"] = local
-
-    if local:
-        # `gethostbyaddr` returns `cn-d003` but we want `cn-d003.server.mila.quebec`
-        # else torchrun does not recognize the main node
-        node["hostname"] = socket.gethostname()
-        
-    return local
-
-
-def resolve_addresses(nodes):
-    if offline:
-        for n in nodes:
-            n["hostname"] = n["ip"]
-    
-        return nodes[0]
-
-    self = None
-    
-    for node in nodes:
-        if resolve_node_address(node):
-            self = node
-
-    return self
-
-
 def build_system_config(config_file, defaults=None, gpu=True):
     """Load the system configuration, verify its validity and resolve ip addresses
 
@@ -537,7 +392,3 @@ def show_overrides(to_json=False):
         print(json.dumps(config, indent=2))
     else:
         compact(config, 0)
-
-
-if __name__ == "__main__":
-    show_overrides()
