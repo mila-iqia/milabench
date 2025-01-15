@@ -23,6 +23,7 @@ class PCQM4Mv2Subset(PCQM4Mv2):
         transform: Optional[Callable] = None,
         backend: str = "sqlite",
         from_smiles: Optional[Callable] = None,
+        bad_samples=None
     ) -> None:
         assert split in ["train", "val", "test", "holdout"]
 
@@ -43,6 +44,15 @@ class PCQM4Mv2Subset(PCQM4Mv2):
 
         split_idx = torch.load(self.raw_paths[1])
         self._indices = split_idx[self.split_mapping[split]].tolist()
+
+        # Bad samples handling        
+        if bad_samples is None:
+            bad_samples = []
+
+        bad_samples.sort()
+        for bad in reversed(bad_samples):
+            self._indices.pop(bad)
+        self.size -= len(bad_samples)
 
     def raw_file_names(self):
         return super().raw_file_names + [

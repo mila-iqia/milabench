@@ -105,8 +105,61 @@ def std(self):
     return np.std([self.get(i).y for i in range(len(self))])
 
 
+def find_bad_sample(args):
+    if not args.use3d:
+        return 
+
+    DataLoaderClass = DataLoader
+    dataloader_kwargs = {}
+
+    train_dataset = PCQM4Mv2Subset(
+        args.num_samples, 
+        args.root,
+    )
+    
+    train_loader = DataLoaderClass(
+        train_dataset,
+        batch_size=1,
+        shuffle=False,
+        num_workers=0,
+        **dataloader_kwargs,
+    )
+    
+    sample = next(iter(train_dataset))
+
+    info = models[args.model](
+        args,
+        sample=sample,
+        degree=lambda: degree,
+    )
+
+    device = accelerator.fetch_device(0)
+    model = info.model.to(device)
+    
+    from tqdm import tqdm
+    bad = []
+    for step, batch in enumerate(tqdm(train_loader)):
+        batch = batch.to(device)
+
+        try:
+            with torch.no_grad():
+                molecule_repr = model(z=batch.z, pos=batch.pos, batch=batch.batch)
+        except AssertionError:
+            print(step)
+            bad.append(step)
+            
+    with open("bad.txt", "a") as fp:
+        fp.write(f"{bad}\n")
+
+    print(bad)
+
+# those sample cause an assertion error inside torch-cluster
+BAD_SAMPLES = [23847, 33055, 33056, 57908, 57909, 86016, 86488, 86872, 87929, 96913]
+
 def main():
     args = parser().parse_args()
+
+    # find_bad_sample(args)
 
     def batch_size(x):
         # assert len(x.batch.unique()) == int(x.batch[-1] - x.batch[0] + 1)
@@ -114,7 +167,11 @@ def main():
 
     observer = BenchObserver(batch_size_fn=batch_size)
 
-    train_dataset = PCQM4Mv2Subset(args.num_samples, args.root)
+    bad_samples = []
+    if args.use3d:
+        bad_samples = BAD_SAMPLES
+
+    train_dataset = PCQM4Mv2Subset(args.num_samples, args.root, bad_samples=bad_samples)
     degree = train_degree(train_dataset)
 
     sample = next(iter(train_dataset))

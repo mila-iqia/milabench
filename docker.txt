@@ -9,8 +9,36 @@
 
 
     podman pull ghcr.io/mila-iqia/milabench:cuda-nightly
+    podman pull ubuntu
+
+
+    # Simulate multinode setup
+    podman network create milabench-network
+
+    podman run -d -v "/tmp/node1:/milabench/results/" --name node1 --replace --network milabench-network milabench:cuda-nightly "tail -f /dev/null"
+    podman run -d -v "/tmp/node2:/milabench/results/" --name node2 --replace --network milabench-network milabench:cuda-nightly "tail -f /dev/null"
+
+    podman run -d -v "/tmp/node1:/milabench/results/" --name node1 --replace --network host milabench:cuda-nightly
+    podman run -d -v "/tmp/node2:/milabench/results/" --name node2 --replace --network host milabench:cuda-nightly
+
+
+    podman network create milabench-network
+
+    podman run -d -v "/tmp/node1:/milabench/results/" --name node10 --replace --network host ubuntu "tail -f /dev/null"
+
+    podman run -d -v "/tmp/node2:/milabench/results/" --name node2 --network milabench-network ubuntu
+
+
+    # ssh to one of the node1
+    podman exec -it node1 bash
 
 
 
-    podman run --rm -it -v "$(pwd):/mnt" milabench:cuda-nightly bash
+    # podman run --rm -it --device nvidia.com/gpu=0,1 -v "$(pwd):/mnt" milabench:cuda-nightly bash
+    # podman run --rm -it --device nvidia.com/gpu=2,3 -v "$(pwd):/mnt" milabench:cuda-nightly bash
 
+
+
+    # real multinode
+    podman run --net=host -d -v "/tmp/node1:/milabench/results/" --name node1 --network milabench-network milabench:cuda-nightly
+    podman run --net=host -d -v "/tmp/node2:/milabench/results/" --name node2 --network milabench-network milabench:cuda-nightly
