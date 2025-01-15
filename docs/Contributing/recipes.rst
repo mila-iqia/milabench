@@ -36,6 +36,68 @@ Note that some benchmarks do require more than 40Go of VRAM.
 One bench might be problematic; rwkv which requires nvcc but can be ignored.
 
 
+Install+Prepare on Network nodes
+--------------------------------
+
+1. Network node
+
+.. code-block:: bash
+
+   cd /network/shared/setup
+   git clone https://github.com/mila-iqia/milabench.git
+
+   milabench install --base /network/shared/setup/results --config config/standard.yaml
+   milabench prepare --base /network/shared/setup/results --config config/standard.yaml
+
+2. Compute node
+
+   # Sync data to local but use code from network location
+   milabench sharedsetup --network /network/shared/setup/results --local /tmp/local/milabench
+
+   milabench run --base /tmp/local/setup/results --config /network/shared/setup/milabench/config/standard.yaml
+
+
+Batch Update Dependencies / Dependenies pinning
+-----------------------------------------------
+
+Milabench comes with tool to manage the dependencies of all the benchmarks and update them seemlessly.
+
+Major version updates
+^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+    export MILABENCH_GPU_ARCH=cuda 
+    milabench pin -c constraints/cuda.txt --config config/standard.yaml --from-scratch
+
+    export MILABENCH_GPU_ARCH=rocm 
+    milabench pin -c constraints/rocm.txt --config config/standard.yaml --from-scratch
+
+    export MILABENCH_GPU_ARCH=xpu 
+    milabench pin -c constraints/xpu.txt --config config/standard.yaml --from-scratch
+
+    export MILABENCH_GPU_ARCH=hpu 
+    milabench pin -c constraints/hpu.txt --config config/standard.yaml --from-scratch
+
+
+Minor version updates
+^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+    export MILABENCH_GPU_ARCH=cuda 
+    milabench pin -c constraints/cuda.txt --config config/standard.yaml
+
+    export MILABENCH_GPU_ARCH=rocm 
+    milabench pin -c constraints/rocm.txt --config config/standard.yaml
+
+    export MILABENCH_GPU_ARCH=xpu 
+    milabench pin -c constraints/xpu.txt --config config/standard.yaml
+
+    export MILABENCH_GPU_ARCH=hpu 
+    milabench pin -c constraints/hpu.txt --config config/standard.yaml
+
+
 Increase Runtime
 ----------------
 
