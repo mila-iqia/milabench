@@ -46,6 +46,9 @@ Install+Prepare on Network nodes
    cd /network/shared/setup
    git clone https://github.com/mila-iqia/milabench.git
 
+
+   export MILABENCH_CONFIG="/network/shared/setup//milabench/config/standard.yaml"
+   
    milabench install --base /network/shared/setup/results --config config/standard.yaml
    milabench prepare --base /network/shared/setup/results --config config/standard.yaml
 
