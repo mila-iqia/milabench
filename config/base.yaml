@@ -560,7 +560,7 @@ llm-lora-single:
     method: per_gpu
 
   argv:
-    tuneworkaroundrecipes/lora_finetune_single_device.py: true
+    bench/lora_finetune_single_device.py: true
     --config: "{milabench_code}/configs/llama3_8B_lora_single_device.yaml"
     epochs=1: true
     output_dir={milabench_extra}/output: true
@@ -585,8 +585,8 @@ llm-lora-ddp-gpus:
     - multigpu
 
   argv:
-    #"{milabench_code}/recipes/lora_finetune_distributed.py": true
-    tuneworkaroundrecipes/lora_finetune_distributed.py: true
+    #"{milabench_code}/bench/lora_finetune_distributed.py": true
+    bench/lora_finetune_distributed.py: true
     --config: "{milabench_code}/configs/llama3_8B_lora_single_device.yaml"
     epochs=1: true
     output_dir={milabench_extra}/output: true
@@ -612,7 +612,7 @@ llm-lora-ddp-nodes:
   
   url: https://huggingface.co/meta-llama/Llama-3.1-8B
   argv:
-    tuneworkaroundrecipes/lora_finetune_distributed.py: true
+    bench/lora_finetune_distributed.py: true
     --config: "{milabench_code}/configs/llama3_8B_lora_single_device.yaml"
     epochs=1: true
     output_dir={milabench_extra}/output: true
@@ -638,8 +638,8 @@ llm-lora-mp-gpus:
     n: 1
 
   argv:
-    #"{milabench_code}/recipes/lora_finetune_distributed.py": true
-    tuneworkaroundrecipes/lora_finetune_distributed.py: true
+    #"{milabench_code}/bench/lora_finetune_distributed.py": true
+    bench/lora_finetune_distributed.py: true
     --config: "{milabench_code}/configs/llama3_70B_lora.yaml"
     epochs=1: true
     output_dir={milabench_extra}/output: true
@@ -667,14 +667,14 @@ llm-full-mp-gpus:
     n: 1
 
   argv:
-    #"{milabench_code}/recipes/full_finetune_distributed.py": true
-    tuneworkaroundrecipes/full_finetune_distributed.py: true
+    # "{milabench_code}/bench/full_finetune_distributed.py": true
+    bench/full_finetune_distributed.py: true
     --config: "{milabench_code}/configs/llama3_70B_full.yaml"
     epochs=1: true
     output_dir={milabench_extra}/output: true
     tokenizer.path={milabench_data}/llama3_70B/original/tokenizer.model: true
     checkpointer.checkpoint_dir={milabench_data}/llama3_70B: true
-    checkpointer.output_dir={milabench_data}/llama3_70B/: true
+    checkpointer.output_dir={milabench_data}/llama3_70B_out/: true
     metric_logger.log_dir={milabench_extra}/metrics: true
     repo_id="meta-llama/Meta-Llama-3.1-70B": true
     safetensors=true: true
@@ -693,7 +693,7 @@ llm-full-mp-nodes:
     n: 1
 
   argv:
-    tuneworkaroundrecipes/full_finetune_distributed.py: true
+    bench/full_finetune_distributed.py: true
     --config: "{milabench_code}/configs/llama3_70B_full.yaml"
     epochs=1: true
     output_dir={milabench_extra}/output: true
