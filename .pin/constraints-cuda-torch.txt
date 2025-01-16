@@ -275,7 +275,7 @@ httpcore==1.0.7
     # via httpx
 httpx==0.28.1
     # via blosc2
-huggingface-hub==0.27.1
+huggingface-hub[hf_transfer]==0.27.1
     # via
     #   -r benchmarks/timm/requirements.in
     #   accelerate
@@ -359,6 +359,8 @@ jinja2==3.1.5
     #   torch-geometric
 joblib==1.4.2
     # via scikit-learn
+kagglehub==0.3.6
+    # via torchtune
 kiwisolver==1.4.8
     # via matplotlib
 lightning==2.5.0.post0
@@ -538,7 +540,7 @@ nvidia-cusparse-cu12==12.1.0.106
     #   torch
 nvidia-ml-py==12.560.30
     # via voir
-nvidia-nccl-cu12==2.20.5
+nvidia-nccl-cu12==2.21.5
     # via
     #   jax-cuda12-plugin
     #   torch
@@ -555,7 +557,7 @@ omegaconf==2.3.0
     #   -r benchmarks/recursiongfn/requirements.in
     #   torchtune
     #   voir
-opencv-python==4.10.0.84
+opencv-python==4.11.0.86
     # via -r benchmarks/vjepa/requirements.in
 opt-einsum==3.4.0
     # via
@@ -581,6 +583,7 @@ packaging==24.2
     #   datasets
     #   envpool
     #   huggingface-hub
+    #   kagglehub
     #   lightning
     #   lightning-utilities
     #   matplotlib
@@ -611,6 +614,7 @@ pillow==11.1.0
     #   matplotlib
     #   navix
     #   rdkit
+    #   torchtune
     #   torchvision
 platformdirs==4.3.6
     # via
@@ -635,6 +639,7 @@ psutil==5.9.8
     # via
     #   accelerate
     #   torch-geometric
+    #   torchtune
     #   voir
     #   wandb
 ptera==1.4.1
@@ -643,7 +648,7 @@ py-cpuinfo==9.0.0
     # via
     #   blosc2
     #   tables
-pyarrow==18.1.0
+pyarrow==19.0.0
     # via
     #   -r benchmarks/recursiongfn/requirements.in
     #   datasets
@@ -723,6 +728,7 @@ requests==2.32.3
     #   datasets
     #   diffusers
     #   huggingface-hub
+    #   kagglehub
     #   tiktoken
     #   torch-geometric
     #   transformers
@@ -790,7 +796,7 @@ submitit==1.5.2
     # via
     #   -r benchmarks/dinov2/requirements.in
     #   -r benchmarks/vjepa/requirements.in
-sympy==1.13.3
+sympy==1.13.1
     # via torch
 tables==3.10.2
     # via -r benchmarks/recursiongfn/requirements.in
@@ -827,8 +833,9 @@ tomlkit==0.13.2
     # via pylint
 toolz==1.0.0
     # via chex
-torch==2.4.0+cu121
+torch==2.5.1+cu121
     # via
+    #   -c .pin/../constraints/cuda.txt
     #   -r benchmarks/brax/requirements.in
     #   -r benchmarks/dinov2/requirements.in
     #   -r benchmarks/flops/requirements.in
@@ -876,11 +883,8 @@ torch-sparse==0.6.18+pt25cu121
     # via
     #   -r benchmarks/geo_gnn/requirements.in
     #   -r benchmarks/recursiongfn/requirements.in
-torchao==0.3.1+cu121
-    # via
-    #   -c .pin/../constraints/cuda.txt
-    #   -r benchmarks/llm/requirements.in
-    #   torchtune
+torchao==0.8.0
+    # via -r benchmarks/llm/requirements.in
 torchcompat==1.1.4
     # via
     #   -c .pin/../constraints/cuda.txt
@@ -894,11 +898,9 @@ torchmetrics==1.6.1
     #   -r benchmarks/dinov2/requirements.in
     #   lightning
     #   pytorch-lightning
-torchtune==0.2.1+cu121
-    # via
-    #   -c .pin/../constraints/cuda.txt
-    #   -r benchmarks/llm/requirements.in
-torchvision==0.19.0+cu121
+torchtune==0.5.0
+    # via -r benchmarks/llm/requirements.in
+torchvision==0.20.1+cu121
     # via
     #   -r benchmarks/diffusion/requirements.in
     #   -r benchmarks/dinov2/requirements.in
@@ -919,6 +921,7 @@ tqdm==4.67.1
     #   fvcore
     #   huggingface-hub
     #   iopath
+    #   kagglehub
     #   lightning
     #   pyro-ppl
     #   pytorch-lightning
@@ -927,7 +930,6 @@ tqdm==4.67.1
     #   transformers
 transformers==4.48.0
     # via
-    #   -c .pin/../constraints/cuda.txt
     #   -r benchmarks/diffusion/requirements.in
     #   -r benchmarks/huggingface/requirements.in
     #   -r benchmarks/llama/requirements.in
@@ -939,7 +941,7 @@ trimesh==4.5.3
     # via
     #   brax
     #   mujoco-mjx
-triton==3.0.0
+triton==3.1.0
     # via torch
 trl==0.10.1
     # via
@@ -992,7 +994,7 @@ urllib3==2.3.0
     #   blobfile
     #   requests
     #   sentry-sdk
-varname==0.13.5
+varname==0.14.0
     # via giving
 voir==0.2.19
     # via
@@ -1025,7 +1027,7 @@ werkzeug==3.1.3
     # via
     #   flask
     #   tensorboard
-xformers==0.0.27.post2
+xformers==0.0.29.post1
     # via
     #   -r benchmarks/dinov2/requirements.in
     #   -r constraints/extra/torch.cuda.txt

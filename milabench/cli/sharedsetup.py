@@ -40,7 +40,14 @@ def cli_shared_setup(args = None):
     os.makedirs(args.local, exist_ok=True)
 
     # rsync datasets & checkpoints to local disk
-    subprocess.check_call(["rsync", "-av", remote_data, args.local])
+    subprocess.check_call(["rsync", "-azh", "--info=progress2", "--partial", remote_data, args.local])
 
     # create a soft link for the code
-    os.symlink(remote_code, local_code, target_is_directory=True)
+    try:
+        os.symlink(remote_code, local_code, target_is_directory=True)
+    except:
+        pass
+
+    print("use for local excution of milabench")
+    print("")
+    print(f"    export MILABENCH_BASE={args.local}")

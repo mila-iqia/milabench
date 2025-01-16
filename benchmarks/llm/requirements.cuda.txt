@@ -111,7 +111,7 @@ hjson==3.1.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   argklass
-huggingface-hub==0.27.1
+huggingface-hub[hf_transfer]==0.27.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   accelerate
@@ -148,6 +148,10 @@ jinja2==3.1.5
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   torch
+kagglehub==0.3.6
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   torchtune
 lxml==5.3.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
@@ -254,7 +258,7 @@ nvidia-ml-py==12.560.30
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   voir
-nvidia-nccl-cu12==2.20.5
+nvidia-nccl-cu12==2.21.5
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
@@ -288,11 +292,16 @@ packaging==24.2
     #   accelerate
     #   datasets
     #   huggingface-hub
+    #   kagglehub
     #   transformers
 pandas==2.2.3
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   datasets
+pillow==11.1.0
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   torchtune
 propcache==0.2.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
@@ -302,12 +311,13 @@ psutil==5.9.8
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   accelerate
+    #   torchtune
     #   voir
 ptera==1.4.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   voir
-pyarrow==18.1.0
+pyarrow==19.0.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   datasets
@@ -350,6 +360,7 @@ requests==2.32.3
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   datasets
     #   huggingface-hub
+    #   kagglehub
     #   tiktoken
     #   transformers
 rich==13.9.4
@@ -375,7 +386,7 @@ six==1.17.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   python-dateutil
-sympy==1.13.3
+sympy==1.13.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   torch
@@ -391,38 +402,36 @@ tokenizers==0.21.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   transformers
-torch==2.4.0+cu121
+torch==2.5.1+cu121
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   -c .pin/../constraints/cuda.txt
     #   -r benchmarks/llm/requirements.in
     #   -r benchmarks/llm/requirements.txt
     #   accelerate
     #   fairscale
     #   xformers
-torchao==0.3.1+cu121
+torchao==0.8.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
-    #   -c .pin/../constraints/cuda.txt
     #   -r benchmarks/llm/requirements.in
-    #   torchtune
-torchtune==0.2.1+cu121
+torchtune==0.5.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
-    #   -c .pin/../constraints/cuda.txt
     #   -r benchmarks/llm/requirements.in
 tqdm==4.67.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   datasets
     #   huggingface-hub
+    #   kagglehub
     #   torchtune
     #   transformers
 transformers==4.48.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
-    #   -c .pin/../constraints/cuda.txt
     #   -r benchmarks/llm/requirements.in
-triton==3.0.0
+triton==3.1.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   torch
@@ -441,7 +450,7 @@ urllib3==2.3.0
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   blobfile
     #   requests
-varname==0.13.5
+varname==0.14.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   giving
@@ -450,7 +459,7 @@ voir==0.2.19
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -c .pin/../constraints/cuda.txt
     #   -r benchmarks/llm/requirements.in
-xformers==0.0.27.post2
+xformers==0.0.29.post1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -r .pin/../constraints/extra/torch.cuda.txt

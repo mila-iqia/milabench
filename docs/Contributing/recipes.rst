@@ -70,6 +70,7 @@ Major version updates
 
 .. code-block:: bash
 
+    export MILABENCH_BASE=../
     export MILABENCH_GPU_ARCH=cuda 
     milabench pin -c constraints/cuda.txt --config config/standard.yaml --from-scratch
 
