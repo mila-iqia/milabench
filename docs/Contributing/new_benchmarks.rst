@@ -1,6 +1,6 @@
 
-Creating a new benchmark
-------------------------
+Adding a benchmark
+==================
 
 To define a new benchmark (let's assume it is called ``ornatebench``), 
 

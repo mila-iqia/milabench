@@ -22,7 +22,7 @@ class PCQM4Mv2Subset(PCQM4Mv2):
         split: str = "train",
         transform: Optional[Callable] = None,
         backend: str = "sqlite",
-        from_smiles: Optional[Callable] = None,
+        from_smiles: Optional[Callable] = None
     ) -> None:
         assert split in ["train", "val", "test", "holdout"]
 
@@ -70,26 +70,33 @@ class PCQM4Mv2Subset(PCQM4Mv2):
         data_list: List[Data] = []
         suppl = Chem.SDMolSupplier(self.raw_paths[-1])
         iterator = enumerate(zip(df["smiles"], df["homolumogap"], suppl))
+        k = 0
+
         for i, (smiles, y, extra) in tqdm(iterator, total=min(len(df), self.size)):
-            # data = from_smiles(smiles)
-            data = self.from_smiles(Chem.MolToSmiles(extra))
-            data.y = y
-            data.pos = torch.tensor(
-                extra.GetConformer().GetPositions(), dtype=torch.float
-            )
-            data.z = torch.tensor(
-                [atom.GetAtomicNum() for atom in extra.GetAtoms()], dtype=torch.long
-            )
+            
+            if extra is None:
+                print(f"Skipping {i}")
+            else:
+                # data = from_smiles(smiles)
+                k += 1
+                data = self.from_smiles(Chem.MolToSmiles(extra))
+                data.y = y
+                data.pos = torch.tensor(
+                    extra.GetConformer().GetPositions(), dtype=torch.float
+                )
+                data.z = torch.tensor(
+                    [atom.GetAtomicNum() for atom in extra.GetAtoms()], dtype=torch.long
+                )
 
-            data_list.append(data)
-            if (
-                i + 1 == len(df) or (i + 1) % 1000 == 0 or i >= self.size
-            ):  # Write batch-wise:
-                self.extend(data_list)
-                data_list = []
+                data_list.append(data)
+                if (
+                    k + 1 == len(df) or (k + 1) % 1000 == 0 or k >= self.size
+                ):  # Write batch-wise:
+                    self.extend(data_list)
+                    data_list = []
 
-            if i >= self.size:
-                break
+                if k >= self.size:
+                    break
 
     def __len__(self):
         return min(super().__len__(), self.size)

@@ -33,11 +33,41 @@ evaluating current and future hardware in a research environment.
     export MILABENCH_GPU_ARCH=cuda
   
     milabench install --base workspace --config milabench/config/standard.yaml --select fp32
-    
+
+    export MILABENCH_HF_TOKEN={your_token}
     milabench prepare --base workspace --config milabench/config/standard.yaml --select fp32
     
     milabench run --base workspace --config milabench/config/standard.yaml --select fp32
 
+
+## Gated Models
+
+Some benchmark use gated models or datasets, which requires the user to request permission to huggingface
+
+1. Request permission
+
+       llama
+           url: https://huggingface.co/meta-llama/Llama-2-7b/tree/main
+       
+       llm-lora-single
+       llm-lora-ddp-gpus
+       llm-lora-ddp-nodes
+           url: https://huggingface.co/meta-llama/Llama-3.1-8B
+       
+       llm-lora-mp-gpus
+       llm-full-mp-gpus
+       llm-full-mp-nodes
+           url: https://huggingface.co/meta-llama/Llama-3.1-70B
+
+3. Create a new token
+   
+       https://huggingface.co/settings/tokens/new?tokenType=read
+    
+4. Add your token to your environment
+
+       export MILABENCH_HF_TOKEN={your_token}
+
+Now you are ready to execute `milabench prepare`
 
 ## Details
 

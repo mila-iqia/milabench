@@ -6,7 +6,7 @@ from milabench.utils import validation_layers
 
 from ..common import get_multipack, run_with_loggers
 from ..log import DataReporter, TerminalFormatter, TextReporter
-
+from .gated import cli_gated
 
 # fmt: off
 @dataclass
@@ -55,7 +55,7 @@ def cli_install(args=None):
 
     mp = get_multipack(run_name="install.{time}", overrides=overrides)
 
-    return run_with_loggers(
+    rc = run_with_loggers(
         mp.do_install(),
         loggers=[
             TerminalFormatter(),
@@ -66,3 +66,8 @@ def cli_install(args=None):
         ],
         mp=mp,
     )
+
+    # Print info about setting up milabench for gated models
+    cli_gated()
+
+    return rc

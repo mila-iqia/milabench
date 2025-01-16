@@ -1,7 +1,7 @@
 # FROM ubuntu:22.04
 
 # For cuda-gdb
-FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
+FROM nvidia/cuda:12.1.0-devel-ubuntu22.04
 
 # Arguments
 # ---------
@@ -73,4 +73,4 @@ ENV PIP_DEFAULT_TIMEOUT=800
 RUN milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
     python -m pip cache purge                                                          
 
-CMD milabench run
+# CMD milabench run

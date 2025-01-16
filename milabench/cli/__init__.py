@@ -23,6 +23,9 @@ from .resolve import cli_resolve
 from .new import cli_new
 from .env import cli_env
 from .prepare_run import cli_prepare_run
+from .gated import cli_gated
+from .sharedsetup import cli_shared_setup
+
 
 class Main:
     def new():
@@ -102,6 +105,12 @@ class Main:
 
     def prepare_run():
         cli_prepare_run()
+
+    def gated():
+        cli_gated()
+
+    def sharedsetup():
+        cli_shared_setup()
 
 
 def main(argv=None):
