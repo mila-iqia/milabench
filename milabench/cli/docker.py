@@ -42,14 +42,24 @@ def cli_docker(args=None):
     system = pack.config["system"]
     config = DockerConfig(**system.get("docker"))
 
+    # TODO: how can we generate this
+    extra_args = [
+        "--system", "/milabench/envs/data/system.yaml"
+    ]
+    print()
+    print()
+
     # milabench prepare
-    plan = DockerRunCommand(CmdCommand(pack, "milabench", "prepare"), config)
+    plan = DockerRunCommand(CmdCommand(pack, "milabench", "prepare", *extra_args), config)
 
     for pack, argv, _ in plan.commands():
         print(" ".join(argv))
 
+    print()
     # milabench run
-    plan = DockerRunCommand(CmdCommand(pack, "milabench", "run"), config)
+    plan = DockerRunCommand(CmdCommand(pack, "milabench", "run", *extra_args), config)
 
     for pack, argv, _ in plan.commands():
         print(" ".join(argv))
+
+    print()
