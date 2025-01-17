@@ -197,6 +197,9 @@ Run a benchmark without milabench
 Containers
 ----------
 
+NGC
+^^^
+
 When using containers where some dependencies are already installed, we need to use a dummy virtualenv 
 so make milabench install its dependencies there, then the duplicate dependencies can be removed.
 
@@ -230,6 +233,28 @@ so make milabench install its dependencies there, then the duplicate dependencie
     
     milabench prepare --use-current-env
     milabench run --use-current-env
+
+Nightly
+^^^^^^^
+
+.. code-block:: bash
+
+   podman run -it --rm --ipc=host --gpus=all                        \
+      -e MILABENCH_HF_TOKEN=<TOKEN>                                 \
+      -v /tmp/workspace/data:/milabench/envs/data                   \
+      -v /tmp/workspace/runs:/milabench/envs/runs                   \
+      ghcr.io/mila-iqia/milabench:cuda-nightly milabench prepare
+
+   podman run -it --rm --ipc=host --gpus=all                        \
+      -e MILABENCH_HF_TOKEN=<TOKEN>                                 \
+      -v /tmp/workspace/data:/milabench/envs/data                   \
+      -v /tmp/workspace/runs:/milabench/envs/runs                   \
+      ghcr.io/mila-iqia/milabench:cuda-nightly milabench run
+
+
+Multi Node & Docker
+^^^^^^^^^^^^^^^^^^^
+
 
 
 Example Reports

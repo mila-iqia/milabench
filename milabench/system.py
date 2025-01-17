@@ -232,6 +232,34 @@ class DatasetConfig:
     buffer: str = defaultfield("data.buffer", str, default="${dirs.base}/buffer")
 
 
+def default_docker_args():
+    return [
+       "-it", "--rm", "--ipc=host", "--gpus=all",
+        "--network", "host",
+        "--privileged",
+       "-e", f"MILABENCH_HF_TOKEN={os.getenv('MILABENCH_HF_TOKEN', 'Undefined')}",
+       "-v", "/tmp/workspace/data:/milabench/envs/data",
+       "-v", "/tmp/workspace/runs:/milabench/envs/runs",
+    ]
+
+
+@dataclass
+class DockerConfig:
+    executable: str = defaultfield("docker.executable", str, "podman")
+    image: str  = defaultfield("docker.image", str, None)
+    base: str = defaultfield("docker.base", str, "/tmp/workspace")
+    args: list = defaultfield("docker.args", list, default_docker_args())
+
+    def command(self, extra_args):
+        return [
+            self.executable,
+            "run",
+            *self.args,
+            *extra_args,
+            self.image
+        ]
+
+
 @dataclass
 class Dirs:
     """Common directories used by milabench. This can be used to override

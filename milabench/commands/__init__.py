@@ -16,7 +16,7 @@ from ..fs import XPath
 from ..merge import merge
 from ..utils import select_nodes
 from .executors import execute_command
-from ..system import option
+from ..system import option, DockerConfig
 
 
 def clone_with(cfg, new_cfg):
@@ -328,23 +328,15 @@ class DockerRunCommand(WrapperCommand):
     """
 
     def __init__(
-        self, executor: SingleCmdCommand, image: str, *docker_argv, **kwargs
+        self, executor: SingleCmdCommand, config: DockerConfig, *docker_argv, **kwargs
     ) -> None:
+        self.config = config
+        self.extra_args = docker_argv
+    
         super().__init__(
             executor,
-            "docker",
-            "run",
-            "-i",
-            "--rm",
-            "--network",
-            "host",
-            "--privileged",
-            "--gpus",
-            "all",
-            *docker_argv,
             **kwargs,
         )
-        self.image = image
 
     def as_container_path(self, path):
         # replace local output path with docker path
@@ -386,7 +378,7 @@ class DockerRunCommand(WrapperCommand):
     def _argv(self, **kwargs) -> List:
         # if the command is executed remotely it does not matter
         # if we are inside docker or not
-        if (self.image is None) or (self.is_inside_docker() and not self.remote):
+        if (self.config.image is None) or (self.is_inside_docker() and not self.remote):
             # No-op when there's no docker image to run or inside a docker
             # container
             return []
@@ -395,11 +387,11 @@ class DockerRunCommand(WrapperCommand):
 
         env = self.pack.make_env()
         for var in ("XDG_CACHE_HOME", "OMP_NUM_THREADS"):
-            argv.append("--env")
-            argv.append(f"{var}='{self.as_container_path(env[var])}'")
+            if var in env:
+                argv.append("--env")
+                argv.append(f"{var}='{self.as_container_path(env[var])}'")
 
-        argv.append(self.image)
-        return argv
+        return self.config.command(argv)
 
 
 class SSHCommand(WrapperCommand):
@@ -923,7 +915,7 @@ class AccelerateAllNodes(ForeachNode):
 
         return DockerRunCommand(
             AccelerateLaunchCommand(executor, rank=rank, **self.options),
-            config["system"].get("docker_image"),
+            DockerConfig(**config["system"].get("docker")),
         )
 
 

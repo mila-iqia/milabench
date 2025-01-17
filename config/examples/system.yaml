@@ -3,8 +3,17 @@ system:
   arch: cuda
   # sshkey used in remote milabench operations
   sshkey: ~/.ssh/id_ed25519
-  # Docker image to use
-  docker_image: ghcr.io/mila-iqia/milabench:${system.arch}-nightly
+
+  docker:
+    executable: podman
+    image: ghcr.io/mila-iqia/milabench:${system.arch}-nightly
+    base: /tmp/workspace/
+    args: [
+       -it, --rm, --ipc=host, --gpus=all,
+       -e, MILABENCH_HF_TOKEN=<TOKEN>,
+       -v, "${system.docker.base}/data:/milabench/envs/data",
+       -v, "${system.docker.base}/runs:/milabench/envs/runs",
+    ]
 
   # Nodes list
   nodes:
@@ -26,9 +35,6 @@ system:
       ip: 192.168.11.13
       main: false 
       user: username
-
-
-
 
 multirun:
   runs:

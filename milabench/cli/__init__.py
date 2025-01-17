@@ -25,6 +25,7 @@ from .env import cli_env
 from .prepare_run import cli_prepare_run
 from .gated import cli_gated
 from .sharedsetup import cli_shared_setup
+from .docker import cli_docker
 
 
 class Main:
@@ -111,6 +112,9 @@ class Main:
 
     def sharedsetup():
         cli_shared_setup()
+
+    def docker():
+        cli_docker()
 
 
 def main(argv=None):
