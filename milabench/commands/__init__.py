@@ -578,7 +578,7 @@ def node_address(node):
     """Favour Hostname as it is the most consistent name across machines"""
     host = node.get("hostname")
     ip = node.get("ip")
-    return ip or hostname
+    return ip or host
 
 
 class ForeachNode(ListCommand):
@@ -706,7 +706,8 @@ class TorchrunAllNodes(ForeachNode):
         ]
         executor.wrapper_argv = new_args
 
-        return executor
+        config = executor.pack.config
+        return DockerRunCommand(executor, DockerConfig(**config["system"].get("docker")))
     
     def __init__(self, executor: Command, *args, **kwargs) -> None:
         base_exec = TorchrunAllNodes.make_base_executor(
