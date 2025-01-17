@@ -635,12 +635,17 @@ class ForeachNode(ListCommand):
                 )
 
             print(rank, node, node_address(node))
+
+            bench_cmd = self.make_new_node_executor(rank, node, self.executor)
+
+            docker_cmd = DockerRunCommand(bench_cmd, DockerConfig(**config["system"].get("docker")))
+
             worker = SSHCommand(
                 host=node_address(node),
                 user=node["user"],
                 key=key,
                 port=node.get("sshport", 22),
-                executor=self.make_new_node_executor(rank, node, self.executor),
+                executor=docker_cmd,
                 **options
             )
             executors.append(worker)
@@ -706,8 +711,7 @@ class TorchrunAllNodes(ForeachNode):
         ]
         executor.wrapper_argv = new_args
 
-        config = executor.pack.config
-        return DockerRunCommand(executor, DockerConfig(**config["system"].get("docker")))
+        return executor
     
     def __init__(self, executor: Command, *args, **kwargs) -> None:
         base_exec = TorchrunAllNodes.make_base_executor(
