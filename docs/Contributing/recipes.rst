@@ -42,22 +42,24 @@ Install+Prepare on Network nodes
 1. Network node
 
 .. code-block:: bash
+   
+   conda activate py310
 
    cd /network/shared/setup
    git clone https://github.com/mila-iqia/milabench.git
-
-
-   export MILABENCH_CONFIG="/network/shared/setup//milabench/config/standard.yaml"
+   pip install -e milabench
    
-   milabench install --base /network/shared/setup/results --config config/standard.yaml
-   milabench prepare --base /network/shared/setup/results --config config/standard.yaml
+   export MILABENCH_CONFIG="/network/shared/setup/milabench/config/standard.yaml"
+   
+   milabench install --base /network/shared/setup/results --config $MILABENCH_CONFIG
+   milabench prepare --base /network/shared/setup/results --config $MILABENCH_CONFIG
 
 2. Compute node
 
-   # Sync data to local but use code from network location
-   milabench sharedsetup --network /network/shared/setup/results --local /tmp/local/milabench
+   # Sync data to local but use code from the network location
+   milabench sharedsetup --network /network/shared/setup/results --local /tmp/local/results
 
-   milabench run --base /tmp/local/setup/results --config /network/shared/setup/milabench/config/standard.yaml
+   milabench run --base /tmp/local/results --config /network/shared/setup/milabench/config/standard.yaml
 
 
 Batch Update Dependencies / Dependenies pinning

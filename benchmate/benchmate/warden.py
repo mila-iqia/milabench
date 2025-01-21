@@ -87,7 +87,31 @@ def safe_get_gpu_info():
         return {}
 
 
-class GPUProcessWarden:
+class BaseWarden:
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, *args):
+        pass
+
+    def terminate(self):
+        pass
+
+    def kill(self):
+        pass
+
+
+@contextmanager
+def gpu_warden(*args, enabled=True, **kwargs):
+    cls = BaseWarden
+    if enabled:
+        cls = GPUProcessWarden
+
+    with cls(*args, **kwargs) as warden:
+        yield warden
+
+
+class GPUProcessWarden(BaseWarden):
     """Ensure all the process using the GPU are killed before & after the bench"""
 
     def __init__(self, kill_on_start=True, kill_on_end=True):
@@ -286,7 +310,7 @@ def destroy(*processes, step=1, timeout=30):
 
 
 @contextmanager
-def process_cleaner(timeout=30):
+def process_cleaner(timeout=30, with_gpu_warden=True):
     """Delay signal handling until all the processes have been killed"""
 
     def kill_everything(processes):
@@ -296,7 +320,7 @@ def process_cleaner(timeout=30):
         return _
 
     with Protected() as signalhandler:
-        with GPUProcessWarden() as warden:  # => SIGTERM all processes using GPUs
+        with gpu_warden(enabled=with_gpu_warden) as warden:  # => SIGTERM all processes using GPUs
             processes = []
   
             # when a signal is received kill the known processes first

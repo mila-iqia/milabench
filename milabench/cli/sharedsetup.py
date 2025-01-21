@@ -39,8 +39,15 @@ def cli_shared_setup(args = None):
     
     os.makedirs(args.local, exist_ok=True)
 
-    # rsync datasets & checkpoints to local disk
-    subprocess.check_call(["rsync", "-azh", "--info=progress2", "--partial", remote_data, args.local])
+    if args.network.endswith(".tar.gz"):
+        untar = ["tar", "-xf", args.network, "-C", args.local]
+        print(" ".join(untar))
+        subprocess.check_call(untar)
+    else:
+        # rsync datasets & checkpoints to local disk
+        rsync = ["rsync", "-azh", "--info=progress2", "--partial", remote_data, args.local]
+        print(" ".join(rsync))
+        subprocess.check_call(rsync)
 
     # create a soft link for the code
     try:

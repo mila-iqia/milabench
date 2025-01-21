@@ -4,11 +4,13 @@ A ``Package`` must define three methods corresponding to milabench's three main
 commands: ``install``, ``prepare`` and ``run``. The :class:`~milabench.pack.Package`
 class defines good default behavior.
 """
+from __future__ import annotations
 
 import json
 import os
 import traceback
 from argparse import Namespace as NS
+import functools
 from sys import version_info as pyv
 from typing import Sequence
 
@@ -27,6 +29,7 @@ from .utils import (
 )
 
 
+@functools.cache
 def is_editable_install():
     import json
     import subprocess
@@ -43,10 +46,19 @@ def is_editable_install():
         return False
 
 
-async def install_benchmate(pack):
-    milabench = os.path.dirname(__file__)
-    benchmate = os.path.join(milabench, "..", "benchmate")
-    await pack.pip_install("-e", benchmate)
+installed_benchmate = {}
+
+
+async def install_benchmate(pack: Package):
+    global installed_benchmate
+
+    group = pack.config.get("install_group", {})
+
+    if group not in installed_benchmate:
+        milabench = os.path.dirname(__file__)
+        benchmate = os.path.join(milabench, "..", "benchmate")
+        await pack.pip_install("-e", benchmate)
+        installed_benchmate[group] = 1
 
 
 class PackageCore:
@@ -489,7 +501,7 @@ class Package(BasePackage):
         The default value of ``self.prepare_script`` is ``"prepare.py"``.
         """
         assert self.phase == "prepare"
-        return await self.build_prepare_plan().execute()
+        return await self.build_prepare_plan().execute(with_gpu_warden=False)
 
     def build_prepare_plan(self) -> "cmd.Command":
         if self.prepare_script is not None:
