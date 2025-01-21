@@ -57,9 +57,11 @@ def cli_docker(args=None):
 
     print()
     # milabench run
-    plan = DockerRunCommand(CmdCommand(pack, "milabench", "run", *extra_args), config)
 
-    for pack, argv, _ in plan.commands():
-        print(" ".join(argv))
+    for name, pack in mp.packs.items():
+        plan = DockerRunCommand(CmdCommand(pack, "milabench", "run", "--select", name, *extra_args), config)
+
+        for pack, argv, _ in plan.commands():
+            print(" ".join(argv))
 
     print()
