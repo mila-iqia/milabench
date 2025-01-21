@@ -11,6 +11,7 @@ system:
     base: /tmp/workspace
     args: [
        -it, --rm, --ipc=host, --gpus=all, --network, host, --privileged,
+       --log-driver=none,
        -e, MILABENCH_HF_TOKEN=<TOKEN>,
        -v, "${system.docker.base}/data:/milabench/envs/data",
        -v, "${system.docker.base}/runs:/milabench/envs/runs",
