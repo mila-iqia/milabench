@@ -1,10 +1,8 @@
-#!/usr/bin/env python3
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
-
 import os
 import sys
 import time
@@ -138,7 +136,7 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
                 "full fp16 training is not supported with this recipe. Please use bf16 or fp32 instead."
             )
 
-        _, rank = utils.get_world_size_and_rank()
+        _, rank = training.get_world_size_and_rank()
 
         self._is_rank_zero = rank == 0
 
@@ -200,7 +198,7 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
         """
         self._checkpointer = config.instantiate(
             cfg_checkpointer,
-            should_load_recipe_state=self._resume_from_checkpoint,
+            resume_from_checkpoint=self._resume_from_checkpoint,
         )
         checkpoint_dict = self._checkpointer.load_checkpoint()
 
@@ -483,6 +481,7 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
                 model,
                 lora_weights_state_dict,
                 self._device,
+                self._is_rank_zero,
                 cpu_offload=fsdp_cpu_offload,
             )
         else:
@@ -507,6 +506,7 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
             model,
             base_model_state_dict,
             self._device,
+            self._is_rank_zero,
             cpu_offload=fsdp_cpu_offload,
         )
         for m in model.modules():
@@ -550,7 +550,6 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
         optimizer = config.instantiate(cfg_optimizer, self._model.parameters())
         if opt_state_dict:
             training.load_from_full_optimizer_state_dict(
-                self._model,
                 optimizer,
                 opt_state_dict,
                 self._device,
@@ -586,7 +585,7 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
         DistributedSamplers with Map-style Datasets which fit into memory. Other samplers,
         iterable datasets and streaming datasets are not supported.
         """
-        world_size, rank = utils.get_world_size_and_rank()
+        world_size, rank = training.get_world_size_and_rank()
 
         if isinstance(cfg_dataset, ListConfig):
             datasets = [
@@ -594,7 +593,7 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
                 for single_cfg_dataset in cfg_dataset
             ]
             ds = ConcatDataset(datasets=datasets)
-            packed = getattr(ds, "packed", False)
+            packed = False
         else:
             ds = config.instantiate(cfg_dataset, self._tokenizer)
             packed = cfg_dataset.get("packed", False)
@@ -658,11 +657,14 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
 
         # To prevent GPU memory from spiking during checkpoint save,
         # we consolidate the full model and optim state dicts on CPU for rank 0
+        state_dict = self._model.state_dict()
+        if self._save_adapter_weights_only:
+            state_dict = get_adapter_state_dict(state_dict, device=None)
+
         cpu_state_dict = training.gather_cpu_state_dict(
-            self._model,
+            state_dict,
             self._is_rank_zero,
             device=self._device,
-            adapter_weights_only=self._save_adapter_weights_only,
         )
         utils.log_rank_zero(
             log,
@@ -672,7 +674,6 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
         if intermediate_checkpoint:
             utils.log_rank_zero(log, "Retrieving optimizer state dict...")
             opt_state_dict = training.get_full_optimizer_state_dict(
-                self._model,
                 self._optimizer,
                 self._is_rank_zero,
                 device=self._device,
@@ -746,7 +747,7 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
         # clean up before training begins
         training.cleanup_before_training()
 
-        world_size, rank = utils.get_world_size_and_rank()
+        world_size, rank = training.get_world_size_and_rank()
 
         # zero out the gradients before starting training
         self._optimizer.zero_grad()
@@ -825,13 +826,12 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
                     # This will ensure that the logged loss matches what we're optimizing
                     torch.distributed.all_reduce(running_loss)
                     # Manually scale the gradients from unnormalized loss by total # of tokens
-                    # We multiply by world_size to undo FSDP2 gradient normalization.
-                    training.scale_grads(self._model, world_size / num_tokens)
+                    training.scale_grads(self._model, 1 / num_tokens)
                     if self._clip_grad_norm is not None:
                         grad_norm = torch.nn.utils.clip_grad_norm_(
                             self._model.parameters(),
                             max_norm=float(self._clip_grad_norm),
-                        ).full_tensor()
+                        )
                     self._optimizer.step()
                     self._optimizer.zero_grad(set_to_none=True)
                     self._lr_scheduler.step()
@@ -902,7 +902,6 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
             self._metric_logger.close()
         destroy_process_group()
 
-
     def log_loss(self, loss):
         pass
 
@@ -931,6 +930,7 @@ def prepare_voir(recipe):
 
     return observer, bench_monitor
 
+
 @config.parse
 def recipe_main(cfg: DictConfig) -> None:
     """
@@ -945,6 +945,7 @@ def recipe_main(cfg: DictConfig) -> None:
             "Distributed finetune recipe should be run via a distributed launcher."
             "If using tune CLI, please specify --nnodes 1 and --nproc_per_node [num_gpus]"
         )
+    
     # init_process_group("cuda:nccl,cpu:gloo")
     acc.init_process_group()
 
