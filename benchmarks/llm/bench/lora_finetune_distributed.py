@@ -1,8 +1,11 @@
+#!/usr/bin/env python3
+
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
+
 import os
 import sys
 import time
@@ -945,7 +948,6 @@ def recipe_main(cfg: DictConfig) -> None:
             "Distributed finetune recipe should be run via a distributed launcher."
             "If using tune CLI, please specify --nnodes 1 and --nproc_per_node [num_gpus]"
         )
-    
     # init_process_group("cuda:nccl,cpu:gloo")
     acc.init_process_group()
 
