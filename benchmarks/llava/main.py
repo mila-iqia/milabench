@@ -62,11 +62,11 @@ def main():
         "llava-hf/llava-1.5-7b-hf",
         torch_dtype=torch.bfloat16,
         device_map=compat.device_type,
-        revision="a272c74b2481d8aff3aa6fc2c4bf891fe57334fb"
+        revision="e2214c2851fadaf9241c9f9ac91dcdee51981021"
     )
     processor = AutoProcessor.from_pretrained(
         "llava-hf/llava-1.5-7b-hf",
-        revision="a272c74b2481d8aff3aa6fc2c4bf891fe57334fb"
+        revision="e2214c2851fadaf9241c9f9ac91dcdee51981021"
     )
 
     # Load dataset and create DataLoader
