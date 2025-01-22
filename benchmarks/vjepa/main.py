@@ -53,6 +53,39 @@ torch.backends.cudnn.benchmark = True
 logger = get_logger(__name__)
 
 
+def generate_absolute_metainfo(manifests):
+    """The default format of video_metainfo.csv (video manifest) use absolute paths.
+    Which prevent us from relocating the dataset easily, so we rewrite it with the write path.
+    """
+    import pandas as pd
+
+    fixed_manifests = []
+
+    def newpath(parent, oldpath):
+        return os.path.join(parent, os.path.basename(oldpath))
+
+    for manifest in manifests:
+        if manifest[-4:] == '.csv':
+            parent = os.path.dirname(manifest)
+            data = pd.read_csv(manifest, header=None, delimiter=" ")
+            
+            samples = list(newpath(parent, path) for path in data.values[:, 0])
+            labels = list(data.values[:, 1])
+
+            newname = f"{manifest}.csv"
+            
+            with open(newname, "w") as fp:
+                for path, label in zip(samples, labels):
+                    fp.write(f"{path} {label}\n")
+
+            fixed_manifests.append(newname)
+        else:
+            fixed_manifests.append(newname)
+
+    return fixed_manifests
+
+
+
 def _main(args, resume_preempt=False):
     # ----------------------------------------------------------------------- #
     #  PASSED IN PARAMS FROM CONFIG FILE
@@ -94,7 +127,7 @@ def _main(args, resume_preempt=False):
     cfgs_data = args.get('data')
     dataset_type = cfgs_data.get('dataset_type', 'videodataset')
     mask_type = cfgs_data.get('mask_type', 'multiblock3d')
-    dataset_paths = cfgs_data.get('datasets', [])
+    dataset_paths = generate_absolute_metainfo(cfgs_data.get('datasets', []))
     datasets_weights = cfgs_data.get('datasets_weights', None)
     if datasets_weights is not None:
         assert len(datasets_weights) == len(dataset_paths), 'Must have one sampling weight specified for each dataset'
