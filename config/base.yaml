@@ -210,6 +210,7 @@ resnet50:
     --batch-size: "auto_batch(256)"
     --num-workers: "auto({n_worker}, 8)"
     --loader: pytorch
+    --optim: channel_last
   
 resnet50-noio:
   inherits: _torchvision
@@ -230,6 +231,7 @@ resnet50-noio:
     --model: resnet50
     --batch-size: batch_resize(256)
     --loader: synthetic_fixed
+    --optim: channel_last
 
 resnet152-ddp-gpus:
   inherits: _torchvision_ddp
