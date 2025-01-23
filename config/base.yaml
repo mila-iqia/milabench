@@ -202,7 +202,7 @@ resnet50:
   
   argv:
     --model: resnet50
-    --batch-size: 256
+    --batch-size: "auto_batch(256)"
     --num-workers: "auto({n_worker}, 8)"
     --loader: pytorch
   
@@ -223,7 +223,7 @@ resnet50-noio:
   
   argv:
     --model: resnet50
-    --batch-size: 256
+    --batch-size: batch_resize(256)
     --loader: synthetic_fixed
 
 resnet152-ddp-gpus:

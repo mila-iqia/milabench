@@ -1,20 +1,43 @@
+from collections import defaultdict
 import contextvars
 import multiprocessing
 import os
 from copy import deepcopy
-import multiprocessing
 
 import numpy as np
 import yaml
 from voir.instruments.gpu import get_gpu_info
+from cantilever.core.statstream import StatStream
 
-from .merge import merge
 from .system import CPUOptions, SizerOptions, system_global, option
 from .validation.validation import ValidationLayer
 
 ROOT = os.path.dirname(__file__)
 
-default_scaling_config = os.path.join(ROOT, "..", "config", "scaling.yaml")
+
+
+default_scaling_folder = os.path.join(ROOT, "..", "config", "scaling")
+default_scaling_config = os.path.join(default_scaling_folder, "default.yaml")
+
+
+def gpu_name():
+    try:
+        info = get_gpu_info()
+        values = list(info["gpus"].values())
+        return values[0]["product"]
+    except:
+        return None
+
+
+def get_scaling_config():
+    name = gpu_name()
+
+    specialized = os.path.join(default_scaling_folder, f"{name}.yaml")
+
+    if name is None or not os.path.exists(specialized):
+        return default_scaling_config
+    
+    return specialized
 
 
 metric_prefixes = {
@@ -58,11 +81,14 @@ class Sizer:
         self.sizer_override = sizer
         
         if scaling_config is None:
-            scaling_config = default_scaling_config
+            scaling_config = get_scaling_config()
 
-        with open(scaling_config, "r") as sconf:
-            self.scaling_config = yaml.safe_load(sconf)
-            
+        if os.path.exists(scaling_config):
+            with open(scaling_config, "r") as sconf:
+                self.scaling_config = yaml.safe_load(sconf)
+        else:
+            print(scaling_config, "does not exist")
+
     @property
     def options(self):
         if self.sizer_override:
@@ -80,6 +106,24 @@ class Sizer:
 
         # pack
         return self.scaling_config.get(benchmark.config["name"])
+
+    def _scaling_v1(self, config):
+        data = list(sorted(config["model"].items(), key=lambda x: x[0]))
+
+        mem = [to_octet(v[1]) for v in data]
+        size = [float(v[0]) for v in data]
+
+        return mem, size
+    
+    def _scaling_v2(self, config):
+        data = config["observations"]
+
+        data = list(sorted(data, key=lambda x: x["batch_size"]))
+
+        mem = [to_octet(v["memory"]) for v in data]
+        size = [float(v["batch_size"]) for v in data]
+
+        return mem, size
 
     def get_capacity(self, capacity):
         if self.options.capacity is not None:
@@ -103,9 +147,10 @@ class Sizer:
             print(f"Missing batch-size model for {benchmark.config['name']}")
             return 1
 
-        data = list(sorted(config["model"].items(), key=lambda x: x[0]))
-        mem = [to_octet(v[1]) for v in data]
-        size = [float(v[0]) for v in data]
+        if "model" in config:
+            mem, size = self._scaling_v1(config)
+        else:
+            mem, size = self._scaling_v2(config)
 
         if len(mem) == 1:
             print(f"Not enough data for {benchmark.config['name']}")
@@ -149,76 +194,6 @@ class Sizer:
 
         return None
 
-    def find_batch_size(self, benchmark, event):
-        config = self.benchscaling(benchmark)
-
-        if config is None:
-            return None
-
-        argname = config.get("arg")
-        if argname is None:
-            return -1
-
-        if "event" in event:
-            event = event["data"]
-
-        argv = event["command"]
-
-        for i, arg in enumerate(argv):
-            if str(arg).endswith(argname):
-                return int(argv[i + 1])
-
-        return -1
-
-    def argv(self, benchmark, capacity, argv):
-        newargv = self._argv(benchmark, capacity, argv)
-        return newargv
-        
-    def _argv(self, benchmark, capacity, argv):
-        """Find the batch size and override it with a new value"""
-
-        config = self.benchscaling(benchmark)
-        if config is None:
-            return argv
-
-        newsize = self.size(benchmark, capacity)
-
-        if newsize is None:
-            return argv
-
-        # <param> <value>
-        argv = list(argv)
-        argname = config.get("arg")
-        if argname is None:
-            return argv
-
-        # placeholder replace
-        #   train.batch_size_per_gpu={batch_size}
-        placeholder = "{batch_size}"
-        if placeholder in argname:
-            newval = argname.format(batch_size=str(newsize))
-
-            for i, arg in enumerate(argv):
-                if str(arg).startswith(argname[0:-len(placeholder)]):
-                    break
-            else:
-                return argv + [newval]
-
-            argv[i] = newval
-            return argv
-
-        # positional argument replace
-        #   --argname {batch_size}
-        for i, arg in enumerate(argv):
-            if str(arg).endswith(argname):
-                break
-        else:
-            # add the new argument
-            return argv + [argname, str(newsize)]
-
-        argv[i + 1] = str(newsize)
-        return argv
-
 
 sizer_global = contextvars.ContextVar("sizer_global", default=None)
 
@@ -249,63 +224,108 @@ def scale_argv(pack, argv):
         return argv
 
 
+def suggested_batch_size(pack):
+    sizer = batch_sizer()
+
+    system = system_global.get()
+    capacity = system.get("gpu", dict()).get("capacity")
+
+    return sizer.size(pack, capacity)
+
+
+def compact_dump():
+    # This is to create a compact yaml that is still readable
+    from yaml.representer import SequenceNode, ScalarNode
+
+    class CustomDumper(yaml.SafeDumper):
+        
+        def represent_sequence(self, tag, sequence, flow_style=None):
+            value = []
+            node = SequenceNode(tag, value, flow_style=flow_style)
+
+            if self.alias_key is not None:
+                self.represented_objects[self.alias_key] = node
+            best_style = True
+
+            for item in sequence:
+                node_item = self.represent_data(item)
+                node_item.flow_style = True
+
+                if not (isinstance(node_item, ScalarNode) and not node_item.style):
+                    best_style = False
+
+                value.append(node_item)
+
+            if flow_style is None:
+                if self.default_flow_style is not None:
+                    node.flow_style = self.default_flow_style
+                else:
+                    node.flow_style = best_style
+            return node
+
+    return CustomDumper
+
+
 class MemoryUsageExtractor(ValidationLayer):
     """Extract max memory usage per benchmark to populate the memory model"""
 
     def __init__(self):
-        
         self.filepath = option("sizer.save", str, None)
         sizer = Sizer()
-        self.memory = deepcopy(sizer.scaling_config)
+
+        if os.path.exists(self.filepath):
+            with open(self.filepath, "r") as fp:
+                self.memory = yaml.safe_load(fp) or {}
+        else:
+            self.memory = deepcopy(sizer.scaling_config)
+
+        if self.memory.get("version", 1.0) <= 1.0:
+            self.convert()
+            self.memory["version"] = 2.0
+
         self.scaling = None
+        self.stats = defaultdict(lambda: StatStream(drop_first_obs=0))
         self.benchname = None
         self.batch_size = 0
         self.max_usage = float("-inf")  # Usage from the gpu monitor
         self.peak_usage = float("-inf") # Usage provided by the bench itself (for jax)
         self.early_stopped = False
 
+        global on_batch_size_set, on_cpu_count_set
+
+        # TODO: currently this is okay but we might have to find a way to make
+        # this class only remove its callback
+        on_batch_size_set = [self.on_batch_size_set]
+        on_cpu_count_set = [self.on_cpu_count_set]
+
+    def on_cpu_count_set(self, pack, _, value):
+        self.stats["cpu"] += value
+
+    def on_batch_size_set(self, pack, _, value):
+        self.stats["batch_size"] += value
+
+    def convert(self):
+        # TODO: this could be handled seemlessly on the loading part
+        for bench, config in self.memory.items():
+            if bench == "version":
+                continue
+        
+            model = config.pop("model", None)
+
+            if model is not None:
+                obs = []
+                for k, v in model.items():
+                    obs.append({"batch_size": k, "memory": v})
+    
+                config["observations"] = obs
+
     def on_start(self, entry):
         if self.filepath is None:
             return
 
-        argv = entry.data["command"]
         self.benchname = entry.pack.config["name"]
-        self.batch_size = None
         self.max_usage = float("-inf")
         self.peak_usage = float("-inf")
-
-        config = self.memory.setdefault(self.benchname, dict())
-        template = config.get("arg", None)
-
-        if template is None:
-            self.benchname = None
-            return
-
-        placeholder = "{batch_size}"
-        argstart = template.replace(placeholder, "")
-
-        is_template = False
-        found = None
-        for i, arg in enumerate(argv):
-            if arg.endswith(template):
-                found = i
-                break
-
-            #
-            if arg.startswith(argstart):
-                found = i
-                is_template = True
-                break
-
-        if found:
-            if is_template:
-                arg = argv[found]
-                value = arg.replace(argstart, "")
-                self.batch_size = int(value)
-            else:
-                self.batch_size = int(argv[found + 1])
-        else:
-            print("Count not find batch_size argument")
 
     def on_data(self, entry):
         if self.filepath is None:
@@ -314,27 +334,26 @@ class MemoryUsageExtractor(ValidationLayer):
         if entry.data is None:
             return
 
-        memorypeak = entry.data.get("memory_peak")
-        if memorypeak is not None:
-            self.peak_usage = max(memorypeak, self.peak_usage)
+        # This is for jax
+        if memorypeak := entry.data.get("memory_peak"):
+            self.stats["memorypeak"] += memorypeak
             return
-
-        gpudata = entry.data.get("gpudata")
-        if gpudata is not None:
-            current_usage = []
+        
+        if gpudata := entry.data.get("gpudata"):
             for device, data in gpudata.items():
                 usage, total = data.get("memory", [0, 1])
-                current_usage.append(usage)
+                self.stats["memory"] += usage
 
-            self.max_usage = max(*current_usage, self.max_usage)
-
+        if rate := entry.data.get("rate"):
+            self.stats["perf"] += rate
+ 
     def on_stop(self, entry):
         self.early_stopped = True
 
     def max_memory_usage(self):
-        if self.peak_usage != float("-inf"):
-            return self.peak_usage
-        return self.max_usage
+        if self.stats["memorypeak"].current_count != 0:
+            return self.stats["memorypeak"].max
+        return self.stats["memory"].max
 
     def on_end(self, entry):
         if self.filepath is None:
@@ -349,28 +368,36 @@ class MemoryUsageExtractor(ValidationLayer):
 
         # Only update is successful
         rc = entry.data["return_code"]
+
         if rc == 0 or self.early_stopped:
             config = self.memory.setdefault(self.benchname, dict())
-            model = config.setdefault("model", dict())
-            model[self.batch_size] = f"{self.max_memory_usage()} MiB"
-            config["model"] = dict(sorted(model.items(), key=lambda x: x[0]))
+            observations = config.setdefault("observations", [])
+
+            obs = {
+                "cpu": int(self.stats["cpu"].avg),
+                "batch_size": int(self.stats["batch_size"].avg),
+                "memory": f"{int(self.stats['memory'].max)} MiB",
+                "perf": float(f"{self.stats['perf'].avg:.2f}"),
+            }
+
+            if memorypeak := self.stats.pop("memorypeak", None):
+                if memorypeak.current_count != 0:
+                    obs["memory"] = f"{int(memorypeak.max)} MiB",
+
+            observations.append(obs)
+
+            config["observations"] = list(sorted(observations, key=lambda x: x["batch_size"]))
 
         self.benchname = None
         self.batch_size = None
+        self.stats = defaultdict(lambda: StatStream(drop_first_obs=0))
         self.max_usage = float("-inf")
         self.peak_usage = float("-inf")
 
     def report(self, *args):
         if self.filepath is not None:
-            newdata = self.memory
-
-            if os.path.exists(self.filepath):
-                with open(self.filepath, "r") as fp:
-                    previous_data = yaml.safe_load(fp)
-                newdata = merge(previous_data, self.memory)
-
             with open(self.filepath, "w") as file:
-                yaml.dump(newdata, file)
+                yaml.dump(self.memory, file, Dumper=compact_dump())
 
 
 def arch_to_device(arch):
@@ -388,6 +415,16 @@ def arch_to_device(arch):
     arch_to_device["rocm"] = "cuda"
     return arch_to_device.get(arch, "cpu")
 
+
+on_cpu_count_set = []
+on_batch_size_set = []
+
+def broadcast(delegates, *args, **kwargs):
+    for fun in delegates:
+        try:
+            fun(*args, **kwargs)
+        except Exception as err:
+            print(f"Error during broadcasting {fun} {err}")
 
 
 def new_argument_resolver(pack):
@@ -410,10 +447,25 @@ def new_argument_resolver(pack):
     ccl = {"hpu": "hccl", "cuda": "nccl", "rocm": "rccl", "xpu": "ccl", "cpu": "gloo"}
 
     cpu_opt = CPUOptions()
-    def auto(value, default):
+
+    def cpu(value, default):
+        newvalue = default
+
         if cpu_opt.enabled:
-            return value
-        return default
+            newvalue = value
+        
+        broadcast(on_cpu_count_set, pack, default, newvalue)
+        return newvalue
+    
+    gpu_opt = SizerOptions()
+    def batch_resize(default):
+        newvalue = default
+
+        if gpu_opt.enabled:
+            newvalue = suggested_batch_size(pack)
+        
+        broadcast(on_batch_size_set, pack, default, newvalue)
+        return newvalue
 
     def clamp(x, mn=cpu_opt.cpu_min, mx=cpu_opt.cpu_max):
         return min(max(x, mn), mx)
@@ -446,7 +498,7 @@ def new_argument_resolver(pack):
     def auto_eval(arg):
         newvalue = str(arg).format(**context)
         if newvalue.startswith("auto"):
-            newvalue = str(eval(newvalue, {"auto": auto}, {}))
+            newvalue = str(eval(newvalue, {"auto": cpu, "auto_batch": batch_resize}, {}))
         return newvalue
 
     return auto_eval

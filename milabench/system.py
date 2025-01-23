@@ -5,7 +5,6 @@ import sys
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 
-import psutil
 import yaml
 from voir.instruments.gpu import get_gpu_info
 
@@ -203,6 +202,9 @@ class SizerOptions:
     # Save the batch size, VRM usage data to a scaling file
     save: str = defaultfield("sizer.save", str, None)
 
+    @property
+    def enabled(self):
+        return self.autoscale > 0
 
 @dataclass
 class CPUOptions:
