@@ -4,7 +4,7 @@ from voir import configurable
 from voir.phase import StopProgram
 from voir.instruments import dash, early_stop, log
 from benchmate.observer import BenchObserver
-from benchmate.monitor import monitor_monogpu
+from benchmate.monitor import monitor_monogpu, monitor_process_monogpu
 
 
 @dataclass
@@ -52,6 +52,7 @@ def instrument_main(ov, options: Config):
         log(*metrics, *overhead_metrics, context="task"),
         early_stop(n=options.stop, key="rate", task="train"),
         monitor_monogpu(poll_interval=options.gpu_poll),
+        monitor_process_monogpu(poll_interval=3)
     )
 
     yield ov.phases.load_script
