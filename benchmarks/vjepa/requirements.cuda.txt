@@ -5,7 +5,7 @@
 #    pip-compile --output-file=benchmarks/vjepa/requirements.cuda.txt .pin/tmp-constraints-cuda-vjepa-gpus.txt benchmarks/vjepa/requirements.in
 #
 --extra-index-url https://pypi.ngc.nvidia.com
---extra-index-url https://download.pytorch.org/whl/cu121
+--extra-index-url https://download.pytorch.org/whl/cu126
 --find-links https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 --find-links https://data.pyg.org/whl/torch-2.5.1+cu121.html
 --trusted-host pypi.ngc.nvidia.com
@@ -27,7 +27,7 @@ braceexpand==0.1.7
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -r benchmarks/vjepa/requirements.in
     #   webdataset
-certifi==2024.12.14
+certifi==2025.1.31
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   requests
@@ -51,7 +51,7 @@ einops==0.8.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -r benchmarks/vjepa/requirements.in
-executing==2.1.0
+executing==2.2.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   varname
@@ -60,7 +60,6 @@ filelock==3.17.0
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   huggingface-hub
     #   torch
-    #   triton
 fsspec==2024.9.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
@@ -71,7 +70,7 @@ giving==0.4.3
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   ptera
     #   voir
-huggingface-hub==0.27.1
+huggingface-hub==0.28.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   timm
@@ -138,57 +137,61 @@ numpy==1.26.4
     #   torchvision
     #   webdataset
     #   xformers
-nvidia-cublas-cu12==12.1.3.1
+nvidia-cublas-cu12==12.6.4.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
     #   nvidia-cudnn-cu12
     #   nvidia-cusolver-cu12
     #   torch
-nvidia-cuda-cupti-cu12==12.1.105
+nvidia-cuda-cupti-cu12==12.6.80
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
     #   torch
-nvidia-cuda-nvcc-cu12==12.6.85
+nvidia-cuda-nvcc-cu12==12.8.61
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
-nvidia-cuda-nvrtc-cu12==12.1.105
+nvidia-cuda-nvrtc-cu12==12.6.77
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   torch
-nvidia-cuda-runtime-cu12==12.1.105
-    # via
-    #   -c .pin/../.pin/constraints-cuda-torch.txt
-    #   jax-cuda12-plugin
-    #   torch
-nvidia-cudnn-cu12==9.1.0.70
+nvidia-cuda-runtime-cu12==12.6.77
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
     #   torch
-nvidia-cufft-cu12==11.0.2.54
+nvidia-cudnn-cu12==9.5.1.17
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
     #   torch
-nvidia-curand-cu12==10.3.2.106
-    # via
-    #   -c .pin/../.pin/constraints-cuda-torch.txt
-    #   torch
-nvidia-cusolver-cu12==11.4.5.107
+nvidia-cufft-cu12==11.3.0.4
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
     #   torch
-nvidia-cusparse-cu12==12.1.0.106
+nvidia-curand-cu12==10.3.7.77
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   torch
+nvidia-cusolver-cu12==11.7.1.2
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   jax-cuda12-plugin
+    #   torch
+nvidia-cusparse-cu12==12.5.4.2
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
     #   nvidia-cusolver-cu12
     #   torch
-nvidia-ml-py==12.560.30
+nvidia-cusparselt-cu12==0.6.3
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   torch
+nvidia-ml-py==12.570.86
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   voir
@@ -201,9 +204,11 @@ nvidia-nvjitlink-cu12==12.6.85
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
+    #   nvidia-cufft-cu12
     #   nvidia-cusolver-cu12
     #   nvidia-cusparse-cu12
-nvidia-nvtx-cu12==12.1.105
+    #   torch
+nvidia-nvtx-cu12==12.6.77
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   torch
@@ -251,7 +256,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   pandas
-pytz==2024.2
+pytz==2025.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   pandas
@@ -300,7 +305,7 @@ timm==1.0.14
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -r benchmarks/vjepa/requirements.in
-torch==2.5.1+cu121
+torch==2.6.0+cu126
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -c .pin/../constraints/cuda.txt
@@ -308,7 +313,7 @@ torch==2.5.1+cu121
     #   timm
     #   torchvision
     #   xformers
-torchvision==0.20.1+cu121
+torchvision==0.21.0+cu126
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -r benchmarks/vjepa/requirements.in
@@ -317,7 +322,7 @@ tqdm==4.67.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   huggingface-hub
-triton==3.1.0
+triton==3.2.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   torch
@@ -350,7 +355,7 @@ webdataset==0.2.100
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -r benchmarks/vjepa/requirements.in
-xformers==0.0.29.post1
+xformers==0.0.29.post2
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -r .pin/../constraints/extra/torch.cuda.txt

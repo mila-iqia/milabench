@@ -5,7 +5,7 @@
 #    pip-compile --output-file=benchmarks/llm/requirements.cuda.txt .pin/tmp-constraints-cuda-llm-full-mp-nodes.txt benchmarks/llm/requirements.in
 #
 --extra-index-url https://pypi.ngc.nvidia.com
---extra-index-url https://download.pytorch.org/whl/cu121
+--extra-index-url https://download.pytorch.org/whl/cu126
 --find-links https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 --find-links https://data.pyg.org/whl/torch-2.5.1+cu121.html
 --trusted-host pypi.ngc.nvidia.com
@@ -27,6 +27,10 @@ aiosignal==1.3.2
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   aiohttp
+annotated-types==0.7.0
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   pydantic
 antlr4-python3-runtime==4.9.3
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
@@ -43,19 +47,27 @@ async-timeout==5.0.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   aiohttp
-attrs==24.3.0
+attrs==25.1.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   aiohttp
+betterproto==2.0.0b6
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   sigstore-protobuf-specs
 blobfile==3.0.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -r benchmarks/llm/requirements.txt
     #   torchtune
-certifi==2024.12.14
+certifi==2025.1.31
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   requests
+cffi==1.17.1
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   cryptography
 charset-normalizer==3.4.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
@@ -64,6 +76,13 @@ codefind==0.1.7
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   ptera
+cryptography==44.0.0
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   model-signing
+    #   pyopenssl
+    #   rfc3161-client
+    #   sigstore
 datasets==3.2.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
@@ -73,7 +92,15 @@ dill==0.3.8
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   datasets
     #   multiprocess
-executing==2.1.0
+dnspython==2.7.0
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   email-validator
+email-validator==2.2.0
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   pydantic
+executing==2.2.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   varname
@@ -90,7 +117,6 @@ filelock==3.17.0
     #   huggingface-hub
     #   torch
     #   transformers
-    #   triton
 fire==0.7.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
@@ -111,11 +137,23 @@ giving==0.4.3
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   ptera
     #   voir
+grpclib==0.4.7
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   betterproto
+h2==4.2.0
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   grpclib
 hjson==3.1.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   argklass
-huggingface-hub[hf-transfer,hf_transfer]==0.27.1
+hpack==4.1.0
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   h2
+huggingface-hub[hf-transfer,hf_transfer]==0.28.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   accelerate
@@ -123,15 +161,29 @@ huggingface-hub[hf-transfer,hf_transfer]==0.27.1
     #   tokenizers
     #   torchtune
     #   transformers
+hyperframe==6.1.0
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   h2
+id==1.5.0
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   sigstore
 idna==3.10
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   email-validator
     #   requests
     #   yarl
-importlib-resources==6.5.2
+importlib-resources==5.13.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   argklass
+    #   sigstore
+in-toto-attestation==0.9.3
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   model-signing
 jax[cuda12]==0.5.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
@@ -152,7 +204,7 @@ jinja2==3.1.5
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   torch
-kagglehub==0.3.6
+kagglehub==0.3.7
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   torchtune
@@ -177,6 +229,10 @@ ml-dtypes==0.5.1
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax
     #   jaxlib
+model-signing==0.2.0
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   kagglehub
 mpmath==1.3.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
@@ -185,6 +241,7 @@ multidict==6.1.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   aiohttp
+    #   grpclib
     #   yarl
 multiprocess==0.70.16
     # via
@@ -208,57 +265,61 @@ numpy==1.26.4
     #   torchtune
     #   transformers
     #   xformers
-nvidia-cublas-cu12==12.1.3.1
+nvidia-cublas-cu12==12.6.4.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
     #   nvidia-cudnn-cu12
     #   nvidia-cusolver-cu12
     #   torch
-nvidia-cuda-cupti-cu12==12.1.105
+nvidia-cuda-cupti-cu12==12.6.80
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
     #   torch
-nvidia-cuda-nvcc-cu12==12.6.85
+nvidia-cuda-nvcc-cu12==12.8.61
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
-nvidia-cuda-nvrtc-cu12==12.1.105
+nvidia-cuda-nvrtc-cu12==12.6.77
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   torch
-nvidia-cuda-runtime-cu12==12.1.105
-    # via
-    #   -c .pin/../.pin/constraints-cuda-torch.txt
-    #   jax-cuda12-plugin
-    #   torch
-nvidia-cudnn-cu12==9.1.0.70
+nvidia-cuda-runtime-cu12==12.6.77
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
     #   torch
-nvidia-cufft-cu12==11.0.2.54
+nvidia-cudnn-cu12==9.5.1.17
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
     #   torch
-nvidia-curand-cu12==10.3.2.106
-    # via
-    #   -c .pin/../.pin/constraints-cuda-torch.txt
-    #   torch
-nvidia-cusolver-cu12==11.4.5.107
+nvidia-cufft-cu12==11.3.0.4
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
     #   torch
-nvidia-cusparse-cu12==12.1.0.106
+nvidia-curand-cu12==10.3.7.77
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   torch
+nvidia-cusolver-cu12==11.7.1.2
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   jax-cuda12-plugin
+    #   torch
+nvidia-cusparse-cu12==12.5.4.2
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
     #   nvidia-cusolver-cu12
     #   torch
-nvidia-ml-py==12.560.30
+nvidia-cusparselt-cu12==0.6.3
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   torch
+nvidia-ml-py==12.570.86
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   voir
@@ -271,9 +332,11 @@ nvidia-nvjitlink-cu12==12.6.85
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
+    #   nvidia-cufft-cu12
     #   nvidia-cusolver-cu12
     #   nvidia-cusparse-cu12
-nvidia-nvtx-cu12==12.1.105
+    #   torch
+nvidia-nvtx-cu12==12.6.77
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   torch
@@ -306,11 +369,19 @@ pillow==11.1.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   torchtune
+platformdirs==4.3.6
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   sigstore
 propcache==0.2.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   aiohttp
     #   yarl
+protobuf==5.29.3
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   in-toto-attestation
 psutil==5.9.8
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
@@ -325,19 +396,45 @@ pyarrow==19.0.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   datasets
+pyasn1==0.6.1
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   sigstore
+pycparser==2.22
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   cffi
 pycryptodomex==3.21.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   blobfile
+pydantic[email]==2.10.6
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   sigstore
+    #   sigstore-rekor-types
+pydantic-core==2.27.2
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   pydantic
 pygments==2.19.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   rich
+pyjwt==2.10.1
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   sigstore
+pyopenssl==25.0.0
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   sigstore
 python-dateutil==2.9.0.post0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   betterproto
     #   pandas
-pytz==2024.2
+pytz==2025.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   pandas
@@ -364,12 +461,24 @@ requests==2.32.3
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   datasets
     #   huggingface-hub
+    #   id
     #   kagglehub
+    #   sigstore
     #   tiktoken
     #   transformers
+    #   tuf
+rfc3161-client==0.1.2
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   sigstore
+rfc8785==0.1.4
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   sigstore
 rich==13.9.4
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   sigstore
     #   voir
 safetensors==0.5.2
     # via
@@ -382,10 +491,26 @@ scipy==1.15.1
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax
     #   jaxlib
+securesystemslib==1.2.0
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   tuf
 sentencepiece==0.2.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   torchtune
+sigstore==3.6.1
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   model-signing
+sigstore-protobuf-specs==0.3.2
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   sigstore
+sigstore-rekor-types==0.0.18
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   sigstore
 six==1.17.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
@@ -406,7 +531,7 @@ tokenizers==0.21.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   transformers
-torch==2.5.1+cu121
+torch==2.6.0+cu126
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -c .pin/../constraints/cuda.txt
@@ -415,7 +540,7 @@ torch==2.5.1+cu121
     #   accelerate
     #   fairscale
     #   xformers
-torchao==0.8.0
+torchao==0.8.0+cu126
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -r benchmarks/llm/requirements.in
@@ -431,19 +556,27 @@ tqdm==4.67.1
     #   kagglehub
     #   torchtune
     #   transformers
-transformers==4.48.1
+transformers==4.48.2
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -r benchmarks/llm/requirements.in
-triton==3.1.0
+triton==3.2.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   torch
+tuf==5.1.0
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   sigstore
 typing-extensions==4.12.2
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   huggingface-hub
+    #   model-signing
     #   multidict
+    #   pydantic
+    #   pydantic-core
+    #   pyopenssl
     #   reactivex
     #   rich
     #   torch
@@ -465,7 +598,7 @@ voir==0.2.19
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -c .pin/../constraints/cuda.txt
     #   -r benchmarks/llm/requirements.in
-xformers==0.0.29.post1
+xformers==0.0.29.post2
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -r .pin/../constraints/extra/torch.cuda.txt

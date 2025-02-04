@@ -5,197 +5,258 @@
 #    pip-compile --output-file=benchmarks/llm/requirements.rocm.txt .pin/tmp-constraints-rocm-llm-full-mp-nodes.txt benchmarks/llm/requirements.in
 #
 --extra-index-url https://pypi.ngc.nvidia.com
---extra-index-url https://download.pytorch.org/whl/rocm6.2
+--extra-index-url https://download.pytorch.org/whl/rocm6.2.4
 --trusted-host pypi.ngc.nvidia.com
 
-accelerate==1.2.1
+accelerate==1.3.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   -r benchmarks/llm/requirements.in
 aiohappyeyeballs==2.4.4
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   aiohttp
 aiohttp==3.11.11
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   datasets
     #   fsspec
 aiosignal==1.3.2
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   aiohttp
+annotated-types==0.7.0
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   pydantic
 antlr4-python3-runtime==4.9.3
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   omegaconf
 argklass==1.4.4
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   -r benchmarks/llm/requirements.in
 asttokens==3.0.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   giving
 async-timeout==5.0.1
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   aiohttp
-attrs==24.3.0
+attrs==25.1.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   aiohttp
+betterproto==2.0.0b6
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   sigstore-protobuf-specs
 blobfile==3.0.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
-    #   -r benchmarks/llm/requirements.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   -r /network/scratch/d/delaunap/shared/milabench/benchmarks/llm/requirements.txt
     #   torchtune
-certifi==2024.12.14
+certifi==2025.1.31
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   requests
+cffi==1.17.1
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   cryptography
 charset-normalizer==3.4.1
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   requests
 codefind==0.1.7
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   ptera
+cryptography==44.0.0
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   model-signing
+    #   pyopenssl
+    #   rfc3161-client
+    #   sigstore
 datasets==3.2.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   torchtune
 dill==0.3.8
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   datasets
     #   multiprocess
-executing==2.1.0
+dnspython==2.7.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   email-validator
+email-validator==2.2.0
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   pydantic
+executing==2.2.0
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   varname
 fairscale==0.4.13
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   -r /network/scratch/d/delaunap/shared/milabench/benchmarks/llm/requirements.txt
     #   -r benchmarks/llm/requirements.in
-    #   -r benchmarks/llm/requirements.txt
-filelock==3.16.1
+filelock==3.17.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   blobfile
     #   datasets
     #   huggingface-hub
-    #   pytorch-triton-rocm
     #   torch
     #   transformers
 fire==0.7.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
-    #   -r benchmarks/llm/requirements.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   -r /network/scratch/d/delaunap/shared/milabench/benchmarks/llm/requirements.txt
 frozenlist==1.5.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   aiohttp
     #   aiosignal
 fsspec[http]==2024.9.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   datasets
     #   huggingface-hub
     #   torch
 giving==0.4.3
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   ptera
     #   voir
+grpclib==0.4.7
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   betterproto
+h2==4.2.0
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   grpclib
+hf-transfer==0.1.9
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   huggingface-hub
 hjson==3.1.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   argklass
-huggingface-hub[hf-transfer,hf_transfer]==0.27.1
+hpack==4.1.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   h2
+huggingface-hub[hf-transfer,hf_transfer]==0.28.1
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   accelerate
     #   datasets
     #   tokenizers
     #   torchtune
     #   transformers
+hyperframe==6.1.0
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   h2
+id==1.5.0
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   sigstore
 idna==3.10
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   email-validator
     #   requests
     #   yarl
-importlib-resources==6.5.2
+importlib-resources==5.13.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   argklass
+    #   sigstore
+in-toto-attestation==0.9.3
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   model-signing
 jinja2==3.1.5
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   torch
-kagglehub==0.3.6
+kagglehub==0.3.7
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   torchtune
 lxml==5.3.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   blobfile
 markdown-it-py==3.0.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   rich
 markupsafe==3.0.2
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   jinja2
 mdurl==0.1.2
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   markdown-it-py
+model-signing==0.2.0
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   kagglehub
 mpmath==1.3.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   sympy
 multidict==6.1.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   aiohttp
+    #   grpclib
     #   yarl
 multiprocess==0.70.16
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   datasets
 networkx==3.4.2
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   torch
 numpy==1.26.4
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   accelerate
     #   datasets
     #   fairscale
     #   pandas
     #   torchtune
     #   transformers
-nvidia-ml-py==12.560.30
+nvidia-ml-py==12.570.86
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   voir
 omegaconf==2.3.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   torchtune
     #   voir
 ovld==0.3.9
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   voir
 packaging==24.2
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   accelerate
     #   datasets
     #   huggingface-hub
@@ -203,54 +264,88 @@ packaging==24.2
     #   transformers
 pandas==2.2.3
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   datasets
 pillow==11.1.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   torchtune
+platformdirs==4.3.6
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   sigstore
 propcache==0.2.1
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   aiohttp
     #   yarl
+protobuf==5.29.3
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   in-toto-attestation
 psutil==5.9.8
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   accelerate
     #   torchtune
     #   voir
 ptera==1.4.1
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   voir
 pyarrow==19.0.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   datasets
+pyasn1==0.6.1
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   sigstore
+pycparser==2.22
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   cffi
 pycryptodomex==3.21.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   blobfile
+pydantic[email]==2.10.6
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   sigstore
+    #   sigstore-rekor-types
+pydantic-core==2.27.2
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   pydantic
 pygments==2.19.1
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   rich
+pyjwt==2.10.1
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   sigstore
+pyopenssl==25.0.0
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   sigstore
 python-dateutil==2.9.0.post0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   betterproto
     #   pandas
-pytorch-triton-rocm==3.1.0
+pytorch-triton-rocm==3.2.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   torch
-pytz==2024.2
+pytz==2025.1
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   pandas
 pyyaml==6.0.2
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   -r benchmarks/llm/requirements.in
     #   accelerate
     #   datasets
@@ -259,113 +354,149 @@ pyyaml==6.0.2
     #   transformers
 reactivex==4.0.4
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   giving
 regex==2024.11.6
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   tiktoken
     #   transformers
 requests==2.32.3
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   datasets
     #   huggingface-hub
+    #   id
     #   kagglehub
+    #   sigstore
     #   tiktoken
     #   transformers
+    #   tuf
+rfc3161-client==0.1.2
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   sigstore
+rfc8785==0.1.4
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   sigstore
 rich==13.9.4
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   sigstore
     #   voir
 safetensors==0.5.2
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   accelerate
     #   torchtune
     #   transformers
+securesystemslib==1.2.0
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   tuf
 sentencepiece==0.2.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   torchtune
+sigstore==3.6.1
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   model-signing
+sigstore-protobuf-specs==0.3.2
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   sigstore
+sigstore-rekor-types==0.0.18
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   sigstore
 six==1.17.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   python-dateutil
 sympy==1.13.1
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   torch
 termcolor==2.5.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   fire
 tiktoken==0.8.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   torchtune
 tokenizers==0.21.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   transformers
-torch==2.5.1+rocm6.2
+torch==2.6.0+rocm6.2.4
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   -r /network/scratch/d/delaunap/shared/milabench/benchmarks/llm/requirements.txt
     #   -r benchmarks/llm/requirements.in
-    #   -r benchmarks/llm/requirements.txt
     #   accelerate
     #   fairscale
-torchao==0.8.0
+torchao==0.8.0+rocm6.2.4
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   -r benchmarks/llm/requirements.in
 torchtune==0.5.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   -r benchmarks/llm/requirements.in
 tqdm==4.67.1
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   datasets
     #   huggingface-hub
     #   kagglehub
     #   torchtune
     #   transformers
-transformers==4.48.0
+transformers==4.48.2
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   -r benchmarks/llm/requirements.in
+tuf==5.1.0
+    # via
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   sigstore
 typing-extensions==4.12.2
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   huggingface-hub
+    #   model-signing
     #   multidict
+    #   pydantic
+    #   pydantic-core
+    #   pyopenssl
     #   reactivex
     #   rich
     #   torch
-tzdata==2024.2
+tzdata==2025.1
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   pandas
 urllib3==2.3.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   blobfile
     #   requests
 varname==0.14.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   giving
 voir==0.2.19
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
-    #   -c .pin/../constraints/rocm.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/constraints/rocm.txt
     #   -r benchmarks/llm/requirements.in
 xxhash==3.5.0
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   datasets
 yarl==1.18.3
     # via
-    #   -c .pin/../.pin/constraints-rocm-torch.txt
+    #   -c /network/scratch/d/delaunap/shared/milabench/.pin/constraints-rocm-torch.txt
     #   aiohttp
