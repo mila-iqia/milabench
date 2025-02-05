@@ -273,7 +273,7 @@ class MemoryUsageExtractor(ValidationLayer):
         self.filepath = option("sizer.save", str, None)
         sizer = Sizer()
 
-        if os.path.exists(self.filepath):
+        if self.filepath and os.path.exists(self.filepath):
             with open(self.filepath, "r") as fp:
                 self.memory = yaml.safe_load(fp) or {}
         else:
