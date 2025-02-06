@@ -41,14 +41,14 @@ system:
 multirun:
   runs:
     # Force batch size to populate the sizing model
-    - name: "bs{sizer.batch_size}"
+    - name: "bs{sizer.batch_size}.{time}"
       matrix:
         sizer.auto: 1
         sizer.batch_size: [1, 2, 4, 8, 16, 32, 64, 128]
         sizer.save: ["scaling.yaml"]
     
     # Matrix run
-    - name: "c{sizer.capacity}_m{sizer.multiple}_w{cpu.n_workers}"
+    - name: "c{sizer.capacity}_m{sizer.multiple}_w{cpu.n_workers}.{time}"
       matrix:
         cpu.auto: 1
         cpu.n_workers: [2, 4, 8, 16, 32]
@@ -58,7 +58,7 @@ multirun:
         sizer.save: ["scaling.yaml"]
 
     # Auto run
-    - name: "auto"
+    - name: "auto.{time}"
       matrix:
         cpu.auto: 1
         sizer.auto: 1

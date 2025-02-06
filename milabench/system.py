@@ -184,6 +184,9 @@ class SizerOptions:
     # overrides the batch size to use for all benchmarks
     size: int = defaultfield("sizer.batch_size", int, None)
 
+    # Add a fixed number to the current batch size
+    add: int = defaultfield("sizer.batch_size_add", int, None)
+
     # Enables auto batch resize
     autoscale: bool = defaultfield("sizer.auto", int, 0)
 

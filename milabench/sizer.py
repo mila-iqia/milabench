@@ -9,6 +9,7 @@ import yaml
 from voir.instruments.gpu import get_gpu_info
 from cantilever.core.statstream import StatStream
 
+from .syslog import syslog
 from .system import CPUOptions, SizerOptions, system_global, option
 from .validation.validation import ValidationLayer
 
@@ -273,7 +274,7 @@ class MemoryUsageExtractor(ValidationLayer):
         self.filepath = option("sizer.save", str, None)
         sizer = Sizer()
 
-        if os.path.exists(self.filepath):
+        if self.filepath and os.path.exists(self.filepath):
             with open(self.filepath, "r") as fp:
                 self.memory = yaml.safe_load(fp) or {}
         else:
@@ -286,7 +287,9 @@ class MemoryUsageExtractor(ValidationLayer):
         self.scaling = None
         self.stats = defaultdict(lambda: StatStream(drop_first_obs=0))
         self.benchname = None
-        self.batch_size = 0
+        self.batch_size = None
+        self.active_count = defaultdict(int)
+        self.rc = defaultdict(int)
         self.max_usage = float("-inf")  # Usage from the gpu monitor
         self.peak_usage = float("-inf") # Usage provided by the bench itself (for jax)
         self.early_stopped = False
@@ -302,6 +305,7 @@ class MemoryUsageExtractor(ValidationLayer):
         self.stats["cpu"] += value
 
     def on_batch_size_set(self, pack, _, value):
+        self.batch_size = value
         self.stats["batch_size"] += value
 
     def convert(self):
@@ -322,10 +326,12 @@ class MemoryUsageExtractor(ValidationLayer):
     def on_start(self, entry):
         if self.filepath is None:
             return
-
+        
         self.benchname = entry.pack.config["name"]
         self.max_usage = float("-inf")
         self.peak_usage = float("-inf")
+
+        self.active_count[self.benchname] += 1
 
     def on_data(self, entry):
         if self.filepath is None:
@@ -359,45 +365,70 @@ class MemoryUsageExtractor(ValidationLayer):
         if self.filepath is None:
             return
 
-        if (
-            self.benchname is None
-            or self.batch_size is None
-            or self.max_memory_usage() == float("-inf")
-        ):
+        if self.benchname is None:
+            syslog("MemoryUsageExtractor: Skipping missing benchmark {}", entry)
+            return
+
+        if self.batch_size is None:
+            syslog("MemoryUsageExtractor: Skipping missing batch_size {}", entry)
+            return
+        
+        if self.max_memory_usage() == float("-inf"):
+            syslog("MemoryUsageExtractor: Missing memory info {}", entry)
             return
 
         # Only update is successful
         rc = entry.data["return_code"]
 
         if rc == 0 or self.early_stopped:
-            config = self.memory.setdefault(self.benchname, dict())
-            observations = config.setdefault("observations", [])
+            rc = 0
+        
+        self.rc[self.benchname] += rc
+        self.active_count[self.benchname] -= 1
 
-            obs = {
-                "cpu": int(self.stats["cpu"].avg),
-                "batch_size": int(self.stats["batch_size"].avg),
-                "memory": f"{int(self.stats['memory'].max)} MiB",
-                "perf": float(f"{self.stats['perf'].avg:.2f}"),
-            }
+        if self.active_count[self.benchname] <= 0:
+            
+            if self.rc[self.benchname] == 0:
+                self.push_observation()
+            else:
+                syslog("MemoryUsageExtractor: Could not add scaling data because of a failure")
 
-            if memorypeak := self.stats.pop("memorypeak", None):
-                if memorypeak.current_count != 0:
-                    obs["memory"] = f"{int(memorypeak.max)} MiB",
+            self.benchname = None
+            self.batch_size = None
+            self.stats = defaultdict(lambda: StatStream(drop_first_obs=0))
+            self.max_usage = float("-inf")
+            self.peak_usage = float("-inf")
+            # avoid losing results
+            try:
+                self.save()
+            except Exception as err:
+                print(f"MemoryUsageExtractor: Could not save scaling file because of {err}")
 
-            observations.append(obs)
+    def push_observation(self):
+        config = self.memory.setdefault(self.benchname, dict())
+        observations = config.setdefault("observations", [])
 
-            config["observations"] = list(sorted(observations, key=lambda x: x["batch_size"]))
+        obs = {
+            "cpu": int(self.stats["cpu"].avg),
+            "batch_size": int(self.stats["batch_size"].avg),
+            "memory": f"{int(self.stats['memory'].max)} MiB",
+            "perf": float(f"{self.stats['perf'].avg:.2f}"),
+        }
 
-        self.benchname = None
-        self.batch_size = None
-        self.stats = defaultdict(lambda: StatStream(drop_first_obs=0))
-        self.max_usage = float("-inf")
-        self.peak_usage = float("-inf")
+        if memorypeak := self.stats.pop("memorypeak", None):
+            if memorypeak.current_count != 0:
+                obs["memory"] = f"{int(memorypeak.max)} MiB",
 
-    def report(self, *args):
+        observations.append(obs)
+        config["observations"] = list(sorted(observations, key=lambda x: x["batch_size"]))
+
+    def save(self):
         if self.filepath is not None:
             with open(self.filepath, "w") as file:
                 yaml.dump(self.memory, file, Dumper=compact_dump())
+
+    def report(self, *args):
+        self.save()
 
 
 def arch_to_device(arch):
@@ -462,7 +493,10 @@ def new_argument_resolver(pack):
         newvalue = default
 
         if gpu_opt.enabled:
-            newvalue = suggested_batch_size(pack)
+            if gpu_opt.add is not None and isinstance(gpu_opt.add, int):
+                newvalue = max(1, default + gpu_opt.add)
+            else:
+                newvalue = suggested_batch_size(pack)
         
         broadcast(on_batch_size_set, pack, default, newvalue)
         return newvalue

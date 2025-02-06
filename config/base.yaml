@@ -216,7 +216,7 @@ resnet50-noio:
   inherits: _torchvision
   voir:
     options:
-      stop: 500
+      stop: 60
       interval: "1s"
 
   tags:
@@ -229,7 +229,7 @@ resnet50-noio:
   
   argv:
     --model: resnet50
-    --batch-size: batch_resize(256)
+    --batch-size: auto_batch(256)
     --loader: synthetic_fixed
     --optim: channel_last
 
