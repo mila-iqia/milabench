@@ -45,21 +45,23 @@ Install+Prepare on Network nodes
    
    conda activate py310
 
-   cd /network/shared/setup
+   export NETWORK_FOLDER=/network/shared/setup
+
+   cd $NETWORK_FOLDER
    git clone https://github.com/mila-iqia/milabench.git
    pip install -e milabench
    
-   export MILABENCH_CONFIG="/network/shared/setup/milabench/config/standard.yaml"
+   export MILABENCH_CONFIG="$NETWORK_FOLDER/milabench/config/standard.yaml"
    
-   milabench install --base /network/shared/setup/results --config $MILABENCH_CONFIG
-   milabench prepare --base /network/shared/setup/results --config $MILABENCH_CONFIG
+   milabench install --base $NETWORK_FOLDER --config $MILABENCH_CONFIG
+   milabench prepare --base $NETWORK_FOLDER --config $MILABENCH_CONFIG
 
 2. Compute node
 
    # Sync data to local but use code from the network location
-   milabench sharedsetup --network /network/shared/setup/results --local /tmp/local/results
+   milabench sharedsetup --network $NETWORK_FOLDER --local /tmp/local/results
 
-   milabench run --base /tmp/local/results --config /network/shared/setup/milabench/config/standard.yaml
+   milabench run --base /tmp/local/results --config $NETWORK_FOLDER/milabench/config/standard.yaml
 
 
 Batch Update Dependencies / Dependenies pinning
