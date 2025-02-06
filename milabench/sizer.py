@@ -3,6 +3,7 @@ import contextvars
 import multiprocessing
 import os
 from copy import deepcopy
+import time
 
 import numpy as np
 import yaml
@@ -391,7 +392,7 @@ class MemoryUsageExtractor(ValidationLayer):
             if self.rc[self.benchname] == 0:
                 self.push_observation()
             else:
-                syslog("MemoryUsageExtractor: Could not add scaling data because of a failure")
+                syslog("MemoryUsageExtractor: Could not add scaling data because of a failure {}", self.benchname)
 
             self.benchname = None
             self.batch_size = None
@@ -413,6 +414,7 @@ class MemoryUsageExtractor(ValidationLayer):
             "batch_size": int(self.stats["batch_size"].avg),
             "memory": f"{int(self.stats['memory'].max)} MiB",
             "perf": float(f"{self.stats['perf'].avg:.2f}"),
+            "time": time.time()
         }
 
         if memorypeak := self.stats.pop("memorypeak", None):
