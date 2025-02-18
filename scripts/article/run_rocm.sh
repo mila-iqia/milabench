@@ -142,7 +142,7 @@ fi
 
 #
 #   Run the benchmakrs
-milabench run $ARGS # --system $MILABENCH_WORDIR/system.yaml
+milabench run $ARGS --exclude llm-full-mp-gpus,nobatch --system /home/testroot/system.yaml
 
 
 #

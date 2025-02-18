@@ -184,8 +184,11 @@ class SizerOptions:
     # overrides the batch size to use for all benchmarks
     size: int = defaultfield("sizer.batch_size", int, None)
 
+    # Add a fixed number to the current batch size
+    add: int = defaultfield("sizer.batch_size_add", int, None)
+
     # Enables auto batch resize
-    autoscale: bool = defaultfield("sizer.auto", int, 0)
+    auto: bool = defaultfield("sizer.auto", int, 0)
 
     # Constraint the batch size to be a multiple of a number
     multiple: int = defaultfield("sizer.multiple", int, 8)
@@ -204,11 +207,17 @@ class SizerOptions:
 
     @property
     def enabled(self):
-        return self.autoscale > 0
+        return self.auto > 0
+
+    @staticmethod
+    def instance():
+        system_config = system_global.get() or {}
+        instance =  SizerOptions(**system_config.get("options", {}).get("sizer", {}))
+        return instance
 
 @dataclass
 class CPUOptions:
-    enabled: bool = defaultfield("cpu.auto", bool, False)
+    enabled: bool = defaultfield("cpu.enabled", bool, False)
 
     total_count: bool = defaultfield("cpu.total_count", int, None)
 
@@ -224,6 +233,12 @@ class CPUOptions:
     # Number of workers (ignores cpu_max and cpu_min)
     n_workers: int = defaultfield("cpu.n_workers", int)
 
+    @staticmethod
+    def instance():
+        system_config = system_global.get() or {}
+        instance =  CPUOptions(**system_config.get("options", {}).get("cpu", {}))
+        return instance
+    
 
 @dataclass
 class DatasetConfig:
