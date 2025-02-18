@@ -568,7 +568,7 @@ llm-lora-single:
 
   argv:
     bench/lora_finetune_single_device.py: true
-    --config: "{milabench_code}/configs/llama3_8B_lora_single_device.yaml"
+    --config: "{milabench_code}/configs/llama3_8B_lora.yaml"
     epochs=1: true
     output_dir={milabench_extra}/output: true
     tokenizer.path={milabench_data}/llama3_8B/original/tokenizer.model: true
@@ -594,7 +594,7 @@ llm-lora-ddp-gpus:
   argv:
     #"{milabench_code}/bench/lora_finetune_distributed.py": true
     bench/lora_finetune_distributed.py: true
-    --config: "{milabench_code}/configs/llama3_8B_lora_single_device.yaml"
+    --config: "{milabench_code}/configs/llama3_8B_lora.yaml"
     epochs=1: true
     output_dir={milabench_extra}/output: true
     tokenizer.path={milabench_data}/llama3_8B/original/tokenizer.model: true
@@ -620,7 +620,7 @@ llm-lora-ddp-nodes:
   url: https://huggingface.co/meta-llama/Llama-3.1-8B
   argv:
     bench/lora_finetune_distributed.py: true
-    --config: "{milabench_code}/configs/llama3_8B_lora_single_device.yaml"
+    --config: "{milabench_code}/configs/llama3_8B_lora.yaml"
     epochs=1: true
     output_dir={milabench_extra}/output: true
     tokenizer.path={milabench_data}/llama3_8B/original/tokenizer.model: true
