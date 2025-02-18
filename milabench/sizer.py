@@ -496,10 +496,18 @@ def new_argument_resolver(pack):
     context["benchmark_folder"] = pack.config.get('definition', None)
 
     def auto_eval(arg):
-        newvalue = str(arg).format(**context)
+        newvalue: str = str(arg).format(**context)
+
+        # Handles the case where argument=value
+        finalize_val = lambda x: x
+        if "=" in newvalue:
+            name, newvalue = newvalue.split("=", maxsplit=1)
+            finalize_val = lambda x: f"{name}={x}"
+
         if newvalue.startswith("auto"):
             newvalue = str(eval(newvalue, {"auto": cpu, "auto_batch": batch_resize}, {}))
-        return newvalue
+        
+        return finalize_val(newvalue)
 
     return auto_eval
 
