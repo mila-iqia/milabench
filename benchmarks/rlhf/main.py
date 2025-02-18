@@ -15,6 +15,8 @@
 # limitations under the License.
 
 import shutil
+from dataclasses import dataclass, field
+from typing import Iterable, Optional, Union
 
 import torch
 import accelerate
@@ -31,12 +33,10 @@ from trl import (
     ModelConfig,
     PPOConfig,
     PPOTrainer,
-    ScriptArguments,
     get_kbit_device_map,
     get_peft_config,
     get_quantization_config,
 )
-from trl.trainer.utils import SIMPLE_CHAT_TEMPLATE
 
 import torchcompat.core as compat
 
@@ -103,7 +103,13 @@ class PPOv2TrainerIntrumented(PPOTrainer):
         pass
 
 
+
+
 def main():
+    from trl.trainer.utils import SIMPLE_CHAT_TEMPLATE
+    from trl.scripts.utils import ScriptArguments
+    # SIMPLE_CHAT_TEMPLATE = "{% for message in messages %}{{message['role'].capitalize() + ': ' + message['content'] + '\n\n'}}{% endfor %}{% if add_generation_prompt %}{{ 'Assistant:' }}{% endif %}"
+
     parser = HfArgumentParser((ScriptArguments, PPOConfig, ModelConfig))
     script_args, training_args, model_args = parser.parse_args_into_dataclasses()
     # remove output_dir if exists
