@@ -6,6 +6,7 @@ import subprocess
 import time
 import traceback
 import warnings
+import json
 from collections import defaultdict
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -70,10 +71,23 @@ def _default():
     return []
 
 
+
+def _rocm_parse_processes():
+    cmd = ["rocm-smi", f"--showpids", "--json"]
+    output = subprocess.check_output(cmd, text=True)
+    data = json.loads(output)
+    info = []
+    for key, data in data.get("system", {}).items():
+        process_name, ngpu, vram, sdma, cu_occupancy = data.split(",")
+        pid = key[3:]
+        info.append(ProcessInfo(pid=pid, process_name=process_name, used_memory=vram))
+    return info
+
+
 backends = {
     "hpu": _hpu_parse_processes,
     "cuda": _cuda_parse_processes,
-    # ROCM
+    "rocm": _rocm_parse_processes,
     # XPU
     "cpu": _default,
 }
