@@ -4,6 +4,7 @@ import multiprocessing
 import os
 from copy import deepcopy
 import time
+from dataclasses import dataclass, field
 
 import numpy as np
 import yaml
@@ -267,6 +268,25 @@ def compact_dump():
 
     return CustomDumper
 
+@dataclass
+class BenchStats:
+    benchname: str
+    active_count: int = 0
+    rc: list = field(default_factory=list)
+    early_stopped: list = field(default_factory=list)
+    batch_size: StatStream = field(default_factory=lambda: StatStream(drop_first_obs=0))
+    perf: StatStream = field(default_factory=lambda: StatStream(drop_first_obs=0))
+    cpu: StatStream = field(default_factory=lambda: StatStream(drop_first_obs=0))
+    max_usage: StatStream = field(default_factory=lambda: StatStream(drop_first_obs=0))
+    peak_usage: StatStream = field(default_factory=lambda: StatStream(drop_first_obs=0))
+
+    def max_memory_usage(self):
+        if self.peak_usage.current_count != 0:
+            return self.peak_usage.max
+        return self.max_usage.max
+
+    def has_stopped_early(self):
+        return len(self.early_stopped) > 0 and self.early_stopped[-1]
 
 class MemoryUsageExtractor(ValidationLayer):
     """Extract max memory usage per benchmark to populate the memory model"""
@@ -286,29 +306,15 @@ class MemoryUsageExtractor(ValidationLayer):
             self.convert()
             self.memory["version"] = 2.0
 
-        self.scaling = None
-        self.stats = defaultdict(lambda: StatStream(drop_first_obs=0))
         self.benchname = None
-        self.batch_size = None
-        self.active_count = defaultdict(int)
-        self.rc = defaultdict(int)
-        self.max_usage = float("-inf")  # Usage from the gpu monitor
-        self.peak_usage = float("-inf") # Usage provided by the bench itself (for jax)
-        self.early_stopped = False
-
+        self._benchstat = {}
         global on_batch_size_set, on_cpu_count_set
+
 
         # TODO: currently this is okay but we might have to find a way to make
         # this class only remove its callback
         on_batch_size_set = [self.on_batch_size_set]
         on_cpu_count_set = [self.on_cpu_count_set]
-
-    def on_cpu_count_set(self, pack, _, value):
-        self.stats["cpu"] += value
-
-    def on_batch_size_set(self, pack, _, value):
-        self.batch_size = value
-        self.stats["batch_size"] += value
 
     def convert(self):
         # TODO: this could be handled seemlessly on the loading part
@@ -325,14 +331,23 @@ class MemoryUsageExtractor(ValidationLayer):
     
                 config["observations"] = obs
 
+    def benchstat(self, name):
+        if self.benchname != name:
+            self._benchstat[name] = BenchStats(name)
+            self.benchname = name
+        return self._benchstat[name]
+
+    def on_cpu_count_set(self, pack, _, value):
+        self.benchstat(pack.config["name"]).cpu += value
+
+    def on_batch_size_set(self, pack, _, value):
+        self.benchstat(pack.config["name"]).batch_size += value
+
     def on_start(self, entry):
         if self.filepath is None:
             return
 
-        self.benchname = entry.pack.config["name"]
-        self.max_usage = float("-inf")
-        self.peak_usage = float("-inf")
-        self.active_count[self.benchname] += 1
+        self.benchstat(entry.pack.config["name"]).active_count += 1
 
     def on_data(self, entry):
         if self.filepath is None:
@@ -341,86 +356,72 @@ class MemoryUsageExtractor(ValidationLayer):
         if entry.data is None:
             return
 
+        stat = self.benchstat(entry.pack.config["name"])
+
         # This is for jax
         if memorypeak := entry.data.get("memory_peak"):
-            self.stats["memorypeak"] += memorypeak
+            stat.peak_usage += memorypeak
             return
         
         if gpudata := entry.data.get("gpudata"):
             for device, data in gpudata.items():
                 usage, total = data.get("memory", [0, 1])
-                self.stats["memory"] += usage
+                stat.max_usage += usage
 
         if rate := entry.data.get("rate"):
-            self.stats["perf"] += rate
+            stat.perf += rate
  
     def on_stop(self, entry):
-        self.early_stopped = True
-
-    def max_memory_usage(self):
-        if self.stats["memorypeak"].current_count != 0:
-            return self.stats["memorypeak"].max
-        return self.stats["memory"].max
+        stat = self.benchstat(entry.pack.config["name"])
+        stat.early_stopped.append(True)
 
     def on_end(self, entry):
         if self.filepath is None:
             return
 
-        if self.benchname is None:
-            syslog("MemoryUsageExtractor: Skipping missing benchmark {}", entry)
-            return
+        stats = self.benchstat(entry.pack.config["name"])
 
-        if self.batch_size is None:
+        if stats.batch_size.current_count <= 0 and int(stats.batch_size.avg) == 0:
             syslog("MemoryUsageExtractor: Skipping missing batch_size {}", entry)
             return
 
-        if self.max_memory_usage() == float("-inf"):
+        if stats.max_memory_usage() == float("-inf"):
             syslog("MemoryUsageExtractor: Missing memory info {}", entry)
             return
     
         # Only update is successful
         rc = entry.data["return_code"]
-
-        if rc == 0 or self.early_stopped:
+        if rc == 0 or stats.has_stopped_early():
             rc = 0
 
-        self.rc[self.benchname] += rc
-        self.active_count[self.benchname] -= 1
+        stats.active_count -= 1
+        stats.rc.append(rc)
 
-
-        if self.active_count[self.benchname] <= 0:
-            print(self.rc)
-            if self.rc[self.benchname] == 0:
-                self.push_observation()
+        if stats.active_count <= 0:
+            if sum(stats.rc) == 0:
+                self.push_observation(stats)
             else:
-                syslog("MemoryUsageExtractor: Could not add scaling data because of a failure {}", self.benchname)
+                syslog("MemoryUsageExtractor: Could not add scaling data because of a failure {}", stats.benchname)
 
-            self.benchname = None
-            self.batch_size = None
-            self.stats = defaultdict(lambda: StatStream(drop_first_obs=0))
-            self.max_usage = float("-inf")
-            self.peak_usage = float("-inf")
-            # avoid losing results
             try:
                 self.save()
             except Exception as err:
                 print(f"MemoryUsageExtractor: Could not save scaling file because of {err}")
 
-    def push_observation(self):
-        config = self.memory.setdefault(self.benchname, dict())
+    def push_observation(self, stats):
+        config = self.memory.setdefault(stats.benchname, dict())
         observations = config.setdefault("observations", [])
 
         obs = {
-            "cpu": int(self.stats["cpu"].avg),
-            "batch_size": int(self.stats["batch_size"].avg),
-            "memory": f"{int(self.stats['memory'].max)} MiB",
-            "perf": float(f"{self.stats['perf'].avg:.2f}"),
+            "cpu": int(stats.cpu.avg),
+            "batch_size": int(stats.batch_size.avg),
+            "memory": f"{int(stats.max_usage.max)} MiB",
+            "perf": float(f"{stats.perf.avg:.2f}"),
             "time": int(time.time())
         }
 
-        if memorypeak := self.stats.pop("memorypeak", None):
-            if memorypeak.current_count != 0:
-                obs["memory"] = f"{int(memorypeak.max)} MiB",
+        if stats.peak_usage.current_count > 0:
+            obs["memory"] = f"{int(stats.peak_usage.max)} MiB",
 
         observations.append(obs)
         config["observations"] = list(sorted(observations, key=lambda x: x["batch_size"]))
@@ -431,6 +432,10 @@ class MemoryUsageExtractor(ValidationLayer):
                 yaml.dump(self.memory, file, Dumper=compact_dump())
 
     def report(self, *args):
+        for name, stats in self._benchstat.items():
+            if stats.active_count > 0:
+                syslog("MemoryUsageExtractor: Could not add scaling data because bench never ended {}", stats.benchname)
+
         self.save()
 
 def arch_to_device(arch):
@@ -606,11 +611,11 @@ def deduplicate_observation(scaling):
                     lastest_time = max(lastest_time, obs["time"])
 
             should_generate_aggregate = (
-                (perf_stat.count > 1 and memory_stat.count > 1) and 
+                (perf_stat.current_count > 1 and memory_stat.current_count > 1) and 
                 (memory_stat.avg > 0 and memory_stat.sd / memory_stat.avg < 0.1) and 
                 (perf_stat.avg > 0   and perf_stat.sd   / perf_stat.avg   < 0.1)
             )
-            should_generate_single = perf_stat.count == 1 and perf_stat.avg > 0 and memory_stat.count == 1
+            should_generate_single = perf_stat.current_count == 1 and perf_stat.avg > 0 and memory_stat.current_count == 1
 
             if should_generate_aggregate or should_generate_single:
                 # If observation are similar-ish merge them into one
@@ -623,8 +628,8 @@ def deduplicate_observation(scaling):
                 })
             else:
                 if (not should_generate_aggregate) and perf_stat.avg > 0:
-                    syslog("Could not merge observation, significant differences because (Mem: {:.2f} < 0.1) and (Perf: {:.2f} < 0.1)",
-                         memory_stat.sd / memory_stat.avg, perf_stat.sd / perf_stat.avg)
+                    syslog("{}: could not merge observation, significant differences because (Mem: {:.2f} < 0.1) and (Perf: {:.2f} < 0.1)",
+                         bench, memory_stat.sd / memory_stat.avg, perf_stat.sd / perf_stat.avg)
                 
                 for obs in data:
                     if obs["perf"] > 0:

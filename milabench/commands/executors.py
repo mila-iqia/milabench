@@ -72,6 +72,9 @@ async def trigger_exceptions(futures, packs):
                 for l in line.split("\n"):
                     await pack.send(event="line", data=l, pipe="stderr")
 
+            # ---
+            # ValueError: filedescriptor out of range in select()
+            
             # also send the error
             await pack.send(event="error", data={
                 "type": type(exc).__name__, 
