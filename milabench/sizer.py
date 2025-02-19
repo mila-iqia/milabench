@@ -415,7 +415,7 @@ class MemoryUsageExtractor(ValidationLayer):
             "batch_size": int(self.stats["batch_size"].avg),
             "memory": f"{int(self.stats['memory'].max)} MiB",
             "perf": float(f"{self.stats['perf'].avg:.2f}"),
-            "time": time.time()
+            "time": int(time.time())
         }
 
         if memorypeak := self.stats.pop("memorypeak", None):
@@ -495,8 +495,8 @@ def new_argument_resolver(pack):
         val = default
 
         if gpu_opt.enabled:
-            if gpu_opt.add is not None and isinstance(gpu_opt.add, int):
-                val = max(1, default + gpu_opt.add)
+            if (gpu_opt.add is not None or gpu_opt.mult is not None):
+                val = max(1, int(default * (gpu_opt.mult or 1)) + (gpu_opt.add or 0))
             else:
                 val = suggested_batch_size(pack)
                 assert val is not None
@@ -560,3 +560,97 @@ def resolve_argv(pack, argv):
     for i, arg in enumerate(argv):
         argv[i] = resolver(arg)
     return argv
+
+
+
+
+def deduplicate_observation(scaling):
+    deduplicated_scaling = {}
+
+    for bench, data in scaling.items():
+        if bench == "version":
+            deduplicated_scaling[bench] = data
+            continue
+
+        observations = data.get("observations", [])
+        duplicate_sets = defaultdict(list)
+
+        for obs in observations:
+            index = (obs["batch_size"], obs["cpu"])
+            duplicate_sets[index].append(obs)
+        
+        newobs = []
+
+        # Add back unique observation
+        for key in list(duplicate_sets.keys()):
+            if len(duplicate_sets[key]) == 1:
+                data = duplicate_sets.pop(key)[0]
+
+                if data["perf"] > 0:
+                    newobs.append(data)
+
+        # Merge duplicates
+        while len(duplicate_sets) > 0:
+            key, data = duplicate_sets.popitem()
+
+            memory_stat = StatStream(0)
+            perf_stat = StatStream(0)
+            lastest_time = 0
+
+            for obs in data:
+                perf = obs["perf"]
+
+                if perf > 0:
+                    memory_stat += int(obs["memory"].split(" ")[0])
+                    perf_stat += perf
+                    lastest_time = max(lastest_time, obs["time"])
+
+            should_generate_aggregate = (
+                (perf_stat.count > 1 and memory_stat.count > 1) and 
+                (memory_stat.avg > 0 and memory_stat.sd / memory_stat.avg < 0.1) and 
+                (perf_stat.avg > 0   and perf_stat.sd   / perf_stat.avg   < 0.1)
+            )
+            should_generate_single = perf_stat.count == 1 and perf_stat.avg > 0 and memory_stat.count == 1
+
+            if should_generate_aggregate or should_generate_single:
+                # If observation are similar-ish merge them into one
+                newobs.append({
+                    "batch_size": key[0], 
+                    "cpu": key[1],
+                    "memory": f"{int(memory_stat.avg)} MiB",
+                    "perf": int(perf_stat.avg * 100) / 100,
+                    "time": int(lastest_time)
+                })
+            else:
+                if (not should_generate_aggregate) and perf_stat.avg > 0:
+                    syslog("Could not merge observation, significant differences because (Mem: {:.2f} < 0.1) and (Perf: {:.2f} < 0.1)",
+                         memory_stat.sd / memory_stat.avg, perf_stat.sd / perf_stat.avg)
+                
+                for obs in data:
+                    if obs["perf"] > 0:
+                        newobs.append(obs)
+
+        # make sure observations are sorted
+        newobs = list(sorted(newobs, key=lambda x: x["batch_size"]))
+
+        deduplicated_scaling[bench] = {
+            "observations": newobs
+        }
+
+    return deduplicated_scaling
+
+
+def deduplicate_scaling_file(filepath):
+    with open(filepath, "r") as fp:
+        memory = yaml.safe_load(fp) or {}
+
+    newmem = deduplicate_observation(memory)
+
+    with open(f"{filepath}.new.yml", "w") as fp:
+        yaml.dump(newmem, fp, Dumper=compact_dump())
+
+
+
+if __name__ == "__main__":
+    filepath = "/home/testroot/milabench/config/scaling/MI325.yaml"
+    deduplicate_scaling_file(filepath)
