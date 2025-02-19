@@ -149,6 +149,9 @@ def cli_run(args=None):
         mp = get_multipack(run_name=run_name)
         
         with apply_system(conf):
-            success += run(mp, args, run_name)
-    
+            try:
+                success += run(mp, args, run_name)
+            except AssertionError as err:
+                print(err)
+
     return success
