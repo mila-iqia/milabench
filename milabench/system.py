@@ -209,13 +209,17 @@ class SizerOptions:
     save: str = defaultfield("sizer.save", str, None)
 
     @property
+    def autoscale(self):
+        return self.enabled and self.multiple or self.capacity
+
+    @property
     def enabled(self):
         return self.auto > 0
 
     @staticmethod
     def instance():
         system_config = system_global.get() or {}
-        instance =  SizerOptions(**system_config.get("options", {}).get("sizer", {}))
+        instance = SizerOptions(**system_config.get("options", {}).get("sizer", {}))
         return instance
 
     @property
