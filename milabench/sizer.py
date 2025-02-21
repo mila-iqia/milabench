@@ -32,6 +32,14 @@ def gpu_name():
         return None
 
 
+def gpu_capacity():
+    try:
+        info = get_gpu_info()
+        values = list(info["gpus"].values())
+        return values[0]["memory"]["total"]
+    except:
+        return None
+
 def get_scaling_config():
     name = gpu_name()
 
@@ -132,6 +140,9 @@ class Sizer:
         if self.options.capacity is not None:
             capacity = self.options.capacity
 
+        if capacity == "All":
+            capacity = f"{gpu_capacity()} MiB"
+
         if isinstance(capacity, str):
             capacity = to_octet(capacity)
 
@@ -141,13 +152,14 @@ class Sizer:
         capacity = self.get_capacity(capacity)
 
         if capacity is None:
+            syslog("Capacity is missing")
             return None
 
         config = self.benchscaling(benchmark)
         model = config.get("model", None)
 
         if model is None:
-            print(f"Missing batch-size model for {benchmark.config['name']}")
+            syslog(f"Missing batch-size model for {benchmark.config['name']}")
             return 1
 
         if "model" in config:
@@ -156,7 +168,7 @@ class Sizer:
             mem, size = self._scaling_v2(config)
 
         if len(mem) == 1:
-            print(f"Not enough data for {benchmark.config['name']}")
+            syslog(f"Not enough data for {benchmark.config['name']}")
             return 1
         # This does not extrapolate
         # int(np.interp(capacity, mem, size))
@@ -195,6 +207,7 @@ class Sizer:
         if self.options.autoscale:
             return self.auto_size(benchmark, capacity)
 
+        syslog("Could not find auto scale the batch size")
         return None
 
 
@@ -232,6 +245,9 @@ def suggested_batch_size(pack):
 
     system = system_global.get()
     capacity = system.get("gpu", dict()).get("capacity")
+
+    if capacity is None:
+        capacity = f"{gpu_capacity()} MiB"
 
     return sizer.size(pack, capacity)
 

@@ -108,6 +108,7 @@ def multirun():
             
             ctx = unflatten(run)
             ctx['time'] = int(time.time())
+            
             run_name = template_name.format(**ctx)
             
             yield run_name, run
