@@ -672,6 +672,40 @@ def deduplicate_scaling_file(filepath):
 
 
 
+def scaling_to_csv(filepath):
+    import csv
+
+    with open(filepath, "r") as fp:
+        memory = yaml.safe_load(fp) or {}
+
+
+    with open("scaling.csv", "w") as file:
+        writer = csv.writer(file)
+        row_count = 0
+
+        for k, items in memory.items():
+            if k == "version":
+                continue
+        
+
+            rows = items["observations"]
+            
+            for row in rows:
+                row["bench"] = k
+
+                sorted_row = sorted(list(row.items()), key=lambda x: x[0])
+
+                value_row = list(map(lambda x: x[1], sorted_row))
+
+                if row_count == 0:
+                    header_row = list(map(lambda x: x[0], sorted_row))
+                    writer.writerow(header_row)
+
+                writer.writerow(value_row)
+                row_count += 1
+    
+
 if __name__ == "__main__":
     filepath = "/home/testroot/milabench/config/scaling/MI325.yaml"
-    deduplicate_scaling_file(filepath)
+    scaling_to_csv(filepath)
+    # deduplicate_scaling_file(filepath)
