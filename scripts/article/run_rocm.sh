@@ -43,6 +43,43 @@ export PYTORCH_ROCM_ARCH="$GPU"
 
 ARGS="$@"
 
+#
+# DOES NOT WORK with autotune
+#
+export XLA_FLAGS=--xla_gpu_autotune_level=0
+
+install_jax() {
+    (
+        . $BENCHMARK_VENV/bin/activate
+    
+        export MAX_JOBS=24
+
+        # Jax 0.4.30
+        # https://github.com/ROCm/jax/releases/tag/rocm-jaxlib-v0.4.30
+        # pip install https://github.com/ROCm/jax/releases/download/rocm-jaxlib-v0.4.30/jaxlib-0.4.30+rocm611-cp310-cp310-manylinux2014_x86_64.whl
+        # pip install https://github.com/ROCm/jax/archive/refs/tags/rocm-jaxlib-v0.4.30.tar.gz
+
+        # Jax 0.5
+        # https://github.com/ROCm/jax/releases/download/rocm-jax-v0.5.0/jaxlib-0.5.0-cp310-cp310-manylinux_2_28_x86_64.whl
+
+        pip install https://github.com/ROCm/jax/archive/refs/tags/rocm-jax-v0.5.0.tar.gz
+
+        pip install https://github.com/ROCm/jax/releases/download/rocm-jax-v0.5.0/jaxlib-0.5.0-cp310-cp310-manylinux_2_28_x86_64.whl
+        pip install https://github.com/ROCm/jax/releases/download/rocm-jax-v0.5.0/jax_rocm60_pjrt-0.5.0-py3-none-manylinux_2_28_x86_64.whl \
+                    https://github.com/ROCm/jax/releases/download/rocm-jax-v0.5.0/jax_rocm60_plugin-0.5.0-cp310-cp310-manylinux_2_28_x86_64.whl
+                
+        # pip install jax[rocm]
+        # pip freeze | grep jax
+    )
+}
+
+install_graph() {
+    pip uninstall torch_cluster torch_scatter torch_sparse -y
+    FORCE_ONLY_CUDA=1 pip install -U -v --use-pep517 --no-build-isolation git+https://github.com/rusty1s/pytorch_cluster.git
+    FORCE_ONLY_CUDA=1 pip install -U -v --use-pep517 --no-build-isolation git+https://github.com/rusty1s/pytorch_scatter.git
+    FORCE_ONLY_CUDA=1 pip install -U -v --use-pep517 --no-build-isolation git+https://github.com/rusty1s/pytorch_sparse.git
+}
+
 install_prepare() {
     mkdir -p $MILABENCH_WORDIR
     cd $MILABENCH_WORDIR
@@ -89,22 +126,17 @@ install_prepare() {
         #
         which pip
         export MAX_JOBS=24
-        # https://github.com/ROCm/jax/releases/download/rocm-jax-v0.5.0/jaxlib-0.5.0-cp310-cp310-manylinux_2_28_x86_64.whl
 
-        # https://github.com/ROCm/jax/releases/tag/rocm-jaxlib-v0.4.30
-        # pip install https://github.com/ROCm/jax/releases/download/rocm-jaxlib-v0.4.30/jaxlib-0.4.30+rocm611-cp310-cp310-manylinux2014_x86_64.whl
-        # pip install https://github.com/ROCm/jax/archive/refs/tags/rocm-jaxlib-v0.4.30.tar.gz
+        install_jax
 
-        # pip uninstall torch_cluster torch_scatter torch_sparse -y
-        # FORCE_ONLY_CUDA=1 pip install -U -v --use-pep517 --no-build-isolation git+https://github.com/rusty1s/pytorch_cluster.git
-        # FORCE_ONLY_CUDA=1 pip install -U -v --use-pep517 --no-build-isolation git+https://github.com/rusty1s/pytorch_scatter.git
-        # FORCE_ONLY_CUDA=1 pip install -U -v --use-pep517 --no-build-isolation git+https://github.com/rusty1s/pytorch_sparse.git
+        # install_graph
 
         # takes forever to compile
         # https://github.com/ROCm/xformers
         pip uninstall xformers -y
         # pip install "torch<2.6" --index-url https://download.pytorch.org/whl/rocm6.2
         # pip install xformers==0.0.29 --index-url https://download.pytorch.org/whl/rocm6.2
+
         pip install -v -U --no-build-isolation --no-deps git+https://github.com/ROCm/xformers.git@develop#egg=xformers
         # pip install -v -U --no-build-isolation --no-deps git+https://github.com/facebookresearch/xformers.git
         # pip install xformers -U --index-url https://download.pytorch.org/whl/rocm6.1
@@ -130,6 +162,9 @@ else
     . $MILABENCH_WORDIR/env/bin/activate
 fi
 
+
+
+
 # (
 #     # . $BENCHMARK_VENV/bin/activate
 #     # pip install xformers --index-url https://download.pytorch.org/whl/rocm6.1
@@ -142,11 +177,11 @@ fi
 
 #
 #   Run the benchmakrs
-milabench run $ARGS --exclude llm-full-mp-gpus,nobatch --system /home/testroot/system.yaml
+milabench run $ARGS # --system /home/testroot/system.yaml
 
 
 #
 #   Display report
-milabench report --runs $MILABENCH_WORDIR/results/runs
+# milabench report --runs $MILABENCH_WORDIR/results/runs
 
 # rocm

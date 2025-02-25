@@ -20,7 +20,7 @@ def memory_peak_fetcher():
             # dqn.D0 [stdout]   largest_free_block_bytes: 0.0 MiB
             # dqn.D0 [stdout]   pool_bytes: 60832.359375 MiB
             # dqn.D0 [stdout]   peak_pool_bytes: 60832.359375 MiB
-
+            # 
             # device_name = str(device)
             mem = device.memory_stats().get("peak_bytes_in_use", 0) / (1024 ** 2)
             max_mem = max(mem, max_mem)
