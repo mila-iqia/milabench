@@ -119,7 +119,8 @@ _timm:
     --data-dir: "{milabench_data}"
     --dataset: "FakeImageNet"
     --workers: "auto({n_worker}, 8)"
-
+    --batch-size: "auto_batch(128)"
+  
 _accelerate_opt:
   inherits: _defaults
   tags:
@@ -242,6 +243,11 @@ resnet152-ddp-gpus:
     - resnet
     - multigpu
   
+  voir:
+    options:
+      stop: 60
+      gpu_poll: 0.1
+
   argv:
     --model: resnet152
     --batch-size: "auto_batch(256)"
@@ -258,7 +264,7 @@ _convnext_large-base:
     - monogpu
   argv:
     --model: convnext_large
-    --batch-size: 128
+    --batch-size: "auto_batch(128)"
   voir:
     options:
       stop: 30
@@ -568,7 +574,7 @@ llm-lora-single:
 
   argv:
     bench/lora_finetune_single_device.py: true
-    --config: "{milabench_code}/configs/llama3_8B_lora_single_device.yaml"
+    --config: "{milabench_code}/configs/llama3_8B_lora.yaml"
     epochs=1: true
     output_dir={milabench_extra}/output: true
     tokenizer.path={milabench_data}/llama3_8B/original/tokenizer.model: true
@@ -594,7 +600,7 @@ llm-lora-ddp-gpus:
   argv:
     #"{milabench_code}/bench/lora_finetune_distributed.py": true
     bench/lora_finetune_distributed.py: true
-    --config: "{milabench_code}/configs/llama3_8B_lora_single_device.yaml"
+    --config: "{milabench_code}/configs/llama3_8B_lora.yaml"
     epochs=1: true
     output_dir={milabench_extra}/output: true
     tokenizer.path={milabench_data}/llama3_8B/original/tokenizer.model: true
@@ -620,7 +626,7 @@ llm-lora-ddp-nodes:
   url: https://huggingface.co/meta-llama/Llama-3.1-8B
   argv:
     bench/lora_finetune_distributed.py: true
-    --config: "{milabench_code}/configs/llama3_8B_lora_single_device.yaml"
+    --config: "{milabench_code}/configs/llama3_8B_lora.yaml"
     epochs=1: true
     output_dir={milabench_extra}/output: true
     tokenizer.path={milabench_data}/llama3_8B/original/tokenizer.model: true

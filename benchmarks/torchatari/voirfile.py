@@ -23,7 +23,7 @@ class Config:
     stop: int = 20
 
     # Number of seconds between each gpu poll
-    gpu_poll: int = 3
+    gpu_poll: int = 1
 
 
 @configurable
@@ -34,14 +34,14 @@ def instrument_main(ov, options: Config):
     voirfile_monitor(ov, options)
 
     yield ov.phases.load_script
-    
+
     step_per_iteration = 0
-    
+
     def fetch_args(args):
         nonlocal step_per_iteration
         step_per_iteration = args.num_envs * args.num_steps
         return args
-        
+
     def batch_size(x):
         return step_per_iteration
 
@@ -49,10 +49,10 @@ def instrument_main(ov, options: Config):
         earlystop=options.stop + options.skip,
         batch_size_fn=batch_size,
     )
-    
+
     probe = ov.probe("//main > args", overridable=True)
     probe['args'].override(fetch_args)
-    
+
     # measure the time it took to execute the body
     probe = ov.probe("//main > iterations", overridable=True)
     probe['iterations'].override(observer.loader)
@@ -68,7 +68,7 @@ def instrument_main(ov, options: Config):
             if name == "losses/value_loss":
                 observer.record_loss(values[0])
             old_add_scalar(name, *values)
-        
+
         writer.add_scalar = add_scalar
         return writer
 
@@ -77,7 +77,7 @@ def instrument_main(ov, options: Config):
 
     probe = ov.probe("//main > optimizer", overridable=True)
     probe['optimizer'].override(observer.optimizer)
-    
+
     #
     # Run the benchmark
     #

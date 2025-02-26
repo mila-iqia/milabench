@@ -44,7 +44,7 @@ dataset:
   packed: False  # True increases speed
 seed: null
 shuffle: True
-batch_size: 1
+batch_size: 2
 
 # Optimizer and Scheduler
 optimizer:
@@ -77,8 +77,8 @@ log_peak_memory_stats: True
 device: cuda
 dtype: bf16
 enable_activation_checkpointing: True  # True reduces memory
-enable_activation_offloading: True  # True reduces memory
-fsdp_cpu_offload: True
+enable_activation_offloading: False  # True reduces memory
+fsdp_cpu_offload: False
 # custom_sharded_layers: ['tok_embeddings', 'output']  # Layers to shard separately (useful for large vocab size models). Lower Memory, but lower speed.
 
 

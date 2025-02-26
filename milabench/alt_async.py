@@ -123,7 +123,7 @@ class FeedbackEventLoop(type(asyncio.get_event_loop())):
             yield from self.run_until_complete(coro)
         except BaseException as exc:
             for mx in self._multiplexers:
-                for proc, (streams, argv, info) in mx.processes.items():
+                for proc, (streams, argv, info, w) in mx.processes.items():
                     yield self._callback(
                         mx.constructor(
                             event="error",
