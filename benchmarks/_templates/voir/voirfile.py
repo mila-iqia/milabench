@@ -24,7 +24,7 @@ class Config:
     stop: int = 20
 
     # Number of seconds between each gpu poll
-    gpu_poll: int = 3
+    gpu_poll: int = 1
 
 
 @configurable
@@ -59,7 +59,7 @@ def instrument_main(ov, options: Config):
 
     probe = ov.probe("//my_optimizer_creator() as optimizer", overridable=True)
     probe['optimizer'].override(observer.optimizer)
-    
+
     #
     # Run the benchmark
     #

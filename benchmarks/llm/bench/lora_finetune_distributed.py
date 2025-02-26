@@ -134,6 +134,8 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
         self._device = acc.fetch_device(int(os.getenv("LOCAL_RANK", "0")))
         self._dtype = training.get_dtype(cfg.dtype, device=self._device)
 
+        print(self._device)
+
         if self._dtype == torch.float16:
             raise ValueError(
                 "full fp16 training is not supported with this recipe. Please use bf16 or fp32 instead."

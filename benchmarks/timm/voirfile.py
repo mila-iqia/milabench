@@ -23,7 +23,7 @@ class Config:
     stop: int = 20
 
     # Number of seconds between each gpu poll
-    gpu_poll: int = 3
+    gpu_poll: int = 1
 
 
 @configurable
@@ -36,7 +36,7 @@ def instrument_main(ov, options: Config):
     from benchmate.observer import BenchObserver
 
     observer = BenchObserver(
-        accelerator.Event, 
+        accelerator.Event,
         earlystop=options.stop + options.skip,
         backward_callback=accelerator.mark_step,
         step_callback=accelerator.mark_step,
@@ -65,8 +65,8 @@ def instrument_main(ov, options: Config):
         log(
             "value", "progress", "rate", "units", "loss", "gpudata", context="task"
         ),
-        monitor(poll_interval=options.gpu_poll) 
-    ] 
+        monitor(poll_interval=options.gpu_poll)
+    ]
 
     if int(os.getenv("RANK", 0)) == 0:
         instruments.append(early_stop(n=options.stop, key="rate", task="train", signal="stop"))

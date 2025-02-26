@@ -23,7 +23,7 @@ class Config1:
     stop: int = 20
 
     # Number of seconds between each gpu poll
-    gpu_poll: int = 3
+    gpu_poll: int = 1
 
 
 def lora_single_device(ov, observer):
@@ -32,7 +32,7 @@ def lora_single_device(ov, observer):
             sampler, loader = args
             wrapped = observer.loader(loader, custom_step=True)
             return sampler, wrapped
-        
+
         def wrap_lr_scheduler(scheduler):
             original = scheduler.step
 
@@ -42,7 +42,7 @@ def lora_single_device(ov, observer):
 
             scheduler.step = newstep
             return scheduler
-        
+
         def wrap_loss(loss):
             observer.record_loss(loss)
             observer.step()
@@ -66,7 +66,7 @@ def lora_distributed(ov, observer):
         sampler, loader = args
         wrapped = observer.loader(loader, custom_step=True)
         return sampler, wrapped
-    
+
     def wrap_lr_scheduler(scheduler):
         original = scheduler.step
 
@@ -76,7 +76,7 @@ def lora_distributed(ov, observer):
 
         scheduler.step = newstep
         return scheduler
-    
+
     def wrap_loss(loss):
         observer.record_loss(loss)
         observer.step()

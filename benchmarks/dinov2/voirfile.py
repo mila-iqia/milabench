@@ -23,7 +23,7 @@ class Config:
     stop: int = 60
 
     # Number of seconds between each gpu poll
-    gpu_poll: int = 3
+    gpu_poll: int = 1
 
 
 def populate_slurm():
@@ -79,7 +79,7 @@ def instrument_main(ov, options: Config):
 
     probe = ov.probe("/dinov2.train.train/build_optimizer() as optimizer", overridable=True)
     probe['optimizer'].override(observer.optimizer)
-    
+
     #
     # Run the benchmark
     #
@@ -93,10 +93,10 @@ def instrument_main(ov, options: Config):
 def code_patch(ov):
     # FIX dinov2 code using ptera
     import os
-    
+
     from torchvision.datasets import ImageFolder
     import torch
-    import dinov2.train.train 
+    import dinov2.train.train
 
     class SSLMetaArch2(dinov2.train.train.SSLMetaArch):
         def fsdp_synchronize_streams(self):

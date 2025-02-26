@@ -108,6 +108,7 @@ def multirun():
             
             ctx = unflatten(run)
             ctx['time'] = int(time.time())
+            
             run_name = template_name.format(**ctx)
             
             yield run_name, run
@@ -182,10 +183,16 @@ def default_save_location():
 @dataclass
 class SizerOptions:
     # overrides the batch size to use for all benchmarks
-    size: int = defaultfield("sizer.batch_size", int, None)
+    batch_size: int = defaultfield("sizer.batch_size", int, None)
+
+    # Add a fixed number to the current batch size
+    add: int = defaultfield("sizer.add", int, None)
+
+    # Add a fixed number to the current batch size
+    mult: int = defaultfield("sizer.mult", int, None)
 
     # Enables auto batch resize
-    autoscale: bool = defaultfield("sizer.auto", int, 0)
+    auto: bool = defaultfield("sizer.auto", int, 0)
 
     # Constraint the batch size to be a multiple of a number
     multiple: int = defaultfield("sizer.multiple", int, 8)
@@ -203,20 +210,34 @@ class SizerOptions:
     save: str = defaultfield("sizer.save", str, None)
 
     @property
+    def autoscale(self):
+        return self.enabled and self.multiple or self.capacity
+
+    @property
     def enabled(self):
-        return self.autoscale > 0
+        return self.auto > 0
+
+    @staticmethod
+    def instance():
+        system_config = system_global.get() or {}
+        instance = SizerOptions(**system_config.get("options", {}).get("sizer", {}))
+        return instance
+
+    @property
+    def size(self):
+        return self.batch_size
 
 @dataclass
 class CPUOptions:
-    enabled: bool = defaultfield("cpu.auto", bool, False)
+    enabled: bool = defaultfield("cpu.enabled", bool, False)
 
     total_count: bool = defaultfield("cpu.total_count", int, None)
 
     # max number of CPU per GPU
-    cpu_max: int = defaultfield("cpu.max", int, 16)
+    max: int = defaultfield("cpu.max", int, 16)
 
     # min number of CPU per GPU
-    cpu_min: int = defaultfield("cpu.min", int, 2)
+    min: int = defaultfield("cpu.min", int, 2)
 
     # reserved CPU cores (i.e not available for the benchmark)
     reserved_cores: int = defaultfield("cpu.reserved_cores", int, 0)
@@ -224,6 +245,20 @@ class CPUOptions:
     # Number of workers (ignores cpu_max and cpu_min)
     n_workers: int = defaultfield("cpu.n_workers", int)
 
+    @staticmethod
+    def instance():
+        system_config = system_global.get() or {}
+        instance =  CPUOptions(**system_config.get("options", {}).get("cpu", {}))
+        return instance
+
+    @property
+    def cpu_max(self):
+        return self.max
+
+    @property
+    def cpu_min(self):
+        return self.min
+    
 
 @dataclass
 class DatasetConfig:
