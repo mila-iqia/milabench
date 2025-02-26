@@ -177,7 +177,7 @@ fi
 
 #
 #   Run the benchmakrs
-milabench run $ARGS # --system /home/testroot/system.yaml
+milabench run $ARGS --system /home/testroot/system.yaml
 
 
 #
