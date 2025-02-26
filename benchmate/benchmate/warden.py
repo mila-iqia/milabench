@@ -75,8 +75,14 @@ def _default():
 def _rocm_parse_processes():
     cmd = ["rocm-smi", f"--showpids", "--json"]
     output = subprocess.check_output(cmd, text=True)
-    data = json.loads(output)
+    
     info = []
+
+    try:
+        data = json.loads(output)
+    except json.decoder.JSONDecodeError:
+        return info
+
     for key, data in data.get("system", {}).items():
         process_name, ngpu, vram, sdma, cu_occupancy = data.split(",")
         pid = key[3:]
