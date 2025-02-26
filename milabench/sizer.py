@@ -707,5 +707,5 @@ def scaling_to_csv(filepath):
 
 if __name__ == "__main__":
     filepath = "/home/testroot/milabench/config/scaling/MI325.yaml"
-    scaling_to_csv(filepath)
-    # deduplicate_scaling_file(filepath)
+    # scaling_to_csv(filepath)
+    deduplicate_scaling_file(filepath)
