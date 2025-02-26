@@ -4,8 +4,6 @@ set -ex
 
 # sudo usermod -a -G render,video $LOGNAME
 # sudo chmod u+s /opt/rocm-6.2.2/lib/llvm/bin/amdgpu-arch
-
-
 # sudo apt-get install g++-12 libstdc++-12-dev
 
 
@@ -23,23 +21,12 @@ else
     export MILABENCH_CONFIG="$MILABENCH_SOURCE/config/standard.yaml"
 fi
 
-
 export GPU="$(/opt/rocm/lib/llvm/bin/amdgpu-arch | head -n 1)"
 export TORCH_ROCM_ARCH_LIST="$GPU"
 export ROCM_TARGETS="$GPU"
 export PYTORCH_ROCM_ARCH="$GPU"
+export MAX_JOBS=24
 
-if [ -z "${MILABENCH_SOURCE}" ]; then
-    export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/standard.yaml"
-else
-    export MILABENCH_CONFIG="$MILABENCH_SOURCE/config/standard.yaml"
-fi
-
-
-export GPU="$(/opt/rocm/lib/llvm/bin/amdgpu-arch | head -n 1)"
-export TORCH_ROCM_ARCH_LIST="$GPU"
-export ROCM_TARGETS="$GPU"
-export PYTORCH_ROCM_ARCH="$GPU"
 
 ARGS="$@"
 
@@ -51,8 +38,6 @@ export XLA_FLAGS=--xla_gpu_autotune_level=0
 install_jax() {
     (
         . $BENCHMARK_VENV/bin/activate
-    
-        export MAX_JOBS=24
 
         # Jax 0.4.30
         # https://github.com/ROCm/jax/releases/tag/rocm-jaxlib-v0.4.30
@@ -80,37 +65,9 @@ install_graph() {
     FORCE_ONLY_CUDA=1 pip install -U -v --use-pep517 --no-build-isolation git+https://github.com/rusty1s/pytorch_sparse.git
 }
 
-install_prepare() {
-    mkdir -p $MILABENCH_WORDIR
-    cd $MILABENCH_WORDIR
 
-    virtualenv $MILABENCH_WORDIR/env
-
-    if [ -z "${MILABENCH_SOURCE}" ]; then
-        if [ ! -d "$MILABENCH_WORDIR/milabench" ]; then
-            git clone https://github.com/mila-iqia/milabench.git -b rocm
-        fi
-        export MILABENCH_SOURCE="$MILABENCH_WORDIR/milabench"
-    fi
-
-    . $MILABENCH_WORDIR/env/bin/activate
-    pip install -e $MILABENCH_SOURCE
-
-    
-    #
-    # Install milabench's benchmarks in their venv
-    #
-    # pip install torch --index-url https://download.pytorch.org/whl/rocm6.1
-    # milabench pin --variant rocm --from-scratch $ARGS 
-    milabench install $ARGS 
-
-    #
-    # Override/add package to milabench venv here
-    #
-    which pip
-    pip uninstall pynvml
-
-    (
+install_override() {
+  (
         . $BENCHMARK_VENV/bin/activate
 
         pip install ninja
@@ -133,19 +90,51 @@ install_prepare() {
 
         # takes forever to compile
         # https://github.com/ROCm/xformers
-        pip uninstall xformers -y
+        # pip uninstall xformers -y
         # pip install "torch<2.6" --index-url https://download.pytorch.org/whl/rocm6.2
         # pip install xformers==0.0.29 --index-url https://download.pytorch.org/whl/rocm6.2
-        pip install -v -U --no-build-isolation --no-deps git+https://github.com/ROCm/xformers.git@develop#egg=xformers
+        # pip install -v -U --no-build-isolation --no-deps git+https://github.com/ROCm/xformers.git@develop#egg=xformers
         # pip install -v -U --no-build-isolation --no-deps git+https://github.com/facebookresearch/xformers.git
         # pip install xformers -U --index-url https://download.pytorch.org/whl/rocm6.1
 
         pip uninstall -y flash-attention
         pip install -v -U --no-build-isolation --use-pep517 --no-deps git+https://github.com/ROCm/flash-attention.git 
         pip uninstall pynvml nvidia-ml-py -y
-
         pip install einops
     )
+}
+
+install_prepare() {
+    mkdir -p $MILABENCH_WORDIR
+    cd $MILABENCH_WORDIR
+
+    virtualenv $MILABENCH_WORDIR/env
+
+    if [ -z "${MILABENCH_SOURCE}" ]; then
+        if [ ! -d "$MILABENCH_WORDIR/milabench" ]; then
+            git clone https://github.com/mila-iqia/milabench.git -b rocm
+        fi
+        export MILABENCH_SOURCE="$MILABENCH_WORDIR/milabench"
+    fi
+
+    . $MILABENCH_WORDIR/env/bin/activate
+    pip install -e $MILABENCH_SOURCE
+
+    
+    #
+    # Install milabench's benchmarks in their venv
+    #
+    # pip install torch --index-url https://download.pytorch.org/whl/rocm6.1
+    milabench pin --variant rocm --from-scratch $ARGS 
+    milabench install $ARGS 
+
+    #
+    # Override/add package to milabench venv here
+    #
+    which pip
+    pip uninstall pynvml
+
+    install_override
 
     pip uninstall pynvml nvidia-ml-py -y
     #
