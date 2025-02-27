@@ -22,12 +22,17 @@ ROOT = os.path.dirname(__file__)
 default_scaling_folder = os.path.join(ROOT, "..", "config", "scaling")
 default_scaling_config = os.path.join(default_scaling_folder, "default.yaml")
 
+gpu_name_to_file = {
+    "AMD Instinct MI325 OAM": "MI325",
+}
+
 
 def gpu_name():
     try:
         info = get_gpu_info()
         values = list(info["gpus"].values())
-        return values[0]["product"]
+        n = values[0]["product"]
+        return gpu_name_to_file.get(n, n)
     except:
         return None
 
@@ -199,6 +204,7 @@ class Sizer:
     def optimized(self, benchmark, capacity):
         # Old V1 format
         config = self.benchscaling(benchmark)
+
         if "model" in config:
             return config["optimized"]
 
@@ -215,8 +221,8 @@ class Sizer:
         data = list(sorted(data, key=lambda x: x["perf"], reverse=True))
 
         for obs in data:
-            used_mem = to_octet(v["memory"])
-            if used_men < capacity:
+            used_mem = to_octet(obs["memory"])
+            if used_mem < capacity:
                 return int(obs["batch_size"])
         
         return None
