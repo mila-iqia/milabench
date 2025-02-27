@@ -167,13 +167,20 @@ def children_warden(enabled=True):
         yield
         return
 
-    yield
-
-    pid = os.getpid()
 
     def get_children():
         with open(f"/proc/{pid}/task/{pid}/children", "r") as f:
             return [int(c) for c in f.read().strip().split()]
+
+    prev = set(get_children())
+
+    def get_children():
+        with open(f"/proc/{pid}/task/{pid}/children", "r") as f:
+            return set([int(c) for c in f.read().strip().split()]) - prev
+
+    yield
+
+    pid = os.getpid()
 
     def wait_for_children():
         children = get_children()

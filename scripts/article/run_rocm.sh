@@ -118,6 +118,7 @@ install_prepare() {
     fi
 
     . $MILABENCH_WORDIR/env/bin/activate
+
     pip install -e $MILABENCH_SOURCE
 
     
@@ -154,19 +155,30 @@ fi
 
 
 
+(
+    . $MILABENCH_WORDIR/env/bin/activate
+    pip install git+https://github.com/breuleux/voir.git
+
+    (
+        . $BENCHMARK_VENV/bin/activate
+        pip install git+https://github.com/breuleux/voir.git
+    )
+
+)
+
 # (
 #     # . $BENCHMARK_VENV/bin/activate
 #     # pip install xformers --index-url https://download.pytorch.org/whl/rocm6.1
 # )
 
-# milabench install $ARGS --system $MILABENCH_WORDIR/system.yaml
+milabench prepare $ARGS # --system $MILABENCH_WORDIR/system.yaml
 
 # milabench prepare $ARGS # --system $MILABENCH_WORDIR/system.yaml
 # install_prepare
 
 #
 #   Run the benchmakrs
-# milabench run $ARGS # --system $MILABENCH_WORDIR/system.yaml
+milabench run $ARGS # --system $MILABENCH_WORDIR/system.yaml
 
 
 #
