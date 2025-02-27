@@ -73,7 +73,7 @@ def _default():
 
 
 def _rocm_parse_processes():
-    cmd = ["rocm-smi", f"--showpids", "--json"]
+    cmd = ["rocm-smi", f"--showpids", "--json", "--loglevel", "error"]
     output = subprocess.check_output(cmd, text=True)
     
     info = []
@@ -212,6 +212,17 @@ def children_warden(enabled=True):
 
     for child in children:
         os.kill(child, signal.SIGCONT)
+
+    count = 0
+    for child in children:
+        try:
+            pid, status = os.waitpid(child, os.WNOHANG)
+            count += 1
+        except:
+            pass
+
+    if count > 0:
+        syslog(f"{count}/{len(children)} reaped children")
 
 
 class GPUProcessWarden(BaseWarden):
