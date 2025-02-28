@@ -155,16 +155,17 @@ fi
 
 
 
-# (
-#     . $MILABENCH_WORDIR/env/bin/activate
-#     pip install git+https://github.com/breuleux/voir.git
+(
+    . $MILABENCH_WORDIR/env/bin/activate
+    pip install git+https://github.com/breuleux/voir.git
+    pip install -e /home/testroot/milabench/benchmate
+    (
+        . $BENCHMARK_VENV/bin/activate
+        pip install git+https://github.com/breuleux/voir.git
+        pip install -e /home/testroot/milabench/benchmate
+    )
 
-#     (
-#         . $BENCHMARK_VENV/bin/activate
-#         pip install git+https://github.com/breuleux/voir.git
-#     )
-
-# )
+)
 
 # (
 #     # . $BENCHMARK_VENV/bin/activate
