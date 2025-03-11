@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 import os
 import subprocess
+import shutil
+
 
 from coleo import Option, tooled
 
@@ -23,6 +25,9 @@ def arguments():
     return Arguments(network, local, remote_data)
 
 
+def is_installed(command):
+    return shutil.which(command) is not None
+
 @tooled
 def cli_shared_setup(args = None):
     
@@ -31,8 +36,12 @@ def cli_shared_setup(args = None):
     
     remote_code = os.path.join(args.network, "venv")
     local_code  = os.path.join(args.local, "venv")
+
     remote_data = os.path.join(args.network, "data")
     local_data  = os.path.join(args.local, "data")
+
+    remote_cache = os.path.join(args.network, "cache")
+    local_cache  = os.path.join(args.local, "cache")
 
     assert os.path.exists(remote_code), "missing venv, was milabench install run ?"
     assert os.path.exists(remote_data), "missing data, was milabench prepare run ?"
@@ -45,10 +54,26 @@ def cli_shared_setup(args = None):
         subprocess.check_call(untar)
     else:
         # rsync datasets & checkpoints to local disk
-        rsync = ["rsync", "-azh", "--info=progress2", "--partial", remote_data, args.local]
+
+        if is_installed("rclone"):
+            # --multi-thread-streams=32                     => Elapsed time:     17m29.2s | 428.337 GiB
+            # --multi-thread-streams=32 --transfers=16      => Elapsed time:      4m50.8s | 428.337 GiB
+            # --multi-thread-streams=32 --transfers=32      => Elapsed time:      2m36.8s | 428.337 GiB
+            # --multi-thread-streams=32 --transfers=64      => Elapsed time:      2m51.3s | 428.337 GiB
+            rsync = ["rclone", "copy", "--multi-thread-streams=32", "--transfers=32",  remote_data, local_data]
+        else:
+            rsync = ["rsync", "-azh", "--info=progress2", "--partial", remote_data, args.local]
+
         print(" ".join(rsync))
         subprocess.check_call(rsync)
 
+        if is_installed("rclone"):
+            rsync = ["rclone", "copy", "--multi-thread-streams=32", "--transfers=32", "--copy-links", remote_cache, local_cache]
+        else:
+            rsync = ["rsync", "-azh", "--info=progress2", "--partial", remote_cache, args.local]
+
+        print(" ".join(rsync))
+        subprocess.check_call(rsync)
     # create a soft link for the code
     try:
         os.symlink(remote_code, local_code, target_is_directory=True)
@@ -58,3 +83,10 @@ def cli_shared_setup(args = None):
     print("use for local excution of milabench")
     print("")
     print(f"    export MILABENCH_BASE={args.local}")
+
+
+
+
+# mkdir -p $SLURM_TMPDIR/imagenet/train
+# cd       $SLURM_TMPDIR/imagenet/train
+# tar  -xf /network/datasets/imagenet/ILSVRC2012_img_train.tar --to-command='mkdir ${TAR_REALNAME%.tar}; tar -xC ${TAR_REALNAME%.tar}'
