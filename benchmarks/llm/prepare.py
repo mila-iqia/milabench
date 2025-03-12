@@ -79,10 +79,11 @@ def generate_model(
         conn.close()
 
 
-def load_model(recipe, cfg):
+def load_dataset(recipe, cfg):
     import sys
     import os
-    sys.path.append(os.path.join(os.path.dirname(__file__), "recipes"))
+    from torchtune import config
+    sys.path.append(os.path.join(os.path.dirname(__file__), "bench"))
 
     if recipe.endswith("full_finetune_distributed.py"):
         from full_finetune_distributed import FullFinetuneRecipeDistributed as Recipe
@@ -94,9 +95,22 @@ def load_model(recipe, cfg):
         from lora_finetune_single_device import LoRAFinetuneRecipeSingleDevice as Recipe
 
     with long_action("Still working", 30):
+        cfg.dtype = "fp32"
+        cfg.enable_activation_offloading = False
         recipe = Recipe(cfg=cfg)
-        recipe.setup(cfg=cfg)
-        recipe.save_checkpoint(0)
+
+        # recipe.setup(cfg=cfg)
+
+        recipe._tokenizer = config.instantiate(cfg.tokenizer)
+        recipe._loss_fn = config.instantiate(cfg.loss)
+
+        collate_name = cfg.get("collate_fn", "torchtune.data.padded_collate_sft")
+        recipe._setup_data(
+            cfg_dataset=cfg.dataset,
+            shuffle=cfg.shuffle,
+            batch_size=cfg.batch_size,
+            collate_fn=collate_name,
+        )
 
 
 def generate_weights(args, config):
@@ -194,14 +208,13 @@ def main():
 
     # Download Huggingface repo
     parser = MyParser()
-    args = parser.parse_args(download_args)
-    parser.run(args)
+    tune_args = parser.parse_args(download_args)
+    parser.run(tune_args)
 
     if not pretrained:
         generate_weights(args, config)
     
-    if "qlora" in config.get("model", {}).get("_component_", ""):
-        load_model(args.recipe, config)
+    load_dataset(args.recipe, config)
 
 
 if __name__ == "__main__":
