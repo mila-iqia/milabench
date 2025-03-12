@@ -5,9 +5,9 @@
 #    pip-compile --output-file=benchmarks/purejaxrl/requirements.cuda.txt .pin/tmp-constraints-cuda-ppo.txt benchmarks/purejaxrl/requirements.in
 #
 --extra-index-url https://pypi.ngc.nvidia.com
---extra-index-url https://download.pytorch.org/whl/cu121
+--extra-index-url https://download.pytorch.org/whl/cu126
 --find-links https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
---find-links https://data.pyg.org/whl/torch-2.5.1+cu121.html
+--find-links https://data.pyg.org/whl/torch-2.6.0+cu126.html
 --trusted-host pypi.ngc.nvidia.com
 
 absl-py==2.1.0
@@ -17,6 +17,7 @@ absl-py==2.1.0
     #   chex
     #   distrax
     #   dm-env
+    #   dm-tree
     #   ml-collections
     #   mujoco
     #   mujoco-mjx
@@ -36,7 +37,7 @@ argklass==1.4.4
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -r benchmarks/purejaxrl/requirements.in
-astroid==3.3.8
+astroid==3.3.9
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   pylint
@@ -44,7 +45,11 @@ asttokens==3.0.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   giving
-black==24.10.0
+attrs==25.2.0
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   dm-tree
+black==25.1.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   navix
@@ -56,7 +61,7 @@ brax==0.12.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -r benchmarks/purejaxrl/requirements.in
-certifi==2024.12.14
+certifi==2025.1.31
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   requests
@@ -65,11 +70,10 @@ charset-normalizer==3.4.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   requests
-chex==0.1.88
+chex==0.1.89
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   distrax
-    #   evosax
     #   flashbax
     #   gymnax
     #   optax
@@ -98,7 +102,7 @@ cycler==0.12.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   matplotlib
-decorator==5.1.1
+decorator==5.2.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   tensorflow-probability
@@ -116,7 +120,7 @@ dm-env==1.6
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   brax
     #   rlax
-dm-tree==0.1.8
+dm-tree==0.1.9
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   dm-env
@@ -133,7 +137,7 @@ dotmap==1.3.30
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   evosax
-etils[epath,epy]==1.11.0
+etils[epath,epy]==1.12.2
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   brax
@@ -141,7 +145,7 @@ etils[epath,epy]==1.11.0
     #   mujoco-mjx
     #   optax
     #   orbax-checkpoint
-evosax==0.1.6
+evosax==0.2.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -r benchmarks/purejaxrl/requirements.in
@@ -149,7 +153,7 @@ exceptiongroup==1.2.2
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   pytest
-executing==2.1.0
+executing==2.2.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   varname
@@ -161,8 +165,7 @@ filelock==3.17.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   torch
-    #   triton
-flake8==7.1.1
+flake8==7.1.2
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   navix
@@ -175,11 +178,11 @@ flask==3.1.0
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   brax
     #   flask-cors
-flask-cors==5.0.0
+flask-cors==5.0.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   brax
-flax==0.10.2
+flax==0.10.4
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -r benchmarks/purejaxrl/requirements.in
@@ -188,11 +191,11 @@ flax==0.10.2
     #   flashbax
     #   gymnax
     #   navix
-fonttools==4.55.4
+fonttools==4.56.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   matplotlib
-fsspec==2024.9.0
+fsspec==2024.12.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   etils
@@ -218,7 +221,7 @@ glfw==2.8.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   mujoco
-grpcio==1.69.0
+grpcio==1.71.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   brax
@@ -231,7 +234,7 @@ gym-notices==0.0.8
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   gym
-gymnasium==1.0.0
+gymnasium==1.1.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   gymnax
@@ -244,7 +247,7 @@ hjson==3.1.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   argklass
-humanize==4.11.0
+humanize==4.12.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   orbax-checkpoint
@@ -261,7 +264,7 @@ iniconfig==2.0.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   pytest
-isort==5.13.2
+isort==6.0.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   pylint
@@ -269,7 +272,7 @@ itsdangerous==2.2.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   flask
-jax[cuda12]==0.5.0
+jax[cuda12]==0.5.2
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -r .pin/../constraints/extra/torch.cuda.txt
@@ -286,21 +289,20 @@ jax[cuda12]==0.5.0
     #   optax
     #   orbax-checkpoint
     #   rlax
-jax-cuda12-pjrt==0.5.0
+jax-cuda12-pjrt==0.5.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
-jax-cuda12-plugin[with-cuda]==0.5.0
+jax-cuda12-plugin[with-cuda]==0.5.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax
-jaxlib==0.5.0
+jaxlib==0.5.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   brax
     #   chex
     #   distrax
-    #   evosax
     #   flashbax
     #   gymnax
     #   jax
@@ -312,7 +314,7 @@ jaxopt==0.8.3
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   brax
-jinja2==3.1.5
+jinja2==3.1.6
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   brax
@@ -331,7 +333,7 @@ markupsafe==3.0.2
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jinja2
     #   werkzeug
-matplotlib==3.10.0
+matplotlib==3.10.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   evosax
@@ -365,12 +367,12 @@ msgpack==1.1.0
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   flax
     #   orbax-checkpoint
-mujoco==3.2.7
+mujoco==3.3.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   brax
     #   mujoco-mjx
-mujoco-mjx==3.2.7
+mujoco-mjx==3.3.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   brax
@@ -399,6 +401,7 @@ numpy==1.26.4
     #   contourpy
     #   distrax
     #   dm-env
+    #   dm-tree
     #   evosax
     #   flashbax
     #   gym
@@ -419,62 +422,63 @@ numpy==1.26.4
     #   tensorboardx
     #   tensorflow-probability
     #   tensorstore
+    #   treescope
     #   trimesh
     #   xformers
-nvidia-cublas-cu12==12.1.3.1
+nvidia-cublas-cu12==12.6.4.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
     #   nvidia-cudnn-cu12
     #   nvidia-cusolver-cu12
     #   torch
-nvidia-cuda-cupti-cu12==12.1.105
+nvidia-cuda-cupti-cu12==12.6.80
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
     #   torch
-nvidia-cuda-nvcc-cu12==12.6.85
+nvidia-cuda-nvcc-cu12==12.8.93
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
-nvidia-cuda-nvrtc-cu12==12.1.105
+nvidia-cuda-nvrtc-cu12==12.6.77
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   torch
-nvidia-cuda-runtime-cu12==12.1.105
-    # via
-    #   -c .pin/../.pin/constraints-cuda-torch.txt
-    #   jax-cuda12-plugin
-    #   torch
-nvidia-cudnn-cu12==9.1.0.70
+nvidia-cuda-runtime-cu12==12.6.77
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
     #   torch
-nvidia-cufft-cu12==11.0.2.54
+nvidia-cudnn-cu12==9.5.1.17
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
     #   torch
-nvidia-curand-cu12==10.3.2.106
-    # via
-    #   -c .pin/../.pin/constraints-cuda-torch.txt
-    #   torch
-nvidia-cusolver-cu12==11.4.5.107
+nvidia-cufft-cu12==11.3.0.4
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
     #   torch
-nvidia-cusparse-cu12==12.1.0.106
+nvidia-curand-cu12==10.3.7.77
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   torch
+nvidia-cusolver-cu12==11.7.1.2
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   jax-cuda12-plugin
+    #   torch
+nvidia-cusparse-cu12==12.5.4.2
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
     #   nvidia-cusolver-cu12
     #   torch
-nvidia-ml-py==12.560.30
+nvidia-cusparselt-cu12==0.6.3
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
-    #   voir
+    #   torch
 nvidia-nccl-cu12==2.21.5
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
@@ -484,9 +488,11 @@ nvidia-nvjitlink-cu12==12.6.85
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
+    #   nvidia-cufft-cu12
     #   nvidia-cusolver-cu12
     #   nvidia-cusparse-cu12
-nvidia-nvtx-cu12==12.1.105
+    #   torch
+nvidia-nvtx-cu12==12.6.77
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   torch
@@ -504,7 +510,7 @@ optax==0.2.4
     #   -r benchmarks/purejaxrl/requirements.in
     #   brax
     #   flax
-orbax-checkpoint==0.11.0
+orbax-checkpoint==0.11.8
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   brax
@@ -551,7 +557,7 @@ protobuf==5.29.3
     #   orbax-checkpoint
     #   tensorboardx
     #   wandb
-psutil==5.9.8
+psutil==7.0.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   voir
@@ -564,7 +570,7 @@ pycodestyle==2.12.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   flake8
-pydantic==2.10.5
+pydantic==2.10.6
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   wandb
@@ -580,7 +586,7 @@ pygments==2.19.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   rich
-pylint==3.3.3
+pylint==3.3.5
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   navix
@@ -592,7 +598,7 @@ pyparsing==3.2.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   matplotlib
-pytest==8.3.4
+pytest==8.3.5
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   navix
@@ -605,14 +611,13 @@ pytinyrenderer==0.0.14
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   brax
-pytz==2024.2
+pytz==2025.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   pandas
 pyyaml==6.0.2
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
-    #   evosax
     #   flax
     #   gymnax
     #   ml-collections
@@ -637,7 +642,7 @@ rlax==0.1.6
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   navix
-scipy==1.15.1
+scipy==1.15.2
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   brax
@@ -649,15 +654,15 @@ seaborn==0.13.2
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   gymnax
-sentry-sdk==2.20.0
+sentry-sdk==2.22.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   wandb
-setproctitle==1.3.4
+setproctitle==1.3.5
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   wandb
-setuptools-scm==8.1.0
+setuptools-scm==8.2.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   navix
@@ -665,7 +670,7 @@ shtab==1.7.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   tyro
-simplejson==3.19.3
+simplejson==3.20.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   orbax-checkpoint
@@ -692,7 +697,7 @@ tensorflow-probability==0.25.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   distrax
-tensorstore==0.1.71
+tensorstore==0.1.72
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   flashbax
@@ -713,22 +718,26 @@ toolz==1.0.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   chex
-torch==2.5.1+cu121
+torch==2.6.0+cu126
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -c .pin/../constraints/cuda.txt
     #   -r benchmarks/purejaxrl/requirements.in
     #   xformers
-trimesh==4.6.0
+treescope==0.1.9
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   flax
+trimesh==4.6.4
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   brax
     #   mujoco-mjx
-triton==3.1.0
+triton==3.2.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   torch
-typeguard==4.4.1
+typeguard==4.4.2
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   tyro
@@ -753,7 +762,7 @@ typing-extensions==4.12.2
     #   typeguard
     #   tyro
     #   wandb
-tyro==0.9.12
+tyro==0.9.16
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   navix
@@ -775,7 +784,7 @@ voir==0.2.20
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -c .pin/../constraints/cuda.txt
     #   -r benchmarks/purejaxrl/requirements.in
-wandb==0.19.4
+wandb==0.19.8
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   navix
@@ -783,7 +792,12 @@ werkzeug==3.1.3
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   flask
-xformers==0.0.29.post1
+    #   flask-cors
+wrapt==1.17.2
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   dm-tree
+xformers==0.0.29.post3
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -r .pin/../constraints/extra/torch.cuda.txt

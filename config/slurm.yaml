@@ -30,6 +30,19 @@ multi-node-full-H100:
   - --mem=0
   - --export=ALL,MILABENCH_SIZER_AUTO=0
 
+single-node-full-H100:
+  - --partition=staff-idt
+  - -w cn-n[001-002]
+  - --ntasks=1
+  - --gpus-per-task=8
+  - --exclusive
+  - --nodes=1
+  - --cpus-per-task=192
+  - --time=2:00:00
+  - --ntasks-per-node=1
+  - --mem=0
+  - --export=ALL,MILABENCH_SIZER_AUTO=0
+
 
 single-node-full-A100l:
   # DGX run: 1 node x 8 A100 80Go SXM4
@@ -135,3 +148,32 @@ multi-node-a100:
   - --mem=0
   - --exclusive
   - --export=ALL,MILABENCH_SIZER_AUTO=1,MILABENCH_SIZER_MULTIPLE=8
+
+
+tamia-single-node:
+  - --partition gpubase_bynode_b3
+  - --gpus-per-task=4
+  - --ntasks=1
+  - --exclusive
+  - --nodes=1
+  - --cpus-per-task=48
+  - --time=2:00:00
+  - --ntasks-per-node=1
+  - --mem=0
+  - --exclusive
+  - --export=ALL,MILABENCH_SIZER_AUTO=0
+
+
+tamia-multi-node:
+  - --partition gpubase_bynode_b3
+  - --gpus-per-task=4
+  - --ntasks=2
+  - --exclusive
+  - --nodes=2
+  - --cpus-per-task=48
+  - --time=1:30:00
+  - --ntasks-per-node=1
+  - --mem=0
+  - --exclusive
+  - --export=ALL,MILABENCH_SIZER_AUTO=0
+
