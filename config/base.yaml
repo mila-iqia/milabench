@@ -580,6 +580,7 @@ llm-lora-single:
     tokenizer.path={milabench_data}/llama3_8B/original/tokenizer.model: true
     safetensors=true: true
     checkpointer.checkpoint_dir={milabench_data}/llama3_8B: true
+    checkpointer.output_dir={milabench_extra}/llama3_8B: true
     metric_logger.log_dir={milabench_extra}/metrics: true
     repo_id="meta-llama/Meta-Llama-3.1-8B": true
     batch_size=auto_batch(8): true
@@ -605,6 +606,7 @@ llm-lora-ddp-gpus:
     output_dir={milabench_extra}/output: true
     tokenizer.path={milabench_data}/llama3_8B/original/tokenizer.model: true
     checkpointer.checkpoint_dir={milabench_data}/llama3_8B/: true
+    checkpointer.output_dir={milabench_extra}/llama3_8B/: true
     safetensors=true: true
     metric_logger.log_dir={milabench_extra}/metrics: true
     repo_id="meta-llama/Meta-Llama-3.1-8B": true
@@ -630,8 +632,8 @@ llm-lora-ddp-nodes:
     epochs=1: true
     output_dir={milabench_extra}/output: true
     tokenizer.path={milabench_data}/llama3_8B/original/tokenizer.model: true
-    checkpointer.checkpoint_dir={milabench_data}/llama3_8B/original: true
-    checkpointer.output_dir={milabench_data}/llama3_8B/: true
+    checkpointer.checkpoint_dir={milabench_data}/llama3_8B: true
+    checkpointer.output_dir={milabench_extra}/llama3_8B/: true
     safetensors=true: true
     metric_logger.log_dir={milabench_extra}/metrics: true
     repo_id="meta-llama/Meta-Llama-3.1-8B": true
@@ -659,6 +661,7 @@ llm-lora-mp-gpus:
     output_dir={milabench_extra}/output: true
     tokenizer.path={milabench_data}/llama3_70B/original/tokenizer.model: true
     checkpointer.checkpoint_dir={milabench_data}/llama3_70B: true
+    checkpointer.output_dir={milabench_extra}/llama3_70B/: true
     safetensors=true: true
     metric_logger.log_dir={milabench_extra}/metrics: true
     repo_id="meta-llama/Meta-Llama-3.1-70B": true
@@ -687,7 +690,7 @@ llm-full-mp-gpus:
     output_dir={milabench_extra}/output: true
     tokenizer.path={milabench_data}/llama3_70B/original/tokenizer.model: true
     checkpointer.checkpoint_dir={milabench_data}/llama3_70B: true
-    checkpointer.output_dir={milabench_data}/llama3_70B_out/: true
+    checkpointer.output_dir={milabench_extra}/llama3_70B: true
     metric_logger.log_dir={milabench_extra}/metrics: true
     repo_id="meta-llama/Meta-Llama-3.1-70B": true
     safetensors=true: true
@@ -712,7 +715,7 @@ llm-full-mp-nodes:
     output_dir={milabench_extra}/output: true
     tokenizer.path={milabench_data}/llama3_70B/original/tokenizer.model: true
     checkpointer.checkpoint_dir={milabench_data}/llama3_70B: true
-    checkpointer.output_dir={milabench_data}/llama3_70B/: true
+    checkpointer.output_dir={milabench_extra}/llama3_70B/: true
     metric_logger.log_dir={milabench_extra}/metrics: true
     repo_id="meta-llama/Meta-Llama-3.1-70B": true
     safetensors=true: true

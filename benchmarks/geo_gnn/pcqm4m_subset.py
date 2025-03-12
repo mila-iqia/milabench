@@ -41,7 +41,7 @@ class PCQM4Mv2Subset(PCQM4Mv2):
         self.from_smiles = from_smiles or _from_smiles
         super(PCQM4Mv2, self).__init__(root, transform, backend=backend, schema=schema)
 
-        split_idx = torch.load(self.raw_paths[1])
+        split_idx = torch.load(self.raw_paths[1], weights_only=False)
         self._indices = split_idx[self.split_mapping[split]].tolist()
 
     def raw_file_names(self):

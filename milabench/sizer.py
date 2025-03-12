@@ -22,12 +22,17 @@ ROOT = os.path.dirname(__file__)
 default_scaling_folder = os.path.join(ROOT, "..", "config", "scaling")
 default_scaling_config = os.path.join(default_scaling_folder, "default.yaml")
 
+gpu_name_to_file = {
+    "AMD Instinct MI325 OAM": "MI325",
+}
+
 
 def gpu_name():
     try:
         info = get_gpu_info()
         values = list(info["gpus"].values())
-        return values[0]["product"]
+        n = values[0]["product"]
+        return gpu_name_to_file.get(n, n)
     except:
         return None
 
@@ -133,8 +138,9 @@ class Sizer:
 
         mem = [to_octet(v["memory"]) for v in data]
         size = [float(v["batch_size"]) for v in data]
+        perf = [float(v["perf"]) for v in data]
 
-        return mem, size
+        return mem, size, perf
 
     def get_capacity(self, capacity):
         if self.options.capacity is not None:
@@ -165,7 +171,7 @@ class Sizer:
         if "model" in config:
             mem, size = self._scaling_v1(config)
         else:
-            mem, size = self._scaling_v2(config)
+            mem, size, _ = self._scaling_v2(config)
 
         if len(mem) == 1:
             syslog(f"Not enough data for {benchmark.config['name']}")
@@ -195,6 +201,32 @@ class Sizer:
 
         return max(final_size, 1)
 
+    def optimized(self, benchmark, capacity):
+        # Old V1 format
+        config = self.benchscaling(benchmark)
+
+        if "model" in config:
+            return config["optimized"]
+
+        # Look for the best batch size
+        capacity = self.get_capacity(capacity)
+
+        if capacity is None:
+            syslog("Capacity is missing")
+            return None
+
+        # Look for the best batch size, make sure the used memory can fit
+        # in our current GPU
+        data = config["observations"]
+        data = list(sorted(data, key=lambda x: x["perf"], reverse=True))
+
+        for obs in data:
+            used_mem = to_octet(obs["memory"])
+            if used_mem < capacity:
+                return int(obs["batch_size"])
+        
+        return None
+
     def size(self, benchmark, capacity):
         config = self.benchscaling(benchmark)
 
@@ -202,7 +234,7 @@ class Sizer:
             return self.options.size
 
         if self.options.optimized:
-            return config["optimized"]
+            return self.optimized(benchmark, capacity)
 
         if self.options.autoscale:
             return self.auto_size(benchmark, capacity)

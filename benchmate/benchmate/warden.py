@@ -71,14 +71,26 @@ def _default():
     return []
 
 
-
 def _rocm_parse_processes():
-    cmd = ["rocm-smi", f"--showpids", "--json"]
+    cmd = ["rocm-smi", "--loglevel", "error", "--showpids", "--json"]
     output = subprocess.check_output(cmd, text=True)
-    data = json.loads(output)
+    
     info = []
+
+    try:
+        data = json.loads(output)
+    except json.decoder.JSONDecodeError:
+        return info
+
     for key, data in data.get("system", {}).items():
-        process_name, ngpu, vram, sdma, cu_occupancy = data.split(",")
+        cols = data.split(",")
+
+        process_name = cols[0]
+        ngpu = cols[1]
+        vram = cols[2]
+        sdma = cols[3]
+        cu_occupancy = cols[4]
+
         pid = key[3:]
         info.append(ProcessInfo(pid=pid, process_name=process_name, used_memory=vram))
     return info
@@ -161,25 +173,35 @@ def children_warden(enabled=True):
         yield
         return
 
-    yield
-
     pid = os.getpid()
 
     def get_children():
         with open(f"/proc/{pid}/task/{pid}/children", "r") as f:
             return [int(c) for c in f.read().strip().split()]
 
-    def wait_for_children():
+    prev = set(get_children())
+
+    yield
+
+    def get_children():
+        with open(f"/proc/{pid}/task/{pid}/children", "r") as f:
+            return set([int(c) for c in f.read().strip().split()]) - prev
+
+    def wait_for_children(wait_time=15):
         children = get_children()
         start_time = time.time()
 
-        while children and time.time()  - start_time < 15:
+        while children and time.time()  - start_time < wait_time:
+            for child in children:
+                os.waitpid(child, os.WNOHANG)
+
             children = get_children()
             time.sleep(0)
 
         return children
 
-    children = get_children()
+    children = wait_for_children(1)
+
     if children:
         syslog(f"{len(children)} still alive after end of benchmark")
 
@@ -199,6 +221,8 @@ def children_warden(enabled=True):
 
     for child in children:
         os.kill(child, signal.SIGCONT)
+
+    wait_for_children(1)
 
 
 class GPUProcessWarden(BaseWarden):

@@ -164,7 +164,7 @@ def main():
 
     repo_id = config["repo_id"]
     hf_token = os.getenv("MILABENCH_HF_TOKEN", None)
-    output_dir = config["checkpointer"]["output_dir"]
+    output_dir = config["checkpointer"]["checkpoint_dir"]
 
     #
     huggingface_format = config.get("safetensors", False)
@@ -181,6 +181,8 @@ def main():
     else:
         # Ignore hugging face weights
         ignore_patterns = ["*.safetensors"]
+
+    print(f"Downloading to {output_dir}")
 
     download_args = [
         "download",
