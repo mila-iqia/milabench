@@ -368,6 +368,7 @@ class SystemConfig:
     noterm: bool = defaultfield("noterm", bool, 0)
     github: Github = field(default_factory=Github)
 
+    use_uv: bool = defaultfield("use_uv", bool, 0)
 
 def check_node_config(nodes):
     mandatory_fields = ["name", "ip", "user"]
