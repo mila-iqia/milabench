@@ -30,7 +30,9 @@ def is_installed(command):
 
 @tooled
 def cli_shared_setup(args = None):
-    
+    #
+    # TODO: Do this for each node
+    #
     if args is None:
         args = arguments()
     
