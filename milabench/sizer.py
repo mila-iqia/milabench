@@ -24,6 +24,7 @@ default_scaling_config = os.path.join(default_scaling_folder, "default.yaml")
 
 gpu_name_to_file = {
     "AMD Instinct MI325 OAM": "MI325",
+    "NVIDIA H100 80GB HBM3": "H100",
 }
 
 
@@ -162,11 +163,6 @@ class Sizer:
             return None
 
         config = self.benchscaling(benchmark)
-        model = config.get("model", None)
-
-        if model is None:
-            syslog(f"Missing batch-size model for {benchmark.config['name']}")
-            return 1
 
         if "model" in config:
             mem, size = self._scaling_v1(config)
@@ -756,8 +752,11 @@ def merge_scaling_files(*files):
 
             all_data[k]["observations"] = list(sorted(rows, key=lambda x: x["batch_size"]))
 
+
+    newmem = deduplicate_observation(dict(all_data))
+
     with open("merged.yaml", "w") as fp:
-        yaml.dump(dict(all_data), fp, Dumper=compact_dump())
+        yaml.dump(dict(newmem), fp, Dumper=compact_dump())
     
 
 if __name__ == "__main__":
