@@ -737,7 +737,33 @@ def scaling_to_csv(filepath):
                 row_count += 1
     
 
+
+
+def merge_scaling_files(*files):
+    all_data = defaultdict(lambda: {"observations": []})
+
+    for file in files:
+        with open(file, "r") as fp:
+            data = yaml.safe_load(fp) or {}
+
+        for k, items in data.items():
+            if k == "version":
+                continue
+
+            rows = all_data[k]["observations"]
+            
+            rows.extend(items["observations"])
+
+            all_data[k]["observations"] = list(sorted(rows, key=lambda x: x["batch_size"]))
+
+    with open("merged.yaml", "w") as fp:
+        yaml.dump(dict(all_data), fp, Dumper=compact_dump())
+    
+
 if __name__ == "__main__":
-    filepath = "/home/testroot/milabench/config/scaling/MI325.yaml"
+    import sys
+    # filepath = "/home/testroot/milabench/config/scaling/MI325.yaml"
     # scaling_to_csv(filepath)
-    deduplicate_scaling_file(filepath)
+    # deduplicate_scaling_file(filepath)
+
+    merge_scaling_files(*sys.argv[1:])

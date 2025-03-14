@@ -189,7 +189,7 @@ class SizerOptions:
     add: int = defaultfield("sizer.add", int, None)
 
     # Add a fixed number to the current batch size
-    mult: int = defaultfield("sizer.mult", int, None)
+    mult: int = defaultfield("sizer.mult", float, None)
 
     # Enables auto batch resize
     auto: bool = defaultfield("sizer.auto", int, 0)
