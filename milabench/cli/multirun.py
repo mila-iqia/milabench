@@ -128,9 +128,6 @@ if __name__ == "__main__":
 
 # sbatch --dependency=afterok:1154:1155:1156:1157:1158:1159 
 
-
-
-
 # sbatch c32Go_m8_w8.bash
 # sbatch c32Go_m8_w16.bash
 # sbatch c64Go_m8_w8.bash
