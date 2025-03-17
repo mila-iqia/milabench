@@ -444,7 +444,13 @@ class SSHCommand(WrapperCommand):
 
     def is_local(self):
         local = self._is_local()
-        print("is_local", self.host, local)
+
+        # We try to detect when we need to SSH and avoid SSHing when we do not need to
+        # BUT some setup we got access to had very weird config which made it easier
+        # to just SSH all the time, even to itself
+        if option("force_remote", int, 1):
+            return False
+
         return local
 
     def _is_local(self):
@@ -456,6 +462,8 @@ class SSHCommand(WrapperCommand):
                 or self.host in localnode.get("ipaddrlist", [])
                 # The hostname is the local node
                 or self.host == localnode["hostname"]  
+
+                or self.host == localnode["ip"]  
             )
     
         # self is none; the node we are currently
@@ -475,6 +483,21 @@ class SSHCommand(WrapperCommand):
         host = f"{user}@{self.host}" if user else self.host
 
         argv = super()._argv(**kwargs)
+
+        env = self.pack.make_env()
+
+        # We need to set `XDG_CACHE_HOME` for datasets
+        # This only works if server can `AcceptEnv`
+        # for k in env.keys():
+        #     argv.append(f"-oSendEnv={k}")
+
+        envs = [
+            "env",
+            "-C", self.pack.working_directory,
+            "-",
+            f"XDG_CACHE_HOME={str(self.pack.dirs.cache)}",
+        ]
+
         argv.extend(["-oPasswordAuthentication=no"])
         argv.extend(["-p", str(self.port)])
 
@@ -482,7 +505,11 @@ class SSHCommand(WrapperCommand):
             argv.append(f"-i{key}")
         argv.append(host)
 
-        return argv # + ["env", "-i"]
+        # We need to set the working directory here because multinode
+        # will not use the process cwd
+        return (argv  
+            + envs 
+        )
 
 
 class SCPCommand(SSHCommand, CmdCommand):
@@ -634,11 +661,9 @@ class ForeachNode(ListCommand):
                     **self.options
                 )
 
-            print(rank, node, node_address(node))
-
             bench_cmd = self.make_new_node_executor(rank, node, self.executor)
 
-            docker_cmd = DockerRunCommand(bench_cmd, DockerConfig(**config["system"].get("docker")))
+            docker_cmd = DockerRunCommand(bench_cmd, DockerConfig(**config["system"].get("docker", {})))
 
             worker = SSHCommand(
                 host=node_address(node),
@@ -920,7 +945,7 @@ class AccelerateAllNodes(ForeachNode):
 
         return DockerRunCommand(
             AccelerateLaunchCommand(executor, rank=rank, **self.options),
-            DockerConfig(**config["system"].get("docker")),
+            DockerConfig(**config["system"].get("docker", {})),
         )
 
 

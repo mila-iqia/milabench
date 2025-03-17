@@ -573,6 +573,7 @@ llm-lora-single:
     method: per_gpu
 
   argv:
+    # "{milabench_code}/bench/lora_finetune_single_device.py": true
     bench/lora_finetune_single_device.py: true
     --config: "{milabench_code}/configs/llama3_8B_lora.yaml"
     epochs=1: true
@@ -599,7 +600,7 @@ llm-lora-ddp-gpus:
     - multigpu
 
   argv:
-    #"{milabench_code}/bench/lora_finetune_distributed.py": true
+    # "{milabench_code}/bench/lora_finetune_distributed.py": true
     bench/lora_finetune_distributed.py: true
     --config: "{milabench_code}/configs/llama3_8B_lora.yaml"
     epochs=1: true
@@ -627,6 +628,7 @@ llm-lora-ddp-nodes:
   
   url: https://huggingface.co/meta-llama/Llama-3.1-8B
   argv:
+    # "{milabench_code}/bench/lora_finetune_distributed.py": true
     bench/lora_finetune_distributed.py: true
     --config: "{milabench_code}/configs/llama3_8B_lora.yaml"
     epochs=1: true
@@ -654,7 +656,7 @@ llm-lora-mp-gpus:
     n: 1
 
   argv:
-    #"{milabench_code}/bench/lora_finetune_distributed.py": true
+    # "{milabench_code}/bench/lora_finetune_distributed.py": true
     bench/lora_finetune_distributed.py: true
     --config: "{milabench_code}/configs/llama3_70B_lora.yaml"
     epochs=1: true
@@ -709,6 +711,7 @@ llm-full-mp-nodes:
     n: 1
 
   argv:
+    # "{milabench_code}/bench/full_finetune_distributed.py": true
     bench/full_finetune_distributed.py: true
     --config: "{milabench_code}/configs/llama3_70B_full.yaml"
     epochs=1: true

@@ -582,18 +582,22 @@ def new_argument_resolver(pack):
     context["benchmark_folder"] = pack.config.get('definition', None)
 
     def auto_eval(arg):
-        newvalue: str = str(arg).format(**context)
+        try:
+            newvalue: str = str(arg).format(**context)
 
-        # Handles the case where argument=value
-        finalize_val = lambda x: x
-        if "=" in newvalue:
-            name, newvalue = newvalue.split("=", maxsplit=1)
-            finalize_val = lambda x: f"{name}={x}"
+            # Handles the case where argument=value
+            finalize_val = lambda x: x
+            if "=" in newvalue:
+                name, newvalue = newvalue.split("=", maxsplit=1)
+                finalize_val = lambda x: f"{name}={x}"
 
-        if newvalue.startswith("auto"):
-            newvalue = str(eval(newvalue, {"auto": cpu, "auto_batch": batch_resize}, {}))
-        
-        return finalize_val(newvalue)
+            if newvalue.startswith("auto"):
+                newvalue = str(eval(newvalue, {"auto": cpu, "auto_batch": batch_resize}, {}))
+            
+            return finalize_val(newvalue)
+        except KeyError as err:
+            syslog("Couldn't resolve {} because of {}", arg, err)
+            return arg
 
     return auto_eval
 
