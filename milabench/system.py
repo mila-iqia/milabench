@@ -189,7 +189,7 @@ class SizerOptions:
     add: int = defaultfield("sizer.add", int, None)
 
     # Add a fixed number to the current batch size
-    mult: int = defaultfield("sizer.mult", int, None)
+    mult: int = defaultfield("sizer.mult", float, None)
 
     # Enables auto batch resize
     auto: bool = defaultfield("sizer.auto", int, 0)
@@ -368,6 +368,7 @@ class SystemConfig:
     noterm: bool = defaultfield("noterm", bool, 0)
     github: Github = field(default_factory=Github)
 
+    use_uv: bool = defaultfield("use_uv", bool, 0)
 
 def check_node_config(nodes):
     mandatory_fields = ["name", "ip", "user"]

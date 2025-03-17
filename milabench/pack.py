@@ -29,6 +29,11 @@ from .utils import (
 )
 
 
+def should_use_uv():
+    from .system import option
+    return option("use_uv", bool, 0)
+
+
 @functools.cache
 def is_editable_install():
     import json
@@ -213,8 +218,14 @@ class BasePackage:
             args += ["-c", str(self.constraints)]
         for line in self.config.get("pip", {}).get("args", []):
             args += line.split(" ")
+
+        if should_use_uv():
+            pip_install_cmd = ["uv", "pip", "install", "--no-build-isolation", "--index-strategy", "unsafe-best-match", *args]
+        else:
+            pip_install_cmd = ["pip", "install", "--no-build-isolation", *args]
+
         await run(
-            ["pip", "install", *args],
+            pip_install_cmd,
             info={"pack": self},
             env={
                 **self.core._nox_session.env,

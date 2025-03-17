@@ -24,6 +24,7 @@ default_scaling_config = os.path.join(default_scaling_folder, "default.yaml")
 
 gpu_name_to_file = {
     "AMD Instinct MI325 OAM": "MI325",
+    "NVIDIA H100 80GB HBM3": "H100",
 }
 
 
@@ -162,11 +163,6 @@ class Sizer:
             return None
 
         config = self.benchscaling(benchmark)
-        model = config.get("model", None)
-
-        if model is None:
-            syslog(f"Missing batch-size model for {benchmark.config['name']}")
-            return 1
 
         if "model" in config:
             mem, size = self._scaling_v1(config)
@@ -586,18 +582,22 @@ def new_argument_resolver(pack):
     context["benchmark_folder"] = pack.config.get('definition', None)
 
     def auto_eval(arg):
-        newvalue: str = str(arg).format(**context)
+        try:
+            newvalue: str = str(arg).format(**context)
 
-        # Handles the case where argument=value
-        finalize_val = lambda x: x
-        if "=" in newvalue:
-            name, newvalue = newvalue.split("=", maxsplit=1)
-            finalize_val = lambda x: f"{name}={x}"
+            # Handles the case where argument=value
+            finalize_val = lambda x: x
+            if "=" in newvalue:
+                name, newvalue = newvalue.split("=", maxsplit=1)
+                finalize_val = lambda x: f"{name}={x}"
 
-        if newvalue.startswith("auto"):
-            newvalue = str(eval(newvalue, {"auto": cpu, "auto_batch": batch_resize}, {}))
-        
-        return finalize_val(newvalue)
+            if newvalue.startswith("auto"):
+                newvalue = str(eval(newvalue, {"auto": cpu, "auto_batch": batch_resize}, {}))
+            
+            return finalize_val(newvalue)
+        except KeyError as err:
+            syslog("Couldn't resolve {} because of {}", arg, err)
+            return arg
 
     return auto_eval
 
@@ -737,7 +737,36 @@ def scaling_to_csv(filepath):
                 row_count += 1
     
 
+
+
+def merge_scaling_files(*files):
+    all_data = defaultdict(lambda: {"observations": []})
+
+    for file in files:
+        with open(file, "r") as fp:
+            data = yaml.safe_load(fp) or {}
+
+        for k, items in data.items():
+            if k == "version":
+                continue
+
+            rows = all_data[k]["observations"]
+            
+            rows.extend(items["observations"])
+
+            all_data[k]["observations"] = list(sorted(rows, key=lambda x: x["batch_size"]))
+
+
+    newmem = deduplicate_observation(dict(all_data))
+
+    with open("merged.yaml", "w") as fp:
+        yaml.dump(dict(newmem), fp, Dumper=compact_dump())
+    
+
 if __name__ == "__main__":
-    filepath = "/home/testroot/milabench/config/scaling/MI325.yaml"
+    import sys
+    # filepath = "/home/testroot/milabench/config/scaling/MI325.yaml"
     # scaling_to_csv(filepath)
-    deduplicate_scaling_file(filepath)
+    # deduplicate_scaling_file(filepath)
+
+    merge_scaling_files(*sys.argv[1:])
