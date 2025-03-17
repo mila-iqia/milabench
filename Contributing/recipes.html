@@ -62,6 +62,12 @@
 <li class="toctree-l1"><a class="reference internal" href="dev-usage.html">Using milabench (DEVELOPERS)</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Recipes</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#base-setup">Base Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#install-prepare-on-network-nodes">Install+Prepare on Network nodes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#batch-update-dependencies-dependenies-pinning">Batch Update Dependencies / Dependenies pinning</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#major-version-updates">Major version updates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#minor-version-updates">Minor version updates</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#increase-runtime">Increase Runtime</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#one-env">One Env</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#batch-resizer">Batch resizer</a></li>
@@ -69,7 +75,12 @@
 <li class="toctree-l2"><a class="reference internal" href="#update-package">Update Package</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#arguments">Arguments</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#run-a-benchmark-without-milabench">Run a benchmark without milabench</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#containers">Containers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#containers">Containers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#ngc">NGC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nightly">Nightly</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#multi-node-docker">Multi Node &amp; Docker</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#example-reports">Example Reports</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#xa100-sxm4-80go">8xA100 SXM4 80Go</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#id1">4xA100 SXM4 80Go</a></li>
@@ -142,6 +153,70 @@ milabench<span class="w"> </span>run
 <p>The current setup runs on 8xA100 SXM4 80Go.
 Note that some benchmarks do require more than 40Go of VRAM.
 One bench might be problematic; rwkv which requires nvcc but can be ignored.</p>
+</section>
+<section id="install-prepare-on-network-nodes">
+<h2>Install+Prepare on Network nodes<a class="headerlink" href="#install-prepare-on-network-nodes" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p>Network node</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>activate<span class="w"> </span>py310
+
+<span class="nb">export</span><span class="w"> </span><span class="nv">NETWORK_FOLDER</span><span class="o">=</span>/network/shared/setup
+
+<span class="nb">cd</span><span class="w"> </span><span class="nv">$NETWORK_FOLDER</span>
+git<span class="w"> </span>clone<span class="w"> </span>https://github.com/mila-iqia/milabench.git
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>milabench
+
+<span class="nb">export</span><span class="w"> </span><span class="nv">MILABENCH_CONFIG</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$NETWORK_FOLDER</span><span class="s2">/milabench/config/standard.yaml&quot;</span>
+
+milabench<span class="w"> </span>install<span class="w"> </span>--base<span class="w"> </span><span class="nv">$NETWORK_FOLDER</span><span class="w"> </span>--config<span class="w"> </span><span class="nv">$MILABENCH_CONFIG</span>
+milabench<span class="w"> </span>prepare<span class="w"> </span>--base<span class="w"> </span><span class="nv">$NETWORK_FOLDER</span><span class="w"> </span>--config<span class="w"> </span><span class="nv">$MILABENCH_CONFIG</span>
+</pre></div>
+</div>
+<ol class="arabic" start="2">
+<li><p>Compute node</p>
+<p># Sync data to local but use code from the network location
+milabench sharedsetup –network $NETWORK_FOLDER –local /tmp/local/results</p>
+<p>milabench run –base /tmp/local/results –config $NETWORK_FOLDER/milabench/config/standard.yaml</p>
+</li>
+</ol>
+</section>
+<section id="batch-update-dependencies-dependenies-pinning">
+<h2>Batch Update Dependencies / Dependenies pinning<a class="headerlink" href="#batch-update-dependencies-dependenies-pinning" title="Link to this heading"></a></h2>
+<p>Milabench comes with tool to manage the dependencies of all the benchmarks and update them seemlessly.</p>
+<section id="major-version-updates">
+<h3>Major version updates<a class="headerlink" href="#major-version-updates" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">MILABENCH_BASE</span><span class="o">=</span>../
+<span class="nb">export</span><span class="w"> </span><span class="nv">MILABENCH_GPU_ARCH</span><span class="o">=</span>cuda
+milabench<span class="w"> </span>pin<span class="w"> </span>-c<span class="w"> </span>constraints/cuda.txt<span class="w"> </span>--config<span class="w"> </span>config/standard.yaml<span class="w"> </span>--from-scratch
+
+<span class="nb">export</span><span class="w"> </span><span class="nv">MILABENCH_GPU_ARCH</span><span class="o">=</span>rocm
+milabench<span class="w"> </span>pin<span class="w"> </span>-c<span class="w"> </span>constraints/rocm.txt<span class="w"> </span>--config<span class="w"> </span>config/standard.yaml<span class="w"> </span>--from-scratch
+
+<span class="nb">export</span><span class="w"> </span><span class="nv">MILABENCH_GPU_ARCH</span><span class="o">=</span>xpu
+milabench<span class="w"> </span>pin<span class="w"> </span>-c<span class="w"> </span>constraints/xpu.txt<span class="w"> </span>--config<span class="w"> </span>config/standard.yaml<span class="w"> </span>--from-scratch
+
+<span class="nb">export</span><span class="w"> </span><span class="nv">MILABENCH_GPU_ARCH</span><span class="o">=</span>hpu
+milabench<span class="w"> </span>pin<span class="w"> </span>-c<span class="w"> </span>constraints/hpu.txt<span class="w"> </span>--config<span class="w"> </span>config/standard.yaml<span class="w"> </span>--from-scratch
+</pre></div>
+</div>
+</section>
+<section id="minor-version-updates">
+<h3>Minor version updates<a class="headerlink" href="#minor-version-updates" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">MILABENCH_GPU_ARCH</span><span class="o">=</span>cuda
+milabench<span class="w"> </span>pin<span class="w"> </span>-c<span class="w"> </span>constraints/cuda.txt<span class="w"> </span>--config<span class="w"> </span>config/standard.yaml
+
+<span class="nb">export</span><span class="w"> </span><span class="nv">MILABENCH_GPU_ARCH</span><span class="o">=</span>rocm
+milabench<span class="w"> </span>pin<span class="w"> </span>-c<span class="w"> </span>constraints/rocm.txt<span class="w"> </span>--config<span class="w"> </span>config/standard.yaml
+
+<span class="nb">export</span><span class="w"> </span><span class="nv">MILABENCH_GPU_ARCH</span><span class="o">=</span>xpu
+milabench<span class="w"> </span>pin<span class="w"> </span>-c<span class="w"> </span>constraints/xpu.txt<span class="w"> </span>--config<span class="w"> </span>config/standard.yaml
+
+<span class="nb">export</span><span class="w"> </span><span class="nv">MILABENCH_GPU_ARCH</span><span class="o">=</span>hpu
+milabench<span class="w"> </span>pin<span class="w"> </span>-c<span class="w"> </span>constraints/hpu.txt<span class="w"> </span>--config<span class="w"> </span>config/standard.yaml
+</pre></div>
+</div>
+</section>
 </section>
 <section id="increase-runtime">
 <h2>Increase Runtime<a class="headerlink" href="#increase-runtime" title="Link to this heading"></a></h2>
@@ -220,6 +295,8 @@ It holds all the benchmark specific logs and metrics gathered by milabench.</p>
 </section>
 <section id="containers">
 <h2>Containers<a class="headerlink" href="#containers" title="Link to this heading"></a></h2>
+<section id="ngc">
+<h3>NGC<a class="headerlink" href="#ngc" title="Link to this heading"></a></h3>
 <p>When using containers where some dependencies are already installed, we need to use a dummy virtualenv
 so make milabench install its dependencies there, then the duplicate dependencies can be removed.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>podman<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>--device<span class="w"> </span>nvidia.com/gpu<span class="o">=</span>all<span class="w"> </span>--storage-opt<span class="w"> </span><span class="nv">ignore_chown_errors</span><span class="o">=</span><span class="nb">true</span><span class="w"> </span>--security-opt<span class="o">=</span><span class="nv">label</span><span class="o">=</span>disable<span class="w"> </span>--ipc<span class="o">=</span>host<span class="w"> </span>-it<span class="w"> </span>-e<span class="w"> </span><span class="nv">HOME</span><span class="o">=</span><span class="nv">$HOME</span><span class="w"> </span>-e<span class="w"> </span><span class="nv">USER</span><span class="o">=</span><span class="nv">$USER</span><span class="w"> </span>-v<span class="w"> </span><span class="nv">$HOME</span>:<span class="nv">$HOME</span><span class="w">  </span>nvcr.io/nvidia/pytorch:24.02-py3
@@ -252,6 +329,91 @@ milabench<span class="w"> </span>prepare<span class="w"> </span>--use-current-en
 milabench<span class="w"> </span>run<span class="w"> </span>--use-current-env
 </pre></div>
 </div>
+</section>
+<section id="nightly">
+<h3>Nightly<a class="headerlink" href="#nightly" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>podman<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span>--ipc<span class="o">=</span>host<span class="w"> </span>--gpus<span class="o">=</span>all<span class="w">                        </span><span class="se">\</span>
+<span class="w">   </span>-e<span class="w"> </span><span class="nv">MILABENCH_HF_TOKEN</span><span class="o">=</span>&lt;TOKEN&gt;<span class="w">                                 </span><span class="se">\</span>
+<span class="w">   </span>-v<span class="w"> </span>/tmp/workspace/data:/milabench/envs/data<span class="w">                   </span><span class="se">\</span>
+<span class="w">   </span>-v<span class="w"> </span>/tmp/workspace/runs:/milabench/envs/runs<span class="w">                   </span><span class="se">\</span>
+<span class="w">   </span>ghcr.io/mila-iqia/milabench:cuda-nightly<span class="w"> </span>milabench<span class="w"> </span>prepare
+
+podman<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span>--ipc<span class="o">=</span>host<span class="w"> </span>--gpus<span class="o">=</span>all<span class="w">                        </span><span class="se">\</span>
+<span class="w">   </span>-e<span class="w"> </span><span class="nv">MILABENCH_HF_TOKEN</span><span class="o">=</span>&lt;TOKEN&gt;<span class="w">                                 </span><span class="se">\</span>
+<span class="w">   </span>-v<span class="w"> </span>/tmp/workspace/data:/milabench/envs/data<span class="w">                   </span><span class="se">\</span>
+<span class="w">   </span>-v<span class="w"> </span>/tmp/workspace/runs:/milabench/envs/runs<span class="w">                   </span><span class="se">\</span>
+<span class="w">   </span>ghcr.io/mila-iqia/milabench:cuda-nightly<span class="w"> </span>milabench<span class="w"> </span>run
+</pre></div>
+</div>
+</section>
+<section id="multi-node-docker">
+<h3>Multi Node &amp; Docker<a class="headerlink" href="#multi-node-docker" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p>Create a system file with the right docker configuration</p></li>
+</ol>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">system</span><span class="p">:</span>
+<span class="w">   </span><span class="c1"># Default arch</span>
+<span class="w">   </span><span class="nt">arch</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cuda</span>
+
+<span class="w">   </span><span class="c1"># sshkey used in remote milabench operations</span>
+<span class="w">   </span><span class="nt">sshkey</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">~/.ssh/id_ed25519</span>
+
+<span class="w">   </span><span class="c1"># Configures how to use docker</span>
+<span class="w">   </span><span class="nt">docker</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">executable</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">podman</span>
+<span class="w">      </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ghcr.io/mila-iqia/milabench:${system.arch}-nightly</span>
+<span class="w">      </span><span class="nt">base</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/tmp/workspace</span>
+<span class="w">      </span><span class="nt">args</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span>
+<span class="w">         </span><span class="nv">-it</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">--rm</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">--ipc=host</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">--gpus=all</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">--network</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">host</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">--privileged</span><span class="p p-Indicator">,</span>
+<span class="w">         </span><span class="nv">-e</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">MILABENCH_HF_TOKEN=&lt;TOKEN&gt;</span><span class="p p-Indicator">,</span>
+<span class="w">         </span><span class="nv">-v</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;${system.docker.base}/data:/milabench/envs/data&quot;</span><span class="p p-Indicator">,</span>
+<span class="w">         </span><span class="nv">-v</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;${system.docker.base}/runs:/milabench/envs/runs&quot;</span><span class="p p-Indicator">,</span>
+<span class="w">      </span><span class="p p-Indicator">]</span>
+
+<span class="w">   </span><span class="c1"># Nodes list</span>
+<span class="w">   </span><span class="nt">nodes</span><span class="p">:</span>
+<span class="w">      </span><span class="c1"># Alias used to reference the node</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">manager</span>
+<span class="w">         </span><span class="l l-Scalar l-Scalar-Plain">ip</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">192.168.11.11</span>
+<span class="w">         </span><span class="l l-Scalar l-Scalar-Plain">port</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5000</span>
+<span class="w">         </span><span class="l l-Scalar l-Scalar-Plain"># Use this node as the master node or not</span>
+<span class="w">         </span><span class="l l-Scalar l-Scalar-Plain">main</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">         </span><span class="l l-Scalar l-Scalar-Plain"># User to use in remote milabench operations</span>
+<span class="w">         </span><span class="l l-Scalar l-Scalar-Plain">user</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">manager</span>
+
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">node1</span>
+<span class="w">         </span><span class="l l-Scalar l-Scalar-Plain">ip</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">192.168.11.12</span>
+<span class="w">         </span><span class="l l-Scalar l-Scalar-Plain">main</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">         </span><span class="l l-Scalar l-Scalar-Plain">user</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">username</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">milabench</span> <span class="pre">docker</span></code> to suggest the command to use to execute the benchmark</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cp<span class="w"> </span>system.yaml<span class="w"> </span>/tmp/workspace/data/system.yaml
+milabench<span class="w"> </span>docker<span class="w"> </span>--system<span class="w"> </span>system.yaml
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">podman</span> <span class="n">run</span> <span class="o">-</span><span class="n">it</span> <span class="o">--</span><span class="n">rm</span> <span class="o">--</span><span class="n">ipc</span><span class="o">=</span><span class="n">host</span> <span class="o">--</span><span class="n">gpus</span><span class="o">=</span><span class="nb">all</span> <span class="o">--</span><span class="n">network</span> <span class="n">host</span> <span class="o">--</span><span class="n">privileged</span>   \
+   <span class="o">-</span><span class="n">e</span> <span class="n">MILABENCH_HF_TOKEN</span><span class="o">=&lt;</span><span class="n">TOKEN</span><span class="o">&gt;</span>                                        \
+   <span class="o">-</span><span class="n">v</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">workspace</span><span class="o">/</span><span class="n">data</span><span class="p">:</span><span class="o">/</span><span class="n">milabench</span><span class="o">/</span><span class="n">envs</span><span class="o">/</span><span class="n">data</span>                          \
+   <span class="o">-</span><span class="n">v</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">workspace</span><span class="o">/</span><span class="n">runs</span><span class="p">:</span><span class="o">/</span><span class="n">milabench</span><span class="o">/</span><span class="n">envs</span><span class="o">/</span><span class="n">runs</span>                          \
+   <span class="o">-</span><span class="n">e</span> <span class="n">OMP_NUM_THREADS</span><span class="o">=</span><span class="s1">&#39;12&#39;</span> <span class="n">ghcr</span><span class="o">.</span><span class="n">io</span><span class="o">/</span><span class="n">mila</span><span class="o">-</span><span class="n">iqia</span><span class="o">/</span><span class="n">milabench</span><span class="p">:</span><span class="n">cuda</span><span class="o">-</span><span class="n">nightly</span>     \
+   <span class="n">milabench</span> <span class="n">prepare</span> <span class="o">--</span><span class="n">system</span> <span class="o">/</span><span class="n">milabench</span><span class="o">/</span><span class="n">envs</span><span class="o">/</span><span class="n">data</span><span class="o">/</span><span class="n">system</span><span class="o">.</span><span class="n">yaml</span>
+
+<span class="n">podman</span> <span class="n">run</span> <span class="o">-</span><span class="n">it</span> <span class="o">--</span><span class="n">rm</span> <span class="o">--</span><span class="n">ipc</span><span class="o">=</span><span class="n">host</span> <span class="o">--</span><span class="n">gpus</span><span class="o">=</span><span class="nb">all</span> <span class="o">--</span><span class="n">network</span> <span class="n">host</span> <span class="o">--</span><span class="n">privileged</span>   \
+   <span class="o">-</span><span class="n">e</span> <span class="n">MILABENCH_HF_TOKEN</span><span class="o">=&lt;</span><span class="n">TOKEN</span><span class="o">&gt;</span>                                        \
+   <span class="o">-</span><span class="n">v</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">workspace</span><span class="o">/</span><span class="n">data</span><span class="p">:</span><span class="o">/</span><span class="n">milabench</span><span class="o">/</span><span class="n">envs</span><span class="o">/</span><span class="n">data</span>                          \
+   <span class="o">-</span><span class="n">v</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">workspace</span><span class="o">/</span><span class="n">runs</span><span class="p">:</span><span class="o">/</span><span class="n">milabench</span><span class="o">/</span><span class="n">envs</span><span class="o">/</span><span class="n">runs</span>                          \
+   <span class="o">-</span><span class="n">e</span> <span class="n">OMP_NUM_THREADS</span><span class="o">=</span><span class="s1">&#39;12&#39;</span> <span class="n">ghcr</span><span class="o">.</span><span class="n">io</span><span class="o">/</span><span class="n">mila</span><span class="o">-</span><span class="n">iqia</span><span class="o">/</span><span class="n">milabench</span><span class="p">:</span><span class="n">cuda</span><span class="o">-</span><span class="n">nightly</span>     \
+   <span class="n">milabench</span> <span class="n">run</span> <span class="o">--</span><span class="n">system</span> <span class="o">/</span><span class="n">milabench</span><span class="o">/</span><span class="n">envs</span><span class="o">/</span><span class="n">data</span><span class="o">/</span><span class="n">system</span><span class="o">.</span><span class="n">yaml</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p>execute prepare</p></li>
+<li><p>execute run</p></li>
+</ol>
+</section>
 </section>
 <section id="example-reports">
 <h2>Example Reports<a class="headerlink" href="#example-reports" title="Link to this heading"></a></h2>

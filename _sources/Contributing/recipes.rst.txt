@@ -36,6 +36,76 @@ Note that some benchmarks do require more than 40Go of VRAM.
 One bench might be problematic; rwkv which requires nvcc but can be ignored.
 
 
+Install+Prepare on Network nodes
+--------------------------------
+
+1. Network node
+
+.. code-block:: bash
+   
+   conda activate py310
+
+   export NETWORK_FOLDER=/network/shared/setup
+
+   cd $NETWORK_FOLDER
+   git clone https://github.com/mila-iqia/milabench.git
+   pip install -e milabench
+   
+   export MILABENCH_CONFIG="$NETWORK_FOLDER/milabench/config/standard.yaml"
+   
+   milabench install --base $NETWORK_FOLDER --config $MILABENCH_CONFIG
+   milabench prepare --base $NETWORK_FOLDER --config $MILABENCH_CONFIG
+
+2. Compute node
+
+   # Sync data to local but use code from the network location
+   milabench sharedsetup --network $NETWORK_FOLDER --local /tmp/local/results
+
+   milabench run --base /tmp/local/results --config $NETWORK_FOLDER/milabench/config/standard.yaml
+
+
+Batch Update Dependencies / Dependenies pinning
+-----------------------------------------------
+
+Milabench comes with tool to manage the dependencies of all the benchmarks and update them seemlessly.
+
+Major version updates
+^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+    export MILABENCH_BASE=../
+    export MILABENCH_GPU_ARCH=cuda 
+    milabench pin -c constraints/cuda.txt --config config/standard.yaml --from-scratch
+
+    export MILABENCH_GPU_ARCH=rocm 
+    milabench pin -c constraints/rocm.txt --config config/standard.yaml --from-scratch
+
+    export MILABENCH_GPU_ARCH=xpu 
+    milabench pin -c constraints/xpu.txt --config config/standard.yaml --from-scratch
+
+    export MILABENCH_GPU_ARCH=hpu 
+    milabench pin -c constraints/hpu.txt --config config/standard.yaml --from-scratch
+
+
+Minor version updates
+^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+    export MILABENCH_GPU_ARCH=cuda 
+    milabench pin -c constraints/cuda.txt --config config/standard.yaml
+
+    export MILABENCH_GPU_ARCH=rocm 
+    milabench pin -c constraints/rocm.txt --config config/standard.yaml
+
+    export MILABENCH_GPU_ARCH=xpu 
+    milabench pin -c constraints/xpu.txt --config config/standard.yaml
+
+    export MILABENCH_GPU_ARCH=hpu 
+    milabench pin -c constraints/hpu.txt --config config/standard.yaml
+
+
 Increase Runtime
 ----------------
 
@@ -131,6 +201,9 @@ Run a benchmark without milabench
 Containers
 ----------
 
+NGC
+^^^
+
 When using containers where some dependencies are already installed, we need to use a dummy virtualenv 
 so make milabench install its dependencies there, then the duplicate dependencies can be removed.
 
@@ -164,6 +237,96 @@ so make milabench install its dependencies there, then the duplicate dependencie
     
     milabench prepare --use-current-env
     milabench run --use-current-env
+
+Nightly
+^^^^^^^
+
+.. code-block:: bash
+
+   podman run -it --rm --ipc=host --gpus=all                        \
+      -e MILABENCH_HF_TOKEN=<TOKEN>                                 \
+      -v /tmp/workspace/data:/milabench/envs/data                   \
+      -v /tmp/workspace/runs:/milabench/envs/runs                   \
+      ghcr.io/mila-iqia/milabench:cuda-nightly milabench prepare
+
+   podman run -it --rm --ipc=host --gpus=all                        \
+      -e MILABENCH_HF_TOKEN=<TOKEN>                                 \
+      -v /tmp/workspace/data:/milabench/envs/data                   \
+      -v /tmp/workspace/runs:/milabench/envs/runs                   \
+      ghcr.io/mila-iqia/milabench:cuda-nightly milabench run
+
+
+Multi Node & Docker
+^^^^^^^^^^^^^^^^^^^
+
+1. Create a system file with the right docker configuration
+
+.. code-block:: yaml
+
+   system:
+      # Default arch
+      arch: cuda
+
+      # sshkey used in remote milabench operations
+      sshkey: ~/.ssh/id_ed25519
+
+      # Configures how to use docker 
+      docker:
+         executable: podman
+         image: ghcr.io/mila-iqia/milabench:${system.arch}-nightly
+         base: /tmp/workspace
+         args: [
+            -it, --rm, --ipc=host, --gpus=all, --network, host, --privileged,
+            -e, MILABENCH_HF_TOKEN=<TOKEN>,
+            -v, "${system.docker.base}/data:/milabench/envs/data",
+            -v, "${system.docker.base}/runs:/milabench/envs/runs",
+         ]
+
+      # Nodes list
+      nodes:
+         # Alias used to reference the node
+         - name: manager
+            ip: 192.168.11.11
+            port: 5000
+            # Use this node as the master node or not
+            main: true
+            # User to use in remote milabench operations
+            user: manager
+
+         - name: node1
+            ip: 192.168.11.12
+            main: false
+            user: username
+
+
+2. Use ``milabench docker`` to suggest the command to use to execute the benchmark
+
+.. code-block:: bash
+
+   cp system.yaml /tmp/workspace/data/system.yaml
+   milabench docker --system system.yaml
+
+
+.. code-block::
+
+   podman run -it --rm --ipc=host --gpus=all --network host --privileged   \
+      -e MILABENCH_HF_TOKEN=<TOKEN>                                        \
+      -v /tmp/workspace/data:/milabench/envs/data                          \
+      -v /tmp/workspace/runs:/milabench/envs/runs                          \
+      -e OMP_NUM_THREADS='12' ghcr.io/mila-iqia/milabench:cuda-nightly     \
+      milabench prepare --system /milabench/envs/data/system.yaml
+   
+   podman run -it --rm --ipc=host --gpus=all --network host --privileged   \
+      -e MILABENCH_HF_TOKEN=<TOKEN>                                        \
+      -v /tmp/workspace/data:/milabench/envs/data                          \
+      -v /tmp/workspace/runs:/milabench/envs/runs                          \
+      -e OMP_NUM_THREADS='12' ghcr.io/mila-iqia/milabench:cuda-nightly     \
+      milabench run --system /milabench/envs/data/system.yaml
+
+
+3. execute prepare
+
+4. execute run
 
 
 Example Reports
