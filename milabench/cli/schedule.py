@@ -8,6 +8,12 @@ import requests
 import yaml
 from coleo import Option, tooled
 
+from ..system import option
+
+
+ROOT = os.path.dirname(__file__)
+default_sbatch_profiles = os.path.join(ROOT, "..", "..", "config", "slurm.yaml")
+
 
 # fmt: off
 @dataclass
@@ -16,6 +22,7 @@ class Arguments:
     dry : bool = False
     args: list = field(default_factory=list)
     profile: str = None
+    sbatch_profiles: str = None
 # fmt: on
 
 
@@ -30,18 +37,19 @@ def arguments():
     # sbatch run profile
     profile: Option & str = None
 
+    sbatch_profiles: Option & str = option("sbatch.profiles", str, None)
+
     # script arguments
     # [remainder]
     args: Option = []
 
-    return Arguments(sync, dry, args, profile)
+    return Arguments(sync, dry, args, profile, sbatch_profiles)
 
 
-def get_sbatch_profiles(profile, default):
-    ROOT = os.path.dirname(__file__)
-    default_scaling_config = os.path.join(ROOT, "..", "..", "config", "slurm.yaml")
-
-    with open(default_scaling_config, "r") as fp:
+def get_sbatch_profiles(profile, default, sbatch_profiles=None):
+    profile_file = sbatch_profiles or default_sbatch_profiles
+    
+    with open(profile_file, "r") as fp:
         sbatch_profiles = yaml.safe_load(fp)
 
     args = sbatch_profiles.get(profile)
@@ -59,7 +67,7 @@ def cli_schedule(args=None):
     if args is None:
         args = arguments()
 
-    sbatch_args = get_sbatch_profiles(args.profile, "single-node-small")
+    sbatch_args = get_sbatch_profiles(args.profile, "single-node-small", args.sbatch_profiles)
 
     launch_milabench(args.args, sbatch_args=sbatch_args, dry=args.dry, sync=args.sync)
 

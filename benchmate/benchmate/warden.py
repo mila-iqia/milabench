@@ -6,6 +6,7 @@ import subprocess
 import time
 import traceback
 import warnings
+import json
 from collections import defaultdict
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -70,10 +71,35 @@ def _default():
     return []
 
 
+def _rocm_parse_processes():
+    cmd = ["rocm-smi", "--loglevel", "error", "--showpids", "--json"]
+    output = subprocess.check_output(cmd, text=True)
+    
+    info = []
+
+    try:
+        data = json.loads(output)
+    except json.decoder.JSONDecodeError:
+        return info
+
+    for key, data in data.get("system", {}).items():
+        cols = data.split(",")
+
+        process_name = cols[0]
+        ngpu = cols[1]
+        vram = cols[2]
+        sdma = cols[3]
+        cu_occupancy = cols[4]
+
+        pid = key[3:]
+        info.append(ProcessInfo(pid=pid, process_name=process_name, used_memory=vram))
+    return info
+
+
 backends = {
     "hpu": _hpu_parse_processes,
     "cuda": _cuda_parse_processes,
-    # ROCM
+    "rocm": _rocm_parse_processes,
     # XPU
     "cpu": _default,
 }
@@ -87,8 +113,120 @@ def safe_get_gpu_info():
         return {}
 
 
-class GPUProcessWarden:
-    """Ensure all the process using the GPU are killed before & after the bench"""
+class BaseWarden:
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, *args):
+        pass
+
+    def terminate(self):
+        pass
+
+    def kill(self):
+        pass
+
+
+@contextmanager
+def gpu_warden(*args, enabled=True, **kwargs):
+    cls = BaseWarden
+    if enabled:
+        cls = GPUProcessWarden
+
+    with cls(*args, **kwargs) as warden:
+        yield warden
+
+
+@contextmanager
+def pipe_warden(enabled=True):
+    if not enabled:
+        yield
+        return
+
+    fd_folder = f"/proc/{os.getpid()}/fd/" 
+
+    before = set(os.listdir(fd_folder))
+
+    yield
+
+    after = set(os.listdir(fd_folder))
+
+    new_fds = after - before
+
+    if len(new_fds) > 0:
+        syslog("detected {} new file descriptors after running the benchmark", len(new_fds))
+        closed = 0
+
+        for new_fd in new_fds:
+            try:
+                os.close(int(new_fd))
+                closed += 1
+            except:
+                pass
+
+        syslog("closed {}/{} fd after bench", closed, len(new_fds))
+
+
+@contextmanager
+def children_warden(enabled=True):
+    if not enabled:
+        yield
+        return
+
+    pid = os.getpid()
+
+    def get_children():
+        with open(f"/proc/{pid}/task/{pid}/children", "r") as f:
+            return [int(c) for c in f.read().strip().split()]
+
+    prev = set(get_children())
+
+    yield
+
+    def get_children():
+        with open(f"/proc/{pid}/task/{pid}/children", "r") as f:
+            return set([int(c) for c in f.read().strip().split()]) - prev
+
+    def wait_for_children(wait_time=15):
+        children = get_children()
+        start_time = time.time()
+
+        while children and time.time()  - start_time < wait_time:
+            for child in children:
+                os.waitpid(child, os.WNOHANG)
+
+            children = get_children()
+            time.sleep(0)
+
+        return children
+
+    children = wait_for_children(1)
+
+    if children:
+        syslog(f"{len(children)} still alive after end of benchmark")
+
+    for child in children:
+        os.kill(child, signal.SIGTERM)
+
+    children = wait_for_children()
+    if children:
+        syslog(f"{len(children)} still alive after sigterm")
+
+    for child in children:
+        os.kill(child, signal.SIGKILL)
+
+    children = wait_for_children()
+    if children:
+        syslog(f"{len(children)} still alive after sigkill")
+
+    for child in children:
+        os.kill(child, signal.SIGCONT)
+
+    wait_for_children(1)
+
+
+class GPUProcessWarden(BaseWarden):
+    """Ensure all the processes using the GPU are killed before & after the bench"""
 
     def __init__(self, kill_on_start=True, kill_on_end=True):
         self.gpus = safe_get_gpu_info()
@@ -286,7 +424,7 @@ def destroy(*processes, step=1, timeout=30):
 
 
 @contextmanager
-def process_cleaner(timeout=30):
+def process_cleaner(timeout=30, with_gpu_warden=True):
     """Delay signal handling until all the processes have been killed"""
 
     def kill_everything(processes):
@@ -296,24 +434,49 @@ def process_cleaner(timeout=30):
         return _
 
     with Protected() as signalhandler:
-        with GPUProcessWarden() as warden:  # => SIGTERM all processes using GPUs
-            processes = []
-  
-            # when a signal is received kill the known processes first
-            # then handle the signal
-            signalhandler.stop = kill_everything(processes)
+        # Makes sure we are not leaking pipes/fd
+        with pipe_warden(enabled=True):
+            # Makes sure we are the the only one using the GPUs
+            with gpu_warden(enabled=with_gpu_warden) as warden:  # => SIGTERM all processes using GPUs
+                # Makes sure all our children processes die after each benchmark
+                with children_warden(enabled=True):
+                    processes = []
+        
+                    # when a signal is received kill the known processes first
+                    # then handle the signal
+                    signalhandler.stop = kill_everything(processes)
 
-            try:                            # NOTE: we have not waited much between both signals
-                warden.kill()               # => SIGKILL all processes using GPUs
+                    try:                            # NOTE: we have not waited much between both signals
+                        warden.kill()               # => SIGKILL all processes using GPUs
 
-                yield processes             # => Run milabench, spawning processes for the benches
+                        yield processes             # => Run milabench, spawning processes for the benches
 
-            finally:
-                warden.terminate()          # => SIGTERM all processes using GPUs
+                    finally:
+                        warden.terminate()          # => SIGTERM all processes using GPUs
 
-                destroy(*processes, timeout=timeout) # => SIGTERM+SIGKILL milabench processes
+                        destroy(*processes, timeout=timeout) # => SIGTERM+SIGKILL milabench processes
 
-                                            # destroy waited 30s
-                                        
-                # warden.__exit__           # => SIGKILL all  processes still using GPUs
-             
+                                                    # destroy waited 30s
+                                                
+                        # warden.__exit__           # => SIGKILL all  processes still using GPUs
+
+
+def subreaper():
+    # Make sure milabench children stays milabench children
+    # and don't get re-parented
+    #
+    # So in the case of torchrun were it spawns one children per GPUs
+    # if torchrun dies then the children get reparented to milabench instead of PID:1
+    #
+    # Thanks to this we can rely on `children_warden` to kill all milabench children
+    #
+    from ctypes import CDLL, c_int
+    import ctypes.util
+    libc_path = ctypes.util.find_library("c")
+
+    if libc_path:
+        libc = ctypes.CDLL(libc_path)
+        PR_SET_CHILD_SUBREAPER = 36 
+        libc.prctl(PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0)
+
+subreaper()

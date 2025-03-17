@@ -16,7 +16,7 @@ from ..fs import XPath
 from ..merge import merge
 from ..utils import select_nodes
 from .executors import execute_command
-from ..system import option
+from ..system import option, DockerConfig
 
 
 def clone_with(cfg, new_cfg):
@@ -328,23 +328,15 @@ class DockerRunCommand(WrapperCommand):
     """
 
     def __init__(
-        self, executor: SingleCmdCommand, image: str, *docker_argv, **kwargs
+        self, executor: SingleCmdCommand, config: DockerConfig, *docker_argv, **kwargs
     ) -> None:
+        self.config = config
+        self.extra_args = docker_argv
+    
         super().__init__(
             executor,
-            "docker",
-            "run",
-            "-i",
-            "--rm",
-            "--network",
-            "host",
-            "--privileged",
-            "--gpus",
-            "all",
-            *docker_argv,
             **kwargs,
         )
-        self.image = image
 
     def as_container_path(self, path):
         # replace local output path with docker path
@@ -386,7 +378,7 @@ class DockerRunCommand(WrapperCommand):
     def _argv(self, **kwargs) -> List:
         # if the command is executed remotely it does not matter
         # if we are inside docker or not
-        if (self.image is None) or (self.is_inside_docker() and not self.remote):
+        if (self.config.image is None) or (self.is_inside_docker() and not self.remote):
             # No-op when there's no docker image to run or inside a docker
             # container
             return []
@@ -395,11 +387,11 @@ class DockerRunCommand(WrapperCommand):
 
         env = self.pack.make_env()
         for var in ("XDG_CACHE_HOME", "OMP_NUM_THREADS"):
-            argv.append("--env")
-            argv.append(f"{var}='{self.as_container_path(env[var])}'")
+            if var in env:
+                argv.append("--env")
+                argv.append(f"{var}='{self.as_container_path(env[var])}'")
 
-        argv.append(self.image)
-        return argv
+        return self.config.command(argv)
 
 
 class SSHCommand(WrapperCommand):
@@ -452,7 +444,13 @@ class SSHCommand(WrapperCommand):
 
     def is_local(self):
         local = self._is_local()
-        print("is_local", self.host, local)
+
+        # We try to detect when we need to SSH and avoid SSHing when we do not need to
+        # BUT some setup we got access to had very weird config which made it easier
+        # to just SSH all the time, even to itself
+        if option("force_remote", int, 1):
+            return False
+
         return local
 
     def _is_local(self):
@@ -464,6 +462,8 @@ class SSHCommand(WrapperCommand):
                 or self.host in localnode.get("ipaddrlist", [])
                 # The hostname is the local node
                 or self.host == localnode["hostname"]  
+
+                or self.host == localnode["ip"]  
             )
     
         # self is none; the node we are currently
@@ -483,6 +483,21 @@ class SSHCommand(WrapperCommand):
         host = f"{user}@{self.host}" if user else self.host
 
         argv = super()._argv(**kwargs)
+
+        env = self.pack.make_env()
+
+        # We need to set `XDG_CACHE_HOME` for datasets
+        # This only works if server can `AcceptEnv`
+        # for k in env.keys():
+        #     argv.append(f"-oSendEnv={k}")
+
+        envs = [
+            "env",
+            "-C", self.pack.working_directory,
+            "-",
+            f"XDG_CACHE_HOME={str(self.pack.dirs.cache)}",
+        ]
+
         argv.extend(["-oPasswordAuthentication=no"])
         argv.extend(["-p", str(self.port)])
 
@@ -490,7 +505,11 @@ class SSHCommand(WrapperCommand):
             argv.append(f"-i{key}")
         argv.append(host)
 
-        return argv # + ["env", "-i"]
+        # We need to set the working directory here because multinode
+        # will not use the process cwd
+        return (argv  
+            + envs 
+        )
 
 
 class SCPCommand(SSHCommand, CmdCommand):
@@ -586,7 +605,7 @@ def node_address(node):
     """Favour Hostname as it is the most consistent name across machines"""
     host = node.get("hostname")
     ip = node.get("ip")
-    return ip or hostname
+    return ip or host
 
 
 class ForeachNode(ListCommand):
@@ -642,13 +661,16 @@ class ForeachNode(ListCommand):
                     **self.options
                 )
 
-            print(rank, node, node_address(node))
+            bench_cmd = self.make_new_node_executor(rank, node, self.executor)
+
+            docker_cmd = DockerRunCommand(bench_cmd, DockerConfig(**config["system"].get("docker", {})))
+
             worker = SSHCommand(
                 host=node_address(node),
                 user=node["user"],
                 key=key,
                 port=node.get("sshport", 22),
-                executor=self.make_new_node_executor(rank, node, self.executor),
+                executor=docker_cmd,
                 **options
             )
             executors.append(worker)
@@ -923,7 +945,7 @@ class AccelerateAllNodes(ForeachNode):
 
         return DockerRunCommand(
             AccelerateLaunchCommand(executor, rank=rank, **self.options),
-            config["system"].get("docker_image"),
+            DockerConfig(**config["system"].get("docker", {})),
         )
 
 

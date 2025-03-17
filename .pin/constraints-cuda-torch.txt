@@ -5,9 +5,9 @@
 #    pip-compile --output-file=.pin/constraints-cuda-torch.txt .pin/tmp-constraints.txt benchmarks/brax/requirements.in benchmarks/diffusion/requirements.in benchmarks/dinov2/requirements.in benchmarks/flops/requirements.in benchmarks/geo_gnn/requirements-pre.in benchmarks/geo_gnn/requirements.in benchmarks/huggingface/requirements.in benchmarks/lightning/requirements.in benchmarks/llama/requirements.in benchmarks/llava/requirements.in benchmarks/llm/requirements.in benchmarks/purejaxrl/requirements.in benchmarks/recursiongfn/requirements.in benchmarks/rlhf/requirements.in benchmarks/timm/requirements.in benchmarks/torchatari/requirements.in benchmarks/torchvision/requirements.in benchmarks/torchvision_ddp/requirements.in benchmarks/vjepa/requirements.in constraints/extra/torch.cuda.txt
 #
 --extra-index-url https://pypi.ngc.nvidia.com
---extra-index-url https://download.pytorch.org/whl/cu121
+--extra-index-url https://download.pytorch.org/whl/cu126
 --find-links https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
---find-links https://data.pyg.org/whl/torch-2.4.0+cu121.html
+--find-links https://data.pyg.org/whl/torch-2.6.0+cu126.html
 --trusted-host pypi.ngc.nvidia.com
 
 absl-py==2.1.0
@@ -16,6 +16,7 @@ absl-py==2.1.0
     #   chex
     #   distrax
     #   dm-env
+    #   dm-tree
     #   ml-collections
     #   mujoco
     #   mujoco-mjx
@@ -24,7 +25,7 @@ absl-py==2.1.0
     #   rlax
     #   tensorboard
     #   tensorflow-probability
-accelerate==0.34.2
+accelerate==1.5.1
     # via
     #   -r benchmarks/diffusion/requirements.in
     #   -r benchmarks/llava/requirements.in
@@ -32,15 +33,17 @@ accelerate==0.34.2
     #   -r benchmarks/rlhf/requirements.in
     #   diffusers
     #   trl
-aiohappyeyeballs==2.4.3
+aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.10.8
+aiohttp==3.11.13
     # via
     #   datasets
     #   fsspec
     #   torch-geometric
-aiosignal==1.3.1
+aiosignal==1.3.2
     # via aiohttp
+annotated-types==0.7.0
+    # via pydantic
 antlr4-python3-runtime==4.9.3
     # via omegaconf
 appdirs==1.4.4
@@ -50,19 +53,21 @@ argklass==1.4.4
     #   -r benchmarks/diffusion/requirements.in
     #   -r benchmarks/llm/requirements.in
     #   -r benchmarks/purejaxrl/requirements.in
-astroid==3.3.4
+astroid==3.3.9
     # via pylint
-asttokens==2.4.1
+asttokens==3.0.0
     # via giving
-async-timeout==4.0.3
+async-timeout==5.0.1
     # via aiohttp
-attrs==24.2.0
-    # via aiohttp
-beartype==0.19.0
+attrs==25.2.0
+    # via
+    #   aiohttp
+    #   dm-tree
+beartype==0.20.0
     # via -r benchmarks/vjepa/requirements.in
-black==24.8.0
+black==25.1.0
     # via navix
-blinker==1.8.2
+blinker==1.9.0
     # via flask
 blobfile==3.0.0
     # via
@@ -70,38 +75,37 @@ blobfile==3.0.0
     #   torchtune
 blosc2==2.7.1
     # via tables
-botorch==0.12.0
+botorch==0.13.0
     # via -r benchmarks/recursiongfn/requirements.in
 braceexpand==0.1.7
     # via
     #   -r benchmarks/vjepa/requirements.in
     #   webdataset
-brax==0.10.5
+brax==0.12.1
     # via
     #   -r benchmarks/brax/requirements.in
     #   -r benchmarks/purejaxrl/requirements.in
 cantilever==0.1.0
     # via -r benchmarks/torchatari/requirements.in
-certifi==2024.8.30
+certifi==2025.1.31
     # via
     #   requests
     #   sentry-sdk
-charset-normalizer==3.3.2
+charset-normalizer==3.4.1
     # via requests
-chex==0.1.87
+chex==0.1.89
     # via
     #   distrax
-    #   evosax
     #   flashbax
     #   gymnax
     #   optax
     #   rlax
-click==8.1.7
+click==8.1.8
     # via
     #   black
     #   flask
     #   wandb
-cloudpickle==3.0.0
+cloudpickle==3.1.1
     # via
     #   gym
     #   gymnasium
@@ -109,15 +113,13 @@ cloudpickle==3.0.0
     #   tensorflow-probability
 codefind==0.1.7
     # via ptera
-contextlib2==21.6.0
-    # via ml-collections
-contourpy==1.3.0
+contourpy==1.3.1
     # via matplotlib
 cvxopt==1.3.2
     # via -r benchmarks/recursiongfn/requirements.in
 cycler==0.12.1
     # via matplotlib
-datasets==3.0.1
+datasets==3.3.2
     # via
     #   -r benchmarks/diffusion/requirements.in
     #   -r benchmarks/llama/requirements.in
@@ -125,11 +127,11 @@ datasets==3.0.1
     #   -r benchmarks/rlhf/requirements.in
     #   torchtune
     #   trl
-decorator==5.1.1
+decorator==5.2.1
     # via tensorflow-probability
 decord==0.6.0
     # via -r benchmarks/vjepa/requirements.in
-diffusers[torch]==0.30.3
+diffusers[torch]==0.32.2
     # via -r benchmarks/diffusion/requirements.in
 dill==0.3.8
     # via
@@ -145,7 +147,7 @@ dm-env==1.6
     #   brax
     #   envpool
     #   rlax
-dm-tree==0.1.8
+dm-tree==0.1.9
     # via
     #   dm-env
     #   tensorflow-probability
@@ -155,22 +157,24 @@ docstring-parser==0.16
     # via tyro
 dotmap==1.3.30
     # via evosax
-einops==0.8.0
-    # via -r benchmarks/vjepa/requirements.in
+einops==0.8.1
+    # via
+    #   -r benchmarks/rlhf/requirements.in
+    #   -r benchmarks/vjepa/requirements.in
 envpool==0.8.4
     # via -r benchmarks/torchatari/requirements.in
-etils[epath,epy]==1.9.4
+etils[epath,epy]==1.12.2
     # via
     #   brax
     #   mujoco
     #   mujoco-mjx
     #   optax
     #   orbax-checkpoint
-evosax==0.1.6
+evosax==0.2.0
     # via -r benchmarks/purejaxrl/requirements.in
 exceptiongroup==1.2.2
     # via pytest
-executing==2.1.0
+executing==2.2.0
     # via varname
 fairscale==0.4.13
     # via
@@ -179,7 +183,7 @@ fairscale==0.4.13
     #   -r benchmarks/llm/requirements.txt
 farama-notifications==0.0.4
     # via gymnasium
-filelock==3.16.1
+filelock==3.17.0
     # via
     #   blobfile
     #   datasets
@@ -187,22 +191,21 @@ filelock==3.16.1
     #   huggingface-hub
     #   torch
     #   transformers
-    #   triton
 fire==0.7.0
     # via
     #   -r benchmarks/llama/requirements.in
     #   -r benchmarks/llm/requirements.txt
-flake8==7.1.1
+flake8==7.1.2
     # via navix
 flashbax==0.1.2
     # via -r benchmarks/purejaxrl/requirements.in
-flask==3.0.3
+flask==3.1.0
     # via
     #   brax
     #   flask-cors
-flask-cors==5.0.0
+flask-cors==5.0.1
     # via brax
-flax==0.9.0
+flax==0.10.4
     # via
     #   -r benchmarks/purejaxrl/requirements.in
     #   brax
@@ -210,13 +213,13 @@ flax==0.9.0
     #   flashbax
     #   gymnax
     #   navix
-fonttools==4.54.1
+fonttools==4.56.0
     # via matplotlib
-frozenlist==1.4.1
+frozenlist==1.5.0
     # via
     #   aiohttp
     #   aiosignal
-fsspec[http]==2024.6.1
+fsspec[http]==2024.12.0
     # via
     #   datasets
     #   etils
@@ -229,9 +232,9 @@ fvcore==0.1.5.post20221221
     # via -r benchmarks/dinov2/requirements.in
 gast==0.6.0
     # via tensorflow-probability
-gitdb==4.0.11
+gitdb==4.0.12
     # via gitpython
-gitpython==3.1.43
+gitpython==3.1.44
     # via
     #   -r benchmarks/recursiongfn/requirements.in
     #   wandb
@@ -239,13 +242,13 @@ giving==0.4.3
     # via
     #   ptera
     #   voir
-glfw==2.7.0
+glfw==2.8.0
     # via mujoco
-gpytorch==1.13
+gpytorch==1.14
     # via
     #   -r benchmarks/recursiongfn/requirements.in
     #   botorch
-grpcio==1.66.2
+grpcio==1.71.0
     # via
     #   brax
     #   tensorboard
@@ -257,7 +260,7 @@ gym==0.26.2
     #   gymnax
 gym-notices==0.0.8
     # via gym
-gymnasium==0.29.1
+gymnasium==1.1.1
     # via
     #   envpool
     #   gymnax
@@ -267,7 +270,7 @@ gymnax==0.0.8
     #   -r benchmarks/purejaxrl/requirements.in
 hjson==3.1.0
     # via argklass
-huggingface-hub==0.25.1
+huggingface-hub[hf-transfer]==0.29.3
     # via
     #   -r benchmarks/timm/requirements.in
     #   accelerate
@@ -277,15 +280,15 @@ huggingface-hub==0.25.1
     #   tokenizers
     #   torchtune
     #   transformers
-humanize==4.10.0
+humanize==4.12.1
     # via orbax-checkpoint
 idna==3.10
     # via
     #   requests
     #   yarl
-importlib-metadata==8.5.0
+importlib-metadata==8.6.1
     # via diffusers
-importlib-resources==6.4.5
+importlib-resources==6.5.2
     # via
     #   argklass
     #   cantilever
@@ -297,11 +300,11 @@ iopath==0.1.10
     # via
     #   -r benchmarks/dinov2/requirements.in
     #   fvcore
-isort==5.13.2
+isort==6.0.1
     # via pylint
 itsdangerous==2.2.0
     # via flask
-jax[cuda12]==0.4.33
+jax[cuda12]==0.5.2
     # via
     #   -r benchmarks/brax/requirements.in
     #   -r benchmarks/purejaxrl/requirements.in
@@ -318,31 +321,29 @@ jax[cuda12]==0.4.33
     #   optax
     #   orbax-checkpoint
     #   rlax
-jax-cuda12-pjrt==0.4.33
+jax-cuda12-pjrt==0.5.1
     # via jax-cuda12-plugin
-jax-cuda12-plugin[with-cuda]==0.4.33
+jax-cuda12-plugin[with-cuda]==0.5.1
     # via jax
-jaxlib==0.4.33
+jaxlib==0.5.1
     # via
     #   brax
     #   chex
     #   distrax
-    #   evosax
     #   flashbax
     #   gymnax
     #   jax
     #   jaxopt
     #   mujoco-mjx
     #   optax
-    #   orbax-checkpoint
     #   rlax
 jaxopt==0.8.3
     # via brax
-jaxtyping==0.2.19
+jaxtyping==0.2.38
     # via
     #   gpytorch
     #   linear-operator
-jinja2==3.1.4
+jinja2==3.1.6
     # via
     #   brax
     #   flask
@@ -350,30 +351,32 @@ jinja2==3.1.4
     #   torch-geometric
 joblib==1.4.2
     # via scikit-learn
-kiwisolver==1.4.7
+kagglehub==0.3.10
+    # via torchtune
+kiwisolver==1.4.8
     # via matplotlib
-lightning==2.4.0
+lightning==2.5.0.post0
     # via -r benchmarks/lightning/requirements.in
-lightning-utilities==0.11.7
+lightning-utilities==0.14.0
     # via
     #   lightning
     #   pytorch-lightning
     #   torchmetrics
-linear-operator==0.5.3
+linear-operator==0.6
     # via
     #   botorch
     #   gpytorch
-lxml==5.3.0
+lxml==5.3.1
     # via blobfile
 markdown==3.7
     # via tensorboard
 markdown-it-py==3.0.0
     # via rich
-markupsafe==2.1.5
+markupsafe==3.0.2
     # via
     #   jinja2
     #   werkzeug
-matplotlib==3.9.2
+matplotlib==3.10.1
     # via
     #   evosax
     #   gymnax
@@ -384,16 +387,15 @@ mccabe==0.7.0
     #   pylint
 mdurl==0.1.2
     # via markdown-it-py
-ml-collections==0.1.1
+ml-collections==1.0.0
     # via brax
-ml-dtypes==0.5.0
+ml-dtypes==0.5.1
     # via
     #   jax
     #   jaxlib
     #   tensorstore
 mpmath==1.3.0
     # via
-    #   botorch
     #   gpytorch
     #   linear-operator
     #   sympy
@@ -402,11 +404,11 @@ msgpack==1.1.0
     #   blosc2
     #   flax
     #   orbax-checkpoint
-mujoco==3.2.3
+mujoco==3.3.0
     # via
     #   brax
     #   mujoco-mjx
-mujoco-mjx==3.2.3
+mujoco-mjx==3.3.0
     # via brax
 multidict==6.1.0
     # via
@@ -417,18 +419,20 @@ multipledispatch==1.0.0
 multiprocess==0.70.16
     # via datasets
 mypy-extensions==1.0.0
-    # via black
+    # via
+    #   black
+    #   typing-inspect
 navix==0.7.0
     # via -r benchmarks/purejaxrl/requirements.in
 ndindex==1.9.2
     # via blosc2
 nest-asyncio==1.6.0
     # via orbax-checkpoint
-networkx==3.3
+networkx==3.4.2
     # via
     #   -r benchmarks/recursiongfn/requirements.in
     #   torch
-numexpr==2.10.1
+numexpr==2.10.2
     # via
     #   blosc2
     #   tables
@@ -449,6 +453,7 @@ numpy==1.26.4
     #   diffusers
     #   distrax
     #   dm-env
+    #   dm-tree
     #   envpool
     #   evosax
     #   fairscale
@@ -459,7 +464,6 @@ numpy==1.26.4
     #   jax
     #   jaxlib
     #   jaxopt
-    #   jaxtyping
     #   matplotlib
     #   ml-dtypes
     #   mujoco
@@ -469,7 +473,6 @@ numpy==1.26.4
     #   optax
     #   orbax-checkpoint
     #   pandas
-    #   pyarrow
     #   pyro-ppl
     #   rdkit
     #   rlax
@@ -486,59 +489,61 @@ numpy==1.26.4
     #   torchtune
     #   torchvision
     #   transformers
+    #   treescope
     #   trimesh
-    #   trl
     #   webdataset
     #   xformers
-nvidia-cublas-cu12==12.1.3.1
+nvidia-cublas-cu12==12.6.4.1
     # via
     #   jax-cuda12-plugin
     #   nvidia-cudnn-cu12
     #   nvidia-cusolver-cu12
     #   torch
-nvidia-cuda-cupti-cu12==12.1.105
+nvidia-cuda-cupti-cu12==12.6.80
     # via
     #   jax-cuda12-plugin
     #   torch
-nvidia-cuda-nvcc-cu12==12.6.77
+nvidia-cuda-nvcc-cu12==12.8.93
     # via jax-cuda12-plugin
-nvidia-cuda-nvrtc-cu12==12.1.105
+nvidia-cuda-nvrtc-cu12==12.6.77
     # via torch
-nvidia-cuda-runtime-cu12==12.1.105
+nvidia-cuda-runtime-cu12==12.6.77
     # via
     #   jax-cuda12-plugin
     #   torch
-nvidia-cudnn-cu12==9.1.0.70
+nvidia-cudnn-cu12==9.5.1.17
     # via
     #   jax-cuda12-plugin
     #   torch
-nvidia-cufft-cu12==11.0.2.54
+nvidia-cufft-cu12==11.3.0.4
     # via
     #   jax-cuda12-plugin
     #   torch
-nvidia-curand-cu12==10.3.2.106
+nvidia-curand-cu12==10.3.7.77
     # via torch
-nvidia-cusolver-cu12==11.4.5.107
+nvidia-cusolver-cu12==11.7.1.2
     # via
     #   jax-cuda12-plugin
     #   torch
-nvidia-cusparse-cu12==12.1.0.106
+nvidia-cusparse-cu12==12.5.4.2
     # via
     #   jax-cuda12-plugin
     #   nvidia-cusolver-cu12
     #   torch
-nvidia-ml-py==12.560.30
-    # via voir
-nvidia-nccl-cu12==2.20.5
+nvidia-cusparselt-cu12==0.6.3
+    # via torch
+nvidia-nccl-cu12==2.21.5
     # via
     #   jax-cuda12-plugin
     #   torch
-nvidia-nvjitlink-cu12==12.6.77
+nvidia-nvjitlink-cu12==12.6.85
     # via
     #   jax-cuda12-plugin
+    #   nvidia-cufft-cu12
     #   nvidia-cusolver-cu12
     #   nvidia-cusparse-cu12
-nvidia-nvtx-cu12==12.1.105
+    #   torch
+nvidia-nvtx-cu12==12.6.77
     # via torch
 omegaconf==2.3.0
     # via
@@ -546,32 +551,33 @@ omegaconf==2.3.0
     #   -r benchmarks/recursiongfn/requirements.in
     #   torchtune
     #   voir
-opencv-python==4.10.0.84
+opencv-python==4.11.0.86
     # via -r benchmarks/vjepa/requirements.in
 opt-einsum==3.4.0
     # via
     #   jax
     #   pyro-ppl
-optax==0.2.3
+optax==0.2.4
     # via
     #   -r benchmarks/purejaxrl/requirements.in
     #   brax
     #   flax
-optree==0.12.1
+optree==0.14.1
     # via envpool
-orbax-checkpoint==0.6.4
+orbax-checkpoint==0.11.8
     # via
     #   brax
     #   flax
 ovld==0.3.9
     # via voir
-packaging==24.1
+packaging==24.2
     # via
     #   accelerate
     #   black
     #   datasets
     #   envpool
     #   huggingface-hub
+    #   kagglehub
     #   lightning
     #   lightning-utilities
     #   matplotlib
@@ -592,7 +598,7 @@ pandas==2.2.3
     #   seaborn
 pathspec==0.12.1
     # via black
-pillow==10.4.0
+pillow==11.1.0
     # via
     #   -r benchmarks/huggingface/requirements.in
     #   -r benchmarks/llava/requirements.in
@@ -602,6 +608,7 @@ pillow==10.4.0
     #   matplotlib
     #   navix
     #   rdkit
+    #   torchtune
     #   torchvision
 platformdirs==4.3.6
     # via
@@ -610,18 +617,23 @@ platformdirs==4.3.6
     #   wandb
 pluggy==1.5.0
     # via pytest
-portalocker==2.10.1
+portalocker==3.1.1
     # via iopath
-protobuf==5.28.2
+propcache==0.3.0
+    # via
+    #   aiohttp
+    #   yarl
+protobuf==5.29.3
     # via
     #   orbax-checkpoint
     #   tensorboard
     #   tensorboardx
     #   wandb
-psutil==5.9.8
+psutil==7.0.0
     # via
     #   accelerate
     #   torch-geometric
+    #   torchtune
     #   voir
     #   wandb
 ptera==1.4.1
@@ -630,7 +642,7 @@ py-cpuinfo==9.0.0
     # via
     #   blosc2
     #   tables
-pyarrow==17.0.0
+pyarrow==19.0.1
     # via
     #   -r benchmarks/recursiongfn/requirements.in
     #   datasets
@@ -638,25 +650,31 @@ pycodestyle==2.12.1
     # via flake8
 pycryptodomex==3.21.0
     # via blobfile
+pydantic==2.10.6
+    # via wandb
+pydantic-core==2.27.2
+    # via pydantic
 pyflakes==3.2.0
     # via flake8
-pygments==2.18.0
+pygments==2.19.1
     # via rich
-pylint==3.3.1
+pylint==3.3.5
     # via navix
-pyopengl==3.1.7
+pyopengl==3.1.9
     # via mujoco
-pyparsing==3.1.4
+pyparsing==3.2.1
     # via
     #   matplotlib
     #   torch-geometric
+pyre-extensions==0.0.32
+    # via botorch
 pyro-api==0.1.2
     # via pyro-ppl
 pyro-ppl==1.9.1
     # via
     #   -r benchmarks/recursiongfn/requirements.in
     #   botorch
-pytest==8.3.3
+pytest==8.3.5
     # via navix
 python-dateutil==2.9.0.post0
     # via
@@ -664,9 +682,9 @@ python-dateutil==2.9.0.post0
     #   pandas
 pytinyrenderer==0.0.14
     # via brax
-pytorch-lightning==2.4.0
+pytorch-lightning==2.5.0.post0
     # via lightning
-pytz==2024.2
+pytz==2025.1
     # via pandas
 pyyaml==6.0.2
     # via
@@ -675,11 +693,11 @@ pyyaml==6.0.2
     #   -r benchmarks/vjepa/requirements.in
     #   accelerate
     #   datasets
-    #   evosax
     #   flax
     #   fvcore
     #   gymnax
     #   huggingface-hub
+    #   kagglehub
     #   lightning
     #   ml-collections
     #   omegaconf
@@ -690,13 +708,13 @@ pyyaml==6.0.2
     #   wandb
     #   webdataset
     #   yacs
-rdkit==2024.3.5
+rdkit==2024.9.6
     # via
     #   -r benchmarks/geo_gnn/requirements.in
     #   -r benchmarks/recursiongfn/requirements.in
 reactivex==4.0.4
     # via giving
-regex==2024.9.11
+regex==2024.11.6
     # via
     #   diffusers
     #   tiktoken
@@ -706,18 +724,20 @@ requests==2.32.3
     #   datasets
     #   diffusers
     #   huggingface-hub
+    #   kagglehub
     #   tiktoken
     #   torch-geometric
     #   transformers
     #   wandb
-rich==13.9.1
+rich==13.9.4
     # via
     #   flax
+    #   trl
     #   tyro
     #   voir
 rlax==0.1.6
     # via navix
-safetensors==0.4.5
+safetensors==0.5.3
     # via
     #   -r benchmarks/timm/requirements.in
     #   accelerate
@@ -725,9 +745,9 @@ safetensors==0.4.5
     #   timm
     #   torchtune
     #   transformers
-scikit-learn==1.5.2
+scikit-learn==1.6.1
     # via gpytorch
-scipy==1.14.1
+scipy==1.15.2
     # via
     #   -r benchmarks/dinov2/requirements.in
     #   -r benchmarks/recursiongfn/requirements.in
@@ -748,35 +768,36 @@ sentencepiece==0.2.0
     # via
     #   -r benchmarks/llama/requirements.in
     #   torchtune
-sentry-sdk==2.15.0
+sentry-sdk==2.22.0
     # via wandb
-setproctitle==1.3.3
+setproctitle==1.3.5
     # via wandb
-setuptools-scm==8.1.0
+setuptools-scm==8.2.0
     # via navix
 shtab==1.7.1
     # via tyro
-six==1.16.0
+simplejson==3.20.1
+    # via orbax-checkpoint
+six==1.17.0
     # via
-    #   asttokens
     #   docker-pycreds
     #   ml-collections
     #   python-dateutil
     #   tensorboard
     #   tensorflow-probability
-smmap==5.0.1
+smmap==5.0.2
     # via gitdb
 submitit==1.5.2
     # via
     #   -r benchmarks/dinov2/requirements.in
     #   -r benchmarks/vjepa/requirements.in
-sympy==1.13.3
+sympy==1.13.1
     # via torch
 tables==3.10.1
     # via -r benchmarks/recursiongfn/requirements.in
 tabulate==0.9.0
     # via fvcore
-tensorboard==2.18.0
+tensorboard==2.19.0
     # via
     #   -r benchmarks/recursiongfn/requirements.in
     #   -r benchmarks/torchatari/requirements.in
@@ -784,26 +805,28 @@ tensorboard-data-server==0.7.2
     # via tensorboard
 tensorboardx==2.6.2.2
     # via brax
-tensorflow-probability==0.24.0
+tensorflow-probability==0.25.0
     # via distrax
-tensorstore==0.1.66
+tensorstore==0.1.72
     # via
     #   flashbax
     #   flax
     #   orbax-checkpoint
-termcolor==2.4.0
+termcolor==2.5.0
     # via
     #   fire
     #   fvcore
 threadpoolctl==3.5.0
-    # via scikit-learn
-tiktoken==0.7.0
+    # via
+    #   botorch
+    #   scikit-learn
+tiktoken==0.9.0
     # via torchtune
-timm==1.0.9
+timm==1.0.15
     # via -r benchmarks/vjepa/requirements.in
-tokenizers==0.19.1
+tokenizers==0.21.0
     # via transformers
-tomli==2.0.2
+tomli==2.2.1
     # via
     #   black
     #   pylint
@@ -811,10 +834,11 @@ tomli==2.0.2
     #   setuptools-scm
 tomlkit==0.13.2
     # via pylint
-toolz==0.12.1
+toolz==1.0.0
     # via chex
-torch==2.4.0+cu121
+torch==2.6.0+cu126
     # via
+    #   -c .pin/../constraints/cuda.txt
     #   -r benchmarks/brax/requirements.in
     #   -r benchmarks/dinov2/requirements.in
     #   -r benchmarks/flops/requirements.in
@@ -844,9 +868,8 @@ torch==2.4.0+cu121
     #   timm
     #   torchmetrics
     #   torchvision
-    #   trl
     #   xformers
-torch-cluster==1.6.3+pt24cu121
+torch-cluster==1.6.3
     # via
     #   -r benchmarks/geo_gnn/requirements.in
     #   -r benchmarks/recursiongfn/requirements.in
@@ -854,19 +877,16 @@ torch-geometric==2.6.1
     # via
     #   -r benchmarks/geo_gnn/requirements.in
     #   -r benchmarks/recursiongfn/requirements.in
-torch-scatter==2.1.2+pt24cu121
+torch-scatter==2.1.2
     # via
     #   -r benchmarks/geo_gnn/requirements.in
     #   -r benchmarks/recursiongfn/requirements.in
-torch-sparse==0.6.18+pt24cu121
+torch-sparse==0.6.18
     # via
     #   -r benchmarks/geo_gnn/requirements.in
     #   -r benchmarks/recursiongfn/requirements.in
-torchao==0.3.1+cu121
-    # via
-    #   -c .pin/../constraints/cuda.txt
-    #   -r benchmarks/llm/requirements.in
-    #   torchtune
+torchao==0.9.0+cu126
+    # via -r benchmarks/llm/requirements.in
 torchcompat==1.1.4
     # via
     #   -c .pin/../constraints/cuda.txt
@@ -875,16 +895,14 @@ torchcompat==1.1.4
     #   -r benchmarks/torchatari/requirements.in
     #   -r benchmarks/torchvision/requirements.in
     #   -r benchmarks/torchvision_ddp/requirements.in
-torchmetrics==1.4.2
+torchmetrics==1.6.2
     # via
     #   -r benchmarks/dinov2/requirements.in
     #   lightning
     #   pytorch-lightning
-torchtune==0.2.1+cu121
-    # via
-    #   -c .pin/../constraints/cuda.txt
-    #   -r benchmarks/llm/requirements.in
-torchvision==0.19.0+cu121
+torchtune==0.5.0
+    # via -r benchmarks/llm/requirements.in
+torchvision==0.21.0+cu126
     # via
     #   -r benchmarks/diffusion/requirements.in
     #   -r benchmarks/dinov2/requirements.in
@@ -895,7 +913,7 @@ torchvision==0.19.0+cu121
     #   -r benchmarks/torchvision_ddp/requirements.in
     #   -r benchmarks/vjepa/requirements.in
     #   timm
-tqdm==4.66.5
+tqdm==4.67.1
     # via
     #   -r benchmarks/diffusion/requirements.in
     #   -r benchmarks/flops/requirements.in
@@ -905,15 +923,15 @@ tqdm==4.66.5
     #   fvcore
     #   huggingface-hub
     #   iopath
+    #   kagglehub
     #   lightning
     #   pyro-ppl
     #   pytorch-lightning
     #   torch-geometric
     #   torchtune
     #   transformers
-transformers==4.44.2
+transformers==4.49.0
     # via
-    #   -c .pin/../constraints/cuda.txt
     #   -r benchmarks/diffusion/requirements.in
     #   -r benchmarks/huggingface/requirements.in
     #   -r benchmarks/llama/requirements.in
@@ -921,19 +939,19 @@ transformers==4.44.2
     #   -r benchmarks/llm/requirements.in
     #   -r benchmarks/rlhf/requirements.in
     #   trl
-trimesh==4.4.9
+treescope==0.1.9
+    # via flax
+trimesh==4.6.4
     # via
     #   brax
     #   mujoco-mjx
-triton==3.0.0
+triton==3.2.0
     # via torch
-trl==0.10.1
-    # via
-    #   -c .pin/../constraints/cuda.txt
-    #   -r benchmarks/rlhf/requirements.in
-typeguard==4.3.0
-    # via jaxtyping
-types-protobuf==5.28.0.20240924
+trl==0.15.2
+    # via -r benchmarks/rlhf/requirements.in
+typeguard==4.4.2
+    # via tyro
+types-protobuf==5.29.1.20250208
     # via envpool
 typing-extensions==4.12.2
     # via
@@ -949,13 +967,15 @@ typing-extensions==4.12.2
     #   gymnasium
     #   huggingface-hub
     #   iopath
-    #   jaxtyping
     #   lightning
     #   lightning-utilities
     #   multidict
     #   navix
     #   optree
     #   orbax-checkpoint
+    #   pydantic
+    #   pydantic-core
+    #   pyre-extensions
     #   pytorch-lightning
     #   reactivex
     #   rich
@@ -963,22 +983,25 @@ typing-extensions==4.12.2
     #   tables
     #   torch
     #   typeguard
+    #   typing-inspect
     #   tyro
-tyro==0.8.11
+    #   wandb
+typing-inspect==0.9.0
+    # via pyre-extensions
+tyro==0.9.16
     # via
     #   -r benchmarks/torchatari/requirements.in
     #   navix
-    #   trl
-tzdata==2024.2
+tzdata==2025.1
     # via pandas
-urllib3==2.2.3
+urllib3==2.3.0
     # via
     #   blobfile
     #   requests
     #   sentry-sdk
-varname==0.13.3
+varname==0.14.0
     # via giving
-voir==0.2.19
+voir==0.2.20
     # via
     #   -c .pin/../constraints/cuda.txt
     #   -r benchmarks/brax/requirements.in
@@ -999,17 +1022,22 @@ voir==0.2.19
     #   -r benchmarks/torchvision/requirements.in
     #   -r benchmarks/torchvision_ddp/requirements.in
     #   -r benchmarks/vjepa/requirements.in
-wandb==0.18.3
+wadler-lindig==0.1.3
+    # via jaxtyping
+wandb==0.19.8
     # via
     #   -r benchmarks/recursiongfn/requirements.in
     #   navix
-webdataset==0.2.100
+webdataset==0.2.111
     # via -r benchmarks/vjepa/requirements.in
-werkzeug==3.0.4
+werkzeug==3.1.3
     # via
     #   flask
+    #   flask-cors
     #   tensorboard
-xformers==0.0.27.post2
+wrapt==1.17.2
+    # via dm-tree
+xformers==0.0.29.post3
     # via
     #   -r benchmarks/dinov2/requirements.in
     #   -r constraints/extra/torch.cuda.txt
@@ -1017,9 +1045,9 @@ xxhash==3.5.0
     # via datasets
 yacs==0.1.8
     # via fvcore
-yarl==1.13.1
+yarl==1.18.3
     # via aiohttp
-zipp==3.20.2
+zipp==3.21.0
     # via
     #   etils
     #   importlib-metadata

@@ -1,4 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+# #  As of November 2024, the development of torchrun is very rapid.
+# This is the recipe based on torchrun recipe git commit e137afe (post release 0.3.1)
+# https://github.com/pytorch/torchtune/blob/7bfb3336446f0d874ab5d4595249839b735b7076/recipes/full_finetune_single_device.py
+
+# Torchtune 0.2.1 recipe with device instrumenation (c) Mila
+# https://github.com/mila-iqia/milabench/blob/a60a3aae21e87e46bcce403620a3f56c12878554/benchmarks/llm/recipes/full_finetune_single_device.py
+
+# The instrumentation edits (c) AMD 
 
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
@@ -6,9 +14,9 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import os
 import sys
 import time
-
 from functools import partial
 from typing import Any, Dict, Optional, Tuple
 from warnings import warn
@@ -17,21 +25,12 @@ import torch
 from omegaconf import DictConfig, ListConfig
 
 from torch import nn
-from torch.distributed import init_process_group
-from torch.distributed.fsdp import (
-    CPUOffload,
-    FullOptimStateDictConfig,
-    FullStateDictConfig,
-    FullyShardedDataParallel as FSDP,
-    StateDictType,
-)
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader, DistributedSampler
 
 from torchtune import config, modules, utils
 from torchtune.datasets import ConcatDataset
 from torchtune.recipe_interfaces import FTRecipeInterface
-from torchtune.utils.activations import apply_selective_activation_checkpointing
 
 from tqdm import tqdm
 
@@ -39,26 +38,12 @@ from tqdm import tqdm
 log = utils.get_logger("DEBUG")
 
 
-class QATRecipeDistributed(FTRecipeInterface):
+class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
     """
-    Quantization-aware training (QAT) recipe for dense transformer-based LLMs such as Llama2.
-    This recipe supports distributed training and can be run on a single node (1 to 8 GPUs).
-    Only compatible with PyTorch 2.4+.
+    Full finetuning recipe for dense transformer-based LLMs such as Llama2. This recipe is optimized
+    for single GPU training. Training on CPU is not supported.
 
     Features:
-        - Quantization-aware training (QAT). Perform fake quantization on weights and/or activations
-            during finetuning, with the goal of ultimately producing a quantized model with minimal
-            accuracy degradation. This recipe produces an unquantized model in the original dtype,
-            which can then be quantized separately.
-
-        - Delayed fake quantization. Optionally specify the step after which fake quantization occurs.
-            Empirically, allowing the model to finetune without fake quantization initially allows the
-            weight and activation values to stabilize before fake quantizing them, potentially leading
-            to improved quantized accuracy. This can be specified through ``fake_quant_after_n_steps``.
-
-        - FSDP. Supported using PyTorch's FSDP APIs. DDP is currently not supported. Training on CPU
-            is not supported.
-
         - Activation Checkpointing. This can be controlled using the ``activation_checkpointing``
             flag. Activation checkpointing helps reduce the memory footprint since we no longer keep
             activations in memory and instead recompute them during the backward pass. This is especially
@@ -76,17 +61,27 @@ class QATRecipeDistributed(FTRecipeInterface):
         - Gradient Accumulation. You can simulate larger batch sizes by accumulating gradients. This is
             controlled using the ``gradient_accumulation_steps`` flag.
 
-                Total Batch Size = batch_size * number of GPUs * gradient accumulation steps.
+                Total Batch Size = batch_size * gradient accumulation steps.
 
-            For example: with batch_size=1, nproc_per_node=2 and gradient_accumulation_steps=32 we get a
-            total batch size of 64.
+            For example: with batch_size=1 and gradient_accumulation_steps=32 we get a total batch size of 32.
 
             Gradient accumulation is especially useful when you are memory constrained. In this case,
             accumulating gradients might give you better training speed than enabling activation
             checkpointing.
 
+        - Optimizer in Backward. Fusing the optimizer step into the backward pass helps reduce the memory
+            footprint associated with gradients. This can be especially helpful when you are memory
+            constrained. Note that users can only use ONE of gradient accumulation or optimizer in backward.
+            These features currently do not work together. For more details on optimizer in backward, please
+            see this tutorial: https://pytorch.org/tutorials/intermediate/optimizer_step_in_backward_tutorial.html
+
+        - Lower precision optimizers. This recipe supports lower-precision optimizers from the bitsandbytes
+            library (https://huggingface.co/docs/bitsandbytes/main/en/index). We've tested the recipe with
+            8-bit AdamW and Paged AdamW. These optimizers are especially helpful when you are memory constrained
+            since they help reduce the memory footprint associated with the optimizer states.
+
         - Checkpointing. Model weights are checkpointed both at the end of each epoch and at the end of
-            training. Optimizer state and recipe state (seed, total_epochs, number of epochs run etc) are
+            training. Optimizer State and recipe state (seed, total_epochs, number of epochs run etc) are
             only saved at the end of a given epoch and used in case of resuming training.
 
             Resuming training is controlled by the ``resume_from_checkpoint`` flag. Mid-epoch checkpointing is
@@ -104,26 +99,19 @@ class QATRecipeDistributed(FTRecipeInterface):
         cfg (DictConfig): OmegaConf object parsed from yaml file
 
     Raises:
-        ValueError: If ``dtype`` is set to fp16.
+        RuntimeError: If ``dtype`` is set to fp16.
+        RuntimeError: If ``dtype`` is set to bf16 and the hardware does not support bf16.
+        RuntimeError: If ``gradient_accumulation_steps > 1`` and ``optimizer_in_bwd`` is `True`.
     """
 
     def __init__(self, cfg: DictConfig) -> None:
-
-        self._device = utils.get_device(device=cfg.device)
+        self._device = accelerator.fetch_device(int(os.getenv("HABANA_VISIBLE_MODULES", "0").split(",")[0]))
         self._dtype = utils.get_dtype(cfg.dtype, device=self._device)
-
+        # Disable for fp16, as we haven't validated "full" fp16 with this recipe, nor
+        # enabled necessary features such as gradient scaling.
         if self._dtype == torch.float16:
-            raise ValueError(
-                "full fp16 training is not supported with this recipe. Please use bf16 or fp32 instead."
-            )
-
-        if (
-            cfg.get("fsdp_cpu_offload", False)
-            and cfg.get("fused", False)
-            and not utils.torch_version_ge("2.4.0")
-        ):
             raise RuntimeError(
-                "Using fused optimizer on CPU is only supported in PyTorch nightly."
+                "full fp16 training is not supported with this recipe. Please use bf16 or fp32 instead."
             )
 
         # logging attributes
@@ -131,16 +119,18 @@ class QATRecipeDistributed(FTRecipeInterface):
         self._log_every_n_steps = cfg.get("log_every_n_steps", 1)
         self._log_peak_memory_stats = cfg.get("log_peak_memory_stats", False)
 
-        # _is_rank_zero is used primarily for logging. In the future, the logger
-        # should directly take care of this
-        _, rank = utils.get_world_size_and_rank()
-        self._is_rank_zero = rank == 0
-
         # Training cfg
         self._resume_from_checkpoint = cfg.resume_from_checkpoint
         self._gradient_accumulation_steps = cfg.gradient_accumulation_steps
-        self._fake_quant_after_n_steps = cfg.get("fake_quant_after_n_steps", None)
-        self._quantizer_mode = None
+        self._optimizer_in_bwd = cfg.optimizer_in_bwd
+
+        # TODO: find a better place / way to perform validation of args that don't yet
+        # compose with each other.
+        if self._gradient_accumulation_steps > 1 and self._optimizer_in_bwd:
+            raise RuntimeError(
+                "Gradient accumulation is not supported with optimizer in bwd."
+                "Please set gradient_accumulation_steps=1, or optimizer_in_bwd=False."
+            )
 
         # These are public properties which are updated by the checkpoint loader
         # when ``resume_from_checkpoint`` is `True` or validated in tests
@@ -210,40 +200,38 @@ class QATRecipeDistributed(FTRecipeInterface):
         Sets up the recipe state correctly. This includes setting recipe attributes based
         on the ``resume_from_checkpoint`` flag.
         """
-        if self._is_rank_zero:
-            self._metric_logger = config.instantiate(cfg.metric_logger)
+        self._metric_logger = config.instantiate(cfg.metric_logger)
 
-            # log config with parameter override
-            self._metric_logger.log_config(cfg)
+        # log config with parameter override
+        self._metric_logger.log_config(cfg)
 
         ckpt_dict = self.load_checkpoint(cfg.checkpointer)
 
         # ``_setup_model`` handles initialization and loading the state dict. This method
         # should be called before ``_setup_optimizer`` since transforming the optimizer
         # state dict requires the model
+        self._model_compile = cfg.compile
         self._model = self._setup_model(
             cfg_model=cfg.model,
             enable_activation_checkpointing=cfg.enable_activation_checkpointing,
-            memory_efficient_fsdp_wrap=cfg.get("memory_efficient_fsdp_wrap", False),
-            fsdp_cpu_offload=cfg.get("fsdp_cpu_offload", False),
+            compile_model=self._model_compile,
             model_state_dict=ckpt_dict[utils.MODEL_KEY],
-            ac_mode=cfg.get("ac_mode", None),
-            ac_option=cfg.get("ac_option", None),
-            quantizer_cfg=cfg.get("quantizer", None),
         )
-
         self._tokenizer = config.instantiate(cfg.tokenizer)
+        log.info("Tokenizer is initialized from file.")
 
         # _setup_optimizer should take in ckpt_dict only if training is resumed from
         # checkpoint. Transforming the opt state dict is handled by this method
         self._optimizer = self._setup_optimizer(
             cfg_optimizer=cfg.optimizer,
-            opt_state_dict=ckpt_dict[utils.OPT_KEY]
-            if self._resume_from_checkpoint
-            else None,
+            optimizer_in_bwd=cfg.optimizer_in_bwd,
+            opt_state_dict=(
+                ckpt_dict[utils.OPT_KEY] if self._resume_from_checkpoint else None
+            ),
         )
 
         self._loss_fn = config.instantiate(cfg.loss)
+        log.info("Loss is initialized.")
 
         # sampler and dataloader depend on the tokenizer and loss_fn and should be
         # setup after both of these are initialized
@@ -274,137 +262,78 @@ class QATRecipeDistributed(FTRecipeInterface):
         self,
         cfg_model: DictConfig,
         enable_activation_checkpointing: bool,
-        memory_efficient_fsdp_wrap: bool,
-        fsdp_cpu_offload: bool,
+        compile_model: bool,
         model_state_dict: Dict[str, Any],
-        ac_mode: Optional[str] = None,
-        ac_option: Optional[int] = None,
-        quantizer_cfg: Optional[DictConfig] = None,
     ) -> nn.Module:
         """
-        Model initialization has some important considerations:
-            a. To minimize GPU peak memory, we load the model on CPU with the right
-               dtype. To ensure that we don't instantiate ``world_size`` number of models,
-               we initialize on meta_device for all ranks other than rank 0.
-            b. Rank 0 is also responsible for calling ``load_state_dict`` and loading the
-               model weights from checkpoint.
-            c. While wrapping the model with FSDP, we set ``sync_module_states``
-               to TRUE and broadcast module params and buffers from rank 0.
-            d. The ``device_id`` param ensures that the FSDP initialization happens on
-               the correct device.
+        Set up the model including enabling activation checkpointing.
         """
-        if self._is_rank_zero:
-            log.info("FSDP is enabled. Instantiating Model on CPU for Rank 0 ...")
-            init_start = time.perf_counter()
+        with utils.set_default_dtype(self._dtype), self._device:
+            model = config.instantiate(cfg_model)
 
-            with utils.set_default_dtype(self._dtype):
-                model = config.instantiate(cfg_model)
-
-            log.info(
-                f"Model instantiation took {time.perf_counter() - init_start:.2f} secs"
-            )
-
-            # Load both the model weights. This should happen only on Rank 0
-            model.load_state_dict(model_state_dict)
-
-        else:
-            # For non-zero ranks, load the model on meta device
-            with utils.set_default_dtype(self._dtype), torch.device("meta"):
-                model = config.instantiate(cfg_model)
-
-        if self._dtype == torch.bfloat16:
-            model = model.to(torch.bfloat16)
-
-        # We currently have two versions of activation checkpointing in this recipe
-        # for testing and BC purposes. ``enable_activation_checkpointing`` controls
-        # the older version of AC and this behavior is unchanged
-        # ac_mode and ac_option together control selective AC. This is only enabled
-        # when these are set AND ``enable_activation_checkpointing`` is set to False
-        # We'll clean this up as soon as testing of AC is complete
-        ac_mode = ac_mode
-        ac_option = ac_option
-
-        if (not enable_activation_checkpointing) and (ac_mode is not None):
-            apply_selective_activation_checkpointing(
-                model,
-                ac_mode,
-                ac_option,
-            )
-
-        # Apply quantization-aware training during finetuning
-        if quantizer_cfg is None:
-            raise ValueError("Quantizer must be specified for QAT recipe.")
-        quantizer = config.instantiate(quantizer_cfg)
-        quantizer.precision = self._dtype
-        quantizer_mode = utils.quantization.get_quantizer_mode(quantizer)
-        if "qat" not in quantizer_mode:
-            raise ValueError(
-                "Quantizer mode '%s' is not supported for finetuning" % quantizer_mode
-            )
-        self._quantizer_mode = quantizer_mode
-        model = quantizer.prepare(model)
-
-        # Wrap the model with FSDP. This will ensure that the model is sharded
-        # across all available GPUs.
-        model = FSDP(
-            module=model,
-            auto_wrap_policy=utils.get_full_finetune_fsdp_wrap_policy(
-                memory_efficient_fsdp_wrap=memory_efficient_fsdp_wrap,
-                modules_to_wrap={modules.TransformerDecoderLayer},
-            ),
-            cpu_offload=CPUOffload(offload_params=fsdp_cpu_offload),
-            sharding_strategy=torch.distributed.fsdp.ShardingStrategy.FULL_SHARD,
-            device_id=self._device,
-            # this recipe does not currently support mixed precision training
-            mixed_precision=None,
-            # Ensure we broadcast params and buffers from rank 0
-            sync_module_states=True,
-            # Initialize empty modules on all non-zero ranks
-            param_init_fn=(
-                lambda module: module.to_empty(
-                    device=torch.device("cuda"), recurse=False
-                )
-                if not self._is_rank_zero
-                else None
-            ),
-        )
-
-        # Ensure no params and buffers are on meta device
-        utils.validate_no_params_on_meta_device(model)
-
-        # original activation checkpointing (full) - flip the condition above
-        if enable_activation_checkpointing and ac_mode is None:
+        if enable_activation_checkpointing:
             utils.set_activation_checkpointing(
                 model, auto_wrap_policy={modules.TransformerDecoderLayer}
             )
 
-        if self._is_rank_zero:
-            memory_stats = utils.get_memory_stats(device=self._device)
-            utils.log_memory_stats(memory_stats)
+        model.load_state_dict(model_state_dict)
 
-        # synchronize before training begins
-        torch.distributed.barrier()
+        # Validate model was loaded in with the expected dtype.
+        utils.validate_expected_param_dtype(model.named_parameters(), dtype=self._dtype)
+        log.info(f"Model is initialized with precision {self._dtype}.")
+
+        # Compile model, if enabled.
+        if compile_model:
+            log.info("Compiling model with torch.compile...")
+            backend = os.environ.get("TORCH_COMPILE_BACKEND", "inductor")
+            model.compile(backend=backend)
+        # if self._device.type == "cuda":
+        #     memory_stats = utils.get_memory_stats(device=self._device)
+        #     utils.log_memory_stats(memory_stats)
 
         return model
 
     def _setup_optimizer(
-        self, cfg_optimizer: DictConfig, opt_state_dict: Optional[Dict[str, Any]] = None
-    ) -> Optimizer:
+        self,
+        cfg_optimizer: DictConfig,
+        optimizer_in_bwd: bool = False,
+        opt_state_dict: Optional[Dict[str, Any]] = None,
+    ) -> Optional[Optimizer]:
         """
-        Set up the optimizer. This method also handles transforing the state dict
-        for FSDP.
+        Set up the optimizer. This method also handles loading the optimizer state_dict, if specified.
         """
-        optimizer = config.instantiate(cfg_optimizer, self._model.parameters())
-
-        if opt_state_dict:
-            opt_state_dict = FSDP.optim_state_dict_to_load(
-                self._model, optimizer, opt_state_dict
+        if optimizer_in_bwd:
+            # Maintain a dict of optims for every parameter.
+            optim_dict = {
+                p: config.instantiate(cfg_optimizer, [p])
+                for p in self._model.parameters()
+            }
+            # Register optimizer step hooks on the model to run optimizer in backward.
+            utils.register_optim_in_bwd_hooks(model=self._model, optim_dict=optim_dict)
+            # Create a wrapper for checkpoint save/load of optimizer states when running in backward.
+            self._optim_ckpt_wrapper = utils.create_optim_in_bwd_wrapper(
+                model=self._model, optim_dict=optim_dict
             )
-            optimizer.load_state_dict(opt_state_dict)
+            # Load optimizer states. If optimizer states are being restored in an optimizer in backward
+            # run, these need to have been saved with the same setting. Cannot restore from runs that did not
+            # use optimizer in backward.
+            if opt_state_dict is not None:
+                try:
+                    self._optim_ckpt_wrapper.load_state_dict(opt_state_dict)
+                except BaseException as e:
+                    raise RuntimeError(
+                        "Failed loading in-backward optimizer checkpoints."
+                        "Please make sure run being restored from was using in-backward optimizer."
+                    ) from e
+            log.info("In-backward optimizers are set up.")
+            return None
+        else:
+            optimizer = config.instantiate(cfg_optimizer, self._model.parameters())
 
-        if self._is_rank_zero:
+            if opt_state_dict:
+                optimizer.load_state_dict(opt_state_dict)
             log.info("Optimizer is initialized.")
-        return optimizer
+            return optimizer
 
     def _setup_data(
         self,
@@ -417,8 +346,6 @@ class QATRecipeDistributed(FTRecipeInterface):
         DistributedSamplers with Map-style Datasets which fit into memory. Other samplers,
         iterable datasets and streaming datasets are not supported.
         """
-        world_size, rank = utils.get_world_size_and_rank()
-
         if isinstance(cfg_dataset, ListConfig):
             datasets = [
                 config.instantiate(single_cfg_dataset, tokenizer=self._tokenizer)
@@ -432,8 +359,8 @@ class QATRecipeDistributed(FTRecipeInterface):
 
         sampler = DistributedSampler(
             ds,
-            num_replicas=world_size,
-            rank=rank,
+            num_replicas=1,
+            rank=0,
             shuffle=shuffle,
             seed=0,
         )
@@ -450,8 +377,7 @@ class QATRecipeDistributed(FTRecipeInterface):
             else None,
         )
 
-        if self._is_rank_zero:
-            log.info("Dataset and Sampler are initialized.")
+        log.info("Dataset and Sampler are initialized.")
 
         return sampler, dataloader
 
@@ -460,55 +386,39 @@ class QATRecipeDistributed(FTRecipeInterface):
         Save state dict to file. The recipe save_checkpoint method is responsible for
         correctly creating the checkpoint dict and passing to the checkpointer.
         """
-        checkpoint_dict = {}
-
-        # To prevent GPU memory from spiking during checkpoint save,
-        # we consolidate the full model and optim state dicts on CPU for rank 0
-        with FSDP.state_dict_type(
-            self._model,
-            StateDictType.FULL_STATE_DICT,
-            FullStateDictConfig(offload_to_cpu=True, rank0_only=True),
-            FullOptimStateDictConfig(offload_to_cpu=True, rank0_only=True),
-        ):
-            cpu_state_dict = self._model.state_dict()
-            opt_state_dict = FSDP.optim_state_dict(self._model, self._optimizer)
-
-        # Now that we have the model and opt state dict, create the actual checkpoint dict
-        # to be sent to the checkpointer and ultimately written to file
-        if self._is_rank_zero:
-
-            checkpoint_dict.update({utils.MODEL_KEY: cpu_state_dict})
-
-            # if training is in-progress, checkpoint the optimizer state as well
-            if epoch + 1 < self.total_epochs:
-                checkpoint_dict.update(
-                    {
-                        utils.OPT_KEY: opt_state_dict,
-                        utils.SEED_KEY: self.seed,
-                        utils.EPOCHS_KEY: self.epochs_run,
-                        utils.TOTAL_EPOCHS_KEY: self.total_epochs,
-                        utils.MAX_STEPS_KEY: self.max_steps_per_epoch,
-                    }
-                )
-
-            self._checkpointer.save_checkpoint(
-                checkpoint_dict,
-                epoch=epoch,
-                intermediate_checkpoint=(epoch + 1 < self.total_epochs),
+        ckpt_dict = {utils.MODEL_KEY: self._model.state_dict()}
+        # if training is in-progress, checkpoint the optimizer state as well
+        if epoch + 1 < self.total_epochs:
+            ckpt_dict.update(
+                {
+                    utils.SEED_KEY: self.seed,
+                    utils.EPOCHS_KEY: self.epochs_run,
+                    utils.TOTAL_EPOCHS_KEY: self.total_epochs,
+                    utils.MAX_STEPS_KEY: self.max_steps_per_epoch,
+                }
             )
+            if not self._optimizer_in_bwd:
+                ckpt_dict[utils.OPT_KEY] = self._optimizer.state_dict()
+            else:
+                ckpt_dict[utils.OPT_KEY] = self._optim_ckpt_wrapper.state_dict()
+        self._checkpointer.save_checkpoint(
+            ckpt_dict,
+            epoch=epoch,
+            intermediate_checkpoint=(epoch + 1 < self.total_epochs),
+        )
 
     def train(self) -> None:
         """
         The core training loop. Supports training on subsets of the dataset using the
         ``max_steps_per_epoch``.
         """
-        # clean up before training begins
-        utils.cleanup_before_training()
-
-        _, rank = utils.get_world_size_and_rank()
-
+        if self._model_compile:
+            log.info(
+                "NOTE: torch.compile is enabled and model is compiled in first forward. Expect a relatively slow first iteration."
+            )
         # zero out the gradients before starting training
-        self._optimizer.zero_grad()
+        if not self._optimizer_in_bwd:
+            self._optimizer.zero_grad()
 
         # Initialize tokens count and running loss (for grad accumulation)
         t0 = time.perf_counter()
@@ -517,12 +427,11 @@ class QATRecipeDistributed(FTRecipeInterface):
 
         # self.epochs_run should be non-zero when we're resuming from a checkpoint
         for curr_epoch in range(self.epochs_run, self.total_epochs):
-
             # Update the sampler to ensure data is correctly shuffled across epochs
             # in case shuffle is True
             self._sampler.set_epoch(curr_epoch)
 
-            pbar = tqdm(total=self._steps_per_epoch, disable=not (rank == 0))
+            pbar = tqdm(total=self._steps_per_epoch)
             for idx, batch in enumerate(self._dataloader):
                 if (
                     self.max_steps_per_epoch is not None
@@ -537,27 +446,6 @@ class QATRecipeDistributed(FTRecipeInterface):
                 # exist. Currently, only sample packing in PackedDataset returns these
                 mask = batch.get("mask", None)  # shape [b, s, s]
                 input_pos = batch.get("input_pos", None)  # shape [b, s]
-
-                # Optionally wait N steps before enabling fake quant
-                if self._fake_quant_after_n_steps is not None:
-                    if self.global_step == 0:
-                        log.info(
-                            "Step 0: Disabling fake quant, will re-enable in step %s"
-                            % self._fake_quant_after_n_steps
-                        )
-                        disable_fq = utils.quantization._get_disable_fake_quant(
-                            self._quantizer_mode
-                        )
-                        self._model.apply(disable_fq)
-                    elif self.global_step == self._fake_quant_after_n_steps:
-                        log.info(
-                            "Step %s: Enabling fake quant"
-                            % self._fake_quant_after_n_steps
-                        )
-                        enable_fq = utils.quantization._get_enable_fake_quant(
-                            self._quantizer_mode
-                        )
-                        self._model.apply(enable_fq)
 
                 tokens = tokens.to(self._device)
                 num_tokens += tokens.numel()
@@ -581,10 +469,10 @@ class QATRecipeDistributed(FTRecipeInterface):
 
                 # Step with optimizer
                 if (idx + 1) % self._gradient_accumulation_steps == 0:
-                    self._optimizer.step()
-                    self._optimizer.zero_grad(set_to_none=True)
+                    if not self._optimizer_in_bwd:
+                        self._optimizer.step()
+                        self._optimizer.zero_grad(set_to_none=True)
 
-                    # Update the number of steps when the weights are updated
                     self.global_step += 1
 
                     loss_to_log = running_loss.item()
@@ -594,18 +482,21 @@ class QATRecipeDistributed(FTRecipeInterface):
                     )
 
                     # Log per-step metrics
-                    if (
-                        self.global_step % self._log_every_n_steps == 0
-                        and self._is_rank_zero
-                    ):
+                    if self.global_step % self._log_every_n_steps == 0:
                         time_per_step = time.perf_counter() - t0
                         log_dict = {
                             "loss": loss_to_log,
-                            "lr": self._optimizer.param_groups[0]["lr"],
+                            # NOTE: for optim in backward, this assumes all optimizers have the same LR. This is currently
+                            # true since we don't expose the ability to configure this yet.
+                            "lr": (
+                                self._optim_ckpt_wrapper.get_optim_key("lr")
+                                if self._optimizer_in_bwd
+                                else self._optimizer.param_groups[0]["lr"]
+                            ),
                             "tokens_per_second_per_gpu": num_tokens / time_per_step,
                         }
-                        if self._log_peak_memory_stats:
-                            log_dict.update(utils.get_memory_stats(device=self._device))
+                        # if self._device.type == "cuda" and self._log_peak_memory_stats:
+                        #     log_dict.update(utils.get_memory_stats(device=self._device))
                         self._metric_logger.log_dict(
                             log_dict,
                             step=self.global_step,
@@ -620,9 +511,7 @@ class QATRecipeDistributed(FTRecipeInterface):
             self.save_checkpoint(epoch=curr_epoch)
 
     def cleanup(self) -> None:
-        if self._is_rank_zero:
-            self._metric_logger.close()
-        torch.distributed.destroy_process_group()
+        self._metric_logger.close()
 
 
 @config.parse
@@ -634,21 +523,8 @@ def recipe_main(cfg: DictConfig) -> None:
         - Parameters specified in config (see available configs through ``tune ls``)
         - Overwritten by arguments from the command-line
     """
-    if not utils.is_distributed():
-        raise RuntimeError(
-            "Distributed QAT recipe should be run via a distributed launcher."
-            "If using tune CLI, please specify --nnodes 1 and --nproc_per_node [num_gpus]"
-        )
-
-    init_process_group(backend="gloo" if cfg.device == "cpu" else "nccl")
-    if cfg.get("fsdp_cpu_offload", False):
-        # Utilize all available CPU cores for intra-op parallelism. This provides ~2x
-        # speed up when benchmarking fused AdamW on CPU
-        utils.set_torch_num_threads()
-
-    config.log_config(recipe_name="QATRecipeDistributed", cfg=cfg)
-
-    recipe = QATRecipeDistributed(cfg=cfg)
+    config.log_config(recipe_name="FullFinetuneRecipeSingleDevice", cfg=cfg)
+    recipe = FullFinetuneRecipeSingleDevice(cfg=cfg)
     recipe.setup(cfg=cfg)
     recipe.train()
     recipe.cleanup()

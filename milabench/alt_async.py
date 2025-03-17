@@ -123,7 +123,10 @@ class FeedbackEventLoop(type(asyncio.get_event_loop())):
             yield from self.run_until_complete(coro)
         except BaseException as exc:
             for mx in self._multiplexers:
-                for proc, (streams, argv, info) in mx.processes.items():
+                for proc, attr in mx.processes.items():
+                    # ValueError: not enough values to unpack (expected 4, got 3)
+                    streams, argv, info = attr[0], attr[1], attr[2]
+
                     yield self._callback(
                         mx.constructor(
                             event="error",

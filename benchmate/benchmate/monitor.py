@@ -4,7 +4,6 @@ import os
 import time
 from contextlib import contextmanager
 
-
 from voir.instruments.utils import monitor as generic_monitor
 from voir.smuggle import SmuggleWriter
 from voir.tools import instrument_definition
@@ -45,8 +44,16 @@ def monitor_monogpu(ov, poll_interval=1, arch=None):
         ov,
         poll_interval=poll_interval,
         gpudata=gpu_monitor_fun(),
-        process=process_monitor(os.getpid()),
         worker_init=lambda: select_backend(arch, force=True),
+    )
+
+
+@instrument_definition
+def monitor_process_monogpu(ov, poll_interval=3, arch=None):
+    return monitor(
+        ov,
+        poll_interval=poll_interval,
+        process=process_monitor(os.getpid()),
     )
 
 

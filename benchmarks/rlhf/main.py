@@ -1,7 +1,24 @@
 #!/usr/bin/env python
 
-import shutil
+# Copyright 2025 The HuggingFace Team. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
+import shutil
+from dataclasses import dataclass, field
+from typing import Iterable, Optional, Union
+
+import torch
 import accelerate
 from accelerate import PartialState
 from datasets import load_dataset
@@ -12,21 +29,55 @@ from transformers import (
     HfArgumentParser,
 )
 
-from trl import ModelConfig
-from trl.trainer.ppov2_trainer import PPOv2Config, PPOv2Trainer
-from trl.trainer.utils import SIMPLE_QUERY_CHAT_TEMPLATE
+from trl import (
+    ModelConfig,
+    PPOConfig,
+    PPOTrainer,
+    get_kbit_device_map,
+    get_peft_config,
+    get_quantization_config,
+)
 
 import torchcompat.core as compat
 
+"""
+python -i examples/scripts/ppo/ppo.py \
+    --dataset_name trl-internal-testing/descriptiveness-sentiment-trl-style \
+    --dataset_train_split descriptiveness \
+    --learning_rate 3e-6 \
+    --output_dir models/minimal/ppo \
+    --per_device_train_batch_size 64 \
+    --gradient_accumulation_steps 1 \
+    --total_episodes 10000 \
+    --model_name_or_path EleutherAI/pythia-1b-deduped \
+    --missing_eos_penalty 1.0
 
-class PPOv2TrainerIntrumented(PPOv2Trainer):
-    def __init__(self, config: PPOv2Config, *args, **kwargs):
-        config.report_to = []
+accelerate launch --config_file examples/accelerate_configs/deepspeed_zero3.yaml \
+    examples/scripts/ppo/ppo.py \
+    --dataset_name trl-internal-testing/descriptiveness-sentiment-trl-style \
+    --dataset_train_split descriptiveness \
+    --output_dir models/minimal/ppo \
+    --num_ppo_epochs 1 \
+    --num_mini_batches 1 \
+    --learning_rate 3e-6 \
+    --per_device_train_batch_size 1 \
+    --gradient_accumulation_steps 16 \
+    --total_episodes 10000 \
+    --model_name_or_path EleutherAI/pythia-1b-deduped \
+    --sft_model_path EleutherAI/pythia-1b-deduped \
+    --reward_model_path EleutherAI/pythia-1b-deduped \
+    --local_rollout_forward_batch_size 1 \
+    --missing_eos_penalty 1.0
+"""
+
+class PPOv2TrainerIntrumented(PPOTrainer):
+    def __init__(self, args: PPOConfig, *pargs, **kwargs):
+        args.report_to = []
         
         # FIXME: better way to monkeypatch this ?
         # Use the compatibility accelerator class
         accelerate.Accelerator = compat.accelerate.Accelerator
-        super().__init__(config, *args, **kwargs)
+        super().__init__(args, *pargs, **kwargs)
 
         def batch_size_fn(batch):
             x, y = batch['input_ids'].shape
@@ -52,47 +103,66 @@ class PPOv2TrainerIntrumented(PPOv2Trainer):
         pass
 
 
-def main():
-    
 
-    parser = HfArgumentParser((PPOv2Config, ModelConfig))
-    config, model_config = parser.parse_args_into_dataclasses()
-    
-    import torchcompat.core
-    
+
+def main():
+    from trl.trainer.utils import SIMPLE_CHAT_TEMPLATE
+    from trl.scripts.utils import ScriptArguments
+    # SIMPLE_CHAT_TEMPLATE = "{% for message in messages %}{{message['role'].capitalize() + ': ' + message['content'] + '\n\n'}}{% endfor %}{% if add_generation_prompt %}{{ 'Assistant:' }}{% endif %}"
+
+    parser = HfArgumentParser((ScriptArguments, PPOConfig, ModelConfig))
+    script_args, training_args, model_args = parser.parse_args_into_dataclasses()
     # remove output_dir if exists
-    shutil.rmtree(config.output_dir, ignore_errors=True)
+    shutil.rmtree(training_args.output_dir, ignore_errors=True)
 
     ################
     # Model & Tokenizer
     ################
+    torch_dtype = (
+        model_args.torch_dtype if model_args.torch_dtype in ["auto", None] else getattr(torch, model_args.torch_dtype)
+    )
+    quantization_config = get_quantization_config(model_args)
+    model_kwargs = dict(
+        revision=model_args.model_revision,
+        attn_implementation=model_args.attn_implementation,
+        torch_dtype=torch_dtype,
+        device_map=get_kbit_device_map() if quantization_config is not None else None,
+        quantization_config=quantization_config,
+    )
+
     tokenizer = AutoTokenizer.from_pretrained(
-        model_config.model_name_or_path,
-        padding_side="left",
-        trust_remote_code=model_config.trust_remote_code,
+        model_args.model_name_or_path, padding_side="left", trust_remote_code=model_args.trust_remote_code
     )
     tokenizer.add_special_tokens({"pad_token": "[PAD]"})
     if tokenizer.chat_template is None:
-        tokenizer.chat_template = SIMPLE_QUERY_CHAT_TEMPLATE
+        tokenizer.chat_template = SIMPLE_CHAT_TEMPLATE
     value_model = AutoModelForSequenceClassification.from_pretrained(
-        config.reward_model_path, trust_remote_code=model_config.trust_remote_code, num_labels=1
+        training_args.reward_model_path, trust_remote_code=model_args.trust_remote_code, num_labels=1
     )
     reward_model = AutoModelForSequenceClassification.from_pretrained(
-        config.reward_model_path, trust_remote_code=model_config.trust_remote_code, num_labels=1
-    )
-    ref_policy = AutoModelForCausalLM.from_pretrained(
-        config.sft_model_path, trust_remote_code=model_config.trust_remote_code
+        training_args.reward_model_path, trust_remote_code=model_args.trust_remote_code, num_labels=1
     )
     policy = AutoModelForCausalLM.from_pretrained(
-        config.sft_model_path, trust_remote_code=model_config.trust_remote_code
+        training_args.sft_model_path, trust_remote_code=model_args.trust_remote_code
     )
+
+    peft_config = get_peft_config(model_args)
+    if peft_config is None:
+        ref_policy = AutoModelForCausalLM.from_pretrained(
+            training_args.sft_model_path, trust_remote_code=model_args.trust_remote_code
+        )
+    else:
+        ref_policy = None
+
     ################
     # Dataset
     ################
-    raw_datasets = load_dataset("trl-internal-testing/descriptiveness-sentiment-trl-style", split="descriptiveness")
-    eval_samples = 20
-    train_dataset = raw_datasets.select(range(len(raw_datasets) - eval_samples))
-    eval_dataset = raw_datasets.select(range(len(raw_datasets) - eval_samples, len(raw_datasets)))
+    dataset = load_dataset(
+        script_args.dataset_name, name=script_args.dataset_config, split=script_args.dataset_train_split
+    )
+    eval_samples = 100
+    train_dataset = dataset.select(range(len(dataset) - eval_samples))
+    eval_dataset = dataset.select(range(len(dataset) - eval_samples, len(dataset)))
     dataset_text_field = "prompt"
 
     def prepare_dataset(dataset, tokenizer):
@@ -109,7 +179,7 @@ def main():
             tokenize,
             batched=True,
             remove_columns=dataset.column_names,
-            num_proc=config.dataset_num_proc,
+            num_proc=training_args.dataset_num_proc,
         )
 
     # Compute that only on the main process for faster data processing.
@@ -122,17 +192,25 @@ def main():
     # Training
     ################
     trainer = PPOv2TrainerIntrumented(
-        config=config,
-        tokenizer=tokenizer,
-        policy=policy,
-        ref_policy=ref_policy,
+        args=training_args,
+        processing_class=tokenizer,
+        model=policy,
+        ref_model=ref_policy,
         reward_model=reward_model,
         value_model=value_model,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
+        peft_config=peft_config,
     )
-
     trainer.train()
+
+    # Save and push to hub
+    trainer.save_model(training_args.output_dir)
+    if training_args.push_to_hub:
+        trainer.push_to_hub(dataset_name=script_args.dataset_name)
+
+    trainer.generate_completions()
+
 
 
 if __name__ == "__main__":

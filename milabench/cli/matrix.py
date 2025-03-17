@@ -64,6 +64,7 @@ def clean_config(config, args):
 
 @tooled
 def cli_matrix_run(args=None):
+    """Generate a new benchmark configuration from a matrix run"""
     if args is None:
         args = arguments()
 

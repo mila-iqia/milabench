@@ -29,8 +29,8 @@ async def execute(pack, *args, cwd=None, env={}, external=False, use_stdout=Fals
 
     # Final argument transformation,
     # everything is resolved right now
-    sized_args = scale_argv(pack, args)
-    final_args = resolve_argv(pack, sized_args)
+    # sized_args = scale_argv(pack, args)
+    final_args = resolve_argv(pack, args)
 
     if use_stdout:
         exec_env["MILABENCH_USE_STDOUT"] = "1"
@@ -72,6 +72,9 @@ async def trigger_exceptions(futures, packs):
                 for l in line.split("\n"):
                     await pack.send(event="line", data=l, pipe="stderr")
 
+            # ---
+            # ValueError: filedescriptor out of range in select()
+            
             # also send the error
             await pack.send(event="error", data={
                 "type": type(exc).__name__, 
@@ -80,7 +83,7 @@ async def trigger_exceptions(futures, packs):
 
 
 async def execute_command(
-    command, phase="run", timeout=False, timeout_delay=600, **kwargs
+    command, phase="run", timeout=False, timeout_delay=600, with_gpu_warden=True, **kwargs
 ):
     """Execute all the commands and return the aggregated results"""
     packs = {}
@@ -90,7 +93,7 @@ async def execute_command(
 
     max_delay = timeout_delay
 
-    with process_cleaner() as warden:
+    with process_cleaner(with_gpu_warden=with_gpu_warden) as warden:
         for pack, argv, _kwargs in command.commands():
             await pack.send(event="config", data=pack.config)
             await pack.send(event="meta", data=machine_metadata(pack))

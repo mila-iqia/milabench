@@ -6,7 +6,7 @@ import datetime
 import functools
 
 import cpuinfo
-from voir.instruments.gpu import get_gpu_info
+import voir.instruments.gpu as gpu
 
 import milabench.scripts.torchversion as torchversion
 
@@ -14,9 +14,16 @@ from ._version import __commit__, __date__, __tag__
 from .scripts.vcs import retrieve_git_versions
 from .utils import error_guard
 
+
 def _get_gpu_info():
     try:
-        return get_gpu_info()
+        smi = gpu.select_backend()
+
+        return {
+            "arch": smi.arch,
+            "gpus": smi.get_gpus_info(),
+            "system": smi.system_info(),
+        }
     except Exception:
         traceback.print_exc()
         return {}
@@ -72,3 +79,9 @@ def machine_metadata(pack=None):
         ),
         "pytorch": torchv,
     }
+
+
+if __name__ == "__main__":
+    import json
+
+    print(json.dumps(machine_metadata(), indent=2))

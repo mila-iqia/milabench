@@ -38,6 +38,15 @@ jobs:
       packages: write
 
     steps:
+      - uses: easimon/maximize-build-space@master
+        with:
+          remove-dotnet: 'true'
+          remove-codeql: 'true'
+          remove-haskell: 'true'
+          remove-android: 'true'
+          build-mount-path: /home/runner/work/milabench/
+          root-reserve-mb: 30000
+
       - name: Show all images
         run: |
           docker image ls

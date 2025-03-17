@@ -37,29 +37,29 @@ while getopts ":hm:p:e:b:o:c:f:" opt; do
       usage
       ;;
     f)
-      FUN="$OPTARG"
+      FUN="${OPTARG# }"
       ;;
     p)
-        PYTHON="$OPTARG"
+        PYTHON="${OPTARG# }"
         ;;
     b)
-        BRANCH="$OPTARG"
+        BRANCH="${OPTARG# }"
         ;;
     o)
-        ORIGIN="$OPTARG"
+        ORIGIN="${OPTARG# }"
         ;;
     c)
-        CONFIG="$OPTARG"
+        CONFIG="${OPTARG# }"
         ;;
     e)
-        ENV="$OPTARG"
+        ENV="${OPTARG# }"
         ;;
     a)
-        ARCH="$OPTARG"
+        ARCH="${OPTARG# }"
         ;;
     l)
         # FIX ME
-        LOC="$OPTARG"
+        LOC="${OPTARG# }"
         CONFIG="$LOC/milabench/config/standard.yaml"
         BASE="$LOC/base"
         ;;

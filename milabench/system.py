@@ -1,19 +1,16 @@
 import contextvars
 from copy import deepcopy
-import ipaddress
 import os
-import socket
-import subprocess
 import sys
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 
-import psutil
 import yaml
 from voir.instruments.gpu import get_gpu_info
 
 from .fs import XPath
 from .merge import merge
+from .network import resolve_addresses
 
 system_global = contextvars.ContextVar("system", default=None)
 multirun_global = contextvars.ContextVar("multirun", default=None)
@@ -111,6 +108,7 @@ def multirun():
             
             ctx = unflatten(run)
             ctx['time'] = int(time.time())
+            
             run_name = template_name.format(**ctx)
             
             yield run_name, run
@@ -185,10 +183,16 @@ def default_save_location():
 @dataclass
 class SizerOptions:
     # overrides the batch size to use for all benchmarks
-    size: int = defaultfield("sizer.batch_size", int, None)
+    batch_size: int = defaultfield("sizer.batch_size", int, None)
+
+    # Add a fixed number to the current batch size
+    add: int = defaultfield("sizer.add", int, None)
+
+    # Add a fixed number to the current batch size
+    mult: int = defaultfield("sizer.mult", float, None)
 
     # Enables auto batch resize
-    autoscale: bool = defaultfield("sizer.auto", int, 0)
+    auto: bool = defaultfield("sizer.auto", int, 0)
 
     # Constraint the batch size to be a multiple of a number
     multiple: int = defaultfield("sizer.multiple", int, 8)
@@ -205,18 +209,35 @@ class SizerOptions:
     # Save the batch size, VRM usage data to a scaling file
     save: str = defaultfield("sizer.save", str, None)
 
+    @property
+    def autoscale(self):
+        return self.enabled and self.multiple or self.capacity
+
+    @property
+    def enabled(self):
+        return self.auto > 0
+
+    @staticmethod
+    def instance():
+        system_config = system_global.get() or {}
+        instance = SizerOptions(**system_config.get("options", {}).get("sizer", {}))
+        return instance
+
+    @property
+    def size(self):
+        return self.batch_size
 
 @dataclass
 class CPUOptions:
-    enabled: bool = defaultfield("cpu.auto", bool, False)
+    enabled: bool = defaultfield("cpu.enabled", bool, False)
 
     total_count: bool = defaultfield("cpu.total_count", int, None)
 
     # max number of CPU per GPU
-    cpu_max: int = defaultfield("cpu.max", int, 16)
+    max: int = defaultfield("cpu.max", int, 16)
 
     # min number of CPU per GPU
-    cpu_min: int = defaultfield("cpu.min", int, 2)
+    min: int = defaultfield("cpu.min", int, 2)
 
     # reserved CPU cores (i.e not available for the benchmark)
     reserved_cores: int = defaultfield("cpu.reserved_cores", int, 0)
@@ -224,6 +245,20 @@ class CPUOptions:
     # Number of workers (ignores cpu_max and cpu_min)
     n_workers: int = defaultfield("cpu.n_workers", int)
 
+    @staticmethod
+    def instance():
+        system_config = system_global.get() or {}
+        instance =  CPUOptions(**system_config.get("options", {}).get("cpu", {}))
+        return instance
+
+    @property
+    def cpu_max(self):
+        return self.max
+
+    @property
+    def cpu_min(self):
+        return self.min
+    
 
 @dataclass
 class DatasetConfig:
@@ -232,6 +267,34 @@ class DatasetConfig:
 
     # buffer location to copy the datasets bfore running the benchmarks
     buffer: str = defaultfield("data.buffer", str, default="${dirs.base}/buffer")
+
+
+def default_docker_args():
+    return [
+       "-it", "--rm", "--ipc=host", "--gpus=all",
+        "--network", "host",
+        "--privileged",
+       "-e", f"MILABENCH_HF_TOKEN={os.getenv('MILABENCH_HF_TOKEN', 'Undefined')}",
+       "-v", "/tmp/workspace/data:/milabench/envs/data",
+       "-v", "/tmp/workspace/runs:/milabench/envs/runs",
+    ]
+
+
+@dataclass
+class DockerConfig:
+    executable: str = defaultfield("docker.executable", str, "podman")
+    image: str  = defaultfield("docker.image", str, None)
+    base: str = defaultfield("docker.base", str, "/tmp/workspace")
+    args: list = defaultfield("docker.args", list, default_docker_args())
+
+    def command(self, extra_args):
+        return [
+            self.executable,
+            "run",
+            *self.args,
+            *extra_args,
+            self.image
+        ]
 
 
 @dataclass
@@ -305,6 +368,7 @@ class SystemConfig:
     noterm: bool = defaultfield("noterm", bool, 0)
     github: Github = field(default_factory=Github)
 
+    use_uv: bool = defaultfield("use_uv", bool, 0)
 
 def check_node_config(nodes):
     mandatory_fields = ["name", "ip", "user"]
@@ -314,149 +378,6 @@ def check_node_config(nodes):
 
         for field in mandatory_fields:
             assert field in node, f"The `{field}` of the node `{name}` is missing"
-
-
-def get_remote_ip():
-    """Get all the ip of all the network interfaces"""
-    if offline:
-        return set()
-
-    addresses = psutil.net_if_addrs()
-    stats = psutil.net_if_stats()
-
-    result = []
-
-    for interface, address_list in addresses.items():
-        for address in address_list:
-            # if address.family in (socket.AF_INET, socket.AF_INET6):
-            if interface in stats and getattr(stats[interface], "isup"):
-                result.append(address.address)
-
-    return set(result)
-
-
-def is_loopback(address: str) -> bool:
-    try:
-        # Create an IP address object
-        ip = ipaddress.ip_address(address)
-        # Check if the address is a loopback address
-        return ip.is_loopback
-    except ValueError:
-        # If the address is invalid, return False
-        return False
-
-
-
-# If true that means we cannot resolve the ip addresses
-# so we ignore errors
-offline = True
-
-
-@contextmanager
-def enable_offline(enabled):
-    global offline
-    old = offline
-
-    offline = enabled
-    yield
-    offline = old
-
-
-def _resolve_addresses(nodes):
-    # Note: it is possible for self to be none
-    # if we are running milabench on a node that is not part of the system
-    # in that case it should still work; the local is then going to
-    # ssh into the main node which will dispatch the work to the other nodes
-    self = None
-    lazy_raise = None
-    ip_list = get_remote_ip()
-
-    for node in nodes:
-        ip = node["ip"]
-        
-        is_local = is_loopback(ip)
-        
-        if ip in ip_list:
-            is_local = True            
-        
-        node["local"] = is_local
-        
-        if is_local:
-            node["hostname"] = socket.gethostname()
-
-        if is_local and self is None:
-            self = node
-            node["ipaddrlist"] = list(set(list(ip_list)))
-
-    # if self is node we might be outisde the cluster
-    # which explains why we could not resolve the IP of the nodes
-    if not offline:
-        if self is not None and lazy_raise:
-            raise RuntimeError("Could not resolve node ip") from lazy_raise
-
-    return self
-
-
-def gethostname(host):
-    try:
-        #             "-oCheckHostIP=no",
-        # "-oPasswordAuthentication=no",
-        return subprocess.check_output([
-            "ssh",  
-            "-oCheckHostIP=no", 
-            "-oPasswordAuthentication=no", 
-            "-oStrictHostKeyChecking=no", host, "cat", "/etc/hostname"], text=True).strip()
-    except:
-        print("Could not resolve hostname")
-        return host
-
-
-def resolve_hostname(ip):
-    try:
-        hostname, _, iplist = socket.gethostbyaddr(ip)
-        
-        for ip in iplist:
-            if is_loopback(ip):
-                return hostname, True
-
-        # FIXME
-        return socket.gethostname(), hostname.startswith(socket.gethostname())
-        return hostname, hostname == socket.gethostname()
-
-    except:
-        if offline:
-            return ip, False
-
-        raise
-
-def resolve_node_address(node):
-    hostname, local = resolve_hostname(node["ip"])
-
-    node["hostname"] = hostname
-    node["local"] = local
-
-    if local:
-        # `gethostbyaddr` returns `cn-d003` but we want `cn-d003.server.mila.quebec`
-        # else torchrun does not recognize the main node
-        node["hostname"] = socket.gethostname()
-        
-    return local
-
-
-def resolve_addresses(nodes):
-    if offline:
-        for n in nodes:
-            n["hostname"] = n["ip"]
-    
-        return nodes[0]
-
-    self = None
-    
-    for node in nodes:
-        if resolve_node_address(node):
-            self = node
-
-    return self
 
 
 def build_system_config(config_file, defaults=None, gpu=True):
@@ -537,7 +458,3 @@ def show_overrides(to_json=False):
         print(json.dumps(config, indent=2))
     else:
         compact(config, 0)
-
-
-if __name__ == "__main__":
-    show_overrides()

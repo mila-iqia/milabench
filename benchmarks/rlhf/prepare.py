@@ -9,14 +9,20 @@ from transformers import (
     HfArgumentParser,
 )
 from datasets import load_dataset
-from trl import ModelConfig
-from trl.trainer.ppov2_trainer import PPOv2Config
-from trl.trainer.utils import SIMPLE_QUERY_CHAT_TEMPLATE
-
+from trl.trainer.utils import SIMPLE_CHAT_TEMPLATE
+from trl.scripts.utils import ScriptArguments
+from trl import (
+    ModelConfig,
+    PPOConfig,
+    PPOTrainer,
+    get_kbit_device_map,
+    get_peft_config,
+    get_quantization_config,
+)
 
 if __name__ == "__main__":
-    parser = HfArgumentParser((PPOv2Config, ModelConfig))
-    config, model_config = parser.parse_args_into_dataclasses()
+    parser = HfArgumentParser((ScriptArguments, PPOConfig, ModelConfig))
+    script_args, config, model_config = parser.parse_args_into_dataclasses()
     
     # remove output_dir if exists
     shutil.rmtree(config.output_dir, ignore_errors=True)
@@ -30,7 +36,7 @@ if __name__ == "__main__":
     tokenizer.add_special_tokens({"pad_token": "[PAD]"})
 
     if tokenizer.chat_template is None:
-        tokenizer.chat_template = SIMPLE_QUERY_CHAT_TEMPLATE
+        tokenizer.chat_template = SIMPLE_CHAT_TEMPLATE
     
     value_model = AutoModelForSequenceClassification.from_pretrained(
         config.reward_model_path, 
