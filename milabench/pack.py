@@ -31,8 +31,13 @@ from .utils import (
 
 def should_use_uv():
     from .system import option
-    return option("use_uv", bool, 0)
+    return option("use_uv", int, 0)
 
+def no_build_isolation(build_isolation):
+    from .system import option
+    if option("no_build_isolation", bool, not build_isolation):
+        return ["--no-build-isolation"]
+    return []
 
 @functools.cache
 def is_editable_install():
@@ -60,9 +65,10 @@ async def install_benchmate(pack: Package):
     group = pack.config.get("install_group", {})
 
     if group not in installed_benchmate:
+        # "no-build-isolation" + "build-system.requires" does not work
         milabench = os.path.dirname(__file__)
         benchmate = os.path.join(milabench, "..", "benchmate")
-        await pack.pip_install("-e", benchmate)
+        await pack.pip_install("-e", benchmate, build_isolation=True)
         installed_benchmate[group] = 1
 
 
@@ -205,7 +211,7 @@ class BasePackage:
         await self.install()
         self.install_mark_file.touch()
 
-    async def pip_install(self, *args):
+    async def pip_install(self, *args, build_isolation=False, **kwargs):
         """Install a package in the virtual environment.
 
         The arguments are given to ``pip install`` verbatim, so you can
@@ -220,9 +226,9 @@ class BasePackage:
             args += line.split(" ")
 
         if should_use_uv():
-            pip_install_cmd = ["uv", "pip", "install", "--no-build-isolation", "--index-strategy", "unsafe-best-match", *args]
+            pip_install_cmd = ["uv", "pip", "install"] + no_build_isolation(build_isolation) + [ "--index-strategy", "unsafe-best-match", *args]
         else:
-            pip_install_cmd = ["pip", "install", "--no-build-isolation", *args]
+            pip_install_cmd = ["pip", "install"] + no_build_isolation(build_isolation) + [*args]
 
         await run(
             pip_install_cmd,
