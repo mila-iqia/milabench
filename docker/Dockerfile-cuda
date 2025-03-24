@@ -70,6 +70,9 @@ RUN python -m pip install -U pip            &&\
 # pip times out often when downloading pytorch
 ENV PIP_DEFAULT_TIMEOUT=800
 
+# https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html#gpu-feature-list
+ENV TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6;8.9"
+
 RUN milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
     python -m pip cache purge                                                          
 
