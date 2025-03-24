@@ -29,5 +29,17 @@ class Recursiongfn(Package):
     async def prepare(self):
         await super().prepare()  # super() call executes prepare_script
 
+    def make_env(self):
+        # Return a dict of environment variables for prepare_script and
+        # main_script.
+        env = super().make_env()
+
+        # In the case of compiling pytorch geometric
+        # we want to compile for conda support even if no GPUs are availble
+        env = {
+            "FORCE_CUDA": "1"
+        }
+
+        return env
 
 __pack__ = Recursiongfn
