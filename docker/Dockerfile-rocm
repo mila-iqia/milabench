@@ -63,7 +63,7 @@ RUN python -m pip install -U pip            &&\
 
 # pip times out often when downloading pytorch
 ENV PIP_DEFAULT_TIMEOUT=800
-
+ENV ROCM_HOME="/opt/rocm"
 RUN milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
     python -m pip cache purge
 
