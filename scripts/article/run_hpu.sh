@@ -114,36 +114,41 @@ fi
 #
 # sed -i 's/pic.numpy(force=True)/pic.numpy()/' $BENCHMARK_VENV/lib/python3.10/dist-packages/torchvision/transforms/functional.py
 # sed -i 's/range(hpu.device_count())/range(len(available_modules))/' $BENCHMARK_VENV/lib/site-packages/habana_frameworks/torch/hpu/_utils.py
-milabench prepare $ARGS
+# milabench prepare $ARGS
+
+# (
+#     . $BENCHMARK_VENV/bin/activate
+#     pip install lightning-habana
+#     pip install habana-media-loader
+#     # git clone https://github.com/Delaunay/torchcompat.git
+#     # git clone https://github.com/breuleux/voir
+#     pip uninstall torchcompat voir -y
+#     pip install -e $MILABENCH_WORDIR/torchcompat
+#     pip install -e $MILABENCH_WORDIR/voir
+#     pip install -e $MILABENCH_WORDIR/optimum-habana
+#     # pip install habana_dataloader
+# )
+
+
 
 (
-    . $BENCHMARK_VENV/bin/activate
-    pip install lightning-habana
-    pip install habana-media-loader
-    # git clone https://github.com/Delaunay/torchcompat.git
-    # git clone https://github.com/breuleux/voir
+    . $MILABENCH_WORDIR/env/bin/activate
     pip uninstall torchcompat voir -y
     pip install -e $MILABENCH_WORDIR/torchcompat
     pip install -e $MILABENCH_WORDIR/voir
-    pip install -e $MILABENCH_WORDIR/optimum-habana
-    # pip install habana_dataloader
 )
-
-
-
-
 
 if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     cd $MILABENCH_WORDIR
 
     # python -c "import torch; print(torch.__version__)"
-    milabench prepare $ARGS --system $MILABENCH_WORDIR/system.yaml
+    # milabench prepare $ARGS --system $MILABENCH_WORDIR/system.yaml
 
     #
     #   Run the benchmakrs
-    milabench run $ARGS --system $MILABENCH_WORDIR/system.yaml
+    milabench run $ARGS
 
     #
     #   Display report
-    milabench report --runs $MILABENCH_WORDIR/results/runs
+    # milabench report --runs $MILABENCH_WORDIR/results/runs
 fi

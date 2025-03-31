@@ -151,6 +151,8 @@ def huggingface_main(args, model, config):
         if count > 40:
             break
 
+        print(f"{count/40:%}")
+
     monitor.stop()
 
 
