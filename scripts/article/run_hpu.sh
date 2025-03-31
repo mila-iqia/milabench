@@ -38,11 +38,11 @@ install_prepare() {
         export MILABENCH_SOURCE="$MILABENCH_WORDIR/milabench"
     fi
 
-    git clone https://github.com/huggingface/optimum-habana.git -b v1.13.2
+    git clone https://github.com/huggingface/optimum-habana.git -b v1.16.0
 
     # wget -nv https://vault.habana.ai/artifactory/gaudi-installer/1.15.1/habanalabs-installer.sh
     # wget -nv https://vault.habana.ai/artifactory/gaudi-installer/1.16.1/habanalabs-installer.sh
-    wget -nv https://vault.habana.ai/artifactory/gaudi-installer/1.17.1/habanalabs-installer.sh
+    wget -nv https://vault.habana.ai/artifactory/gaudi-installer/1.20.0/habanalabs-installer.sh
     chmod +x habanalabs-installer.sh
 
     . $MILABENCH_WORDIR/env/bin/activate
@@ -59,7 +59,7 @@ install_prepare() {
     #
     # Install milabench's benchmarks in their venv
     #
-    # milabench pin --variant hpu --from-scratch $ARGS 
+    milabench pin --variant hpu --from-scratch $ARGS 
     milabench install $ARGS
 
     (
@@ -89,7 +89,7 @@ install_prepare() {
     milabench prepare $ARGS
 }
 
-if [ ! -d "$MILABENCH_WORDIR" ]; then
+if [ ! -d "$MILABENCH_WORDIR/env" ]; then
     install_prepare
 else
     echo "Reusing previous install"
@@ -97,18 +97,41 @@ else
 fi
 
 
+
+# (
+#     . $BENCHMARK_VENV/bin/activate
+#     which pip
+#     # pip install --no-deps -e $MILABENCH_WORDIR/optimum-habana 
+#     pip install -U numpy
+#     pip uninstall torch torchvision torchaudio -y
+#     export HABANALABS_VIRTUAL_DIR=$BENCHMARK_VENV
+#     ./habanalabs-installer.sh install -t dependencies --venv -y | true
+#     ./habanalabs-installer.sh install -t pytorch --venv -y | true
+# )
+
+#
+#   Generate/download datasets, download models etc...
+#
+# sed -i 's/pic.numpy(force=True)/pic.numpy()/' $BENCHMARK_VENV/lib/python3.10/dist-packages/torchvision/transforms/functional.py
+# sed -i 's/range(hpu.device_count())/range(len(available_modules))/' $BENCHMARK_VENV/lib/site-packages/habana_frameworks/torch/hpu/_utils.py
+milabench prepare $ARGS
+
 (
     . $BENCHMARK_VENV/bin/activate
     pip install lightning-habana
     pip install habana-media-loader
     # git clone https://github.com/Delaunay/torchcompat.git
-    # git clone https://github.com/Delaunay/voir.git -b hpu
+    # git clone https://github.com/breuleux/voir
     pip uninstall torchcompat voir -y
     pip install -e $MILABENCH_WORDIR/torchcompat
     pip install -e $MILABENCH_WORDIR/voir
     pip install -e $MILABENCH_WORDIR/optimum-habana
     # pip install habana_dataloader
 )
+
+
+
+
 
 if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     cd $MILABENCH_WORDIR
