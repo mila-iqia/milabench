@@ -62,7 +62,8 @@ class Runner:
         self.device = accelerator.fetch_device(0)
         self.batch_size = args.batch_size
         self.info = models[args.model](args)
-        self.model = self.info.model.to(self.device)
+
+        self.model = accelerator.compile(self.info.model).to(self.device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=args.lr)
 
         # this cause the bench to fail for one model (reformer)

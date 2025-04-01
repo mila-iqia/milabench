@@ -120,23 +120,18 @@ fi
 #     . $BENCHMARK_VENV/bin/activate
 #     pip install lightning-habana
 #     pip install habana-media-loader
-#     # git clone https://github.com/Delaunay/torchcompat.git
-#     # git clone https://github.com/breuleux/voir
-#     pip uninstall torchcompat voir -y
-#     pip install -e $MILABENCH_WORDIR/torchcompat
-#     pip install -e $MILABENCH_WORDIR/voir
-#     pip install -e $MILABENCH_WORDIR/optimum-habana
-#     # pip install habana_dataloader
+#     pip install optimum-habana
+#     pip install optimum
 # )
 
 
 
-(
-    . $MILABENCH_WORDIR/env/bin/activate
-    pip uninstall torchcompat voir -y
-    pip install -e $MILABENCH_WORDIR/torchcompat
-    pip install -e $MILABENCH_WORDIR/voir
-)
+# (
+#     . $MILABENCH_WORDIR/env/bin/activate
+#     pip uninstall torchcompat voir -y
+#     pip install -e $MILABENCH_WORDIR/torchcompat
+#     pip install -e $MILABENCH_WORDIR/voir
+# )
 
 if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     cd $MILABENCH_WORDIR
@@ -152,3 +147,8 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     #   Display report
     # milabench report --runs $MILABENCH_WORDIR/results/runs
 fi
+
+
+
+
+

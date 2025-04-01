@@ -1,6 +1,6 @@
 # FROM artifactory-kfs.habana-labs.com/docker-local/1.17.0/ubuntu22.04/habanalabs/pytorch-installer-2.3.1:1.17.0-462
 
-FROM vault.habana.ai/gaudi-docker/1.17.0/ubuntu22.04/habanalabs/pytorch-installer-2.3.1:latest
+FROM vault.habana.ai/gaudi-docker/1.20.0/ubuntu22.04/habanalabs/pytorch-installer-2.6.0:latest
 
 ENV MILABENCH_GPU_ARCH=hpu
 
@@ -13,27 +13,31 @@ ENV MILABENCH_BASE="${MILABENCH_WORDIR}/results"
 ENV MILABENCH_VENV="${MILABENCH_WORDIR}/env"
 ENV BENCHMARK_VENV="${MILABENCH_WORDIR}/results/venv/torch"
 
-ARG BENCH=lightning
+ARG BENCH=torchatari
 
+ENV BENCH="${BENCH}"
 RUN mkdir -p ${MILABENCH_WORDIR}
 RUN pip install virtualenv
 RUN virtualenv --system-site-packages $MILABENCH_VENV
 
 ARG CACHEBUST=1 
 RUN echo "$CACHEBUST"
-RUN git clone https://github.com/mila-iqia/milabench.git -b $MILABENCH_GPU_ARCH
+RUN git clone https://github.com/mila-iqia/milabench.git -b gaudi3
+RUN git clone https://github.com/Delaunay/voir.git -b hpu
+RUN git clone https://github.com/Delaunay/torchcompat.git -b hpu
+
 RUN $MILABENCH_VENV/bin/pip install -e milabench
 
 RUN . $MILABENCH_VENV/bin/activate && milabench install --use-current-env --select "${BENCH}"
 
+RUN $MILABENCH_VENV/bin/pip install -e voir
+RUN $MILABENCH_VENV/bin/pip install -e torchcompat
+
 RUN $MILABENCH_VENV/bin/pip uninstall torch torchvision torchaudio -y 
-RUN sed -i 's/pic.numpy(force=True)/pic.numpy()/' /usr/local/lib/python3.10/dist-packages/torchvision/transforms/functional.py
+
 
 # This does not work
 # RUN . $MILABENCH_VENV/bin/activate && milabench prepare --use-current-env --select "${BENCH}"
-
-
-
 # RUN . $MILABENCH_VENV/bin/activate && milabench run --use-current-env --select $BENCH
 # RUN huggingface-cli login --token $MILABENCH_HF_TOKEN
 

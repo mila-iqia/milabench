@@ -34,6 +34,8 @@ def ddp_setup(rank, world_size):
     os.environ["MASTER_ADDR"] = "localhost"
     os.environ["MASTER_PORT"] = "12355"
     os.environ["ID"] = str(rank)
+    os.environ["RANK"] = str(rank)
+    os.environ["WORLD_SIZE"] = str(world_size)
     accelerator.init_process_group(backend=accelerator.ccl, rank=rank, world_size=world_size)
     accelerator.set_device(rank)
 
@@ -116,6 +118,8 @@ def load_train_objs(args):
     model = getattr(torchvision_models, args.model)()
 
     optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
+
+    model = accelerator.compile(model)
 
     return model, optimizer
 

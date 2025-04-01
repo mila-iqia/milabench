@@ -44,8 +44,19 @@ def instrument_main(ov, options: Config):
         stdout=False,
     )
 
+
+    from timm.models import create_model
+    from ptera.utils import refstring
+
+    from timm.models import create_model
+
+    print(refstring(create_model))
+
     probe = ov.probe("/timm.data.loader/create_loader() as loader", overridable=True)
     probe['loader'].override(observer.loader)
+
+    probe = ov.probe("/timm.models._factory/create_model() as model", overridable=True)
+    probe['model'].override(accelerator.compile)
 
     probe = ov.probe("//train_one_epoch > loss_fn", overridable=True)
     probe['loss_fn'].override(observer.criterion)

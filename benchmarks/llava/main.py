@@ -93,11 +93,10 @@ def main():
     optimizer = observer.optimizer(torch.optim.AdamW(model.parameters(), lr=5e-5))
     model, optimizer, dataloader = accelerator.prepare(model, optimizer, dataloader)
 
-    # model = torch.compile(model,backend="hpu_backend")
+    model = compat.compile(model)
 
     for epoch in range(args.epochs):
         for i, batch in enumerate(observer.iterate(dataloader)):
-            print("HERE")
             images = batch["images"][0]  # Access the first item in the list of images
             texts = batch["texts"]
             prompt = apply_chat_template(texts)
