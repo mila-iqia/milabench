@@ -3,6 +3,7 @@
 FROM vault.habana.ai/gaudi-docker/1.20.0/ubuntu22.04/habanalabs/pytorch-installer-2.6.0:latest
 
 ENV MILABENCH_GPU_ARCH=hpu
+ENV PT_HPU_LAZY_MODE=1
 
 WORKDIR /workspace
 
@@ -13,7 +14,7 @@ ENV MILABENCH_BASE="${MILABENCH_WORDIR}/results"
 ENV MILABENCH_VENV="${MILABENCH_WORDIR}/env"
 ENV BENCHMARK_VENV="${MILABENCH_WORDIR}/results/venv/torch"
 
-ARG BENCH=torchatari
+ARG BENCH=vjepa-single
 
 ENV BENCH="${BENCH}"
 RUN mkdir -p ${MILABENCH_WORDIR}
