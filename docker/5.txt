@@ -1,1 +1,7 @@
 git add --all
+git commit -m "-" | true
+git push origin gaudi3
+docker rmi -f  | true
+# docker system prune -a -f
+# docker image prune -a -f
+docker build --build-arg BENCH=bf16 --build-arg CACHEBUST=`git rev-parse gaudi3` -f Dockerfile-hpu -t dockerfile-hpu . 
