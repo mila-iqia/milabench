@@ -41,7 +41,7 @@ hpu-fast:
 		-e HABANA_VISIBLE_DEVICES=$(devices)   					     			\
 		-e OMPI_MCA_btl_vader_single_copy_mechanism=none		    			\
 		-v /home/ubuntu/hpu/results/data:/workspace/hpu/results/data 			\
-		-v /home/ubuntu/hpu/results/cache:/workspace/hpu/results/data 			\
+		-v /home/ubuntu/hpu/results/cache:/workspace/hpu/results/cache 			\
 		 --ipc=host   --cap-add=sys_nice   --net=host   dockerfile-hpu:latest   \
 		 bash -c '. $$MILABENCH_VENV/bin/activate && milabench run --use-current-env $(args) --select $(bench)'
 
