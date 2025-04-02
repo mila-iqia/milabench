@@ -43,5 +43,5 @@ hpu-fast:
 		-v /home/ubuntu/hpu/results/data:/workspace/hpu/results/data 			\
 		-v /home/ubuntu/hpu/results/cache:/workspace/hpu/results/cache 			\
 		 --ipc=host   --cap-add=sys_nice   --net=host   dockerfile-hpu:latest   \
-		 bash -c '. $$MILABENCH_VENV/bin/activate && milabench run --use-current-env $(args) --select $(bench)') > $(bench).out
+		 bash -c '. $$MILABENCH_VENV/bin/activate && pip install argklass && milabench run --use-current-env $(args) --select $(bench)') > $(bench).out
 
