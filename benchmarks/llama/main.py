@@ -90,6 +90,9 @@ def huggingface_main(args, model, config):
     else:
         model = LlamaForCausalLM(LlamaConfig.from_dict(config)).to(device=device)
 
+
+    model = accelerator.compile(model)
+
     println("Pipeline")
     pipeline = transformers.pipeline(
         "text-generation",
@@ -150,6 +153,8 @@ def huggingface_main(args, model, config):
 
         if count > 40:
             break
+
+        print(f"{count/40:%}")
 
     monitor.stop()
 

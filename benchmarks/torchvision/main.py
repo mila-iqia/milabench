@@ -62,21 +62,23 @@ def model_optimizer(args, model, device):
         model = torch.jit.trace(model, input)
         return model, model.parameters()
 
-    if "inductor" in args.optim:
-        from functorch import make_functional_with_buffers
-        from functorch.compile import make_boxed_func
+    # if "inductor" in args.optim:
+    #     from functorch import make_functional_with_buffers
+    #     from functorch.compile import make_boxed_func
 
-        model, params, buffers = make_functional_with_buffers(model)
+    #     model, params, buffers = make_functional_with_buffers(model)
 
-        model = make_boxed_func(model)
+    #     model = make_boxed_func(model)
 
-        # backend , nvprims_nvfuser, cnvprims_nvfuser
-        model = torch.compile(model, backend="inductor")
+    #     # backend , nvprims_nvfuser, cnvprims_nvfuser
+    #     model = torch.compile(model, backend="inductor")
 
-        def forward(*args):
-            return model((params, buffers, *args))
+    #     def forward(*args):
+    #         return model((params, buffers, *args))
 
-        return forward, params
+    #     return forward, params
+
+    model = accelerator.compile(model)
 
     return model, model.parameters()
 

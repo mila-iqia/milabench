@@ -39,7 +39,7 @@ def auto_push():
 
 
 @instrument_definition
-def monitor_monogpu(ov, poll_interval=1, arch=None):
+def monitor_monogpu(ov, poll_interval=1, arch=os.getenv("MILABENCH_GPU_ARCH")):
     return monitor(
         ov,
         poll_interval=poll_interval,
@@ -49,7 +49,7 @@ def monitor_monogpu(ov, poll_interval=1, arch=None):
 
 
 @instrument_definition
-def monitor_process_monogpu(ov, poll_interval=3, arch=None):
+def monitor_process_monogpu(ov, poll_interval=3, arch=os.getenv("MILABENCH_GPU_ARCH")):
     return monitor(
         ov,
         poll_interval=poll_interval,
@@ -58,7 +58,7 @@ def monitor_process_monogpu(ov, poll_interval=3, arch=None):
 
 
 @instrument_definition
-def monitor_node(ov, poll_interval=1, arch=None):
+def monitor_node(ov, poll_interval=1, arch=os.getenv("MILABENCH_GPU_ARCH")):
     return monitor(
         ov,
         poll_interval=poll_interval,
@@ -127,12 +127,12 @@ def smuggle_monitor(poll_interval=10, worker_init=None, enabled=True, **monitors
         yield
 
 
-def _monitors(monogpu=True):
+def _monitors(monogpu=True, arch=os.getenv("MILABENCH_GPU_ARCH")):
     if monogpu:
         monitors = [
             ("gpudata", gpu_monitor_fun()),
             ("process", process_monitor(os.getpid())),
-            ("worker_init", lambda: select_backend(None, True)),
+            ("worker_init", lambda: select_backend(arch, True)),
         ]
     else:
         monitors = [
@@ -140,7 +140,7 @@ def _monitors(monogpu=True):
             ("iodata", io_monitor()),
             ("netdata", network_monitor()),
             ("cpudata", cpu_monitor()),
-            ("worker_init", lambda: select_backend(None, True)),
+            ("worker_init", lambda: select_backend(arch, True)),
         ]
     return dict(monitors)
 
@@ -173,10 +173,10 @@ def bench_monitor(*args, **kwargs):
 #
 # Legacy compatibility
 #
-def setupvoir(monogpu=True, enabled=True):
+def setupvoir(monogpu=True, enabled=True, arch=os.getenv("MILABENCH_GPU_ARCH")):
     return _smuggle_monitor(
         poll_interval=3, 
-        **_monitors(monogpu)
+        **_monitors(monogpu, arch=arch)
     )
 
 
