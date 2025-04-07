@@ -58,6 +58,10 @@ def is_editable_install():
 
 installed_benchmate = {}
 
+def reset_benchmate_status():
+    global installed_benchmate
+    installed_benchmate = {}
+
 
 async def install_benchmate(pack: Package):
     global installed_benchmate

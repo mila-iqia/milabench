@@ -12,7 +12,7 @@ from ..common import (
     is_selected,
     merge,
 )
-from ..sizer import resolve_argv, scale_argv
+from ..sizer import resolve_argv
 from ..system import build_system_config
 
 
@@ -93,8 +93,8 @@ def cli_matrix_run(args=None):
         for k, v in argv.items():
             args.append(k)
             args.append(v)
-        sized_args = scale_argv(pack, args)
-        final_args = resolve_argv(pack, sized_args)
+        
+        final_args = resolve_argv(pack, args)
 
         i = 0
         for k, v in argv.items():

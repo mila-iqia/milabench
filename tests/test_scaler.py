@@ -4,7 +4,7 @@ from milabench.sizer import Sizer, SizerOptions, sizer_global
 
 
 def test_scaler_use_override(multipack, config):
-    sizer = Sizer(SizerOptions(size=64, autoscale=False), config("scaling"))
+    sizer = Sizer(SizerOptions(batch_size=64, auto=False), config("scaling"))
     for k, pack in multipack.packs.items():
         assert sizer.size(pack, "48Go") == 64
 
@@ -12,8 +12,8 @@ def test_scaler_use_override(multipack, config):
 def test_scaler_use_optimized(multipack, config):
     sizer = Sizer(
         SizerOptions(
-            size=None,
-            autoscale=False,
+            batch_size=None,
+            auto=False,
             optimized=True,
         ),
         config("scaling"),
@@ -36,7 +36,7 @@ _values = [
 
 @pytest.mark.parametrize("capacity,expected", _values)
 def test_scaler_autoscaler_lerp(multipack, config, capacity, expected):
-    sizer = Sizer(SizerOptions(size=None, autoscale=True, multiple=None), config("scaling"))
+    sizer = Sizer(SizerOptions(batch_size=None, auto=True, multiple=None), config("scaling"))
     for k, pack in multipack.packs.items():
         assert sizer.size(pack, capacity) == expected
 
@@ -51,8 +51,8 @@ _values_2 = [
 def test_scaler_autoscaler_lerp_multiple(multipack, config, capacity, expected):
     sizer = Sizer(
         SizerOptions(
-            size=None,
-            autoscale=True,
+            batch_size=None,
+            auto=True,
             multiple=8,
         ),
         config("scaling"),
@@ -67,10 +67,9 @@ def test_scaler_disabled(multipack):
 
 
 def fakeexec(pack):
-    from milabench.sizer import resolve_argv, scale_argv
+    from milabench.sizer import resolve_argv
 
-    sized_args = scale_argv(pack, pack.argv)
-    final_args = resolve_argv(pack, sized_args)
+    final_args = resolve_argv(pack, pack.argv)
     return final_args
 
 

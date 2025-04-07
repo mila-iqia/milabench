@@ -137,6 +137,23 @@ def apply_system(config: dict):
     system_global.set(old)
 
 
+def select(*args):
+    # This handles the case where 0 is right value and None is not
+    prev = []
+
+    for val in args:
+        if val is not None:
+            prev.append(val)
+
+        if val:
+            return val
+    
+    if prev:
+        return prev[0]
+
+    return None
+
+
 def option(name, etype, default=None):
     options = dict()
     system = system_global.get()
@@ -152,7 +169,7 @@ def option(name, etype, default=None):
         lookup = lookup.get(frag, dict())
 
     system_value = lookup.get(frags[-1], None)
-    final_value = env_value or system_value or default
+    final_value = select(env_value, system_value, default)
 
     _track_options(name, etype, default, final_value)
 

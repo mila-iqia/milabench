@@ -20,7 +20,7 @@ async def execute(pack, *args, cwd=None, env={}, external=False, use_stdout=Fals
         args: The arguments to the command
         cwd: The cwd to use (defaults to ``self.dirs.code``)
     """
-    from ..sizer import resolve_argv, scale_argv
+    from ..sizer import resolve_argv
 
     if cwd is None:
         cwd = pack.working_directory

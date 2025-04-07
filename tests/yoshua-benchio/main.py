@@ -24,6 +24,11 @@ def main():
         default=None,
     )
     parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=None,
+    )
+    parser.add_argument(
         "--bad",
         action="store_true"
     )

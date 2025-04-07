@@ -232,7 +232,7 @@ class Sizer:
         if self.options.optimized:
             return self.optimized(benchmark, capacity)
 
-        if self.options.autoscale:
+        if self.options.auto:
             return self.auto_size(benchmark, capacity)
 
         syslog("Could not find auto scale the batch size")
@@ -254,18 +254,6 @@ def batch_sizer() -> Sizer:
 def get_batch_size(config, start_event):
     sizer = batch_sizer()
     return sizer.find_batch_size(config, start_event)
-
-
-def scale_argv(pack, argv):
-    sizer = batch_sizer()
-
-    system = system_global.get()
-
-    if system:
-        capacity = system.get("gpu", dict()).get("capacity")
-        return sizer.argv(pack, capacity, argv)
-    else:
-        return argv
 
 
 def suggested_batch_size(pack):

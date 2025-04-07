@@ -6,7 +6,7 @@ async def _failure(pack, condition):
     await pack.message(msg)
 
 
-async def is_system_capable(pack):
+async def is_system_capable(pack) -> bool:
     # eval add __builtins__ to the dictionary, we copy it to not
     # spoil our beautiful config
     capability_context = deepcopy(pack.config["system"])

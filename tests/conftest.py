@@ -68,6 +68,9 @@ class MockDeviceSMI:
             "selection_variable": "MOCK_VISIBLE_DEVICES",
         }
 
+    def system_info(self):
+        return {}
+
     @property
     def arch(self):
         return "mock"
