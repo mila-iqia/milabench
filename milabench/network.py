@@ -130,6 +130,9 @@ def resolve_node_address(node):
         except Exception:
             print("Skipped local normalization")
 
+    if offline:
+        node["hostname"] = ip
+
     return local
 
 
