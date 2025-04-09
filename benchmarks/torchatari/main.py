@@ -5,7 +5,6 @@ import time
 from collections import deque
 from dataclasses import dataclass
 
-import envpool
 import gym
 import numpy as np
 import torch
@@ -15,6 +14,35 @@ import tyro
 from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
 import torchcompat.core as acc
+
+
+def make_environments(args):
+    try:
+        import envpool
+
+        # env setup
+        envs = envpool.make(
+            args.env_id,
+            env_type="gym",
+            num_envs=args.num_envs,
+            episodic_life=True,
+            reward_clip=True,
+            seed=args.seed,
+        )
+        envs.num_envs = args.num_envs
+        envs.single_action_space = envs.action_space
+        envs.single_observation_space = envs.observation_space
+        envs = RecordEpisodeStatistics(envs)
+        assert isinstance(envs.action_space, gym.spaces.Discrete), "only discrete action space is supported"
+
+        return envs
+    except ModuleNotFoundError:
+        from stable_baselines3.common.env_util import make_vec_env
+        return make_vec_env(
+            args.env_id,
+            n_envs=args.num_envs,
+
+        )
 
 @dataclass
 class Args:
@@ -186,20 +214,7 @@ def main():
 
     device = acc.fetch_device(0)
 
-    # env setup
-    envs = envpool.make(
-        args.env_id,
-        env_type="gym",
-        num_envs=args.num_envs,
-        episodic_life=True,
-        reward_clip=True,
-        seed=args.seed,
-    )
-    envs.num_envs = args.num_envs
-    envs.single_action_space = envs.action_space
-    envs.single_observation_space = envs.observation_space
-    envs = RecordEpisodeStatistics(envs)
-    assert isinstance(envs.action_space, gym.spaces.Discrete), "only discrete action space is supported"
+    envs = make_environments(args)
 
     agent = Agent(envs).to(device)
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
