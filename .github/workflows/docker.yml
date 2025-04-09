@@ -46,11 +46,16 @@ jobs:
           remove-android: 'true'
           build-mount-path: /home/runner/work/milabench/
           # Docker needs more space
-          root-reserve-mb: 60000
+          root-reserve-mb: 20000
 
       - name: Show all images
         run: |
           docker image ls
+          systemctl stop docker.service
+          systemctl stop docker.socket
+          cat /lib/systemd/system/docker.service
+          systemctl daemon-reload
+          systemctl start docker
 
       - name: Prune
         run: |
