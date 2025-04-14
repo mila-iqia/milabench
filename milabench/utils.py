@@ -176,8 +176,9 @@ def validation_layers(*layer_names, **kwargs):
 
 
 class MultiLogger:
-    def __init__(self, funs) -> None:
+    def __init__(self, funs, stop_on_exception=False) -> None:
         self.funs = funs
+        self.stop_on_exception = stop_on_exception
 
     def __call__(self, *args: Any, **kwds: Any) -> Any:
         for _, fun in self.funs.items():
@@ -190,6 +191,9 @@ class MultiLogger:
                 print("=" * 80, file=sys.stderr)
                 traceback.print_exc(file=sys.stderr)
                 print("=" * 80, file=sys.stderr)
+
+                if self.stop_on_exception:
+                    raise
 
     def result(self):
         """Combine error codes"""

@@ -25,7 +25,7 @@ TEST_INSTANCE = f"postgresql://{USER}:{PSWD}@{HOST}:{PORT}/{DB}"
 create_database(TEST_INSTANCE)
 
 
-def test_sqlalchemy_postgresql(runs_folder):
+def test_sqlalchemy_write_postgresql(runs_folder):
     run_dir = runs_folder / "sedumoje.2023-03-24_13:57:35.089747"
 
     with SQLAlchemy(TEST_INSTANCE) as logger:
@@ -33,6 +33,24 @@ def test_sqlalchemy_postgresql(runs_folder):
             for msg in replay_run(run_dir):
                 log(msg)
 
+        df_post = fetch_data(logger.client, "sedumoje")
+
+    replicated = make_pivot_summary("sedumoje", df_post)
+
+    # Compare
+    # -------
+    runs = [run_dir]
+    reports = _read_reports(*runs)
+    summary = make_summary(reports)
+
+    show_diff(summary, replicated)
+    print("DONE")
+
+
+def test_sqlalchemy_read_postgresql(runs_folder):
+    run_dir = runs_folder / "sedumoje.2023-03-24_13:57:35.089747"
+
+    with SQLAlchemy(TEST_INSTANCE) as logger:
         df_post = fetch_data(logger.client, "sedumoje")
 
     replicated = make_pivot_summary("sedumoje", df_post)

@@ -1,5 +1,6 @@
 import math
 import sys
+import io
 
 import numpy as np
 from hrepr import HTML, hrepr
@@ -124,7 +125,10 @@ class Table:
 class Outputter:
     def __init__(self, stdout, html):
         self.stdout = stdout
-        self.html_file = html and open(html, "w")
+        if isinstance(html, io.StringIO):
+            self.html_file = html
+        else:
+            self.html_file = html and open(html, "w")
         self._html(_table_style)
         self._html(_error_style)
 
@@ -171,7 +175,7 @@ class Outputter:
 
     def title(self, title):
         self._html(f"<html><head><title>{title}</title></head><body>")
-        self.html(H.h2(title))
+        self.html(H.h1(title))
         self._text("=" * len(title))
         self._text(title)
         self._text("=" * len(title))
@@ -430,7 +434,7 @@ def make_report(
             logscore = np.sum(np.log(score + 1) * weights) / weight_total
             return np.exp(logscore)
         except ZeroDivisionError:
-            return 0
+            return -1
 
     score = _score("score")
     failure_rate = df["fail"].sum() / max(df["n"].sum(), 1)

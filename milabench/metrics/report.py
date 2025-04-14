@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 import pandas as pd
 import sqlalchemy
@@ -6,8 +8,8 @@ from sqlalchemy.orm import Session
 from milabench.metrics.sqlalchemy import Exec, Metric, Pack
 
 
-def fetch_data(client, run_name):
-    stmt = (
+def base_report_view():
+    return (
         sqlalchemy.select(
             Exec.name.label("run"),
             Pack.name.label("bench"),
@@ -17,7 +19,17 @@ def fetch_data(client, run_name):
         )
         .join(Exec, Metric.exec_id == Exec._id)
         .join(Pack, Metric.pack_id == Pack._id)
-        .where(Exec.name.startswith(run_name))
+    )
+
+
+# Check how to make that query
+# def select_gpu(view, gpu_name):
+#     view.
+
+
+def fetch_data(client, run_name):
+    stmt = (base_report_view()
+            .where(Exec.name.startswith(run_name))
     )
 
     results = []
@@ -84,16 +96,22 @@ def std(xs):
 def count(xs):
     return len(xs)
 
+def no_nan(fun):
+    """NaN are not json serializable"""
+    def wrapped(*args):
+        return fun(*args)
+    return fun
+
 
 default_metrics = {
-    "min": min,
-    "q1": q1,
-    "median": median,
-    "q3": q3,
-    "max": max,
-    "mean": mean,
-    "std": std,
-    "sem": sem,
+    "min": no_nan(min),
+    "q1": no_nan(q1),
+    "median": no_nan(median),
+    "q3": no_nan(q3),
+    "max": no_nan(max),
+    "mean": no_nan(mean),
+    "std": no_nan(std),
+    "sem": no_nan(sem),
 }
 
 
@@ -103,8 +121,6 @@ def make_pivot_summary(runame, df: pd.DataFrame, metrics=None):
 
     if metrics is None:
         metrics = default_metrics
-
-    print(df)
 
     # Per-GPU
     stats = pd.pivot_table(
@@ -128,10 +144,10 @@ def make_pivot_summary(runame, df: pd.DataFrame, metrics=None):
             if gpu_id is None:
                 return df.loc[(runame, bench)][(k, "value", name)]
             return df.loc[(runame, bench, gpu_id)][(k, "value", name)]
-        except:
+        except KeyError:
             # this happens if dropna=true, STD == NA if there is only one observation
             print(f"{bench}.{name}.{k} missing")
-            return 0
+            return -1
 
     def _metric(df, bench, name, gpu_id=None):
         return {k: _get(df, bench, name, gpu_id, k) for k in metrics.keys()}
@@ -158,4 +174,7 @@ def make_pivot_summary(runame, df: pd.DataFrame, metrics=None):
             },
         }
 
-    return {name: bench(name) for name in benchmarks}
+    print(overall.columns)
+    r = {name: bench(name) for name in benchmarks}
+
+    return r 
