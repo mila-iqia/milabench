@@ -11,11 +11,13 @@ mkdir -p /tmp/workspace
 export MILABENCH_BASE=/tmp/workspace/
 export MILABENCH_GPU_ARCH=cuda
 export MILABENCH_CONFIG=~/scratch/shared/milabench/config/standard.yaml
+export MILABENCH_MULTIRUN_CACHE=~/scratch/shared/progress.txt
 
 milabench sharedsetup --network /home/mila/d/delaunap/scratch/shared/ --local $MILABENCH_BASE
 
+
 # Those 2 commands should execute faster now (it will only verify)
-# milabench install
+milabench install
 # milabench prepare 
 
 # Runs

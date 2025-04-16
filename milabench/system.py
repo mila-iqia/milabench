@@ -77,7 +77,38 @@ def as_environment_variable(name):
     return "MILABENCH_" + "_".join(map(str.upper, frags))
 
 
-def multirun():
+def _resumable_multirun(multirun_cache):
+    import json
+
+    done = {}
+
+    if os.path.exists(multirun_cache):
+        with open(multirun_cache, "r") as fp:
+            for line in fp.readlines():
+                run = json.loads(line)
+                unique_name = run["name"].split(".")[0]
+                done[unique_name] = run
+
+
+    def mark_run_as_done(name, config):
+        with open(multirun_cache, "a") as f:
+            f.write(json.dumps({"name": name, "run": config}) + "\n")
+
+    for run_name, run in _multirun():
+        unique_name = run_name.split(".")[0]
+
+        if unique_name in done:
+            print(f"skipping run {unique_name} because it already ran")
+            continue
+
+        yield run_name, run
+
+        mark_run_as_done(run_name, run)
+
+
+
+
+def _multirun():
     multirun = multirun_global.get()
     
     if multirun is None or len(multirun) == 0:
@@ -182,6 +213,13 @@ def option(name, etype, default=None):
     except ValueError:
         print(f"{name}={value} expected type {etype} got {type(value)}")
         return None
+
+
+def multirun(resumable=option("multirun.cache", str, None)):
+    if resumable is not None:
+        yield from _resumable_multirun(resumable)
+    else:
+        yield from _multirun()
 
 
 def defaultfield(name, type, default=None):
