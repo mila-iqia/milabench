@@ -1,6 +1,7 @@
 import os
 from flask import Flask, flash, request, redirect
 from werkzeug.utils import secure_filename
+import html
 
 from milabench.metrics.archive import publish_zipped_run
 from milabench.metrics.sqlalchemy import SQLAlchemy
@@ -31,13 +32,13 @@ def push_server(config):
         if request.method == 'POST':
             if 'file' not in request.files:
                 flash('No file part')
-                return redirect(request.url)
+                return redirect('/push')
 
             file = request.files['file']
 
             if file.filename == '':
                 flash('No selected file')
-                return redirect(request.url)
+                return redirect('/push')
 
             if file and allowed_file(file.filename):
                 try:
@@ -49,9 +50,10 @@ def push_server(config):
                         publish_zipped_run(backend, dest, stop_on_exception=True)
 
                     os.remove(dest)
-                    parts.append(f'<div class="alert alert-success" role="alert">{file.filename} was pushed</div>')
+                    parts.append(f'<div class="alert alert-success" role="alert">{html.escape(file.filename)} was pushed</div>')
                 except Exception as err:
-                    parts.append(f'<div class="alert alert-danger" role="alert">{err}</div>')
+                    app.logger.error("Error %s", err)
+                    parts.append(f'<div class="alert alert-danger" role="alert">{html.escape(str(err))}</div>')
 
         parts = "".join(parts)
 

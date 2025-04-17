@@ -9,7 +9,9 @@ def database_uri():
     HOST = os.getenv("POSTGRES_HOST", "localhost")
     PORT = os.getenv("POSTGRES_PORT", 5432)
 
-    return f"postgresql://{USER}:{PSWD}@{HOST}:{PORT}/{DB}"
+    uri_override = os.getenv("DATABASE_URI", None)
+
+    return uri_override or f"postgresql://{USER}:{PSWD}@{HOST}:{PORT}/{DB}"
 
 
 def page(title, body):

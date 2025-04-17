@@ -40,7 +40,7 @@ def runner(app):
 
 def test_push_server(client, runs_folder, database):
     response = client.post("/push", data={
-        "file": (runs_folder / "8GPUs.zip").open("rb"),
+        "file": (runs_folder / "L40S.zip").open("rb"),
     })
 
     assert response.status_code == 200
