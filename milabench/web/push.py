@@ -31,13 +31,13 @@ def push_server(config):
         if request.method == 'POST':
             if 'file' not in request.files:
                 flash('No file part')
-                return redirect(request.url)
+                return redirect('/push')
 
             file = request.files['file']
 
             if file.filename == '':
                 flash('No selected file')
-                return redirect(request.url)
+                return redirect('/push')
 
             if file and allowed_file(file.filename):
                 try:
@@ -51,7 +51,8 @@ def push_server(config):
                     os.remove(dest)
                     parts.append(f'<div class="alert alert-success" role="alert">{file.filename} was pushed</div>')
                 except Exception as err:
-                    parts.append(f'<div class="alert alert-danger" role="alert">{err}</div>')
+                    app.logger.error("Error %s", err)
+                    parts.append(f'<div class="alert alert-danger" role="alert">Failed {err}</div>')
 
         parts = "".join(parts)
 

@@ -38,6 +38,16 @@ class Exec(Base):
 
     __table_args__ = (Index("exec_name", "name"),)
 
+    def as_dict(self):
+        return {
+            "_id": self._id,
+            "name": self.name,
+            "namespace": self.namespace,
+            "created_time": self.created_time,
+            "meta": self.meta,
+            "status": self.status   
+        }
+
 
 class Pack(Base):
     __tablename__ = "packs"
@@ -55,6 +65,16 @@ class Pack(Base):
         Index("pack_query", "name", "exec_id"),
         Index("pack_tag", "tag"),
     )
+
+    def as_dict(self):
+        return {
+            "_id": self._id,
+            "name": self.name,
+            "tag": self.tag,
+            "created_time": self.created_time,
+            "config": self.config,
+            "command": self.command   
+        }
 
 
 class Metric(Base):
@@ -80,6 +100,19 @@ class Metric(Base):
         Index("metric_name", "name"),
     )
 
+    def as_dict(self):
+        return {
+            "_id": self._id,
+            "exec_id": self.exec_id,
+            "pack_id": self.pack_id,
+            "order": self.order,
+            "name": self.name,
+            "namespace": self.namespace,
+            "value": self.value,
+            "unit": self.unit,
+            "job_id": self.job_id,
+            "gpu_id": self.gpu_id,
+        }
 
 class SQLAlchemy:
     pass
