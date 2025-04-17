@@ -4,6 +4,8 @@
 
 
 mkdir -p /tmp/workspace
+
+ module load cuda/12.6.0
 # Does not work in a bash script
 # conda activate py310
 
@@ -13,11 +15,11 @@ export MILABENCH_GPU_ARCH=cuda
 export MILABENCH_CONFIG=~/scratch/shared/milabench/config/standard.yaml
 export MILABENCH_MULTIRUN_CACHE=~/scratch/shared/progress.txt
 
-milabench sharedsetup --network /home/mila/d/delaunap/scratch/shared/ --local $MILABENCH_BASE
+# milabench sharedsetup --network /home/mila/d/delaunap/scratch/shared/ --local $MILABENCH_BASE
 
 
 # Those 2 commands should execute faster now (it will only verify)
-milabench install
+# MILABENCH_USE_UV=1 milabench install
 # milabench prepare 
 
 # Runs

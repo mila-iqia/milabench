@@ -264,6 +264,9 @@ class SizerOptions:
     # Save the batch size, VRM usage data to a scaling file
     save: str = defaultfield("sizer.save", str, None)
 
+    # Configuration for batch scaling
+    config: str = defaultfield("sizer.config", str, None)
+
     @property
     def autoscale(self):
         return self.enabled and self.multiple or self.capacity
