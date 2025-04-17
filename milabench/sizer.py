@@ -25,6 +25,7 @@ default_scaling_config = os.path.join(default_scaling_folder, "default.yaml")
 gpu_name_to_file = {
     "AMD Instinct MI325 OAM": "MI325",
     "NVIDIA H100 80GB HBM3": "H100",
+    "NVIDIA L40S": "L40S"
 }
 
 
@@ -93,18 +94,22 @@ def to_octet(value: str) -> float:
 class Sizer:
     """Automatically scale the batch size to match GPU spec"""
 
-    def __init__(self, sizer=None, scaling_config=option("sizer.config", etype=str)):
-        self.path = scaling_config
+    def __init__(self, sizer=None, config=None):
+        self.path = config
         self.sizer_override = sizer
         
-        if scaling_config is None:
-            scaling_config = get_scaling_config()
+        
+        if config is None:
+            config = SizerOptions.instance().config
+            
+            if config is None:
+                config = get_scaling_config()
 
-        if os.path.exists(scaling_config):
-            with open(scaling_config, "r") as sconf:
+        if os.path.exists(config):
+            with open(config, "r") as sconf:
                 self.scaling_config = yaml.safe_load(sconf)
         else:
-            print(scaling_config, "does not exist")
+            print(config, "does not exist")
 
     @property
     def options(self):
