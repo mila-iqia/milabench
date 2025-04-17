@@ -1,6 +1,7 @@
 import os
 from flask import Flask, flash, request, redirect
 from werkzeug.utils import secure_filename
+import html
 
 from milabench.metrics.archive import publish_zipped_run
 from milabench.metrics.sqlalchemy import SQLAlchemy
@@ -49,9 +50,9 @@ def push_server(config):
                         publish_zipped_run(backend, dest, stop_on_exception=True)
 
                     os.remove(dest)
-                    parts.append(f'<div class="alert alert-success" role="alert">{file.filename} was pushed</div>')
+                    parts.append(f'<div class="alert alert-success" role="alert">{html.escape(file.filename)} was pushed</div>')
                 except Exception as err:
-                    parts.append(f'<div class="alert alert-danger" role="alert">{err}</div>')
+                    parts.append(f'<div class="alert alert-danger" role="alert">{html.escape(str(err))}</div>')
 
         parts = "".join(parts)
 
