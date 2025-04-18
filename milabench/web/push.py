@@ -24,7 +24,6 @@ def push_server(config):
 
 
     # We could also do a event push kind of thing
-
     @app.route('/push', methods=['GET', 'POST'])
     def upload_file():
         parts = []

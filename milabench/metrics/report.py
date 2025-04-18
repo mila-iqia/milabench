@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from milabench.metrics.sqlalchemy import Exec, Metric, Pack
 
 
-def base_report_view():
+def base_report_view(*columns):
     return (
         sqlalchemy.select(
             Exec.name.label("run"),
@@ -16,16 +16,17 @@ def base_report_view():
             Metric.name.label("metric"),
             Metric.value,
             Metric.gpu_id,
+            *columns
         )
         .join(Exec, Metric.exec_id == Exec._id)
         .join(Pack, Metric.pack_id == Pack._id)
     )
 
 
+
 # Check how to make that query
 # def select_gpu(view, gpu_name):
 #     view.
-
 
 def fetch_data(client, run_name):
     stmt = (base_report_view()

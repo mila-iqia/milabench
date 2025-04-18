@@ -23,11 +23,75 @@ def page(title, body):
             <head>
                 <title>{title}</title>
                 {css}
+
+                <style>
+                    th {{
+                        text-align: left
+                    }}
+
+                    td {{
+                        text-align: right
+                    }}
+                </style>
             </head>
             <body>
-                <div class="container">
+                <div class="container-fluid">
                     {body}
                 </div>
             </body>
         </html>
         """
+
+
+
+def cursor_to_json(cursor):
+    columns = list(cursor.keys())
+    results = []
+    for row in cursor:
+        row_dict = {}
+        for col, val in zip(columns, row):
+            row_dict[col] = val
+        results.append(row_dict)
+    return results
+
+
+def cursor_to_dataframe(cursor):
+    import pandas as pd
+
+    columns = list(cursor.keys())
+    results = []
+    for row in cursor:
+        row = list(row)
+        results.append(row)
+
+    return pd.DataFrame(results, columns=columns)
+
+
+def make_selection_key(key):
+    from milabench.metrics.sqlalchemy import Exec, Metric, Pack
+
+    table, path = key.split(":")
+    tables = {
+        "Exec": Exec, 
+        "Metric": Metric, 
+        "Pack": Pack
+    }
+
+    maybe = path.split(" as ")
+    path = maybe[0]
+
+    frags = path.split(".")
+    selection = getattr(tables[table], frags[0])
+
+    for frag in frags[1:]:
+        selection = selection[frag]
+
+    if len(maybe) == 2:
+        as_name = maybe[1]
+    else:
+        as_name = "_".join(frags)
+
+    return selection.label(as_name)
+
+def make_filter(key):
+    pass
