@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from voir import configurable
 from voir.instruments import dash, early_stop, log, rate
+from benchmate.monitor import log_patterns
 
 
 @dataclass
@@ -29,7 +30,7 @@ def instrument_main(ov, options: Config):
         ov.require(dash)
 
     ov.require(
-        log("value", "progress", "rate", "units", "loss", "gpudata", context="task"),
+        log(*log_patterns(), context="task"),
         rate(
             interval=options.interval,
             skip=options.skip,

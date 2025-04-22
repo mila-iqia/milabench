@@ -2,8 +2,7 @@ from dataclasses import dataclass
 
 from voir.phase import StopProgram
 from voir import configurable
-from voir.instruments import dash, early_stop, log
-from benchmate.monitor import monitor_monogpu
+from benchmate.monitor import voirfile_monitor
 from benchmate.observer import BenchObserver
 
 
@@ -34,14 +33,7 @@ def instrument_main(ov, options: Config):
 
     yield ov.phases.load_script
 
-    if options.dash:
-        ov.require(dash)
-
-    ov.require(
-        log("value", "progress", "rate", "units", "loss", "gpudata", context="task"),
-        early_stop(n=options.stop, key="rate", task="train"),
-        monitor_monogpu(poll_interval=options.gpu_poll),
-    )
+    voirfile_monitor(ov, options)
 
     #
     # Insert milabench tools
