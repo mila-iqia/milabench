@@ -29,6 +29,7 @@ def read_config(filename, output=None):
             for obs in rows.get("observations", []):
                 obs["gpu"] = filename.split(".")[0]
                 obs["bench"] = bench
+                # obs["cpu"] = str(obs["cpu"])
     
                 output.append(obs)
 
@@ -37,21 +38,40 @@ def read_config(filename, output=None):
 output = []
 read_config("L40S.yaml", output)
 read_config("H100.yaml", output)
+read_config("MI325.yaml", output)
 
 df = pd.DataFrame(output)
 
 df['memory'] = df['memory'].apply(lambda x: to_octet(x) / (1024 ** 2))
 
-for bench in benchmarks:
+def perf_scaling():
+    for bench in benchmarks:
 
+        title = alt.TitleParams(bench, anchor='middle')
+
+        chart = (
+            alt.Chart(df[df["bench"] == bench], title=title)
+                .mark_point().encode(
+                    x="memory",
+                    y="perf",
+                    shape="gpu"
+                )
+        )
+
+        chart.save(os.path.join(HERE, "plots", f"{bench}.png"))
+
+
+for bench in benchmarks:
     title = alt.TitleParams(bench, anchor='middle')
 
     chart = (
         alt.Chart(df[df["bench"] == bench], title=title)
             .mark_point().encode(
-                x="memory",
-                y="perf",
-                shape="gpu"
+                x="batch_size",
+                y="memory",
+                shape="gpu",
+                color="gpu",
+                size="perf",
             )
     )
 

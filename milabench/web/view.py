@@ -114,7 +114,8 @@ def view_server(config):
         from milabench.metrics.report import base_report_view
         selected_keys = [ 
             make_selection_key(key) for key in [
-                "Exec:meta.accelerators.gpus.0.product as gpu"
+                "Exec:meta.accelerators.gpus.0.product as gpu",
+                "Exec:meta.accelerators.gpus.0.memory.total as vram"
             ]
         ]
 
@@ -135,7 +136,7 @@ def view_server(config):
                 "metric"
             ],
             "values": {
-                "value": "mean",
+                "value": ["mean", "max"],
             },
             # "filters": [
             #     "gpu == 'L40S'"
@@ -158,30 +159,32 @@ def view_server(config):
         )
 
         formatters = {
-            ("value", "gpu.load"): "{:.2%}".format,
-            ("value", "gpu.memory"): "{:.2%}".format,
-            ("value", "gpu.power"): "{:.2f}".format, 
-            ("value", "gpu.temperature"): "{:.2f}".format, 
-            ("value", "loss"): "{:.2f}".format,
-            ("value", "walltime"): "{:.2f}".format,
-            ("value", "rate"): "{:.2f}".format,
-            ("value", "return_code"): "{:.0f}".format,
-            ("value", "memory_peak"): "{:.0f}".format,
+            ("value", 'mean', "gpu.load"): "{:.2%}".format,
+            ("value", 'mean', "gpu.memory"): "{:.2%}".format,
+            ("value", 'mean', "gpu.power"): "{:.2f}".format, 
+            ("value", 'mean', "gpu.temperature"): "{:.2f}".format, 
+            ("value", 'mean', "loss"): "{:.2f}".format,
+            ("value", 'mean', "walltime"): "{:.2f}".format,
+            ("value", 'mean', "rate"): "{:.2f}".format,
+            ("value", 'mean', "return_code"): "{:.0f}".format,
+            ("value", 'mean', "memory_peak"): "{:.0f}".format,
         }
 
         column_order = [
-            ('value',            'rate'),
-            ('value',        'gpu.load'),
-            ('value',      'gpu.memory'),
-            ('value',       'gpu.power'),
-            ('value', 'gpu.temperature'),
-            ('value',        'walltime'),
+            ('value', 'mean',            'rate'),
+            ('value', 'mean',        'gpu.load'),
+            ('value', 'mean',      'gpu.memory'),
+            ('value', 'mean',       'gpu.power'),
+            ('value', 'mean', 'gpu.temperature'),
+            ('value', 'mean',        'walltime'),
             # Not as important
-            ('value',            'loss'),
-            ('value',     'memory_peak'),
-            ('value',     'return_code'),
+            ('value', 'mean',            'loss'),
+            ('value', 'mean',     'memory_peak'),
+            ('value', 'mean',     'return_code'),
         ]
     
+        print(overall.columns)
+
         df = overall
         df = df[column_order]
         df = df.reset_index()
