@@ -318,6 +318,7 @@ class SQLAlchemy:
         pack_id,
         name,
         value,
+        order=None,
         gpu_id=None,
         job_id=None,
         namespace=None,
@@ -327,11 +328,14 @@ class SQLAlchemy:
             print(f"Unexpected value {value} for metric {name}")
             return
 
+        if order is None:
+            order = time.time()
+
         self.pending_metrics.append(
             Metric(
                 exec_id=run_id,
                 pack_id=pack_id,
-                order=time.time(),
+                order=order,
                 name=name,
                 namespace=namespace,
                 unit=unit,
@@ -341,15 +345,24 @@ class SQLAlchemy:
             )
         )
 
-    def _change_gpudata(self, run_id, pack_id, k, v, jobid):
+    def _change_gpudata(self, run_id, pack_id, k, v, jobid, metric_time=None):
         for gpu_id, values in v.items():
             for metric, value in values.items():
-                if metric == "memory":
-                    use, mx = value
-                    value = use / mx
+                unit = None
+                match metric:
+                    case "memory":
+                        use, mx = value
+                        value = use / mx
+                        unit = "%"
+                    case "load":
+                        unit = "%"
+                    case "temperature":
+                        unit = "°C"
+                    case "power":
+                        unit = "W"
 
                 self._push_metric(
-                    run_id, pack_id, f"gpu.{metric}", value, gpu_id, job_id=jobid
+                    run_id, pack_id, f"gpu.{metric}", value, gpu_id, job_id=jobid, order=metric_time, unit=unit
                 )
 
     def on_data(self, entry):
@@ -359,11 +372,13 @@ class SQLAlchemy:
         run_id = self.run._id
         pack_id = state.pack._id
         job_id, gpu_id = _get_pack_ids(state.pack)
-
+        
         if "progress" in entry.data:
             return
 
         data = deepcopy(entry.data)
+
+        metric_time = entry.get("time", time.time())
 
         # GPU
         gpudata = data.pop("gpudata", None)
@@ -371,7 +386,7 @@ class SQLAlchemy:
             # GPU data would have been too hard to query
             # so the gpu_id is moved to its own column
             # and each metric is pushed as a separate document
-            self._change_gpudata(run_id, pack_id, "gpudata", gpudata, job_id)
+            self._change_gpudata(run_id, pack_id, "gpudata", gpudata, job_id, metric_time=metric_time)
         else:
             # Standard
             unit = data.pop("units", None)
@@ -389,6 +404,7 @@ class SQLAlchemy:
                     job_id=job_id,
                     unit=unit,
                     namespace=task,
+                    order=metric_time,
                 )
             else:
                 print(f"Unknown format {entry.data}")

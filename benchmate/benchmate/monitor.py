@@ -22,7 +22,7 @@ def log_patterns():
     debug_metrics = ("__iter__", "overhead", "process_time")
 
     base_metrics = (
-        "value", "progress", "rate", "units", "loss", 
+        "value", "progress", "rate", "units", "loss",  "time"
     )
 
     gpu_metrics = (
@@ -174,7 +174,6 @@ def multigpu_monitor(*args, **kwargs):
 def monogpu_monitor(*args, **kwargs):
     with smuggle_monitor(*args, **kwargs, **_monitors(True)) as log:
         yield log
-
 
 
 @contextmanager

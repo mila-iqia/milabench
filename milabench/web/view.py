@@ -103,11 +103,31 @@ def view_server(config):
                     results.append(col.as_dict())
     
         return results
+    
+    @app.route('/plot/exec/<exec_id>/packs/<pack_id>/metrics')
+    def plot_metrics_show(exec_id, pack_id):
+        import altair as alt
+        from .utils import plot
 
+        chart = alt.Chart(f"/api/exec/{exec_id}/packs/{pack_id}/metrics").mark_point().encode(
+            x=alt.X("order", type="quantitative", scale=alt.Scale(zero=False)),
+            y=alt.Y("value", type="quantitative", scale=alt.Scale(zero=False)),
+            tooltip=[
+                alt.Tooltip("unit:N", title="Unit"),
+            ]
+        ).facet(
+            facet=alt.Facet("name:N", title="Metric"),
+            columns=4 
+        ).resolve_scale(y='independent')
+
+        return plot(chart.to_json())
 
     @app.route('/api/keys')
     def api_ls_keys():
-        pass
+        here = os.path.dirname(__file__)
+
+        with open(os.path.join(here, "template", "key.txt"), "r") as fp:
+            return fp.readlines()
 
     @app.route('/pivot')
     def api_pivot():

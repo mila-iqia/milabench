@@ -43,6 +43,27 @@ def page(title, body):
         """
 
 
+def plot(chart):
+    return f"""
+    <!doctype html>
+    <html>
+        <head>
+        <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+        <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
+        <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+        </head>
+        <body>
+            <div class="container-fluid">
+                <div id="vis"></div>
+                <script type="text/javascript">
+                    const spec = {chart};
+                    vegaEmbed('#vis', spec);
+                </script>
+            </div>
+        </body>
+    </html>
+    """
+
 
 def cursor_to_json(cursor):
     columns = list(cursor.keys())

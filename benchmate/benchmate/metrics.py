@@ -85,15 +85,16 @@ class LazyLossPusher(LazyMetricPusher):
         # no .item() we do not want to sync
         if hasattr(loss, "detach"):
             value = loss.detach()
-        self.append(value)
+        self.append(value, time.time())
 
-    def materialize(self, loss):
+    def materialize(self, loss, timing=None):
         value = loss
+
         # synch here is fine
         if hasattr(loss, "item"):
             value = loss.item()
 
-        return {"loss": value, "task": self.task}
+        return {"loss": value, "task": self.task, "time": timing}
 
 
 class CPUTimer:
@@ -251,6 +252,7 @@ class TimedIterator:
         # Multi-GPU setup
         self.rank = rank
         self.device = device
+        self.last_time = time.time()
 
         # Options
         self.raise_stop_program = (
@@ -286,6 +288,7 @@ class TimedIterator:
 
     def wrapped(self, iterator):
         # Time IO wait + batch compute
+        self.last_time = time.time()
         self.start = self.event_fn(enable_timing=True)
         self.start.record()
         self.previous_overhead = 0
@@ -372,7 +375,9 @@ class TimedIterator:
             end.synchronize()
             elapsed = (start.elapsed_time(end)) / self.unit
             rate = self.batch_size(bs) / elapsed
-            self.log_rate(rate)
+
+            self.end_time += elapsed
+            self.log_rate(rate, time=self.end_time)
 
         self.total_obs += len(self.events)
         self.events = []
@@ -421,8 +426,8 @@ class TimedIterator:
             self.message(sync_time=sync_time.elapsed(), units="s", task=self.task)
             self.message(process_time=process_time.elapsed(), units="s", task=self.task)
 
-    def log_rate(self, rate):
-        self.message(rate=rate, units="items/s", task=self.task)
+    def log_rate(self, rate, time=None):
+        self.message(rate=rate, units="items/s", task=self.task, time=time)
 
     def log_progress(self):
         if self.early_stop is not None:
