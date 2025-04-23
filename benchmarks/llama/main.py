@@ -146,7 +146,7 @@ def huggingface_main(args, model, config):
             start = time.time()
 
             if log is not None:
-                log({"task": "train", "rate": total / elapsed, "units": "Tok/s"})
+                log({"task": "train", "rate": total / elapsed, "units": "Tok/s", "time": time.time()})
 
         if count > 40:
             break

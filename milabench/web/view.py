@@ -91,9 +91,22 @@ def view_server(config):
     
         return results
 
-    @app.route('/api/exec/<exec_id>/packs/<pack_id>/metrics')
-    def api_metrics_show(exec_id, pack_id):
+    @app.route('/api/exec/<int:exec_id>/packs/<int:pack_id>/metrics')
+    def api_pack_metrics(exec_id, pack_id):
         stmt = sqlalchemy.select(Metric).where(Metric.exec_id == exec_id, Metric.pack_id == pack_id)
+
+        results = []
+        with sqlexec() as sess:
+            cursor = sess.execute(stmt)
+            for row in cursor:
+                for col in row:
+                    results.append(col.as_dict())
+    
+        return results
+    
+    @app.route('/api/exec/<exec_id>/packs/<string:pack_name>/metrics')
+    def api_pack_summary_metrics(exec_id, pack_name):
+        stmt = sqlalchemy.select(Metric).where(Metric.exec_id == exec_id, Pack.name.startswith(pack_name)).join(Pack, Metric.pack_id == Pack._id)
 
         results = []
         with sqlexec() as sess:
@@ -112,6 +125,7 @@ def view_server(config):
         chart = alt.Chart(f"/api/exec/{exec_id}/packs/{pack_id}/metrics").mark_point().encode(
             x=alt.X("order", type="quantitative", scale=alt.Scale(zero=False)),
             y=alt.Y("value", type="quantitative", scale=alt.Scale(zero=False)),
+            color=alt.Color("gpu_id", type="ordinal"),
             tooltip=[
                 alt.Tooltip("unit:N", title="Unit"),
             ]

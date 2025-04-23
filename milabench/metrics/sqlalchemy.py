@@ -365,6 +365,20 @@ class SQLAlchemy:
                     run_id, pack_id, f"gpu.{metric}", value, gpu_id, job_id=jobid, order=metric_time, unit=unit
                 )
 
+    def _push_composed_data(self, run_id, pack_id, gpu_id, k, v, jobid, metric_time):
+        for metric, value in v.items():
+            unit = None
+
+            match metric:
+                case "memory":
+                    used, mx = value
+                    value = used / mx
+                    unit = "%"
+
+            self._push_metric(
+                run_id, pack_id, f"{k}.{metric}", value, gpu_id, job_id=jobid, order=metric_time, unit=unit
+            )
+
     def on_data(self, entry):
         state = self.pack_state(entry)
         assert state.step == DATA
@@ -381,12 +395,24 @@ class SQLAlchemy:
         metric_time = entry.get("time", time.time())
 
         # GPU
-        gpudata = data.pop("gpudata", None)
-        if gpudata is not None:
+        if (gpudata := data.pop("gpudata", None)) is not None:
             # GPU data would have been too hard to query
             # so the gpu_id is moved to its own column
             # and each metric is pushed as a separate document
             self._change_gpudata(run_id, pack_id, "gpudata", gpudata, job_id, metric_time=metric_time)
+        
+        elif (process := data.pop("process", None)) is not None:
+            self._push_composed_data(run_id, pack_id, gpu_id, "NA", process, job_id, metric_time=metric_time)
+
+        elif (cpudata := data.pop("cpudata", None)) is not None:
+            self._push_composed_data(run_id, pack_id, gpu_id, "NA", cpudata, job_id, metric_time=metric_time)
+
+        elif (iodata := data.pop("iodata", None)) is not None:
+            self._push_composed_data(run_id, pack_id, gpu_id, "NA", iodata, job_id, metric_time=metric_time)
+
+        elif (netdata := data.pop("netdata", None)) is not None:
+            self._push_composed_data(run_id, pack_id, gpu_id, "NA", netdata, job_id, metric_time=metric_time)
+        
         else:
             # Standard
             unit = data.pop("units", None)

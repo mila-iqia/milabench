@@ -83,7 +83,7 @@ def f(N, R=30, m=5000000, n=256, unit=TERA, dtype=torch.float32, log=None):
         ts += time.time()
 
         if log is not None:
-            log({"task": "train", "rate": F / ts / unit, "units": "Tflops"})
+            log({"task": "train", "rate": F / ts / unit, "units": "Tflops", "time": time.time()})
 
     empty_cache()
 

@@ -241,7 +241,7 @@ class TimedIterator:
         self.event_fn = event_fn  # function to create a device event
         self.early_stop = earlystop  # Number of observation to target
         self.unit = 1000  # device timer is ms
-
+        self.last_time = time.time()
         self.message_push = push  # How to push the metrics usually voir or stdout
 
         # Number of times we broke out of the iterator for early stopping
@@ -252,7 +252,6 @@ class TimedIterator:
         # Multi-GPU setup
         self.rank = rank
         self.device = device
-        self.last_time = time.time()
 
         # Options
         self.raise_stop_program = (
@@ -376,8 +375,8 @@ class TimedIterator:
             elapsed = (start.elapsed_time(end)) / self.unit
             rate = self.batch_size(bs) / elapsed
 
-            self.end_time += elapsed
-            self.log_rate(rate, time=self.end_time)
+            self.last_time += elapsed
+            self.log_rate(rate, time=self.last_time)
 
         self.total_obs += len(self.events)
         self.events = []
