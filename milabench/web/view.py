@@ -78,7 +78,7 @@ def view_server(config):
 
         return results
     
-    @app.route('/api/exec/<exec_id>/packs')
+    @app.route('/api/exec/<int:exec_id>/packs')
     def api_packs_show(exec_id):
         stmt = sqlalchemy.select(Pack).where(Pack.exec_id == exec_id)
 
@@ -104,7 +104,7 @@ def view_server(config):
     
         return results
     
-    @app.route('/api/exec/<exec_id>/packs/<string:pack_name>/metrics')
+    @app.route('/api/exec/<int:exec_id>/packs/<string:pack_name>/metrics')
     def api_pack_summary_metrics(exec_id, pack_name):
         stmt = sqlalchemy.select(Metric).where(Metric.exec_id == exec_id, Pack.name.startswith(pack_name)).join(Pack, Metric.pack_id == Pack._id)
 
@@ -122,8 +122,8 @@ def view_server(config):
         import altair as alt
         from .utils import plot
 
-        chart = alt.Chart(f"/api/exec/{exec_id}/packs/{pack_id}/metrics").mark_point().encode(
-            x=alt.X("order", type="quantitative", scale=alt.Scale(zero=False)),
+        chart = alt.Chart(f"/api/exec/{exec_id}/packs/{pack_id}/metrics").mark_line().encode(
+            x=alt.X("order", type="quantitative", scale=alt.Scale(zero=False), title="Time"),
             y=alt.Y("value", type="quantitative", scale=alt.Scale(zero=False)),
             color=alt.Color("gpu_id", type="ordinal"),
             tooltip=[
@@ -132,7 +132,7 @@ def view_server(config):
         ).facet(
             facet=alt.Facet("name:N", title="Metric"),
             columns=4 
-        ).resolve_scale(y='independent')
+        ).resolve_scale(y='independent', x='independent')
 
         return plot(chart.to_json())
 

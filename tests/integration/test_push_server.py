@@ -40,14 +40,14 @@ def runner(app):
 
 def test_push_server(client, runs_folder, database):
     response = client.post("/push", data={
-        "file": (runs_folder / "L40S.zip").open("rb"),
+        "file": (runs_folder / "auto.zip").open("rb"),
     })
 
     assert response.status_code == 200
 
     with SQLAlchemy(database) as logger:
-        df_post = fetch_data(logger.client, "8xA100-SXM-80Go")
+        df_post = fetch_data(logger.client, "auto")
 
-    replicated = make_pivot_summary("8xA100-SXM-80Go", df_post)
+    replicated = make_pivot_summary("auto", df_post)
 
     print(replicated)

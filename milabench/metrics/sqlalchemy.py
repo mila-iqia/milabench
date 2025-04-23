@@ -331,6 +331,12 @@ class SQLAlchemy:
         if order is None:
             order = time.time()
 
+        def get_gpu_id(gid):
+            try:
+                return int(gid)
+            except:
+                return -1
+    
         self.pending_metrics.append(
             Metric(
                 exec_id=run_id,
@@ -340,7 +346,7 @@ class SQLAlchemy:
                 namespace=namespace,
                 unit=unit,
                 value=value,
-                gpu_id=gpu_id,
+                gpu_id=get_gpu_id(gpu_id),
                 job_id=job_id,
             )
         )
@@ -362,7 +368,7 @@ class SQLAlchemy:
                         unit = "W"
 
                 self._push_metric(
-                    run_id, pack_id, f"gpu.{metric}", value, gpu_id, job_id=jobid, order=metric_time, unit=unit
+                    run_id, pack_id, f"gpu.{metric}", value, gpu_id=gpu_id, job_id=jobid, order=metric_time, unit=unit
                 )
 
     def _push_composed_data(self, run_id, pack_id, gpu_id, k, v, jobid, metric_time):
@@ -376,7 +382,7 @@ class SQLAlchemy:
                     unit = "%"
 
             self._push_metric(
-                run_id, pack_id, f"{k}.{metric}", value, gpu_id, job_id=jobid, order=metric_time, unit=unit
+                run_id, pack_id, f"{k}.{metric}", value, gpu_id=gpu_id, job_id=jobid, order=metric_time, unit=unit
             )
 
     def on_data(self, entry):
@@ -392,7 +398,7 @@ class SQLAlchemy:
 
         data = deepcopy(entry.data)
 
-        metric_time = entry.get("time", time.time())
+        metric_time = data.pop("time", time.time())
 
         # GPU
         if (gpudata := data.pop("gpudata", None)) is not None:
@@ -402,16 +408,16 @@ class SQLAlchemy:
             self._change_gpudata(run_id, pack_id, "gpudata", gpudata, job_id, metric_time=metric_time)
         
         elif (process := data.pop("process", None)) is not None:
-            self._push_composed_data(run_id, pack_id, gpu_id, "NA", process, job_id, metric_time=metric_time)
+            self._push_composed_data(run_id, pack_id, gpu_id, "process", process, job_id, metric_time=metric_time)
 
         elif (cpudata := data.pop("cpudata", None)) is not None:
-            self._push_composed_data(run_id, pack_id, gpu_id, "NA", cpudata, job_id, metric_time=metric_time)
+            self._push_composed_data(run_id, pack_id, gpu_id, "cpudata", cpudata, job_id, metric_time=metric_time)
 
         elif (iodata := data.pop("iodata", None)) is not None:
-            self._push_composed_data(run_id, pack_id, gpu_id, "NA", iodata, job_id, metric_time=metric_time)
+            self._push_composed_data(run_id, pack_id, gpu_id, "iodata", iodata, job_id, metric_time=metric_time)
 
         elif (netdata := data.pop("netdata", None)) is not None:
-            self._push_composed_data(run_id, pack_id, gpu_id, "NA", netdata, job_id, metric_time=metric_time)
+            self._push_composed_data(run_id, pack_id, gpu_id, "netdata", netdata, job_id, metric_time=metric_time)
         
         else:
             # Standard
@@ -462,11 +468,11 @@ class SQLAlchemy:
 
         end = entry.data["time"]
         self._push_metric(
-            run_id, pack_id, "walltime", end - state.start, gpu_id, job_id
+            run_id, pack_id, "walltime", end - state.start, gpu_id=gpu_id, job_id=job_id
         )
 
         self._push_metric(
-            run_id, pack_id, "return_code", entry.data["return_code"], gpu_id, job_id
+            run_id, pack_id, "return_code", entry.data["return_code"], gpu_id=gpu_id, job_id=job_id
         )
 
         status = "done"
