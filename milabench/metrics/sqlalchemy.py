@@ -346,7 +346,7 @@ class SQLAlchemy:
                 namespace=namespace,
                 unit=unit,
                 value=value,
-                gpu_id=get_gpu_id(gpu_id),
+                gpu_id=gpu_id, # get_gpu_id(gpu_id),
                 job_id=job_id,
             )
         )
