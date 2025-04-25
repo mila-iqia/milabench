@@ -32,7 +32,17 @@ def fetch_data(client, run_name):
     stmt = (base_report_view()
             .where(Exec.name.startswith(run_name))
     )
+    return fetch_data_by_query(client, stmt)
 
+
+def fetch_data_by_id(client, run_id):
+    stmt = (base_report_view()
+            .where(Exec._id == run_id)
+    )
+    return fetch_data_by_query(client, stmt)
+
+
+def fetch_data_by_query(client, stmt):
     results = []
     with Session(client) as sess:
         cursor = sess.execute(stmt)
