@@ -38,6 +38,13 @@ importlib-resources = "^6.1.0"
 filelock = "^3.15.3"
 hrepr = ">=0.7.0"
 cantilever = ">=0.1.0"
+nvidia-ml-py = { version = "^12.555.43", optional = true }
+
+[tool.poetry.extras]
+cuda = ["nvidia-ml-py"]
+rocm = []
+hpu = []
+xpu = []
 
 [tool.poetry.group.dev.dependencies]
 black = ">=21.10b0"
