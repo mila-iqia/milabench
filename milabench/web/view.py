@@ -1,10 +1,11 @@
 from io import StringIO
 import os
+import json
 from contextlib import contextmanager
 from collections import defaultdict
 
 import pandas as pd
-from flask import Flask, jsonify, render_template_string
+from flask import Flask, jsonify, render_template_string, render_template
 import sqlalchemy
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func, cast, TEXT
@@ -13,7 +14,7 @@ from milabench.metrics.sqlalchemy import Exec, Metric, Pack
 from milabench.metrics.sqlalchemy import SQLAlchemy
 from milabench.metrics.report import fetch_data, make_pivot_summary, fetch_data_by_id
 from milabench.report import make_report
-from .utils import database_uri, page, make_selection_key, make_filter, cursor_to_json, cursor_to_dataframe
+from .utils import database_uri, page, make_selection_key, make_filters, cursor_to_json, cursor_to_dataframe
 
 
 def view_server(config):
@@ -97,7 +98,7 @@ def view_server(config):
         results = []
         with sqlexec() as sess:
             cursor = sess.execute(stmt)
-            for row in cursor: 
+            for row in cursor:
                 for col in row:
                     results.append(col.as_dict())
 
@@ -106,8 +107,8 @@ def view_server(config):
     @app.route('/api/keys')
     def api_ls_keys():
         here = os.path.dirname(__file__)
-        with open(os.path.join(here, "template", "key.txt"), "r") as fp:
-            return jsonify(fp.readlines())
+        with open(os.path.join(here, "template", "keys.txt"), "r") as fp:
+            return jsonify([line.strip() for line in fp.readlines()])
 
     @app.route('/api/gpu/list')
     def api_ls_gpu():
@@ -143,7 +144,7 @@ def view_server(config):
                 return jsonify(result.as_dict())
 
         return jsonify({})
-    
+
 
     #
     # html routes
@@ -200,40 +201,55 @@ def view_server(config):
 
         return plot(chart.to_json())
 
+    @app.route('/html/form/pivot')
+    def html_format_pivot():
+        with open("/home/newton/work/milabench_dev/milabench/milabench/web/template/pivot.html", "r") as fp:
+            return render_template_string(fp.read())
+
     @app.route('/html/pivot')
     def html_pivot():
         from milabench.metrics.report import base_report_view
+        from flask import request
+
+        # If no parameters are provided, serve the pivot builder interface
+        if not request.args:
+            return render_template('pivot.html')
+
+        # Get form parameters with defaults
+        rows = request.args.get('rows', '').split(',') if request.args.get('rows') else ["run", "gpu", "pytorch", "bench"]
+        cols = request.args.get('cols', '').split(',') if request.args.get('cols') else ["metric"]
+        values = request.args.get('values', '').split(',') if request.args.get('values') else ["mean", "max"]
+        filters = []
+
+        if request.args.get('filters'):
+            filters = json.loads(request.args.get('filters'))
+
+        filter_fields = [f['field'] for f in filters]
+
         selected_keys = [
-            make_selection_key(key) for key in [
-                "Exec:meta.accelerators.gpus.0.product as gpu",
-                "Exec:meta.accelerators.gpus.0.memory.total as vram"
-            ]
+            make_selection_key(key) for key in [*rows, *cols, *values, *filter_fields]
         ]
 
-        table = base_report_view(*selected_keys).where(Metric.exec_id == 12)
+        table = base_report_view(*selected_keys)
+
+        if filters:
+            table = table.where(*make_filters(filters))
 
         with sqlexec() as sess:
             cursor = sess.execute(table)
             results = cursor_to_json(cursor)
 
-            # df = cursor_to_dataframe(cursor)
-
         pivot_spec = {
-            "rows": [
-                "run", "gpu", "bench",
-            ],
-            "cols": [
-                "metric"
-            ],
+            "rows": rows,
+            "cols": cols,
             "values": {
-                "value": ["mean", "max"],
+                v: ["mean", "max"] for v in values
             },
-            # "filters": [
-            #     "gpu == 'L40S'"
-            # ]
+            "filters": [] # filters
         }
 
         df = pd.DataFrame(results)
+
         filtered = df
         for filter in pivot_spec.get("filters", []):
             filtered = filtered.query(filter)
@@ -248,51 +264,49 @@ def view_server(config):
         )
 
         formatters = {
-            ("value", 'mean', "gpu.load"): "{:.2%}".format,
-            ("value", 'mean', "gpu.memory"): "{:.2%}".format,
-            ("value", 'mean', "gpu.power"): "{:.2f}".format,
-            ("value", 'mean', "gpu.temperature"): "{:.2f}".format,
-            ("value", 'mean', "loss"): "{:.2f}".format,
-            ("value", 'mean', "walltime"): "{:.2f}".format,
-            ("value", 'mean', "rate"): "{:.2f}".format,
-            ("value", 'mean', "return_code"): "{:.0f}".format,
-            ("value", 'mean', "memory_peak"): "{:.0f}".format,
+            ("Metric:value", 'mean', "gpu.load"): "{:.2%}".format,
+            ("Metric:value", 'mean', "gpu.memory"): "{:.2%}".format,
+            ("Metric:value", 'mean', "gpu.power"): "{:.2f}".format,
+            ("Metric:value", 'mean', "gpu.temperature"): "{:.2f}".format,
+            ("Metric:value", 'mean', "loss"): "{:.2f}".format,
+            ("Metric:value", 'mean', "walltime"): "{:.2f}".format,
+            ("Metric:value", 'mean', "rate"): "{:.2f}".format,
+            ("Metric:value", 'mean', "return_code"): "{:.0f}".format,
+            ("Metric:value", 'mean', "memory_peak"): "{:.0f}".format,
         }
 
-        column_order = [
-            ('value', 'mean',            'rate'),
-            ('value', 'mean',        'gpu.load'),
-            ('value', 'mean',      'gpu.memory'),
-            ('value', 'mean',       'gpu.power'),
-            ('value', 'mean', 'gpu.temperature'),
-            ('value', 'mean',        'walltime'),
-            # Not as important
-            ('value', 'mean',            'loss'),
-            ('value', 'mean',     'memory_peak'),
-            ('value', 'mean',     'return_code'),
-        ]
+        metrics = df["Metric:name"].unique()
 
-        print(overall.columns)
+        print(metrics)
+
+        # Dynamically build column order based on selected values
+        column_order = []
+        # FIXME I need to add pivot columns here
+        for value in values:
+            for metric in metrics:
+                column_order.append((value, "mean", metric))
 
         df = overall
-        df = df[column_order]
-        df = df.reset_index()
+        if column_order:
+            df = df[column_order]
 
-        priority_map = defaultdict(int)
-        for i, k in enumerate(sorted(list(set(df['bench'])))):
-            priority_map[k] = i
+        if "Pack:name" in df:
+            priority_map = defaultdict(int)
+            df = df.reset_index()
 
-        priority_map.update({
-            "fp16": -1,
-            "bf16": -2,
-            "tf32": -3,
-            "fp32": -4,
-        })
+            for i, k in enumerate(sorted(list(set(df['Pack:name'])))):
+                priority_map[k] = i
 
-        df['_priority'] = df['bench'].map(priority_map)
-        df = df.sort_values('_priority').drop(columns=['_priority'])
+            priority_map.update({
+                "fp16": -1,
+                "bf16": -2,
+                "tf32": -3,
+                "fp32": -4,
+            })
 
-        df = df.set_index(["run", "gpu", "bench"])
+            df['_priority'] = df['Pack:name'].map(priority_map)
+            df = df.sort_values('_priority').drop(columns=['_priority'])
+            df = df.set_index(rows)
 
         return df.to_html(formatters=formatters, classes=["table", "table-striped", "table-hover", "table-sm"], na_rep="")
 

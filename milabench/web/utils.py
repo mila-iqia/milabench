@@ -83,7 +83,7 @@ def cursor_to_dataframe(cursor):
     return pd.DataFrame(results, columns=columns)
 
 
-def make_selection_key(key):
+def make_selection_key(key, names=None):
     from milabench.metrics.sqlalchemy import Exec, Metric, Pack
 
     table, path = key.split(":")
@@ -105,9 +105,39 @@ def make_selection_key(key):
     if len(maybe) == 2:
         as_name = maybe[1]
     else:
-        as_name = "_".join(frags)
+        as_name = key
+
+    if names is not None:
+        names[key] = as_name
 
     return selection.label(as_name)
 
 def make_filter(key):
-    pass
+    op = key["operator"]
+    field = make_selection_key(key["field"])
+    value = key["value"]
+
+    match op:
+        case "in":
+            return field.in_(value.split(","))
+        case "not in":
+            return field.notin_(value.split(","))
+        case "==":
+            return field == value
+        case "!=":
+            return field != value
+        case ">":
+            return field > value
+        case "<":
+            return field < value
+        case ">=":
+            return field >= value
+        case "<=":
+            return field <= value
+        case "like":
+            return field.like(value)
+        case "not like":
+            return field.notlike(value)
+
+def make_filters(filters):
+    return [make_filter(f) for f in filters]
