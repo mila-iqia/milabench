@@ -85,6 +85,7 @@ def cursor_to_dataframe(cursor):
 
 def make_selection_key(key, names=None):
     from milabench.metrics.sqlalchemy import Exec, Metric, Pack
+    from sqlalchemy import Text, cast
 
     table, path = key.split(":")
     tables = {
@@ -93,15 +94,29 @@ def make_selection_key(key, names=None):
         "Pack": Pack
     }
 
+    types = {
+        "product": str
+    }
+
     maybe = path.split(" as ")
     path = maybe[0]
 
     frags = path.split(".")
     selection = getattr(tables[table], frags[0])
 
-    for frag in frags[1:]:
+    for frag in frags[1:-1]:
         selection = selection[frag]
 
+    if len(frags) > 1:
+        lst = frags[-1]
+        lst_type = types.get(lst, None)
+
+        selection = selection[lst]
+
+        if lst_type is not None:
+            if lst_type is str:
+                selection = cast(selection, Text)
+    
     if len(maybe) == 2:
         as_name = maybe[1]
     else:
