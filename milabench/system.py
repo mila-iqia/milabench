@@ -477,6 +477,9 @@ def build_system_config(config_file, defaults=None, gpu=True):
 
     return config
 
+def overrides_snapshot():
+    return {name: value["value"] for name, value in _global_options.items()}
+
 
 def show_overrides(to_json=False):
     import json
