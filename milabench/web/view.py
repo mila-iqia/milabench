@@ -245,7 +245,8 @@ def view_server(config):
             "values": {
                 v: ["mean", "max"] for v in values
             },
-            "filters": [] # filters
+            # We make the filter in SQL so we have less data to process
+            "filters": []
         }
 
         df = pd.DataFrame(results)

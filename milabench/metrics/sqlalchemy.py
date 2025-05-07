@@ -207,6 +207,11 @@ class SQLAlchemy:
         self.pending_metrics = []
         self.batch_size = 1000
 
+    def start_new_run(self):
+        self.meta = None
+        self.run = None
+        self.states = defaultdict(PackState)
+
     @property
     def client(self):
         return self.engine
@@ -471,16 +476,17 @@ class SQLAlchemy:
             run_id, pack_id, "walltime", end - state.start, gpu_id=gpu_id, job_id=job_id
         )
 
-        self._push_metric(
-            run_id, pack_id, "return_code", entry.data["return_code"], gpu_id=gpu_id, job_id=job_id
-        )
-
         status = "done"
         if state.early_stop:
             status = "early_stop"
 
         if state.error > 0:
             status = "error"
+
+        self._push_metric(
+            run_id, pack_id, "return_code", entry.data["return_code"], gpu_id=gpu_id, job_id=job_id, 
+            namespace=status
+        )
 
         self.update_pack_status(state.pack, status)
         self.states.pop(entry.tag)
