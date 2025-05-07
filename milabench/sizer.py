@@ -169,7 +169,7 @@ class Sizer:
 
         config = self.benchscaling(benchmark)
 
-        if "model" in config:
+        if config and "model" in config:
             mem, size = self._scaling_v1(config)
         else:
             mem, size, _ = self._scaling_v2(config)
@@ -332,13 +332,15 @@ class MemoryUsageExtractor(ValidationLayer):
         sizer = Sizer()
 
         self.filepath = SizerOptions.instance().save
-        
+
         if self.filepath and os.path.exists(self.filepath):
             with open(self.filepath, "r") as fp:
                 self.memory = yaml.safe_load(fp) or {}
-        else:
+        elif SizerOptions.instance().save == SizerOptions.instance().config:
             self.memory = deepcopy(sizer.scaling_config)
-
+        else:
+            self.memory = {}
+        
         if self.memory.get("version", 1.0) <= 1.0:
             self.convert()
             self.memory["version"] = 2.0
