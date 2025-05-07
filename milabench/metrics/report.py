@@ -16,6 +16,7 @@ def base_report_view(*columns):
             Metric.name.label("metric"),
             Metric.value,
             Metric.gpu_id,
+            Metric.order,
             *columns
         )
         .join(Exec, Metric.exec_id == Exec._id)
@@ -30,14 +31,19 @@ def base_report_view(*columns):
 
 def fetch_data(client, run_name):
     stmt = (base_report_view()
-            .where(Exec.name.startswith(run_name))
+            .where(
+                Exec.name.startswith(run_name), 
+                Metric.name.in_(["gpu.memory", "gpu.load", "return_code", "walltime", "rate"]))
     )
     return fetch_data_by_query(client, stmt)
 
 
 def fetch_data_by_id(client, run_id):
     stmt = (base_report_view()
-            .where(Exec._id == run_id)
+            .where(
+                Exec._id == run_id,
+                Metric.name.in_(["gpu.memory", "gpu.load", "return_code", "walltime", "rate"])    
+            )
     )
     return fetch_data_by_query(client, stmt)
 
@@ -166,7 +172,10 @@ def make_pivot_summary(runame, df: pd.DataFrame, metrics=None):
     def bench(name):
         return_codes = df[df["bench"] == name][df["metric"] == "return_code"]
         total = len(return_codes)
+
         success = sum([int(r == 0) for r in return_codes["value"]])
+
+        ngpu = (return_codes['gpu_id'].astype(str).apply(lambda x: len(x.split(',')))).mean()
 
         return {
             "name": name,
@@ -175,6 +184,7 @@ def make_pivot_summary(runame, df: pd.DataFrame, metrics=None):
             "failures": total - success,
             "train_rate": _metric(overall, name, "rate"),
             "walltime": _metric(overall, name, "walltime"),
+            "ngpu": ngpu,
             "per_gpu": {},
             "gpu_load": {
                 g: {
@@ -185,7 +195,6 @@ def make_pivot_summary(runame, df: pd.DataFrame, metrics=None):
             },
         }
 
-    print(overall.columns)
     r = {name: bench(name) for name in benchmarks}
 
     return r 
