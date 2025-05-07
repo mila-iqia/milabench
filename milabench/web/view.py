@@ -3,6 +3,7 @@ import os
 import json
 from contextlib import contextmanager
 from collections import defaultdict
+import base64
 
 import pandas as pd
 from flask import Flask, jsonify, render_template_string, render_template
@@ -15,6 +16,43 @@ from milabench.metrics.sqlalchemy import SQLAlchemy
 from milabench.metrics.report import fetch_data, make_pivot_summary, fetch_data_by_id
 from milabench.report import make_report
 from .utils import database_uri, page, make_selection_key, make_filters, cursor_to_json, cursor_to_dataframe
+
+
+class MultiIndexFormater:
+    """Format a dataframe using the last element on a multi index"""
+    def __init__(self, df):
+        self.df = df
+        self.style = {
+            "gpu.load": "{:.2%}".format,
+            "gpu.memory": "{:.2%}".format,
+            "gpu.power": "{:.2f}".format,
+            "gpu.temperature": "{:.2f}".format,
+            "loss": "{:.2f}".format,
+            "walltime": "{:.2f}".format,
+            "rate": "{:.2f}".format,
+            "return_code": "{:.0f}".format,
+            "memory_peak": "{:.0f}".format,
+        }
+
+    def __len__(self): 
+        return len(self.df.columns)
+    
+    def get(self, item, default=None):
+        for col in item:
+            if col in self.style:
+                return self.style.get(col)
+            
+        return default
+
+
+def pandas_to_html(df):
+    fmt = MultiIndexFormater(df)
+
+    return df.to_html(
+        formatters=fmt, 
+        classes=["table", "table-striped", "table-hover", "table-sm"], 
+        na_rep=""
+    )
 
 
 def view_server(config):
@@ -222,7 +260,7 @@ def view_server(config):
         filters = []
 
         if request.args.get('filters'):
-            filters = json.loads(request.args.get('filters'))
+            filters = json.loads(base64.b64decode(request.args.get('filters')))
 
         filter_fields = [f['field'] for f in filters]
 
@@ -243,7 +281,7 @@ def view_server(config):
             "rows": rows,
             "cols": cols,
             "values": {
-                v: ["mean", "max"] for v in values
+                v: ["mean"] for v in values
             },
             # We make the filter in SQL so we have less data to process
             "filters": []
@@ -254,6 +292,9 @@ def view_server(config):
         filtered = df
         for filter in pivot_spec.get("filters", []):
             filtered = filtered.query(filter)
+    
+        if filtered.empty:
+            return pandas_to_html(filtered)
 
         overall = pd.pivot_table(
             filtered,
@@ -264,28 +305,16 @@ def view_server(config):
             dropna=True,
         )
 
-        formatters = {
-            ("Metric:value", 'mean', "gpu.load"): "{:.2%}".format,
-            ("Metric:value", 'mean', "gpu.memory"): "{:.2%}".format,
-            ("Metric:value", 'mean', "gpu.power"): "{:.2f}".format,
-            ("Metric:value", 'mean', "gpu.temperature"): "{:.2f}".format,
-            ("Metric:value", 'mean', "loss"): "{:.2f}".format,
-            ("Metric:value", 'mean', "walltime"): "{:.2f}".format,
-            ("Metric:value", 'mean', "rate"): "{:.2f}".format,
-            ("Metric:value", 'mean', "return_code"): "{:.0f}".format,
-            ("Metric:value", 'mean', "memory_peak"): "{:.0f}".format,
-        }
 
-        metrics = df["Metric:name"].unique()
+        # metrics = df["Metric:name"].unique()
 
-        print(metrics)
+        # columns = []
+        # for col in pivot_spec["cols"]:
+        #     columns.append(df[col].unique())
 
         # Dynamically build column order based on selected values
         column_order = []
         # FIXME I need to add pivot columns here
-        for value in values:
-            for metric in metrics:
-                column_order.append((value, "mean", metric))
 
         df = overall
         if column_order:
@@ -309,7 +338,7 @@ def view_server(config):
             df = df.sort_values('_priority').drop(columns=['_priority'])
             df = df.set_index(rows)
 
-        return df.to_html(formatters=formatters, classes=["table", "table-striped", "table-hover", "table-sm"], na_rep="")
+        return pandas_to_html(df)
 
     @app.route('/')
     def index():

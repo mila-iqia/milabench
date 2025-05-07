@@ -16,6 +16,7 @@ from sqlalchemy import (
     Index,
     Integer,
     String,
+    text
 )
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.exc import DBAPIError
@@ -24,6 +25,8 @@ from sqlalchemy.orm import Session, declarative_base
 from ..structs import BenchLogEntry
 
 Base = declarative_base()
+
+
 
 
 class Exec(Base):
@@ -35,8 +38,16 @@ class Exec(Base):
     created_time = Column(DateTime, default=datetime.utcnow)
     meta = Column(JSON)
     status = Column(String(256))
+    mark = Column(Integer)
 
-    __table_args__ = (Index("exec_name", "name"),)
+    __table_args__ = (
+        Index("exec_name", "name"),
+        # Index(
+        #     'execs_meta_gpus_0_product_idx',
+        #     text("(meta -> 'accelerators' -> 'gpus' -> '0' ->> 'product')"),
+        #     postgresql_using='btree'
+        # )    
+    )
 
     def as_dict(self):
         return {

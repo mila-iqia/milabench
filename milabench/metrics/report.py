@@ -16,7 +16,6 @@ def base_report_view(*columns):
             Metric.name.label("metric"),
             Metric.value,
             Metric.gpu_id,
-            Metric.order,
             *columns
         )
         .join(Exec, Metric.exec_id == Exec._id)
