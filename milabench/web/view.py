@@ -87,7 +87,7 @@ def view_server(config):
     @app.route('/api/exec/list')
     def api_exec_list():
         stmt = sqlalchemy.select(Exec)
-
+ 
         results = []
         with sqlexec() as sess:
             cursor = sess.execute(stmt)

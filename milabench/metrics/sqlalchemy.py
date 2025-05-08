@@ -38,7 +38,7 @@ class Exec(Base):
     created_time = Column(DateTime, default=datetime.utcnow)
     meta = Column(JSON)
     status = Column(String(256))
-    mark = Column(Integer)
+    # mark = Column(Integer)
 
     __table_args__ = (
         Index("exec_name", "name"),

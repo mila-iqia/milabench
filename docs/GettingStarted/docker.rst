@@ -121,7 +121,7 @@ There are currently two multi-node benchmarks, ``opt-1_3b-multinode`` (data-para
        - name: node1
          ip: 192.168.0.25
          main: true
-         port: 8123
+         sshport: 8123
          user: <username>
       
        - name: node2
@@ -171,7 +171,7 @@ For example, for 4 nodes:
        - name: node1
          ip: 192.168.0.25
          main: true
-         port: 8123
+         sshport: 8123
          user: <username>
       
        - name: node2

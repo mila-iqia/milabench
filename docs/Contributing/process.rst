@@ -71,7 +71,7 @@ Vendor Instructions
          - name: node1
             ip: 192.168.0.25
             main: true
-            port: 8123
+            sshport: 8123
             user: <username>
 
          - name: node2
