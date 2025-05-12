@@ -182,7 +182,37 @@ def view_server(config):
                 return jsonify(result.as_dict())
 
         return jsonify({})
+    
+    @app.route('/api/exec/explore')
+    def api_explore():
+        from flask import request
+        fields = {}
 
+        if request.args.get('filters'):
+            filters = json.loads(base64.b64decode(request.args.get('filters')))
+            # extract the fields that are queried upon
+            # we will add them to the query and display the values
+            table = table.where(*make_filters(filters, fields=fields))
+
+        table = (
+            sqlalchemy.select(
+                Exec._id.label("id"),
+                Exec.name.label("run"),
+                Pack.name.label("bench"),
+                *fields.values()
+            )
+            .join(Exec, Metric.exec_id == Exec._id)
+            .join(Pack, Metric.pack_id == Pack._id)
+        )
+
+        with sqlexec() as sess:
+            cursor = sess.execute(table)
+            for row in cursor:
+                result = row[0]
+                return jsonify(result.as_dict())
+
+        return jsonify({})
+    
 
     #
     # html routes

@@ -127,10 +127,13 @@ def make_selection_key(key, names=None):
 
     return selection.label(as_name)
 
-def make_filter(key):
+def make_filter(key, fields=None):
     op = key["operator"]
     field = make_selection_key(key["field"])
     value = key["value"]
+
+    if fields is not None:
+        fields[key["field"]] = field
 
     match op:
         case "in":
@@ -153,6 +156,10 @@ def make_filter(key):
             return field.like(value)
         case "not like":
             return field.notlike(value)
+        case "is":
+            return field.is_(value)
+        case "is not":
+            return field.is_not(value)
 
-def make_filters(filters):
-    return [make_filter(f) for f in filters]
+def make_filters(filters, fields=None):
+    return [make_filter(f, fields) for f in filters]
