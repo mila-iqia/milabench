@@ -83,7 +83,7 @@ def cursor_to_dataframe(cursor):
     return pd.DataFrame(results, columns=columns)
 
 
-def make_selection_key(key, names=None):
+def make_selection_key(key, names=None, used_tables=None):
     from milabench.metrics.sqlalchemy import Exec, Metric, Pack
     from sqlalchemy import Text, cast
 
@@ -95,8 +95,13 @@ def make_selection_key(key, names=None):
     }
 
     types = {
-        "product": str
+        "product": str,
+        "CUDA_VERSION": str,
+        "TORCH_VERSION": str
     }
+
+    if used_tables is not None:
+        used_tables.append(table)
 
     maybe = path.split(" as ")
     path = maybe[0]
@@ -127,9 +132,9 @@ def make_selection_key(key, names=None):
 
     return selection.label(as_name)
 
-def make_filter(key, fields=None):
+def make_filter(key, fields=None, used_tables=None):
     op = key["operator"]
-    field = make_selection_key(key["field"])
+    field = make_selection_key(key["field"], used_tables=used_tables)
     value = key["value"]
 
     if fields is not None:
@@ -161,5 +166,5 @@ def make_filter(key, fields=None):
         case "is not":
             return field.is_not(value)
 
-def make_filters(filters, fields=None):
-    return [make_filter(f, fields) for f in filters]
+def make_filters(filters, fields=None, used_tables=None):
+    return [make_filter(f, fields, used_tables=used_tables) for f in filters]

@@ -7,6 +7,7 @@ import base64
 
 import pandas as pd
 from flask import Flask, jsonify, render_template_string, render_template
+from flask_caching import Cache
 import sqlalchemy
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func, cast, TEXT
@@ -62,6 +63,12 @@ def view_server(config):
 
     app = Flask(__name__)
     app.config.update(config)
+    app.config.update({
+        "CACHE_TYPE": "SimpleCache",
+        "CACHE_DEFAULT_TIMEOUT": 300
+    })
+
+    cache = Cache(app)
 
     @contextmanager
     def sqlexec():
@@ -91,7 +98,6 @@ def view_server(config):
         results = []
         with sqlexec() as sess:
             cursor = sess.execute(stmt)
-            columns = list(cursor.keys())
             for row in cursor:
                 for col in row:
                     results.append(col.as_dict())
@@ -187,31 +193,40 @@ def view_server(config):
     def api_explore():
         from flask import request
         fields = {}
-
-        if request.args.get('filters'):
-            filters = json.loads(base64.b64decode(request.args.get('filters')))
-            # extract the fields that are queried upon
-            # we will add them to the query and display the values
-            table = table.where(*make_filters(filters, fields=fields))
+        tables = []
 
         table = (
             sqlalchemy.select(
                 Exec._id.label("id"),
                 Exec.name.label("run"),
-                Pack.name.label("bench"),
+                # Pack.name.label("bench"),
                 *fields.values()
             )
-            .join(Exec, Metric.exec_id == Exec._id)
-            .join(Pack, Metric.pack_id == Pack._id)
-        )
+            # 
+            # 
+        ).distinct(Exec._id)
+
+        if request.args.get('filters'):
+            filters = json.loads(base64.b64decode(request.args.get('filters')))
+            # extract the fields that are queried upon
+            # we will add them to the query and display the values
+            table = table.where(*make_filters(filters, fields=fields, used_tables=tables))
+
+        if 'Pack' in tables:
+            table = table.join(Pack, Exec._id == Pack._id)
+
+        if "Metric" in tables:
+            table = table.join(Metric, Exec._id == Metric.exec_id)
 
         with sqlexec() as sess:
             cursor = sess.execute(table)
-            for row in cursor:
-                result = row[0]
-                return jsonify(result.as_dict())
+            columns = list(cursor.keys())
+            results = []
 
-        return jsonify({})
+            for row in cursor:
+                results.append({k: v for k, v in zip(columns, row)})
+
+        return jsonify(results)
     
 
     #
@@ -274,23 +289,9 @@ def view_server(config):
         with open("/home/newton/work/milabench_dev/milabench/milabench/web/template/pivot.html", "r") as fp:
             return render_template_string(fp.read())
 
-    @app.route('/html/pivot')
-    def html_pivot():
+    @cache.cached(timeout=3600)
+    def cached_query(rows, cols, values, filters):
         from milabench.metrics.report import base_report_view
-        from flask import request
-
-        # If no parameters are provided, serve the pivot builder interface
-        if not request.args:
-            return render_template('pivot.html')
-
-        # Get form parameters with defaults
-        rows = request.args.get('rows', '').split(',') if request.args.get('rows') else ["run", "gpu", "pytorch", "bench"]
-        cols = request.args.get('cols', '').split(',') if request.args.get('cols') else ["metric"]
-        values = request.args.get('values', '').split(',') if request.args.get('values') else ["mean", "max"]
-        filters = []
-
-        if request.args.get('filters'):
-            filters = json.loads(base64.b64decode(request.args.get('filters')))
 
         filter_fields = [f['field'] for f in filters]
 
@@ -306,6 +307,28 @@ def view_server(config):
         with sqlexec() as sess:
             cursor = sess.execute(table)
             results = cursor_to_json(cursor)
+
+        return results
+
+    @app.route('/html/pivot')
+    def html_pivot():
+        from flask import request
+
+        # If no parameters are provided, serve the pivot builder interface
+        if not request.args:
+            return render_template('pivot.html')
+
+        args = request.args
+
+        rows = args.get('rows', '').split(',') if args.get('rows') else ["run", "gpu", "pytorch", "bench"]
+        cols = args.get('cols', '').split(',') if args.get('cols') else ["metric"]
+        values = args.get('values', '').split(',') if args.get('values') else ["mean", "max"]
+        filters = []
+
+        if args.get('filters'):
+            filters = json.loads(base64.b64decode(args.get('filters')))
+
+        results = cached_query(rows, cols, values, filters)
 
         pivot_spec = {
             "rows": rows,
