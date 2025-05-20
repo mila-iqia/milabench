@@ -194,7 +194,14 @@ def view_server(config):
         from flask import request
         fields = {}
         tables = []
+        sql_filters = None
 
+        if request.args.get('filters'):
+            filters = json.loads(base64.b64decode(request.args.get('filters')))
+            # extract the fields that are queried upon
+            # we will add them to the query and display the values
+            sql_filters = make_filters(filters, fields=fields, used_tables=tables)
+    
         table = (
             sqlalchemy.select(
                 Exec._id.label("id"),
@@ -206,11 +213,8 @@ def view_server(config):
             # 
         ).distinct(Exec._id)
 
-        if request.args.get('filters'):
-            filters = json.loads(base64.b64decode(request.args.get('filters')))
-            # extract the fields that are queried upon
-            # we will add them to the query and display the values
-            table = table.where(*make_filters(filters, fields=fields, used_tables=tables))
+        if sql_filters:
+            table = table.where(*sql_filters)
 
         if 'Pack' in tables:
             table = table.join(Pack, Exec._id == Pack._id)
