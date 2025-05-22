@@ -4,25 +4,31 @@ import json
 from contextlib import contextmanager
 from collections import defaultdict
 import base64
+from datetime import datetime
 
 import pandas as pd
 from flask import Flask, jsonify, render_template_string, render_template
 from flask_caching import Cache
+from flask import request
 import sqlalchemy
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func, cast, TEXT
 
-from milabench.metrics.sqlalchemy import Exec, Metric, Pack
+from milabench.metrics.sqlalchemy import Exec, Metric, Pack, Weight, SavedQuery
 from milabench.metrics.sqlalchemy import SQLAlchemy
 from milabench.metrics.report import fetch_data, make_pivot_summary, fetch_data_by_id
 from milabench.report import make_report
+from .plot import pivot_query
 from .utils import database_uri, page, make_selection_key, make_filters, cursor_to_json, cursor_to_dataframe
+from .slurm import slurm_integration
+from .realtime import metric_receiver
 
 
 class MultiIndexFormater:
     """Format a dataframe using the last element on a multi index"""
-    def __init__(self, df):
+    def __init__(self, df, default_float="{:.2f}".format):
         self.df = df
+        self.default = default_float
         self.style = {
             "gpu.load": "{:.2%}".format,
             "gpu.memory": "{:.2%}".format,
@@ -35,25 +41,74 @@ class MultiIndexFormater:
             "memory_peak": "{:.0f}".format,
         }
 
-    def __len__(self): 
+    def __len__(self):
         return len(self.df.columns)
-    
+
     def get(self, item, default=None):
         for col in item:
             if col in self.style:
                 return self.style.get(col)
-            
-        return default
+
+        if isinstance(item, str):
+            return default
+
+        return self.default
 
 
-def pandas_to_html(df):
-    fmt = MultiIndexFormater(df)
+def gradient(x, mn, mx):
+    import numpy as np
 
-    return df.to_html(
-        formatters=fmt, 
-        classes=["table", "table-striped", "table-hover", "table-sm"], 
-        na_rep=""
+    c1 = np.array([255, 0, 0])
+    c2 = np.array([255, 255, 255])
+    c3 = np.array([0, 255, 0])
+
+    pct = (x - mn) / (mx - mn)
+
+    if pct < 0.5:
+        t = pct / 0.5
+        return (1 - t) * c1 + t * c2
+
+    else:
+        t = (pct - 0.5) / 0.5
+        return (1 - t) * c2 + t * c3
+
+
+def conditional_format(v, props=''):
+    color = gradient(v, mn=0.5, mx=1.5)
+    return f"background: rgb({color[0]}, {color[1]}, {color[2]})"
+
+
+def pandas_to_html(df, default_float="{:.2f}".format):
+    fmt = MultiIndexFormater(df, default_float=default_float)
+
+    table = df.to_html(
+        formatters=fmt,
+        classes=["table", "table-striped", "table-hover", "table-sm"],
+        na_rep="",
+        justify="right"
     )
+
+    return page("df", table, more_css="""
+        .table {
+            width: auto;
+        }
+    """)
+
+
+def pandas_to_html_relative(df, default_float="{:.2f}".format):
+    table = (df.style
+        .map(conditional_format)
+        .format(precision=2, thousands="'", decimal=".")
+        .set_table_attributes("class='table table-striped table-hover table-sm'")
+        .to_html()
+    )
+
+    return page("df", table, more_css="""
+        .table {
+            width: auto;
+        }
+    """)
+
 
 
 def view_server(config):
@@ -69,6 +124,20 @@ def view_server(config):
     })
 
     cache = Cache(app)
+    from apscheduler.schedulers.background import BackgroundScheduler
+    from apscheduler.schedulers import SchedulerNotRunningError
+
+    scheduler = BackgroundScheduler()
+    app.scheduler = scheduler
+    app.scheduler.start()
+
+    @app.teardown_appcontext
+    def cleanup(exception):
+        try:
+            scheduler.shutdown()
+        except SchedulerNotRunningError:
+            pass
+
 
     @contextmanager
     def sqlexec():
@@ -76,8 +145,12 @@ def view_server(config):
             with Session(logger.client) as sess:
                 yield sess
 
+    slurm_integration(app)
+    
+    metric_receiver(app)
+
     #
-    # AI routes
+    # API routes
     #
 
     @app.route('/api/summary/<runame>')
@@ -92,9 +165,10 @@ def view_server(config):
         return jsonify(multirun)
 
     @app.route('/api/exec/list')
-    def api_exec_list():
-        stmt = sqlalchemy.select(Exec)
- 
+    @app.route('/api/exec/list/<int:limit>')
+    def api_exec_list(limit=25):
+        stmt = sqlalchemy.select(Exec).order_by(Exec._id.desc()).limit(limit)
+
         results = []
         with sqlexec() as sess:
             cursor = sess.execute(stmt)
@@ -160,9 +234,14 @@ def view_server(config):
         with sqlexec() as sess:
             return jsonify(sess.execute(stmt).scalars().all())
 
+    @app.route('/api/metrics/list/<int:exec_id>')
     @app.route('/api/metrics/list')
-    def api_ls_metrics():
-        stmt = select(func.distinct(Metric.name))
+    def api_ls_metrics(exec_id=None):
+        if exec_id:
+            stmt = select(func.distinct(Metric.name)).where(Metric.exec_id == exec_id)
+        else:
+            stmt = select(func.distinct(Metric.name))
+
         with sqlexec() as sess:
             return jsonify(sess.execute(stmt).scalars().all())
 
@@ -171,6 +250,156 @@ def view_server(config):
         stmt = select(func.distinct(cast(Exec.meta["pytorch"]["torch"], TEXT)))
         with sqlexec() as sess:
             return jsonify(sess.execute(stmt).scalars().all())
+
+    @app.route('/api/profile/list')
+    def api_ls_profile():
+        stmt = select(func.distinct(Weight.profile))
+        with sqlexec() as sess:
+            return jsonify(sess.execute(stmt).scalars().all())
+
+    @app.route('/api/profile/show/<string:profile>')
+    def api_show_profile(profile):
+        stmt = select(Weight).where(Weight.profile == profile)
+
+        results = []
+        with sqlexec() as sess:
+            cursor = sess.execute(stmt)
+            for row in cursor:
+                for col in row:
+                    results.append(col.as_dict())
+
+
+        results.sort(key=lambda x: x['priority'])
+
+        return jsonify(results)
+
+    @app.route('/api/profile/save/<string:profile>', methods=['POST'])
+    def api_save_profile(profile):
+        from flask import request
+        weights = request.json
+
+        with sqlexec() as sess:
+            for weight in weights:
+                stmt = (
+                    sqlalchemy.update(Weight)
+                    .where(Weight._id == weight['_id'])
+                    .values(
+                        weight=weight['weight'],
+                        priority=weight['priority'],
+                        enabled=weight['enabled'],
+                        group1=weight.get('group1'),
+                        group2=weight.get('group2'),
+                        group3=weight.get('group3'),
+                        group4=weight.get('group4'),
+                    )
+                )
+                sess.execute(stmt)
+            sess.commit()
+
+        return jsonify({"status": "success"})
+
+    @app.route('/api/profile/copy', methods=['POST'])
+    def api_copy_profile():
+        from flask import request
+        data = request.json
+        source_profile = data['sourceProfile']
+        new_profile = data['newProfile']
+
+        with sqlexec() as sess:
+            # Get all weights from source profile
+            stmt = select(Weight).where(Weight.profile == source_profile)
+            source_weights = []
+            cursor = sess.execute(stmt)
+            for row in cursor:
+                for col in row:
+                    source_weights.append(col.as_dict())
+
+            # Create new weights for the new profile
+            for weight in source_weights:
+                new_weight = Weight(
+                    profile=new_profile,
+                    pack=weight['pack'],
+                    weight=weight['weight'],
+                    priority=weight['priority'],
+                    enabled=weight['enabled'],
+                    group1=weight.get('group1'),
+                    group2=weight.get('group2'),
+                    group3=weight.get('group3'),
+                    group4=weight.get('group4'),
+                )
+                sess.add(new_weight)
+            sess.commit()
+
+        return jsonify({"status": "success"})
+
+    @app.route('/api/query/list')
+    def api_ls_saved():
+        stmt = select(func.distinct(SavedQuery.name))
+        with sqlexec() as sess:
+            return jsonify(sess.execute(stmt).scalars().all())
+
+    @app.route('/api/query/all')
+    def api_get_all_saved_queries():
+        stmt = select(SavedQuery).order_by(SavedQuery.created_time.desc())
+        with sqlexec() as sess:
+            cursor = sess.execute(stmt)
+            results = []
+            for row in cursor:
+                for col in row:
+                    results.append(col.as_dict())
+            return jsonify(results)
+
+    @app.route('/api/query/<string:name>')
+    def api_get_saved_query(name):
+        stmt = select(SavedQuery).where(SavedQuery.name == name)
+        with sqlexec() as sess:
+            result = sess.execute(stmt).scalar_one_or_none()
+            if result:
+                return jsonify(result.as_dict())
+            else:
+                return jsonify({"error": "Query not found"}), 404
+
+    @app.route('/api/query/save', methods=['POST'])
+    def api_save_query():
+        from flask import request
+        data = request.json
+        name = data.get('name')
+        query = data.get('query')
+
+        if not name or not query:
+            return jsonify({"error": "Name and query are required"}), 400
+
+        with sqlexec() as sess:
+            # Check if query with this name already exists
+            existing = sess.execute(select(SavedQuery).where(SavedQuery.name == name)).scalar_one_or_none()
+
+            if existing:
+                # Update existing query
+                existing.query = query
+                existing.created_time = datetime.utcnow()
+            else:
+                # Create new query
+                saved_query = SavedQuery(
+                    name=name,
+                    query=query,
+                    created_time=datetime.utcnow()
+                )
+                sess.add(saved_query)
+
+            sess.commit()
+
+        return jsonify({"status": "success"})
+
+    @app.route('/api/query/delete/<string:name>', methods=['DELETE'])
+    def api_delete_saved_query(name):
+        with sqlexec() as sess:
+            result = sess.execute(select(SavedQuery).where(SavedQuery.name == name)).scalar_one_or_none()
+            if result:
+                sess.delete(result)
+                sess.commit()
+                return jsonify({"status": "success"})
+            else:
+                return jsonify({"error": "Query not found"}), 404
 
     @app.route('/api/milabench/list')
     def api_ls_milabench():
@@ -188,7 +417,7 @@ def view_server(config):
                 return jsonify(result.as_dict())
 
         return jsonify({})
-    
+
     @app.route('/api/exec/explore')
     def api_explore():
         from flask import request
@@ -201,7 +430,7 @@ def view_server(config):
             # extract the fields that are queried upon
             # we will add them to the query and display the values
             sql_filters = make_filters(filters, fields=fields, used_tables=tables)
-    
+
         table = (
             sqlalchemy.select(
                 Exec._id.label("id"),
@@ -209,8 +438,8 @@ def view_server(config):
                 # Pack.name.label("bench"),
                 *fields.values()
             )
-            # 
-            # 
+            #
+            #
         ).distinct(Exec._id)
 
         if sql_filters:
@@ -231,25 +460,25 @@ def view_server(config):
                 results.append({k: v for k, v in zip(columns, row)})
 
         return jsonify(results)
-    
+
 
     #
     # html routes
     #
 
-    def fetch_data_type(client, run_id):
+    def fetch_data_type(client, run_id, profile="default"):
         if isinstance(run_id, str):
-            return fetch_data(client, run_id)
+            return fetch_data(client, run_id, profile=profile)
         else:
-            return fetch_data_by_id(client, run_id)
+            return fetch_data_by_id(client, run_id, profile=profile)
 
-    def report(run_id):
+    def report(run_id, profile="default"):
         with SQLAlchemy(DATABASE_URI) as logger:
-            df_post = fetch_data_type(logger.client, run_id)
+            df_post = fetch_data_type(logger.client, run_id, profile=profile)
 
         names = list(df_post["run"].unique())
 
-        if len(names) > 0:
+        if len(names) > 1:
             print("multiple run report")
 
         full_name = names[0]
@@ -257,17 +486,22 @@ def view_server(config):
 
         stream = StringIO()
         with open(os.devnull, "w") as devnull:
-            make_report(replicated, stream=devnull, html=stream)
+            make_report(replicated, stream=devnull, html=stream, weights=replicated)
 
+        print(names)
         return stream.getvalue()
 
     @app.route('/html/report/<string:runame>')
     def html_report_name(runame):
-        return report(runame)
+        profile = request.cookies.get('scoreProfile')
+
+        return report(runame, profile=profile)
 
     @app.route('/html/report/<int:run_id>')
     def html_report(run_id):
-        return report(run_id)
+        profile = request.cookies.get('scoreProfile')
+
+        return report(run_id, profile=profile)
 
     @app.route('/html/exec/<int:exec_id>/packs/<pack_id>/metrics')
     def html_pack_metrics(exec_id, pack_id):
@@ -293,8 +527,180 @@ def view_server(config):
         with open("/home/newton/work/milabench_dev/milabench/milabench/web/template/pivot.html", "r") as fp:
             return render_template_string(fp.read())
 
-    @cache.cached(timeout=3600)
-    def cached_query(rows, cols, values, filters):
+    @app.route('/api/report/fast')
+    def api_report_fast():
+        from .plot import sql_direct_report
+        # http://localhost:5000/api/report/fast?exec_ids=48&drop_min_max=true&more=Exec:meta.accelerators.gpus.0.product
+
+        profile = request.cookies.get('scoreProfile')
+        exec_ids = request.args.get('exec_ids', '').split(',')
+        drop_min_max = request.args.get('drop_min_max', 'true').lower() == 'true'
+
+        more = filter(lambda x: x != '', request.args.get('more', '').split(','))
+        more = [make_selection_key(key) for key in more]
+
+        with sqlexec() as sess:
+            stmt = sql_direct_report(exec_ids, profile=profile, drop_min_max=drop_min_max, more=more)
+
+            cursor = sess.execute(stmt)
+
+            results = cursor_to_json(cursor)
+
+        return jsonify(results)
+
+    @app.route('/api/scaling')
+    def api_scaling():
+        """Fetch scaling data from the scaling configuration files"""
+        from milabench.analysis.scaling import read_config, folder_path
+
+        gpus = request.args.getlist("gpus")
+
+        if len(gpus) == 0:
+            gpus = list(os.listdir(folder_path))
+            gpus.remove("default.yaml")
+
+            gpus = [gpu.split(".")[0] for gpu in gpus]
+
+        output = []
+        for gpu in gpus:
+            read_config(f"{gpu}.yaml", output)
+
+        return output
+
+    @app.route('/html/scaling/x=<string:x>/y=<string:y>')
+    def scaling_plot(x, y):
+        """Fetch scaling data from the scaling configuration files"""
+        import altair as alt
+        from .utils import plot
+
+        print(x, y)
+
+        chart = (
+            alt.Chart(f"/api/scaling").mark_point().encode(
+                    x=f"{x}:Q",
+                    y=f"{y}:Q",
+                    shape="gpu:N",
+                    color="gpu:N",
+                    size="perf:Q",
+                )
+                .facet(
+                    facet=alt.Facet("bench:N", title="Benchmark"),
+                    columns=4
+                )
+        ).resolve_scale(y='independent', x='independent', size='independent')
+
+        return plot(chart.to_json())
+
+    @app.route('/api/grouped/plot')
+    def api_grouped_plot():
+        from .plot import grouped_plot
+
+        n1 = request.args.get('n1')
+        n2 = request.args.get('n2')
+        g1 = request.args.get('g1')
+        g2 = request.args.get('g2')
+        metric = request.args.get('metric')
+        more = request.args.get('more')
+        exec_ids = request.args.get('exec_ids')
+        profile = request.args.get('profile', request.cookies.get('scoreProfile'))
+        weighted = request.args.get('weighted', 'false').lower() == 'true'
+
+        color = request.args.get('color')
+        relative = request.args.get('relative', '=')
+        color_key, color_val = relative.split("=")
+
+        # Handle None/empty values for g1 and g2
+        group1_col = getattr(Weight, g1) if g1 else None
+        group2_col = getattr(Weight, g2) if g2 else None
+        group1_name = n1
+        group2_name = n2
+
+        metric=metric
+
+        exec_ids = exec_ids.split(',')
+        more = [make_selection_key(key) for key in more.split(',')]
+
+        with sqlexec() as sess:
+            stmt = grouped_plot(
+                group1_col,
+                group2_col,
+                group1_name,
+                group2_name,
+                exec_ids,
+                metric,
+                more,
+                weighted=weighted,
+                profile=profile)
+
+            cursor = sess.execute(stmt)
+
+            results = cursor_to_json(cursor)
+
+        if color_key != "" and color_val != "":
+            values = {}
+            for row in results:
+                name_x = row.get(group1_name, "")
+                name_y = row.get(group2_name, "")
+
+                value = row[color_key]
+                base = row[metric]
+
+                if value == color_val:
+                    values[(name_x, name_y, value)] = base
+
+            for row in results:
+                name_x = row.get(group1_name, "")
+                name_y = row.get(group2_name, "")
+
+                baseline = values.get((name_x, name_y, color_val), 1)
+                row[metric] = row[metric] / baseline
+
+        return jsonify(results)
+
+    @app.route('/html/grouped/plot')
+    def html_grouped_plot():
+        import altair as alt
+        from .utils import plot
+
+        n1 = request.args.get('n1')
+        n2 = request.args.get('n2')
+        metric = request.args.get('metric')
+        color = request.args.get('color')
+
+        query_string = request.query_string.decode('utf-8')
+
+        # TODO: make those arguments
+        row_order = ["fp16", "tf32", "fp32"]
+        column_order = ["FLOPS", "BERT", "CONVNEXT"]
+
+        # ----
+        x = alt.X(metric, type="quantitative", scale=alt.Scale(zero=False))
+        y = alt.Y(color, type="nominal", scale=alt.Scale(zero=False))
+
+        if request.args.get('inverted') is not None:
+            x, y = y, x
+
+        config = {
+            "y": y,
+            "x": x,
+            "color": alt.Color(color, type="nominal"),
+        }
+
+        if request.args.get('g2') is not None:
+            config["row"] = alt.Row(f"{n2}", type="nominal", title=n2, sort=row_order)
+
+        if request.args.get('g1') is not None:
+            config["column"] = alt.Column(f"{n1}", type="nominal", title=n1, sort=column_order)
+
+        chart = alt.Chart(f"/api/grouped/plot?{query_string}").mark_bar().encode(
+            **config
+        )
+
+        return plot(chart.to_json())
+
+
+    @cache.memoize(timeout=3600)
+    def cached_query(rows, cols, values, filters, profile="default"):
         from milabench.metrics.report import base_report_view
 
         filter_fields = [f['field'] for f in filters]
@@ -303,7 +709,7 @@ def view_server(config):
             make_selection_key(key) for key in [*rows, *cols, *values, *filter_fields]
         ]
 
-        table = base_report_view(*selected_keys)
+        table = base_report_view(*selected_keys, profile=profile)
 
         if filters:
             table = table.where(*make_filters(filters))
@@ -314,10 +720,7 @@ def view_server(config):
 
         return results
 
-    @app.route('/html/pivot')
-    def html_pivot():
-        from flask import request
-
+    def make_pivot(profile="default"):
         # If no parameters are provided, serve the pivot builder interface
         if not request.args:
             return render_template('pivot.html')
@@ -326,35 +729,39 @@ def view_server(config):
 
         rows = args.get('rows', '').split(',') if args.get('rows') else ["run", "gpu", "pytorch", "bench"]
         cols = args.get('cols', '').split(',') if args.get('cols') else ["metric"]
-        values = args.get('values', '').split(',') if args.get('values') else ["mean", "max"]
+        values = json.loads(base64.b64decode(args.get('values', '{}')))
+
+        def get_aggregator(v):
+            def to_fun(agg):
+                if agg == "avg":
+                    return "mean"
+                return agg
+
+            return [
+                to_fun(agg) for agg in v
+            ]
+
+
+        values = {k: get_aggregator(v) for k, v in values.items()}
         filters = []
 
         if args.get('filters'):
             filters = json.loads(base64.b64decode(args.get('filters')))
 
-        results = cached_query(rows, cols, values, filters)
+        results = cached_query(rows, cols, values, filters, profile=profile)
 
         pivot_spec = {
             "rows": rows,
             "cols": cols,
-            "values": {
-                v: ["mean"] for v in values
-            },
+            "values": values,
             # We make the filter in SQL so we have less data to process
             "filters": []
         }
 
         df = pd.DataFrame(results)
 
-        filtered = df
-        for filter in pivot_spec.get("filters", []):
-            filtered = filtered.query(filter)
-    
-        if filtered.empty:
-            return pandas_to_html(filtered)
-
         overall = pd.pivot_table(
-            filtered,
+            df,
             values=pivot_spec["values"].keys(),
             index=pivot_spec["rows"],
             columns=pivot_spec["cols"],
@@ -362,40 +769,112 @@ def view_server(config):
             dropna=True,
         )
 
+        import numpy as np
 
-        # metrics = df["Metric:name"].unique()
+        pack_name = "Pack:name"
+        if pack_name in overall.index.names:
+            priority_map = df.drop_duplicates(subset=pack_name, keep='first').set_index(pack_name)['priority']
 
-        # columns = []
-        # for col in pivot_spec["cols"]:
-        #     columns.append(df[col].unique())
+            bench_vals = overall.index.get_level_values(pack_name)
+            priorities = bench_vals.map(priority_map)
 
-        # Dynamically build column order based on selected values
-        column_order = []
-        # FIXME I need to add pivot columns here
+            overall = overall.iloc[priorities.argsort()]
 
-        df = overall
-        if column_order:
-            df = df[column_order]
+            # Compute the score
+            rate_cols_mask = overall.columns.get_level_values('Metric:name') == 'rate'
+            rate_columns = overall.columns[rate_cols_mask]
 
-        if "Pack:name" in df:
-            priority_map = defaultdict(int)
-            df = df.reset_index()
+            if len(rate_columns) > 0:
+                weight_map = df.drop_duplicates(subset=pack_name, keep='first').set_index(pack_name)['weight']
+                weights = bench_vals.map(weight_map)
 
-            for i, k in enumerate(sorted(list(set(df['Pack:name'])))):
-                priority_map[k] = i
+                scores = {}
+                for col in rate_columns:
+                    x = overall[col]
+                    weighted_log_sum = (np.log(x + 1) * weights).sum()
+                    weight_sum = sum(weights.values)
+                    scores[col] = np.exp(weighted_log_sum / weight_sum)
 
-            priority_map.update({
-                "fp16": -1,
-                "bf16": -2,
-                "tf32": -3,
-                "fp32": -4,
-            })
+                # Add the score as a row to overall
+                scores_series = pd.Series(scores)
+                score_row = pd.DataFrame([scores_series], columns=overall.columns)
 
-            df['_priority'] = df['Pack:name'].map(priority_map)
-            df = df.sort_values('_priority').drop(columns=['_priority'])
-            df = df.set_index(rows)
+                existing_index = overall.index[0]
+                pack_name_pos = overall.index.names.index("Pack:name")
+
+                if isinstance(overall.index, pd.MultiIndex):
+                    new_index_label = list(existing_index)
+                    new_index_label[pack_name_pos] = "score"
+                    new_index_label = tuple(new_index_label)
+                    score_row.index = pd.MultiIndex.from_tuples([new_index_label], names=overall.index.names)
+                else:
+                    score_row.index = pd.Index(["score"])
+
+                overall = pd.concat([overall, score_row])
+
+        # We need to reorder the df by the same order
+        return overall
+
+    @app.route('/html/relative/pivot')
+    def html_relative_pivot():
+        # retrieve the cookie `scoreProfile` and use that as the profile
+        profile = request.cookies.get('scoreProfile')
+        df = make_pivot(profile=profile)
+
+        first_col = df.iloc[:, 0]
+
+        df = df.div(first_col, axis=0)
+
+        return pandas_to_html_relative(df)
+
+    @app.route('/html/pivot')
+    def html_pivot():
+        profile = request.cookies.get('scoreProfile')
+
+        df = make_pivot(profile)
 
         return pandas_to_html(df)
+
+    @app.route('/api/pivot')
+    def api_pivot():
+        profile = request.cookies.get('scoreProfile')
+        args = request.args
+
+        i = 0
+        def counter():
+            nonlocal i
+            i += 1
+            return i
+
+        def rename_column(col):
+            if 'as' in col:
+                return col
+            else:
+                return f"{col} as {col.replace(':', '_')}"
+
+        rows = args.get('rows', '').split(',') if args.get('rows') else ["run", "gpu", "pytorch", "bench"]
+        rows = [rename_column(r) for i, r in enumerate(rows)]
+
+        cols = args.get('cols', '').split(',') if args.get('cols') else ["metric"]
+        cols = [rename_column(r) for i, r in enumerate(cols)]
+
+        values = json.loads(base64.b64decode(args.get('values', '{}')))
+        values = {rename_column(k): v for k, v in values.items()}
+
+        filters = []
+        if args.get('filters'):
+            filters = json.loads(base64.b64decode(args.get('filters')))
+
+        if len(filters) == 0:
+            print("No filters, returning empty to avoid crashing the database")
+            return jsonify({})
+
+        with sqlexec() as sess:
+            query = pivot_query(sess, rows, cols, values, filters, profile)
+            cursor = sess.execute(query)
+            results = cursor_to_json(cursor)
+
+        return results
 
     @app.route('/')
     def index():
@@ -418,7 +897,6 @@ def view_server(config):
 
 
 def main():
-    # flask --app milabench.web.view:main run
     app = view_server({})
     return app
 

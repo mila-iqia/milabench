@@ -7,7 +7,6 @@ from urllib.parse import urlparse
 
 import pathspec
 import requests
-from git import GitCommandError, GitCommandNotFound, Repo
 
 
 def manifest_ignorer(manifest):
@@ -127,6 +126,8 @@ class XPath(type(Path())):
             subtree: Path to the subtree to copy.
             dest: Path to which the subtree should be moved (must not already exist).
         """
+        from git import GitCommandError, GitCommandNotFound, Repo
+        
         if dest is None:
             dest = self
         elif not dest.is_absolute():

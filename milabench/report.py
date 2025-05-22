@@ -249,6 +249,11 @@ def make_dataframe(summary, compare=None, weights=None, query=None):
 
     def sort_by(key):
         """Group similar runs together"""
+        if summary:
+            priority = summary.get(key, {}).get("priority", None)
+            if priority:
+                return priority 
+
         if weights:
             return weights.get(key, {}).get("group", key)
 
@@ -286,8 +291,10 @@ def make_dataframe(summary, compare=None, weights=None, query=None):
 def normalize_dataframe(df):
     columns = filter(lambda k: k in columns_order, df.columns)
     columns = sorted(columns, key=lambda k: columns_order.get(k, 0))
+
     for col in columns:
         df[col] = df[col].astype(float)
+    
     return df[columns]
 
 
@@ -392,6 +399,10 @@ def make_report(
         weights = dict()
 
     meta = get_meta(summary)
+
+    # FIXME: we need this because if benchamrks are missing the total weight might be wrong
+    weight_total_override = summary.get(list(summary.keys())[0]).get("weight_total")
+
     df = make_dataframe(summary, compare, weights)
     out = Outputter(stdout=stream, html=html)
 
@@ -412,7 +423,7 @@ def make_report(
     normalized = normalize_dataframe(df)
     out.print(normalized)
 
-    to_latex(normalized)
+    # to_latex(normalized)
 
     out.section("Scores")
 
@@ -425,13 +436,20 @@ def make_report(
             
             # score = (acc if acc > 0 else row["perf"]) * success_ratio
             score = df[column].astype(float)
+            score = score.fillna(0)  # Replace nan by 0
 
             weights = df["weight"] * df["enabled"].astype(int)
+
             # if total weight is 0 ?
-            weight_total = np.sum(weights) 
+            weight_total = np.sum(weights)
+
+            # FIXME: we need this because if benchamrks are missing the total weight might be wrong
+            if weight_total_override:
+                weight_total = weight_total_override
 
             # score cannot be 0
             logscore = np.sum(np.log(score + 1) * weights) / weight_total
+            
             return np.exp(logscore)
         except ZeroDivisionError:
             return -1
@@ -482,6 +500,7 @@ def make_report(
             )
         
     out.finalize()
+    return normalized
 
 
 _formatters = {

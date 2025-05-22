@@ -16,17 +16,19 @@ from sqlalchemy import (
     Index,
     Integer,
     String,
-    text
+    text,
+    Computed,
+    Boolean,
+    UniqueConstraint,
 )
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session, declarative_base
+from sqlalchemy.orm import declared_attr
 
 from ..structs import BenchLogEntry
 
 Base = declarative_base()
-
-
 
 
 class Exec(Base):
@@ -38,15 +40,43 @@ class Exec(Base):
     created_time = Column(DateTime, default=datetime.utcnow)
     meta = Column(JSON)
     status = Column(String(256))
-    # mark = Column(Integer)
+
+    # Visibility works as a level, this way we can do show all runs <= 2
+    #  0= public
+    #  1= private
+    # We could also have a moving "public" visibility as time move older results become available
+    visibility = Column(Integer, default=0)
+
 
     __table_args__ = (
         Index("exec_name", "name"),
+        Index("exec_visibility", "visibility"),
+        Index(
+            'execs_meta_gpus_0_product_idx',
+            text("(meta -> 'accelerators' -> 'gpus' -> '0' ->> 'product')"),
+            postgresql_using='btree'
+        ),
+        # Pivot query optimization indexes
+        Index(
+            'idx_exec_meta_pytorch_version',
+            text("(meta -> 'pytorch' ->> 'version')"),
+            postgresql_using='btree'
+        ),
+        Index(
+            'idx_exec_meta_pytorch_torch',
+            text("(meta -> 'pytorch' ->> 'torch')"),
+            postgresql_using='btree'
+        ),
         # Index(
-        #     'execs_meta_gpus_0_product_idx',
-        #     text("(meta -> 'accelerators' -> 'gpus' -> '0' ->> 'product')"),
-        #     postgresql_using='btree'
-        # )    
+        #     'idx_exec_meta_accelerators_gin',
+        #     text("meta -> 'accelerators'"),
+        #     postgresql_using='gin'
+        # ),
+        # Index(
+        #     'idx_exec_meta_pytorch_gin',
+        #     text("meta -> 'pytorch'"),
+        #     postgresql_using='gin'
+        # )
     )
 
     def as_dict(self):
@@ -56,7 +86,7 @@ class Exec(Base):
             "namespace": self.namespace,
             "created_time": self.created_time,
             "meta": self.meta,
-            "status": self.status   
+            "status": self.status
         }
 
 
@@ -70,21 +100,50 @@ class Pack(Base):
     tag = Column(String(256))
     config = Column(JSON)
     command = Column(JSON)
+    status = Column(String(256))
+
+    #
+    @declared_attr
+    def ngpu(cls):
+        try:
+            if Base.metadata.bind and Base.metadata.bind.dialect.name != 'sqlite':
+                return Column(Integer, Computed("((config->>'num_machines')::int * json_array_length(config->'devices'))"))
+            else:
+                return Column(Integer)  # Empty placeholder
+        except:
+            return Column(Integer)  # Empty placeholder
+
+
+    # @property
+    # def gpu_count(self):
+    #     return len(self.config.get("devices", [1])) if self.config else 1
+
+    # @property
+    # def node_count(self):
+    #     return self.config.get("num_machines", 1) if self.config else 1
+
+    # @property
+    # def ngpu(self):
+    #     return self.gpu_count * self.node_count
 
     __table_args__ = (
         Index("exec_pack_query", "exec_id"),
         Index("pack_query", "name", "exec_id"),
         Index("pack_tag", "tag"),
+        # Pivot query optimization indexes
+        Index("idx_pack_name", "name"),  # For faster name lookups in Weight joins
     )
 
     def as_dict(self):
         return {
             "_id": self._id,
+            "exec_id": self.exec_id,
             "name": self.name,
             "tag": self.tag,
             "created_time": self.created_time,
             "config": self.config,
-            "command": self.command   
+            "command": self.command,
+            "status": self.status
         }
 
 
@@ -109,6 +168,11 @@ class Metric(Base):
     __table_args__ = (
         Index("metric_query", "exec_id", "pack_id"),
         Index("metric_name", "name"),
+        # Pivot query optimization indexes
+        Index("idx_metric_name_value", "name", "value"),  # For DISTINCT queries with filtering
+        Index("idx_metric_exec_pack_name", "exec_id", "pack_id", "name"),  # For base_report_view joins
+        Index("idx_metric_pack_name", "pack_id", "name"),  # For faster pack-metric joins
+        Index("idx_metric_exec_name", "exec_id", "name"),  # For exec-metric aggregations
     )
 
     def as_dict(self):
@@ -124,6 +188,82 @@ class Metric(Base):
             "job_id": self.job_id,
             "gpu_id": self.gpu_id,
         }
+
+
+class SavedQuery(Base):
+    """Save queries to easy access"""
+    __tablename__ = "saved_queries"
+
+    _id = Column(Integer, primary_key=True, autoincrement=True)
+
+    name = Column(String(256))
+    query = Column(JSON)
+    created_time = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index("saved_queries_name", "name"),
+    )
+
+    def as_dict(self):
+        return {
+            "_id": self._id,
+            "name": self.name,
+            "query": self.query,
+            "created_time": self.created_time,
+        }
+
+
+class Weight(Base):
+    """Save queries to easy access"""
+    __tablename__ = "weights"
+
+    _id = Column(Integer, primary_key=True, autoincrement=True)
+
+    profile = Column(String(256), nullable=False)
+    pack = Column(String(256), nullable=False)
+    weight = Column(Integer, default=0, nullable=False)
+    # 1XXX: Synthetic
+    # 2XXX: CV
+    # 3XXX: NLP
+    # 4XXX: RL
+    # 5XXX: Graphs
+
+    # 1XX: Transformer
+    # 2XX: Convnets
+    # 3XX: MLP
+    priority = Column(Integer, default=0, nullable=False)
+    enabled = Column(Boolean, default=False, nullable=False)
+    group1 = Column(String(256), nullable=True)
+    group2 = Column(String(256), nullable=True)
+    group3 = Column(String(256), nullable=True)
+    group4 = Column(String(256), nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("profile", "pack", name="uq_profile_pack"),
+        Index("weight_profile_pack", "profile", "pack"),
+        # Pivot query optimization indexes
+        Index("idx_weight_profile_enabled", "profile", "enabled"),  # For enabled weight filtering
+        Index("idx_weight_pack", "pack"),  # For pack name lookups
+        Index("idx_weight_profile_priority", "profile", "priority"),  # For ordered results
+    )
+
+    def __repr__(self):
+        return f"Weight({self.as_dict()})"
+
+    def as_dict(self):
+        return {
+            "_id": self._id,
+            "profile": self.profile,
+            "pack": self.pack,
+            "weight": self.weight,
+            "priority": self.priority,
+            "enabled": self.enabled,
+            "group1": self.group1,
+            "group2": self.group2,
+            "group3": self.group3,
+            "group4": self.group4,
+        }
+
 
 class SQLAlchemy:
     pass
@@ -151,12 +291,21 @@ def generate_database_sql_setup(uri=None):
     """Users usally do not have create table permission.
     We generate the code to create the table so someone with permission can execute the script.
     """
+    import os
 
     dummy = "sqlite:///sqlite.db"
     if uri is None:
         uri = dummy
 
-    with open("setup.sql", "w") as file:
+
+    filename = os.path.join(os.path.dirname(__file__), "..", "..", "scripts", "tables.sql")
+
+    with open(filename, "w") as file:
+        file.write("--\n")
+        file.write("-- Generated using:\n")
+        file.write("--\n")
+        file.write("--      python -m milabench.metrics.sqlalchemy\n")
+        file.write("--\n")
 
         def metadata_dump(sql, *multiparams, **params):
             sql = str(sql.compile(dialect=postgresql.dialect()))
@@ -172,6 +321,68 @@ def generate_database_sql_setup(uri=None):
         Base.metadata.create_all(engine)
 
 
+        file.write(base_weight_profile().replace("        ", ""))
+        file.write("-- \n")
+
+
+
+def base_weight_profile():
+    return """
+        INSERT INTO
+            weights (profile, weight, priority, pack, enabled, group1, group2)
+        VALUES
+            ('default', 0, 1000, 'fp16', TRUE, 'SYNTHETIC', 'FLOPS'),
+            ('default', 0, 1001, 'bf16', TRUE, 'SYNTHETIC', 'FLOPS'),
+            ('default', 0, 1002, 'tf32', TRUE, 'SYNTHETIC', 'FLOPS'),
+            ('default', 0, 1003, 'fp32', TRUE, 'SYNTHETIC', 'FLOPS'),
+            ('default', 0, 2201, 'convnext_large-fp32', TRUE, 'CV', 'CONVNET'),
+            ('default', 0, 2202, 'convnext_large-fp16', TRUE, 'CV', 'CONVNET'),
+            ('default', 0, 2203, 'convnext_large-tf32', TRUE, 'CV', 'CONVNET'),
+            ('default', 1, 2204, 'convnext_large-tf32-fp16', TRUE, 'CV', 'CONVNET'),
+            ('default', 1, 2205, 'resnet50', TRUE, 'CV', 'CONVNET'),
+            ('default', 0, 2206, 'resnet50-noio', TRUE, 'CV', 'CONVNET'),
+            ('default', 0, 2207, 'resnet152-ddp-gpus', TRUE, 'CV', 'CONVNET'),
+            ('default', 1, 2208, 'regnet_y_128gf', TRUE, 'CV', 'CONVNET'),
+            ('default', 0, 2209, 'lightning', TRUE, 'CV', 'CONVNET'),
+            ('default', 1, 2210, 'lightning-gpus', TRUE, 'CV', 'CONVNET'),
+            ('default', 0, 2211, 'focalnet', TRUE, 'CV', 'CONVNET'),
+            ('default', 0, 2012, 'diffusion-single', TRUE, 'CV', 'DIFFUSION'),
+            ('default', 1, 2013, 'diffusion-gpus', TRUE, 'CV', 'DIFFUSION'),
+            ('default', 1, 2014, 'diffusion-nodes', FALSE, 'CV', 'DIFFUSION'),
+            ('default', 0, 2101, 'dinov2-giant-single', TRUE, 'CV', 'TRANSFORMER'),
+            ('default', 1, 2102, 'dinov2-giant-gpus', TRUE, 'CV', 'TRANSFORMER'),
+            ('default', 0, 2103, 'dinov2-giant-nodes', FALSE, 'CV', 'TRANSFORMER'),
+            ('default', 1, 2104, 'llava-single', TRUE, 'CV', 'TRANSFORMER'),
+            ('default', 0, 2105, 'llava-gpus', FALSE, 'CV', 'TRANSFORMER'),
+            ('default', 1, 2106, 'vjepa-single', TRUE, 'CV', 'TRANSFORMER'),
+            ('default', 1, 2107, 'vjepa-gpus', TRUE, 'CV', 'TRANSFORMER'),
+            ('default', 0, 3100, 'bert-fp32', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 0, 3101, 'bert-fp16', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 0, 3102, 'bert-tf32', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 1, 3103, 'bert-tf32-fp16', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 0, 3104, 't5', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 1, 3105, 'reformer', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 0, 3106, 'whisper', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 1, 3107, 'llama', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 1, 3108, 'llm-lora-single', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 1, 3109, 'llm-lora-ddp-gpus', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 1, 3110, 'llm-lora-ddp-nodes', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 1, 3111, 'llm-lora-mp-gpus', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 1, 3112, 'llm-full-mp-gpus', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 1, 3113, 'llm-full-mp-nodes', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 1, 3114, 'rlhf-single', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 0, 3115, 'rlhf-gpus', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 1, 4201, 'torchatari', TRUE, 'RL', 'CONVNET'),
+            ('default', 1, 4302, 'brax', TRUE, 'RL', 'MLP'),
+            ('default', 0, 4303, 'dqn', TRUE, 'RL', 'MLP'),
+            ('default', 1, 4304, 'ppo', TRUE, 'RL', 'MLP'),
+            ('default', 0, 4305, 'cleanrljax', FALSE, 'RL', 'MLP'),
+            ('default', 1, 5000, 'pna', TRUE, 'GRAPHS', 'GNN'),
+            ('default', 1, 5001, 'dimenet', TRUE, 'GRAPHS', 'GNN'),
+            ('default', 1, 5002, 'recursiongfn', TRUE, 'GRAPHS', 'GFlow')
+        ON CONFLICT (profile, pack) DO NOTHING 
+        ;"""
+
 def create_database(uri):
     engine = sqlalchemy.create_engine(
         uri,
@@ -182,9 +393,15 @@ def create_database(uri):
     )
 
     try:
+        Base.metadata.bind = engine
         Base.metadata.create_all(engine)
-    except DBAPIError:
-        print("could not create database schema because of {err}")
+
+        with Session(engine) as session:
+            session.execute(text(base_weight_profile()))
+            session.commit()
+
+    except DBAPIError as err:
+        print(f"could not create database schema because of {err}")
 
 
 def _get_pack_ids(pack):
@@ -197,7 +414,7 @@ def _get_pack_ids(pack):
 
 
 class SQLAlchemy:
-    def __init__(self, uri="sqlite:///sqlite.db", meta_override=None) -> None:
+    def __init__(self, uri="sqlite:///sqlite.db", meta_override=None, visibility=0) -> None:
         if uri.startswith("sqlite"):
             create_database(uri)
 
@@ -276,6 +493,7 @@ class SQLAlchemy:
             created_time=datetime.utcnow(),
             meta=self.meta_override or entry.data,
             status="running",
+            visibility=visibility
         )
         self.session.add(self.run)
         self.session.commit()
@@ -352,7 +570,7 @@ class SQLAlchemy:
                 return int(gid)
             except:
                 return -1
-    
+
         self.pending_metrics.append(
             Metric(
                 exec_id=run_id,
@@ -408,7 +626,7 @@ class SQLAlchemy:
         run_id = self.run._id
         pack_id = state.pack._id
         job_id, gpu_id = _get_pack_ids(state.pack)
-        
+
         if "progress" in entry.data:
             return
 
@@ -422,7 +640,7 @@ class SQLAlchemy:
             # so the gpu_id is moved to its own column
             # and each metric is pushed as a separate document
             self._change_gpudata(run_id, pack_id, "gpudata", gpudata, job_id, metric_time=metric_time)
-        
+
         elif (process := data.pop("process", None)) is not None:
             self._push_composed_data(run_id, pack_id, gpu_id, "process", process, job_id, metric_time=metric_time)
 
@@ -434,7 +652,7 @@ class SQLAlchemy:
 
         elif (netdata := data.pop("netdata", None)) is not None:
             self._push_composed_data(run_id, pack_id, gpu_id, "netdata", netdata, job_id, metric_time=metric_time)
-        
+
         else:
             # Standard
             unit = data.pop("units", None)
@@ -495,8 +713,16 @@ class SQLAlchemy:
             status = "error"
 
         self._push_metric(
-            run_id, pack_id, "return_code", entry.data["return_code"], gpu_id=gpu_id, job_id=job_id, 
+            run_id, pack_id, "return_code", entry.data["return_code"], gpu_id=gpu_id, job_id=job_id,
             namespace=status
+        )
+
+        status_code = 1
+        if status in ("early_stop", "done"):
+            status_code = 0
+
+        self._push_metric(
+            run_id, pack_id, "status", status_code, gpu_id=gpu_id, job_id=job_id
         )
 
         self.update_pack_status(state.pack, status)

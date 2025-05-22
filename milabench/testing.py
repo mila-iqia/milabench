@@ -98,9 +98,12 @@ def replay_run(folder):
         yield from interleave(*benchfiles)
 
 
-def show_diff(a, b, depth=0, path=None):
+def show_diff(a, b, depth=0, path=None, handler=None):
     indent = " " * depth
     acc = 0
+
+    if handler is None:
+        handler = lambda indent, p, v1, v2: print(f'{indent} {".".join(p)} {v1} != {v2}')
 
     if depth == 0:
         print()
@@ -115,15 +118,16 @@ def show_diff(a, b, depth=0, path=None):
         v2 = b.get(k)
 
         if v1 is None or v2 is None:
-            print(f"Missing key {k}")
+            handler(indent, p, f"{k}={v1}", f"{k}={v2}")
             continue
 
         if isinstance(v1, dict):
-            acc += show_diff(v1, v2, depth + 1, p)
+            acc += show_diff(v1, v2, depth + 1, p, handler)
             continue
 
         if v1 != v2:
-            print(f'{indent} {".".join(p)} {v1} != {v2}')
+            handler(indent, p, v1, v2)
+            
             acc += 1
 
     return acc
