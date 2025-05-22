@@ -16,7 +16,8 @@ from sqlalchemy import (
     Index,
     Integer,
     String,
-    text
+    text,
+    Computed
 )
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.exc import DBAPIError
@@ -71,6 +72,19 @@ class Pack(Base):
     config = Column(JSON)
     command = Column(JSON)
     status = Column(String(256))
+    ngpu = Column(Integer, Computed("((config->>'num_machines')::int * json_array_length(config->'devices'))"))
+
+    # @property
+    # def gpu_count(self):
+    #     return len(self.config.get("devices", [1])) if self.config else 1
+
+    # @property
+    # def node_count(self):
+    #     return self.config.get("num_machines", 1) if self.config else 1
+
+    # @property
+    # def ngpu(self):
+    #     return self.gpu_count * self.node_count
 
     __table_args__ = (
         Index("exec_pack_query", "exec_id"),
