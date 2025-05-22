@@ -42,11 +42,11 @@ class Exec(Base):
 
     __table_args__ = (
         Index("exec_name", "name"),
-        # Index(
-        #     'execs_meta_gpus_0_product_idx',
-        #     text("(meta -> 'accelerators' -> 'gpus' -> '0' ->> 'product')"),
-        #     postgresql_using='btree'
-        # )    
+        Index(
+            'execs_meta_gpus_0_product_idx',
+            text("(meta -> 'accelerators' -> 'gpus' -> '0' ->> 'product')"),
+            postgresql_using='btree'
+        )    
     )
 
     def as_dict(self):
@@ -70,6 +70,7 @@ class Pack(Base):
     tag = Column(String(256))
     config = Column(JSON)
     command = Column(JSON)
+    status = Column(String(256))
 
     __table_args__ = (
         Index("exec_pack_query", "exec_id"),
@@ -84,7 +85,8 @@ class Pack(Base):
             "tag": self.tag,
             "created_time": self.created_time,
             "config": self.config,
-            "command": self.command   
+            "command": self.command,
+            "status": self.status
         }
 
 
