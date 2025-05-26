@@ -141,6 +141,29 @@ class Metric(Base):
             "gpu_id": self.gpu_id,
         }
 
+
+class SavedQuery(Base):
+    """Save queries to easy access"""
+    __tablename__ = "saved_queries"
+
+    _id = Column(Integer, primary_key=True, autoincrement=True)
+
+    name = Column(String(256))
+    query = Column(JSON)
+    created_time = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index("saved_queries_name", "name"),
+    )
+
+    def as_dict(self):
+        return {
+            "_id": self._id,
+            "query": self.query,
+            "created_time": self.created_time,
+        }
+
+
 class SQLAlchemy:
     pass
 

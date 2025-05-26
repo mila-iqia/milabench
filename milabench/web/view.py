@@ -23,6 +23,7 @@ class MultiIndexFormater:
     """Format a dataframe using the last element on a multi index"""
     def __init__(self, df):
         self.df = df
+        self.default = "{:.2f}".format
         self.style = {
             "gpu.load": "{:.2%}".format,
             "gpu.memory": "{:.2%}".format,
@@ -42,19 +43,30 @@ class MultiIndexFormater:
         for col in item:
             if col in self.style:
                 return self.style.get(col)
-            
-        return default
+        
+        if isinstance(item, str):
+            return default
+        
+        return self.default
 
 
 def pandas_to_html(df):
     fmt = MultiIndexFormater(df)
 
-    return df.to_html(
+
+    table = df.to_html(
         formatters=fmt, 
         classes=["table", "table-striped", "table-hover", "table-sm"], 
-        na_rep=""
+        na_rep="",
+        justify="right"
     )
 
+    return page("df", table, more_css="""
+        .table {
+            width: auto;
+        }
+    """)
+    
 
 def view_server(config):
     """Display milabench results"""

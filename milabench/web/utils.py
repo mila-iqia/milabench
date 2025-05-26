@@ -14,7 +14,7 @@ def database_uri():
     return uri_override or f"postgresql://{USER}:{PSWD}@{HOST}:{PORT}/{DB}"
 
 
-def page(title, body):
+def page(title, body, more_css=""):
     css = '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">'
     
     return f"""
@@ -32,6 +32,8 @@ def page(title, body):
                     td {{
                         text-align: right
                     }}
+
+                    {more_css}
                 </style>
             </head>
             <body>
@@ -114,7 +116,7 @@ def make_selection_key(key, names=None, used_tables=None):
 
     if len(frags) > 1:
         lst = frags[-1]
-        lst_type = types.get(lst, None)
+        lst_type = types.get(lst, str)
 
         selection = selection[lst]
 
@@ -142,9 +144,15 @@ def make_filter(key, fields=None, used_tables=None):
 
     match op:
         case "in":
-            return field.in_(value.split(","))
+            if isinstance(value, str):
+                return field.in_(value.split(","))
+            else:
+                return field.in_(value)
         case "not in":
-            return field.notin_(value.split(","))
+            if isinstance(value, str):
+                return field.notin_(value.split(","))
+            else:
+                return field.notin_(value)
         case "==":
             return field == value
         case "!=":

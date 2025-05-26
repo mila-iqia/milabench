@@ -174,6 +174,7 @@ def make_pivot_summary(runame, df: pd.DataFrame, metrics=None):
 
         success = sum([int(r == 0) for r in return_codes["value"]])
 
+        # FIXME: Does not work for multi-node
         ngpu = (return_codes['gpu_id'].astype(str).apply(lambda x: len(x.split(',')))).mean()
 
         return {
