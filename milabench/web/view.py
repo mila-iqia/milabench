@@ -305,7 +305,8 @@ def view_server(config):
         with open("/home/newton/work/milabench_dev/milabench/milabench/web/template/pivot.html", "r") as fp:
             return render_template_string(fp.read())
 
-    @cache.cached(timeout=3600)
+
+    @cache.memoize(timeout=3600)
     def cached_query(rows, cols, values, filters):
         from milabench.metrics.report import base_report_view
 
@@ -314,7 +315,7 @@ def view_server(config):
         selected_keys = [
             make_selection_key(key) for key in [*rows, *cols, *values, *filter_fields]
         ]
-
+ 
         table = base_report_view(*selected_keys)
 
         if filters:
