@@ -538,6 +538,14 @@ class SQLAlchemy:
             namespace=status
         )
 
+        status_code = 1
+        if status in ("early_stop", "done"):
+            status_code = 0
+
+        self._push_metric(
+            run_id, pack_id, "status", status_code, gpu_id=gpu_id, job_id=job_id
+        )
+
         self.update_pack_status(state.pack, status)
         self.states.pop(entry.tag)
 

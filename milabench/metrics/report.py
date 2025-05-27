@@ -32,7 +32,7 @@ def fetch_data(client, run_name):
     stmt = (base_report_view()
             .where(
                 Exec.name.startswith(run_name), 
-                Metric.name.in_(["gpu.memory", "gpu.load", "return_code", "walltime", "rate"]))
+                Metric.name.in_(["gpu.memory", "gpu.load", "status", "walltime", "rate"]))
     )
     return fetch_data_by_query(client, stmt)
 
@@ -41,7 +41,7 @@ def fetch_data_by_id(client, run_id):
     stmt = (base_report_view()
             .where(
                 Exec._id == run_id,
-                Metric.name.in_(["gpu.memory", "gpu.load", "return_code", "walltime", "rate"])    
+                Metric.name.in_(["gpu.memory", "gpu.load", "status", "walltime", "rate"])    
             )
     )
     return fetch_data_by_query(client, stmt)
@@ -169,7 +169,7 @@ def make_pivot_summary(runame, df: pd.DataFrame, metrics=None):
         return {k: _get(df, bench, name, gpu_id, k) for k in metrics.keys()}
 
     def bench(name):
-        return_codes = df[df["bench"] == name][df["metric"] == "return_code"]
+        return_codes = df[df["bench"] == name][df["metric"] == "status"]
         total = len(return_codes)
 
         success = sum([int(r == 0) for r in return_codes["value"]])
