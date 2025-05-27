@@ -21,9 +21,9 @@ from .utils import database_uri, page, make_selection_key, make_filters, cursor_
 
 class MultiIndexFormater:
     """Format a dataframe using the last element on a multi index"""
-    def __init__(self, df):
+    def __init__(self, df, default_float="{:.2f}".format):
         self.df = df
-        self.default = "{:.2f}".format
+        self.default = default_float
         self.style = {
             "gpu.load": "{:.2%}".format,
             "gpu.memory": "{:.2%}".format,
@@ -50,15 +50,52 @@ class MultiIndexFormater:
         return self.default
 
 
-def pandas_to_html(df):
-    fmt = MultiIndexFormater(df)
+def gradient(x, mn, mx):
+    import numpy as np
 
+    c1 = np.array([255, 0, 0])
+    c2 = np.array([255, 255, 255])
+    c3 = np.array([0, 255, 0])
+
+    pct = (x - mn) / (mx - mn)
+
+    if pct < 0.5:
+        t = pct / 0.5
+        return (1 - t) * c1 + t * c2
+    
+    else:
+        t = (pct - 0.5) / 0.5
+        return (1 - t) * c2 + t * c3
+
+
+def conditional_format(v, props=''):
+    color = gradient(v, mn=0.5, mx=1.5)
+    return f"background: rgb({color[0]}, {color[1]}, {color[2]})"
+
+
+def pandas_to_html(df, default_float="{:.2f}".format):
+    fmt = MultiIndexFormater(df, default_float=default_float)
 
     table = df.to_html(
         formatters=fmt, 
         classes=["table", "table-striped", "table-hover", "table-sm"], 
         na_rep="",
         justify="right"
+    )
+
+    return page("df", table, more_css="""
+        .table {
+            width: auto;
+        }
+    """)
+
+
+def pandas_to_html_relative(df, default_float="{:.2f}".format):
+    table = (df.style
+        .map(conditional_format)
+        .format(precision=2, thousands="'", decimal=".")
+        .set_table_attributes("class='table table-striped table-hover table-sm'")
+        .to_html()
     )
 
     return page("df", table, more_css="""
@@ -104,8 +141,9 @@ def view_server(config):
         return jsonify(multirun)
 
     @app.route('/api/exec/list')
-    def api_exec_list():
-        stmt = sqlalchemy.select(Exec)
+    @app.route('/api/exec/list/<int:limit>')
+    def api_exec_list(limit=25):
+        stmt = sqlalchemy.select(Exec).order_by(Exec._id.desc()).limit(limit)
  
         results = []
         with sqlexec() as sess:
@@ -327,8 +365,7 @@ def view_server(config):
 
         return results
 
-    @app.route('/html/pivot')
-    def html_pivot():
+    def make_pivot():
         from flask import request
 
         # If no parameters are provided, serve the pivot builder interface
@@ -407,6 +444,22 @@ def view_server(config):
             df['_priority'] = df['Pack:name'].map(priority_map)
             df = df.sort_values('_priority').drop(columns=['_priority'])
             df = df.set_index(rows)
+        
+        return df
+
+    @app.route('/html/relative/pivot')
+    def html_relative_pivot():
+        df = make_pivot()
+
+        first_col = df.iloc[:, 0]
+
+        df = df.div(first_col, axis=0)
+
+        return pandas_to_html_relative(df)
+
+    @app.route('/html/pivot')
+    def html_pivot():
+        df = make_pivot()
 
         return pandas_to_html(df)
 

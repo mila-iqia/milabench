@@ -95,6 +95,7 @@ class Pack(Base):
     def as_dict(self):
         return {
             "_id": self._id,
+            "exec_id": self.exec_id,
             "name": self.name,
             "tag": self.tag,
             "created_time": self.created_time,
