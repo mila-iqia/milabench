@@ -36,17 +36,17 @@ class MultiIndexFormater:
             "memory_peak": "{:.0f}".format,
         }
 
-    def __len__(self): 
+    def __len__(self):
         return len(self.df.columns)
-    
+
     def get(self, item, default=None):
         for col in item:
             if col in self.style:
                 return self.style.get(col)
-        
+
         if isinstance(item, str):
             return default
-        
+
         return self.default
 
 
@@ -62,7 +62,7 @@ def gradient(x, mn, mx):
     if pct < 0.5:
         t = pct / 0.5
         return (1 - t) * c1 + t * c2
-    
+
     else:
         t = (pct - 0.5) / 0.5
         return (1 - t) * c2 + t * c3
@@ -77,8 +77,8 @@ def pandas_to_html(df, default_float="{:.2f}".format):
     fmt = MultiIndexFormater(df, default_float=default_float)
 
     table = df.to_html(
-        formatters=fmt, 
-        classes=["table", "table-striped", "table-hover", "table-sm"], 
+        formatters=fmt,
+        classes=["table", "table-striped", "table-hover", "table-sm"],
         na_rep="",
         justify="right"
     )
@@ -103,7 +103,7 @@ def pandas_to_html_relative(df, default_float="{:.2f}".format):
             width: auto;
         }
     """)
-    
+
 
 def view_server(config):
     """Display milabench results"""
@@ -144,7 +144,7 @@ def view_server(config):
     @app.route('/api/exec/list/<int:limit>')
     def api_exec_list(limit=25):
         stmt = sqlalchemy.select(Exec).order_by(Exec._id.desc()).limit(limit)
- 
+
         results = []
         with sqlexec() as sess:
             cursor = sess.execute(stmt)
@@ -238,7 +238,7 @@ def view_server(config):
                 return jsonify(result.as_dict())
 
         return jsonify({})
-    
+
     @app.route('/api/exec/explore')
     def api_explore():
         from flask import request
@@ -251,7 +251,7 @@ def view_server(config):
             # extract the fields that are queried upon
             # we will add them to the query and display the values
             sql_filters = make_filters(filters, fields=fields, used_tables=tables)
-    
+
         table = (
             sqlalchemy.select(
                 Exec._id.label("id"),
@@ -259,8 +259,8 @@ def view_server(config):
                 # Pack.name.label("bench"),
                 *fields.values()
             )
-            # 
-            # 
+            #
+            #
         ).distinct(Exec._id)
 
         if sql_filters:
@@ -281,7 +281,7 @@ def view_server(config):
                 results.append({k: v for k, v in zip(columns, row)})
 
         return jsonify(results)
-    
+
 
     #
     # html routes
@@ -353,7 +353,7 @@ def view_server(config):
         selected_keys = [
             make_selection_key(key) for key in [*rows, *cols, *values, *filter_fields]
         ]
- 
+
         table = base_report_view(*selected_keys)
 
         if filters:
@@ -399,7 +399,7 @@ def view_server(config):
         filtered = df
         for filter in pivot_spec.get("filters", []):
             filtered = filtered.query(filter)
-    
+
         if filtered.empty:
             return pandas_to_html(filtered)
 
@@ -444,7 +444,7 @@ def view_server(config):
             df['_priority'] = df['Pack:name'].map(priority_map)
             df = df.sort_values('_priority').drop(columns=['_priority'])
             df = df.set_index(rows)
-        
+
         return df
 
     @app.route('/html/relative/pivot')
