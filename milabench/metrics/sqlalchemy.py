@@ -17,7 +17,9 @@ from sqlalchemy import (
     Integer,
     String,
     text,
-    Computed
+    Computed,
+    Boolean,
+    UniqueConstraint,
 )
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.exc import DBAPIError
@@ -162,6 +164,44 @@ class SavedQuery(Base):
             "_id": self._id,
             "query": self.query,
             "created_time": self.created_time,
+        }
+
+
+class Weight(Base):
+    """Save queries to easy access"""
+    __tablename__ = "weights"
+
+    _id = Column(Integer, primary_key=True, autoincrement=True)
+
+    profile = Column(String(256), nullable=False)
+    pack = Column(String(256), nullable=False)
+    weight = Column(Integer, default=0, nullable=False)
+    # 1XXX: Synthetic
+    # 2XXX: CV
+    # 3XXX: NLP
+    # 4XXX: RL
+    # 5XXX: Graphs
+    # 1XX: Transformer
+    order = Column(Integer, default=0, nullable=False)
+    enabled = Column(Boolean, default=False, nullable=False)
+    group1 = Column(String(256), nullable=True)
+    group2 = Column(String(256), nullable=True)
+    group3 = Column(String(256), nullable=True)
+    group4 = Column(String(256), nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("profile", "pack", name="uq_profile_pack"),
+        Index("weight_profile_pack", "profile", "pack"),
+    )
+
+    def as_dict(self):
+        return {
+            "_id": self._id,
+            "profile": self.profile,
+            "pack": self.pack,
+            "weight": self.weight,
+            "order": self.order,
+            "enabled": self.enabled,
         }
 
 

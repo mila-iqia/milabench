@@ -427,9 +427,13 @@ def view_server(config):
         if column_order:
             df = df[column_order]
 
-        if "Pack:name" in df:
+        print(df, "Pack:name" in df)
+        if True: # "Pack:name" in df:
+            # df.reindex(weights.keys()))
             priority_map = defaultdict(int)
             df = df.reset_index()
+
+            # df.reindex(weights.keys()))
 
             for i, k in enumerate(sorted(list(set(df['Pack:name'])))):
                 priority_map[k] = i

@@ -1,40 +1,49 @@
 #
 #   Make a web dashboard instead of the CLI version
 #   Easier to read the logs 
-#   graphs ?
+#   plots ?
 #
 
 
 # Have a client validation that push data to the server ?
 # Server both reads the folder and the event
 
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
+if False:
+    from watchdog.observers import Observer
+    from watchdog.events import FileSystemEventHandler
+
+    class _EventHandler(FileSystemEventHandler):
+        def on_created(self, event):
+            print(f"File created: {event.src_path}")
+
+        def on_modified(self, event):
+            print(f"File modified: {event.src_path}")
+
+        def on_closed(self, event):
+            print(f"File closed: {event.src_path}")
+
+
+    class ResultFolderMonitor:
+        def __init__(self, folder_path):
+            self.folder_path = folder_path
+            self.observer = Observer()
+            self.observer.schedule(_EventHandler(), self.folder_path, recursive=True)
+            self.observer.start()
+
+        def stop(self):
+            self.observer.stop()
+            self.observer.join()
 
 
 
-class _EventHandler(FileSystemEventHandler):
-    def on_created(self, event):
-        print(f"File created: {event.src_path}")
-
-    def on_modified(self, event):
-        print(f"File modified: {event.src_path}")
-
-    def on_closed(self, event):
-        print(f"File closed: {event.src_path}")
+#
+# Could we modify `SQLAlchemy` observer to make it send websocket events to the dashboard ?
+# 
 
 
-class ResultFolderMonitor:
-    def __init__(self, folder_path):
-        self.folder_path = folder_path
-        self.observer = Observer()
-        self.observer.schedule(_EventHandler(), self.folder_path, recursive=True)
-        self.observer.start()
-
-    def stop(self):
-        self.observer.stop()
-        self.observer.join()
-
+#
+#   This reads an exisitng result folder and gives a view of the data
+#
 
 class ResultFolderInspector:
     """This is used to give a view of the results folder similar to the SQLAlchemy queries"""
