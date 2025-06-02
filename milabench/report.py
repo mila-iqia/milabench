@@ -249,6 +249,11 @@ def make_dataframe(summary, compare=None, weights=None, query=None):
 
     def sort_by(key):
         """Group similar runs together"""
+        if summary:
+            priority = summary.get(key, {}).get("priority", None)
+            if priority:
+                return priority 
+
         if weights:
             return weights.get(key, {}).get("group", key)
 
@@ -286,8 +291,10 @@ def make_dataframe(summary, compare=None, weights=None, query=None):
 def normalize_dataframe(df):
     columns = filter(lambda k: k in columns_order, df.columns)
     columns = sorted(columns, key=lambda k: columns_order.get(k, 0))
+
     for col in columns:
         df[col] = df[col].astype(float)
+    
     return df[columns]
 
 

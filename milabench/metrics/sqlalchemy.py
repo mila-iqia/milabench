@@ -181,8 +181,11 @@ class Weight(Base):
     # 3XXX: NLP
     # 4XXX: RL
     # 5XXX: Graphs
+
     # 1XX: Transformer
-    order = Column(Integer, default=0, nullable=False)
+    # 2XX: Convnets
+    # 3XX: MLP
+    priority = Column(Integer, default=0, nullable=False)
     enabled = Column(Boolean, default=False, nullable=False)
     group1 = Column(String(256), nullable=True)
     group2 = Column(String(256), nullable=True)

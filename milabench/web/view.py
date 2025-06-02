@@ -396,15 +396,8 @@ def view_server(config):
 
         df = pd.DataFrame(results)
 
-        filtered = df
-        for filter in pivot_spec.get("filters", []):
-            filtered = filtered.query(filter)
-
-        if filtered.empty:
-            return pandas_to_html(filtered)
-
         overall = pd.pivot_table(
-            filtered,
+            df,
             values=pivot_spec["values"].keys(),
             index=pivot_spec["rows"],
             columns=pivot_spec["cols"],
@@ -412,44 +405,51 @@ def view_server(config):
             dropna=True,
         )
 
+        import numpy as np
 
-        # metrics = df["Metric:name"].unique()
+        pack_name = "Pack:name"
+        if pack_name in overall.index.names:
+            priority_map = df.drop_duplicates(subset=pack_name, keep='first').set_index(pack_name)['priority']
 
-        # columns = []
-        # for col in pivot_spec["cols"]:
-        #     columns.append(df[col].unique())
+            bench_vals = overall.index.get_level_values(pack_name)
+            priorities = bench_vals.map(priority_map)
 
-        # Dynamically build column order based on selected values
-        column_order = []
-        # FIXME I need to add pivot columns here
+            overall = overall.iloc[priorities.argsort()]
 
-        df = overall
-        if column_order:
-            df = df[column_order]
+            # Compute the score
+            rate_cols_mask = overall.columns.get_level_values('Metric:name') == 'rate'
+            rate_columns = overall.columns[rate_cols_mask]
 
-        print(df, "Pack:name" in df)
-        if True: # "Pack:name" in df:
-            # df.reindex(weights.keys()))
-            priority_map = defaultdict(int)
-            df = df.reset_index()
+            if len(rate_columns) > 0:
+                weight_map = df.drop_duplicates(subset=pack_name, keep='first').set_index(pack_name)['weight']
+                weights = bench_vals.map(weight_map)
+                
+                scores = {}
+                for col in rate_columns:
+                    x = overall[col]
+                    weighted_log_sum = (np.log(x + 1) * weights).sum()
+                    weight_sum = sum(weights.values)
+                    scores[col] = np.exp(weighted_log_sum / weight_sum)
 
-            # df.reindex(weights.keys()))
+                # Add the score as a row to overall
+                scores_series = pd.Series(scores)
+                score_row = pd.DataFrame([scores_series], columns=overall.columns)
 
-            for i, k in enumerate(sorted(list(set(df['Pack:name'])))):
-                priority_map[k] = i
+                existing_index = overall.index[0]
+                pack_name_pos = overall.index.names.index("Pack:name")
 
-            priority_map.update({
-                "fp16": -1,
-                "bf16": -2,
-                "tf32": -3,
-                "fp32": -4,
-            })
+                if isinstance(overall.index, pd.MultiIndex):
+                    new_index_label = list(existing_index)
+                    new_index_label[pack_name_pos] = "score"
+                    new_index_label = tuple(new_index_label)
+                    score_row.index = pd.MultiIndex.from_tuples([new_index_label], names=overall.index.names)
+                else:
+                    score_row.index = pd.Index(["score"])
 
-            df['_priority'] = df['Pack:name'].map(priority_map)
-            df = df.sort_values('_priority').drop(columns=['_priority'])
-            df = df.set_index(rows)
+                overall = pd.concat([overall, score_row])
 
-        return df
+        # We need to reorder the df by the same order
+        return overall
 
     @app.route('/html/relative/pivot')
     def html_relative_pivot():

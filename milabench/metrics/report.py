@@ -5,7 +5,7 @@ import pandas as pd
 import sqlalchemy
 from sqlalchemy.orm import Session
 
-from milabench.metrics.sqlalchemy import Exec, Metric, Pack
+from milabench.metrics.sqlalchemy import Exec, Metric, Pack, Weight
 
 
 def base_report_view(*columns):
@@ -16,10 +16,15 @@ def base_report_view(*columns):
             Metric.name.label("metric"),
             Metric.value,
             Metric.gpu_id,
+            Weight.weight,
+            Weight.priority,
             *columns
         )
         .join(Exec, Metric.exec_id == Exec._id)
         .join(Pack, Metric.pack_id == Pack._id)
+        .join(Weight, Weight.pack == Pack.name)
+        .where(Weight.profile == "default")
+        .order_by(Weight.priority)
     )
 
 
@@ -183,6 +188,10 @@ def make_pivot_summary(runame, df: pd.DataFrame, metrics=None):
             "successes": success,
             "failures": total - success,
             "train_rate": _metric(overall, name, "rate"),
+
+            "weight": df[df["bench"] == name]["weight"].iloc[0],
+            "priority": df[df["bench"] == name]["priority"].iloc[0],
+
             "walltime": _metric(overall, name, "walltime"),
             "ngpu": ngpu,
             "per_gpu": {},
