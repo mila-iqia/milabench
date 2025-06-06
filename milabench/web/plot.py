@@ -76,8 +76,6 @@ def grouped_plot(group=None, profile="default"):
     return perf_per_group
 
 
-
-
 def sql_direct_report(group=None, profile="default"):
     """Use SQL to directly compute the report from the metrics.
     

@@ -450,6 +450,49 @@ def view_server(config):
 
         return jsonify(results)
 
+    @app.route('/api/scaling')
+    def api_scaling():
+        """Fetch scaling data from the scaling configuration files"""
+        from milabench.analysis.scaling import read_config, folder_path
+
+        gpus = request.args.getlist("gpus")
+
+        if len(gpus) == 0:
+            gpus = list(os.listdir(folder_path))
+            gpus.remove("default.yaml")
+
+            gpus = [gpu.split(".")[0] for gpu in gpus]
+
+        output = []
+        for gpu in gpus:
+            read_config(f"{gpu}.yaml", output)
+        
+        return output
+
+    @app.route('/html/scaling/x=<string:x>/y=<string:y>')
+    def scaling_plot(x, y): 
+        """Fetch scaling data from the scaling configuration files"""
+        import altair as alt
+        from .utils import plot
+
+        print(x, y)
+
+        chart = (
+            alt.Chart(f"/api/scaling").mark_point().encode(
+                    x=f"{x}:Q",
+                    y=f"{y}:Q",
+                    shape="gpu:N",
+                    color="gpu:N",
+                    size="perf:Q",
+                )
+                .facet(
+                    facet=alt.Facet("bench:N", title="Benchmark"),
+                    columns=4
+                )
+        ).resolve_scale(y='independent', x='independent', size='independent')
+
+        return plot(chart.to_json())
+
     @app.route('/api/grouped/plot')
     def api_grouped_plot():
         from .plot import grouped_plot
