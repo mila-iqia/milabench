@@ -432,13 +432,16 @@ def make_report(
             
             # score = (acc if acc > 0 else row["perf"]) * success_ratio
             score = df[column].astype(float)
+            score = score.fillna(0)  # Replace nan by 0
 
             weights = df["weight"] * df["enabled"].astype(int)
+
             # if total weight is 0 ?
             weight_total = np.sum(weights) 
 
             # score cannot be 0
             logscore = np.sum(np.log(score + 1) * weights) / weight_total
+            
             return np.exp(logscore)
         except ZeroDivisionError:
             return -1

@@ -203,8 +203,12 @@ class Weight(Base):
             "profile": self.profile,
             "pack": self.pack,
             "weight": self.weight,
-            "order": self.order,
+            "priority": self.priority,
             "enabled": self.enabled,
+            "group1": self.group1,
+            "group2": self.group2,
+            "group3": self.group3,
+            "group4": self.group4,
         }
 
 

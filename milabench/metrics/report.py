@@ -4,11 +4,12 @@ import numpy as np
 import pandas as pd
 import sqlalchemy
 from sqlalchemy.orm import Session
+from sqlalchemy import cast, Integer
 
 from milabench.metrics.sqlalchemy import Exec, Metric, Pack, Weight
 
 
-def base_report_view(*columns):
+def base_report_view(*columns, profile="default"):
     return (
         sqlalchemy.select(
             Exec.name.label("run"),
@@ -18,12 +19,13 @@ def base_report_view(*columns):
             Metric.gpu_id,
             Weight.weight,
             Weight.priority,
+            cast(Weight.enabled, Integer),
             *columns
         )
         .join(Exec, Metric.exec_id == Exec._id)
         .join(Pack, Metric.pack_id == Pack._id)
         .join(Weight, Weight.pack == Pack.name)
-        .where(Weight.profile == "default")
+        .where(Weight.profile == profile)
         .order_by(Weight.priority)
     )
 
@@ -33,8 +35,8 @@ def base_report_view(*columns):
 # def select_gpu(view, gpu_name):
 #     view.
 
-def fetch_data(client, run_name):
-    stmt = (base_report_view()
+def fetch_data(client, run_name, profile="default"):
+    stmt = (base_report_view(profile=profile)
             .where(
                 Exec.name.startswith(run_name), 
                 Metric.name.in_(["gpu.memory", "gpu.load", "status", "walltime", "rate"]))
@@ -42,8 +44,8 @@ def fetch_data(client, run_name):
     return fetch_data_by_query(client, stmt)
 
 
-def fetch_data_by_id(client, run_id):
-    stmt = (base_report_view()
+def fetch_data_by_id(client, run_id, profile="default"):
+    stmt = (base_report_view(profile=profile)
             .where(
                 Exec._id == run_id,
                 Metric.name.in_(["gpu.memory", "gpu.load", "status", "walltime", "rate"])    
@@ -190,6 +192,7 @@ def make_pivot_summary(runame, df: pd.DataFrame, metrics=None):
             "train_rate": _metric(overall, name, "rate"),
 
             "weight": df[df["bench"] == name]["weight"].iloc[0],
+            "enabled": df[df["bench"] == name]["enabled"].iloc[0],
             "priority": df[df["bench"] == name]["priority"].iloc[0],
 
             "walltime": _metric(overall, name, "walltime"),

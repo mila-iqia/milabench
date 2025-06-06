@@ -8,11 +8,12 @@ import base64
 import pandas as pd
 from flask import Flask, jsonify, render_template_string, render_template
 from flask_caching import Cache
+from flask import request
 import sqlalchemy
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func, cast, TEXT
 
-from milabench.metrics.sqlalchemy import Exec, Metric, Pack
+from milabench.metrics.sqlalchemy import Exec, Metric, Pack, Weight, SavedQuery
 from milabench.metrics.sqlalchemy import SQLAlchemy
 from milabench.metrics.report import fetch_data, make_pivot_summary, fetch_data_by_id
 from milabench.report import make_report
@@ -222,6 +223,93 @@ def view_server(config):
         with sqlexec() as sess:
             return jsonify(sess.execute(stmt).scalars().all())
 
+    @app.route('/api/profile/list')
+    def api_ls_profile():
+        stmt = select(func.distinct(Weight.profile))
+        with sqlexec() as sess:
+            return jsonify(sess.execute(stmt).scalars().all())
+
+    @app.route('/api/profile/show/<string:profile>')
+    def api_show_profile(profile):
+        stmt = select(Weight).where(Weight.profile == profile)
+
+        results = []
+        with sqlexec() as sess:
+            cursor = sess.execute(stmt)
+            for row in cursor:
+                for col in row:
+                    results.append(col.as_dict())
+
+
+        results.sort(key=lambda x: x['priority'])
+
+        return jsonify(results)
+
+    @app.route('/api/profile/save/<string:profile>', methods=['POST'])
+    def api_save_profile(profile):
+        from flask import request
+        weights = request.json
+
+        with sqlexec() as sess:
+            for weight in weights:
+                stmt = (
+                    sqlalchemy.update(Weight)
+                    .where(Weight._id == weight['_id'])
+                    .values(
+                        weight=weight['weight'],
+                        priority=weight['priority'],
+                        enabled=weight['enabled'],
+                        group1=weight.get('group1'),
+                        group2=weight.get('group2'),
+                        group3=weight.get('group3'),
+                        group4=weight.get('group4'),
+                    )
+                )
+                sess.execute(stmt)
+            sess.commit()
+
+        return jsonify({"status": "success"})
+
+    @app.route('/api/profile/copy', methods=['POST'])
+    def api_copy_profile():
+        from flask import request
+        data = request.json
+        source_profile = data['sourceProfile']
+        new_profile = data['newProfile']
+
+        with sqlexec() as sess:
+            # Get all weights from source profile
+            stmt = select(Weight).where(Weight.profile == source_profile)
+            source_weights = []
+            cursor = sess.execute(stmt)
+            for row in cursor:
+                for col in row:
+                    source_weights.append(col.as_dict())
+
+            # Create new weights for the new profile
+            for weight in source_weights:
+                new_weight = Weight(
+                    profile=new_profile,
+                    pack=weight['pack'],
+                    weight=weight['weight'],
+                    priority=weight['priority'],
+                    enabled=weight['enabled'],
+                    group1=weight.get('group1'),
+                    group2=weight.get('group2'),
+                    group3=weight.get('group3'),
+                    group4=weight.get('group4'),
+                )
+                sess.add(new_weight)
+            sess.commit()
+
+        return jsonify({"status": "success"})
+
+    @app.route('/api/query/list')
+    def api_ls_saved():
+        stmt = select(func.distinct(SavedQuery.name))
+        with sqlexec() as sess:
+            return jsonify(sess.execute(stmt).scalars().all())
+
     @app.route('/api/milabench/list')
     def api_ls_milabench():
         stmt = select(func.distinct(cast(Exec.meta["milabench"]["tag"], TEXT)))
@@ -287,15 +375,15 @@ def view_server(config):
     # html routes
     #
 
-    def fetch_data_type(client, run_id):
+    def fetch_data_type(client, run_id, profile="default"):
         if isinstance(run_id, str):
-            return fetch_data(client, run_id)
+            return fetch_data(client, run_id, profile=profile)
         else:
-            return fetch_data_by_id(client, run_id)
+            return fetch_data_by_id(client, run_id, profile=profile)
 
-    def report(run_id):
+    def report(run_id, profile="default"):
         with SQLAlchemy(DATABASE_URI) as logger:
-            df_post = fetch_data_type(logger.client, run_id)
+            df_post = fetch_data_type(logger.client, run_id, profile=profile)
 
         names = list(df_post["run"].unique())
 
@@ -307,17 +395,21 @@ def view_server(config):
 
         stream = StringIO()
         with open(os.devnull, "w") as devnull:
-            make_report(replicated, stream=devnull, html=stream)
+            make_report(replicated, stream=devnull, html=stream, weights=replicated)
 
         return stream.getvalue()
 
     @app.route('/html/report/<string:runame>')
     def html_report_name(runame):
-        return report(runame)
+        profile = request.cookies.get('scoreProfile')
+        
+        return report(runame, profile=profile)
 
     @app.route('/html/report/<int:run_id>')
     def html_report(run_id):
-        return report(run_id)
+        profile = request.cookies.get('scoreProfile')
+
+        return report(run_id, profile=profile)
 
     @app.route('/html/exec/<int:exec_id>/packs/<pack_id>/metrics')
     def html_pack_metrics(exec_id, pack_id):
@@ -345,7 +437,7 @@ def view_server(config):
 
 
     @cache.memoize(timeout=3600)
-    def cached_query(rows, cols, values, filters):
+    def cached_query(rows, cols, values, filters, profile="default"):
         from milabench.metrics.report import base_report_view
 
         filter_fields = [f['field'] for f in filters]
@@ -354,7 +446,7 @@ def view_server(config):
             make_selection_key(key) for key in [*rows, *cols, *values, *filter_fields]
         ]
 
-        table = base_report_view(*selected_keys)
+        table = base_report_view(*selected_keys, profile=profile)
 
         if filters:
             table = table.where(*make_filters(filters))
@@ -365,9 +457,7 @@ def view_server(config):
 
         return results
 
-    def make_pivot():
-        from flask import request
-
+    def make_pivot(profile="default"):
         # If no parameters are provided, serve the pivot builder interface
         if not request.args:
             return render_template('pivot.html')
@@ -382,7 +472,7 @@ def view_server(config):
         if args.get('filters'):
             filters = json.loads(base64.b64decode(args.get('filters')))
 
-        results = cached_query(rows, cols, values, filters)
+        results = cached_query(rows, cols, values, filters, profile=profile)
 
         pivot_spec = {
             "rows": rows,
@@ -423,7 +513,7 @@ def view_server(config):
             if len(rate_columns) > 0:
                 weight_map = df.drop_duplicates(subset=pack_name, keep='first').set_index(pack_name)['weight']
                 weights = bench_vals.map(weight_map)
-                
+
                 scores = {}
                 for col in rate_columns:
                     x = overall[col]
@@ -453,7 +543,9 @@ def view_server(config):
 
     @app.route('/html/relative/pivot')
     def html_relative_pivot():
-        df = make_pivot()
+        # retrieve the cookie `scoreProfile` and use that as the profile
+        profile = request.cookies.get('scoreProfile')
+        df = make_pivot(profile=profile)
 
         first_col = df.iloc[:, 0]
 
@@ -463,7 +555,9 @@ def view_server(config):
 
     @app.route('/html/pivot')
     def html_pivot():
-        df = make_pivot()
+        profile = request.cookies.get('scoreProfile')
+
+        df = make_pivot(profile)
 
         return pandas_to_html(df)
 
