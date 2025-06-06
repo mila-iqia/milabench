@@ -435,6 +435,48 @@ def view_server(config):
         with open("/home/newton/work/milabench_dev/milabench/milabench/web/template/pivot.html", "r") as fp:
             return render_template_string(fp.read())
 
+    @app.route('/api/grouped/plot')
+    def api_grouped_plot():
+        from .plot import grouped_plot
+
+        profile = request.cookies.get('scoreProfile')
+
+        with sqlexec() as sess:
+            stmt = grouped_plot(profile=profile)
+
+            cursor = sess.execute(stmt)
+
+            results = cursor_to_json(cursor)
+
+        return jsonify(results)
+    
+    @app.route('/html/grouped/plot')
+    def html_grouped_plot():
+        import altair as alt
+        from .utils import plot
+
+        # TODO: make those arguments
+        g1 = "group1"
+        g2 = "group2"
+        color = "pytorch"
+
+        row_order = ["fp16", "tf32", "fp32"]
+        column_order = ["FLOPS", "BERT", "CONVNEXT"]
+
+        # ----
+
+        chart = alt.Chart(f"/api/grouped/plot").mark_bar().encode(
+            y=alt.Y(color, type="nominal", scale=alt.Scale(zero=False), title="Pytorch"),
+            x=alt.X("perf", type="quantitative", scale=alt.Scale(zero=False)),
+            
+            color=alt.Color(color, type="nominal"),
+
+            row=alt.Row(f"{g2}", type="nominal", title="Group1", sort=row_order),
+            column=alt.Column(f"{g1}", type="nominal", title="Group1", sort=column_order),
+        )
+
+        return plot(chart.to_json())
+
 
     @cache.memoize(timeout=3600)
     def cached_query(rows, cols, values, filters, profile="default"):
