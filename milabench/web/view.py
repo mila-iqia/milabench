@@ -435,6 +435,21 @@ def view_server(config):
         with open("/home/newton/work/milabench_dev/milabench/milabench/web/template/pivot.html", "r") as fp:
             return render_template_string(fp.read())
 
+    @app.route('/api/report/fast')
+    def api_report_fast():
+        from .plot import sql_direct_report
+
+        profile = request.cookies.get('scoreProfile')
+
+        with sqlexec() as sess:
+            stmt = sql_direct_report(profile=profile)
+
+            cursor = sess.execute(stmt)
+
+            results = cursor_to_json(cursor)
+
+        return jsonify(results)
+
     @app.route('/api/grouped/plot')
     def api_grouped_plot():
         from .plot import grouped_plot
