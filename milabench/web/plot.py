@@ -14,7 +14,7 @@ from milabench.report import make_report
 from .utils import database_uri, page, make_selection_key, make_filters, cursor_to_json, cursor_to_dataframe
 
 
-def grouped_plot(group1_col, group2_col, group1_name, group2_name, exec_ids, metric, more=None, profile="default"):
+def grouped_plot(group1_col, group2_col, group1_name, group2_name, exec_ids, metric, more=None, weighted=False,profile="default"):
     # group1 = Weight.group3
     # group2 = Weight.group4
     # exec_ids = (48, 47, 46)
@@ -43,36 +43,60 @@ def grouped_plot(group1_col, group2_col, group1_name, group2_name, exec_ids, met
 
     sub = average_perf_per_pack.subquery()
 
+    perf_formula = (func.avg(sub.c.avg_value)).label('perf')
+    if weighted:
+        perf_formula = (func.avg(sub.c.avg_value) * Weight.weight).label('perf')
+
     perf_per_bench = (
         select(
             Pack.name.label("bench"),
             sub.c.exec_id,
-            func.avg(sub.c.avg_value).label('perf')
+            perf_formula
         )
         .join(Pack, sub.c.pack_id == Pack._id)
-        .group_by(Pack.name, sub.c.exec_id)
+        .join(Weight, Weight.pack == Pack.name)
+        .where(
+            Weight.profile == profile,
+        )
+        .group_by(Pack.name, sub.c.exec_id, Weight.weight)
     )
 
     sub = perf_per_bench.subquery()
     
+    args = []
+    filters = []
+    group_by = []
+
+    if group1_col is not None:
+        args.append(group1_col.label(group1_name))
+        group_by.append(group1_col)
+        filters.extend([
+            group1_col is not None,
+            group1_col != "",
+        ])
+    
+    if group2_col is not None:
+        args.append(group2_col.label(group2_name))
+        group_by.append(group2_col)
+        filters.extend([
+            group2_col is not None,
+            group2_col != "",
+        ])
+
     perf_per_group = (
         select(
             sub.c.exec_id,
-            group1_col.label(group1_name),
-            group2_col.label(group2_name),
+            *args,
             func.avg(sub.c.perf).label(metric),
             *more
         )
-        .join(Weight, Weight.pack == sub.c.bench)
         .join(Exec, Exec._id == sub.c.exec_id)
+        .join(Weight, Weight.pack == sub.c.bench)
         .where(
             Weight.profile == profile,
-            group1_col is not None,
-            group2_col is not None,
-            group1_col != "",
-            group2_col != "",
+            *filters
         )
-        .group_by(sub.c.exec_id, group1_col, group2_col, *more)
+        .group_by(sub.c.exec_id, *group_by, *more)
     )
 
     return perf_per_group

@@ -162,6 +162,7 @@ class SavedQuery(Base):
     def as_dict(self):
         return {
             "_id": self._id,
+            "name": self.name,
             "query": self.query,
             "created_time": self.created_time,
         }

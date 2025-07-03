@@ -4,6 +4,7 @@ import json
 from contextlib import contextmanager
 from collections import defaultdict
 import base64
+from datetime import datetime
 
 import pandas as pd
 from flask import Flask, jsonify, render_template_string, render_template
@@ -310,6 +311,69 @@ def view_server(config):
         with sqlexec() as sess:
             return jsonify(sess.execute(stmt).scalars().all())
 
+    @app.route('/api/query/all')
+    def api_get_all_saved_queries():
+        stmt = select(SavedQuery).order_by(SavedQuery.created_time.desc())
+        with sqlexec() as sess:
+            cursor = sess.execute(stmt)
+            results = []
+            for row in cursor:
+                for col in row:
+                    results.append(col.as_dict())
+            return jsonify(results)
+
+    @app.route('/api/query/<string:name>')
+    def api_get_saved_query(name):
+        stmt = select(SavedQuery).where(SavedQuery.name == name)
+        with sqlexec() as sess:
+            result = sess.execute(stmt).scalar_one_or_none()
+            if result:
+                return jsonify(result.as_dict())
+            else:
+                return jsonify({"error": "Query not found"}), 404
+
+    @app.route('/api/query/save', methods=['POST'])
+    def api_save_query():
+        from flask import request
+        data = request.json
+        name = data.get('name')
+        query = data.get('query')
+
+        if not name or not query:
+            return jsonify({"error": "Name and query are required"}), 400
+
+        with sqlexec() as sess:
+            # Check if query with this name already exists
+            existing = sess.execute(select(SavedQuery).where(SavedQuery.name == name)).scalar_one_or_none()
+
+            if existing:
+                # Update existing query
+                existing.query = query
+                existing.created_time = datetime.utcnow()
+            else:
+                # Create new query
+                saved_query = SavedQuery(
+                    name=name,
+                    query=query,
+                    created_time=datetime.utcnow()
+                )
+                sess.add(saved_query)
+
+            sess.commit()
+
+        return jsonify({"status": "success"})
+
+    @app.route('/api/query/delete/<string:name>', methods=['DELETE'])
+    def api_delete_saved_query(name):
+        with sqlexec() as sess:
+            result = sess.execute(select(SavedQuery).where(SavedQuery.name == name)).scalar_one_or_none()
+            if result:
+                sess.delete(result)
+                sess.commit()
+                return jsonify({"status": "success"})
+            else:
+                return jsonify({"error": "Query not found"}), 404
+
     @app.route('/api/milabench/list')
     def api_ls_milabench():
         stmt = select(func.distinct(cast(Exec.meta["milabench"]["tag"], TEXT)))
@@ -503,11 +567,13 @@ def view_server(config):
         g2 = request.args.get('g2')
         metric = request.args.get('metric')
         more = request.args.get('more')
-        exec_ids = request.args.get('exec_ids') 
-        profile = request.args.get('profile', request.cookies.get('scoreProfile')) 
+        exec_ids = request.args.get('exec_ids')
+        profile = request.args.get('profile', request.cookies.get('scoreProfile'))
+        weighted = request.args.get('weighted', 'false').lower() == 'true'
 
-        group1_col = getattr(Weight, g1)
-        group2_col = getattr(Weight, g2)
+        # Handle None/empty values for g1 and g2
+        group1_col = getattr(Weight, g1) if g1 else None
+        group2_col = getattr(Weight, g2) if g2 else None
         group1_name = n1
         group2_name = n2
 
@@ -525,11 +591,14 @@ def view_server(config):
                 exec_ids,
                 metric,
                 more,
+                weighted=weighted,
                 profile=profile)
 
             cursor = sess.execute(stmt)
 
             results = cursor_to_json(cursor)
+
+            # Relative to something ?
 
         return jsonify(results)
 
@@ -550,15 +619,26 @@ def view_server(config):
         column_order = ["FLOPS", "BERT", "CONVNEXT"]
 
         # ----
+        x = alt.X(metric, type="quantitative", scale=alt.Scale(zero=False))
+        y = alt.Y(color, type="nominal", scale=alt.Scale(zero=False))
+
+        if request.args.get('inverted') is not None:
+            x, y = y, x
+
+        config = {
+            "y": y,
+            "x": x,
+            "color": alt.Color(color, type="nominal"),
+        }
+
+        if request.args.get('g2') is not None:
+            config["row"] = alt.Row(f"{n2}", type="nominal", title=n2, sort=row_order)
+
+        if request.args.get('g1') is not None:
+            config["column"] = alt.Column(f"{n1}", type="nominal", title=n1, sort=column_order)
 
         chart = alt.Chart(f"/api/grouped/plot?{query_string}").mark_bar().encode(
-            y=alt.Y(color, type="nominal", scale=alt.Scale(zero=False), title="Pytorch"),
-            x=alt.X(metric, type="quantitative", scale=alt.Scale(zero=False)),
-
-            color=alt.Color(color, type="nominal"),
-
-            row=alt.Row(f"{n2}", type="nominal", title=n2, sort=row_order),
-            column=alt.Column(f"{n1}", type="nominal", title=n1, sort=column_order),
+            **config
         )
 
         return plot(chart.to_json())
