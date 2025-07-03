@@ -402,7 +402,7 @@ def view_server(config):
     @app.route('/html/report/<string:runame>')
     def html_report_name(runame):
         profile = request.cookies.get('scoreProfile')
-        
+
         return report(runame, profile=profile)
 
     @app.route('/html/report/<int:run_id>')
@@ -466,11 +466,11 @@ def view_server(config):
         output = []
         for gpu in gpus:
             read_config(f"{gpu}.yaml", output)
-        
+
         return output
 
     @app.route('/html/scaling/x=<string:x>/y=<string:y>')
-    def scaling_plot(x, y): 
+    def scaling_plot(x, y):
         """Fetch scaling data from the scaling configuration files"""
         import altair as alt
         from .utils import plot
@@ -497,40 +497,68 @@ def view_server(config):
     def api_grouped_plot():
         from .plot import grouped_plot
 
-        profile = request.cookies.get('scoreProfile')
+        n1 = request.args.get('n1')
+        n2 = request.args.get('n2')
+        g1 = request.args.get('g1')
+        g2 = request.args.get('g2')
+        metric = request.args.get('metric')
+        more = request.args.get('more')
+        exec_ids = request.args.get('exec_ids') 
+        profile = request.args.get('profile', request.cookies.get('scoreProfile')) 
+
+        group1_col = getattr(Weight, g1)
+        group2_col = getattr(Weight, g2)
+        group1_name = n1
+        group2_name = n2
+
+        metric=metric
+
+        exec_ids = exec_ids.split(',')
+        more = [make_selection_key(key) for key in more.split(',')]
 
         with sqlexec() as sess:
-            stmt = grouped_plot(profile=profile)
+            stmt = grouped_plot(
+                group1_col,
+                group2_col,
+                group1_name,
+                group2_name,
+                exec_ids,
+                metric,
+                more,
+                profile=profile)
 
             cursor = sess.execute(stmt)
 
             results = cursor_to_json(cursor)
 
         return jsonify(results)
-    
+
     @app.route('/html/grouped/plot')
     def html_grouped_plot():
         import altair as alt
         from .utils import plot
 
-        # TODO: make those arguments
-        g1 = "group1"
-        g2 = "group2"
-        color = "pytorch"
+        n1 = request.args.get('n1')
+        n2 = request.args.get('n2')
+        metric = request.args.get('metric')
+        color = request.args.get('color')
 
+        query_string = request.query_string.decode('utf-8')
+
+        # TODO: make those arguments
         row_order = ["fp16", "tf32", "fp32"]
         column_order = ["FLOPS", "BERT", "CONVNEXT"]
 
         # ----
 
-        chart = alt.Chart(f"/api/grouped/plot").mark_bar().encode(
+        chart = alt.Chart(f"/api/grouped/plot?{query_string}").mark_bar().encode(
             y=alt.Y(color, type="nominal", scale=alt.Scale(zero=False), title="Pytorch"),
-            x=alt.X("perf", type="quantitative", scale=alt.Scale(zero=False)),
-            
+            x=alt.X(metric, type="quantitative", scale=alt.Scale(zero=False)),
+
             color=alt.Color(color, type="nominal"),
 
-            row=alt.Row(f"{g2}", type="nominal", title="Group1", sort=row_order),
-            column=alt.Column(f"{g1}", type="nominal", title="Group1", sort=column_order),
+            row=alt.Row(f"{n2}", type="nominal", title=n2, sort=row_order),
+            column=alt.Column(f"{n1}", type="nominal", title=n1, sort=column_order),
         )
 
         return plot(chart.to_json())

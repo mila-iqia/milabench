@@ -118,11 +118,10 @@ def make_selection_key(key, names=None, used_tables=None):
         lst = frags[-1]
         lst_type = types.get(lst, str)
 
-        selection = selection[lst]
-
-        if lst_type is not None:
-            if lst_type is str:
-                selection = cast(selection, Text)
+        if lst_type is str:
+            selection = cast(selection[lst], Text)
+        else:
+            selection = selection[lst]
     
     if len(maybe) == 2:
         as_name = maybe[1]
