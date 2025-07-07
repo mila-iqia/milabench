@@ -26,7 +26,7 @@ def grouped_plot(group1_col, group2_col, group1_name, group2_name, exec_ids, met
 
     if more is None:
         more = []
-    
+
     # ---
     average_perf_per_pack = (
         select(
@@ -43,26 +43,26 @@ def grouped_plot(group1_col, group2_col, group1_name, group2_name, exec_ids, met
 
     sub = average_perf_per_pack.subquery()
 
-    perf_formula = (func.avg(sub.c.avg_value)).label('perf')
+    perf_formula = (func.avg(func.coalesce(sub.c.avg_value, 0))).label('perf')
     if weighted:
-        perf_formula = (func.avg(sub.c.avg_value) * Weight.weight).label('perf')
+        perf_formula = (func.avg(func.coalesce(sub.c.avg_value, 0)) * Weight.weight).label('perf')
 
     perf_per_bench = (
         select(
-            Pack.name.label("bench"),
+            Weight.pack.label("bench"),
             sub.c.exec_id,
             perf_formula
         )
-        .join(Pack, sub.c.pack_id == Pack._id)
-        .join(Weight, Weight.pack == Pack.name)
+        .outerjoin(sub, Weight.pack == Pack.name)
+        .join(Pack, Weight.pack == Pack.name)
         .where(
             Weight.profile == profile,
         )
-        .group_by(Pack.name, sub.c.exec_id, Weight.weight)
+        .group_by(Weight.pack, sub.c.exec_id, Weight.weight)
     )
 
     sub = perf_per_bench.subquery()
-    
+
     args = []
     filters = []
     group_by = []
@@ -74,7 +74,7 @@ def grouped_plot(group1_col, group2_col, group1_name, group2_name, exec_ids, met
             group1_col is not None,
             group1_col != "",
         ])
-    
+
     if group2_col is not None:
         args.append(group2_col.label(group2_name))
         group_by.append(group2_col)
@@ -91,7 +91,7 @@ def grouped_plot(group1_col, group2_col, group1_name, group2_name, exec_ids, met
             *more
         )
         .join(Exec, Exec._id == sub.c.exec_id)
-        .join(Weight, Weight.pack == sub.c.bench)
+        .outerjoin(Weight, Weight.pack == sub.c.bench)  # Use LEFT JOIN to include all weights
         .where(
             Weight.profile == profile,
             *filters
@@ -129,11 +129,11 @@ def average_drop_min_max(exec_ids):
             Metric.exec_id,
             Metric.value,
             func.row_number().over(
-                partition_by=(Metric.pack_id, Metric.exec_id),
+                partition_by=(Metric.pack_id,),
                 order_by=Metric.value.asc()
             ).label("row_asc"),
             func.row_number().over(
-                partition_by=(Metric.pack_id, Metric.exec_id),
+                partition_by=(Metric.pack_id,),
                 order_by=Metric.value.desc()
             ).label("row_desc"),
         )
@@ -170,13 +170,13 @@ def average_drop_min_max(exec_ids):
 
 def sql_direct_report(exec_ids, group=None, profile="default", drop_min_max=True, more=None):
     """Use SQL to directly compute the report from the metrics.
-    
+
     But we lose a bit of flexibility when it comes to how things get computed.
     But it is much faster.
     """
     if more is None:
         more = []
-    
+
     if drop_min_max:
         average_perf_per_pack = average_drop_min_max(exec_ids)
     else:
@@ -206,32 +206,40 @@ def sql_direct_report(exec_ids, group=None, profile="default", drop_min_max=True
     # This gives the raw score per bench before weighting
     sub = perf_per_bench.subquery()
 
+    if len(exec_ids) == 1:
+        exec_id = func.coalesce(sub.c.exec_id, exec_ids[0])
+    else:
+        exec_id = sub.c.exec_id
+
     weighted_perf_per_bench = (
         select(
-            sub.c.exec_id,
-            sub.c.bench,
-            func.avg(sub.c.ngpu).label("ngpu"),
-            func.avg(sub.c.n).label("n"),
-            func.avg(sub.c.avg).label("perf"),
-            func.avg(sub.c.score).label("score"),
-            func.avg(sub.c.std).label("std"),
-            func.avg(func.ln(sub.c.score + 1) * Weight.weight).label("log_score")
-        ) 
-        .join(Weight, Weight.pack == sub.c.bench)
+            exec_id.label("exec_id"),
+            Weight.pack.label("bench"),  # Use Weight.pack instead of sub.c.bench to ensure all weights are included
+            func.avg(func.coalesce(sub.c.ngpu, 0)).label("ngpu"),
+            func.avg(func.coalesce(sub.c.n, 0)).label("n"),
+            func.avg(func.coalesce(sub.c.avg, 0)).label("perf"),
+            func.avg(func.coalesce(sub.c.score, 0)).label("score"),
+            func.avg(func.coalesce(sub.c.std, 0)).label("std"),
+            func.avg(func.ln(func.coalesce(sub.c.score, 0) + 1) * Weight.weight).label("log_score")
+        )
+        # .outerjoin(sub, Weight.pack == sub.c.bench) 
+        .outerjoin(Weight, Weight.pack == sub.c.bench)  # Use LEFT JOIN (outerjoin) instead of INNER JOIN
         .where(
             Weight.profile == profile,
-        ).group_by(sub.c.bench, sub.c.exec_id)
+        ).group_by(Weight.pack, sub.c.exec_id)
     )
 
     sub = weighted_perf_per_bench.subquery()
-    
+
+    weight_total = select(func.sum(Weight.weight)).where(Weight.profile == profile).scalar_subquery()
+
     # Final query to consolidate all the data into the report table we know
     perf_per_group = (
         select(
             sub.c.exec_id,
 
-            sub.c.bench,
-            
+            Weight.pack.label("bench"),
+
             *more,
             # fail,
 
@@ -241,15 +249,20 @@ def sql_direct_report(exec_ids, group=None, profile="default", drop_min_max=True
             # ngpu
             func.avg(sub.c.ngpu).cast(Float).label("ngpu"),
             # perf
-            
+
             func.avg(sub.c.perf).label("perf"),
 
-            # sem%
-            func.avg(sub.c.std / sub.c.perf).label("sem"),
+            # sem% - handle division by zero
+            func.avg(
+                sqlalchemy.case(
+                    (sub.c.perf > 0, sub.c.std / sub.c.perf), 
+                    else_=0
+                )
+            ).label("sem"),
 
             # std%
             func.avg(sub.c.std).label("std"),
-            
+
             # peak_memory
 
             # score
@@ -265,14 +278,16 @@ def sql_direct_report(exec_ids, group=None, profile="default", drop_min_max=True
             func.avg(sub.c.log_score).label("log_score"),
 
             func.avg(Weight.priority).cast(Float).label("order"),
+
+            weight_total.label("weight_total")
         )
-        .join(Weight, Weight.pack == sub.c.bench)
+        .outerjoin(Weight, Weight.pack == sub.c.bench)
         .join(Exec, Exec._id == sub.c.exec_id)
         .where(
             Weight.profile == profile,
             Weight.pack == sub.c.bench
         )
-        .group_by(sub.c.bench, sub.c.exec_id, *more)
+        .group_by(Weight.pack, sub.c.exec_id, *more)
         .order_by("order")
     )
 
