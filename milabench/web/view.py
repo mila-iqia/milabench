@@ -502,11 +502,17 @@ def view_server(config):
     @app.route('/api/report/fast')
     def api_report_fast():
         from .plot import sql_direct_report
+        # http://localhost:5000/api/report/fast?exec_ids=48&drop_min_max=true&more=Exec:meta.accelerators.gpus.0.product
 
         profile = request.cookies.get('scoreProfile')
+        exec_ids = request.args.get('exec_ids', '').split(',')
+        drop_min_max = request.args.get('drop_min_max', 'true').lower() == 'true'
+
+        more = filter(lambda x: x != '', request.args.get('more', '').split(','))
+        more = [make_selection_key(key) for key in more]
 
         with sqlexec() as sess:
-            stmt = sql_direct_report(profile=profile)
+            stmt = sql_direct_report(exec_ids, profile=profile, drop_min_max=drop_min_max, more=more)
 
             cursor = sess.execute(stmt)
 

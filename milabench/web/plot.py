@@ -102,26 +102,12 @@ def grouped_plot(group1_col, group2_col, group1_name, group2_name, exec_ids, met
     return perf_per_group
 
 
-def sql_direct_report(group=None, profile="default"):
-    """Use SQL to directly compute the report from the metrics.
-    
-    But we lose a bit of flexibility when it comes to how things get computed.
-    But it is much faster.
-    """
-    # TODO: move this as arguments
-    exec_ids = (48, 47, 46)
-    more = [
-        cast(Exec.meta['accelerators']['gpus']['0']['product'], TEXT).label("product"),
-        cast(Exec.meta['pytorch']['build_settings']['TORCH_VERSION'], TEXT).label("pytorch"),
-    ]
-    
-    # ---
+
+def regular_average(exec_ids):
     average_perf_per_pack = (
         select(
             Metric.pack_id,
             Metric.exec_id,
-            # FIXME: we actually don't do an exact average
-            # we drop min and max and then do the average
             func.avg(Metric.value).label("perf"),
             func.stddev(Metric.value).label("std"),
         )
@@ -131,6 +117,70 @@ def sql_direct_report(group=None, profile="default"):
         )
         .group_by(Metric.pack_id, Metric.exec_id)
     )
+
+    return average_perf_per_pack
+
+
+def average_drop_min_max(exec_ids):
+    # Step 1: Assign row numbers or ranks to values per group
+    ranked_metrics = (
+        select(
+            Metric.pack_id,
+            Metric.exec_id,
+            Metric.value,
+            func.row_number().over(
+                partition_by=(Metric.pack_id, Metric.exec_id),
+                order_by=Metric.value.asc()
+            ).label("row_asc"),
+            func.row_number().over(
+                partition_by=(Metric.pack_id, Metric.exec_id),
+                order_by=Metric.value.desc()
+            ).label("row_desc"),
+        )
+        .where(
+            Metric.name == "rate",
+            Metric.exec_id.in_(exec_ids)
+        )
+    ).subquery()
+
+    # Step 2: Filter out min and max rows (row_asc = 1 or row_desc = 1)
+    filtered_metrics = (
+        select(
+            ranked_metrics.c.pack_id,
+            ranked_metrics.c.exec_id,
+            ranked_metrics.c.value,
+        )
+        .where(
+            ranked_metrics.c.row_asc > 1,
+            ranked_metrics.c.row_desc > 1,
+        )
+    ).subquery()
+
+    # Step 3: Aggregate the remaining values
+    return (
+        select(
+            filtered_metrics.c.pack_id,
+            filtered_metrics.c.exec_id,
+            func.avg(filtered_metrics.c.value).label("perf"),
+            func.stddev(filtered_metrics.c.value).label("std"),
+        )
+        .group_by(filtered_metrics.c.pack_id, filtered_metrics.c.exec_id)
+    )
+
+
+def sql_direct_report(exec_ids, group=None, profile="default", drop_min_max=True, more=None):
+    """Use SQL to directly compute the report from the metrics.
+    
+    But we lose a bit of flexibility when it comes to how things get computed.
+    But it is much faster.
+    """
+    if more is None:
+        more = []
+    
+    if drop_min_max:
+        average_perf_per_pack = average_drop_min_max(exec_ids)
+    else:
+        average_perf_per_pack = regular_average(exec_ids)
 
     sub = average_perf_per_pack.subquery()
 
@@ -165,7 +215,7 @@ def sql_direct_report(group=None, profile="default"):
             func.avg(sub.c.avg).label("perf"),
             func.avg(sub.c.score).label("score"),
             func.avg(sub.c.std).label("std"),
-            func.avg(func.log(sub.c.score + 1) * Weight.weight).label("log_score")
+            func.avg(func.ln(sub.c.score + 1) * Weight.weight).label("log_score")
         ) 
         .join(Weight, Weight.pack == sub.c.bench)
         .where(
@@ -207,6 +257,9 @@ def sql_direct_report(group=None, profile="default"):
 
             # weight
             func.avg(Weight.weight).cast(Float).label("weight"),
+
+            # enabled
+            func.avg(Weight.enabled.cast(Integer)).cast(Float).label("enabled"),
 
             # No included usually
             func.avg(sub.c.log_score).label("log_score"),
