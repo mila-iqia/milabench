@@ -168,15 +168,7 @@ def average_drop_min_max(exec_ids):
     )
 
 
-def sql_direct_report(exec_ids, group=None, profile="default", drop_min_max=True, more=None):
-    """Use SQL to directly compute the report from the metrics.
-
-    But we lose a bit of flexibility when it comes to how things get computed.
-    But it is much faster.
-    """
-    if more is None:
-        more = []
-
+def perf_per_bench_query(exec_ids, profile="default", drop_min_max=True):
     if drop_min_max:
         average_perf_per_pack = average_drop_min_max(exec_ids)
     else:
@@ -203,6 +195,12 @@ def sql_direct_report(exec_ids, group=None, profile="default", drop_min_max=True
         .group_by(Pack.name, sub.c.exec_id)
     )
 
+    return perf_per_bench
+
+
+def weighted_perf_per_bench_query(exec_ids, profile="default", drop_min_max=True):
+    perf_per_bench = perf_per_bench_query(exec_ids, profile, drop_min_max)
+
     # This gives the raw score per bench before weighting
     sub = perf_per_bench.subquery()
 
@@ -220,18 +218,32 @@ def sql_direct_report(exec_ids, group=None, profile="default", drop_min_max=True
             func.avg(func.coalesce(sub.c.avg, 0)).label("perf"),
             func.avg(func.coalesce(sub.c.score, 0)).label("score"),
             func.avg(func.coalesce(sub.c.std, 0)).label("std"),
-            func.avg(func.ln(func.coalesce(sub.c.score, 0) + 1) * Weight.weight).label("log_score")
+            func.avg(func.ln(func.coalesce(sub.c.score, 0) + 1) * Weight.weight * Weight.enabled.cast(Integer)).label("log_score")
         )
-        # .outerjoin(sub, Weight.pack == sub.c.bench) 
-        .outerjoin(Weight, Weight.pack == sub.c.bench)  # Use LEFT JOIN (outerjoin) instead of INNER JOIN
+        .outerjoin(sub, Weight.pack == sub.c.bench) 
+        # .outerjoin(Weight, Weight.pack == sub.c.bench)  # Use LEFT JOIN (outerjoin) instead of INNER JOIN
         .where(
             Weight.profile == profile,
         ).group_by(Weight.pack, sub.c.exec_id)
     )
 
+    return weighted_perf_per_bench
+
+
+def sql_direct_report(exec_ids, profile="default", drop_min_max=True, more=None):
+    """Use SQL to directly compute the report from the metrics.
+
+    But we lose a bit of flexibility when it comes to how things get computed.
+    But it is much faster.
+    """
+    if more is None:
+        more = []
+
+    weighted_perf_per_bench = weighted_perf_per_bench_query(exec_ids, profile, drop_min_max)
+
     sub = weighted_perf_per_bench.subquery()
 
-    weight_total = select(func.sum(Weight.weight)).where(Weight.profile == profile).scalar_subquery()
+    weight_total = select(func.sum(Weight.weight * Weight.enabled.cast(Integer))).where(Weight.profile == profile).scalar_subquery()
 
     # Final query to consolidate all the data into the report table we know
     perf_per_group = (

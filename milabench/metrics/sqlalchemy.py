@@ -198,6 +198,9 @@ class Weight(Base):
         Index("weight_profile_pack", "profile", "pack"),
     )
 
+    def __repr__(self):
+        return f"Weight({self.as_dict()})"
+
     def as_dict(self):
         return {
             "_id": self._id,
