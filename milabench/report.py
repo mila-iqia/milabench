@@ -419,7 +419,7 @@ def make_report(
     normalized = normalize_dataframe(df)
     out.print(normalized)
 
-    to_latex(normalized)
+    # to_latex(normalized)
 
     out.section("Scores")
 

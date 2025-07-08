@@ -34,6 +34,7 @@ def test_sqlalchemy_sqlite(runs_folder, clean_db, tmp_path):
     run_name = df_post.run.iloc[0]
     replicated = make_pivot_summary(run_name, df_post)
 
+    print()
     print(replicated)
 
     # Unpack the zip so we can read the reports with the old code
@@ -48,4 +49,8 @@ def test_sqlalchemy_sqlite(runs_folder, clean_db, tmp_path):
 
     print(summary)
 
-    show_diff(summary, replicated)
+    def handler(indent, p, v1, v2):
+        if len(p) <= 1 or p[1] not in ('gpu_load', 'per_gpu', 'meta', 'extra', 'group'):
+            print(f'{indent} {".".join(p)} {v1} != {v2}')
+
+    show_diff(summary, replicated, handler=handler)

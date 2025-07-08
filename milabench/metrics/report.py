@@ -107,7 +107,7 @@ def max(xs):
 
 
 def mean(xs):
-    # xs = dropminmax(xs)
+    xs = dropminmax(xs)
     return np.mean(xs)
 
 
@@ -197,7 +197,10 @@ def make_pivot_summary(runame, df: pd.DataFrame, metrics=None):
 
             "walltime": _metric(overall, name, "walltime"),
             "ngpu": ngpu,
-            "per_gpu": {},
+            "per_gpu": {
+                g: _metric(stats, name, "rate", gpu_id=g)
+                for g in gpu
+            },
             "gpu_load": {
                 g: {
                     "memory": _metric(stats, name, "gpu.memory", g),
