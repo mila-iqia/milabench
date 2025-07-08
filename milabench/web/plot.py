@@ -53,8 +53,8 @@ def grouped_plot(group1_col, group2_col, group1_name, group2_name, exec_ids, met
             sub.c.exec_id,
             perf_formula
         )
-        .outerjoin(sub, Weight.pack == Pack.name)
-        .join(Pack, Weight.pack == Pack.name)
+        .join(Pack, Pack._id == sub.c.pack_id)
+        .outerjoin(Weight, Weight.pack == Pack.name)
         .where(
             Weight.profile == profile,
         )
