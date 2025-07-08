@@ -107,7 +107,7 @@ def max(xs):
 
 
 def mean(xs):
-    xs = dropminmax(xs)
+    # xs = dropminmax(xs)
     return np.mean(xs)
 
 

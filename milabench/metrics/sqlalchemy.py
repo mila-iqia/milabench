@@ -24,6 +24,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session, declarative_base
+from sqlalchemy.orm import declared_attr
 
 from ..structs import BenchLogEntry
 
@@ -74,7 +75,18 @@ class Pack(Base):
     config = Column(JSON)
     command = Column(JSON)
     status = Column(String(256))
-    ngpu = Column(Integer, Computed("((config->>'num_machines')::int * json_array_length(config->'devices'))"))
+
+    # 
+    @declared_attr
+    def ngpu(cls):
+        try:
+            if Base.metadata.bind and Base.metadata.bind.dialect.name != 'sqlite':
+                return Column(Integer, Computed("((config->>'num_machines')::int * json_array_length(config->'devices'))"))
+            else:
+                return Column(Integer)  # Empty placeholder
+        except:
+            return Column(Integer)  # Empty placeholder
+
 
     # @property
     # def gpu_count(self):
@@ -263,6 +275,64 @@ def generate_database_sql_setup(uri=None):
         Base.metadata.create_all(engine)
 
 
+
+def base_weight_profile():
+    return """
+        INSERT INTO 
+            weights (profile, weight, priority, pack, enabled, group1, group2)
+        VALUES 
+            ('default', 0, 1000, 'fp16', TRUE, 'SYNTHETIC', 'FLOPS'),
+            ('default', 0, 1001, 'bf16', TRUE, 'SYNTHETIC', 'FLOPS'),
+            ('default', 0, 1002, 'tf32', TRUE, 'SYNTHETIC', 'FLOPS'),
+            ('default', 0, 1003, 'fp32', TRUE, 'SYNTHETIC', 'FLOPS'),
+            ('default', 0, 2201, 'convnext_large-fp32', TRUE, 'CV', 'CONVNET'),
+            ('default', 0, 2202, 'convnext_large-fp16', TRUE, 'CV', 'CONVNET'),
+            ('default', 0, 2203, 'convnext_large-tf32', TRUE, 'CV', 'CONVNET'),
+            ('default', 1, 2204, 'convnext_large-tf32-fp16', TRUE, 'CV', 'CONVNET'),
+            ('default', 1, 2205, 'resnet50', TRUE, 'CV', 'CONVNET'),
+            ('default', 0, 2206, 'resnet50-noio', TRUE, 'CV', 'CONVNET'),
+            ('default', 0, 2207, 'resnet152-ddp-gpus', TRUE, 'CV', 'CONVNET'),
+            ('default', 1, 2208, 'regnet_y_128gf', TRUE, 'CV', 'CONVNET'),
+            ('default', 0, 2209, 'lightning', TRUE, 'CV', 'CONVNET'),
+            ('default', 1, 2210, 'lightning-gpus', TRUE, 'CV', 'CONVNET'),
+            ('default', 0, 2211, 'focalnet', TRUE, 'CV', 'CONVNET'),
+            ('default', 0, 2012, 'diffusion-single', TRUE, 'CV', 'DIFFUSION'),
+            ('default', 1, 2013, 'diffusion-gpus', TRUE, 'CV', 'DIFFUSION'),
+            ('default', 1, 2014, 'diffusion-nodes', FALSE, 'CV', 'DIFFUSION'),
+            ('default', 0, 2101, 'dinov2-giant-single', TRUE, 'CV', 'TRANSFORMER'),
+            ('default', 1, 2102, 'dinov2-giant-gpus', TRUE, 'CV', 'TRANSFORMER'),
+            ('default', 0, 2103, 'dinov2-giant-nodes', FALSE, 'CV', 'TRANSFORMER'),
+            ('default', 1, 2104, 'llava-single', TRUE, 'CV', 'TRANSFORMER'),
+            ('default', 0, 2105, 'llava-gpus', FALSE, 'CV', 'TRANSFORMER'),
+            ('default', 1, 2106, 'vjepa-single', TRUE, 'CV', 'TRANSFORMER'),
+            ('default', 1, 2107, 'vjepa-gpus', TRUE, 'CV', 'TRANSFORMER'),
+            ('default', 0, 3100, 'bert-fp32', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 0, 3101, 'bert-fp16', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 0, 3102, 'bert-tf32', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 1, 3103, 'bert-tf32-fp16', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 0, 3104, 't5', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 1, 3105, 'reformer', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 0, 3106, 'whisper', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 1, 3107, 'llama', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 1, 3108, 'llm-lora-single', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 1, 3109, 'llm-lora-ddp-gpus', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 1, 3110, 'llm-lora-ddp-nodes', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 1, 3111, 'llm-lora-mp-gpus', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 1, 3112, 'llm-full-mp-gpus', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 1, 3113, 'llm-full-mp-nodes', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 1, 3114, 'rlhf-single', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 0, 3115, 'rlhf-gpus', TRUE, 'NLP', 'TRANSFORMER'),
+            ('default', 1, 4201, 'torchatari', TRUE, 'RL', 'CONVNET'),
+            ('default', 1, 4302, 'brax', TRUE, 'RL', 'MLP'),
+            ('default', 0, 4303, 'dqn', TRUE, 'RL', 'MLP'),
+            ('default', 1, 4304, 'ppo', TRUE, 'RL', 'MLP'),
+            ('default', 0, 4305, 'cleanrljax', FALSE, 'RL', 'MLP'),
+            ('default', 1, 5000, 'pna', TRUE, 'GRAPHS', 'GNN'),
+            ('default', 1, 5001, 'dimenet', TRUE, 'GRAPHS', 'GNN'),
+            ('default', 1, 5002, 'recursiongfn', TRUE, 'GRAPHS', 'GFlow')
+            ;
+    """
+
 def create_database(uri):
     engine = sqlalchemy.create_engine(
         uri,
@@ -273,9 +343,15 @@ def create_database(uri):
     )
 
     try:
+        Base.metadata.bind = engine
         Base.metadata.create_all(engine)
-    except DBAPIError:
-        print("could not create database schema because of {err}")
+
+        with Session(engine) as session:
+            session.execute(text(base_weight_profile()))
+            session.commit()
+    
+    except DBAPIError as err:
+        print(f"could not create database schema because of {err}")
 
 
 def _get_pack_ids(pack):

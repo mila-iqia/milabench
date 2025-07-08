@@ -451,7 +451,7 @@ def view_server(config):
 
         names = list(df_post["run"].unique())
 
-        if len(names) > 0:
+        if len(names) > 1:
             print("multiple run report")
 
         full_name = names[0]
@@ -461,6 +461,7 @@ def view_server(config):
         with open(os.devnull, "w") as devnull:
             make_report(replicated, stream=devnull, html=stream, weights=replicated)
 
+        print(names)
         return stream.getvalue()
 
     @app.route('/html/report/<string:runame>')
