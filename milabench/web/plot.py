@@ -163,7 +163,7 @@ def average_drop_min_max(exec_ids):
             filtered_metrics.c.exec_id,
             func.avg(filtered_metrics.c.value).label("perf"),
             func.stddev(filtered_metrics.c.value).label("std"),
-            func.count().label("count"),
+            # func.count().label("count"),
         )
         .group_by(filtered_metrics.c.pack_id, filtered_metrics.c.exec_id)
     )
@@ -188,7 +188,7 @@ def perf_per_bench_query(exec_ids, profile="default", drop_min_max=True):
             func.avg(Pack.ngpu).label("ngpu"),
             func.avg(sub.c.perf).label("avg"),
 
-            func.sum(sub.c.count).label("count"),
+            # func.sum(sub.c.count).label("count"),
 
             # HERE: This is a sum of the average
             # so multiple runs (i.e mono-gpu runs) are summed up
@@ -221,7 +221,7 @@ def weighted_perf_per_bench_query(exec_ids, profile="default", drop_min_max=True
             func.avg(func.coalesce(sub.c.avg, 0)).label("perf"),
             func.avg(func.coalesce(sub.c.score, 0)).label("score"),
             func.avg(func.coalesce(sub.c.std, 0)).label("std"),
-            func.avg(func.coalesce(sub.c.count, 0)).label("count"),
+            # func.avg(func.coalesce(sub.c.count, 0)).label("count"),
             func.avg(func.ln(func.coalesce(sub.c.score, 0) + 1) * Weight.weight * Weight.enabled.cast(Integer)).label("log_score")
         )
         .outerjoin(sub, Weight.pack == sub.c.bench) 
@@ -297,7 +297,7 @@ def sql_direct_report(exec_ids, profile="default", drop_min_max=True, more=None)
 
             weight_total.label("weight_total"),
 
-            func.avg(sub.c.count).label("count"),
+            # func.avg(sub.c.count).label("count"),
         )
         .outerjoin(Weight, Weight.pack == sub.c.bench)
         .join(Exec, Exec._id == sub.c.exec_id)
