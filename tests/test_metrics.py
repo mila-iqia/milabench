@@ -21,6 +21,7 @@ def clean_db():
     #     os.remove("sqlite.db")
 
 
+
 def test_sqlalchemy_sqlite(runs_folder, clean_db, tmp_path):
     run_dir = runs_folder / "8GPUs.zip"
     run_name = "8xA100-SXM-80Go"
@@ -47,10 +48,18 @@ def test_sqlalchemy_sqlite(runs_folder, clean_db, tmp_path):
     reports = _read_reports(*runs)
     summary = make_summary(reports)
 
-    print(summary)
+    assert 'diffusion-nodes' not in summary
+    assert 'diffusion-nodes' in replicated.keys()
+
+    print(list(sorted(set(summary.keys()))))
+    print(list(sorted(set(replicated.keys()))))
+
+    assert len(replicated.keys()) == 14
+    assert len(summary.keys()) == 23
 
     def handler(indent, p, v1, v2):
         if len(p) <= 1 or p[1] not in ('gpu_load', 'per_gpu', 'meta', 'extra', 'group'):
             print(f'{indent} {".".join(p)} {v1} != {v2}')
 
     show_diff(summary, replicated, handler=handler)
+

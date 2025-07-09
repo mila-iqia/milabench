@@ -399,6 +399,10 @@ def make_report(
         weights = dict()
 
     meta = get_meta(summary)
+
+    # FIXME: we need this because if benchamrks are missing the total weight might be wrong
+    weight_total_override = summary.get(list(summary.keys())[0]).get("weight_total")
+
     df = make_dataframe(summary, compare, weights)
     out = Outputter(stdout=stream, html=html)
 
@@ -437,7 +441,11 @@ def make_report(
             weights = df["weight"] * df["enabled"].astype(int)
 
             # if total weight is 0 ?
-            weight_total = np.sum(weights) 
+            weight_total = np.sum(weights)
+
+            # FIXME: we need this because if benchamrks are missing the total weight might be wrong
+            if weight_total_override:
+                weight_total = weight_total_override
 
             # score cannot be 0
             logscore = np.sum(np.log(score + 1) * weights) / weight_total
@@ -492,6 +500,7 @@ def make_report(
             )
         
     out.finalize()
+    return normalized
 
 
 _formatters = {

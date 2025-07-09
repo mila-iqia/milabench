@@ -7,6 +7,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
 from milabench.metrics.sqlalchemy import SQLAlchemy, create_database, Exec, Metric, Pack, Weight
+from milabench.metrics.report import fetch_data_by_id, make_pandas_report
 from milabench.web.plot import (
     grouped_plot,
     regular_average,
@@ -110,3 +111,47 @@ def test_sql_direct_report_basic(sample_data):
 
     for r in rows:
         print(r)
+
+
+def test_sql_direct_report_vs_pandas(sample_data, db_session):
+    """Test sql_direct_report with basic parameters"""
+    session = sample_data["session"]
+    exec_ids = [sample_data["exec_id"]]
+
+    query = sql_direct_report(exec_ids, profile="default", drop_min_max=True)
+    result = session.execute(query)
+    rows = result.fetchall()
+
+    # Make pandas report
+    pd_report, replicated = make_pandas_report(db_session.connection(), 48)
+
+    sq_report = pd.DataFrame(rows)
+    pd_report = pd_report.reset_index()
+
+    bench_names = pd_report["index"]
+
+    no_nan = lambda x: x if not pd.isna(x) else 0
+
+    acc = 0
+    for name in bench_names:
+        pd_row = pd_report[pd_report["index"] == name]
+        sq_row = sq_report[sq_report["bench"] == name]
+
+        sq_count = sq_row["count"].iloc[0]
+        pd_count = no_nan(replicated[name]["train_rate"]["debug_count"])
+        total_count = no_nan(replicated[name]["train_rate"]["count"])
+        
+        pandas_perf = no_nan(pd_row["perf"].iloc[0])
+        sql_perf = no_nan(sq_row["perf"].iloc[0])
+
+        diff = pandas_perf - sql_perf
+        acc += abs(diff)
+    
+        if abs(diff) > 1e-6 or pd_count != sq_count:
+            print(f"{name:>40}: {pandas_perf:10.2f} != {sql_perf:10.2f} ({diff:10.2f}) "
+                  f"| {int(pd_count):4d} != {int(sq_count):4d} ({int(pd_count) - int(sq_count):4d}) "
+                  f"{int(total_count):4d}")
+        
+
+    print(f"Total diff: {acc:10.2f}")
+    assert acc < 1e-6
