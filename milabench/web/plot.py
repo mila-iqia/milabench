@@ -310,3 +310,54 @@ def sql_direct_report(exec_ids, profile="default", drop_min_max=True, more=None)
     )
 
     return perf_per_group
+
+
+
+def pivot_query(sesh, rows, cols, values, filters, profile="default"):
+    from milabench.metrics.report import base_report_view
+
+    filter_fields = [f['field'] for f in filters]
+    names = {}
+
+    groub_by_rows = [
+        make_selection_key(key, names=names) for key in [*rows]
+    ]
+
+    selected_keys = groub_by_rows + [
+        make_selection_key(key, names=names) for key in [*cols, *list(values.keys()), *filter_fields]
+    ]
+
+    query = base_report_view(*selected_keys, profile=profile)
+
+    if filters:
+        query = query.where(*make_filters(filters))
+    sub = query.subquery()
+
+    # Find the unique values for each column
+    # Those will become their own column in the final query
+    column_values = {}
+    for col in cols:
+        col_name = names[col]
+        query = select(getattr(sub.c, col_name).label("col")).distinct()
+        column_values[names[col]] = [row[0] for row in sesh.execute(query)]
+
+    agg = []
+    for col, col_values in column_values.items():
+        for col_val in col_values:
+            for k, functions in values.items():
+                for f in functions:
+                    fun = getattr(func, f)
+                    k_name = names[k]
+                    
+                    switch = sqlalchemy.case((
+                        getattr(sub.c, col) == col_val,
+                        getattr(sub.c, k_name)), else_=None
+                    ) 
+
+                    agg.append(fun(switch).label(f"{col}={col_val}.{f}({k_name})"))
+
+    final_group_by = [
+        getattr(sub.c, names[key]) for key in rows
+    ]
+
+    return select(*final_group_by, *agg).group_by(*final_group_by)

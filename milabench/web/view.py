@@ -18,6 +18,7 @@ from milabench.metrics.sqlalchemy import Exec, Metric, Pack, Weight, SavedQuery
 from milabench.metrics.sqlalchemy import SQLAlchemy
 from milabench.metrics.report import fetch_data, make_pivot_summary, fetch_data_by_id
 from milabench.report import make_report
+from .plot import pivot_query
 from .utils import database_uri, page, make_selection_key, make_filters, cursor_to_json, cursor_to_dataframe
 
 
@@ -775,6 +776,49 @@ def view_server(config):
         df = make_pivot(profile)
 
         return pandas_to_html(df)
+
+    @app.route('/api/pivot')
+    def api_pivot():
+        profile = request.cookies.get('scoreProfile')
+        args = request.args
+
+        i = 0
+        def counter():
+            nonlocal i
+            i += 1
+            return i
+
+        def rename_column(col):
+            if 'as' in col:
+                return col
+            else:
+                return f"{col} as {col.replace(':', '_')}"
+
+        rows = args.get('rows', '').split(',') if args.get('rows') else ["run", "gpu", "pytorch", "bench"]
+        rows = [rename_column(r) for i, r in enumerate(rows)]
+
+        cols = args.get('cols', '').split(',') if args.get('cols') else ["metric"]
+        cols = [rename_column(r) for i, r in enumerate(cols)]
+
+        values = args.get('values', '').split(',') if args.get('values') else ["mean", "max"]
+        values = [rename_column(r) for i, r in enumerate(values)]
+
+        values = {v: ["avg"] for v in values}
+        
+        filters = []
+        if args.get('filters'):
+            filters = json.loads(base64.b64decode(args.get('filters')))
+
+        if len(filters) == 0:
+            print("No filters, returning empty to avoid crashing the database")
+            return jsonify({})
+
+        with sqlexec() as sess:
+            query = pivot_query(sess, rows, cols, values, filters, profile)
+            cursor = sess.execute(query)
+            results = cursor_to_json(cursor)
+
+        return results
 
     @app.route('/')
     def index():
