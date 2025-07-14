@@ -682,7 +682,20 @@ def view_server(config):
 
         rows = args.get('rows', '').split(',') if args.get('rows') else ["run", "gpu", "pytorch", "bench"]
         cols = args.get('cols', '').split(',') if args.get('cols') else ["metric"]
-        values = args.get('values', '').split(',') if args.get('values') else ["mean", "max"]
+        values = json.loads(base64.b64decode(args.get('values', '{}')))
+
+        def get_aggregator(v):
+            def to_fun(agg):
+                if agg == "avg":
+                    return "mean"
+                return agg
+
+            return [
+                to_fun(agg) for agg in v
+            ]
+
+
+        values = {k: get_aggregator(v) for k, v in values.items()}
         filters = []
 
         if args.get('filters'):
@@ -693,9 +706,7 @@ def view_server(config):
         pivot_spec = {
             "rows": rows,
             "cols": cols,
-            "values": {
-                v: ["mean"] for v in values
-            },
+            "values": values,
             # We make the filter in SQL so we have less data to process
             "filters": []
         }
@@ -800,11 +811,9 @@ def view_server(config):
         cols = args.get('cols', '').split(',') if args.get('cols') else ["metric"]
         cols = [rename_column(r) for i, r in enumerate(cols)]
 
-        values = args.get('values', '').split(',') if args.get('values') else ["mean", "max"]
-        values = [rename_column(r) for i, r in enumerate(values)]
+        values = json.loads(base64.b64decode(args.get('values', '{}')))
+        values = {rename_column(k): v for k, v in values.items()}
 
-        values = {v: ["avg"] for v in values}
-        
         filters = []
         if args.get('filters'):
             filters = json.loads(base64.b64decode(args.get('filters')))
