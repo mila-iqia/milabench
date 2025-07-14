@@ -144,12 +144,12 @@ def make_filter(key, fields=None, used_tables=None):
     match op:
         case "in":
             if isinstance(value, str):
-                return field.in_(value.split(","))
+                return field.in_([v.strip() for v in value.split(",")])
             else:
                 return field.in_(value)
         case "not in":
             if isinstance(value, str):
-                return field.notin_(value.split(","))
+                return field.notin_([v.strip() for v in value.split(",")])
             else:
                 return field.notin_(value)
         case "==":

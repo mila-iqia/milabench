@@ -213,9 +213,14 @@ def view_server(config):
         with sqlexec() as sess:
             return jsonify(sess.execute(stmt).scalars().all())
 
+    @app.route('/api/metrics/list/<int:exec_id>')
     @app.route('/api/metrics/list')
-    def api_ls_metrics():
-        stmt = select(func.distinct(Metric.name))
+    def api_ls_metrics(exec_id=None):
+        if exec_id:
+            stmt = select(func.distinct(Metric.name)).where(Metric.exec_id == exec_id)
+        else:
+            stmt = select(func.distinct(Metric.name))
+            
         with sqlexec() as sess:
             return jsonify(sess.execute(stmt).scalars().all())
 

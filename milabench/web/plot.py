@@ -331,6 +331,7 @@ def pivot_query(sesh, rows, cols, values, filters, profile="default"):
 
     if filters:
         query = query.where(*make_filters(filters))
+
     sub = query.subquery()
 
     # Find the unique values for each column
@@ -341,20 +342,30 @@ def pivot_query(sesh, rows, cols, values, filters, profile="default"):
         query = select(getattr(sub.c, col_name).label("col")).distinct()
         column_values[names[col]] = [row[0] for row in sesh.execute(query)]
 
-    agg = []
-    for col, col_values in column_values.items():
-        for col_val in col_values:
-            for k, functions in values.items():
-                for f in functions:
-                    fun = getattr(func, f)
-                    k_name = names[k]
-                    
-                    switch = sqlalchemy.case((
-                        getattr(sub.c, col) == col_val,
-                        getattr(sub.c, k_name)), else_=None
-                    ) 
+    from itertools import product
+    final_columns = list(product(*column_values.values()))
 
-                    agg.append(fun(switch).label(f"{col}={col_val}.{f}({k_name})"))
+    agg = []
+    for value_col, functions in values.items():
+        for product_value in final_columns:
+            frags = []
+            conds = []
+
+            for col_key, v in zip(column_values.keys(), product_value):
+                col_name = names.get(col_key, col_key)
+                frags.append(f"{col_name}={v}")
+                conds.append(getattr(sub.c, col_name) == v)
+
+            for f in functions:
+                k_name = names.get(value_col)
+                
+                label = "/".join(frags + [k_name, f])
+                value = getattr(sub.c, k_name)
+
+                switch = sqlalchemy.case((sqlalchemy.and_(*conds), value), else_=None).cast(Float)
+                fun = getattr(func, f)
+
+                agg.append(fun(switch).label(label))
 
     final_group_by = [
         getattr(sub.c, names[key]) for key in rows
