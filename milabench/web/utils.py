@@ -86,14 +86,15 @@ def cursor_to_dataframe(cursor):
 
 
 def make_selection_key(key, names=None, used_tables=None):
-    from milabench.metrics.sqlalchemy import Exec, Metric, Pack
+    from milabench.metrics.sqlalchemy import Exec, Metric, Pack, Weight
     from sqlalchemy import Text, cast
 
     table, path = key.split(":")
     tables = {
         "Exec": Exec, 
         "Metric": Metric, 
-        "Pack": Pack
+        "Pack": Pack,
+        "Weight": Weight
     }
 
     types = {
@@ -109,7 +110,7 @@ def make_selection_key(key, names=None, used_tables=None):
     path = maybe[0]
 
     frags = path.split(".")
-    selection = getattr(tables[table], frags[0])
+    selection = getattr(tables[table], frags[0]) 
 
     for frag in frags[1:-1]:
         selection = selection[frag]
