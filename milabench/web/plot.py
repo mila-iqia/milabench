@@ -365,4 +365,4 @@ def pivot_query(sesh, rows, cols, values, filters, profile="default"):
         getattr(sub.c, names[key]) for key in rows
     ]
 
-    return select(*final_group_by, *agg).group_by(*final_group_by)
+    return select(*final_group_by, *agg).group_by(*final_group_by).order_by(*final_group_by)
