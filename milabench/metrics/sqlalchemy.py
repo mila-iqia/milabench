@@ -50,7 +50,28 @@ class Exec(Base):
             'execs_meta_gpus_0_product_idx',
             text("(meta -> 'accelerators' -> 'gpus' -> '0' ->> 'product')"),
             postgresql_using='btree'
-        )    
+        ),
+        # Pivot query optimization indexes
+        Index(
+            'idx_exec_meta_pytorch_version',
+            text("(meta -> 'pytorch' ->> 'version')"),
+            postgresql_using='btree'
+        ),
+        Index(
+            'idx_exec_meta_pytorch_torch',
+            text("(meta -> 'pytorch' ->> 'torch')"),
+            postgresql_using='btree'
+        ),
+        Index(
+            'idx_exec_meta_accelerators_gin',
+            text("meta -> 'accelerators'"),
+            postgresql_using='gin'
+        ),
+        Index(
+            'idx_exec_meta_pytorch_gin',
+            text("meta -> 'pytorch'"),
+            postgresql_using='gin'
+        )
     )
 
     def as_dict(self):
@@ -60,7 +81,7 @@ class Exec(Base):
             "namespace": self.namespace,
             "created_time": self.created_time,
             "meta": self.meta,
-            "status": self.status   
+            "status": self.status
         }
 
 
@@ -76,7 +97,7 @@ class Pack(Base):
     command = Column(JSON)
     status = Column(String(256))
 
-    # 
+    #
     @declared_attr
     def ngpu(cls):
         try:
@@ -104,6 +125,8 @@ class Pack(Base):
         Index("exec_pack_query", "exec_id"),
         Index("pack_query", "name", "exec_id"),
         Index("pack_tag", "tag"),
+        # Pivot query optimization indexes
+        Index("idx_pack_name", "name"),  # For faster name lookups in Weight joins
     )
 
     def as_dict(self):
@@ -140,6 +163,11 @@ class Metric(Base):
     __table_args__ = (
         Index("metric_query", "exec_id", "pack_id"),
         Index("metric_name", "name"),
+        # Pivot query optimization indexes
+        Index("idx_metric_name_value", "name", "value"),  # For DISTINCT queries with filtering
+        Index("idx_metric_exec_pack_name", "exec_id", "pack_id", "name"),  # For base_report_view joins
+        Index("idx_metric_pack_name", "pack_id", "name"),  # For faster pack-metric joins
+        Index("idx_metric_exec_name", "exec_id", "name"),  # For exec-metric aggregations
     )
 
     def as_dict(self):
@@ -208,6 +236,10 @@ class Weight(Base):
     __table_args__ = (
         UniqueConstraint("profile", "pack", name="uq_profile_pack"),
         Index("weight_profile_pack", "profile", "pack"),
+        # Pivot query optimization indexes
+        Index("idx_weight_profile_enabled", "profile", "enabled"),  # For enabled weight filtering
+        Index("idx_weight_pack", "pack"),  # For pack name lookups
+        Index("idx_weight_profile_priority", "profile", "priority"),  # For ordered results
     )
 
     def __repr__(self):
@@ -278,9 +310,9 @@ def generate_database_sql_setup(uri=None):
 
 def base_weight_profile():
     return """
-        INSERT INTO 
+        INSERT INTO
             weights (profile, weight, priority, pack, enabled, group1, group2)
-        VALUES 
+        VALUES
             ('default', 0, 1000, 'fp16', TRUE, 'SYNTHETIC', 'FLOPS'),
             ('default', 0, 1001, 'bf16', TRUE, 'SYNTHETIC', 'FLOPS'),
             ('default', 0, 1002, 'tf32', TRUE, 'SYNTHETIC', 'FLOPS'),
@@ -349,7 +381,7 @@ def create_database(uri):
         with Session(engine) as session:
             session.execute(text(base_weight_profile()))
             session.commit()
-    
+
     except DBAPIError as err:
         print(f"could not create database schema because of {err}")
 
@@ -519,7 +551,7 @@ class SQLAlchemy:
                 return int(gid)
             except:
                 return -1
-    
+
         self.pending_metrics.append(
             Metric(
                 exec_id=run_id,
@@ -575,7 +607,7 @@ class SQLAlchemy:
         run_id = self.run._id
         pack_id = state.pack._id
         job_id, gpu_id = _get_pack_ids(state.pack)
-        
+
         if "progress" in entry.data:
             return
 
@@ -589,7 +621,7 @@ class SQLAlchemy:
             # so the gpu_id is moved to its own column
             # and each metric is pushed as a separate document
             self._change_gpudata(run_id, pack_id, "gpudata", gpudata, job_id, metric_time=metric_time)
-        
+
         elif (process := data.pop("process", None)) is not None:
             self._push_composed_data(run_id, pack_id, gpu_id, "process", process, job_id, metric_time=metric_time)
 
@@ -601,7 +633,7 @@ class SQLAlchemy:
 
         elif (netdata := data.pop("netdata", None)) is not None:
             self._push_composed_data(run_id, pack_id, gpu_id, "netdata", netdata, job_id, metric_time=metric_time)
-        
+
         else:
             # Standard
             unit = data.pop("units", None)
@@ -662,7 +694,7 @@ class SQLAlchemy:
             status = "error"
 
         self._push_metric(
-            run_id, pack_id, "return_code", entry.data["return_code"], gpu_id=gpu_id, job_id=job_id, 
+            run_id, pack_id, "return_code", entry.data["return_code"], gpu_id=gpu_id, job_id=job_id,
             namespace=status
         )
 

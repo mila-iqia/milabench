@@ -334,25 +334,19 @@ def pivot_query(sesh, rows, cols, values, filters, profile="default"):
 
     sub = query.subquery()
 
-    # Find the unique values for each column
-    # Those will become their own column in the final query
-    column_values = {}
-    for col in cols:
-        col_name = names[col]
-        query = select(getattr(sub.c, col_name).label("col")).distinct()
-        column_values[names[col]] = [row[0] for row in sesh.execute(query)]
+    # This only fetches the unique columns
+    col_names = [names[col] for col in cols]
+    query = select(*[getattr(sub.c, col_name) for col_name in col_names]).distinct()
+    final_columns = [row for row in sesh.execute(query)]  
 
-    from itertools import product
-    final_columns = list(product(*column_values.values()))
-
+    # Generate the SQL query to make the pivot
     agg = []
     for value_col, functions in values.items():
         for product_value in final_columns:
             frags = []
             conds = []
 
-            for col_key, v in zip(column_values.keys(), product_value):
-                col_name = names.get(col_key, col_key)
+            for col_name, v in zip(col_names, product_value):
                 frags.append(f"{col_name}={v}")
                 conds.append(getattr(sub.c, col_name) == v)
 
