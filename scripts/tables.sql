@@ -17,9 +17,9 @@ CREATE TABLE IF NOT EXISTS execs (
 ;-- 
 CREATE INDEX IF NOT EXISTS execs_meta_gpus_0_product_idx ON execs USING btree ((meta -> 'accelerators' -> 'gpus' -> '0' ->> 'product'));-- 
 CREATE INDEX IF NOT EXISTS idx_exec_meta_pytorch_torch ON execs USING btree ((meta -> 'pytorch' ->> 'torch'));-- 
-CREATE INDEX IF NOT EXISTS idx_exec_meta_accelerators_gin ON execs USING gin (meta -> 'accelerators');-- 
+-- CREATE INDEX IF NOT EXISTS idx_exec_meta_accelerators_gin ON execs USING gin (meta -> 'accelerators');-- 
 CREATE INDEX IF NOT EXISTS exec_name ON execs (name);-- 
-CREATE INDEX IF NOT EXISTS idx_exec_meta_pytorch_gin ON execs USING gin (meta -> 'pytorch');-- 
+-- CREATE INDEX IF NOT EXISTS idx_exec_meta_pytorch_gin ON execs USING gin (meta -> 'pytorch');-- 
 CREATE INDEX IF NOT EXISTS idx_exec_meta_pytorch_version ON execs USING btree ((meta -> 'pytorch' ->> 'version'));-- 
 
 CREATE TABLE IF NOT EXISTS saved_queries (

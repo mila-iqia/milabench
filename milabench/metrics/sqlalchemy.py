@@ -62,16 +62,16 @@ class Exec(Base):
             text("(meta -> 'pytorch' ->> 'torch')"),
             postgresql_using='btree'
         ),
-        Index(
-            'idx_exec_meta_accelerators_gin',
-            text("meta -> 'accelerators'"),
-            postgresql_using='gin'
-        ),
-        Index(
-            'idx_exec_meta_pytorch_gin',
-            text("meta -> 'pytorch'"),
-            postgresql_using='gin'
-        )
+        # Index(
+        #     'idx_exec_meta_accelerators_gin',
+        #     text("meta -> 'accelerators'"),
+        #     postgresql_using='gin'
+        # ),
+        # Index(
+        #     'idx_exec_meta_pytorch_gin',
+        #     text("meta -> 'pytorch'"),
+        #     postgresql_using='gin'
+        # )
     )
 
     def as_dict(self):
