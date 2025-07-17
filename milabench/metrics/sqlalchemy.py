@@ -286,12 +286,21 @@ def generate_database_sql_setup(uri=None):
     """Users usally do not have create table permission.
     We generate the code to create the table so someone with permission can execute the script.
     """
+    import os
 
     dummy = "sqlite:///sqlite.db"
     if uri is None:
         uri = dummy
 
-    with open("setup.sql", "w") as file:
+
+    filename = os.path.join(os.path.dirname(__file__), "..", "..", "scripts", "tables.sql")
+
+    with open(filename, "w") as file:
+        file.write("--\n")
+        file.write("-- Generated using:\n")
+        file.write("--\n")
+        file.write("--      python -m milabench.metrics.sqlalchemy\n")
+        file.write("--\n")
 
         def metadata_dump(sql, *multiparams, **params):
             sql = str(sql.compile(dialect=postgresql.dialect()))
@@ -305,6 +314,10 @@ def generate_database_sql_setup(uri=None):
             uri, strategy="mock", executor=metadata_dump
         )
         Base.metadata.create_all(engine)
+
+
+        file.write(base_weight_profile().replace("        ", ""))
+        file.write("-- \n")
 
 
 
@@ -362,8 +375,7 @@ def base_weight_profile():
             ('default', 1, 5000, 'pna', TRUE, 'GRAPHS', 'GNN'),
             ('default', 1, 5001, 'dimenet', TRUE, 'GRAPHS', 'GNN'),
             ('default', 1, 5002, 'recursiongfn', TRUE, 'GRAPHS', 'GFlow')
-            ;
-    """
+        ;"""
 
 def create_database(uri):
     engine = sqlalchemy.create_engine(
