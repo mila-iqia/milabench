@@ -44,6 +44,7 @@ class Exec(Base):
     # Visibility works as a level, this way we can do show all runs <= 2
     #  0= public
     #  1= private
+    # We could also have a moving "public" visibility as time move older results become available
     visibility = Column(Integer, default=0)
 
 
@@ -412,7 +413,7 @@ def _get_pack_ids(pack):
 
 
 class SQLAlchemy:
-    def __init__(self, uri="sqlite:///sqlite.db", meta_override=None) -> None:
+    def __init__(self, uri="sqlite:///sqlite.db", meta_override=None, visibility=0) -> None:
         if uri.startswith("sqlite"):
             create_database(uri)
 
@@ -491,6 +492,7 @@ class SQLAlchemy:
             created_time=datetime.utcnow(),
             meta=self.meta_override or entry.data,
             status="running",
+            visibility=visibility
         )
         self.session.add(self.run)
         self.session.commit()
