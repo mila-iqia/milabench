@@ -220,7 +220,7 @@ def view_server(config):
             stmt = select(func.distinct(Metric.name)).where(Metric.exec_id == exec_id)
         else:
             stmt = select(func.distinct(Metric.name))
-            
+
         with sqlexec() as sess:
             return jsonify(sess.execute(stmt).scalars().all())
 
@@ -584,6 +584,10 @@ def view_server(config):
         profile = request.args.get('profile', request.cookies.get('scoreProfile'))
         weighted = request.args.get('weighted', 'false').lower() == 'true'
 
+        color = request.args.get('color')
+        relative = request.args.get('relative', '=')
+        color_key, color_val = relative.split("=")
+        
         # Handle None/empty values for g1 and g2
         group1_col = getattr(Weight, g1) if g1 else None
         group2_col = getattr(Weight, g2) if g2 else None
@@ -611,7 +615,24 @@ def view_server(config):
 
             results = cursor_to_json(cursor)
 
-            # Relative to something ?
+        if color_key != "" and color_val != "":
+            values = {}
+            for row in results:
+                name_x = row.get(group1_name, "")
+                name_y = row.get(group2_name, "")
+
+                value = row[color_key]
+                base = row[metric]
+
+                if value == color_val:
+                    values[(name_x, name_y, value)] = base
+
+            for row in results:
+                name_x = row.get(group1_name, "")
+                name_y = row.get(group2_name, "")
+
+                baseline = values.get((name_x, name_y, color_val), 1)
+                row[metric] = row[metric] / baseline
 
         return jsonify(results)
 
