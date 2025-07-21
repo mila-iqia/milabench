@@ -14,7 +14,7 @@ from milabench.report import make_report
 from .utils import database_uri, page, make_selection_key, make_filters, cursor_to_json, cursor_to_dataframe
 
 
-def grouped_plot(group1_col, group2_col, group1_name, group2_name, exec_ids, metric, more=None, weighted=False,profile="default"):
+def grouped_plot(group1_col, group2_col, group1_name, group2_name, exec_ids, metric, more=None, weighted=False, profile="default", visibility=0):
     # group1 = Weight.group3
     # group2 = Weight.group4
     # exec_ids = (48, 47, 46)
@@ -34,9 +34,11 @@ def grouped_plot(group1_col, group2_col, group1_name, group2_name, exec_ids, met
             Metric.exec_id,
             func.avg(Metric.value).label("avg_value")
         )
+        .join(Exec, Exec._id == Metric.exec_id)
         .where(
             Metric.name == metric,
-            Metric.exec_id.in_(exec_ids)
+            Metric.exec_id.in_(exec_ids),
+            Exec.visibility == visibility 
         )
         .group_by(Metric.pack_id, Metric.exec_id)
     )
@@ -103,7 +105,7 @@ def grouped_plot(group1_col, group2_col, group1_name, group2_name, exec_ids, met
 
 
 
-def regular_average(exec_ids):
+def regular_average(exec_ids, visibility=0):
     average_perf_per_pack = (
         select(
             Metric.pack_id,
@@ -111,7 +113,9 @@ def regular_average(exec_ids):
             func.avg(Metric.value).label("perf"),
             func.stddev(Metric.value).label("std"),
         )
+        .join(Exec, Exec._id == Metric.exec_id)
         .where(
+            Exec.visibility == visibility,
             Metric.name == "rate",
             Metric.exec_id.in_(exec_ids)
         )
@@ -121,7 +125,7 @@ def regular_average(exec_ids):
     return average_perf_per_pack
 
 
-def average_drop_min_max(exec_ids):
+def average_drop_min_max(exec_ids, visibility=0):
     # Step 1: Assign row numbers or ranks to values per group
     ranked_metrics = (
         select(
@@ -137,7 +141,9 @@ def average_drop_min_max(exec_ids):
                 order_by=Metric.value.desc()
             ).label("row_desc"),
         )
+        .join(Exec, Exec._id == Metric.exec_id)
         .where(
+            Exec.visibility == visibility,
             Metric.name == "rate",
             Metric.exec_id.in_(exec_ids)
         )
@@ -169,11 +175,11 @@ def average_drop_min_max(exec_ids):
     )
 
 
-def perf_per_bench_query(exec_ids, profile="default", drop_min_max=True):
+def perf_per_bench_query(exec_ids, profile="default", drop_min_max=True, visibility=0):
     if drop_min_max:
-        average_perf_per_pack = average_drop_min_max(exec_ids)
+        average_perf_per_pack = average_drop_min_max(exec_ids, visibility=visibility)
     else:
-        average_perf_per_pack = regular_average(exec_ids)
+        average_perf_per_pack = regular_average(exec_ids, visibility=visibility)
 
     sub = average_perf_per_pack.subquery()
 
@@ -313,7 +319,7 @@ def sql_direct_report(exec_ids, profile="default", drop_min_max=True, more=None)
 
 
 
-def pivot_query(sesh, rows, cols, values, filters, profile="default"):
+def pivot_query(sesh, rows, cols, values, filters, profile="default", visibility=0):
     from milabench.metrics.report import base_report_view
 
     filter_fields = [f['field'] for f in filters]
@@ -327,7 +333,7 @@ def pivot_query(sesh, rows, cols, values, filters, profile="default"):
         make_selection_key(key, names=names) for key in [*cols, *list(values.keys()), *filter_fields]
     ]
 
-    query = base_report_view(*selected_keys, profile=profile)
+    query = base_report_view(*selected_keys, profile=profile, visibility=visibility)
 
     if filters:
         query = query.where(*make_filters(filters))

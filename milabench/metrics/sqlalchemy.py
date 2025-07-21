@@ -31,8 +31,6 @@ from ..structs import BenchLogEntry
 Base = declarative_base()
 
 
-
-
 class Exec(Base):
     __tablename__ = "execs"
 
@@ -42,10 +40,16 @@ class Exec(Base):
     created_time = Column(DateTime, default=datetime.utcnow)
     meta = Column(JSON)
     status = Column(String(256))
-    # mark = Column(Integer)
+
+    # Visibility works as a level, this way we can do show all runs <= 2
+    #  0= public
+    #  1= private
+    visibility = Column(Integer, default=0)
+
 
     __table_args__ = (
         Index("exec_name", "name"),
+        Index("exec_visibility", "visibility"),
         Index(
             'execs_meta_gpus_0_product_idx',
             text("(meta -> 'accelerators' -> 'gpus' -> '0' ->> 'product')"),

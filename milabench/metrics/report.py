@@ -12,7 +12,7 @@ from sqlalchemy import select, func, cast, TEXT, Float, and_
 from milabench.metrics.sqlalchemy import Exec, Metric, Pack, Weight
 
 
-def base_report_view(*columns, profile="default"):
+def base_report_view(*columns, profile="default", visibility=0):
     weight_total = select(func.sum(Weight.weight * Weight.enabled.cast(Integer))).where(Weight.profile == profile).scalar_subquery()
 
     # Why not all Weight.pack are included?
@@ -34,6 +34,7 @@ def base_report_view(*columns, profile="default"):
         .join(Exec, Metric.exec_id == Exec._id)
         .outerjoin(Weight, Weight.pack == Pack.name)
         .where(Weight.profile == profile)
+        .where(Exec.visibility == visibility)
         .order_by(Weight.priority)
     )
 
