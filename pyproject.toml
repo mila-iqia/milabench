@@ -45,7 +45,17 @@ cuda = ["nvidia-ml-py"]
 rocm = []
 hpu = []
 xpu = []
-web = ["flask", "flask-caching", "psycopg2", "altair"]
+web = []
+
+[tool.poetry.group.cuda.dependencies]
+nvidia-ml-py = "^12.575.51"
+
+[tool.poetry.group.web.dependencies]
+flask = "^3.1.1"
+flask-caching = "^2.3.1"
+psycopg2-binary = "^2.9.10"
+altair = "^5.5.0"
+waitress = "^3.0.2"
 
 [tool.poetry.group.dev.dependencies]
 black = ">=21.10b0"
