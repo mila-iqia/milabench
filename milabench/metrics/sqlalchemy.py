@@ -380,7 +380,7 @@ def base_weight_profile():
             ('default', 1, 5000, 'pna', TRUE, 'GRAPHS', 'GNN'),
             ('default', 1, 5001, 'dimenet', TRUE, 'GRAPHS', 'GNN'),
             ('default', 1, 5002, 'recursiongfn', TRUE, 'GRAPHS', 'GFlow')
-        ON CONFLICT (profile, pack) DO NOTHING
+        ON CONFLICT (profile, pack) DO NOTHING 
         ;"""
 
 def create_database(uri):

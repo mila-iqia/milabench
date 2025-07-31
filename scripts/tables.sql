@@ -11,15 +11,15 @@ CREATE TABLE IF NOT EXISTS execs (
 	created_time TIMESTAMP WITHOUT TIME ZONE, 
 	meta JSON, 
 	status VARCHAR(256), 
+	visibility INTEGER, 
 	PRIMARY KEY (_id)
 )
 
 ;-- 
-CREATE INDEX IF NOT EXISTS execs_meta_gpus_0_product_idx ON execs USING btree ((meta -> 'accelerators' -> 'gpus' -> '0' ->> 'product'));-- 
-CREATE INDEX IF NOT EXISTS idx_exec_meta_pytorch_torch ON execs USING btree ((meta -> 'pytorch' ->> 'torch'));-- 
--- CREATE INDEX IF NOT EXISTS idx_exec_meta_accelerators_gin ON execs USING gin (meta -> 'accelerators');-- 
 CREATE INDEX IF NOT EXISTS exec_name ON execs (name);-- 
--- CREATE INDEX IF NOT EXISTS idx_exec_meta_pytorch_gin ON execs USING gin (meta -> 'pytorch');-- 
+CREATE INDEX IF NOT EXISTS execs_meta_gpus_0_product_idx ON execs USING btree ((meta -> 'accelerators' -> 'gpus' -> '0' ->> 'product'));-- 
+CREATE INDEX IF NOT EXISTS exec_visibility ON execs (visibility);-- 
+CREATE INDEX IF NOT EXISTS idx_exec_meta_pytorch_torch ON execs USING btree ((meta -> 'pytorch' ->> 'torch'));-- 
 CREATE INDEX IF NOT EXISTS idx_exec_meta_pytorch_version ON execs USING btree ((meta -> 'pytorch' ->> 'version'));-- 
 
 CREATE TABLE IF NOT EXISTS saved_queries (
@@ -49,10 +49,10 @@ CREATE TABLE IF NOT EXISTS weights (
 )
 
 ;-- 
-CREATE INDEX IF NOT EXISTS weight_profile_pack ON weights (profile, pack);-- 
-CREATE INDEX IF NOT EXISTS idx_weight_profile_priority ON weights (profile, priority);-- 
-CREATE INDEX IF NOT EXISTS idx_weight_pack ON weights (pack);-- 
 CREATE INDEX IF NOT EXISTS idx_weight_profile_enabled ON weights (profile, enabled);-- 
+CREATE INDEX IF NOT EXISTS idx_weight_pack ON weights (pack);-- 
+CREATE INDEX IF NOT EXISTS idx_weight_profile_priority ON weights (profile, priority);-- 
+CREATE INDEX IF NOT EXISTS weight_profile_pack ON weights (profile, pack);-- 
 
 CREATE TABLE IF NOT EXISTS packs (
 	_id SERIAL NOT NULL, 
@@ -71,8 +71,8 @@ CREATE TABLE IF NOT EXISTS packs (
 ;-- 
 CREATE INDEX IF NOT EXISTS exec_pack_query ON packs (exec_id);-- 
 CREATE INDEX IF NOT EXISTS pack_query ON packs (name, exec_id);-- 
-CREATE INDEX IF NOT EXISTS idx_pack_name ON packs (name);-- 
 CREATE INDEX IF NOT EXISTS pack_tag ON packs (tag);-- 
+CREATE INDEX IF NOT EXISTS idx_pack_name ON packs (name);-- 
 
 CREATE TABLE IF NOT EXISTS metrics (
 	_id SERIAL NOT NULL, 
@@ -91,12 +91,12 @@ CREATE TABLE IF NOT EXISTS metrics (
 )
 
 ;-- 
-CREATE INDEX IF NOT EXISTS metric_query ON metrics (exec_id, pack_id);-- 
-CREATE INDEX IF NOT EXISTS metric_name ON metrics (name);-- 
 CREATE INDEX IF NOT EXISTS idx_metric_pack_name ON metrics (pack_id, name);-- 
 CREATE INDEX IF NOT EXISTS idx_metric_exec_name ON metrics (exec_id, name);-- 
 CREATE INDEX IF NOT EXISTS idx_metric_name_value ON metrics (name, value);-- 
 CREATE INDEX IF NOT EXISTS idx_metric_exec_pack_name ON metrics (exec_id, pack_id, name);-- 
+CREATE INDEX IF NOT EXISTS metric_query ON metrics (exec_id, pack_id);-- 
+CREATE INDEX IF NOT EXISTS metric_name ON metrics (name);-- 
 
 INSERT INTO
     weights (profile, weight, priority, pack, enabled, group1, group2)
@@ -150,4 +150,5 @@ VALUES
     ('default', 1, 5000, 'pna', TRUE, 'GRAPHS', 'GNN'),
     ('default', 1, 5001, 'dimenet', TRUE, 'GRAPHS', 'GNN'),
     ('default', 1, 5002, 'recursiongfn', TRUE, 'GRAPHS', 'GFlow')
+ON CONFLICT (profile, pack) DO NOTHING 
 ;-- 
