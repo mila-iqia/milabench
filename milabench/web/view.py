@@ -20,6 +20,7 @@ from milabench.metrics.report import fetch_data, make_pivot_summary, fetch_data_
 from milabench.report import make_report
 from .plot import pivot_query
 from .utils import database_uri, page, make_selection_key, make_filters, cursor_to_json, cursor_to_dataframe
+from .slurm import slurm_integration
 
 
 class MultiIndexFormater:
@@ -108,6 +109,7 @@ def pandas_to_html_relative(df, default_float="{:.2f}".format):
     """)
 
 
+
 def view_server(config):
     """Display milabench results"""
 
@@ -128,8 +130,11 @@ def view_server(config):
             with Session(logger.client) as sess:
                 yield sess
 
+
+    slurm_integration(app)
+
     #
-    # AI routes
+    # API routes
     #
 
     @app.route('/api/summary/<runame>')
@@ -587,7 +592,7 @@ def view_server(config):
         color = request.args.get('color')
         relative = request.args.get('relative', '=')
         color_key, color_val = relative.split("=")
-        
+
         # Handle None/empty values for g1 and g2
         group1_col = getattr(Weight, g1) if g1 else None
         group2_col = getattr(Weight, g2) if g2 else None
