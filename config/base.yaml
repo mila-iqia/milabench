@@ -807,24 +807,6 @@ recursiongfn:
     --layer_width: 128
     --num_layers: 4
 
-torchatari:
-  inherits: _defaults
-  definition: ../benchmarks/torchatari
-  install_group: torch
-  plan:
-    method: per_gpu
-  tags:
-    - rl
-    - monogpu
-    - gym
-  argv:
-    --num-minibatches: "auto_batch(16)"
-    --update-epochs: 4
-    --num-steps: 128
-    --num-envs: auto({cpu_per_gpu}, 128)
-    --total-timesteps: 1000000
-    --env-id: Breakout-v5
-
 _llava:
   max_duration: 3600
   inherits: _defaults

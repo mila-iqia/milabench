@@ -244,6 +244,23 @@ def slurm_integration(app):
 
         except Exception as e:
             return jsonify({'error': str(e)}), 500
+    
+    @app.route('/api/slurm/jobs/<int:job_id>')
+    def api_slurm_job_status(job_id):
+        """Get list of all slurm jobs"""
+        try:
+            # Get running and pending jobs using JSON format
+            result = remote_command(SLURM_HOST, f"'squeue -u $USER -j {job_id} --json'")
+
+            if not result['success']:
+                return jsonify({'error': f'Failed to get jobs: {result["stderr"]}'}), 500
+
+            jobs = json.loads(result['stdout'])["jobs"]
+
+            return jsonify(jobs)
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
 
     # List jobs
     @app.route('/api/slurm/jobs')
@@ -422,7 +439,7 @@ def slurm_integration(app):
         return api_slurm_job_info(jr_job_id, None)
 
     @app.route('/api/slurm/jobs/<jr_job_id>/stdout')
-    @rsync_load("log.stderr", "jr_job_id")
+    @rsync_load("log.stdout", "jr_job_id")
     def api_slurm_job_stdout(jr_job_id):
         """Get logs for a specific job"""
         try:

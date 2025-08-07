@@ -4,8 +4,6 @@ set -ex
 
 OUTPUT_DIRECTORY=$(scontrol show job "$SLURM_JOB_ID" --json | jq -r '.jobs[0].standard_output' | xargs dirname)
 
-echo "OUTPUT is $OUTPUT_DIRECTORY"
-
 CONDA_EXEC="$(which conda)"
 CONDA_BASE=$(dirname $CONDA_EXEC)
 source $CONDA_BASE/../etc/profile.d/conda.sh
@@ -37,7 +35,7 @@ install_prepare() {
     cd $MILABENCH_WORDIR
 
     if [ ! -d "$MILABENCH_WORDIR/env" ]; then
-        conda create --prefix $MILABENCH_WORDIR/env python='3.10' -y
+        conda create --prefix $MILABENCH_WORDIR/env python='3.12' -y
         # virtualenv $MILABENCH_WORDIR/env
     fi
 
@@ -54,7 +52,8 @@ install_prepare() {
         )
     fi
     
-    . $MILABENCH_WORDIR/env/bin/activate
+    conda activate $MILABENCH_WORDIR/env
+    # . $MILABENCH_WORDIR/env/bin/activate
 
     pip install -e $MILABENCH_SOURCE
 
@@ -91,13 +90,16 @@ if [ ! -d "$MILABENCH_WORDIR/env" ]; then
     install_prepare 
 else
     echo "Reusing previous install"
-    . $MILABENCH_WORDIR/env/bin/activate
+
+    conda activate $MILABENCH_WORDIR/env
+    # . $MILABENCH_WORDIR/env/bin/activate
 fi
 
 if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     cd $MILABENCH_WORDIR
 
-    . $MILABENCH_WORDIR/env/bin/activate
+    conda activate $MILABENCH_WORDIR/env
+    # . $MILABENCH_WORDIR/env/bin/activate
 
     # pip install torch
     # milabench pin --variant cuda --from-scratch 
