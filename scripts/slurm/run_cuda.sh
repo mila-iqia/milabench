@@ -1,20 +1,28 @@
 #!/bin/bash
 
+
+export MILABENCH_BRANCH=uv_compile_py3.12
+
+
 set -ex
 
+# ===
 OUTPUT_DIRECTORY=$(scontrol show job "$SLURM_JOB_ID" --json | jq -r '.jobs[0].standard_output' | xargs dirname)
-
-echo "OUTPUT is $OUTPUT_DIRECTORY"
+mkdir -p $OUTPUT_DIRECTORY/meta
+scontrol show job --json $SLURM_JOB_ID | jq '.jobs[0]' > $OUTPUT_DIRECTORY/meta/info.json
+# ===
 
 CONDA_EXEC="$(which conda)"
 CONDA_BASE=$(dirname $CONDA_EXEC)
 source $CONDA_BASE/../etc/profile.d/conda.sh
 
+export PYTHON_VERSION='3.12'
 export MILABENCH_GPU_ARCH=cuda
+
 export MILABENCH_WORDIR="/tmp/$SLURM_JOB_ID/$MILABENCH_GPU_ARCH"
 export MILABENCH_BASE="$MILABENCH_WORDIR/results"
 
-export MILABENCH_VENV="$MILABENCH_WORDIR/env"
+export MILABENCH_ENV="$MILABENCH_WORDIR/.env/$PYTHON_VERSION/"
 export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
 export MILABENCH_SIZER_SAVE="$MILABENCH_WORDIR/scaling.yaml"
 
@@ -36,26 +44,24 @@ install_prepare() {
     mkdir -p $MILABENCH_WORDIR
     cd $MILABENCH_WORDIR
 
-    if [ ! -d "$MILABENCH_WORDIR/env" ]; then
-        conda create --prefix $MILABENCH_WORDIR/env python='3.10' -y
-        # virtualenv $MILABENCH_WORDIR/env
+    if [ ! -d "$MILABENCH_ENV" ]; then
+        conda create --prefix $MILABENCH_ENV python=$PYTHON_VERSION -y
     fi
 
     if [ -z "${MILABENCH_SOURCE}" ]; then
         if [ ! -d "$MILABENCH_WORDIR/milabench" ]; then
-            git clone https://github.com/mila-iqia/milabench.git -b staging
+            git clone https://github.com/mila-iqia/milabench.git -b $MILABENCH_BRANCH
         fi
         export MILABENCH_SOURCE="$MILABENCH_WORDIR/milabench"
     else
         (
             cd $MILABENCH_SOURCE
-            git checkout staging
-            git pull origin staging
+            git fetch origin
+            git reset --hard origin/$MILABENCH_BRANCH
         )
     fi
     
-    . $MILABENCH_WORDIR/env/bin/activate
-
+    conda activate $MILABENCH_ENV
     pip install -e $MILABENCH_SOURCE
 
     milabench slurm_system > $MILABENCH_WORDIR/system.yaml
@@ -65,6 +71,9 @@ install_prepare() {
     #
     # pip install torch
     # milabench pin --variant cuda --from-scratch $ARGS 
+
+    export MILABENCH_NO_BUILD_ISOLATION=1
+    export MILABENCH_USE_UV=1
     milabench install --system $MILABENCH_WORDIR/system.yaml $ARGS
 
     which pip
@@ -91,13 +100,16 @@ if [ ! -d "$MILABENCH_WORDIR/env" ]; then
     install_prepare 
 else
     echo "Reusing previous install"
-    . $MILABENCH_WORDIR/env/bin/activate
+
+    conda activate $MILABENCH_ENV
+    # . $MILABENCH_WORDIR/env/bin/activate
 fi
 
 if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     cd $MILABENCH_WORDIR
 
-    . $MILABENCH_WORDIR/env/bin/activate
+    conda activate $MILABENCH_ENV
+    # . $MILABENCH_WORDIR/env/bin/activate
 
     # pip install torch
     # milabench pin --variant cuda --from-scratch 
@@ -121,3 +133,7 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
 fi
 
 rsync -az $MILABENCH_WORDIR/results/runs $OUTPUT_DIRECTORY
+
+# ===
+scontrol show job --json $SLURM_JOB_ID | jq '.jobs[0]' > $OUTPUT_DIRECTORY/meta/info.json
+# ===

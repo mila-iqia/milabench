@@ -400,7 +400,7 @@ brax:
     - nobatch
   definition: ../benchmarks/brax
   group: brax
-  install_group: torch
+  install_group: jax
   plan:
     method: njobs
     n: 1
@@ -732,7 +732,7 @@ llm-full-mp-nodes:
 
 _purejaxrl:
   inherits: _defaults
-  install_group: torch
+  install_group: jax
   tags:
     - monogpu
     - gym
@@ -773,6 +773,7 @@ _geo_gnn:
   plan:
     method: per_gpu
 
+
 pna:
   inherits: _geo_gnn
   argv:
@@ -780,6 +781,7 @@ pna:
     --num-samples: 100000
     --batch-size: "auto_batch(4096)" 
     --num-workers: "auto({n_worker}, 0)"
+    --root: "{milabench_data}"
 
 dimenet:
   inherits: _geo_gnn
@@ -789,6 +791,7 @@ dimenet:
     --use3d: True
     --batch-size: "auto_batch(16)"
     --num-workers: "auto({n_worker}, 0)"
+    --root: "{milabench_data}"
 
 recursiongfn:
   inherits: _defaults
@@ -806,24 +809,7 @@ recursiongfn:
     --num_steps: 100
     --layer_width: 128
     --num_layers: 4
-
-torchatari:
-  inherits: _defaults
-  definition: ../benchmarks/torchatari
-  install_group: torch
-  plan:
-    method: per_gpu
-  tags:
-    - rl
-    - monogpu
-    - gym
-  argv:
-    --num-minibatches: "auto_batch(16)"
-    --update-epochs: 4
-    --num-steps: 128
-    --num-envs: auto({cpu_per_gpu}, 128)
-    --total-timesteps: 1000000
-    --env-id: Breakout-v5
+    --data: "{milabench_data}"
 
 _llava:
   max_duration: 3600
@@ -880,7 +866,7 @@ _rlhf:
     --per_device_train_batch_size: "auto_batch(64)"
     --logging_strategy: "no"
     --log_level: "critical"
-    --bf16: true
+    --torch_dtype: bfloat16
     --dataset-name: "trl-internal-testing/descriptiveness-sentiment-trl-style"
     --dataset_train_split: "descriptiveness"
   
@@ -928,7 +914,7 @@ vjepa-gpus:
 
 cleanrljax:
   inherits: _defaults
-  install_group: torch
+  install_group: jax
   definition: ../benchmarks/cleanrl_jax
   tags:
     - monogpu

@@ -1,0 +1,78 @@
+diff --git a/original/lora_finetune_distributed.py b/lora_finetune_distributed.py
+old mode 100644
+new mode 100755
+index a01b70e..796c835
+--- a/original/lora_finetune_distributed.py
++++ b/lora_finetune_distributed.py
+@@ -15,7 +15,6 @@ import torch
+ from omegaconf import DictConfig, ListConfig
+ 
+ from torch import nn
+-from torch.distributed import destroy_process_group, init_process_group
+ 
+ from torch.optim import Optimizer
+ from torchdata.stateful_dataloader import StatefulDataLoader
+@@ -833,6 +832,7 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
+                     self.global_step += 1
+ 
+                     loss_to_log = running_loss.item() / num_tokens
++                    self.log_loss(loss_to_log)
+                     pbar.update(1)
+                     pbar.set_description(
+                         f"{curr_epoch + 1}|{self.global_step}|Loss: {loss_to_log}"
+@@ -898,7 +898,12 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
+     def cleanup(self) -> None:
+         if self._is_rank_zero:
+             self._metric_logger.close()
+-        destroy_process_group()
++
++        import torchcompat.core as acc
++        acc.destroy_process_group()
++
++    def log_loss(self, loss):
++        pass
+ 
+ 
+ @config.parse
+@@ -910,12 +915,21 @@ def recipe_main(cfg: DictConfig) -> None:
+         - Parameters specified in config (see available configs through ``tune ls``)
+         - Overwritten by arguments from the command-line
+     """
++    # <<<<
++    import sys, os
++    current_dir = os.path.dirname(os.path.abspath(__file__))
++    sys.path.append(os.path.join(current_dir))
++    # >>>>
++
+     if not training.is_distributed():
+         raise RuntimeError(
+             "Distributed finetune recipe should be run via a distributed launcher."
+             "If using tune CLI, please specify --nnodes 1 and --nproc_per_node [num_gpus]"
+         )
+-    init_process_group("cuda:nccl,cpu:gloo")
++    
++    import torchcompat.core as acc
++    acc.init_process_group()
++
+     if cfg.get("fsdp_cpu_offload", False):
+         # Utilize all available CPU cores for intra-op parallelism. This provides ~2x
+         # speed up when benchmarking fused AdamW on CPU
+@@ -925,7 +939,17 @@ def recipe_main(cfg: DictConfig) -> None:
+ 
+     recipe = LoRAFinetuneRecipeDistributed(cfg=cfg)
+     recipe.setup(cfg=cfg)
+-    recipe.train()
++    # <<<<
++    from voir.phase import StopProgram
++    try:
++        from .utils import prepare_voir
++        _, monitor = prepare_voir(recipe)
++        with monitor():
++            recipe.train()
++    
++    except StopProgram:
++        print("early stopping")
++    # >>>>
+     recipe.cleanup()
+ 
+ 

@@ -1,3 +1,4 @@
+import mimetypes
 import os
 import subprocess
 import json
@@ -7,8 +8,9 @@ import os
 import yaml
 import uuid
 from functools import wraps
+import traceback
 
-from flask import request, jsonify
+from flask import request, jsonify, send_file
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 
@@ -23,16 +25,35 @@ JOBRUNNER_LOCAL_CACHE =  os.path.abspath(os.path.join(ROOT, '..', 'data'))
 #   The server copies file over to the slurm cluster in a know folder structure
 #   known as the JOBRUNNER_WORKDIR, this folder has all the job data that matters
 #
-#   THis folder is periodically sync locally to the server and it is used as cache
+#   This folder is periodically sync locally to the server and it is used as cache
+#   No database needed, all the information is saved on the filesystem and sync between the cluster and the local machine
 #
-
-#   /home/$user/scratch/jobrunner/$internal_job_id/output.stdout
-#   /home/$user/scratch/jobrunner/$internal_job_id/output.stderr
+#   /home/$user/scratch/jobrunner/$internal_job_id/log.stdout
+#   /home/$user/scratch/jobrunner/$internal_job_id/log.stderr
+#   /home/$user/scratch/jobrunner/$internal_job_id/meta/acc.json    <= cached accounting information
+#   /home/$user/scratch/jobrunner/$internal_job_id/meta/info.json   <= cached scontrol | squeue  information
 #   /home/$user/scratch/jobrunner/$internal_job_id/script.sbatch
+#   /home/$user/scratch/jobrunner/$internal_job_id/cmd.sh
 #   /home/$user/scratch/jobrunner/$internal_job_id/output/...
 #
 
-def local_cache(cache_key, arg_key="job_id"):
+def job_acc_cache_status(filename: str):
+    with open(filename, "r") as fp:
+        try:
+            job_acc = json.load(fp)
+
+            job_states = job_acc.get("state", {}).get("current", [])
+
+            # Cache is good
+            if "COMPLETED" in job_states:
+                return True
+            
+            return False
+        except json.decoder.JSONDecodeError:
+            return False
+
+
+def local_cache(cache_key, arg_key="job_id", check_validation=None):
     """Cache a remote result locally"""
     def wrapped(fun):
         @wraps(fun)
@@ -42,9 +63,12 @@ def local_cache(cache_key, arg_key="job_id"):
             cache_dir = os.path.join(JOBRUNNER_LOCAL_CACHE, job_id, "meta")
             cache_file = os.path.join(cache_dir, cache_key)
 
-            if os.path.exists(cache_file):
-                with open(cache_file, "r") as fp:
-                    return fp.read()
+            try:
+                if os.path.exists(cache_file):
+                    if check_validation is None or check_validation(cache_file):
+                        return send_file(cache_file, mimetype="application/json")
+            except:
+                traceback.print_exc()
 
             result = fun(**kwargs)
 
@@ -53,11 +77,30 @@ def local_cache(cache_key, arg_key="job_id"):
                 with open(cache_file, "w") as fp:
                     fp.write(result.get_data(as_text=True))
             except AttributeError:
+                traceback.print_exc()
                 return result
 
             return result
         return wrapper
     return wrapped
+
+
+def generate_unique_job_name(job_data=None, from_job_id=None):
+    """Try to generate a meaningful name from the job configuration"""
+    unique_id = str(uuid.uuid4())[:8]
+
+    if from_job_id is not None:
+        return f"{from_job_id[:-9]}_{unique_id}"
+
+    if job_data is not None:
+
+        # If a job name is provided, use that and add a unique identifier
+        if job_name := job_data.get('job_name', None):
+            return f"{job_name}_{unique_id}"
+
+        # Exract script arguments ?
+
+    return unique_id
 
 
 def rsync_jobrunner_folder():
@@ -73,7 +116,7 @@ def rsync_jobrunner_folder():
                 timeout=30,
                 shell=True
             )
-        
+
         return 0
     except Exception:
         import traceback
@@ -83,21 +126,38 @@ def rsync_jobrunner_folder():
 
 def rsync_load(cache_key, arg_key="job_id"):
     """Rsync jobrunner data folder and load the file.
-    
+
     This is used to big-ish file, instead of getting them from the compute cluster directly
     we rsync the jobrunner folder to only get the missing data and then send the local data over.
     """
     def wrapped(fun):
         @wraps(fun)
         def wrapper(**kwargs):
+            # Cols = 80
+            # Rows = 80
+            # Size TO Fetch: (Cols * Rows * 8)
+
             job_id = kwargs.get(arg_key)
+            start = kwargs.get("start")
+            end = kwargs.get("end")
+
             cache_dir = os.path.join(JOBRUNNER_LOCAL_CACHE, job_id)
             cache_file = os.path.join(cache_dir, cache_key)
 
             if rsync_jobrunner_folder() == 0:
                 if os.path.exists(cache_file):
                     with open(cache_file, "r") as fp:
-                        return fp.read()
+                        if start is not None and end is not None:
+                            fp.seek(start, os.SEEK_SET)
+                            return {
+                                "data": fp.read(end - start),
+                                "size": os.path.getsize(cache_file)   
+                            }
+
+                        return {
+                            "data": fp.read(),
+                            "size": os.path.getsize(cache_file)    
+                        }
 
             return ""
         return wrapper
@@ -119,7 +179,9 @@ def _parse_sbatch_args(sbatch_args):
                 value = None
 
             # Map to form-friendly names
-            if key == 'partition':
+            if key == 'job-name':
+                parsed['job_name'] = value
+            elif key == 'partition':
                 parsed['partition'] = value
             elif key == 'nodes':
                 parsed['nodes'] = int(value) if value else 1
@@ -214,6 +276,10 @@ def slurm_integration(app):
 
     @app.route('/api/slurm/jobs/persited')
     def api_slurm_persisted():
+        return api_slurm_persisted_limited(10)
+
+    @app.route('/api/slurm/jobs/persited/<int:limit>')
+    def api_slurm_persisted_limited(limit=None):
         """Get a list of job output still available"""
         try:
             if rsync_jobrunner_folder() == 0:
@@ -221,10 +287,13 @@ def slurm_integration(app):
                 # jobs.remove(".git")
                 result = subprocess.check_output(f"ls -t {JOBRUNNER_LOCAL_CACHE}", shell=True, text=True)
                 jobs = list(filter(lambda x: x != "", result.split("\n")))
-                return jobs
 
+                if limit is None:
+                    return jobs
+
+                return jobs[:limit]
             return []
-          
+
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
@@ -236,9 +305,43 @@ def slurm_integration(app):
             result = remote_command(SLURM_HOST, "'sacct -u $USER --json'")
 
             if not result['success']:
-                return jsonify({'error': f'Failed to get jobs: {result["stderr"]}'}), 500
+                return jsonify({'error': f'Failed to get jobs: {result["stderr"]}'}), 404
 
             jobs = json.loads(result['stdout'])["jobs"]
+
+            return jsonify(jobs)
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/slurm/jobs/<int:job_id>')
+    def api_slurm_job_status(job_id):
+        """Get list of all slurm jobs"""
+        try:
+            # Get running and pending jobs using JSON format
+            result = remote_command(SLURM_HOST, f"'squeue -u $USER -j {job_id} --json'")
+
+            if not result['success']:
+                return jsonify({'error': f'Failed to get jobs: {result["stderr"]}'}), 404
+
+            jobs = json.loads(result['stdout'])["jobs"][0]
+
+            return jsonify(jobs)
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/slurm/jobs/old/<int:job_id>')
+    def api_slurm_old_job_status(job_id):
+        """Get list of all slurm jobs"""
+        try:
+            # Get running and pending jobs using JSON format
+            result = remote_command(SLURM_HOST, f"'sacct -u $USER -j {job_id} --json'")
+
+            if not result['success']:
+                return jsonify({'error': f'Failed to get jobs: {result["stderr"]}'}), 404
+
+            jobs = json.loads(result['stdout'])["jobs"][0]
 
             return jsonify(jobs)
 
@@ -258,32 +361,98 @@ def slurm_integration(app):
 
             jobs = json.loads(result['stdout'])["jobs"]
 
-                        # Extract jr_job_id from comment field for each job
+            # Extract jr_job_id from comment field for each job
             for job in jobs:
                 job['jr_job_id'] = None
-                if 'comment' in job and job['comment']:
-                    # Handle comment as string or object
-                    comment_str = job['comment']
-                    if isinstance(comment_str, dict):
-                        # If comment is an object, try to get the string value
-                        comment_str = comment_str.get('string', '') if isinstance(comment_str, dict) else str(comment_str)
-                    elif not isinstance(comment_str, str):
-                        comment_str = str(comment_str)
 
-                    # Debug: print comment structure for first job
-                    if job == jobs[0]:
-                        print(f"DEBUG: Comment type: {type(job['comment'])}, value: {job['comment']}")
-                        print(f"DEBUG: Processed comment_str: {comment_str}")
+                if (comment := job.get('comment')) is not None:
+                    kv_dict = comment.split(';')
 
-                    # Extract jr_job_id from comment like "jr_job_id=abc12345"
-                    comment_match = re.search(r'jr_job_id=([a-zA-Z0-9]+)', comment_str)
-                    if comment_match:
-                        job['jr_job_id'] = comment_match.group(1)
+                    for kv in kv_dict:
+                        try:
+                            k, v = kv.split("=")
+                            job[k] = v
+                        except ValueError:
+                            pass
 
             return jsonify(jobs)
 
         except Exception as e:
+            traceback.print_exc()
             return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/slurm/job/save/<string:jr_job_id>/<string:message>')
+    def api_slurm_save_job(jr_job_id: str, message: str):
+        try:
+            if rsync_jobrunner_folder() == 0:
+                cache_dir = os.path.join(JOBRUNNER_LOCAL_CACHE, jr_job_id)
+
+                cmd = f"git add {cache_dir} && git commit -m \"{message}\" && git push origin main"
+
+                subprocess.check_call(cmd, shell=True, cwd=cache_dir)
+
+            return jsonify({})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/slurm/rerun/<string:jr_job_id>')
+    def api_slurm_rerun(jr_job_id: str):
+        """Rerun a previous job"""
+
+        old_jr_job_id = jr_job_id
+        new_jr_job_id = generate_unique_job_name(from_job_id=jr_job_id)
+
+        old_remote_dir = f"~/scratch/jobrunner/{old_jr_job_id}"
+        new_remote_dir = f"~/scratch/jobrunner/{new_jr_job_id}"
+
+        old_remote_script = f"{old_remote_dir}/script.sbatch"
+        new_remote_script = f"{new_remote_dir}/script.sbatch"
+
+        old_cmd_path = f"{old_remote_dir}/cmd.sh"
+
+        # Create remote directory and copy script
+        result = remote_command(SLURM_HOST, f"'mkdir -p {new_remote_dir}'")
+        if not result['success']:
+            return jsonify({'error': f'Failed to create job directory: {result["stderr"]}'}), 500
+
+        # Copy old_remote_script to new job
+        result = remote_command(SLURM_HOST, f"'cp {old_remote_script} {new_remote_script}'")
+        if not result['success']:
+            return jsonify({'error': f'Failed to copy script: {result["stderr"]}'}), 500
+
+        result = remote_command(SLURM_HOST, f"'cat {old_cmd_path}'")
+        if not result['success']:
+            return jsonify({'error': f'Failed to retrieve previous job command: {result["stderr"]}'}), 500
+
+        old_cmd = result["stdout"]
+
+        new_cmd = "'" + old_cmd.replace(old_jr_job_id, new_jr_job_id) + "'"
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.sh', delete=False) as f:
+            f.write(new_cmd[1:-1])
+            f.flush()
+            cmd_path = f.name
+
+            remote_cmd = f"{new_remote_dir}/cmd.sh"
+            scp_cmd = f"scp {cmd_path} mila:{remote_cmd}"
+            subprocess.check_call(scp_cmd, shell=True)
+
+        # Submit job
+        result = remote_command(SLURM_HOST, new_cmd)
+
+        if result['success']:
+            # Extract job ID from output
+            job_id_match = re.search(r'Submitted batch job (\d+)', result['stdout'])
+            job_id = job_id_match.group(1) if job_id_match else None
+
+            return jsonify({
+                'success': True,
+                'job_id': job_id,
+                "jr_job_id": new_jr_job_id,
+                'message': result['stdout']
+            })
+        else:
+            return jsonify({'error': result['stderr']}), 500
 
     # Submit job
     @app.route('/api/slurm/submit', methods=['POST'])
@@ -294,10 +463,13 @@ def slurm_integration(app):
             if not data:
                 return jsonify({'error': 'No data provided'}), 400
 
+
+            jr_job_id = generate_unique_job_name(data)
+
             # Create a temporary SLURM script
+            job_name = data.get('job_name', jr_job_id)
+
             script_content = data.get('script', '')
-            job_name = data.get('job_name', 'milabench_job')
-            jr_job_id = str(uuid.uuid4())[:8]
             remote_dir = f"~/scratch/jobrunner/{jr_job_id}"
             remote_script = f"{remote_dir}/script.sbatch"
 
@@ -309,28 +481,46 @@ def slurm_integration(app):
                 sbatch_args = data['sbatch_args']
             else:
                 # Build sbatch_args from individual parameters (old approach)
-                if data.get('partition'):
-                    sbatch_args.append(f"--partition={data['partition']}")
-                if data.get('nodes'):
-                    sbatch_args.append(f"--nodes={data['nodes']}")
-                if data.get('ntasks'):
-                    sbatch_args.append(f"--ntasks={data['ntasks']}")
-                if data.get('cpus_per_task'):
-                    sbatch_args.append(f"--cpus-per-task={data['cpus_per_task']}")
-                if data.get('mem'):
-                    sbatch_args.append(f"--mem={data['mem']}")
-                if data.get('time_limit'):
-                    sbatch_args.append(f"--time={data['time_limit']}")
-                if data.get('gpus_per_task'):
-                    sbatch_args.append(f"--gpus-per-task={data['gpus_per_task']}")
-                if data.get('ntasks_per_node'):
-                    sbatch_args.append(f"--ntasks-per-node={data['ntasks_per_node']}")
+                if (partition := data.get('partition')) is not None:
+                    sbatch_args.append(f"--partition={partition}")
+
+                if (nodes := data.get('nodes')) is not None:
+                    sbatch_args.append(f"--nodes={nodes}")
+
+                if (ntasks := data.get('ntasks')) is not None:
+                    sbatch_args.append(f"--ntasks={ntasks}")
+
+                if (cpus_per_task := data.get('cpus_per_task')) is not None:
+                    sbatch_args.append(f"--cpus-per-task={cpus_per_task}")
+
+                if (mem := data.get('mem')) is not None:
+                    sbatch_args.append(f"--mem={mem}")
+
+                if (time_limit := data.get('time_limit')) is not None:
+                    sbatch_args.append(f"--time={time_limit}")
+
+                if (gpus_per_task := data.get('gpus_per_task')) is not None:
+                    sbatch_args.append(f"--gpus-per-task={gpus_per_task}")
+
+                if (ntasks_per_node := data.get('ntasks_per_node')) is not None:
+                    sbatch_args.append(f"--ntasks-per-node={ntasks_per_node}")
+
                 if data.get('exclusive'):
                     sbatch_args.append('--exclusive')
-                if data.get('export'):
-                    sbatch_args.append(f"--export={data['export']}")
-                if data.get('nodelist'):
-                    sbatch_args.append(f"-w {data['nodelist']}")
+
+                if (export_val := data.get('export')) is not None:
+                    sbatch_args.append(f"--export={export_val}")
+
+                if (nodelist := data.get('nodelist')) is not None:
+                    sbatch_args.append(f"-w {nodelist}")
+
+                if (dependencies := data.get('dependency')) is not None:
+                    dep = []
+                    for event, job_id in dependencies:
+                        dep.append(f"{event}:{job_id}")
+
+                    dependency = ",".join(dep)
+                    sbatch_args.append(f"--dependency={dependency}")
 
             # Add required arguments
             sbatch_args.extend([
@@ -340,7 +530,7 @@ def slurm_integration(app):
                 f"--error={remote_dir.replace('~/', '')}/log.stderr"
             ])
 
-            # Create temporary file
+            # Create temporary file to hold the sbatch script
             with tempfile.NamedTemporaryFile(mode='w', suffix='.sh', delete=False) as f:
                 f.write(script_content)
                 script_path = f.name
@@ -348,31 +538,42 @@ def slurm_integration(app):
 
                 # Create remote directory and copy script
                 result = remote_command(SLURM_HOST, f"'mkdir -p {remote_dir}'")
-
-                scp_cmd = f"scp {script_path} mila:{remote_script}"
-                print(scp_cmd)
-                subprocess.check_call(scp_cmd, shell=True)
-
                 if not result['success']:
                     return jsonify({'error': f'Failed to copy script: {result["stderr"]}'}), 500
 
-                # Submit job
-                sbatch_cmd = f"'sbatch {' '.join(sbatch_args)} -- {remote_script}'"
-                result = remote_command(SLURM_HOST, sbatch_cmd)
+                scp_cmd = f"scp {script_path} mila:{remote_script}"
+                subprocess.check_call(scp_cmd, shell=True)
+            # ==
 
-                if result['success']:
-                    # Extract job ID from output
-                    job_id_match = re.search(r'Submitted batch job (\d+)', result['stdout'])
-                    job_id = job_id_match.group(1) if job_id_match else None
+            sbatch_cmd = f"'sbatch {' '.join(sbatch_args)} -- {remote_script}'"
 
-                    return jsonify({
-                        'success': True,
-                        'job_id': job_id,
-                        "jr_job_id": jr_job_id,
-                        'message': result['stdout']
-                    })
-                else:
-                    return jsonify({'error': result['stderr']}), 500
+            # Create a temporary file to hold the sbatch command used
+            # this is used for the re-execute this job
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.sh', delete=False) as f:
+                f.write(sbatch_cmd[1:-1])
+                f.flush()
+                cmd_path = f.name
+
+                remote_cmd = f"{remote_dir}/cmd.sh"
+                scp_cmd = f"scp {cmd_path} mila:{remote_cmd}"
+                subprocess.check_call(scp_cmd, shell=True)
+
+            # Submit job
+            result = remote_command(SLURM_HOST, sbatch_cmd)
+
+            if result['success']:
+                # Extract job ID from output
+                job_id_match = re.search(r'Submitted batch job (\d+)', result['stdout'])
+                job_id = job_id_match.group(1) if job_id_match else None
+
+                return jsonify({
+                    'success': True,
+                    'job_id': job_id,
+                    "jr_job_id": jr_job_id,
+                    'message': result['stdout']
+                })
+            else:
+                return jsonify({'error': result['stderr']}), 500
 
         except Exception as e:
             return jsonify({'error': str(e)}), 500
@@ -392,6 +593,30 @@ def slurm_integration(app):
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
+    @app.route('/api/slurm/jobs/<jr_job_id>/acc/<job_id>')
+    @local_cache("acc.json", "jr_job_id", check_validation=job_acc_cache_status)
+    def api_slurm_job_acc(jr_job_id, job_id=None):
+        """Get logs for a specific job"""
+        try:
+            if job_id is None:
+                return jsonify({})
+
+            # Try to get job logs using scontrol
+            result = remote_command(SLURM_HOST, f'sacct --json -j {job_id}')
+
+            if not result['success']:
+                return jsonify({'error': f'Failed to get job info: {result["stderr"]}'}), 500
+
+            jobs = json.loads(result['stdout'])["jobs"]
+
+            if len(jobs) > 0:
+                return jsonify(jobs[0])
+
+            return jsonify({})
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
     @app.route('/api/slurm/jobs/<jr_job_id>/info/<job_id>')
     @local_cache("info.json", "jr_job_id")
     def api_slurm_job_info(jr_job_id, job_id=None):
@@ -402,7 +627,8 @@ def slurm_integration(app):
 
             # Try to get job logs using scontrol
             result = remote_command(SLURM_HOST, f'scontrol show job --json {job_id}')
-
+            # result = remote_command(SLURM_HOST, f'sacct --json -j {job_id}')
+            
             if not result['success']:
                 return jsonify({'error': f'Failed to get job info: {result["stderr"]}'}), 500
 
@@ -421,9 +647,30 @@ def slurm_integration(app):
     def api_slurm_job_info_cached(jr_job_id):
         return api_slurm_job_info(jr_job_id, None)
 
+    @app.route('/api/slurm/jobs/<jr_job_id>/stdout/size')
+    def api_slurm_job_stdout_size(jr_job_id):
+        """Get logs for a specific job"""
+        try:
+            cache_dir = os.path.join(JOBRUNNER_LOCAL_CACHE, jr_job_id)
+            cache_file = os.path.join(cache_dir, "log.stdout")
+
+            size = 0
+            if os.path.exists(cache_file):
+                size = os.path.getsize(cache_file)
+
+            return jsonify({"size": size})
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
     @app.route('/api/slurm/jobs/<jr_job_id>/stdout')
-    @rsync_load("log.stderr", "jr_job_id")
-    def api_slurm_job_stdout(jr_job_id):
+    def api_slurm_job_stdout_base(jr_job_id):
+        """Get logs for a specific job"""
+        return api_slurm_job_stdout_extended(jr_job_id=jr_job_id)
+
+    @app.route('/api/slurm/jobs/<jr_job_id>/stdout/<int:start>/<int:end>')
+    @rsync_load("log.stdout", "jr_job_id")
+    def api_slurm_job_stdout_extended(jr_job_id, start=None, end=None):
         """Get logs for a specific job"""
         try:
             return jsonify("")
@@ -431,9 +678,31 @@ def slurm_integration(app):
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
+    @app.route('/api/slurm/jobs/<jr_job_id>/stderr/size')
+    def api_slurm_job_stderr_size(jr_job_id):
+        """Get logs for a specific job"""
+        try:
+            cache_dir = os.path.join(JOBRUNNER_LOCAL_CACHE, jr_job_id)
+            cache_file = os.path.join(cache_dir, "log.stderr")
+            size = 0
+            if os.path.exists(cache_file):
+                size = os.path.getsize(cache_file)
+
+            return jsonify({"size": size})
+
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
     @app.route('/api/slurm/jobs/<jr_job_id>/stderr')
     @rsync_load("log.stderr", "jr_job_id")
-    def api_slurm_job_stderr(jr_job_id):
+    def api_slurm_job_stderr_base(jr_job_id):
+        """Get logs for a specific job"""
+        return api_slurm_job_stderr_extend(jr_job_id=jr_job_id)
+
+    @app.route('/api/slurm/jobs/<jr_job_id>/stderr/<int:start>/<int:end>')
+    @rsync_load("log.stderr", "jr_job_id")
+    def api_slurm_job_stderr_extend(jr_job_id, start=None, end=None):
         """Get logs for a specific job"""
         try:
             return jsonify("")
@@ -566,12 +835,16 @@ def slurm_integration(app):
             if not profile_name:
                 return jsonify({'error': 'Profile name is required'}), 400
 
+            # Filter out dependency-related arguments (safety check)
+            # Dependencies are job-specific and should not be saved in reusable profiles
+            filtered_args = [arg for arg in sbatch_args if not arg.startswith('--dependency')]
+
             # Read existing config
             with open(SLURM_PROFILES, 'r') as f:
                 configs = yaml.safe_load(f)
 
             # Add new profile
-            configs[profile_name] = sbatch_args
+            configs[profile_name] = filtered_args
 
             # Write back to file
             with open(SLURM_PROFILES, 'w') as f:

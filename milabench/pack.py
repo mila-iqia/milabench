@@ -31,7 +31,7 @@ from .utils import (
 
 def should_use_uv():
     from .system import option
-    return option("use_uv", int, 0)
+    return option("use_uv", int, 1)
 
 def no_build_isolation(build_isolation):
     from .system import option
@@ -57,6 +57,7 @@ def is_editable_install():
 
 
 installed_benchmate = {}
+installed_requires = {}
 
 def reset_benchmate_status():
     global installed_benchmate
@@ -74,6 +75,15 @@ async def install_benchmate(pack: Package):
         benchmate = os.path.join(milabench, "..", "benchmate")
         await pack.pip_install("-e", benchmate, build_isolation=True)
         installed_benchmate[group] = 1
+
+
+async def install_requires(pack: Package):
+    global installed_requires
+    group = pack.config.get("install_group", {})
+
+    if group not in installed_requires:
+        await pack.pip_install("setuptools", "poetry", "uv")
+        installed_requires[group] = 1
 
 
 class PackageCore:
@@ -416,6 +426,8 @@ class Package(BasePackage):
         """
         assert self.phase == "install"
 
+        await install_requires(self)
+
         for reqs in self.requirements_files(self.config.get("install-variant", None)):
             if reqs.exists():
                 await self.pip_install("-r", reqs)
@@ -495,13 +507,12 @@ class Package(BasePackage):
 
         return await cmd.CmdCommand(
             self,
-            "python3",
-            "-m",
-            "piptools",
+            "uv",
+            "pip",
             "compile",
-            "--resolver",
-            "backtracking",
-            "--output-file",
+            "--emit-index-url",
+            "--emit-find-links",
+            "-o",
             relativize(requirements_file, working_dir),
             *argv,
             *input_files,
