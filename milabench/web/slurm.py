@@ -2,25 +2,107 @@ import os
 import subprocess
 import json
 import re
-from datetime import datetime
 import tempfile
 import os
 import yaml
 import uuid
+from functools import wraps
 
+from flask import request, jsonify
 
-from flask import request, jsonify, send_file
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 
-SLURM_PROFILES = os.path.join(os.path.dirname(__file__), '..', '..', 'config', 'slurm.yaml')
+SLURM_PROFILES = os.path.join(ROOT, 'config', 'slurm.yaml')
+SLURM_TEMPLATES = os.path.join(ROOT, 'scripts', 'slurm')
+JOBRUNNER_WORKDIR = "scratch/jobrunner"
+JOBRUNNER_LOCAL_CACHE =  os.path.abspath(os.path.join(ROOT, '..', 'data'))
 
-SLURM_TEMPLATES = os.path.join(os.path.dirname(__file__), '..', '..', 'scripts', 'slurm')
-
+#
+#   The integration assume the server can send SSH command to the SLURM cluster
+#   The server does not have a direct access to the SLURM cluster
+#   The server copies file over to the slurm cluster in a know folder structure
+#   known as the JOBRUNNER_WORKDIR, this folder has all the job data that matters
+#
+#   THis folder is periodically sync locally to the server and it is used as cache
+#
 
 #   /home/$user/scratch/jobrunner/$internal_job_id/output.stdout
 #   /home/$user/scratch/jobrunner/$internal_job_id/output.stderr
 #   /home/$user/scratch/jobrunner/$internal_job_id/script.sbatch
 #   /home/$user/scratch/jobrunner/$internal_job_id/output/...
 #
+
+def local_cache(cache_key, arg_key="job_id"):
+    """Cache a remote result locally"""
+    def wrapped(fun):
+        @wraps(fun)
+        def wrapper(**kwargs):
+            job_id = kwargs.get(arg_key)
+
+            cache_dir = os.path.join(JOBRUNNER_LOCAL_CACHE, job_id, "meta")
+            cache_file = os.path.join(cache_dir, cache_key)
+
+            if os.path.exists(cache_file):
+                with open(cache_file, "r") as fp:
+                    return fp.read()
+
+            result = fun(**kwargs)
+
+            try:
+                os.makedirs(cache_dir, exist_ok=True)
+                with open(cache_file, "w") as fp:
+                    fp.write(result.get_data(as_text=True))
+            except AttributeError:
+                return result
+
+            return result
+        return wrapper
+    return wrapped
+
+
+def rsync_jobrunner_folder():
+    try:
+        rsync_cmd = f"rsync -az mila:{JOBRUNNER_WORKDIR}/ {JOBRUNNER_LOCAL_CACHE}"
+
+        print(rsync_cmd)
+
+        _ = subprocess.run(
+                rsync_cmd,
+                capture_output=True,
+                text=True,
+                timeout=30,
+                shell=True
+            )
+        
+        return 0
+    except Exception:
+        import traceback
+        traceback.print_exc()
+        return 1
+
+
+def rsync_load(cache_key, arg_key="job_id"):
+    """Rsync jobrunner data folder and load the file.
+    
+    This is used to big-ish file, instead of getting them from the compute cluster directly
+    we rsync the jobrunner folder to only get the missing data and then send the local data over.
+    """
+    def wrapped(fun):
+        @wraps(fun)
+        def wrapper(**kwargs):
+            job_id = kwargs.get(arg_key)
+            cache_dir = os.path.join(JOBRUNNER_LOCAL_CACHE, job_id)
+            cache_file = os.path.join(cache_dir, cache_key)
+
+            if rsync_jobrunner_folder() == 0:
+                if os.path.exists(cache_file):
+                    with open(cache_file, "r") as fp:
+                        return fp.read()
+
+            return ""
+        return wrapper
+    return wrapped
+
 
 def _parse_sbatch_args(sbatch_args):
     """Parse sbatch arguments into a structured format"""
@@ -69,10 +151,7 @@ def remote_command(host, command):
     try:
         # Remote execution via SSH
         # ssh_cmd = ['ssh', SLURM_HOST, command]
-
         ssh_cmd = f'ssh {host} {command}'
-
-        print(ssh_cmd)
 
         result = subprocess.run(
             ssh_cmd,
@@ -111,12 +190,13 @@ def remote_command(host, command):
 def slurm_integration(app):
     """Add Slurm integration routes to the Flask app"""
 
+    app.scheduler.add_job(rsync_jobrunner_folder, 'interval', seconds=60)
+
     # Configuration for SSH connection to Slurm cluster
     SLURM_HOST = os.environ.get('SLURM_HOST', 'mila')
 
-
-    @app.route('/api/slurm/jobs/persited')
-    def api_slurm_persisted():
+    @app.route('/api/slurm/jobs/persited/old')
+    def api_slurm_persisted_old():
         """Get a list of job output still available"""
         try:
             # Get running and pending jobs using JSON format
@@ -125,10 +205,26 @@ def slurm_integration(app):
             if not result['success']:
                 return jsonify({'error': f'Failed to get jobs: {result["stderr"]}'}), 500
 
-            jobs = result['stdout'].split(" ")
-            
+            jobs = list(filter(lambda x: x != "", result['stdout'].split("\n")))
+
             return jsonify(jobs)
 
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/slurm/jobs/persited')
+    def api_slurm_persisted():
+        """Get a list of job output still available"""
+        try:
+            if rsync_jobrunner_folder() == 0:
+                # jobs = os.listdir(JOBRUNNER_LOCAL_CACHE)
+                # jobs.remove(".git")
+                result = subprocess.check_output(f"ls -t {JOBRUNNER_LOCAL_CACHE}", shell=True, text=True)
+                jobs = list(filter(lambda x: x != "", result.split("\n")))
+                return jobs
+
+            return []
+          
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
@@ -143,7 +239,7 @@ def slurm_integration(app):
                 return jsonify({'error': f'Failed to get jobs: {result["stderr"]}'}), 500
 
             jobs = json.loads(result['stdout'])["jobs"]
-            
+
             return jsonify(jobs)
 
         except Exception as e:
@@ -296,10 +392,14 @@ def slurm_integration(app):
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
-    @app.route('/api/slurm/jobs/<job_id>/info')
-    def api_slurm_job_info(job_id):
+    @app.route('/api/slurm/jobs/<jr_job_id>/info/<job_id>')
+    @local_cache("info.json", "jr_job_id")
+    def api_slurm_job_info(jr_job_id, job_id=None):
         """Get logs for a specific job"""
         try:
+            if job_id is None:
+                return jsonify({})
+
             # Try to get job logs using scontrol
             result = remote_command(SLURM_HOST, f'scontrol show job --json {job_id}')
 
@@ -316,11 +416,35 @@ def slurm_integration(app):
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
-    @app.route('/api/slurm/jobs/<job_id>/stdout')
-    def api_slurm_job_stdout(job_id):
+    @app.route('/api/slurm/jobs/<jr_job_id>/info')
+    @local_cache("info.json", "jr_job_id")
+    def api_slurm_job_info_cached(jr_job_id):
+        return api_slurm_job_info(jr_job_id, None)
+
+    @app.route('/api/slurm/jobs/<jr_job_id>/stdout')
+    @rsync_load("log.stderr", "jr_job_id")
+    def api_slurm_job_stdout(jr_job_id):
         """Get logs for a specific job"""
         try:
-            log_path = f"scratch/jobrunner/{job_id}/log.stdout"
+            return jsonify("")
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/slurm/jobs/<jr_job_id>/stderr')
+    @rsync_load("log.stderr", "jr_job_id")
+    def api_slurm_job_stderr(jr_job_id):
+        """Get logs for a specific job"""
+        try:
+            return jsonify("")
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/slurm/jobs/<jr_job_id>/stdout/tail')
+    def api_slurm_job_stdout_tail(jr_job_id):
+        """Get logs for a specific job"""
+        try:
+            log_path = f"scratch/jobrunner/{jr_job_id}/log.stdout"
 
             result = remote_command(SLURM_HOST, f'tail -n 100 {log_path}')
 
@@ -329,11 +453,11 @@ def slurm_integration(app):
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
-    @app.route('/api/slurm/jobs/<job_id>/stderr')
-    def api_slurm_job_stderr(job_id):
+    @app.route('/api/slurm/jobs/<jr_job_id>/stderr/tail')
+    def api_slurm_job_stderr_tail(jr_job_id):
         """Get logs for a specific job"""
         try:
-            log_path = f"scratch/jobrunner/{job_id}/log.stderr"
+            log_path = f"scratch/jobrunner/{jr_job_id}/log.stderr"
 
             result = remote_command(SLURM_HOST, f'tail -n 100 {log_path}')
 

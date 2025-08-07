@@ -21,6 +21,7 @@ from milabench.report import make_report
 from .plot import pivot_query
 from .utils import database_uri, page, make_selection_key, make_filters, cursor_to_json, cursor_to_dataframe
 from .slurm import slurm_integration
+from .realtime import metric_receiver
 
 
 class MultiIndexFormater:
@@ -123,6 +124,20 @@ def view_server(config):
     })
 
     cache = Cache(app)
+    from apscheduler.schedulers.background import BackgroundScheduler
+    from apscheduler.schedulers import SchedulerNotRunningError
+
+    scheduler = BackgroundScheduler()
+    app.scheduler = scheduler
+    app.scheduler.start()
+
+    @app.teardown_appcontext
+    def cleanup(exception):
+        try:
+            scheduler.shutdown()
+        except SchedulerNotRunningError:
+            pass
+
 
     @contextmanager
     def sqlexec():
@@ -130,8 +145,9 @@ def view_server(config):
             with Session(logger.client) as sess:
                 yield sess
 
-
     slurm_integration(app)
+    
+    metric_receiver(app)
 
     #
     # API routes
@@ -881,7 +897,6 @@ def view_server(config):
 
 
 def main():
-    # flask --app milabench.web.view:main run
     app = view_server({})
     return app
 

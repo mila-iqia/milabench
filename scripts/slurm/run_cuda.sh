@@ -2,14 +2,23 @@
 
 set -ex
 
+OUTPUT_DIRECTORY=$(scontrol show job "$SLURM_JOB_ID" --json | jq -r '.jobs[0].standard_output' | xargs dirname)
+
+echo "OUTPUT is $OUTPUT_DIRECTORY"
+
+CONDA_EXEC="$(which conda)"
+CONDA_BASE=$(dirname $CONDA_EXEC)
+source $CONDA_BASE/../etc/profile.d/conda.sh
+
 export MILABENCH_GPU_ARCH=cuda
-export MILABENCH_WORDIR="$(pwd)/$MILABENCH_GPU_ARCH"
+export MILABENCH_WORDIR="/tmp/$SLURM_JOB_ID/$MILABENCH_GPU_ARCH"
 export MILABENCH_BASE="$MILABENCH_WORDIR/results"
 
 export MILABENCH_VENV="$MILABENCH_WORDIR/env"
 export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
 export MILABENCH_SIZER_SAVE="$MILABENCH_WORDIR/scaling.yaml"
-    
+
+mkdir -p $MILABENCH_WORDIR
 
 if [ -z "${MILABENCH_PREPARE}" ]; then
     export MILABENCH_PREPARE=0
@@ -28,20 +37,26 @@ install_prepare() {
     cd $MILABENCH_WORDIR
 
     if [ ! -d "$MILABENCH_WORDIR/env" ]; then
-        virtualenv $MILABENCH_WORDIR/env
+        conda create --prefix $MILABENCH_WORDIR/env python='3.10' -y
+        # virtualenv $MILABENCH_WORDIR/env
     fi
 
     if [ -z "${MILABENCH_SOURCE}" ]; then
         if [ ! -d "$MILABENCH_WORDIR/milabench" ]; then
-            git clone https://github.com/mila-iqia/milabench.git
+            git clone https://github.com/mila-iqia/milabench.git -b staging
         fi
         export MILABENCH_SOURCE="$MILABENCH_WORDIR/milabench"
+    else
+        (
+            cd $MILABENCH_SOURCE
+            git checkout staging
+            git pull origin staging
+        )
     fi
     
     . $MILABENCH_WORDIR/env/bin/activate
 
     pip install -e $MILABENCH_SOURCE
-
 
     milabench slurm_system > $MILABENCH_WORDIR/system.yaml
 
@@ -105,7 +120,4 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     milabench report --runs $MILABENCH_WORDIR/results/runs
 fi
 
-
-# rsync -av mila@172.29.171.42:~/rocm/results/cache ~/cuda/results/cache
-# rsync -av mila@172.29.171.42:~/rocm/results/data ~/cuda/results/data
-# rsync -av mila@172.29.171.42:~/rocm/results/cache ~/cuda/results/cache
+rsync -az $MILABENCH_WORDIR/results/runs $OUTPUT_DIRECTORY
