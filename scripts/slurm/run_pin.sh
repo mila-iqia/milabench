@@ -4,6 +4,7 @@ set -ex
 
 OUTPUT_DIRECTORY=$(scontrol show job "$SLURM_JOB_ID" --json | jq -r '.jobs[0].standard_output' | xargs dirname)
 
+export MILABENCH_USE_UV=1
 export MILABENCH_WORDIR="/tmp/$SLURM_JOB_ID"
 export MILABENCH_BASE="$MILABENCH_WORDIR/results"
 
@@ -21,7 +22,8 @@ conda activate $MILABENCH_WORDIR/env
 (
     cd $MILABENCH_SOURCE
     git checkout staging
-    git pull origin staging
+    git fetch origin
+    git reset --hard origin/staging
 )
 
 pip install -e $MILABENCH_SOURCE
