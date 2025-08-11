@@ -315,9 +315,7 @@ def slurm_integration(app):
         try:
             if rsync_jobrunner_folder() == 0:
                 cache_dir = os.path.join(JOBRUNNER_LOCAL_CACHE, jr_job_id)
-
-                cmd = f"git add --all && git commit -m \"{message}\" && git push origin main"
-
+                cmd = f"git add {cache_dir} && git commit -m \"{message}\" && git push origin main"
                 subprocess.check_call(cmd, shell=True, cwd=cache_dir)
 
             return jsonify({})

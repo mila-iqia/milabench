@@ -38,5 +38,7 @@ MILABENCH_GPU_ARCH=rocm milabench pin -c constraints/rocm.txt --config config/st
 (
     cd $MILABENCH_SOURCE
     git checkout -b "update_pins_${SLURM_JOB_ID}"
+    git add --all
+    git commit -m "Pin Dependencies"
     git push origin "update_pins_${SLURM_JOB_ID}"
 )
