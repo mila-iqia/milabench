@@ -1,5 +1,9 @@
 #!/bin/bash
 
+
+export MILABENCH_BRANCH=update_pins_7455142
+
+
 set -ex
 
 OUTPUT_DIRECTORY=$(scontrol show job "$SLURM_JOB_ID" --json | jq -r '.jobs[0].standard_output' | xargs dirname)
@@ -41,14 +45,14 @@ install_prepare() {
 
     if [ -z "${MILABENCH_SOURCE}" ]; then
         if [ ! -d "$MILABENCH_WORDIR/milabench" ]; then
-            git clone https://github.com/mila-iqia/milabench.git -b staging
+            git clone https://github.com/mila-iqia/milabench.git -b $MILABENCH_BRANCH
         fi
         export MILABENCH_SOURCE="$MILABENCH_WORDIR/milabench"
     else
         (
             cd $MILABENCH_SOURCE
-            git checkout staging
-            git pull origin staging
+            git fetch origin
+            git reset --hard origin/$MILABENCH_BRANCH
         )
     fi
     
@@ -64,6 +68,9 @@ install_prepare() {
     #
     # pip install torch
     # milabench pin --variant cuda --from-scratch $ARGS 
+
+    export MILABENCH_NO_BUILD_ISOLATION=1
+    export MILABENCH_USE_UV=1
     milabench install --system $MILABENCH_WORDIR/system.yaml $ARGS
 
     which pip
