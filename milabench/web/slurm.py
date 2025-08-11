@@ -23,12 +23,13 @@ JOBRUNNER_LOCAL_CACHE =  os.path.abspath(os.path.join(ROOT, '..', 'data'))
 #   The server copies file over to the slurm cluster in a know folder structure
 #   known as the JOBRUNNER_WORKDIR, this folder has all the job data that matters
 #
-#   THis folder is periodically sync locally to the server and it is used as cache
+#   This folder is periodically sync locally to the server and it is used as cache
+#   No database needed, all the information is saved on the filesystem and sync between the cluster and the local machine
 #
-
-#   /home/$user/scratch/jobrunner/$internal_job_id/output.stdout
-#   /home/$user/scratch/jobrunner/$internal_job_id/output.stderr
+#   /home/$user/scratch/jobrunner/$internal_job_id/log.stdout
+#   /home/$user/scratch/jobrunner/$internal_job_id/log.stderr
 #   /home/$user/scratch/jobrunner/$internal_job_id/script.sbatch
+#   /home/$user/scratch/jobrunner/$internal_job_id/cmd.sh
 #   /home/$user/scratch/jobrunner/$internal_job_id/output/...
 #
 
@@ -214,6 +215,10 @@ def slurm_integration(app):
 
     @app.route('/api/slurm/jobs/persited')
     def api_slurm_persisted():
+        return api_slurm_persisted_limited(10)
+
+    @app.route('/api/slurm/jobs/persited/<int:limit>')
+    def api_slurm_persisted_limited(limit=None):
         """Get a list of job output still available"""
         try:
             if rsync_jobrunner_folder() == 0:
@@ -221,8 +226,11 @@ def slurm_integration(app):
                 # jobs.remove(".git")
                 result = subprocess.check_output(f"ls -t {JOBRUNNER_LOCAL_CACHE}", shell=True, text=True)
                 jobs = list(filter(lambda x: x != "", result.split("\n")))
-                return jobs
 
+                if limit is None:
+                    return jobs
+
+                return jobs[:limit]
             return []
           
         except Exception as e:
@@ -302,6 +310,79 @@ def slurm_integration(app):
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
+    @app.route('/api/slurm/job/save/<string:jr_job_id>/<string:message>')
+    def api_slurm_save_job(jr_job_id: str, message: str):
+        try:
+            if rsync_jobrunner_folder() == 0:
+                cache_dir = os.path.join(JOBRUNNER_LOCAL_CACHE, jr_job_id)
+
+                cmd = f"git add {cache_dir} && git commit -m \"{message}\" && git push origin main"
+
+                subprocess.check_call(cmd, shell=True, cwd=cache_dir)
+
+            return jsonify({})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/slurm/rerun/<string:jr_job_id>')
+    def api_slurm_rerun(jr_job_id: str):
+        """Rerun a previous job"""
+
+        old_jr_job_id = jr_job_id
+        new_jr_job_id = str(uuid.uuid4())[:8]
+
+        old_remote_dir = f"~/scratch/jobrunner/{old_jr_job_id}"
+        new_remote_dir = f"~/scratch/jobrunner/{new_jr_job_id}"
+
+        old_remote_script = f"{old_remote_dir}/script.sbatch"
+        new_remote_script = f"{new_remote_dir}/script.sbatch"
+
+        old_cmd_path = f"{old_remote_dir}/cmd.sh"
+
+        # Create remote directory and copy script
+        result = remote_command(SLURM_HOST, f"'mkdir -p {new_remote_dir}'")
+        if not result['success']:
+            return jsonify({'error': f'Failed to create job directory: {result["stderr"]}'}), 500
+
+        # Copy old_remote_script to new job
+        result = remote_command(SLURM_HOST, f"'cp {old_remote_script} {new_remote_script}'")
+        if not result['success']:
+            return jsonify({'error': f'Failed to copy script: {result["stderr"]}'}), 500
+
+        result = remote_command(SLURM_HOST, f"'cat {old_cmd_path}'")
+        if not result['success']:
+            return jsonify({'error': f'Failed to retrieve previous job command: {result["stderr"]}'}), 500
+
+        old_cmd = result["stdout"]
+
+        new_cmd = "'" + old_cmd.replace(old_jr_job_id, new_jr_job_id) + "'"
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.sh', delete=False) as f:
+            f.write(new_cmd[1:-1])
+            f.flush()
+            cmd_path = f.name
+
+            remote_cmd = f"{new_remote_dir}/cmd.sh"
+            scp_cmd = f"scp {cmd_path} mila:{remote_cmd}"
+            subprocess.check_call(scp_cmd, shell=True)
+
+        # Submit job
+        result = remote_command(SLURM_HOST, new_cmd)
+
+        if result['success']:
+            # Extract job ID from output
+            job_id_match = re.search(r'Submitted batch job (\d+)', result['stdout'])
+            job_id = job_id_match.group(1) if job_id_match else None
+
+            return jsonify({
+                'success': True,
+                'job_id': job_id,
+                "jr_job_id": new_jr_job_id,
+                'message': result['stdout']
+            })
+        else:
+            return jsonify({'error': result['stderr']}), 500
+            
     # Submit job
     @app.route('/api/slurm/submit', methods=['POST'])
     def api_slurm_submit():
@@ -357,7 +438,7 @@ def slurm_integration(app):
                 f"--error={remote_dir.replace('~/', '')}/log.stderr"
             ])
 
-            # Create temporary file
+            # Create temporary file to hold the sbatch script
             with tempfile.NamedTemporaryFile(mode='w', suffix='.sh', delete=False) as f:
                 f.write(script_content)
                 script_path = f.name
@@ -365,31 +446,42 @@ def slurm_integration(app):
 
                 # Create remote directory and copy script
                 result = remote_command(SLURM_HOST, f"'mkdir -p {remote_dir}'")
-
-                scp_cmd = f"scp {script_path} mila:{remote_script}"
-                print(scp_cmd)
-                subprocess.check_call(scp_cmd, shell=True)
-
                 if not result['success']:
                     return jsonify({'error': f'Failed to copy script: {result["stderr"]}'}), 500
 
-                # Submit job
-                sbatch_cmd = f"'sbatch {' '.join(sbatch_args)} -- {remote_script}'"
-                result = remote_command(SLURM_HOST, sbatch_cmd)
+                scp_cmd = f"scp {script_path} mila:{remote_script}"
+                subprocess.check_call(scp_cmd, shell=True)
+            # ==
 
-                if result['success']:
-                    # Extract job ID from output
-                    job_id_match = re.search(r'Submitted batch job (\d+)', result['stdout'])
-                    job_id = job_id_match.group(1) if job_id_match else None
+            sbatch_cmd = f"'sbatch {' '.join(sbatch_args)} -- {remote_script}'"
 
-                    return jsonify({
-                        'success': True,
-                        'job_id': job_id,
-                        "jr_job_id": jr_job_id,
-                        'message': result['stdout']
-                    })
-                else:
-                    return jsonify({'error': result['stderr']}), 500
+            # Create a temporary file to hold the sbatch command used
+            # this is used for the re-execute this job
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.sh', delete=False) as f:
+                f.write(sbatch_cmd[1:-1])
+                f.flush()
+                cmd_path = f.name
+
+                remote_cmd = f"{remote_dir}/cmd.sh"
+                scp_cmd = f"scp {cmd_path} mila:{remote_cmd}"
+                subprocess.check_call(scp_cmd, shell=True)
+
+            # Submit job
+            result = remote_command(SLURM_HOST, sbatch_cmd)
+
+            if result['success']:
+                # Extract job ID from output
+                job_id_match = re.search(r'Submitted batch job (\d+)', result['stdout'])
+                job_id = job_id_match.group(1) if job_id_match else None
+
+                return jsonify({
+                    'success': True,
+                    'job_id': job_id,
+                    "jr_job_id": jr_job_id,
+                    'message': result['stdout']
+                })
+            else:
+                return jsonify({'error': result['stderr']}), 500
 
         except Exception as e:
             return jsonify({'error': str(e)}), 500
