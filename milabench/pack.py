@@ -426,7 +426,8 @@ class Package(BasePackage):
         """
         assert self.phase == "install"
 
-        await install_requires()
+        await install_requires(self)
+
 
         for reqs in self.requirements_files(self.config.get("install-variant", None)):
             if reqs.exists():
