@@ -31,7 +31,7 @@ from .utils import (
 
 def should_use_uv():
     from .system import option
-    return option("use_uv", int, 0)
+    return option("use_uv", int, 1)
 
 def no_build_isolation(build_isolation):
     from .system import option
@@ -507,13 +507,12 @@ class Package(BasePackage):
 
         return await cmd.CmdCommand(
             self,
-            "python3",
-            "-m",
-            "piptools",
+            "uv",
+            "pip",
             "compile",
-            "--resolver",
-            "backtracking",
-            "--output-file",
+            "--emit-index-url",
+            "--emit-find-links",
+            "-o",
             relativize(requirements_file, working_dir),
             *argv,
             *input_files,

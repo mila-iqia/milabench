@@ -378,7 +378,7 @@ def to_latex(df):
     if options.output is not None:
         with open(options.output, "w") as fp:
             txt = df.to_latex(formatters=_formatters, escape=False)
-            txt = txt.replace("%", "\%").replace("_", "\_")
+            txt = txt.replace("%", "\\%").replace("_", "\\_")
             fp.write(txt)
 
 
