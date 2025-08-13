@@ -62,7 +62,7 @@ install_prepare() {
     fi
     
     conda activate $MILABENCH_ENV
-    pip install -e $MILABENCH_SOURCE[cuda]
+    pip install -e $MILABENCH_SOURCE
 
     milabench slurm_system > $MILABENCH_WORDIR/system.yaml
 
