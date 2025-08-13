@@ -23,9 +23,7 @@ CONDA_EXEC="$(which conda)"
 CONDA_BASE=$(dirname $CONDA_EXEC)
 source $CONDA_BASE/../etc/profile.d/conda.sh
 
-if [ -d "$MILABENCH_ENV" ]; then
-    conda create --prefix $MILABENCH_ENV python=$PYTHON_VERSION -y
-fi
+conda create --prefix $MILABENCH_ENV python=$PYTHON_VERSION -y
 conda activate $MILABENCH_ENV
 
 (
