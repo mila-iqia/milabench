@@ -61,6 +61,24 @@ def local_cache(cache_key, arg_key="job_id"):
     return wrapped
 
 
+def generate_unique_job_name(job_data=None, from_job_id=None):
+    """Try to generate a meaningful name from the job configuration"""
+    unique_id = str(uuid.uuid4())[:8]
+
+    if from_job_id is not None:
+        return f"{from_job_id[:-9]}_{unique_id}"
+
+    if job_data is not None:
+
+        # If a job name is provided, use that and add a unique identifier
+        if job_name := job_data.get('job_name', None):
+            return f"{job_name}_{unique_id}"
+
+        # Exract script arguments ?
+
+    return unique_id
+
+
 def rsync_jobrunner_folder():
     try:
         rsync_cmd = f"rsync -az mila:{JOBRUNNER_WORKDIR}/ {JOBRUNNER_LOCAL_CACHE}"
@@ -329,7 +347,7 @@ def slurm_integration(app):
         """Rerun a previous job"""
 
         old_jr_job_id = jr_job_id
-        new_jr_job_id = str(uuid.uuid4())[:8]
+        new_jr_job_id = generate_unique_job_name(from_job_id=jr_job_id)
 
         old_remote_dir = f"~/scratch/jobrunner/{old_jr_job_id}"
         new_remote_dir = f"~/scratch/jobrunner/{new_jr_job_id}"
@@ -392,10 +410,13 @@ def slurm_integration(app):
             if not data:
                 return jsonify({'error': 'No data provided'}), 400
 
+
+            jr_job_id = generate_unique_job_name(data)
+
             # Create a temporary SLURM script
+            job_name = data.get('job_name', jr_job_id)
+
             script_content = data.get('script', '')
-            job_name = data.get('job_name', 'milabench_job')
-            jr_job_id = str(uuid.uuid4())[:8]
             remote_dir = f"~/scratch/jobrunner/{jr_job_id}"
             remote_script = f"{remote_dir}/script.sbatch"
 
