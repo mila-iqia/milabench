@@ -8,6 +8,21 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), "gflownet", "src"))
 
 
+
+
+def parser():
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Recurson gfn")
+    parser.add_argument(
+        "--data",
+        type=str,
+        default=os.getenv("MILABENCH_DIR_DATA", None),
+        help="Dataset path",
+    )
+    return parser
+
+
 if __name__ == "__main__":
     from gflownet.models.bengio2021flow import load_original_model
     
@@ -18,7 +33,9 @@ if __name__ == "__main__":
     #milabench_cfg = os.environ["MILABENCH_CONFIG"]
     #print(milabench_cfg)
 
-    xdg_cache = os.environ["XDG_CACHE_HOME"]
+    args, _ = parser().parse_known_args()
+
+    xdg_cache = os.getenv("XDG_CACHE_HOME", args.data)
 
     print("+ Loading proxy model weights to MILABENCH_DIR_DATA={}".format(xdg_cache))
     _ = load_original_model(

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-export MILABENCH_BRANCH=update_pins_7455142
+export MILABENCH_BRANCH=uv_compile_py3.12
 
 
 set -ex
@@ -12,11 +12,13 @@ CONDA_EXEC="$(which conda)"
 CONDA_BASE=$(dirname $CONDA_EXEC)
 source $CONDA_BASE/../etc/profile.d/conda.sh
 
+export PYTHON_VERSION='3.12'
 export MILABENCH_GPU_ARCH=cuda
+
 export MILABENCH_WORDIR="/tmp/$SLURM_JOB_ID/$MILABENCH_GPU_ARCH"
 export MILABENCH_BASE="$MILABENCH_WORDIR/results"
 
-export MILABENCH_VENV="$MILABENCH_WORDIR/env"
+export MILABENCH_ENV="$MILABENCH_WORDIR/.env/$PYTHON_VERSION/"
 export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
 export MILABENCH_SIZER_SAVE="$MILABENCH_WORDIR/scaling.yaml"
 
@@ -38,9 +40,8 @@ install_prepare() {
     mkdir -p $MILABENCH_WORDIR
     cd $MILABENCH_WORDIR
 
-    if [ ! -d "$MILABENCH_WORDIR/env" ]; then
-        conda create --prefix $MILABENCH_WORDIR/env python='3.12' -y
-        # virtualenv $MILABENCH_WORDIR/env
+    if [ ! -d "$MILABENCH_ENV" ]; then
+        conda create --prefix $MILABENCH_ENV python=$PYTHON_VERSION -y
     fi
 
     if [ -z "${MILABENCH_SOURCE}" ]; then
@@ -56,9 +57,7 @@ install_prepare() {
         )
     fi
     
-    conda activate $MILABENCH_WORDIR/env
-    # . $MILABENCH_WORDIR/env/bin/activate
-
+    conda activate $MILABENCH_ENV
     pip install -e $MILABENCH_SOURCE
 
     milabench slurm_system > $MILABENCH_WORDIR/system.yaml
@@ -98,14 +97,14 @@ if [ ! -d "$MILABENCH_WORDIR/env" ]; then
 else
     echo "Reusing previous install"
 
-    conda activate $MILABENCH_WORDIR/env
+    conda activate $MILABENCH_ENV
     # . $MILABENCH_WORDIR/env/bin/activate
 fi
 
 if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     cd $MILABENCH_WORDIR
 
-    conda activate $MILABENCH_WORDIR/env
+    conda activate $MILABENCH_ENV
     # . $MILABENCH_WORDIR/env/bin/activate
 
     # pip install torch

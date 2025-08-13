@@ -400,7 +400,7 @@ brax:
     - nobatch
   definition: ../benchmarks/brax
   group: brax
-  install_group: torch
+  install_group: jax
   plan:
     method: njobs
     n: 1
@@ -732,7 +732,7 @@ llm-full-mp-nodes:
 
 _purejaxrl:
   inherits: _defaults
-  install_group: torch
+  install_group: jax
   tags:
     - monogpu
     - gym
@@ -773,6 +773,7 @@ _geo_gnn:
   plan:
     method: per_gpu
 
+
 pna:
   inherits: _geo_gnn
   argv:
@@ -780,6 +781,7 @@ pna:
     --num-samples: 100000
     --batch-size: "auto_batch(4096)" 
     --num-workers: "auto({n_worker}, 0)"
+    --root: "{milabench_data}"
 
 dimenet:
   inherits: _geo_gnn
@@ -789,6 +791,7 @@ dimenet:
     --use3d: True
     --batch-size: "auto_batch(16)"
     --num-workers: "auto({n_worker}, 0)"
+    --root: "{milabench_data}"
 
 recursiongfn:
   inherits: _defaults
@@ -862,7 +865,7 @@ _rlhf:
     --per_device_train_batch_size: "auto_batch(64)"
     --logging_strategy: "no"
     --log_level: "critical"
-    --bf16: true
+    --torch_dtype: bfloat16
     --dataset-name: "trl-internal-testing/descriptiveness-sentiment-trl-style"
     --dataset_train_split: "descriptiveness"
   
@@ -910,7 +913,7 @@ vjepa-gpus:
 
 cleanrljax:
   inherits: _defaults
-  install_group: torch
+  install_group: jax
   definition: ../benchmarks/cleanrl_jax
   tags:
     - monogpu

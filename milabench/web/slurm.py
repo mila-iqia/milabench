@@ -74,7 +74,7 @@ def rsync_jobrunner_folder():
                 timeout=30,
                 shell=True
             )
-        
+
         return 0
     except Exception:
         import traceback
@@ -84,7 +84,7 @@ def rsync_jobrunner_folder():
 
 def rsync_load(cache_key, arg_key="job_id"):
     """Rsync jobrunner data folder and load the file.
-    
+
     This is used to big-ish file, instead of getting them from the compute cluster directly
     we rsync the jobrunner folder to only get the missing data and then send the local data over.
     """
@@ -232,7 +232,7 @@ def slurm_integration(app):
 
                 return jobs[:limit]
             return []
-          
+
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
@@ -252,7 +252,7 @@ def slurm_integration(app):
 
         except Exception as e:
             return jsonify({'error': str(e)}), 500
-    
+
     @app.route('/api/slurm/jobs/<int:job_id>')
     def api_slurm_job_status(job_id):
         """Get list of all slurm jobs"""
@@ -382,7 +382,7 @@ def slurm_integration(app):
             })
         else:
             return jsonify({'error': result['stderr']}), 500
-            
+
     # Submit job
     @app.route('/api/slurm/submit', methods=['POST'])
     def api_slurm_submit():

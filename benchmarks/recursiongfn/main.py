@@ -158,6 +158,12 @@ if __name__ == "__main__":
         "-w", "--layer_width", help="Width of each policy hidden layer", default=128
     )
     parser.add_argument("-l", "--num_layers", help="Number of hidden layers", default=4)
+    parser.add_argument(
+        "--data",
+        type=str,
+        default=os.getenv("MILABENCH_DIR_DATA", None),
+        help="Dataset path",
+    )
     args = parser.parse_args()
 
     main(
