@@ -301,27 +301,16 @@ def slurm_integration(app):
 
             jobs = json.loads(result['stdout'])["jobs"]
 
-                        # Extract jr_job_id from comment field for each job
+            # Extract jr_job_id from comment field for each job
             for job in jobs:
                 job['jr_job_id'] = None
-                if 'comment' in job and job['comment']:
-                    # Handle comment as string or object
-                    comment_str = job['comment']
-                    if isinstance(comment_str, dict):
-                        # If comment is an object, try to get the string value
-                        comment_str = comment_str.get('string', '') if isinstance(comment_str, dict) else str(comment_str)
-                    elif not isinstance(comment_str, str):
-                        comment_str = str(comment_str)
 
-                    # Debug: print comment structure for first job
-                    if job == jobs[0]:
-                        print(f"DEBUG: Comment type: {type(job['comment'])}, value: {job['comment']}")
-                        print(f"DEBUG: Processed comment_str: {comment_str}")
+                if (comment := job.get('comment')) is not None:
+                    kv_dict = comment.split(';')
 
-                    # Extract jr_job_id from comment like "jr_job_id=abc12345"
-                    comment_match = re.search(r'jr_job_id=([a-zA-Z0-9]+)', comment_str)
-                    if comment_match:
-                        job['jr_job_id'] = comment_match.group(1)
+                    for kv in kv_dict:
+                        k, v = kv.split("=")
+                        job[k] = v
 
             return jsonify(jobs)
 
@@ -428,28 +417,46 @@ def slurm_integration(app):
                 sbatch_args = data['sbatch_args']
             else:
                 # Build sbatch_args from individual parameters (old approach)
-                if data.get('partition'):
-                    sbatch_args.append(f"--partition={data['partition']}")
-                if data.get('nodes'):
-                    sbatch_args.append(f"--nodes={data['nodes']}")
-                if data.get('ntasks'):
-                    sbatch_args.append(f"--ntasks={data['ntasks']}")
-                if data.get('cpus_per_task'):
-                    sbatch_args.append(f"--cpus-per-task={data['cpus_per_task']}")
-                if data.get('mem'):
-                    sbatch_args.append(f"--mem={data['mem']}")
-                if data.get('time_limit'):
-                    sbatch_args.append(f"--time={data['time_limit']}")
-                if data.get('gpus_per_task'):
-                    sbatch_args.append(f"--gpus-per-task={data['gpus_per_task']}")
-                if data.get('ntasks_per_node'):
-                    sbatch_args.append(f"--ntasks-per-node={data['ntasks_per_node']}")
+                if (partition := data.get('partition')) is not None:
+                    sbatch_args.append(f"--partition={partition}")
+
+                if (nodes := data.get('nodes')) is not None:
+                    sbatch_args.append(f"--nodes={nodes}")
+
+                if (ntasks := data.get('ntasks')) is not None:
+                    sbatch_args.append(f"--ntasks={ntasks}")
+
+                if (cpus_per_task := data.get('cpus_per_task')) is not None:
+                    sbatch_args.append(f"--cpus-per-task={cpus_per_task}")
+
+                if (mem := data.get('mem')) is not None:
+                    sbatch_args.append(f"--mem={mem}")
+
+                if (time_limit := data.get('time_limit')) is not None:
+                    sbatch_args.append(f"--time={time_limit}")
+
+                if (gpus_per_task := data.get('gpus_per_task')) is not None:
+                    sbatch_args.append(f"--gpus-per-task={gpus_per_task}")
+
+                if (ntasks_per_node := data.get('ntasks_per_node')) is not None:
+                    sbatch_args.append(f"--ntasks-per-node={ntasks_per_node}")
+
                 if data.get('exclusive'):
                     sbatch_args.append('--exclusive')
-                if data.get('export'):
-                    sbatch_args.append(f"--export={data['export']}")
-                if data.get('nodelist'):
-                    sbatch_args.append(f"-w {data['nodelist']}")
+
+                if (export_val := data.get('export')) is not None:
+                    sbatch_args.append(f"--export={export_val}")
+
+                if (nodelist := data.get('nodelist')) is not None:
+                    sbatch_args.append(f"-w {nodelist}")
+
+                if (dependencies := data.get('dependency')) is not None:
+                    dep = []
+                    for event, job_id in dependencies:
+                        dep.append(f"{event}:{job_id}")
+
+                    dependency = ",".join(dep)
+                    sbatch_args.append(f"--dependency={dependency}")
 
             # Add required arguments
             sbatch_args.extend([
@@ -696,12 +703,16 @@ def slurm_integration(app):
             if not profile_name:
                 return jsonify({'error': 'Profile name is required'}), 400
 
+            # Filter out dependency-related arguments (safety check)
+            # Dependencies are job-specific and should not be saved in reusable profiles
+            filtered_args = [arg for arg in sbatch_args if not arg.startswith('--dependency')]
+
             # Read existing config
             with open(SLURM_PROFILES, 'r') as f:
                 configs = yaml.safe_load(f)
 
             # Add new profile
-            configs[profile_name] = sbatch_args
+            configs[profile_name] = filtered_args
 
             # Write back to file
             with open(SLURM_PROFILES, 'w') as f:
