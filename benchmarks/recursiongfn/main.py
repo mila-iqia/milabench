@@ -26,9 +26,9 @@ from benchmate.observer import BenchObserver
 
 
 class SEHFragTrainerMonkeyPatch(SEHFragTrainer):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, data, *args, **kwargs):
+        self.data = data
         super().__init__(*args, **kwargs)
-
         self.batch_size_in_nodes = []
 
         def batch_size(x):
@@ -67,6 +67,7 @@ class SEHFragTrainerMonkeyPatch(SEHFragTrainer):
 
     def setup_task(self):
         self.task = SEHTaskMonkeyPatch(
+            data=self.data,
             dataset=self.training_data,
             cfg=self.cfg,
             rng=self.rng,
@@ -79,6 +80,7 @@ class SEHTaskMonkeyPatch(SEHTask):
 
     def __init__(
         self,
+        data: str,
         dataset: Dataset,
         cfg: Config,
         rng: np.random.Generator = None,
@@ -86,12 +88,12 @@ class SEHTaskMonkeyPatch(SEHTask):
     ):
         self._wrap_model = wrap_model
         self.rng = rng
-        self.models = self._load_task_models()
+        self.models = self._load_task_models(data)
         self.dataset = dataset
         self.temperature_conditional = TemperatureConditional(cfg, rng)
         self.num_cond_dim = self.temperature_conditional.encoding_size()
 
-    def _load_task_models(self):
+    def _load_task_models(self, data):
         xdg_cache = os.environ["XDG_CACHE_HOME"]
         model = bengio2021flow.load_original_model(
             cache=True,
@@ -103,7 +105,7 @@ class SEHTaskMonkeyPatch(SEHTask):
 
 
 def main(
-    batch_size: int, num_workers: int, num_steps: int, layer_width: int, num_layers: int
+    data:str, batch_size: int, num_workers: int, num_steps: int, layer_width: int, num_layers: int
 ):
     # This script runs on an A100 with 8 cpus and 32Gb memory, but the A100 is probably
     # overkill here. VRAM peaks at 6Gb and GPU usage peaks at 25%.
@@ -140,7 +142,7 @@ def main(
 
     # This may need to be adjusted if the batch_size is made bigger
     config.mp_buffer_size = 32 * 1024**2  # 32Mb
-    trial = SEHFragTrainerMonkeyPatch(config, print_config=False)
+    trial = SEHFragTrainerMonkeyPatch(data, config, print_config=False)
     trial.run()
     trial.terminate()
 
@@ -167,6 +169,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(
+        args.data,
         args.batch_size,
         args.num_workers,
         args.num_steps,

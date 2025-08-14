@@ -420,14 +420,6 @@ class MemoryUsageExtractor(ValidationLayer):
 
         stats = self.benchstat(entry.pack.config["name"])
 
-        if stats.batch_size.current_count <= 0 and int(stats.batch_size.avg) == 0:
-            syslog("MemoryUsageExtractor: Skipping missing batch_size {}", entry)
-            return
-
-        if stats.max_memory_usage() == float("-inf"):
-            syslog("MemoryUsageExtractor: Missing memory info {}", entry)
-            return
-    
         # Only update is successful
         rc = entry.data["return_code"]
         if rc == 0 or stats.has_stopped_early():
@@ -435,6 +427,14 @@ class MemoryUsageExtractor(ValidationLayer):
 
         stats.active_count -= 1
         stats.rc.append(rc)
+
+        if stats.batch_size.current_count <= 0 and int(stats.batch_size.avg) == 0:
+            syslog("MemoryUsageExtractor: Skipping missing batch_size {}", entry)
+            return
+
+        if stats.max_memory_usage() == float("-inf"):
+            syslog("MemoryUsageExtractor: Missing memory info {}", entry)
+            return
 
         if stats.active_count <= 0:
             if sum(stats.rc) == 0:
