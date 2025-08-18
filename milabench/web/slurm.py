@@ -583,7 +583,12 @@ def slurm_integration(app):
         try:
             cache_dir = os.path.join(JOBRUNNER_LOCAL_CACHE, jr_job_id)
             cache_file = os.path.join(cache_dir, "log.stdout")
-            return jsonify({"size": os.path.getsize(cache_file)})
+
+            size = 0
+            if os.path.exists(cache_file):
+                size = os.path.getsize(cache_file)
+
+            return jsonify({"size": size})
 
         except Exception as e:
             return jsonify({'error': str(e)}), 500
@@ -609,7 +614,12 @@ def slurm_integration(app):
         try:
             cache_dir = os.path.join(JOBRUNNER_LOCAL_CACHE, jr_job_id)
             cache_file = os.path.join(cache_dir, "log.stderr")
-            return jsonify({"size": os.path.getsize(cache_file)})
+            size = 0
+            if os.path.exists(cache_file):
+                size = os.path.getsize(cache_file)
+
+            return jsonify({"size": size})
+
 
         except Exception as e:
             return jsonify({'error': str(e)}), 500
