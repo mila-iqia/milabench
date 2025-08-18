@@ -956,7 +956,7 @@ def recipe_main(cfg: DictConfig) -> None:
     recipe = FullFinetuneRecipeDistributed(cfg=cfg)
 
     import torchcompat.core as acc
-    acc.init_process_group(recipe.distributed_backend)
+    acc.init_process_group(backend=recipe.distributed_backend)
 
     recipe.setup(cfg=cfg)
     # <<<<
