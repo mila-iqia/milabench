@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import os
 import subprocess
 import shutil
-
+import sys
 
 from coleo import Option, tooled
 
@@ -23,6 +23,10 @@ def arguments():
     remote_data: Option & str = None
 
     return Arguments(network, local, remote_data)
+
+
+def is_interactive():
+    return sys.stdout.isatty() and sys.stderr.isatty()
 
 
 def is_installed(command):
@@ -50,6 +54,10 @@ def cli_shared_setup(args = None):
     
     os.makedirs(args.local, exist_ok=True)
 
+    rsync_interactive_flags = []
+    if is_interactive():
+        rsync_interactive_flags = ["--info=progress2"]
+
     if args.network.endswith(".tar.gz"):
         untar = ["tar", "-xf", args.network, "-C", args.local]
         print(" ".join(untar))
@@ -64,7 +72,7 @@ def cli_shared_setup(args = None):
             # --multi-thread-streams=32 --transfers=64      => Elapsed time:      2m51.3s | 428.337 GiB
             rsync = ["rclone", "copy", "--multi-thread-streams=32", "--transfers=32",  remote_data, local_data]
         else:
-            rsync = ["rsync", "-azh", "--info=progress2", "--partial", remote_data, args.local]
+            rsync = ["rsync", "-azh"] + rsync_interactive_flags + ["--partial", remote_data, args.local]
 
         print(" ".join(rsync))
         subprocess.check_call(rsync)
@@ -72,7 +80,7 @@ def cli_shared_setup(args = None):
         if is_installed("rclone"):
             rsync = ["rclone", "copy", "--multi-thread-streams=32", "--transfers=32", "--copy-links", remote_cache, local_cache]
         else:
-            rsync = ["rsync", "-azh", "--info=progress2", "--partial", remote_cache, args.local]
+            rsync = ["rsync", "-azh"] + rsync_interactive_flags + ["--partial", remote_cache, args.local]
 
         print(" ".join(rsync))
         subprocess.check_call(rsync)

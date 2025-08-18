@@ -1,3 +1,4 @@
+import mimetypes
 import os
 import subprocess
 import json
@@ -108,14 +109,31 @@ def rsync_load(cache_key, arg_key="job_id"):
     def wrapped(fun):
         @wraps(fun)
         def wrapper(**kwargs):
+            # Cols = 80
+            # Rows = 80
+            # Size TO Fetch: (Cols * Rows * 8)
+
             job_id = kwargs.get(arg_key)
+            start = kwargs.get("start")
+            end = kwargs.get("end")
+
             cache_dir = os.path.join(JOBRUNNER_LOCAL_CACHE, job_id)
             cache_file = os.path.join(cache_dir, cache_key)
 
             if rsync_jobrunner_folder() == 0:
                 if os.path.exists(cache_file):
                     with open(cache_file, "r") as fp:
-                        return fp.read()
+                        if start is not None and end is not None:
+                            fp.seek(start, os.SEEK_SET)
+                            return {
+                                "data": fp.read(end - start),
+                                "size": os.path.getsize(cache_file)   
+                            }
+
+                        return {
+                            "data": fp.read(),
+                            "size": os.path.getsize(cache_file)    
+                        }
 
             return ""
         return wrapper
@@ -263,7 +281,7 @@ def slurm_integration(app):
             result = remote_command(SLURM_HOST, "'sacct -u $USER --json'")
 
             if not result['success']:
-                return jsonify({'error': f'Failed to get jobs: {result["stderr"]}'}), 500
+                return jsonify({'error': f'Failed to get jobs: {result["stderr"]}'}), 404
 
             jobs = json.loads(result['stdout'])["jobs"]
 
@@ -280,7 +298,7 @@ def slurm_integration(app):
             result = remote_command(SLURM_HOST, f"'squeue -u $USER -j {job_id} --json'")
 
             if not result['success']:
-                return jsonify({'error': f'Failed to get jobs: {result["stderr"]}'}), 500
+                return jsonify({'error': f'Failed to get jobs: {result["stderr"]}'}), 404
 
             jobs = json.loads(result['stdout'])["jobs"]
 
@@ -559,9 +577,25 @@ def slurm_integration(app):
     def api_slurm_job_info_cached(jr_job_id):
         return api_slurm_job_info(jr_job_id, None)
 
+    @app.route('/api/slurm/jobs/<jr_job_id>/stdout/size')
+    def api_slurm_job_stdout_size(jr_job_id):
+        """Get logs for a specific job"""
+        try:
+            cache_dir = os.path.join(JOBRUNNER_LOCAL_CACHE, jr_job_id)
+            cache_file = os.path.join(cache_dir, "log.stdout")
+            return jsonify({"size": os.path.getsize(cache_file)})
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
     @app.route('/api/slurm/jobs/<jr_job_id>/stdout')
+    def api_slurm_job_stdout_base(jr_job_id):
+        """Get logs for a specific job"""
+        return api_slurm_job_stdout_extended(jr_job_id=jr_job_id)
+
+    @app.route('/api/slurm/jobs/<jr_job_id>/stdout/<int:start>/<int:end>')
     @rsync_load("log.stdout", "jr_job_id")
-    def api_slurm_job_stdout(jr_job_id):
+    def api_slurm_job_stdout_extended(jr_job_id, start=None, end=None):
         """Get logs for a specific job"""
         try:
             return jsonify("")
@@ -569,9 +603,26 @@ def slurm_integration(app):
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
+    @app.route('/api/slurm/jobs/<jr_job_id>/stderr/size')
+    def api_slurm_job_stderr_size(jr_job_id):
+        """Get logs for a specific job"""
+        try:
+            cache_dir = os.path.join(JOBRUNNER_LOCAL_CACHE, jr_job_id)
+            cache_file = os.path.join(cache_dir, "log.stderr")
+            return jsonify({"size": os.path.getsize(cache_file)})
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
     @app.route('/api/slurm/jobs/<jr_job_id>/stderr')
     @rsync_load("log.stderr", "jr_job_id")
-    def api_slurm_job_stderr(jr_job_id):
+    def api_slurm_job_stderr_base(jr_job_id):
+        """Get logs for a specific job"""
+        return api_slurm_job_stderr_extend(jr_job_id=jr_job_id)
+
+    @app.route('/api/slurm/jobs/<jr_job_id>/stderr/<int:start>/<int:end>')
+    @rsync_load("log.stderr", "jr_job_id")
+    def api_slurm_job_stderr_extend(jr_job_id, start=None, end=None):
         """Get logs for a specific job"""
         try:
             return jsonify("")
