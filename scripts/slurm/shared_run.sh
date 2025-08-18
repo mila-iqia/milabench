@@ -3,6 +3,7 @@
 export MILABENCH_BRANCH=uv_compile_py3.12
 export PYTHON_VERSION='3.12'
 export MILABENCH_GPU_ARCH=cuda
+export PYTHONUNBUFFERED=1
 
 set -ex
 
@@ -20,7 +21,7 @@ export MILABENCH_SHARED="$HOME/scratch/shared/$MILABENCH_GPU_ARCH"
 export MILABENCH_WORDIR="/tmp/$SLURM_JOB_ID/$MILABENCH_GPU_ARCH"  
 
 export MILABENCH_ENV="$MILABENCH_SHARED/.env/$PYTHON_VERSION/"
-export MILABENCH_SIZER_SAVE="$SLURM_JOB_ID/scaling.yaml"
+export MILABENCH_SIZER_SAVE="$MILABENCH_WORDIR/results/runs/scaling.yaml"
 export MILABENCH_BASE="$MILABENCH_WORDIR/results"
 export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
 

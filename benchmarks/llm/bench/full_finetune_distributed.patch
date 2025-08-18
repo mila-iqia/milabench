@@ -1,21 +1,18 @@
 diff --git a/original/full_finetune_distributed.py b/full_finetune_distributed.py
 old mode 100644
 new mode 100755
-index a3e2599..48c9be6
+index a3e2599..7ad1a87
 --- a/original/full_finetune_distributed.py
 +++ b/full_finetune_distributed.py
-@@ -141,7 +141,9 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
+@@ -141,7 +141,6 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
              offload_ops_to_cpu=self.fsdp_cpu_offload
              or self._enable_async_checkpointing,
          )
 -        init_process_group(self.distributed_backend)
-+
-+        import torchcompat as acc
-+        acc.init_process_group(self.distributed_backend)
  
          # Initialize distributed variables
          self.world_size, self.rank = utils.get_world_size_and_rank()
-@@ -846,6 +848,7 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
+@@ -846,6 +845,7 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
                          self._lr_scheduler.step()
  
                      loss_to_log = running_loss.item() / num_tokens
@@ -23,12 +20,12 @@ index a3e2599..48c9be6
                      pbar.update(1)
                      pbar.set_description(
                          f"{curr_epoch + 1}|{self.global_step}|Loss: {loss_to_log}"
-@@ -931,8 +934,11 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
+@@ -931,8 +931,11 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
      def cleanup(self) -> None:
          if self._is_rank_zero:
              self._metric_logger.close()
 -        destroy_process_group()
-+        import torchcompat as acc
++        import torchcompat.core as acc
 +        acc.destroy_process_group()
  
 +    def log_loss(self, loss):
@@ -36,7 +33,7 @@ index a3e2599..48c9be6
  
  @config.parse
  def recipe_main(cfg: DictConfig) -> None:
-@@ -943,10 +949,26 @@ def recipe_main(cfg: DictConfig) -> None:
+@@ -943,10 +946,30 @@ def recipe_main(cfg: DictConfig) -> None:
          - Parameters specified in config (see available configs through ``tune ls``)
          - Overwritten by arguments from the command-line
      """
@@ -48,6 +45,10 @@ index a3e2599..48c9be6
 +
      config.log_config(recipe_name="FullFinetuneRecipeDistributed", cfg=cfg)
      recipe = FullFinetuneRecipeDistributed(cfg=cfg)
++
++    import torchcompat.core as acc
++    acc.init_process_group(recipe.distributed_backend)
++
      recipe.setup(cfg=cfg)
 -    recipe.train()
 +    # <<<<

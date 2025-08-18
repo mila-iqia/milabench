@@ -1,7 +1,7 @@
 diff --git a/original/lora_finetune_distributed.py b/lora_finetune_distributed.py
 old mode 100644
 new mode 100755
-index a01b70e..a0e6f4a
+index a01b70e..796c835
 --- a/original/lora_finetune_distributed.py
 +++ b/lora_finetune_distributed.py
 @@ -15,7 +15,6 @@ import torch
@@ -26,7 +26,7 @@ index a01b70e..a0e6f4a
              self._metric_logger.close()
 -        destroy_process_group()
 +
-+        import torchcompat as acc
++        import torchcompat.core as acc
 +        acc.destroy_process_group()
 +
 +    def log_loss(self, loss):
@@ -51,7 +51,7 @@ index a01b70e..a0e6f4a
          )
 -    init_process_group("cuda:nccl,cpu:gloo")
 +    
-+    import torchcompat as acc
++    import torchcompat.core as acc
 +    acc.init_process_group()
 +
      if cfg.get("fsdp_cpu_offload", False):

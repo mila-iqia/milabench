@@ -142,9 +142,6 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
             or self._enable_async_checkpointing,
         )
 
-        import torchcompat as acc
-        acc.init_process_group(self.distributed_backend)
-
         # Initialize distributed variables
         self.world_size, self.rank = utils.get_world_size_and_rank()
         self._is_rank_zero = self.rank == 0
@@ -934,7 +931,7 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
     def cleanup(self) -> None:
         if self._is_rank_zero:
             self._metric_logger.close()
-        import torchcompat as acc
+        import torchcompat.core as acc
         acc.destroy_process_group()
 
     def log_loss(self, loss):
@@ -957,6 +954,10 @@ def recipe_main(cfg: DictConfig) -> None:
 
     config.log_config(recipe_name="FullFinetuneRecipeDistributed", cfg=cfg)
     recipe = FullFinetuneRecipeDistributed(cfg=cfg)
+
+    import torchcompat.core as acc
+    acc.init_process_group(recipe.distributed_backend)
+
     recipe.setup(cfg=cfg)
     # <<<<
     from voir.phase import StopProgram

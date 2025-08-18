@@ -899,7 +899,7 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
         if self._is_rank_zero:
             self._metric_logger.close()
 
-        import torchcompat as acc
+        import torchcompat.core as acc
         acc.destroy_process_group()
 
     def log_loss(self, loss):
@@ -927,7 +927,7 @@ def recipe_main(cfg: DictConfig) -> None:
             "If using tune CLI, please specify --nnodes 1 and --nproc_per_node [num_gpus]"
         )
     
-    import torchcompat as acc
+    import torchcompat.core as acc
     acc.init_process_group()
 
     if cfg.get("fsdp_cpu_offload", False):

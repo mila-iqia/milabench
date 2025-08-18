@@ -3,6 +3,7 @@
 export MILABENCH_BRANCH=uv_compile_py3.12
 export PYTHON_VERSION='3.12'
 export MILABENCH_GPU_ARCH=cuda
+export PYTHONUNBUFFERED=1
 
 set -ex
 
@@ -18,8 +19,8 @@ source $CONDA_BASE/../etc/profile.d/conda.sh
 export MILABENCH_WORDIR="$HOME/scratch/shared/$MILABENCH_GPU_ARCH"
 export MILABENCH_ENV="$MILABENCH_WORDIR/.env/$PYTHON_VERSION/"
 export MILABENCH_SIZER_SAVE="$MILABENCH_WORDIR/scaling.yaml"
-export MILABENCH_BASE="$MILABENCH_WORDIR/results"
-export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
+export MILABENCH_BASE="$MILABENCH_WORDIR"
+export BENCHMARK_VENV="$MILABENCH_WORDIR/venv/torch"
 
 if [ -z "${MILABENCH_SOURCE}" ]; then
     export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/standard.yaml"
@@ -62,6 +63,9 @@ pip install -e $MILABENCH_SOURCE[$MILABENCH_GPU_ARCH]
 ARGS="$@"
 
 milabench slurm_system > $MILABENCH_WORDIR/system.yaml
+
+rm -rf  $MILABENCH_BASE/extra
+
 milabench install --system $MILABENCH_WORDIR/system.yaml $ARGS
 milabench prepare --system $MILABENCH_WORDIR/system.yaml $ARGS
 
