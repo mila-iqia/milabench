@@ -9,7 +9,8 @@ set -ex
 
 # ===
 OUTPUT_DIRECTORY=$(scontrol show job "$SLURM_JOB_ID" --json | jq -r '.jobs[0].standard_output' | xargs dirname)
-scontrol show job --json $SLURM_JOB_ID > $OUTPUT_DIRECTORY/info.json
+mkdir -p $OUTPUT_DIRECTORY/meta
+scontrol show job --json $SLURM_JOB_ID | jq '.jobs[0]' > $OUTPUT_DIRECTORY/meta/info.json
 # ===
 
 CONDA_EXEC="$(which conda)"
@@ -55,5 +56,5 @@ milabench run --system $MILABENCH_WORDIR/system.yaml $ARGS
 rsync -az $MILABENCH_WORDIR/results/runs $OUTPUT_DIRECTORY
 
 # ===
-scontrol show job --json $SLURM_JOB_ID > $OUTPUT_DIRECTORY/info.json
+scontrol show job --json $SLURM_JOB_ID | jq '.jobs[0]' > $OUTPUT_DIRECTORY/meta/info.json
 # ===

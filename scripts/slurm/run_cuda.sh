@@ -6,7 +6,11 @@ export MILABENCH_BRANCH=uv_compile_py3.12
 
 set -ex
 
+# ===
 OUTPUT_DIRECTORY=$(scontrol show job "$SLURM_JOB_ID" --json | jq -r '.jobs[0].standard_output' | xargs dirname)
+mkdir -p $OUTPUT_DIRECTORY/meta
+scontrol show job --json $SLURM_JOB_ID | jq '.jobs[0]' > $OUTPUT_DIRECTORY/meta/info.json
+# ===
 
 CONDA_EXEC="$(which conda)"
 CONDA_BASE=$(dirname $CONDA_EXEC)
@@ -129,3 +133,7 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
 fi
 
 rsync -az $MILABENCH_WORDIR/results/runs $OUTPUT_DIRECTORY
+
+# ===
+scontrol show job --json $SLURM_JOB_ID | jq '.jobs[0]' > $OUTPUT_DIRECTORY/meta/info.json
+# ===

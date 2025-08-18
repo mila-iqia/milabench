@@ -2,7 +2,11 @@
 
 set -ex
 
+# ===
 OUTPUT_DIRECTORY=$(scontrol show job "$SLURM_JOB_ID" --json | jq -r '.jobs[0].standard_output' | xargs dirname)
+mkdir -p $OUTPUT_DIRECTORY/meta
+scontrol show job --json $SLURM_JOB_ID | jq '.jobs[0]' > $OUTPUT_DIRECTORY/meta/info.json
+# ===
 
 export MILABENCH_USE_UV=1
 export MILABENCH_WORDIR="/tmp/$SLURM_JOB_ID"
@@ -43,3 +47,7 @@ MILABENCH_GPU_ARCH=cuda milabench pin -c constraints/cuda.txt --config config/st
     git commit -m "Pin Dependencies"
     git push origin "update_pins_${SLURM_JOB_ID}"
 )
+
+# ===
+scontrol show job --json $SLURM_JOB_ID | jq '.jobs[0]' > $OUTPUT_DIRECTORY/meta/info.json
+# ===

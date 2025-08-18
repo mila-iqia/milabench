@@ -8,7 +8,7 @@ import yaml
 import uuid
 from functools import wraps
 
-from flask import request, jsonify
+from flask import request, jsonify, send_file
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 
@@ -44,8 +44,7 @@ def local_cache(cache_key, arg_key="job_id"):
             cache_file = os.path.join(cache_dir, cache_key)
 
             if os.path.exists(cache_file):
-                with open(cache_file, "r") as fp:
-                    return fp.read()
+                return send_file(cache_file, mimetype="application/json")
 
             result = fun(**kwargs)
 
@@ -138,7 +137,9 @@ def _parse_sbatch_args(sbatch_args):
                 value = None
 
             # Map to form-friendly names
-            if key == 'partition':
+            if key == 'job-name':
+                parsed['job_name'] = value
+            elif key == 'partition':
                 parsed['partition'] = value
             elif key == 'nodes':
                 parsed['nodes'] = int(value) if value else 1

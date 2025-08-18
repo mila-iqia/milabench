@@ -2,10 +2,10 @@
 
 set -ex
 
-# ---
-# Job Runner Insert
+# ===
 OUTPUT_DIRECTORY=$(scontrol show job "$SLURM_JOB_ID" --json | jq -r '.jobs[0].standard_output' | xargs dirname)
-scontrol show job --json $SLURM_JOB_ID > $OUTPUT_DIRECTORY/info.json
+mkdir -p $OUTPUT_DIRECTORY/meta
+scontrol show job --json $SLURM_JOB_ID | jq '.jobs[0]' > $OUTPUT_DIRECTORY/meta/info.json
 # ===
 
 export PYTHON_VERSION='3.12'
@@ -50,3 +50,7 @@ module load cuda/12.6.0
     git commit -m "Pin Dependencies"
     git push origin "update_pins_${SLURM_JOB_ID}"
 )
+
+# ===
+scontrol show job --json $SLURM_JOB_ID | jq '.jobs[0]' > $OUTPUT_DIRECTORY/meta/info.json
+# ===
