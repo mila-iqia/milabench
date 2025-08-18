@@ -33,7 +33,7 @@ if __name__ == "__main__":
     #milabench_cfg = os.environ["MILABENCH_CONFIG"]
     #print(milabench_cfg)
 
-    args, _ = parser.parse_known_args()
+    args, _ = parser().parse_known_args()
 
     xdg_cache = os.getenv("XDG_CACHE_HOME", args.data)
 
