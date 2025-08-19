@@ -11,6 +11,7 @@ set -ex
 OUTPUT_DIRECTORY=$(scontrol show job "$SLURM_JOB_ID" --json | jq -r '.jobs[0].standard_output' | xargs dirname)
 mkdir -p $OUTPUT_DIRECTORY/meta
 scontrol show job --json $SLURM_JOB_ID | jq '.jobs[0]' > $OUTPUT_DIRECTORY/meta/info.json
+touch $SLURM_SUBMIT_DIR/.no_report
 # ===
 
 CONDA_EXEC="$(which conda)"
@@ -51,7 +52,7 @@ milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
 
 milabench slurm_system > $MILABENCH_WORDIR/system.yaml
 
-milabench run --system $MILABENCH_WORDIR/system.yaml $ARGS
+milabench run --system $MILABENCH_WORDIR/system.yaml $ARGS || :
 
 rsync -az $MILABENCH_WORDIR/results/runs $OUTPUT_DIRECTORY
 

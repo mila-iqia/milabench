@@ -80,10 +80,16 @@ def cli_shared_setup(args = None):
         if is_installed("rclone"):
             rsync = ["rclone", "copy", "--multi-thread-streams=32", "--transfers=32", "--copy-links", remote_cache, local_cache]
         else:
-            rsync = ["rsync", "-azh"] + rsync_interactive_flags + ["--partial", remote_cache, args.local]
+            rsync = ["rsync", "-ah", "--inplace", "--whole-file", "--no-compress"] + rsync_interactive_flags + ["--partial", remote_cache, args.local]
 
-        print(" ".join(rsync))
-        subprocess.check_call(rsync)
+        rsync = f"find {remote_cache} -type f -print0 | xargs -0 -n100 -P8 rsync -aR {{}} {args.local}"
+
+        # Parallel rsync
+        # find /src/dir -type f | parallel -j8 rsync -aR {} user@host:/dst/dir
+
+        cmd = " ".join(rsync)
+        print(cmd)
+        subprocess.check_call(cmd, shell=True)
     # create a soft link for the code
     try:
         os.symlink(remote_code, local_code, target_is_directory=True)
