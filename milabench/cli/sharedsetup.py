@@ -32,6 +32,29 @@ def is_interactive():
 def is_installed(command):
     return shutil.which(command) is not None
 
+
+def sync_folder(src, dst, folder):
+    rsync_interactive_flags = []
+    if is_interactive():
+        rsync_interactive_flags = ["--info=progress2"]
+
+    if is_installed("rclone"):
+        # --multi-thread-streams=32                     => Elapsed time:     17m29.2s | 428.337 GiB
+        # --multi-thread-streams=32 --transfers=16      => Elapsed time:      4m50.8s | 428.337 GiB
+        # --multi-thread-streams=32 --transfers=32      => Elapsed time:      2m36.8s | 428.337 GiB
+        # --multi-thread-streams=32 --transfers=64      => Elapsed time:      2m51.3s | 428.337 GiB
+        rsync = ["rclone", "copy", "--multi-thread-streams=32", "--transfers=32",  os.path.join(dst, folder)]
+    else:
+        rsync = ["rsync", "-azh"] + rsync_interactive_flags + ["--partial", src, dst]
+
+    # Parallel rsync
+    rsync = [f"find {src} -type f -print0 | xargs -0 -n100 -P8  'rsync -ah --whole-file --ignore-times --inplace --no-compress -R \"$@\" {dst}'"]
+
+    cmd = " ".join(rsync)
+    print(cmd)
+    subprocess.check_call(cmd, shell=True)
+
+
 @tooled
 def cli_shared_setup(args = None):
     #
@@ -44,19 +67,12 @@ def cli_shared_setup(args = None):
     local_code  = os.path.join(args.local, "venv")
 
     remote_data = os.path.join(args.network, "data")
-    local_data  = os.path.join(args.local, "data")
-
     remote_cache = os.path.join(args.network, "cache")
-    local_cache  = os.path.join(args.local, "cache")
 
     assert os.path.exists(remote_code), "missing venv, was milabench install run ?"
     assert os.path.exists(remote_data), "missing data, was milabench prepare run ?"
     
     os.makedirs(args.local, exist_ok=True)
-
-    rsync_interactive_flags = []
-    if is_interactive():
-        rsync_interactive_flags = ["--info=progress2"]
 
     if args.network.endswith(".tar.gz"):
         untar = ["tar", "-xf", args.network, "-C", args.local]
@@ -64,36 +80,10 @@ def cli_shared_setup(args = None):
         subprocess.check_call(untar)
     else:
         # rsync datasets & checkpoints to local disk
+        sync_folder(remote_data, args.local, "data")
 
-        if is_installed("rclone"):
-            # --multi-thread-streams=32                     => Elapsed time:     17m29.2s | 428.337 GiB
-            # --multi-thread-streams=32 --transfers=16      => Elapsed time:      4m50.8s | 428.337 GiB
-            # --multi-thread-streams=32 --transfers=32      => Elapsed time:      2m36.8s | 428.337 GiB
-            # --multi-thread-streams=32 --transfers=64      => Elapsed time:      2m51.3s | 428.337 GiB
-            rsync = ["rclone", "copy", "--multi-thread-streams=32", "--transfers=32",  remote_data, local_data]
-        else:
-            rsync = ["rsync", "-azh"] + rsync_interactive_flags + ["--partial", remote_data, args.local]
+        sync_folder(remote_cache, args.local, "cache")
 
-        rsync = f"find {remote_data} -type f -print0 | xargs -0 -n100 -P8  'rsync -ah --whole-file --ignore-times --inplace --no-compress -R \"$@\" {args.local}'"
-
-        cmd = " ".join(rsync)
-
-        print(cmd)
-        subprocess.check_call(cmd, shell=True)
-
-        if is_installed("rclone"):
-            rsync = ["rclone", "copy", "--multi-thread-streams=32", "--transfers=32", "--copy-links", remote_cache, local_cache]
-        else:
-            rsync = ["rsync", "-ah", "--inplace", "--whole-file", "--no-compress"] + rsync_interactive_flags + ["--partial", remote_cache, args.local]
-
-        rsync = f"find {remote_cache} -type f -print0 | xargs -0 -n100 -P8  'rsync -ah --whole-file --ignore-times --inplace --no-compress -R \"$@\" {args.local}'"
-
-        # Parallel rsync
-        # find /src/dir -type f | parallel -j8 rsync -aR {} user@host:/dst/dir
-
-        cmd = " ".join(rsync)
-        print(cmd)
-        subprocess.check_call(cmd, shell=True)
     # create a soft link for the code
     try:
         os.symlink(remote_code, local_code, target_is_directory=True)
