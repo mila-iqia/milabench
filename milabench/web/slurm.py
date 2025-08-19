@@ -8,6 +8,7 @@ import os
 import yaml
 import uuid
 from functools import wraps
+import traceback
 
 from flask import request, jsonify, send_file
 
@@ -328,12 +329,16 @@ def slurm_integration(app):
                     kv_dict = comment.split(';')
 
                     for kv in kv_dict:
-                        k, v = kv.split("=")
-                        job[k] = v
+                        try:
+                            k, v = kv.split("=")
+                            job[k] = v
+                        except ValueError:
+                            pass
 
             return jsonify(jobs)
 
         except Exception as e:
+            traceback.print_exc()
             return jsonify({'error': str(e)}), 500
 
     @app.route('/api/slurm/job/save/<string:jr_job_id>/<string:message>')

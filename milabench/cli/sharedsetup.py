@@ -34,6 +34,8 @@ def is_installed(command):
 
 
 def sync_folder(src, dst, folder):
+    nproc = 32
+
     rsync_interactive_flags = []
     if is_interactive():
         rsync_interactive_flags = ["--info=progress2"]
@@ -43,13 +45,13 @@ def sync_folder(src, dst, folder):
         # --multi-thread-streams=32 --transfers=16      => Elapsed time:      4m50.8s | 428.337 GiB
         # --multi-thread-streams=32 --transfers=32      => Elapsed time:      2m36.8s | 428.337 GiB
         # --multi-thread-streams=32 --transfers=64      => Elapsed time:      2m51.3s | 428.337 GiB
-        rsync = ["rclone", "copy", "--multi-thread-streams=32", "--transfers=32",  os.path.join(dst, folder)]
+        rsync = ["rclone", "copy", "--multi-thread-streams=32", f"--transfers={nproc}",  os.path.join(dst, folder)]
     else:
         rsync = ["rsync", "-azh"] + rsync_interactive_flags + ["--partial", src, dst]
 
     # Parallel rsync
     rsync = [
-        f"cd {src} && find . -type f -print0 | xargs -0 -n100 -P8 sh -c 'rsync -ah --whole-file --ignore-times --inplace --no-compress -R \"$@\" {os.path.join(dst, folder)}' _"
+        f"cd {src} && find . -type f -print0 | xargs -0 -n100 -P{nproc} sh -c 'rsync -ah --whole-file --ignore-times --inplace --no-compress -R \"$@\" {os.path.join(dst, folder)}' _"
     ]
 
     cmd = " ".join(rsync)
