@@ -48,7 +48,9 @@ def sync_folder(src, dst, folder):
         rsync = ["rsync", "-azh"] + rsync_interactive_flags + ["--partial", src, dst]
 
     # Parallel rsync
-    rsync = [f"find {src} -type f -print0 | xargs -0 -n100 -P8  'rsync -ah --whole-file --ignore-times --inplace --no-compress -R \"$@\" {dst}'"]
+    rsync = [
+        f"find {src} -type f -print0 | xargs -0 -n100 -P8 sh -c 'rsync -ah --whole-file --ignore-times --inplace --no-compress -R \"$@\" {dst}' _"
+    ]
 
     cmd = " ".join(rsync)
     print(cmd)
