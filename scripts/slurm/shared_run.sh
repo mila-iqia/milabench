@@ -48,6 +48,8 @@ cd $MILABENCH_WORDIR
 
 conda activate $MILABENCH_ENV
 
+pip install -e $MILABENCH_SOURCE
+
 milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
 
 milabench slurm_system > $MILABENCH_WORDIR/system.yaml

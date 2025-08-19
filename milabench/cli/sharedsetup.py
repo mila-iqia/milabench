@@ -74,8 +74,12 @@ def cli_shared_setup(args = None):
         else:
             rsync = ["rsync", "-azh"] + rsync_interactive_flags + ["--partial", remote_data, args.local]
 
-        print(" ".join(rsync))
-        subprocess.check_call(rsync)
+        rsync = f"find {remote_data} -type f -print0 | xargs -0 -n100 -P8  'rsync -ah --whole-file --ignore-times --inplace --no-compress -R \"$@\" {args.local}'"
+
+        cmd = " ".join(rsync)
+
+        print(cmd)
+        subprocess.check_call(cmd, shell=True)
 
         if is_installed("rclone"):
             rsync = ["rclone", "copy", "--multi-thread-streams=32", "--transfers=32", "--copy-links", remote_cache, local_cache]
