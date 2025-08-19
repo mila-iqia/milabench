@@ -82,7 +82,7 @@ def cli_shared_setup(args = None):
         else:
             rsync = ["rsync", "-ah", "--inplace", "--whole-file", "--no-compress"] + rsync_interactive_flags + ["--partial", remote_cache, args.local]
 
-        rsync = f"find {remote_cache} -type f -print0 | xargs -0 -n100 -P8 rsync -aR {{}} {args.local}"
+        rsync = f"find {remote_cache} -type f -print0 | xargs -0 -n100 -P8  'rsync -ah --whole-file --ignore-times --inplace --no-compress -R \"$@\" {args.local}'"
 
         # Parallel rsync
         # find /src/dir -type f | parallel -j8 rsync -aR {} user@host:/dst/dir
