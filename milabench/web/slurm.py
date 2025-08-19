@@ -301,7 +301,7 @@ def slurm_integration(app):
             if not result['success']:
                 return jsonify({'error': f'Failed to get jobs: {result["stderr"]}'}), 404
 
-            jobs = json.loads(result['stdout'])["jobs"]
+            jobs = json.loads(result['stdout'])["jobs"][0]
 
             return jsonify(jobs)
 
