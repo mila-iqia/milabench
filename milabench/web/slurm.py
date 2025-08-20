@@ -35,7 +35,22 @@ JOBRUNNER_LOCAL_CACHE =  os.path.abspath(os.path.join(ROOT, '..', 'data'))
 #   /home/$user/scratch/jobrunner/$internal_job_id/output/...
 #
 
-def local_cache(cache_key, arg_key="job_id"):
+def job_acc_cache_status(filename: str):
+    with open(filename, "r") as fp:
+        try:
+            job_acc = json.load(fp)
+
+            job_states = job_acc.get("state", {}).get("current", [])
+
+            if "RUNNING" in job_states:
+                return False
+            
+            return True
+        except json.decoder.JSONDecodeError:
+            return False
+
+
+def local_cache(cache_key, arg_key="job_id", check_validation=None):
     """Cache a remote result locally"""
     def wrapped(fun):
         @wraps(fun)
@@ -45,8 +60,12 @@ def local_cache(cache_key, arg_key="job_id"):
             cache_dir = os.path.join(JOBRUNNER_LOCAL_CACHE, job_id, "meta")
             cache_file = os.path.join(cache_dir, cache_key)
 
-            if os.path.exists(cache_file):
-                return send_file(cache_file, mimetype="application/json")
+            try:
+                if os.path.exists(cache_file):
+                    if check_validation is None or check_validation(cache_file):
+                        return send_file(cache_file, mimetype="application/json")
+            except:
+                traceback.print_exc()
 
             result = fun(**kwargs)
 
@@ -55,6 +74,7 @@ def local_cache(cache_key, arg_key="job_id"):
                 with open(cache_file, "w") as fp:
                     fp.write(result.get_data(as_text=True))
             except AttributeError:
+                traceback.print_exc()
                 return result
 
             return result
@@ -297,6 +317,23 @@ def slurm_integration(app):
         try:
             # Get running and pending jobs using JSON format
             result = remote_command(SLURM_HOST, f"'squeue -u $USER -j {job_id} --json'")
+
+            if not result['success']:
+                return jsonify({'error': f'Failed to get jobs: {result["stderr"]}'}), 404
+
+            jobs = json.loads(result['stdout'])["jobs"][0]
+
+            return jsonify(jobs)
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/slurm/jobs/old/<int:job_id>')
+    def api_slurm_old_job_status(job_id):
+        """Get list of all slurm jobs"""
+        try:
+            # Get running and pending jobs using JSON format
+            result = remote_command(SLURM_HOST, f"'sacct -u $USER -j {job_id} --json'")
 
             if not result['success']:
                 return jsonify({'error': f'Failed to get jobs: {result["stderr"]}'}), 404
@@ -553,6 +590,30 @@ def slurm_integration(app):
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
+    @app.route('/api/slurm/jobs/<jr_job_id>/acc/<job_id>')
+    @local_cache("acc.json", "jr_job_id", check_validation=job_acc_cache_status)
+    def api_slurm_job_acc(jr_job_id, job_id=None):
+        """Get logs for a specific job"""
+        try:
+            if job_id is None:
+                return jsonify({})
+
+            # Try to get job logs using scontrol
+            result = remote_command(SLURM_HOST, f'sacct --json -j {job_id}')
+
+            if not result['success']:
+                return jsonify({'error': f'Failed to get job info: {result["stderr"]}'}), 500
+
+            jobs = json.loads(result['stdout'])["jobs"]
+
+            if len(jobs) > 0:
+                return jsonify(jobs[0])
+
+            return jsonify({})
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
     @app.route('/api/slurm/jobs/<jr_job_id>/info/<job_id>')
     @local_cache("info.json", "jr_job_id")
     def api_slurm_job_info(jr_job_id, job_id=None):
@@ -563,7 +624,8 @@ def slurm_integration(app):
 
             # Try to get job logs using scontrol
             result = remote_command(SLURM_HOST, f'scontrol show job --json {job_id}')
-
+            # result = remote_command(SLURM_HOST, f'sacct --json -j {job_id}')
+            
             if not result['success']:
                 return jsonify({'error': f'Failed to get job info: {result["stderr"]}'}), 500
 

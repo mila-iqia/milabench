@@ -1,9 +1,10 @@
 #!/bin/bash
 
 export MILABENCH_BRANCH=uv_compile_py3.12
-export PYTHON_VERSION='3.12'
+export PYTHON_VERSION=3.12
 export MILABENCH_GPU_ARCH=cuda
 export PYTHONUNBUFFERED=1
+export MILABENCH_ARGS="--select llm-full-mp-gpus"
 
 set -ex
 
@@ -54,7 +55,7 @@ milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
 
 milabench slurm_system > $MILABENCH_WORDIR/system.yaml
 
-milabench run --system $MILABENCH_WORDIR/system.yaml $ARGS || :
+milabench run --system $MILABENCH_WORDIR/system.yaml $MILABENCH_ARGS || :
 
 rsync -az $MILABENCH_WORDIR/results/runs $OUTPUT_DIRECTORY
 
