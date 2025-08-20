@@ -30,6 +30,8 @@ JOBRUNNER_LOCAL_CACHE =  os.path.abspath(os.path.join(ROOT, '..', 'data'))
 #
 #   /home/$user/scratch/jobrunner/$internal_job_id/log.stdout
 #   /home/$user/scratch/jobrunner/$internal_job_id/log.stderr
+#   /home/$user/scratch/jobrunner/$internal_job_id/meta/acc.json    <= cached accounting information
+#   /home/$user/scratch/jobrunner/$internal_job_id/meta/info.json   <= cached scontrol | squeue  information
 #   /home/$user/scratch/jobrunner/$internal_job_id/script.sbatch
 #   /home/$user/scratch/jobrunner/$internal_job_id/cmd.sh
 #   /home/$user/scratch/jobrunner/$internal_job_id/output/...
@@ -42,10 +44,11 @@ def job_acc_cache_status(filename: str):
 
             job_states = job_acc.get("state", {}).get("current", [])
 
-            if "RUNNING" in job_states:
-                return False
+            # Cache is good
+            if "COMPLETED" in job_states:
+                return True
             
-            return True
+            return False
         except json.decoder.JSONDecodeError:
             return False
 
