@@ -142,6 +142,9 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
             or self._enable_async_checkpointing,
         )
 
+        import torchcompat.core as acc
+        acc.init_process_group(backend=self.distributed_backend)
+
         # Initialize distributed variables
         self.world_size, self.rank = utils.get_world_size_and_rank()
         self._is_rank_zero = self.rank == 0
@@ -957,6 +960,7 @@ def recipe_main(cfg: DictConfig) -> None:
         - Overwritten by arguments from the command-line
     """
     # <<<<
+    import torch.distributed
     import sys, os
     current_dir = os.path.dirname(os.path.abspath(__file__))
     sys.path.append(os.path.join(current_dir))
@@ -964,9 +968,6 @@ def recipe_main(cfg: DictConfig) -> None:
 
     config.log_config(recipe_name="FullFinetuneRecipeDistributed", cfg=cfg)
     recipe = FullFinetuneRecipeDistributed(cfg=cfg)
-
-    import torchcompat.core as acc
-    acc.init_process_group(backend=recipe.distributed_backend)
 
     recipe.setup(cfg=cfg)
     # <<<<
