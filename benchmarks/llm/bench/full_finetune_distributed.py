@@ -535,12 +535,15 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
         )
         init_start = time.perf_counter()
 
+        utils.log_rank_zero(log, "Instantiating model")
+
         with training.set_default_dtype(self._dtype), torch.device("meta"):
             model = config.instantiate(cfg_model)
 
         if self._compile:
             training.compile_model(model, verbose=self._is_rank_zero)
 
+        utils.log_rank_zero(log, "init devide mesh")
         device_mesh = init_device_mesh(
             self._device.type,
             mesh_shape=(self.data_parallel_dim, self.tensor_parallel_dim),
@@ -553,6 +556,7 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
         if self.tensor_parallel_dim > 1:
             # Use the local number (num_heads, num_kv_heads, embed_dim) to account for tensor parallel
             model = training.prepare_mha_for_tp(model, device_mesh["tp"])
+            utils.log_rank_zero(log, "initialize tensor parallel")
             parallelize_module(
                 model,
                 device_mesh["tp"],
@@ -566,6 +570,7 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
         # when these are set AND ``enable_activation_checkpointing`` is set to False
         # We'll clean this up as soon as testing of AC is complete
         if (not enable_activation_checkpointing) and (ac_mode is not None):
+            utils.log_rank_zero(log, "apply selective activation checkpointing")
             apply_selective_activation_checkpointing(
                 model,
                 ac_mode,
@@ -574,12 +579,14 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
 
         # original activation checkpointing (full) - flip the condition above
         if enable_activation_checkpointing and ac_mode is None:
+            utils.log_rank_zero(log, "set activation checkpointing")
             training.set_activation_checkpointing(
                 model, auto_wrap_policy={modules.TransformerSelfAttentionLayer}
             )
 
         # Apply Fully Sharded Data Parallelism to the model
         if self.data_parallel_dim > 1:
+            utils.log_rank_zero(log, "apply data parallel")
             fsdp_shard_conditions = [
                 partial(
                     training.get_shard_conditions,
@@ -594,6 +601,7 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
                 dp_mesh=device_mesh["dp"],
             )
 
+        utils.log_rank_zero(log, "orpe init")
         with training.set_default_dtype(self._dtype), self._device:
             for m in model.modules():
                 # RoPE is not covered in state dict
@@ -602,6 +610,7 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
 
         # This method will convert the full model state dict into a sharded state
         # dict and load into the model
+        utils.log_rank_zero(log, "load from full model")
         training.load_from_full_model_state_dict(
             model,
             model_state_dict,
@@ -611,6 +620,7 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
         )
 
         # activation offloading
+        utils.log_rank_zero(log, "get_act_offloading_ctx_manager")
         self.activations_handling_ctx = training.get_act_offloading_ctx_manager(
             model, enable_activation_offloading
         )
