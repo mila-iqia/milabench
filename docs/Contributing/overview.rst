@@ -131,7 +131,7 @@ This file will define all the nodes accessible to milabench.
          # Alias used to reference the node
          - name: manager
            ip: 192.168.11.11
-           port: 5000
+           sshport: 5000  # Custom SSH port
            main: true     # Use this node as the rank=0 node or not
            user: manager  # User to use in remote milabench operations
 

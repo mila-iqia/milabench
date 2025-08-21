@@ -77,7 +77,38 @@ def as_environment_variable(name):
     return "MILABENCH_" + "_".join(map(str.upper, frags))
 
 
-def multirun():
+def _resumable_multirun(multirun_cache):
+    import json
+
+    done = {}
+
+    if os.path.exists(multirun_cache):
+        with open(multirun_cache, "r") as fp:
+            for line in fp.readlines():
+                run = json.loads(line)
+                unique_name = run["name"].split(".")[0]
+                done[unique_name] = run
+
+
+    def mark_run_as_done(name, config):
+        with open(multirun_cache, "a") as f:
+            f.write(json.dumps({"name": name, "run": config}) + "\n")
+
+    for run_name, run in _multirun():
+        unique_name = run_name.split(".")[0]
+
+        if unique_name in done:
+            print(f"skipping run {unique_name} because it already ran")
+            continue
+
+        yield run_name, run
+
+        mark_run_as_done(run_name, run)
+
+
+
+
+def _multirun():
     multirun = multirun_global.get()
     
     if multirun is None or len(multirun) == 0:
@@ -137,6 +168,23 @@ def apply_system(config: dict):
     system_global.set(old)
 
 
+def select(*args):
+    # This handles the case where 0 is right value and None is not
+    prev = []
+
+    for val in args:
+        if val is not None:
+            prev.append(val)
+
+        if val:
+            return val
+    
+    if prev:
+        return prev[0]
+
+    return None
+
+
 def option(name, etype, default=None):
     options = dict()
     system = system_global.get()
@@ -152,7 +200,7 @@ def option(name, etype, default=None):
         lookup = lookup.get(frag, dict())
 
     system_value = lookup.get(frags[-1], None)
-    final_value = env_value or system_value or default
+    final_value = select(env_value, system_value, default)
 
     _track_options(name, etype, default, final_value)
 
@@ -165,6 +213,13 @@ def option(name, etype, default=None):
     except ValueError:
         print(f"{name}={value} expected type {etype} got {type(value)}")
         return None
+
+
+def multirun(resumable=option("multirun.cache", str, None)):
+    if resumable is not None:
+        yield from _resumable_multirun(resumable)
+    else:
+        yield from _multirun()
 
 
 def defaultfield(name, type, default=None):
@@ -208,6 +263,9 @@ class SizerOptions:
 
     # Save the batch size, VRM usage data to a scaling file
     save: str = defaultfield("sizer.save", str, None)
+
+    # Configuration for batch scaling
+    config: str = defaultfield("sizer.config", str, None)
 
     @property
     def autoscale(self):
@@ -418,6 +476,9 @@ def build_system_config(config_file, defaults=None, gpu=True):
     system["self"] = self
 
     return config
+
+def overrides_snapshot():
+    return {name: value["value"] for name, value in _global_options.items()}
 
 
 def show_overrides(to_json=False):

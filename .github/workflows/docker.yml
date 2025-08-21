@@ -19,9 +19,7 @@ env:
 permissions:
   packages: write
 
-
 # define build arguments
-
 jobs:
   build-image:
     strategy:
@@ -45,7 +43,11 @@ jobs:
           remove-haskell: 'true'
           remove-android: 'true'
           build-mount-path: /home/runner/work/milabench/
+          # Docker needs more space
           root-reserve-mb: 30000
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Show all images
         run: |
@@ -95,6 +97,9 @@ jobs:
           file: docker/Dockerfile-${{ matrix.arch }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=local,src=/home/runner/work/milabench/
+          cache-to:  type=local,dest=/home/runner/work/milabench/
+          # outputs: type=local,dest=/home/runner/work/milabench/
           build-args: |
             ARCH=${{ matrix.arch }}
             CONFIG=standard.yaml

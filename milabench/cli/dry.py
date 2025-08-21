@@ -199,8 +199,8 @@ def with_env(**kwargs):
 def cli_dry(args=None):
     """Generate dry commands to execute the bench standalone"""
     from ..commands import disable_voir
-    from ..system import enable_offline
-    from ..sizer import resolve_argv, scale_argv
+    from ..network import enable_offline
+    from ..sizer import resolve_argv
 
     if args is None:
         args = arguments()
@@ -232,8 +232,7 @@ def cli_dry(args=None):
                         with gen.background():
                             for pack, argv, _ in exec_plan.commands():
                                 
-                                sized_args = scale_argv(pack, argv)
-                                final_args = resolve_argv(pack, sized_args)
+                                final_args = resolve_argv(pack, argv)
 
                                 gen.command(*final_args, env=pack.config.get("env", {}))
 

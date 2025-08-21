@@ -1,5 +1,5 @@
 
-FROM ubuntu:22.04
+FROM rocm/dev-ubuntu-22.04:6.2.4
 
 # Arguments
 # ---------
@@ -38,20 +38,16 @@ COPY . /milabench/milabench/
 #           rustc: used by BERT models inside https://pypi.org/project/tokenizers/
 # build-essential: for rust
 
-RUN mkdir --parents --mode=0755 /etc/apt/keyrings                                                                                                                    &&\
-    wget https://repo.radeon.com/rocm/rocm.gpg.key -O - | gpg --dearmor | tee /etc/apt/keyrings/rocm.gpg > /dev/null                                                 &&\
-    echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.gpg] https://repo.radeon.com/amdgpu/6.2.4/ubuntu jammy main" |  tee /etc/apt/sources.list.d/amdgpu.list   &&\
-    echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.gpg] https://repo.radeon.com/rocm/apt/6.2.4 jammy main" \| tee --append /etc/apt/sources.list.d/rocm.list &&\
-    echo -e 'Package: *\nPin: release o=repo.radeon.com\nPin-Priority: 600' \| tee /etc/apt/preferences.d/rocm-pin-600                                               &&\
-    apt-get update            &&\
-    apt-get install -y rocm-dev hipcc hip-runtime-amd rocminfo rocm-device-libs          &&\
+RUN apt-get update            &&\
     apt-get install -y git build-essential curl python3.10 python-is-python3 python3-pip libgl1-mesa-glx libglib2.0-0 gcc g++ python3-dev &&\
+    apt-get install -y rocthrust hipsparse &&\
     apt-get clean &&\
     rm -rf /var/lib/apt/lists/*
     
 
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
+ENV ROCM_HOME="/opt/rocm"
 
 # Install Milabench
 # -----------------

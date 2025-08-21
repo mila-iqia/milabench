@@ -17,7 +17,7 @@ def parser():
     parser.add_argument(
         "--root",
         type=str,
-        default=os.environ["MILABENCH_DIR_DATA"],
+        default=os.getenv("MILABENCH_DIR_DATA", None),
         help="Dataset path",
     )
     return parser

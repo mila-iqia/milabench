@@ -25,6 +25,7 @@ default_scaling_config = os.path.join(default_scaling_folder, "default.yaml")
 gpu_name_to_file = {
     "AMD Instinct MI325 OAM": "MI325",
     "NVIDIA H100 80GB HBM3": "H100",
+    "NVIDIA L40S": "L40S"
 }
 
 
@@ -93,18 +94,22 @@ def to_octet(value: str) -> float:
 class Sizer:
     """Automatically scale the batch size to match GPU spec"""
 
-    def __init__(self, sizer=None, scaling_config=option("sizer.config", etype=str)):
-        self.path = scaling_config
+    def __init__(self, sizer=None, config=None):
+        self.path = config
         self.sizer_override = sizer
         
-        if scaling_config is None:
-            scaling_config = get_scaling_config()
+        
+        if config is None:
+            config = SizerOptions.instance().config
+            
+            if config is None:
+                config = get_scaling_config()
 
-        if os.path.exists(scaling_config):
-            with open(scaling_config, "r") as sconf:
+        if os.path.exists(config):
+            with open(config, "r") as sconf:
                 self.scaling_config = yaml.safe_load(sconf)
         else:
-            print(scaling_config, "does not exist")
+            print(config, "does not exist")
 
     @property
     def options(self):
@@ -164,7 +169,7 @@ class Sizer:
 
         config = self.benchscaling(benchmark)
 
-        if "model" in config:
+        if config and "model" in config:
             mem, size = self._scaling_v1(config)
         else:
             mem, size, _ = self._scaling_v2(config)
@@ -232,7 +237,7 @@ class Sizer:
         if self.options.optimized:
             return self.optimized(benchmark, capacity)
 
-        if self.options.autoscale:
+        if self.options.auto:
             return self.auto_size(benchmark, capacity)
 
         syslog("Could not find auto scale the batch size")
@@ -254,18 +259,6 @@ def batch_sizer() -> Sizer:
 def get_batch_size(config, start_event):
     sizer = batch_sizer()
     return sizer.find_batch_size(config, start_event)
-
-
-def scale_argv(pack, argv):
-    sizer = batch_sizer()
-
-    system = system_global.get()
-
-    if system:
-        capacity = system.get("gpu", dict()).get("capacity")
-        return sizer.argv(pack, capacity, argv)
-    else:
-        return argv
 
 
 def suggested_batch_size(pack):
@@ -339,13 +332,15 @@ class MemoryUsageExtractor(ValidationLayer):
         sizer = Sizer()
 
         self.filepath = SizerOptions.instance().save
-        
+
         if self.filepath and os.path.exists(self.filepath):
             with open(self.filepath, "r") as fp:
                 self.memory = yaml.safe_load(fp) or {}
-        else:
+        elif SizerOptions.instance().save == SizerOptions.instance().config:
             self.memory = deepcopy(sizer.scaling_config)
-
+        else:
+            self.memory = {}
+        
         if self.memory.get("version", 1.0) <= 1.0:
             self.convert()
             self.memory["version"] = 2.0
@@ -425,14 +420,6 @@ class MemoryUsageExtractor(ValidationLayer):
 
         stats = self.benchstat(entry.pack.config["name"])
 
-        if stats.batch_size.current_count <= 0 and int(stats.batch_size.avg) == 0:
-            syslog("MemoryUsageExtractor: Skipping missing batch_size {}", entry)
-            return
-
-        if stats.max_memory_usage() == float("-inf"):
-            syslog("MemoryUsageExtractor: Missing memory info {}", entry)
-            return
-    
         # Only update is successful
         rc = entry.data["return_code"]
         if rc == 0 or stats.has_stopped_early():
@@ -440,6 +427,14 @@ class MemoryUsageExtractor(ValidationLayer):
 
         stats.active_count -= 1
         stats.rc.append(rc)
+
+        if stats.batch_size.current_count <= 0 and int(stats.batch_size.avg) == 0:
+            syslog("MemoryUsageExtractor: Skipping missing batch_size {}", entry)
+            return
+
+        if stats.max_memory_usage() == float("-inf"):
+            syslog("MemoryUsageExtractor: Missing memory info {}", entry)
+            return
 
         if stats.active_count <= 0:
             if sum(stats.rc) == 0:

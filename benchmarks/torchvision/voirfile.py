@@ -2,9 +2,8 @@ from dataclasses import dataclass
 
 from voir import configurable
 from voir.phase import StopProgram
-from voir.instruments import dash, early_stop, log
 from benchmate.observer import BenchObserver
-from benchmate.monitor import monitor_monogpu, monitor_process_monogpu
+from benchmate.monitor import voirfile_monitor
 
 
 @dataclass
@@ -31,29 +30,7 @@ class Config:
 def instrument_main(ov, options: Config):
     yield ov.phases.init
 
-    if options.dash:
-        ov.require(dash)
-
-    overhead_metrics = [] # "__iter__", "overhead", "process_time"
-
-    metrics = [
-        "value", 
-        "progress", 
-        "rate", 
-        "units", 
-        "loss", 
-        "gpudata",
-        "iodata",
-        "cpudata",
-        "process"
-    ]
-
-    ov.require(
-        log(*metrics, *overhead_metrics, context="task"),
-        early_stop(n=options.stop, key="rate", task="train"),
-        monitor_monogpu(poll_interval=options.gpu_poll),
-        monitor_process_monogpu(poll_interval=3)
-    )
+    voirfile_monitor(ov, options)
 
     yield ov.phases.load_script
 

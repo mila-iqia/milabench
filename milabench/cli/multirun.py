@@ -6,7 +6,7 @@ import yaml
 from coleo import Option, tooled
 
 from ..common import get_multipack
-from ..sizer import resolve_argv, scale_argv
+from ..sizer import resolve_argv
 from ..system import build_system_config, multirun, apply_system, SizerOptions, option, as_environment_variable
 
 

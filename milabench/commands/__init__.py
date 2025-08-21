@@ -560,20 +560,31 @@ class TorchrunAllGPU(WrapperCommand):
     def get_cmd(self):
         return next(iter(self.exec.argv()), None)
 
-    def should_wrap(self):
+    def device_count(self):
         devices = self.pack.config.get("devices", [])
         nproc = len(devices)
-        return nproc > 1
+        return nproc
+
+    def should_wrap(self):
+        return self.device_count() > 1
 
     def _argv(self, **kwargs):
         devices = self.pack.config.get("devices", [])
         nproc = len(devices)
+
         if self.should_wrap():
             # spawn,fork,forkserver
+            multi_gpu_args = (
+                f"--nproc-per-node={nproc}", 
+            )
+
+            if self.pack.config["plan"]["method"] == "per_gpu":
+                multi_gpu_args = tuple()
+
             argv = [
 
                 *super()._argv(**kwargs), 
-                f"--nproc-per-node={nproc}", 
+                *multi_gpu_args
                 # "--start-method=forkserver"
             ]
 
@@ -712,14 +723,21 @@ class TorchrunAllNodes(ForeachNode):
 
         config = executor.pack.config
 
-        return cls(
-            executor,
+        multi_gpu_args = (
             f"--nnodes={len(nodes)}",
             f"--rdzv-backend={backend}",
             f"--rdzv-endpoint={main_addr}",
             f"--master-addr={main_host}",
             f"--master-port={main_port}",
             f"--local-ranks-filter={filters}",
+        )
+
+        if config["plan"]["method"] == "per_gpu":
+            multi_gpu_args = tuple()
+
+        return cls(
+            executor,
+            *multi_gpu_args,
             *args,
             **kwargs
         )

@@ -1,0 +1,52 @@
+diff --git a/original/lora_finetune_single_device.py b/lora_finetune_single_device.py
+old mode 100644
+new mode 100755
+index 628f699..1a73264
+--- a/original/lora_finetune_single_device.py
++++ b/lora_finetune_single_device.py
+@@ -720,6 +720,7 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
+                         self.global_step += 1
+ 
+                         loss_to_log = running_loss.item() / num_tokens
++                        self.log_loss(loss_to_log)
+                         pbar.update(1)
+                         pbar.set_description(
+                             f"{curr_epoch + 1}|{self.global_step}|Loss: {loss_to_log}"
+@@ -787,6 +788,9 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
+     def cleanup(self) -> None:
+         self._metric_logger.close()
+ 
++    def log_loss(self, loss):
++        pass
++
+ 
+ @config.parse
+ def recipe_main(cfg: DictConfig) -> None:
+@@ -797,10 +801,26 @@ def recipe_main(cfg: DictConfig) -> None:
+         - Parameters specified in config (see available configs through ``tune ls``)
+         - Overwritten by arguments from the command-line
+     """
++    # <<<<
++    import sys, os
++    current_dir = os.path.dirname(os.path.abspath(__file__))
++    sys.path.append(os.path.join(current_dir))
++    # >>>>
++
+     config.log_config(recipe_name="LoRAFinetuneRecipeSingleDevice", cfg=cfg)
+     recipe = LoRAFinetuneRecipeSingleDevice(cfg=cfg)
+     recipe.setup(cfg=cfg)
+-    recipe.train()
++    # <<<<
++    from voir.phase import StopProgram
++    try:
++        from .utils import prepare_voir
++        _, monitor = prepare_voir(recipe)
++        with monitor():
++            recipe.train()
++    
++    except StopProgram:
++        print("early stopping")
++    # >>>>
+     recipe.cleanup()
+ 
+ 

@@ -38,7 +38,7 @@
   become: yes
 
   vars_files:
-   - config.yaml
+   - main.yaml
 
   roles:
    - role: geerlingguy.postgresql
@@ -84,15 +84,24 @@
         db: milabench
         name: milabench_read
         password: 1234
+    
+    - name: Create Migration User
+      community.postgresql.postgresql_user:
+        db: milabench
+        name: milabench_migration
+        password: 1234
 
     - name: Setup Privileges
       community.postgresql.postgresql_query:
         db: milabench
         query:
           - GRANT usage ON SCHEMA public TO milabench_write, milabench_read
-          - GRANT select ON metrics,packs,execs TO milabench_write, milabench_read
-          - GRANT insert,update ON metrics,packs,execs TO milabench_write
+          - GRANT select ON metrics,packs,execs,weights,saved_queries TO milabench_write, milabench_read
+          - GRANT insert,update ON metrics,packs,execs,weights,saved_queries TO milabench_write
           - GRANT usage ON ALL sequences IN SCHEMA public TO milabench_write;
+          - GRANT USAGE ON SCHEMA public TO milabench_migration;
+          - GRANT ALL ON ALL TABLES IN SCHEMA public TO milabench_migration;
+          - GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO milabench_migration;
 
     # - name: GRANT USAGE ON SCHEMA publics
     #   community.postgresql.postgresql_privs:

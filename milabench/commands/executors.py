@@ -8,6 +8,7 @@ from ..alt_async import destroy, run
 from ..metadata import machine_metadata
 from ..structs import BenchLogEntry
 from ..syslog import syslog
+from ..system import overrides_snapshot
 
 
 async def execute(pack, *args, cwd=None, env={}, external=False, use_stdout=False, **kwargs):
@@ -20,7 +21,7 @@ async def execute(pack, *args, cwd=None, env={}, external=False, use_stdout=Fals
         args: The arguments to the command
         cwd: The cwd to use (defaults to ``self.dirs.code``)
     """
-    from ..sizer import resolve_argv, scale_argv
+    from ..sizer import resolve_argv
 
     if cwd is None:
         cwd = pack.working_directory
@@ -96,7 +97,11 @@ async def execute_command(
     with process_cleaner(with_gpu_warden=with_gpu_warden) as warden:
         for pack, argv, _kwargs in command.commands():
             await pack.send(event="config", data=pack.config)
-            await pack.send(event="meta", data=machine_metadata(pack))
+
+            meta_info = machine_metadata(pack)
+            meta_info["overrides"] = overrides_snapshot()
+
+            await pack.send(event="meta", data=meta_info)
             
             delay = None
             if timeout:

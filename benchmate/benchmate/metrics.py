@@ -85,15 +85,16 @@ class LazyLossPusher(LazyMetricPusher):
         # no .item() we do not want to sync
         if hasattr(loss, "detach"):
             value = loss.detach()
-        self.append(value)
+        self.append(value, time.time())
 
-    def materialize(self, loss):
+    def materialize(self, loss, timing=None):
         value = loss
+
         # synch here is fine
         if hasattr(loss, "item"):
             value = loss.item()
 
-        return {"loss": value, "task": self.task}
+        return {"loss": value, "task": self.task, "time": timing}
 
 
 class CPUTimer:
@@ -240,7 +241,7 @@ class TimedIterator:
         self.event_fn = event_fn  # function to create a device event
         self.early_stop = earlystop  # Number of observation to target
         self.unit = 1000  # device timer is ms
-
+        self.last_time = time.time()
         self.message_push = push  # How to push the metrics usually voir or stdout
 
         # Number of times we broke out of the iterator for early stopping
@@ -286,6 +287,7 @@ class TimedIterator:
 
     def wrapped(self, iterator):
         # Time IO wait + batch compute
+        self.last_time = time.time()
         self.start = self.event_fn(enable_timing=True)
         self.start.record()
         self.previous_overhead = 0
@@ -372,7 +374,9 @@ class TimedIterator:
             end.synchronize()
             elapsed = (start.elapsed_time(end)) / self.unit
             rate = self.batch_size(bs) / elapsed
-            self.log_rate(rate)
+
+            self.last_time += elapsed
+            self.log_rate(rate, time=self.last_time)
 
         self.total_obs += len(self.events)
         self.events = []
@@ -421,8 +425,8 @@ class TimedIterator:
             self.message(sync_time=sync_time.elapsed(), units="s", task=self.task)
             self.message(process_time=process_time.elapsed(), units="s", task=self.task)
 
-    def log_rate(self, rate):
-        self.message(rate=rate, units="items/s", task=self.task)
+    def log_rate(self, rate, time=None):
+        self.message(rate=rate, units="items/s", task=self.task, time=time)
 
     def log_progress(self):
         if self.early_stop is not None:

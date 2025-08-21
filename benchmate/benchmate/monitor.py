@@ -12,9 +12,28 @@ from voir.instruments.gpu import gpu_monitor as gpu_monitor_fun, select_backend
 from voir.instruments.io import io_monitor
 from voir.instruments.network import network_monitor
 from voir.instruments.monitor import monitor
+from voir.helpers import current_overseer
 
 
 from .metrics import sumggle_push, give_push, file_push
+
+
+def log_patterns():
+    debug_metrics = ("__iter__", "overhead", "process_time")
+
+    base_metrics = (
+        "value", "progress", "rate", "units", "loss",  "time"
+    )
+
+    gpu_metrics = (
+        "gpudata", "memory_peak",
+    )
+
+    system_metrics = (
+        "cpudata", "process", "iodata", "netdata"
+    )
+
+    return base_metrics + gpu_metrics + system_metrics
 
 
 def auto_push():
@@ -157,7 +176,6 @@ def monogpu_monitor(*args, **kwargs):
         yield log
 
 
-
 @contextmanager
 def bench_monitor(*args, **kwargs):
     if int(os.getenv("RANK", -1)) == -1:
@@ -200,7 +218,7 @@ def voirfile_monitor(ov, options):
     
     instruments = [
         log(
-            "value", "progress", "rate", "units", "loss", "gpudata", context="task"
+            *log_patterns(), context="task"
         )
     ] 
 
@@ -213,6 +231,7 @@ def voirfile_monitor(ov, options):
     # mono gpu if rank is not set
     if rank == -1:
         instruments.append(monitor_monogpu(poll_interval=options.gpu_poll))
+        instruments.append(monitor_process_monogpu(poll_interval=options.gpu_poll))
 
     # rank is set only monitor main rank
     if rank == 0:

@@ -4,6 +4,7 @@ import os
 import milabench.alt_async
 import milabench.commands.executors
 from milabench.testing import resolved_config
+from milabench.pack import reset_benchmate_status
 
 import pytest
 
@@ -19,7 +20,10 @@ OVERSIZED_BENCHMARKS = {
 
 
 OVERSIZED_INSTALL_BENCHMARKS = {
-
+    # Needs CUDA_HOME
+    "dimenet",
+    "pna",
+    "recursiongfn"
 }
 
 def run_cli(*args, expected_code=0, msg=None):
@@ -91,8 +95,10 @@ def test_milabench(monkeypatch, bench, module_tmp_dir, standard_config):
         "--config", str(standard_config)
     ]
 
+    reset_benchmate_status()
     monkeypatch.setenv("MILABENCH_GPU_ARCH", "cuda")
-    
+    monkeypatch.setenv("MILABENCH_USE_UV", "1")
+
     if bench in OVERSIZED_INSTALL_BENCHMARKS:
         return
 
@@ -161,6 +167,7 @@ def test_milabench_bad_install(monkeypatch, tmp_path, config, file_regression, c
     ]
 
     monkeypatch.setenv("MILABENCH_GPU_ARCH", "bad")
+    monkeypatch.setenv("MILABENCH_USE_UV", "0")
     
     # check that the return code is an error
     with filecount_inc(str(tmp_path), "install"):

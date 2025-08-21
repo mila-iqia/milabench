@@ -27,11 +27,11 @@ evaluating current and future hardware in a research environment.
 
   
     git clone https://github.com/mila-iqia/milabench.git
-    
-    pip install -e milabench
-  
+
     export MILABENCH_GPU_ARCH=cuda
-  
+
+    pip install -e milabench[cuda]
+
     milabench install --base workspace --config milabench/config/standard.yaml --select fp32
 
     export MILABENCH_HF_TOKEN={your_token}

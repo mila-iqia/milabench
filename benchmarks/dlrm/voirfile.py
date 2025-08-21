@@ -2,8 +2,7 @@ from dataclasses import dataclass
 
 from voir import configurable
 from voir.phase import StopProgram
-from voir.instruments import dash, early_stop, gpu_monitor, log, rate
-from benchmate.monitor import monitor_monogpu
+from benchmate.monitor import voirfile_monitor
 
 
 @dataclass
@@ -32,19 +31,7 @@ def instrument_main(ov, options: Config):
 
     yield ov.phases.init
 
-    if options.dash:
-        ov.require(dash)
-
-    ov.require(
-        log("value", "progress", "rate", "units", "loss", "gpudata", context="task"),
-        rate(
-            interval=options.interval,
-            skip=options.skip,
-            sync=accelerator.synchronize,
-        ),
-        early_stop(n=options.stop, key="rate", task="train"),
-        monitor_monogpu(poll_interval=options.gpu_poll),
-    )
+    voirfile_monitor(ov, options)
 
     yield ov.phases.load_script
 

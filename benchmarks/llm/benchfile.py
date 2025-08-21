@@ -13,8 +13,9 @@ class Torchtune(TorchrunAllGPU):
     def executable(self):
         return f"{self.binfolder}/bin/tune"
 
-    #def should_wrap(self):
-    #    return True
+    def should_wrap(self):
+       # Always wrap inside torchtune even if the bench is single device
+       return True
 
     def __init__(self, pack: BasePackage, *torchrun_args, **kwargs):
         super().__init__(pack, "run", *torchrun_args, module=False, **kwargs)

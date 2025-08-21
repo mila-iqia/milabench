@@ -50,6 +50,7 @@ jobs:
 
       - name: dependencies
         run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
           cd /home/runner/work/milabench/milabench
           pip install virtualenv
           virtualenv ./env
@@ -57,7 +58,7 @@ jobs:
           #
           pip install -U pip
           pip install poetry
-          poetry export --dev -f requirements.txt --output requirements-dev.txt
+          # poetry export --dev -f requirements.txt --output requirements-dev.txt
           #
           # poetry doesnot work when installing those !?
           #
@@ -65,6 +66,7 @@ jobs:
           pip install -e .
           pip install -e benchmate
           pip install coverage pytest-regressions pytest-cov pytest
+          
 
       - name: Simple Template
         run: |

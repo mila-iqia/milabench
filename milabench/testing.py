@@ -98,9 +98,12 @@ def replay_run(folder):
         yield from interleave(*benchfiles)
 
 
-def show_diff(a, b, depth=0, path=None):
+def show_diff(a, b, depth=0, path=None, handler=None):
     indent = " " * depth
     acc = 0
+
+    if handler is None:
+        handler = lambda indent, p, v1, v2: print(f'{indent} {".".join(p)} {v1} != {v2}')
 
     if depth == 0:
         print()
@@ -115,15 +118,16 @@ def show_diff(a, b, depth=0, path=None):
         v2 = b.get(k)
 
         if v1 is None or v2 is None:
-            print(f"Missing key {k}")
+            handler(indent, p, f"{k}={v1}", f"{k}={v2}")
             continue
 
         if isinstance(v1, dict):
-            acc += show_diff(v1, v2, depth + 1, p)
+            acc += show_diff(v1, v2, depth + 1, p, handler)
             continue
 
         if v1 != v2:
-            print(f'{indent} {".".join(p)} {v1} != {v2}')
+            handler(indent, p, v1, v2)
+            
             acc += 1
 
     return acc
@@ -131,29 +135,41 @@ def show_diff(a, b, depth=0, path=None):
 
 def replay_zipfile(path, *validation, sleep=0):
     with zipfile.ZipFile(path, "r") as archive:
-        data = defaultdict(list)
+        data = defaultdict(lambda: defaultdict(list))
         total = 0
 
         for member in archive.namelist():
+            # results/runs/cu118_2.7.0_2.7.0+cu118.2025-05-03_20:27:45.018313/reformer.D1.data
+
             if member.endswith(".data"):
-                filename = member.split("/")[-1]
+                frags = member.split("/")
+
+                filename = frags[-1]
+                runname = frags[-2]
+
                 benchname = filename.split(".", maxsplit=1)[0]
-                data[benchname].append(member)
+                data[runname][benchname].append(member)
                 total += 1
 
         from milabench.config import set_run_count
 
-        set_run_count(total, len(data))
-
         with multilogger(*validation) as log:
-            for _, streams in data.items():
-                gen = interleave(*streams, open_fun=archive.open)
+            for runname, rundata in data.items():
+                
+                # reset the state of the valiation in multi run cases
+                for val in validation:
+                    if hasattr(val, "start_new_run"):
+                        val.start_new_run()
 
-                for entry in gen:
-                    time.sleep(sleep)
-                    log(entry)
-                    # callback(entry)
+                set_run_count(len(data), len(rundata))
 
+                for _, streams in rundata.items():
+                    gen = interleave(*streams, open_fun=archive.open)
+
+                    for entry in gen:
+                        time.sleep(sleep)
+                        log(entry)
+                        # callback(entry)
         return log
 
 

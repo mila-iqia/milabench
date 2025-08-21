@@ -151,8 +151,10 @@ def _metrics(xs):
     xs = sorted(x for x in xs if x is not None)
     if len(xs) >= 5:
         xs = xs[1:-1]  # Remove min and max
+
     if not xs:
         return nans
+    
     percentiles = [0, 25, 50, 75, 100]
     percentile_names = ["min", "q1", "median", "q3", "max"]
     metrics = dict(zip(percentile_names, np.percentile(xs, percentiles)))

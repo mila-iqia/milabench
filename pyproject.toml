@@ -26,7 +26,6 @@ cp-template = "^0.3.0"
 pandas = ">=1.4.2"
 numpy = ">=1.23.0,<2.0.0"
 tqdm = "^4.64.1"
-pip-tools = "^7.4.1"
 rich = "^13.3.2"
 omegaconf = "^2.3.0"
 sqlalchemy = "^2.0.15"
@@ -38,6 +37,27 @@ importlib-resources = "^6.1.0"
 filelock = "^3.15.3"
 hrepr = ">=0.7.0"
 cantilever = ">=0.1.0"
+nvidia-ml-py = { version = "^12.555.43", optional = true }
+uv = "^0.8.8"
+
+[tool.poetry.extras]
+cuda = ["nvidia-ml-py"]
+rocm = []
+hpu = []
+xpu = []
+web = []
+
+[tool.poetry.group.cuda.dependencies]
+nvidia-ml-py = "^12.575.51"
+
+[tool.poetry.group.web.dependencies]
+flask = "^3.1.1"
+flask-caching = "^2.3.1"
+psycopg2-binary = "^2.9.10"
+altair = "^5.5.0"
+waitress = "^3.0.2"
+alembic = "^1.16.4"
+apscheduler = "^3.11"
 
 [tool.poetry.group.dev.dependencies]
 black = ">=21.10b0"

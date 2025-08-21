@@ -103,7 +103,7 @@ Create a configuration file which contains the following structure:
         # Alias used to reference the node
       - name: manager
         ip: 192.168.11.11
-        port: 5000
+        sshport: 5000
         # Use this node as the master node or not
         main: true
         # User to use in remote milabench operations
