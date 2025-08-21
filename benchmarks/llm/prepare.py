@@ -85,6 +85,10 @@ def load_dataset(recipe, cfg):
     from torchtune import config
     sys.path.append(os.path.join(os.path.dirname(__file__), "bench"))
 
+    os.environ["MILABENCH_PREPARE"] = "1"
+    os.environ["RANK"] = "0"
+    os.environ["WORLD_SIZE"] = "1"
+
     if recipe.endswith("full_finetune_distributed.py"):
         from full_finetune_distributed import FullFinetuneRecipeDistributed as Recipe
 
