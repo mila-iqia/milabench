@@ -63,6 +63,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Recipes</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#base-setup">Base Setup</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#install-prepare-on-network-nodes">Install+Prepare on Network nodes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reuse-scaling-model-for-newer-gpus">Reuse scaling model for newer GPUs</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#batch-update-dependencies-dependenies-pinning">Batch Update Dependencies / Dependenies pinning</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#major-version-updates">Major version updates</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#minor-version-updates">Minor version updates</a></li>
@@ -173,13 +174,30 @@ milabench<span class="w"> </span>install<span class="w"> </span>--base<span clas
 milabench<span class="w"> </span>prepare<span class="w"> </span>--base<span class="w"> </span><span class="nv">$NETWORK_FOLDER</span><span class="w"> </span>--config<span class="w"> </span><span class="nv">$MILABENCH_CONFIG</span>
 </pre></div>
 </div>
-<ol class="arabic" start="2">
-<li><p>Compute node</p>
-<p># Sync data to local but use code from the network location
-milabench sharedsetup –network $NETWORK_FOLDER –local /tmp/local/results</p>
-<p>milabench run –base /tmp/local/results –config $NETWORK_FOLDER/milabench/config/standard.yaml</p>
-</li>
+<ol class="arabic simple" start="2">
+<li><p>Compute node</p></li>
 </ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Sync data to local but use code from the network location</span>
+milabench<span class="w"> </span>sharedsetup<span class="w"> </span>--network<span class="w"> </span><span class="nv">$NETWORK_FOLDER</span><span class="w"> </span>--local<span class="w"> </span>/tmp/local/results
+
+milabench<span class="w"> </span>run<span class="w"> </span>--base<span class="w"> </span>/tmp/local/results<span class="w"> </span>--config<span class="w"> </span><span class="nv">$NETWORK_FOLDER</span>/milabench/config/standard.yaml
+</pre></div>
+</div>
+</section>
+<section id="reuse-scaling-model-for-newer-gpus">
+<h2>Reuse scaling model for newer GPUs<a class="headerlink" href="#reuse-scaling-model-for-newer-gpus" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Use H100 scaling model for auto batch size</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">MILABENCH_SIZER_CONFIG</span><span class="o">=</span><span class="s2">&quot;/home/milabench/workspace/milabench/config/scaling/H100.yaml&quot;</span>
+
+<span class="c1"># Save the results to the H200 file</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">MILABENCH_SIZER_SAVE</span><span class="o">=</span><span class="s2">&quot;/home/milabench/workspace/milabench/config/scaling/H200.yaml&quot;</span>
+
+<span class="c1"># Enable batch resizing</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">MILABENCH_SIZER_AUTO</span><span class="o">=</span><span class="m">1</span>
+
+milabench<span class="w"> </span>run
+</pre></div>
+</div>
 </section>
 <section id="batch-update-dependencies-dependenies-pinning">
 <h2>Batch Update Dependencies / Dependenies pinning<a class="headerlink" href="#batch-update-dependencies-dependenies-pinning" title="Link to this heading"></a></h2>
@@ -375,7 +393,7 @@ podman<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </s
 <span class="w">      </span><span class="c1"># Alias used to reference the node</span>
 <span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">manager</span>
 <span class="w">         </span><span class="l l-Scalar l-Scalar-Plain">ip</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">192.168.11.11</span>
-<span class="w">         </span><span class="l l-Scalar l-Scalar-Plain">port</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5000</span>
+<span class="w">         </span><span class="l l-Scalar l-Scalar-Plain">sshport</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5000</span>
 <span class="w">         </span><span class="l l-Scalar l-Scalar-Plain"># Use this node as the master node or not</span>
 <span class="w">         </span><span class="l l-Scalar l-Scalar-Plain">main</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 <span class="w">         </span><span class="l l-Scalar l-Scalar-Plain"># User to use in remote milabench operations</span>

@@ -58,10 +58,31 @@ Install+Prepare on Network nodes
 
 2. Compute node
 
+.. code-block:: bash
+   
    # Sync data to local but use code from the network location
    milabench sharedsetup --network $NETWORK_FOLDER --local /tmp/local/results
 
    milabench run --base /tmp/local/results --config $NETWORK_FOLDER/milabench/config/standard.yaml
+
+
+Reuse scaling model for newer GPUs
+----------------------------------
+
+
+
+.. code-block:: bash
+
+   # Use H100 scaling model for auto batch size
+   export MILABENCH_SIZER_CONFIG="/home/milabench/workspace/milabench/config/scaling/H100.yaml"
+
+   # Save the results to the H200 file
+   export MILABENCH_SIZER_SAVE="/home/milabench/workspace/milabench/config/scaling/H200.yaml"
+
+   # Enable batch resizing
+   export MILABENCH_SIZER_AUTO=1
+
+   milabench run 
 
 
 Batch Update Dependencies / Dependenies pinning
@@ -287,7 +308,7 @@ Multi Node & Docker
          # Alias used to reference the node
          - name: manager
             ip: 192.168.11.11
-            port: 5000
+            sshport: 5000
             # Use this node as the master node or not
             main: true
             # User to use in remote milabench operations
