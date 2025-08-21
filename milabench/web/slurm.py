@@ -276,7 +276,7 @@ def slurm_integration(app):
 
     @app.route('/api/slurm/jobs/persited')
     def api_slurm_persisted():
-        return api_slurm_persisted_limited(10)
+        return api_slurm_persisted_limited(100)
 
     @app.route('/api/slurm/jobs/persited/<int:limit>')
     def api_slurm_persisted_limited(limit=None):

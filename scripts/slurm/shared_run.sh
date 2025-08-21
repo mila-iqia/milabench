@@ -1,10 +1,10 @@
 #!/bin/bash
 
-export MILABENCH_BRANCH=uv_compile_py3.12
+export MILABENCH_BRANCH=staging
 export PYTHON_VERSION=3.12
 export MILABENCH_GPU_ARCH=cuda
 export PYTHONUNBUFFERED=1
-export MILABENCH_ARGS="--select llm-full-mp-gpus"
+export MILABENCH_ARGS=""
 
 set -ex
 

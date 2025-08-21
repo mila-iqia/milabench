@@ -142,8 +142,7 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
             or self._enable_async_checkpointing,
         )
 
-        import torchcompat.core as acc
-        acc.init_process_group(backend=self.distributed_backend)
+        self.init_distributed()
 
         # Initialize distributed variables
         self.world_size, self.rank = utils.get_world_size_and_rank()
@@ -232,6 +231,15 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
         self.total_epochs = cfg.epochs
         self.max_steps_per_epoch = cfg.max_steps_per_epoch
         self.global_step = 0
+
+    def init_distributed(self):
+        import os 
+
+        if os.getenv("MILABENCH_PREPARE") == "1":
+            return 
+
+        import torchcompat.core as acc
+        acc.init_process_group(backend=self.distributed_backend)
 
     def _update_recipe_state(self, ckpt_dict: Dict[str, Any]) -> None:
         """
