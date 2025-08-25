@@ -584,6 +584,9 @@ def slurm_integration(app):
 
         old_cmd = result["stdout"]
 
+        # Remove old dependency requirements
+        old_cmd = re.sub(r'--dependency=[a-z:0-9,\?]*', '', old_cmd)
+
         new_cmd = "'" + old_cmd.replace(old_jr_job_id, new_jr_job_id) + "'"
 
         with tempfile.NamedTemporaryFile(mode='w', suffix='.sh', delete=False) as f:
