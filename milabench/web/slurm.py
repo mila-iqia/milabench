@@ -37,6 +37,78 @@ JOBRUNNER_LOCAL_CACHE =  os.path.abspath(os.path.join(ROOT, '..', 'data'))
 #   /home/$user/scratch/jobrunner/$internal_job_id/output/...
 #
 
+
+OR = "?"
+AND = ","
+
+AFTER = "after"
+AFTER_OK = "afterok"
+AFTER_ANY = "afterany"
+AFTER_NOT_OK = "afternotok"
+SINGLETON = "singleton"
+
+
+class Job:
+    def __init__(self, script, profile):
+        self.script = script
+        self.profile = profile
+
+    def gen(self, depends_event=AFTER_OK, depends_on=None):
+        args = []
+
+        if depends_on is not None:
+            args.append(f"--dependency={depends_event}:{depends_on}")
+
+        cmd = "squeue ..."
+    
+        return job_id
+
+
+class Sequential:
+    def __init__(self, *jobs):
+        self.jobs = jobs
+
+    def gen(self, depends_on=None):
+        job_id = depends_on
+
+        for job in self.jobs:
+            job_id = job.gen(depends_on=job_id)
+
+        return job_id
+
+
+class Parallel:
+    def __init__(self, *jobs):
+        self.jobs = jobs
+    
+    def gen(self, depends_on=None):
+        job_ids = []
+        for job in self.jobs: 
+            job_ids.append(job.gen(depends_on=depends_on))
+
+        return ':'.join(job_ids)
+
+
+#
+# Standard milabench run
+#
+standard_run = Sequential(
+    Job("pin", "pin"),
+    Job("install", "install"),
+    Job("prepare", "prepare"),
+    Parallel(
+        Job("A100l", "run"),
+        Job("A100", "run"),
+        Job("A6000", "run"),
+        Job("H100", "run"),
+        Job("L40S", "run"),
+        Job("rtx8000", "run"),
+        Job("v100", "run"),
+    )
+)
+    
+
+
 def job_acc_cache_status(filename: str):
     with open(filename, "r") as fp:
         try:
