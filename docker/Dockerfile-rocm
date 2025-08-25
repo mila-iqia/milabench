@@ -1,5 +1,5 @@
 
-FROM rocm/dev-ubuntu-22.04:6.2.4
+FROM rocm/dev-ubuntu-24.04:6.4.3
 
 # Arguments
 # ---------
@@ -39,7 +39,7 @@ COPY . /milabench/milabench/
 # build-essential: for rust
 
 RUN apt-get update            &&\
-    apt-get install -y git build-essential curl python3.10 python-is-python3 python3-pip libgl1-mesa-glx libglib2.0-0 gcc g++ python3-dev &&\
+    apt-get install -y git build-essential curl python3 python3-virtualenv python-is-python3 python3-pip libgl1 libglib2.0-0 gcc g++ python3-dev &&\
     apt-get install -y rocthrust hipsparse &&\
     apt-get clean &&\
     rm -rf /var/lib/apt/lists/*
@@ -51,12 +51,14 @@ ENV ROCM_HOME="/opt/rocm"
 
 # Install Milabench
 # -----------------
+ENV MILAENCH_ENV=/milabench/.env
 
-RUN python -m pip install -U pip            &&\
-    python -m pip install -U setuptools     &&\
-    python -m pip install -U poetry         &&\
-    python -m pip install -e /milabench/milabench/ &&\
-    python -m pip cache purge
+RUN virtualenv $MILAENCH_ENV                                            &&\
+    $MILAENCH_ENV/bin/python -m pip install -U pip                      &&\
+    $MILAENCH_ENV/bin/python -m pip install -U setuptools               &&\
+    $MILAENCH_ENV/bin/python -m pip install -U poetry                   &&\
+    $MILAENCH_ENV/bin/python -m pip install -e /milabench/milabench/    &&\
+    $MILAENCH_ENV/bin/python -m pip cache purge                       
 
 
 # Prepare bench
@@ -65,7 +67,7 @@ RUN python -m pip install -U pip            &&\
 # pip times out often when downloading pytorch
 ENV PIP_DEFAULT_TIMEOUT=800
 ENV ROCM_HOME="/opt/rocm"
-RUN milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
+RUN $MILAENCH_ENV/bin/milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
     python -m pip cache purge
 
 CMD ["milabench", "run"]
