@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import mimetypes
 import os
 import subprocess
@@ -10,6 +12,7 @@ import uuid
 from functools import wraps
 import traceback
 
+from cantilever.core.timer import timeit
 from flask import request, jsonify, send_file
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -48,10 +51,66 @@ AFTER_NOT_OK = "afternotok"
 SINGLETON = "singleton"
 
 
-class Job:
-    def __init__(self, script, profile):
+class Pipeline:
+    """The job runner define a dependency between jobs and schedule them to slurm.
+    It is able to launch a job on the cluster.
+
+    Its most interesting feature is being able to track which job failed and which were successful 
+    and only trigger the failed one.
+
+    To do so it simply iterate over the job tree and mark the one failed to retry and skip the successful ones.
+    """
+
+    def __init__(self, job_definition):
+        self.definition: JobNode = job_definition
+
+        # A pipeline run is something only known to the job runner and as such does not have Slurm Job ID
+        # But it has a jobs id
+        self.job_id = None
+
+    def schedule(self):
+        pass
+
+    def rerun(self) -> Pipeline:
+        # traverse the job definition and create a new one
+        pass
+
+    def __json__(self):
+        return {
+            "type": "pipeline",
+            "definition": self.definition.__json__(),
+            "job_id": self.job_id
+        }
+ 
+
+class JobNode:
+    def gen(self, depends_event=AFTER_OK, depends_on=None):
+        pass
+
+    @staticmethod
+    def from_json(data):
+        def make_jobs(data):
+            return [JobNode.from_json(job) for job in data.pop("jobs")]
+
+        match data.pop("type"):
+            case "job":
+                return Job(**data)
+            case "parallel":
+                return Parallel(*make_jobs(data), **data)
+            case "sequential":
+                return Sequential(*make_jobs(data), **data)
+            case "pipeline":
+                return Pipeline(JobNode.from_json(data.pop("definition")), **data)
+            case unknown_type:
+                raise RuntimeError(f"Unknown type: {unknown_type}")
+
+
+class Job(JobNode):
+    def __init__(self, script, profile, job_id=None, slurm_jobid=None):
         self.script = script
         self.profile = profile
+        self.job_id = job_id
+        self.slurm_jobid = slurm_jobid
 
     def gen(self, depends_event=AFTER_OK, depends_on=None):
         args = []
@@ -59,12 +118,23 @@ class Job:
         if depends_on is not None:
             args.append(f"--dependency={depends_event}:{depends_on}")
 
+        # Here we submit the job definition to slurm itslef get the jobid from the query
+        # also make a job runner id for it
         cmd = "squeue ..."
     
-        return job_id
+        return self.slurm_jobid
+
+    def __json__(self):
+        return {
+            "type": "job",
+            "script": self.script,
+            "profile": self.profile,
+            "job_id": self.job_id,
+            "slurm_jobid": self.slurm_jobid
+        }
 
 
-class Sequential:
+class Sequential(JobNode):
     def __init__(self, *jobs):
         self.jobs = jobs
 
@@ -76,8 +146,16 @@ class Sequential:
 
         return job_id
 
+    def __json__(self):
+        return {
+            "type": "sequential",
+            "jobs": [
+                job.__json__() for job in self.jobs
+            ]
+        }
 
-class Parallel:
+
+class Parallel(JobNode):
     def __init__(self, *jobs):
         self.jobs = jobs
     
@@ -88,6 +166,13 @@ class Parallel:
 
         return ':'.join(job_ids)
 
+    def __json__(self):
+        return {
+            "type": "parallel",
+            "jobs": [
+                job.__json__() for job in self.jobs
+            ]
+        }
 
 #
 # Standard milabench run
@@ -179,15 +264,16 @@ def rsync_jobrunner_folder():
     try:
         rsync_cmd = f"rsync -az mila:{JOBRUNNER_WORKDIR}/ {JOBRUNNER_LOCAL_CACHE}"
 
-        print(rsync_cmd)
-
-        _ = subprocess.run(
-                rsync_cmd,
-                capture_output=True,
-                text=True,
-                timeout=30,
-                shell=True
-            )
+        with timeit("rsync") as chrono:
+            _ = subprocess.run(
+                    rsync_cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                    shell=True
+                )
+            
+        print(f"{rsync_cmd} {chrono.timing.value.avg} s")
 
         return 0
     except Exception:
