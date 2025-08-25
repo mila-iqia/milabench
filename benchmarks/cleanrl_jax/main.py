@@ -393,8 +393,8 @@ if __name__ == "__main__":
                 x = jnp.reshape(x, (args.num_minibatches, -1) + x.shape[1:])
                 return x
 
-            flatten_storage = jax.tree_map(flatten, storage)
-            shuffled_storage = jax.tree_map(convert_data, flatten_storage)
+            flatten_storage = jax.tree.map(flatten, storage)
+            shuffled_storage = jax.tree.map(convert_data, flatten_storage)
 
             def update_minibatch(agent_state, minibatch):
                 (loss, (pg_loss, v_loss, entropy_loss, approx_kl)), grads = ppo_loss_grad_fn(

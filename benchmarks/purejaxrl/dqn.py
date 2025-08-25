@@ -108,7 +108,7 @@ def make_train(config):
         train_state = CustomTrainState.create(
             apply_fn=network.apply,
             params=network_params,
-            target_network_params=jax.tree_map(lambda x: jnp.copy(x), network_params),
+            target_network_params=jax.tree.map(lambda x: jnp.copy(x), network_params),
             tx=tx,
             timesteps=0,
             n_updates=0,
