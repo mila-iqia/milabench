@@ -229,6 +229,14 @@ def local_cache(cache_key, arg_key="job_id", check_validation=None):
 
             result = fun(**kwargs)
 
+            if type(result) is tuple:
+                # request failed, send old data
+                if os.path.exists(cache_file):
+                    return send_file(cache_file, mimetype="application/json")
+
+                # No cached data
+                return result 
+
             try:
                 os.makedirs(cache_dir, exist_ok=True)
                 with open(cache_file, "w") as fp:
@@ -260,22 +268,29 @@ def generate_unique_job_name(job_data=None, from_job_id=None):
     return unique_id
 
 
-def rsync_jobrunner_folder():
-    try:
-        rsync_cmd = f"rsync -az mila:{JOBRUNNER_WORKDIR}/ {JOBRUNNER_LOCAL_CACHE}"
+RSYNC_OK = 0
+RSYNC_TIMEOUT = 2
+RSYNC_ERROR = 1 
 
+def rsync_jobrunner_folder(timeout=5):
+    rsync_cmd = f"rsync -az mila:{JOBRUNNER_WORKDIR}/ {JOBRUNNER_LOCAL_CACHE}"
+
+    try:
         with timeit("rsync") as chrono:
             _ = subprocess.run(
                     rsync_cmd,
                     capture_output=True,
                     text=True,
-                    timeout=30,
+                    timeout=timeout,
                     shell=True
                 )
             
         print(f"{rsync_cmd} {chrono.timing.value.avg} s")
 
         return 0
+    except subprocess.TimeoutExpired:
+        print(f"{rsync_cmd} timed out after {timeout} s")
+        return 1
     except Exception:
         import traceback
         traceback.print_exc()
@@ -302,22 +317,25 @@ def rsync_load(cache_key, arg_key="job_id"):
             cache_dir = os.path.join(JOBRUNNER_LOCAL_CACHE, job_id)
             cache_file = os.path.join(cache_dir, cache_key)
 
-            if rsync_jobrunner_folder() == 0:
-                if os.path.exists(cache_file):
-                    with open(cache_file, "r") as fp:
-                        if start is not None and end is not None:
-                            fp.seek(start, os.SEEK_SET)
-                            return {
-                                "data": fp.read(end - start),
-                                "size": os.path.getsize(cache_file)   
-                            }
+            status = "rsynced"
+            if rsync_jobrunner_folder() != 0:
+                status = "stale"
 
+            if os.path.exists(cache_file):
+                with open(cache_file, "r") as fp:
+                    if start is not None and end is not None:
+                        fp.seek(start, os.SEEK_SET)
                         return {
-                            "data": fp.read(),
-                            "size": os.path.getsize(cache_file)    
+                            "data": fp.read(end - start),
+                            "size": os.path.getsize(cache_file),
+                            "status": status
                         }
 
-            return ""
+                    return {
+                        "data": fp.read(),
+                        "size": os.path.getsize(cache_file),
+                        "status": status
+                    }
         return wrapper
     return wrapped
 
@@ -366,7 +384,7 @@ def _parse_sbatch_args(sbatch_args):
     return parsed
 
 
-def remote_command(host, command):
+def remote_command(host, command, timeout=5):
     """Execute a Slurm command via SSH"""
     try:
         # Remote execution via SSH
@@ -377,7 +395,7 @@ def remote_command(host, command):
             ssh_cmd,
             capture_output=True,
             text=True,
-            timeout=30,
+            timeout=timeout,
             shell=True
         )
 
@@ -388,8 +406,6 @@ def remote_command(host, command):
             'returncode': result.returncode
         }
     except subprocess.TimeoutExpired:
-        import traceback
-        traceback.print_exc()
         return {
             'success': False,
             'stdout': '',
@@ -436,21 +452,39 @@ def slurm_integration(app):
     def api_slurm_persisted():
         return api_slurm_persisted_limited(100)
 
+    @app.route("/api/slurm/status")
+    def api_slurm_status():
+        # this works even during maintenance
+        # nc -z -w 2 login.server.mila.quebec 2222
+        result = remote_command(SLURM_HOST, f"sinfo -h")
+
+        if result['success']:
+            return {
+                "status": "online"
+            }
+
+        return {
+            "status": "offline",
+            "reason": result["stderr"]
+        }
+
     @app.route('/api/slurm/jobs/persited/<int:limit>')
     def api_slurm_persisted_limited(limit=None):
         """Get a list of job output still available"""
         try:
-            if rsync_jobrunner_folder() == 0:
-                # jobs = os.listdir(JOBRUNNER_LOCAL_CACHE)
-                # jobs.remove(".git")
-                result = subprocess.check_output(f"ls -t {JOBRUNNER_LOCAL_CACHE}", shell=True, text=True)
-                jobs = list(filter(lambda x: x != "", result.split("\n")))
+            if rsync_jobrunner_folder() != 0:
+                print("Stale")
 
-                if limit is None:
-                    return jobs
+            # jobs = os.listdir(JOBRUNNER_LOCAL_CACHE)
+            # jobs.remove(".git")
 
-                return jobs[:limit]
-            return []
+            result = subprocess.check_output(f"ls -t {JOBRUNNER_LOCAL_CACHE}", shell=True, text=True)
+            jobs = list(filter(lambda x: x != "", result.split("\n")))
+
+            if limit is None:
+                return jobs
+
+            return jobs[:limit]
 
         except Exception as e:
             return jsonify({'error': str(e)}), 500
