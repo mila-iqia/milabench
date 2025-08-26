@@ -2,7 +2,7 @@
 #    uv pip compile --emit-index-url --emit-find-links -o benchmarks/torchvision/requirements.cuda.txt .pin/tmp-constraints-cuda-torchvision.txt benchmarks/torchvision/requirements.in
 --index-url https://pypi.org/simple
 --find-links https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
---find-links https://data.pyg.org/whl/torch-2.7.0+cu128.html
+--find-links https://data.pyg.org/whl/torch-2.8.0+cu129.html
 
 antlr4-python3-runtime==4.9.3
     # via
@@ -20,7 +20,7 @@ executing==2.2.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   varname
-filelock==3.18.0
+filelock==3.19.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   torch
@@ -37,19 +37,19 @@ importlib-resources==6.5.2
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   torchcompat
-jax==0.5.3
+jax==0.6.2
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -r .pin/../constraints/extra/torch.cuda.txt
-jax-cuda12-pjrt==0.5.3
+jax-cuda12-pjrt==0.6.2
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
-jax-cuda12-plugin==0.5.3
+jax-cuda12-plugin==0.6.2
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax
-jaxlib==0.5.3
+jaxlib==0.6.2
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax
@@ -91,14 +91,14 @@ numpy==1.26.4
     #   scipy
     #   torchvision
     #   xformers
-nvidia-cublas-cu12==12.6.4.1
+nvidia-cublas-cu12==12.8.4.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
     #   nvidia-cudnn-cu12
     #   nvidia-cusolver-cu12
     #   torch
-nvidia-cuda-cupti-cu12==12.6.80
+nvidia-cuda-cupti-cu12==12.8.90
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
@@ -107,45 +107,46 @@ nvidia-cuda-nvcc-cu12==12.9.86
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
-nvidia-cuda-nvrtc-cu12==12.6.77
-    # via
-    #   -c .pin/../.pin/constraints-cuda-torch.txt
-    #   torch
-nvidia-cuda-runtime-cu12==12.6.77
+nvidia-cuda-nvrtc-cu12==12.8.93
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
     #   torch
-nvidia-cudnn-cu12==9.5.1.17
+nvidia-cuda-runtime-cu12==12.8.90
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
     #   torch
-nvidia-cufft-cu12==11.3.0.4
+nvidia-cudnn-cu12==9.10.2.21
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
     #   torch
-nvidia-cufile-cu12==1.11.1.6
-    # via
-    #   -c .pin/../.pin/constraints-cuda-torch.txt
-    #   torch
-nvidia-curand-cu12==10.3.7.77
-    # via
-    #   -c .pin/../.pin/constraints-cuda-torch.txt
-    #   torch
-nvidia-cusolver-cu12==11.7.1.2
+nvidia-cufft-cu12==11.3.3.83
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
     #   torch
-nvidia-cusparse-cu12==12.5.4.2
+nvidia-cufile-cu12==1.13.1.3
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   torch
+nvidia-curand-cu12==10.3.9.90
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   torch
+nvidia-cusolver-cu12==11.7.3.90
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   jax-cuda12-plugin
+    #   torch
+nvidia-cusparse-cu12==12.5.8.93
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
     #   nvidia-cusolver-cu12
     #   torch
-nvidia-cusparselt-cu12==0.6.3
+nvidia-cusparselt-cu12==0.7.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   torch
@@ -153,12 +154,12 @@ nvidia-ml-py==13.580.65
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -r .pin/../constraints/extra/torch.cuda.txt
-nvidia-nccl-cu12==2.26.2
+nvidia-nccl-cu12==2.27.3
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
     #   torch
-nvidia-nvjitlink-cu12==12.6.85
+nvidia-nvjitlink-cu12==12.8.93
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   jax-cuda12-plugin
@@ -166,7 +167,11 @@ nvidia-nvjitlink-cu12==12.6.85
     #   nvidia-cusolver-cu12
     #   nvidia-cusparse-cu12
     #   torch
-nvidia-nvtx-cu12==12.6.77
+nvidia-nvshmem-cu12==3.3.24
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   jax-cuda12-plugin
+nvidia-nvtx-cu12==12.8.90
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   torch
@@ -224,7 +229,7 @@ sympy==1.14.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   torch
-torch==2.7.1
+torch==2.8.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -c .pin/../constraints/cuda.txt
@@ -236,7 +241,7 @@ torchcompat==1.1.4
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -c .pin/../constraints/cuda.txt
     #   -r benchmarks/torchvision/requirements.in
-torchvision==0.22.1
+torchvision==0.23.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -r benchmarks/torchvision/requirements.in
@@ -244,11 +249,11 @@ tqdm==4.67.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -r benchmarks/torchvision/requirements.in
-triton==3.3.1
+triton==3.4.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   torch
-typing-extensions==4.14.1
+typing-extensions==4.15.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   reactivex
@@ -262,7 +267,7 @@ voir==0.2.21
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -c .pin/../constraints/cuda.txt
     #   -r benchmarks/torchvision/requirements.in
-xformers==0.0.31.post1
+xformers==0.0.32.post2
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -r .pin/../constraints/extra/torch.cuda.txt

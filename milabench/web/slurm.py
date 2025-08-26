@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import mimetypes
 import os
 import subprocess
@@ -10,6 +12,7 @@ import uuid
 from functools import wraps
 import traceback
 
+from cantilever.core.timer import timeit
 from flask import request, jsonify, send_file
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -36,6 +39,160 @@ JOBRUNNER_LOCAL_CACHE =  os.path.abspath(os.path.join(ROOT, '..', 'data'))
 #   /home/$user/scratch/jobrunner/$internal_job_id/cmd.sh
 #   /home/$user/scratch/jobrunner/$internal_job_id/output/...
 #
+
+
+OR = "?"
+AND = ","
+
+AFTER = "after"
+AFTER_OK = "afterok"
+AFTER_ANY = "afterany"
+AFTER_NOT_OK = "afternotok"
+SINGLETON = "singleton"
+
+
+class Pipeline:
+    """The job runner define a dependency between jobs and schedule them to slurm.
+    It is able to launch a job on the cluster.
+
+    Its most interesting feature is being able to track which job failed and which were successful 
+    and only trigger the failed one.
+
+    To do so it simply iterate over the job tree and mark the one failed to retry and skip the successful ones.
+    """
+
+    def __init__(self, job_definition):
+        self.definition: JobNode = job_definition
+
+        # A pipeline run is something only known to the job runner and as such does not have Slurm Job ID
+        # But it has a jobs id
+        self.job_id = None
+
+    def schedule(self):
+        pass
+
+    def rerun(self) -> Pipeline:
+        # traverse the job definition and create a new one
+        pass
+
+    def __json__(self):
+        return {
+            "type": "pipeline",
+            "definition": self.definition.__json__(),
+            "job_id": self.job_id
+        }
+ 
+
+class JobNode:
+    def gen(self, depends_event=AFTER_OK, depends_on=None):
+        pass
+
+    @staticmethod
+    def from_json(data):
+        def make_jobs(data):
+            return [JobNode.from_json(job) for job in data.pop("jobs")]
+
+        match data.pop("type"):
+            case "job":
+                return Job(**data)
+            case "parallel":
+                return Parallel(*make_jobs(data), **data)
+            case "sequential":
+                return Sequential(*make_jobs(data), **data)
+            case "pipeline":
+                return Pipeline(JobNode.from_json(data.pop("definition")), **data)
+            case unknown_type:
+                raise RuntimeError(f"Unknown type: {unknown_type}")
+
+
+class Job(JobNode):
+    def __init__(self, script, profile, job_id=None, slurm_jobid=None):
+        self.script = script
+        self.profile = profile
+        self.job_id = job_id
+        self.slurm_jobid = slurm_jobid
+
+    def gen(self, depends_event=AFTER_OK, depends_on=None):
+        args = []
+
+        if depends_on is not None:
+            args.append(f"--dependency={depends_event}:{depends_on}")
+
+        # Here we submit the job definition to slurm itslef get the jobid from the query
+        # also make a job runner id for it
+        cmd = "squeue ..."
+    
+        return self.slurm_jobid
+
+    def __json__(self):
+        return {
+            "type": "job",
+            "script": self.script,
+            "profile": self.profile,
+            "job_id": self.job_id,
+            "slurm_jobid": self.slurm_jobid
+        }
+
+
+class Sequential(JobNode):
+    def __init__(self, *jobs):
+        self.jobs = jobs
+
+    def gen(self, depends_on=None):
+        job_id = depends_on
+
+        for job in self.jobs:
+            job_id = job.gen(depends_on=job_id)
+
+        return job_id
+
+    def __json__(self):
+        return {
+            "type": "sequential",
+            "jobs": [
+                job.__json__() for job in self.jobs
+            ]
+        }
+
+
+class Parallel(JobNode):
+    def __init__(self, *jobs):
+        self.jobs = jobs
+    
+    def gen(self, depends_on=None):
+        job_ids = []
+        for job in self.jobs: 
+            job_ids.append(job.gen(depends_on=depends_on))
+
+        return ':'.join(job_ids)
+
+    def __json__(self):
+        return {
+            "type": "parallel",
+            "jobs": [
+                job.__json__() for job in self.jobs
+            ]
+        }
+
+#
+# Standard milabench run
+#
+standard_run = Sequential(
+    Job("pin", "pin"),
+    Job("install", "install"),
+    Job("prepare", "prepare"),
+    Parallel(
+        Job("A100l", "run"),
+        Job("A100", "run"),
+        Job("A6000", "run"),
+        Job("H100", "run"),
+        Job("L40S", "run"),
+        Job("rtx8000", "run"),
+        Job("v100", "run"),
+    )
+)
+    
+
 
 def job_acc_cache_status(filename: str):
     with open(filename, "r") as fp:
@@ -72,6 +229,14 @@ def local_cache(cache_key, arg_key="job_id", check_validation=None):
 
             result = fun(**kwargs)
 
+            if type(result) is tuple:
+                # request failed, send old data
+                if os.path.exists(cache_file):
+                    return send_file(cache_file, mimetype="application/json")
+
+                # No cached data
+                return result 
+
             try:
                 os.makedirs(cache_dir, exist_ok=True)
                 with open(cache_file, "w") as fp:
@@ -103,21 +268,29 @@ def generate_unique_job_name(job_data=None, from_job_id=None):
     return unique_id
 
 
-def rsync_jobrunner_folder():
+RSYNC_OK = 0
+RSYNC_TIMEOUT = 2
+RSYNC_ERROR = 1 
+
+def rsync_jobrunner_folder(timeout=5):
+    rsync_cmd = f"rsync -az mila:{JOBRUNNER_WORKDIR}/ {JOBRUNNER_LOCAL_CACHE}"
+
     try:
-        rsync_cmd = f"rsync -az mila:{JOBRUNNER_WORKDIR}/ {JOBRUNNER_LOCAL_CACHE}"
-
-        print(rsync_cmd)
-
-        _ = subprocess.run(
-                rsync_cmd,
-                capture_output=True,
-                text=True,
-                timeout=30,
-                shell=True
-            )
+        with timeit("rsync") as chrono:
+            _ = subprocess.run(
+                    rsync_cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout,
+                    shell=True
+                )
+            
+        print(f"{rsync_cmd} {chrono.timing.value.avg} s")
 
         return 0
+    except subprocess.TimeoutExpired:
+        print(f"{rsync_cmd} timed out after {timeout} s")
+        return 1
     except Exception:
         import traceback
         traceback.print_exc()
@@ -144,22 +317,25 @@ def rsync_load(cache_key, arg_key="job_id"):
             cache_dir = os.path.join(JOBRUNNER_LOCAL_CACHE, job_id)
             cache_file = os.path.join(cache_dir, cache_key)
 
-            if rsync_jobrunner_folder() == 0:
-                if os.path.exists(cache_file):
-                    with open(cache_file, "r") as fp:
-                        if start is not None and end is not None:
-                            fp.seek(start, os.SEEK_SET)
-                            return {
-                                "data": fp.read(end - start),
-                                "size": os.path.getsize(cache_file)   
-                            }
+            status = "rsynced"
+            if rsync_jobrunner_folder() != 0:
+                status = "stale"
 
+            if os.path.exists(cache_file):
+                with open(cache_file, "r") as fp:
+                    if start is not None and end is not None:
+                        fp.seek(start, os.SEEK_SET)
                         return {
-                            "data": fp.read(),
-                            "size": os.path.getsize(cache_file)    
+                            "data": fp.read(end - start),
+                            "size": os.path.getsize(cache_file),
+                            "status": status
                         }
 
-            return ""
+                    return {
+                        "data": fp.read(),
+                        "size": os.path.getsize(cache_file),
+                        "status": status
+                    }
         return wrapper
     return wrapped
 
@@ -208,7 +384,7 @@ def _parse_sbatch_args(sbatch_args):
     return parsed
 
 
-def remote_command(host, command):
+def remote_command(host, command, timeout=5):
     """Execute a Slurm command via SSH"""
     try:
         # Remote execution via SSH
@@ -219,7 +395,7 @@ def remote_command(host, command):
             ssh_cmd,
             capture_output=True,
             text=True,
-            timeout=30,
+            timeout=timeout,
             shell=True
         )
 
@@ -230,8 +406,6 @@ def remote_command(host, command):
             'returncode': result.returncode
         }
     except subprocess.TimeoutExpired:
-        import traceback
-        traceback.print_exc()
         return {
             'success': False,
             'stdout': '',
@@ -276,23 +450,41 @@ def slurm_integration(app):
 
     @app.route('/api/slurm/jobs/persited')
     def api_slurm_persisted():
-        return api_slurm_persisted_limited(10)
+        return api_slurm_persisted_limited(100)
+
+    @app.route("/api/slurm/status")
+    def api_slurm_status():
+        # this works even during maintenance
+        # nc -z -w 2 login.server.mila.quebec 2222
+        result = remote_command(SLURM_HOST, f"sinfo -h")
+
+        if result['success']:
+            return {
+                "status": "online"
+            }
+
+        return {
+            "status": "offline",
+            "reason": result["stderr"]
+        }
 
     @app.route('/api/slurm/jobs/persited/<int:limit>')
     def api_slurm_persisted_limited(limit=None):
         """Get a list of job output still available"""
         try:
-            if rsync_jobrunner_folder() == 0:
-                # jobs = os.listdir(JOBRUNNER_LOCAL_CACHE)
-                # jobs.remove(".git")
-                result = subprocess.check_output(f"ls -t {JOBRUNNER_LOCAL_CACHE}", shell=True, text=True)
-                jobs = list(filter(lambda x: x != "", result.split("\n")))
+            if rsync_jobrunner_folder() != 0:
+                print("Stale")
 
-                if limit is None:
-                    return jobs
+            # jobs = os.listdir(JOBRUNNER_LOCAL_CACHE)
+            # jobs.remove(".git")
 
-                return jobs[:limit]
-            return []
+            result = subprocess.check_output(f"ls -t {JOBRUNNER_LOCAL_CACHE}", shell=True, text=True)
+            jobs = list(filter(lambda x: x != "", result.split("\n")))
+
+            if limit is None:
+                return jobs
+
+            return jobs[:limit]
 
         except Exception as e:
             return jsonify({'error': str(e)}), 500
@@ -425,6 +617,9 @@ def slurm_integration(app):
             return jsonify({'error': f'Failed to retrieve previous job command: {result["stderr"]}'}), 500
 
         old_cmd = result["stdout"]
+
+        # Remove old dependency requirements
+        old_cmd = re.sub(r'--dependency=[a-z:0-9,\?]*', '', old_cmd)
 
         new_cmd = "'" + old_cmd.replace(old_jr_job_id, new_jr_job_id) + "'"
 

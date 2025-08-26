@@ -1,7 +1,7 @@
 # FROM ubuntu:22.04
 
 # For cuda-gdb
-FROM nvidia/cuda:12.8.1-devel-ubuntu24.04
+FROM nvidia/cuda:12.9.1-devel-ubuntu24.04
 
 # Arguments
 # ---------
@@ -41,7 +41,7 @@ COPY . /milabench/milabench/
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update -y &&\
-    apt-get install -y --no-install-recommends git build-essential curl python3 python-is-python3 python3-pip libgl1 libglib2.0-0 gcc g++ python3-dev &&\
+    apt-get install -y --no-install-recommends git build-essential curl python3 python3-virtualenv python-is-python3 python3-pip libgl1 libglib2.0-0 gcc g++ python3-dev &&\
     curl -o /etc/apt/trusted.gpg.d/mellanox.asc https://content.mellanox.com/ofed/RPM-GPG-KEY-Mellanox &&\
     curl -o /etc/apt/sources.list.d/mellanox.list https://linux.mellanox.com/public/repo/mlnx_ofed/${MOFED_VERSION}/ubuntu22.04/mellanox_mlnx_ofed.list &&\
     apt-get update -y &&\
@@ -57,12 +57,14 @@ ENV CUDA_HOME=/usr/local/cuda-12/
 # Install Milabench
 # -----------------
 
-RUN python -m pip install -U pip            &&\
-    python -m pip install -U setuptools     &&\
-    python -m pip install -U poetry         &&\
-    python -m pip install -e /milabench/milabench/ &&\
-    python -m pip cache purge                       
+ENV MILAENCH_ENV=/milabench/.env
 
+RUN virtualenv $MILAENCH_ENV                                            &&\
+    $MILAENCH_ENV/bin/python -m pip install -U pip                      &&\
+    $MILAENCH_ENV/bin/python -m pip install -U setuptools               &&\
+    $MILAENCH_ENV/bin/python -m pip install -U poetry                   &&\
+    $MILAENCH_ENV/bin/python -m pip install -e /milabench/milabench/    &&\
+    $MILAENCH_ENV/bin/python -m pip cache purge                       
 
 # Prepare bench
 # -------------
@@ -73,7 +75,7 @@ ENV PIP_DEFAULT_TIMEOUT=800
 # https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html#gpu-feature-list
 ENV TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6;8.9"
 
-RUN milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
+RUN $MILAENCH_ENV/bin/milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
     python -m pip cache purge                                                          
 
 # CMD milabench run

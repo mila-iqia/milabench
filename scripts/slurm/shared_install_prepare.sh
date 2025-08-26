@@ -1,7 +1,7 @@
 #!/bin/bash
 
-export MILABENCH_BRANCH=uv_compile_py3.12
-export PYTHON_VERSION='3.12'
+export MILABENCH_BRANCH=staging
+export PYTHON_VERSION=3.12
 export MILABENCH_GPU_ARCH=cuda
 export PYTHONUNBUFFERED=1
 
@@ -67,7 +67,7 @@ milabench slurm_system > $MILABENCH_WORDIR/system.yaml
 
 rm -rf  $MILABENCH_BASE/extra
 
-milabench install --system $MILABENCH_WORDIR/system.yaml $ARGS
+milabench install --force --system $MILABENCH_WORDIR/system.yaml $ARGS
 milabench prepare --system $MILABENCH_WORDIR/system.yaml $ARGS
 
 
