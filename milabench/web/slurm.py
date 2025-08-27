@@ -311,8 +311,6 @@ RSYNC_ERROR = 1
 def clean_remote():
     try:
         cmd = f"find {JOBRUNNER_WORKDIR} -type d -mtime +7 -exec rm -rf {{}} +"
-        cmd = f"find {JOBRUNNER_WORKDIR} -type d -mtime +7 -print"
-
         remote_command("mila", cmd, timeout=30)
     except:
         pass
@@ -331,8 +329,7 @@ def rsync_jobrunner_folder(timeout=5):
                     shell=True
                 )
 
-        if chrono.timing.value.avg > 1:
-            print("removing old folders")
+        if chrono.timing.value.avg > 2:
             clean_remote()
 
         print(f"{rsync_cmd} {chrono.timing.value.avg} s")
