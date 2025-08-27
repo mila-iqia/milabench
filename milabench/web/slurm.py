@@ -19,6 +19,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 SLURM_PROFILES = os.path.join(ROOT, 'config', 'slurm.yaml')
 SLURM_TEMPLATES = os.path.join(ROOT, 'scripts', 'slurm')
+PIPELINE_DEF = os.path.join(ROOT, 'scripts', 'pipeline')
 JOBRUNNER_WORKDIR = "scratch/jobrunner"
 JOBRUNNER_LOCAL_CACHE =  os.path.abspath(os.path.join(ROOT, '..', 'data'))
 
@@ -68,7 +69,7 @@ class JobNode:
             case "sequential":
                 return Sequential(*make_jobs(data), **data)
             case "pipeline":
-                return Pipeline(JobNode.from_json(data.pop("definition")), **data)
+                return Pipeline(job_definition=JobNode.from_json(data.pop("definition")), **data)
             case unknown_type:
                 raise RuntimeError(f"Unknown type: {unknown_type}")
 
@@ -86,13 +87,13 @@ class Pipeline:
 
     """
 
-    def __init__(self, name, job_definition):
+    def __init__(self, name, job_definition, job_id=None):
         self.definition: JobNode = job_definition
         self.name = name
 
         # A pipeline run is something only known to the job runner and as such does not have Slurm Job ID
         # But it has a jobs id
-        self.job_id = None
+        self.job_id = job_id
 
     def output_dir(self, root=JOBRUNNER_WORKDIR):
         return os.path.join(root, self.name)
@@ -307,6 +308,16 @@ RSYNC_OK = 0
 RSYNC_TIMEOUT = 2
 RSYNC_ERROR = 1
 
+def clean_remote():
+    try:
+        cmd = f"find {JOBRUNNER_WORKDIR} -type d -mtime +7 -exec rm -rf {{}} +"
+        cmd = f"find {JOBRUNNER_WORKDIR} -type d -mtime +7 -print"
+
+        remote_command("mila", cmd, timeout=30)
+    except:
+        pass
+
+
 def rsync_jobrunner_folder(timeout=5):
     rsync_cmd = f"rsync -az mila:{JOBRUNNER_WORKDIR}/ {JOBRUNNER_LOCAL_CACHE}"
 
@@ -319,6 +330,10 @@ def rsync_jobrunner_folder(timeout=5):
                     timeout=timeout,
                     shell=True
                 )
+
+        if chrono.timing.value.avg > 1:
+            print("removing old folders")
+            clean_remote()
 
         print(f"{rsync_cmd} {chrono.timing.value.avg} s")
 
@@ -1087,3 +1102,43 @@ def slurm_integration(app):
 
         except Exception as e:
             return jsonify({'error': f'Failed to save profile: {str(e)}'}), 500
+
+
+    @app.route('/api/slurm/pipeline/template/list')
+    def api_pipeline_list():
+        try:
+            return jsonify([str(f[:-5]) for f in os.listdir(PIPELINE_DEF)])
+
+        except Exception as e:
+            return jsonify({'error': f'Failed to list pipeline: {str(e)}'}), 500
+
+    @app.route('/api/slurm/pipeline/template/save', methods=['POST'])
+    def api_pipeline_save():
+        try:
+            data = request.json
+
+            pipeline_name = data.get("name")
+
+            with open(os.path.join(PIPELINE_DEF, pipeline_name) + ".json", "w") as fp:
+                json.dump(data, fp, indent=2)
+
+            return jsonify({"status": "ok"})
+        except Exception as e:
+            traceback.print_exc()
+            return jsonify({'error': f'Failed to save pipeline: {str(e)}'}), 500
+
+    @app.route('/api/slurm/pipeline/template/load/<string:name>')
+    def api_pipeline_load(name: str):
+        try:
+            return send_file(os.path.join(PIPELINE_DEF, name + ".json"), mimetype="application/json")
+
+        except Exception as e:
+            return jsonify({'error': f'Failed to save pipeline: {str(e)}'}), 500
+
+    # @app.route('/api/slurm/pipeline/run', methods=['POST'])
+    # def api_pipeline_run():
+    #     return jsonify({'error': f'not implemented'}), 500
+
+    # @app.route('/api/slurm/pipeline/rerun', methods=['POST'])
+    # def api_pipeline_rerun():
+    #     return jsonify({'error': f'not implemented'}), 500
