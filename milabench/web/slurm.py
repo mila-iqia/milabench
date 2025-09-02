@@ -383,6 +383,12 @@ def rsync_load(cache_key, arg_key="job_id"):
                         "size": os.path.getsize(cache_file),
                         "status": status
                     }
+            return {
+                "data": "",
+                "size": 0,
+                "status": "N/A"
+            }
+            #return fun(**kwargs)
         return wrapper
     return wrapped
 
@@ -915,7 +921,11 @@ def slurm_integration(app):
     def api_slurm_job_stdout_extended(jr_job_id, start=None, end=None):
         """Get logs for a specific job"""
         try:
-            return jsonify("")
+            return jsonify({
+                "size": 0,
+                "data": "",
+                "status": "NA"
+            })
 
         except Exception as e:
             return jsonify({'error': str(e)}), 500
@@ -947,7 +957,11 @@ def slurm_integration(app):
     def api_slurm_job_stderr_extend(jr_job_id, start=None, end=None):
         """Get logs for a specific job"""
         try:
-            return jsonify("")
+            return jsonify({
+                "size": 0,
+                "data": "",
+                "status": "NA"
+            })
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
@@ -1132,10 +1146,34 @@ def slurm_integration(app):
         except Exception as e:
             return jsonify({'error': f'Failed to save pipeline: {str(e)}'}), 500
 
-    # @app.route('/api/slurm/pipeline/run', methods=['POST'])
-    # def api_pipeline_run():
-    #     return jsonify({'error': f'not implemented'}), 500
+    def pipeline_definition_run(definition, context):
+        # I propably want to be able insert some additional info
+        # so jobs know their shared state and things like that
 
-    # @app.route('/api/slurm/pipeline/rerun', methods=['POST'])
-    # def api_pipeline_rerun():
-    #     return jsonify({'error': f'not implemented'}), 500
+        pipeline = JobNode.from_json(definition)
+
+        # reserve spot for all the jobs
+        # Create job folders with their script
+        # make the pipeline folder with links to the jobs
+        #   copy the folers from local to remote
+        #   rsync the pipeline folder as well
+        pipeline.persist()
+
+        # queue the jobs on slurm
+        pipeline.schedule()
+
+    @app.route('/api/slurm/pipeline/run/<string:name>', methods=['POST'])
+    def api_pipeline_run_template(name):
+        context = request.json["context"]
+
+        with open(os.path.join(PIPELINE_DEF, name + ".json"), "r") as fp:
+            definition = json.load(fp)
+
+        return pipeline_definition_run(definition, context)
+
+    @app.route('/api/slurm/pipeline/run', methods=['POST'])
+    def api_pipeline_run():
+        context = request.json["context"]
+        definition = request.json["definition"]
+
+        return pipeline_definition_run(definition, context)
