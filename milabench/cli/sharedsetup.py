@@ -50,9 +50,10 @@ def sync_folder(src, dst, folder):
         rsync = ["rsync", "-azh"] + rsync_interactive_flags + ["--partial", src, dst]
 
     # Parallel rsync
-    rsync = [
-        f"cd {src} && find . -type f -print0 | xargs -0 -n100 -P{nproc} sh -c 'rsync -ah --whole-file --ignore-times --inplace --no-compress -R \"$@\" {os.path.join(dst, folder)}' _"
-    ]
+    if False:
+        rsync = [
+            f"cd {src} && find . -type f -print0 | xargs -0 -n100 -P{nproc} sh -c 'rsync -ah --whole-file --ignore-times --inplace --no-compress -R \"$@\" {os.path.join(dst, folder)}' _"
+        ]
 
     cmd = " ".join(rsync)
     print(cmd)
