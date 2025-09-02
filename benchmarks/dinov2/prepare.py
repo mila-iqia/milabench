@@ -37,7 +37,8 @@ if __name__ == "__main__":
         device=None,
         image_size=[3, 384, 384],
         val=0.1,
-        test=0.1
+        test=0.1,
+        output=os.getenv("MILABENCH_DIR_DATA", None),
     )
     # 
     generate_fakeimagenet(args)
