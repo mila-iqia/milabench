@@ -35,6 +35,13 @@ def is_installed(command):
 
 def sync_folder(src, dst, folder):
     nproc = 32
+    
+    tar_archive = os.path.join(dst, folder + ".tar.gz")
+    if os.path.exists(tar_archive):
+        untar = ["tar", "-xf", tar_archive, "-C", dst]
+        print(" ".join(untar))
+        subprocess.check_call(untar)
+        return
 
     rsync_interactive_flags = []
     if is_interactive():
@@ -105,3 +112,4 @@ def cli_shared_setup(args = None):
 # mkdir -p $SLURM_TMPDIR/imagenet/train
 # cd       $SLURM_TMPDIR/imagenet/train
 # tar  -xf /network/datasets/imagenet/ILSVRC2012_img_train.tar --to-command='mkdir ${TAR_REALNAME%.tar}; tar -xC ${TAR_REALNAME%.tar}'
+
