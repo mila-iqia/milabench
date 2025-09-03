@@ -4,6 +4,7 @@ import subprocess
 import shutil
 import sys
 
+from cantilever.core.timer import timeit, show_timings
 from coleo import Option, tooled
 
 
@@ -114,9 +115,13 @@ def cli_shared_setup(args = None):
     os.makedirs(args.local, exist_ok=True)
 
     # rsync datasets & checkpoints to local disk
-    sync_folder(remote_data, args.local, "data")
+    with timeit("sync_data"):
+        sync_folder(remote_data, args.local, "data")
 
-    sync_folder(remote_cache, args.local, "cache")
+    with timeit("sync_cache"):
+        sync_folder(remote_cache, args.local, "cache")
+
+    show_timings(force=True)
 
     # create a soft link for the code
     try:
