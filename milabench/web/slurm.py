@@ -11,6 +11,7 @@ import yaml
 import uuid
 from functools import wraps
 import traceback
+import time
 
 from cantilever.core.timer import timeit
 from flask import request, jsonify, send_file
@@ -476,7 +477,7 @@ def remote_command(host, command, timeout=5):
         }
 
 
-def slurm_integration(app):
+def slurm_integration(app, cache):
     """Add Slurm integration routes to the Flask app"""
 
     app.scheduler.add_job(rsync_jobrunner_folder, 'interval', seconds=60)
@@ -495,6 +496,18 @@ def slurm_integration(app):
                 return jsonify({'error': f'Failed to get jobs: {result["stderr"]}'}), 500
 
             jobs = list(filter(lambda x: x != "", result['stdout'].split("\n")))
+            
+            # Sort by creation time (oldest first) to preserve server send order
+            def get_remote_creation_time(job_id):
+                stat_result = remote_command(SLURM_HOST, f"stat -c %Y scratch/jobrunner/{job_id} 2>/dev/null || echo '0'")
+                if stat_result['success']:
+                    try:
+                        return float(stat_result['stdout'].strip())
+                    except ValueError:
+                        return 0
+                return 0
+            
+            jobs = sorted(jobs, key=get_remote_creation_time)
 
             return jsonify(jobs)
 
@@ -530,9 +543,72 @@ def slurm_integration(app):
 
             # jobs = os.listdir(JOBRUNNER_LOCAL_CACHE)
             # jobs.remove(".git")
+            
+            def load_info(dir_path, modification_time):
+                key = f"{dir_path}:{modification_time}"
+                
+                if value := cache.get(key):
+                    return value
+                
+                info_path = os.path.join(dir_path, "meta", "info.json")
+                    
+                if os.path.exists(info_path):
+                    with open(info_path, "r") as fp:
+                        with open(info_path, "r") as fp:
+                            try:
+                                info = json.load(fp)
+                            except Exception:
+                                return {}
+                        cache.set(key, info, timeout=3600)
+                        return info
+                return {}
+            
+            def load_acc(dir_path, jr_job_id, job_id):
+                key = dir_path
+                
+                if value := cache.get(key):
+                    return value
+                
+                info_path = os.path.join(dir_path, "meta", "acc.json")
+                      
+                # Note that the job acc info might be out dated
+                # We could check the job status make sure it is a terminal state
+                if os.path.exists(info_path):
+                    with open(info_path, "r") as fp:
+                        with open(info_path, "r") as fp:
+                            try:
+                                info = json.load(fp)
+                            except Exception:
+                                return {}
+                        cache.set(key, info, timeout=3600)
+                        return info
+                    
+                if job_id is not None:
+                    import threading
+                    print("Job acc missing, loading")
+                    threading.Thread(target=api_slurm_job_acc, args=(jr_job_id, job_id)).start()
 
-            result = subprocess.check_output(f"ls -t {JOBRUNNER_LOCAL_CACHE}", shell=True, text=True)
-            jobs = list(filter(lambda x: x != "", result.split("\n")))
+                return {}
+            
+            # Get all job directories and sort by creation time (oldest first) to preserve server send order
+            job_dirs = []
+            for item in os.listdir(JOBRUNNER_LOCAL_CACHE):
+                item_path = os.path.join(JOBRUNNER_LOCAL_CACHE, item)
+                if os.path.isdir(item_path) and item != ".git":
+                    stat= os.stat(item_path)
+                    info = load_info(item_path, stat.st_mtime)
+                    job_dirs.append({
+                        "name": item,
+                        "creation_time": stat.st_ctime,
+                        "last_modified": stat.st_mtime,
+                        "last_accessed": stat.st_atime,
+                        "freshness": time.time() - stat.st_mtime,
+                        "info": info,
+                        "acc": load_acc(item_path, item, info.get("job_id"))
+                    })
+            
+            # Sort by creation time (oldest first) to maintain server send order
+            jobs = sorted(job_dirs, key=lambda x: x["creation_time"], reverse=True)
 
             if limit is None:
                 return jobs

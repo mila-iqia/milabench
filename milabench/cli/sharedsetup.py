@@ -36,7 +36,7 @@ def is_installed(command):
 def sync_folder(src, dst, folder):
     nproc = 32
     
-    tar_archive = os.path.join(dst, folder + ".tar.gz")
+    tar_archive = src + ".tar.gz"
     if os.path.exists(tar_archive):
         untar = ["tar", "-xf", tar_archive, "-C", dst]
         print(" ".join(untar))
