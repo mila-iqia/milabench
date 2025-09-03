@@ -36,12 +36,39 @@ def is_installed(command):
 def sync_folder(src, dst, folder):
     nproc = 32
     
-    tar_archive = src + ".tar.gz"
+    tar_compressed_archive = src + ".tar.gz"
+    tar_archive = src + ".tar"
+    archive = None
+    
+    # Prefer the uncompressed tar archive if both are available
     if os.path.exists(tar_archive):
-        untar = ["tar", "-xf", tar_archive, "-C", dst]
-        print(" ".join(untar))
-        subprocess.check_call(untar)
-        return
+        archive = tar_archive
+        compressed = False
+    
+    elif os.path.exists(tar_compressed_archive):
+        compressed = True
+        archive = tar_compressed_archive
+    # --
+    
+    if archive is not None:
+        if False:
+            untar = ["tar", "-xf", archive, "-C", dst]
+            print(" ".join(untar))
+            subprocess.check_call(untar)
+            return
+        else:
+            # Rsync first and then untar the local tar archive
+            rsync = ["rsync", "-azh", archive, dst]
+            print(" ".join(rsync))
+            subprocess.check_call(rsync)
+            
+            local_tar = os.path.join(dst, folder + ".tar")
+            untar = ["tar", "-xf", local_tar, "-C", dst]
+            
+            print(" ".join(untar))
+            subprocess.check_call(untar)
+            subprocess.check_call(["rm", "-f", local_tar])
+            return
 
     rsync_interactive_flags = []
     if is_interactive():
@@ -86,15 +113,10 @@ def cli_shared_setup(args = None):
     
     os.makedirs(args.local, exist_ok=True)
 
-    if args.network.endswith(".tar.gz"):
-        untar = ["tar", "-xf", args.network, "-C", args.local]
-        print(" ".join(untar))
-        subprocess.check_call(untar)
-    else:
-        # rsync datasets & checkpoints to local disk
-        sync_folder(remote_data, args.local, "data")
+    # rsync datasets & checkpoints to local disk
+    sync_folder(remote_data, args.local, "data")
 
-        sync_folder(remote_cache, args.local, "cache")
+    sync_folder(remote_cache, args.local, "cache")
 
     # create a soft link for the code
     try:

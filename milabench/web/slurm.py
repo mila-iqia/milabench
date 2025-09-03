@@ -570,7 +570,7 @@ def slurm_integration(app, cache):
                     return value
                 
                 info_path = os.path.join(dir_path, "meta", "acc.json")
-                      
+  
                 # Note that the job acc info might be out dated
                 # We could check the job status make sure it is a terminal state
                 if os.path.exists(info_path):

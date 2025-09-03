@@ -5,6 +5,7 @@
 #
 
 export MILABENCH_GPU_ARCH=cuda
+export COMPRESSED=0
 
 set -ex
 
@@ -21,8 +22,16 @@ source $CONDA_BASE/../etc/profile.d/conda.sh
 export MILABENCH_WORDIR="$HOME/scratch/shared/$MILABENCH_GPU_ARCH"
 export MILABENCH_BASE="$MILABENCH_WORDIR"
 
-tar -czvf $MILABENCH_WORDIR/data.tar.gz -C $MILABENCH_WORDIR data
-tar -czvf $MILABENCH_WORDIR/cache.tar.gz -C $MILABENCH_WORDIR cache
+if [ $COMPRESSED -eq 1 ]; then
+    tar_flags="-czvf"
+    extension="tar.gz"
+else
+    tar_flags="-cf"
+    extension="tar"
+fi
+
+tar $tar_flags $MILABENCH_WORDIR/data.$extension -C $MILABENCH_WORDIR data
+tar $tar_flags $MILABENCH_WORDIR/cache.$extension -C $MILABENCH_WORDIR cache
 
 # ===
 scontrol show job --json $SLURM_JOB_ID | jq '.jobs[0]' > $OUTPUT_DIRECTORY/meta/info.json
