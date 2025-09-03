@@ -12,6 +12,7 @@ import uuid
 from functools import wraps
 import traceback
 import time
+import threading
 
 from cantilever.core.timer import timeit
 from flask import request, jsonify, send_file
@@ -230,19 +231,26 @@ standard_run = Sequential(
 )
 
 
+def is_acc_terminal(acc):
+    if type(acc) is list:
+        return False
+    
+    job_states = acc.get("state", {}).get("current", [])
+    
+    # Cache is good
+    if len(job_states) > 0 and job_states[0] in ("COMPLETED", "FAILED", "CANCELLED", "TIMEOUT", "NODE_FAIL", "OUT_OF_MEMORY"):
+        return True
+
+    print(f"Job states: {job_states}")
+    return False
+
 
 def job_acc_cache_status(filename: str):
     with open(filename, "r") as fp:
         try:
             job_acc = json.load(fp)
 
-            job_states = job_acc.get("state", {}).get("current", [])
-
-            # Cache is good
-            if "COMPLETED" in job_states:
-                return True
-
-            return False
+            return is_acc_terminal(job_acc)
         except json.decoder.JSONDecodeError:
             return False
 
@@ -512,6 +520,7 @@ def slurm_integration(app, cache):
             return jsonify(jobs)
 
         except Exception as e:
+            traceback.print_exec()
             return jsonify({'error': str(e)}), 500
 
     @app.route('/api/slurm/jobs/persited')
@@ -554,39 +563,56 @@ def slurm_integration(app, cache):
                     
                 if os.path.exists(info_path):
                     with open(info_path, "r") as fp:
-                        with open(info_path, "r") as fp:
-                            try:
-                                info = json.load(fp)
-                            except Exception:
-                                return {}
-                        cache.set(key, info, timeout=3600)
-                        return info
+                        try:
+                            info = json.load(fp)
+                            cache.set(key, info, timeout=3600)
+                            return info
+                        except Exception:
+                            return {}
                 return {}
             
             def load_acc(dir_path, jr_job_id, job_id):
                 key = dir_path
+                def queue_update():
+                    if job_id is not None:
+                        import threading
+                        
+                        def update():
+                            acc = fetch_latest_job_acc_cached(jr_job_id, job_id)
+                            cache.set(key, acc, timeout=3600)
+    
+                        threading.Thread(target=update).start()
                 
                 if value := cache.get(key):
+                    if not is_acc_terminal(info):
+                        print("Job acc not terminal, updating")
+                        queue_update()
                     return value
                 
-                info_path = os.path.join(dir_path, "meta", "acc.json")
+                acc_path = os.path.join(dir_path, "meta", "acc.json")
+                
   
                 # Note that the job acc info might be out dated
                 # We could check the job status make sure it is a terminal state
-                if os.path.exists(info_path):
-                    with open(info_path, "r") as fp:
-                        with open(info_path, "r") as fp:
-                            try:
-                                info = json.load(fp)
-                            except Exception:
-                                return {}
-                        cache.set(key, info, timeout=3600)
-                        return info
+                if os.path.exists(acc_path):
+                    with open(acc_path, "r") as fp:
+                        try:
+                            info = json.load(fp)
+                            
+                            if not is_acc_terminal(info):
+                                print("Job acc not terminal, updating")
+                                queue_update()
+                            else:
+                                cache.set(key, info, timeout=3600)
+                            return info
+                        except Exception:
+                            traceback.print_exc()
+                            queue_update()
+                            return {}
                     
                 if job_id is not None:
-                    import threading
                     print("Job acc missing, loading")
-                    threading.Thread(target=api_slurm_job_acc, args=(jr_job_id, job_id)).start()
+                    queue_update()
 
                 return {}
             
@@ -616,6 +642,7 @@ def slurm_integration(app, cache):
             return jobs[:limit]
 
         except Exception as e:
+            traceback.print_exc()
             return jsonify({'error': str(e)}), 500
 
     @app.route('/api/slurm/jobs/all')
@@ -917,29 +944,62 @@ def slurm_integration(app, cache):
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
+    # Synchronization mechanism for fetch_latest_job_acc
+    _fetch_lock = threading.Lock()
+    _last_fetch_time = 0
+    _min_interval = 2.0  # 2 seconds minimum between executions
+
+    def fetch_latest_job_acc(job_id):
+        nonlocal _last_fetch_time
+        
+        with _fetch_lock:
+            # Calculate time since last execution
+            current_time = time.time()
+            time_since_last = current_time - _last_fetch_time
+            
+            # If less than 2 seconds have passed, wait for the remaining time
+            if time_since_last < _min_interval:
+                sleep_time = _min_interval - time_since_last
+                time.sleep(sleep_time)
+            
+            # Update the last execution time
+            _last_fetch_time = time.time()
+            
+            print(f"Fetching job acc for {job_id}")
+            # Try to get job logs using scontrol
+            result = remote_command(SLURM_HOST, f'sacct --json -j {job_id}')
+
+            if not result['success']:
+                return {}
+
+            jobs = json.loads(result['stdout'])["jobs"]
+
+            if len(jobs) > 0:
+                return jobs[0]
+            
+            return {}
+        
+    def fetch_latest_job_acc_cached(jr_job_id, job_id):
+        data = fetch_latest_job_acc(job_id)
+        
+        if len(data) != 0:
+            with open(os.path.join(JOBRUNNER_LOCAL_CACHE, jr_job_id, "meta", "acc.json"), "w") as fp:
+                json.dump(data, fp)
+                
+        return data
+
     @app.route('/api/slurm/jobs/<jr_job_id>/acc/<job_id>')
     @local_cache("acc.json", "jr_job_id", check_validation=job_acc_cache_status)
     def api_slurm_job_acc(jr_job_id, job_id=None):
         """Get logs for a specific job"""
         try:
             if job_id is None:
-                return jsonify({})
+                return ({})
 
-            # Try to get job logs using scontrol
-            result = remote_command(SLURM_HOST, f'sacct --json -j {job_id}')
-
-            if not result['success']:
-                return jsonify({'error': f'Failed to get job info: {result["stderr"]}'}), 500
-
-            jobs = json.loads(result['stdout'])["jobs"]
-
-            if len(jobs) > 0:
-                return jsonify(jobs[0])
-
-            return jsonify({})
+            return fetch_latest_job_acc(job_id)
 
         except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            return ({'error': str(e)}), 500
 
     @app.route('/api/slurm/jobs/<jr_job_id>/info/<job_id>')
     @local_cache("info.json", "jr_job_id")

@@ -59,7 +59,10 @@ def simple_rclone(src, dst, folder):
     # --multi-thread-streams=32 --transfers=16      => Elapsed time:      4m50.8s | 428.337 GiB
     # --multi-thread-streams=32 --transfers=32      => Elapsed time:      2m36.8s | 428.337 GiB
     # --multi-thread-streams=32 --transfers=64      => Elapsed time:      2m51.3s | 428.337 GiB
-    rsync = ["rclone", "copy", "--multi-thread-streams=32", f"--transfers={COPY_NPROC}",  os.path.join(dst, folder)]
+    rsync = ["rclone", "copy", "--multi-thread-streams=32", f"--transfers={COPY_NPROC}", 
+             src,
+             os.path.join(dst, folder)        
+    ]
     
     print(" ".join(rsync))
     subprocess.check_call(rsync)

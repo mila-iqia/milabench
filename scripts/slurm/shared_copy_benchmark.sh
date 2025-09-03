@@ -47,23 +47,23 @@ conda activate $MILABENCH_ENV
 
 pip install -e $MILABENCH_SOURCE
 
-mkdir -p $MILABENCH_BASE
-MILABENCH_COPY_METHOD="rsync" milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
-rm -rf $MILABENCH_BASE/*
+# mkdir -p $MILABENCH_BASE
+# export MILABENCH_COPY_NPROC=32
+# MILABENCH_COPY_METHOD="FIND_XARGS_RSYNC" milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
+# rm -rf $MILABENCH_BASE/*
+
+# mkdir -p $MILABENCH_BASE
+# export MILABENCH_COPY_NPROC=8
+# MILABENCH_COPY_METHOD="FIND_XARGS_RSYNC" milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
+# rm -rf $MILABENCH_BASE/*
+
+# mkdir -p $MILABENCH_BASE
+# export MILABENCH_COPY_NPROC=16
+# MILABENCH_COPY_METHOD="FIND_XARGS_RSYNC" milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
+# rm -rf $MILABENCH_BASE/*
 
 mkdir -p $MILABENCH_BASE
-export MILABENCH_COPY_NPROC=32
-MILABENCH_COPY_METHOD="FIND_XARGS_RSYNC" milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
-rm -rf $MILABENCH_BASE/*
-
-mkdir -p $MILABENCH_BASE
-export MILABENCH_COPY_NPROC=8
-MILABENCH_COPY_METHOD="FIND_XARGS_RSYNC" milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
-rm -rf $MILABENCH_BASE/*
-
-mkdir -p $MILABENCH_BASE
-export MILABENCH_COPY_NPROC=16
-MILABENCH_COPY_METHOD="FIND_XARGS_RSYNC" milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
+MILABENCH_COPY_METHOD="rclone" milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
 rm -rf $MILABENCH_BASE/*
 
 mkdir -p $MILABENCH_BASE
@@ -74,6 +74,9 @@ mkdir -p $MILABENCH_BASE
 MILABENCH_COPY_METHOD="rsync_untar" milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
 rm -rf $MILABENCH_BASE/*
 
+mkdir -p $MILABENCH_BASE
+MILABENCH_COPY_METHOD="rsync" milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
+rm -rf $MILABENCH_BASE/*
 
 # ===
 scontrol show job --json $SLURM_JOB_ID | jq '.jobs[0]' > $OUTPUT_DIRECTORY/meta/info.json
