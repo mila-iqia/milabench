@@ -181,7 +181,7 @@ def simple_unzip(src, dst, folder):
 
     os.makedirs(dst, exist_ok=True)
     
-    untar = ["unzip", archive, "-d", dst]
+    untar = ["unzip", "-q", archive, "-d", dst]
     print(" ".join(untar))
     subprocess.check_call(untar)
     return
@@ -220,11 +220,11 @@ def parallel_unzip(src, dst, folder):
             # Run multiple tar processes in parallel
             processes = []
             for chunk_file in chunk_files:
-                extract_cmd = ["unzip", archive, "-d", dst, "-@"]
+                extract_cmd = ["unzip", "-q", archive, "-d", dst, "-@"]
                 print(" ".join(extract_cmd))
 
                 with open(chunk_file, "r") as fp:
-                    process = subprocess.Popen(extract_cmd, stdin=fp)
+                    process = subprocess.Popen(" ".join(extract_cmd) + f" < {chunk_file}", shell=True, stdin=fp)
                     processes.append(process)
             
             elapsed_time = 0
@@ -295,6 +295,7 @@ COPY_METHODS = {
 
 
 def sync_folder(src, dst, folder):
+    # unzip         2550.70
     # rclone        2587.07
     # untar         1067.72  <===
     # rsync_untar   2220.23
