@@ -96,6 +96,8 @@ def archive_name(src):
 
 
 def parallel_untar(src, dst, folder):
+    # This does not work
+    # tar is just a bad format for that kind of things
     archive = archive_name(src)
     
     if archive is None:
@@ -174,6 +176,86 @@ def parallel_untar(src, dst, folder):
             os.chdir(old_cwd)
 
 
+def simple_unzip(src, dst, folder):
+    archive = src + ".zip"
+
+    os.makedirs(dst, exist_ok=True)
+    
+    untar = ["unzip", archive, "-d", dst]
+    print(" ".join(untar))
+    subprocess.check_call(untar)
+    return
+
+def parallel_unzip(src, dst, folder):
+    # This does not work
+    # tar is just a bad format for that kind of things
+    archive = src + ".zip"
+    
+    # Create a temporary directory for processing
+    with tempfile.TemporaryDirectory() as temp_dir:
+        old_cwd = os.getcwd()
+        os.chdir(temp_dir)
+        
+        try:
+            # Get the list of files in the archive
+            list_cmd = ["unzip", "-Z1", archive]
+            print(" ".join(list_cmd))
+            result = subprocess.run(list_cmd, capture_output=True, text=True, check=True)
+            
+            # Save the file list to a file
+            with open("files.list", "w") as f:
+                f.write(result.stdout)
+
+            # Split the file list into chunks for parallel processing
+            split_cmd = ["split", "-n", f"l/{COPY_NPROC}", "files.list", "file.chunk."]
+            print(" ".join(split_cmd))
+            subprocess.run(split_cmd, check=True)
+            
+            # Get list of chunk files
+            chunk_files = [f for f in os.listdir(".") if f.startswith("file.chunk.")]
+            chunk_files.sort()
+
+            os.makedirs(dst, exist_ok=True)
+            
+            # Run multiple tar processes in parallel
+            processes = []
+            for chunk_file in chunk_files:
+                extract_cmd = ["unzip", archive, "-d", dst, "-@"]
+                print(" ".join(extract_cmd))
+
+                with open(chunk_file, "r") as fp:
+                    process = subprocess.Popen(extract_cmd, stdin=fp)
+                    processes.append(process)
+            
+            elapsed_time = 0
+            while len(processes) > 0:
+                pending = []
+                if elapsed_time > 60:
+                    elapsed_time = 0
+                    print("Still working ...")
+
+                # Wait for all processes to complete
+                for i, process in enumerate(processes):
+                    try:
+                        returncode = process.wait(timeout=1)
+                    
+                        if returncode != 0:
+                            print(f"Warning: Process {i} (chunk {chunk_files[i]}) failed with return code {returncode}")
+
+                    except subprocess.TimeoutExpired:
+                        elapsed_time += 1
+                        pending.append(process)
+                
+                processes = pending
+
+        except Exception:
+            traceback.print_exc()
+            simple_unzip(src, dst, folder)
+        finally:
+            # Change back to original directory
+            os.chdir(old_cwd)
+
+
 def simple_untar(src, dst, folder):
     archive = archive_name(src)
     
@@ -207,6 +289,8 @@ COPY_METHODS = {
     "UNTAR": simple_untar,                  # untar the network archive to local
     "PARALLEL_UNTAR": parallel_untar,       # parallel untar the network archive to local
     "RSYNC_UNTAR": rsync_untar,             # rsync the network archive to local and untar it to local
+    "UNZIP": simple_unzip,
+    "PARALLEL_UNZIP": parallel_unzip,
 }
 
 
