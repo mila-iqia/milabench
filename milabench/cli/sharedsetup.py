@@ -3,6 +3,8 @@ import os
 import subprocess
 import shutil
 import sys
+import tempfile
+import traceback
 
 from cantilever.core.timer import timeit, show_timings
 from coleo import Option, tooled
@@ -12,7 +14,7 @@ from ..system import option
 
 COPY_METHOD = option("copy.method", str, default=None)
 COPY_NPROC = option("copy.nproc", int, default=32)
-
+PREFER_COMPRESSED = option("copy.compressed", int, default=0)
 
 
 @dataclass
@@ -83,14 +85,76 @@ def find_xargs_rsync(src, dst, folder):
 def archive_name(src):
     a1 = src + ".tar"
     a2 = src + ".tar.gz"
-    
-    if os.path.exists(a1):
-        return a1
-    
-    if os.path.exists(a2):
-        return a2
 
-    return None
+    a1 = a1 if os.path.exists(a1) else None
+    a2 = a2 if os.path.exists(a2) else None
+
+    if PREFER_COMPRESSED:
+        return a2 or a1
+
+    return a1 or a2
+
+
+def parallel_untar(src, dst, folder):
+    archive = archive_name(src)
+    
+    if archive is None:
+        print(f"No archive found for {src}")
+        return
+    
+    # Create a temporary directory for processing
+    with tempfile.TemporaryDirectory() as temp_dir:
+        old_cwd = os.getcwd()
+        os.chdir(temp_dir)
+        
+        try:
+            # Get the list of files in the archive
+            print(f"Listing files in {archive}...")
+            list_cmd = ["tar", "-tf", archive]
+            result = subprocess.run(list_cmd, capture_output=True, text=True, check=True)
+            
+            # Save the file list to a file
+            with open("files.list", "w") as f:
+                f.write(result.stdout)
+            
+            # Split the file list into chunks for parallel processing
+            print(f"Splitting file list into {COPY_NPROC} chunks...")
+            split_cmd = ["split", "-n", f"l/{COPY_NPROC}", "files.list", "file.chunk."]
+            subprocess.run(split_cmd, check=True)
+            
+            # Get list of chunk files
+            chunk_files = [f for f in os.listdir(".") if f.startswith("file.chunk.")]
+            chunk_files.sort()
+            
+            print(f"Extracting {len(chunk_files)} chunks in parallel...")
+            
+            # Create destination directory if it doesn't exist
+            os.makedirs(dst, exist_ok=True)
+            
+            # Run multiple tar processes in parallel
+            processes = []
+            for chunk_file in chunk_files:
+                extract_cmd = ["tar", "-xf", archive, "-C", dst, "-T", chunk_file]
+                print(f"Starting: {" ".join(extract_cmd)}")
+                process = subprocess.Popen(extract_cmd)
+                processes.append(process)
+            
+            # Wait for all processes to complete
+            for i, process in enumerate(processes):
+                returncode = process.wait()
+                if returncode != 0:
+                    print(f"Warning: Process {i} (chunk {chunk_files[i]}) failed with return code {returncode}")
+                else:
+                    print(f"Completed: {chunk_files[i]}")
+            
+            print("Parallel extraction completed")
+            
+        except Exception:
+            traceback.print_exc()
+            simple_untar(src, dst, folder)
+        finally:
+            # Change back to original directory
+            os.chdir(old_cwd)
 
 
 def simple_untar(src, dst, folder):
@@ -124,6 +188,7 @@ COPY_METHODS = {
     "RCLONE": simple_rclone,                # Rclone the network folder to local
     "FIND_XARGS_RSYNC": find_xargs_rsync,   # Find the files in the network folder, make batches and rsync them to local
     "UNTAR": simple_untar,                  # untar the network archive to local
+    "PARALLEL_UNTAR": parallel_untar,       # parallel untar the network archive to local
     "RSYNC_UNTAR": rsync_untar,             # rsync the network archive to local and untar it to local
 }
 
