@@ -584,7 +584,7 @@ def slurm_integration(app, cache):
                         threading.Thread(target=update).start()
                 
                 if value := cache.get(key):
-                    if not is_acc_terminal(info):
+                    if not is_acc_terminal(value):
                         print("Job acc not terminal, updating")
                         queue_update()
                     return value

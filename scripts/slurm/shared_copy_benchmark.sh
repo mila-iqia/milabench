@@ -47,6 +47,48 @@ conda activate $MILABENCH_ENV
 
 pip install -e $MILABENCH_SOURCE
 
+mkdir -p $MILABENCH_BASE
+MILABENCH_COPY_METHOD="untar" milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
+rm -rf $MILABENCH_BASE/*
+
+mkdir -p $MILABENCH_BASE
+export MILABENCH_COPY_NPROC=1
+export MILABENCH_COPY_METHOD="PARALLEL_UNTAR" 
+milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
+rm -rf $MILABENCH_BASE/*
+
+mkdir -p $MILABENCH_BASE
+export MILABENCH_COPY_NPROC=2
+export MILABENCH_COPY_METHOD="PARALLEL_UNTAR" 
+milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
+rm -rf $MILABENCH_BASE/*
+
+mkdir -p $MILABENCH_BASE
+export MILABENCH_COPY_NPROC=8
+export MILABENCH_COPY_METHOD="PARALLEL_UNTAR" 
+milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
+rm -rf $MILABENCH_BASE/*
+
+mkdir -p $MILABENCH_BASE
+export MILABENCH_COPY_NPROC=16
+export MILABENCH_COPY_METHOD="PARALLEL_UNTAR" 
+milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
+rm -rf $MILABENCH_BASE/*
+
+mkdir -p $MILABENCH_BASE
+export MILABENCH_COPY_NPROC=32
+export MILABENCH_COPY_METHOD="PARALLEL_UNTAR" 
+milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
+rm -rf $MILABENCH_BASE/*
+
+mkdir -p $MILABENCH_BASE
+export MILABENCH_COPY_NPROC=1
+export MILABENCH_COPY_METHOD="PARALLEL_UNTAR" 
+milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
+rm -rf $MILABENCH_BASE/*
+
+
+
 # mkdir -p $MILABENCH_BASE
 # export MILABENCH_COPY_NPROC=32
 # MILABENCH_COPY_METHOD="FIND_XARGS_RSYNC" milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
@@ -62,21 +104,21 @@ pip install -e $MILABENCH_SOURCE
 # MILABENCH_COPY_METHOD="FIND_XARGS_RSYNC" milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
 # rm -rf $MILABENCH_BASE/*
 
-mkdir -p $MILABENCH_BASE
-MILABENCH_COPY_METHOD="rclone" milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
-rm -rf $MILABENCH_BASE/*
+# mkdir -p $MILABENCH_BASE
+# MILABENCH_COPY_METHOD="rclone" milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
+# rm -rf $MILABENCH_BASE/*
 
-mkdir -p $MILABENCH_BASE
-MILABENCH_COPY_METHOD="untar" milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
-rm -rf $MILABENCH_BASE/*
+# mkdir -p $MILABENCH_BASE
+# MILABENCH_COPY_METHOD="untar" milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
+# rm -rf $MILABENCH_BASE/*
 
-mkdir -p $MILABENCH_BASE
-MILABENCH_COPY_METHOD="rsync_untar" milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
-rm -rf $MILABENCH_BASE/*
+# mkdir -p $MILABENCH_BASE
+# MILABENCH_COPY_METHOD="rsync_untar" milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
+# rm -rf $MILABENCH_BASE/*
 
-mkdir -p $MILABENCH_BASE
-MILABENCH_COPY_METHOD="rsync" milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
-rm -rf $MILABENCH_BASE/*
+# mkdir -p $MILABENCH_BASE
+# MILABENCH_COPY_METHOD="rsync" milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
+# rm -rf $MILABENCH_BASE/*
 
 # ===
 scontrol show job --json $SLURM_JOB_ID | jq '.jobs[0]' > $OUTPUT_DIRECTORY/meta/info.json

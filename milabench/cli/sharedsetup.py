@@ -109,46 +109,63 @@ def parallel_untar(src, dst, folder):
         
         try:
             # Get the list of files in the archive
-            print(f"Listing files in {archive}...")
             list_cmd = ["tar", "-tf", archive]
+            print(" ".join(list_cmd))
             result = subprocess.run(list_cmd, capture_output=True, text=True, check=True)
             
             # Save the file list to a file
             with open("files.list", "w") as f:
                 f.write(result.stdout)
             
+            # Shuffle a little bit so the parallel processes get different files
+            if False:
+                shuf_cmd = ["shuf", "files.list"]
+                print(" ".join(shuf_cmd))
+                result = subprocess.run(shuf_cmd, capture_output=True, text=True, check=True)
+
+                with open("files.list", "w") as f:
+                    f.write(result.stdout)
+
             # Split the file list into chunks for parallel processing
-            print(f"Splitting file list into {COPY_NPROC} chunks...")
             split_cmd = ["split", "-n", f"l/{COPY_NPROC}", "files.list", "file.chunk."]
+            print(" ".join(split_cmd))
             subprocess.run(split_cmd, check=True)
             
             # Get list of chunk files
             chunk_files = [f for f in os.listdir(".") if f.startswith("file.chunk.")]
             chunk_files.sort()
-            
-            print(f"Extracting {len(chunk_files)} chunks in parallel...")
-            
-            # Create destination directory if it doesn't exist
+
             os.makedirs(dst, exist_ok=True)
             
             # Run multiple tar processes in parallel
             processes = []
             for chunk_file in chunk_files:
                 extract_cmd = ["tar", "-xf", archive, "-C", dst, "-T", chunk_file]
-                print(f"Starting: {" ".join(extract_cmd)}")
+                print(" ".join(extract_cmd))
                 process = subprocess.Popen(extract_cmd)
                 processes.append(process)
             
-            # Wait for all processes to complete
-            for i, process in enumerate(processes):
-                returncode = process.wait()
-                if returncode != 0:
-                    print(f"Warning: Process {i} (chunk {chunk_files[i]}) failed with return code {returncode}")
-                else:
-                    print(f"Completed: {chunk_files[i]}")
-            
-            print("Parallel extraction completed")
-            
+            elapsed_time = 0
+            while len(processes) > 0:
+                pending = []
+                if elapsed_time > 60:
+                    elapsed_time = 0
+                    print("Still working ...")
+
+                # Wait for all processes to complete
+                for i, process in enumerate(processes):
+                    try:
+                        returncode = process.wait(timeout=1)
+                    
+                        if returncode != 0:
+                            print(f"Warning: Process {i} (chunk {chunk_files[i]}) failed with return code {returncode}")
+
+                    except subprocess.TimeoutExpired:
+                        elapsed_time += 1
+                        pending.append(process)
+                
+                processes = pending
+
         except Exception:
             traceback.print_exc()
             simple_untar(src, dst, folder)
@@ -194,12 +211,16 @@ COPY_METHODS = {
 
 
 def sync_folder(src, dst, folder):
+    # rclone        2587.07
+    # untar         1067.72  <===
+    # rsync_untar   2220.23
+    # rsync         3390.26
     if COPY_METHOD is not None:
         return COPY_METHODS[COPY_METHOD.upper()](src, dst, folder)
 
     else:
         if archive_name(src) is not None:
-            return rsync_untar(src, dst, folder)
+            return simple_untar(src, dst, folder)
         
         if is_installed("rclone"):
             return simple_rclone(src, dst, folder)
