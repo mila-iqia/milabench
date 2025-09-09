@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 import mimetypes
 import os
 import subprocess
@@ -13,6 +14,7 @@ from functools import wraps
 import traceback
 import time
 import threading
+from filelock import FileLock, Timeout
 
 from cantilever.core.timer import timeit
 from flask import request, jsonify, send_file
@@ -325,35 +327,235 @@ def clean_remote():
         pass
 
 
-def rsync_jobrunner_folder(timeout=5):
-    rsync_cmd = f"rsync -az mila:{JOBRUNNER_WORKDIR}/ {JOBRUNNER_LOCAL_CACHE}"
+def remove_job_from_remote(jr_job_id):
+    assert jr_job_id != ""
 
+    cmd = f"rm -rf {JOBRUNNER_WORKDIR}/{jr_job_id}"
+    remote_command("mila", cmd, timeout=30)
+
+
+@contextmanager
+def job_rsync_limiter(jr_job_id, limit=30):
+    cache_dir = JOBRUNNER_LOCAL_CACHE
+
+    if jr_job_id is not None:
+        cache_dir = os.path.join(JOBRUNNER_LOCAL_CACHE, jr_job_id)
+    
+    sys_folder = os.path.join(cache_dir, ".sys")
+    cache_file = os.path.join(sys_folder, "limiter.json")
+    lock_file = os.path.join(sys_folder, "LOCK")
+
+    os.makedirs(sys_folder, exist_ok=True)
     try:
-        with timeit("rsync") as chrono:
-            _ = subprocess.run(
-                    rsync_cmd,
-                    capture_output=True,
-                    text=True,
-                    timeout=timeout,
-                    shell=True
-                )
+        with FileLock(lock_file):
+            now =  time.time()
 
-        if chrono.timing.value.avg > 2:
-            clean_remote()
+            limiter = {
+                "last": 0
+            }
 
-        print(f"{rsync_cmd} {chrono.timing.value.avg} s")
+            if os.path.exists(cache_file):
+                with open(cache_file, "r") as fp:
+                    limiter = json.load(fp)
 
+            last = limiter.get("last", 0)
+            
+            if (now - last) > limit:
+                limiter["last"] = now
+                yield True
+            else:
+                print("RSYNC limiter prevented rsync")
+                yield False
+
+            with open(cache_file, "w") as fp:
+                json.dump(limiter, fp)
+    except Timeout:
+        yield False
+
+
+def rsync_jobrunner_folder(timeout=5):
+    with job_rsync_limiter(None) as can_run:
+        if not can_run:
+            return 0 
+
+        rsync_cmd = f"rsync -az mila:{JOBRUNNER_WORKDIR}/ {JOBRUNNER_LOCAL_CACHE}"
+        
+        try:
+            with timeit("rsync") as chrono:
+                print("RSYNC [full]")
+                _ = subprocess.run(
+                        rsync_cmd,
+                        capture_output=True,
+                        text=True,
+                        timeout=timeout,
+                        shell=True
+                    )
+
+            if chrono.timing.value.avg > 2:
+                clean_remote()
+
+            print(f"{rsync_cmd} {chrono.timing.value.avg} s")
+
+            return 0
+        except subprocess.TimeoutExpired:
+            print(f"{rsync_cmd} timed out after {timeout} s")
+            return 1
+        except Exception:
+            import traceback
+            traceback.print_exc()
+            return 1
+
+
+def rsync_jobrunner_job(jr_job_id, timeout=5):
+    if jr_job_id == "":
+        print("WRONG")
         return 0
-    except subprocess.TimeoutExpired:
-        print(f"{rsync_cmd} timed out after {timeout} s")
-        return 1
+
+    with job_rsync_limiter(jr_job_id) as can_run:
+        if not can_run:
+            return 0 
+
+        rsync_cmd = f"rsync -az mila:{JOBRUNNER_WORKDIR}/{jr_job_id} {JOBRUNNER_LOCAL_CACHE}"
+
+        try:
+            with timeit("rsync") as chrono:
+                print("RSYNC [partial]")
+                _ = subprocess.run(
+                        rsync_cmd,
+                        capture_output=True,
+                        text=True,
+                        timeout=timeout,
+                        shell=True
+                    )
+
+            print(f"{rsync_cmd} {chrono.timing.value.avg} s")
+
+            return 0
+        except subprocess.TimeoutExpired:
+            print(f"{rsync_cmd} timed out after {timeout} s")
+            return 1
+        except Exception:
+            import traceback
+            traceback.print_exc()
+            return 1
+
+
+
+def get_active_jobs():
+    result = remote_command("mila", "'squeue --json -u $USER'")
+
+    if not result['success']:
+        return jsonify({'error': f'Failed to get jobs: {result["stderr"]}'}), 500
+
+    return json.loads(result['stdout'])["jobs"]
+
+
+def make_comment(dictionary):
+    frags = []
+    for k, v in dictionary.items():
+        frags.append(f"{k}={v}")
+    return ";".join(frags)
+
+
+def parse_comment(comment, results=None):
+    if results is None:
+        results = {}
+    
+    kv_dict = comment.split(';')
+
+    for kv in kv_dict:
+        try:
+            k, v = kv.split("=")
+            results[k] = v
+        except ValueError:
+            pass
+    return results
+
+
+def book_keeping():
+    """This function runs to ensure the remote has a little jobs as possible
+    
+    - Do a full rsync 
+    - List all the jobs present on remove
+    - Fetch sacct data for the finished jobs, save that data locally
+    - Delete finished jobs on remote
+
+    """
+    print("BOOK KEEPING")
+    try:
+        if rsync_jobrunner_folder() == 0:
+            # 
+            results = remote_command("mila", f"ls -1 {JOBRUNNER_WORKDIR}", timeout=30)
+            all_jobs = results["stdout"].split('\n')
+            
+            active_jobs = get_active_jobs()
+            active_jr_job_id = [
+                parse_comment(job["comment"]).get("jr_job_id", None) for job in active_jobs
+            ]
+
+            for job in all_jobs:
+                if job == "":
+                    continue
+            
+                if job in active_jr_job_id:
+                    continue
+            
+                remove_job_from_remote(job)
     except Exception:
-        import traceback
         traceback.print_exc()
-        return 1
 
 
-def rsync_load(cache_key, arg_key="job_id"):
+
+def job_rsync_load(cache_key, arg_key="jr_job_id"):
+    """Rsync jobrunner data folder and load the file.
+
+    This is used to big-ish file, instead of getting them from the compute cluster directly
+    we rsync the jobrunner folder to only get the missing data and then send the local data over.
+    """
+    def wrapped(fun):
+        @wraps(fun)
+        def wrapper(**kwargs):
+            # Cols = 80
+            # Rows = 80
+            # Size TO Fetch: (Cols * Rows * 8)
+
+            job_id = kwargs.get(arg_key)
+            start = kwargs.get("start")
+            end = kwargs.get("end")
+
+            cache_dir = os.path.join(JOBRUNNER_LOCAL_CACHE, job_id)
+            cache_file = os.path.join(cache_dir, cache_key)
+
+            status = "rsynced"
+            if rsync_jobrunner_job(jr_job_id=job_id) != 0:
+                status = "stale"
+
+            if os.path.exists(cache_file):
+                with open(cache_file, "r") as fp:
+                    if start is not None and end is not None:
+                        fp.seek(start, os.SEEK_SET)
+                        return {
+                            "data": fp.read(end - start),
+                            "size": os.path.getsize(cache_file),
+                            "status": status
+                        }
+
+                    return {
+                        "data": fp.read(),
+                        "size": os.path.getsize(cache_file),
+                        "status": status
+                    }
+            return {
+                "data": "",
+                "size": 0,
+                "status": "N/A"
+            }
+            #return fun(**kwargs)
+        return wrapper
+    return wrapped
+
+
+def full_rsync_load(cache_key, arg_key="job_id"):
     """Rsync jobrunner data folder and load the file.
 
     This is used to big-ish file, instead of getting them from the compute cluster directly
@@ -488,7 +690,7 @@ def remote_command(host, command, timeout=5):
 def slurm_integration(app, cache):
     """Add Slurm integration routes to the Flask app"""
 
-    app.scheduler.add_job(rsync_jobrunner_folder, 'interval', seconds=60)
+    app.scheduler.add_job(book_keeping, 'interval', seconds=3600)
 
     # Configuration for SSH connection to Slurm cluster
     SLURM_HOST = os.environ.get('SLURM_HOST', 'mila')
@@ -620,7 +822,7 @@ def slurm_integration(app, cache):
             job_dirs = []
             for item in os.listdir(JOBRUNNER_LOCAL_CACHE):
                 item_path = os.path.join(JOBRUNNER_LOCAL_CACHE, item)
-                if os.path.isdir(item_path) and item != ".git":
+                if os.path.isdir(item_path) and item[0] != '.':
                     stat= os.stat(item_path)
                     info = load_info(item_path, stat.st_mtime)
                     job_dirs.append({
@@ -732,7 +934,7 @@ def slurm_integration(app, cache):
     @app.route('/api/slurm/job/save/<string:jr_job_id>/<string:message>')
     def api_slurm_save_job(jr_job_id: str, message: str):
         try:
-            if rsync_jobrunner_folder() == 0:
+            if rsync_jobrunner_job(jr_job_id) == 0:
                 cache_dir = os.path.join(JOBRUNNER_LOCAL_CACHE, jr_job_id)
 
                 cmd = f"git add {cache_dir} && git commit -m \"{message}\" && git push origin main"
@@ -1053,7 +1255,7 @@ def slurm_integration(app, cache):
         return api_slurm_job_stdout_extended(jr_job_id=jr_job_id)
 
     @app.route('/api/slurm/jobs/<jr_job_id>/stdout/<int:start>/<int:end>')
-    @rsync_load("log.stdout", "jr_job_id")
+    @job_rsync_load("log.stdout", "jr_job_id")
     def api_slurm_job_stdout_extended(jr_job_id, start=None, end=None):
         """Get logs for a specific job"""
         try:
@@ -1083,13 +1285,13 @@ def slurm_integration(app, cache):
             return jsonify({'error': str(e)}), 500
 
     @app.route('/api/slurm/jobs/<jr_job_id>/stderr')
-    @rsync_load("log.stderr", "jr_job_id")
+    @job_rsync_load("log.stderr", "jr_job_id")
     def api_slurm_job_stderr_base(jr_job_id):
         """Get logs for a specific job"""
         return api_slurm_job_stderr_extend(jr_job_id=jr_job_id)
 
     @app.route('/api/slurm/jobs/<jr_job_id>/stderr/<int:start>/<int:end>')
-    @rsync_load("log.stderr", "jr_job_id")
+    @job_rsync_load("log.stderr", "jr_job_id")
     def api_slurm_job_stderr_extend(jr_job_id, start=None, end=None):
         """Get logs for a specific job"""
         try:
