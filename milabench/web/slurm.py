@@ -77,7 +77,6 @@ class JobNode:
             case unknown_type:
                 raise RuntimeError(f"Unknown type: {unknown_type}")
 
-
 class Pipeline:
     """The job runner define a dependency between jobs and schedule them to slurm.
     It is able to launch a job on the cluster.
@@ -108,7 +107,6 @@ class Pipeline:
         }
 
         self.definition.gen(context)
-
 
     def rerun(self) -> Pipeline:
         # traverse the job definition and create a new one
@@ -150,7 +148,6 @@ class Job(JobNode):
         # Build the sbatch command
 
         # Submit the job, get a slurm_id for dependencies if any
-
         return self.slurm_jobid
 
     def __json__(self):
@@ -231,7 +228,6 @@ standard_run = Sequential(
         Job("v100", "run"),
     )
 )
-
 
 def is_acc_terminal(acc):
     if type(acc) is list:
@@ -371,6 +367,7 @@ def job_rsync_limiter(jr_job_id, limit=30):
                 json.dump(limiter, fp)
     except Timeout:
         yield False
+
 
 
 def rsync_jobrunner_folder(timeout=5):
@@ -755,7 +752,6 @@ def slurm_integration(app, cache):
 
             # jobs = os.listdir(JOBRUNNER_LOCAL_CACHE)
             # jobs.remove(".git")
-            
             def load_info(dir_path, modification_time):
                 key = f"{dir_path}:{modification_time}"
                 
