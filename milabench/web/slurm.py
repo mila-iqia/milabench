@@ -382,6 +382,7 @@ def rsync_jobrunner_folder(timeout=5):
         
         try:
             with timeit("rsync") as chrono:
+                # "ssh -T -c aes128-gcm@openssh.com -o Compression=no -x"
                 print("RSYNC [full]")
                 _ = subprocess.run(
                         rsync_cmd,
@@ -808,6 +809,7 @@ def slurm_integration(app, cache):
                                 cache.set(key, info, timeout=3600)
                             return info
                         except Exception:
+                            print(acc_path)
                             traceback.print_exc()
                             queue_update()
                             return {}
@@ -1231,7 +1233,7 @@ def slurm_integration(app, cache):
     @app.route('/api/slurm/jobs/<jr_job_id>/info')
     @local_cache("info.json", "jr_job_id")
     def api_slurm_job_info_cached(jr_job_id):
-        return api_slurm_job_info(jr_job_id, None)
+        return api_slurm_job_info(jr_job_id=jr_job_id, job_id=None)
 
     @app.route('/api/slurm/jobs/<jr_job_id>/stdout/size')
     def api_slurm_job_stdout_size(jr_job_id):

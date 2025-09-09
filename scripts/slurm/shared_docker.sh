@@ -37,7 +37,18 @@ cd $MILABENCH_WORDIR
 
 podman pull $MILABENCH_IMAGE
 
-podman run -it --rm --ipc=host --gpus=all                   \
+mkdir -p $MILABENCH_BASE/runs
+mkdir -p $MILABENCH_SHARED/data
+mkdir -p $MILABENCH_SHARED/cache
+
+podman run --rm                           \
+    --device nvidia.com/gpu=all           \
+    --security-opt=label=disable          \
+    ubuntu nvidia-smi -L
+
+podman run -it --rm --ipc=host                              \
+      --device nvidia.com/gpu=all                           \
+      --security-opt=label=disable                          \
       -v $MILABENCH_BASE/runs:/milabench/envs/runs          \
       -v $MILABENCH_SHARED/data:/milabench/envs/data        \
       -v $MILABENCH_SHARED/cache:/milabench/envs/cache      \
