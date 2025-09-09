@@ -41,12 +41,7 @@ mkdir -p $MILABENCH_BASE/runs
 mkdir -p $MILABENCH_SHARED/data
 mkdir -p $MILABENCH_SHARED/cache
 
-podman run --rm                           \
-    --device nvidia.com/gpu=all           \
-    --security-opt=label=disable          \
-    ubuntu nvidia-smi -L
-
-podman run -it --rm --ipc=host                              \
+podman run --rm --ipc=host                                  \
       --device nvidia.com/gpu=all                           \
       --security-opt=label=disable                          \
       -v $MILABENCH_BASE/runs:/milabench/envs/runs          \
