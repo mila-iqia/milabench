@@ -437,8 +437,8 @@ class Package(BasePackage):
             else:
                 raise FileNotFoundError(f"Requirements file not found: {reqs}")
 
-        if is_editable_install():
-            await install_benchmate(self)
+        # if is_editable_install():
+        await install_benchmate(self)
 
     # def ngpu(self):
     #     devices = self.pack.config.get("devices", [])
