@@ -260,7 +260,7 @@ def local_cache(cache_key, arg_key="job_id", check_validation=None):
         def wrapper(**kwargs):
             job_id = kwargs.get(arg_key)
 
-            cache_dir = os.path.join(JOBRUNNER_LOCAL_CACHE, job_id, "meta")
+            cache_dir = safe_job_path(job_id, "meta")
             cache_file = os.path.join(cache_dir, cache_key)
 
             try:
@@ -335,7 +335,7 @@ def job_rsync_limiter(jr_job_id, limit=30):
     cache_dir = JOBRUNNER_LOCAL_CACHE
 
     if jr_job_id is not None:
-        cache_dir = os.path.join(JOBRUNNER_LOCAL_CACHE, jr_job_id)
+        cache_dir = safe_job_path(jr_job_id)
     
     sys_folder = os.path.join(cache_dir, ".sys")
     cache_file = os.path.join(sys_folder, "limiter.json")
@@ -375,7 +375,7 @@ def rsync_jobrunner_folder(timeout=5):
         if not can_run:
             return 0 
 
-        rsync_cmd = f"rsync -az mila:{JOBRUNNER_WORKDIR}/ {JOBRUNNER_LOCAL_CACHE}"
+        rsync_cmd = ["rsync", "-az", f"mila:{JOBRUNNER_WORKDIR}/", f"{JOBRUNNER_LOCAL_CACHE}"]
         
         try:
             with timeit("rsync") as chrono:
@@ -386,17 +386,17 @@ def rsync_jobrunner_folder(timeout=5):
                         capture_output=True,
                         text=True,
                         timeout=timeout,
-                        shell=True
+                        shell=False
                     )
 
             if chrono.timing.value.avg > 2:
                 clean_remote()
 
-            print(f"{rsync_cmd} {chrono.timing.value.avg} s")
+            print(f"{' '.join(rsync_cmd)} {chrono.timing.value.avg} s")
 
             return 0
         except subprocess.TimeoutExpired:
-            print(f"{rsync_cmd} timed out after {timeout} s")
+            print(f"{' '.join(rsync_cmd)} timed out after {timeout} s")
             return 1
         except Exception:
             import traceback
@@ -404,16 +404,37 @@ def rsync_jobrunner_folder(timeout=5):
             return 1
 
 
-def rsync_jobrunner_job(jr_job_id, timeout=5):
+def safe_path(base, *frags):
+    job_path = os.path.normpath(os.path.join(base, *frags))
+
+    # Ensure resulting path is within JOBRUNNER_LOCAL_CACHE
+    if not job_path.startswith(os.path.abspath(base)):
+        raise Exception("Invalid fragements")
+
+    return job_path
+
+def safe_job_path(*frags):
+    return safe_path(JOBRUNNER_LOCAL_CACHE, *frags)
+
+
+def validate_jr_job_id(jr_job_id):
     if jr_job_id == "":
-        print("WRONG")
-        return 0
+        return False
+
+    safe_job_path(JOBRUNNER_LOCAL_CACHE, jr_job_id)
+
+    return True
+
+
+def rsync_jobrunner_job(jr_job_id, timeout=5):
+    if not validate_jr_job_id(jr_job_id):
+        return 1
 
     with job_rsync_limiter(jr_job_id) as can_run:
         if not can_run:
             return 0 
 
-        rsync_cmd = f"rsync -az mila:{JOBRUNNER_WORKDIR}/{jr_job_id} {JOBRUNNER_LOCAL_CACHE}"
+        rsync_cmd = ["rsync", "-az", f"mila:{JOBRUNNER_WORKDIR}/{jr_job_id}", f"{JOBRUNNER_LOCAL_CACHE}"]
 
         try:
             with timeit("rsync") as chrono:
@@ -423,14 +444,14 @@ def rsync_jobrunner_job(jr_job_id, timeout=5):
                         capture_output=True,
                         text=True,
                         timeout=timeout,
-                        shell=True
+                        shell=False
                     )
 
-            print(f"{rsync_cmd} {chrono.timing.value.avg} s")
+            print(f"{' '.join(rsync_cmd)} {chrono.timing.value.avg} s")
 
             return 0
         except subprocess.TimeoutExpired:
-            print(f"{rsync_cmd} timed out after {timeout} s")
+            print(f"{' '.join(rsync_cmd)} timed out after {timeout} s")
             return 1
         except Exception:
             import traceback
@@ -521,7 +542,7 @@ def job_rsync_load(cache_key, arg_key="jr_job_id"):
             start = kwargs.get("start")
             end = kwargs.get("end")
 
-            cache_dir = os.path.join(JOBRUNNER_LOCAL_CACHE, job_id)
+            cache_dir = safe_job_path(job_id)
             cache_file = os.path.join(cache_dir, cache_key)
 
             status = "rsynced"
@@ -552,6 +573,8 @@ def job_rsync_load(cache_key, arg_key="jr_job_id"):
         return wrapper
     return wrapped
 
+def validate_slurm_job_id(s_job_id):
+    return int(s_job_id)
 
 def full_rsync_load(cache_key, arg_key="job_id"):
     """Rsync jobrunner data folder and load the file.
@@ -570,7 +593,7 @@ def full_rsync_load(cache_key, arg_key="job_id"):
             start = kwargs.get("start")
             end = kwargs.get("end")
 
-            cache_dir = os.path.join(JOBRUNNER_LOCAL_CACHE, job_id)
+            cache_dir = safe_job_path(job_id)
             cache_file = os.path.join(cache_dir, cache_key)
 
             status = "rsynced"
@@ -819,7 +842,7 @@ def slurm_integration(app, cache):
             # Get all job directories and sort by creation time (oldest first) to preserve server send order
             job_dirs = []
             for item in os.listdir(JOBRUNNER_LOCAL_CACHE):
-                item_path = os.path.join(JOBRUNNER_LOCAL_CACHE, item)
+                item_path = safe_job_path(item)
                 if os.path.isdir(item_path) and item[0] != '.':
                     stat= os.stat(item_path)
                     info = load_info(item_path, stat.st_mtime)
@@ -865,6 +888,8 @@ def slurm_integration(app, cache):
     @app.route('/api/slurm/jobs/<int:job_id>')
     def api_slurm_job_status(job_id):
         """Get list of all slurm jobs"""
+        job_id = validate_slurm_job_id(job_id)
+    
         try:
             # Get running and pending jobs using JSON format
             result = remote_command(SLURM_HOST, f"'squeue -u $USER -j {job_id} --json'")
@@ -882,6 +907,8 @@ def slurm_integration(app, cache):
     @app.route('/api/slurm/jobs/old/<int:job_id>')
     def api_slurm_old_job_status(job_id):
         """Get list of all slurm jobs"""
+        job_id = validate_slurm_job_id(job_id)
+    
         try:
             # Get running and pending jobs using JSON format
             result = remote_command(SLURM_HOST, f"'sacct -u $USER -j {job_id} --json'")
@@ -933,7 +960,7 @@ def slurm_integration(app, cache):
     def api_slurm_save_job(jr_job_id: str, message: str):
         try:
             if rsync_jobrunner_job(jr_job_id) == 0:
-                cache_dir = os.path.join(JOBRUNNER_LOCAL_CACHE, jr_job_id)
+                cache_dir = safe_job_path(jr_job_id)
 
                 cmd = f"git add {cache_dir} && git commit -m \"{message}\" && git push origin main"
 
@@ -1133,6 +1160,7 @@ def slurm_integration(app, cache):
     @app.route('/api/slurm/cancel/<job_id>', methods=['POST'])
     def api_slurm_cancel(job_id):
         """Cancel a Slurm job"""
+        job_id = validate_slurm_job_id(job_id)
         try:
             result = remote_command(SLURM_HOST, f'scancel {job_id}')
 
@@ -1183,7 +1211,7 @@ def slurm_integration(app, cache):
         data = fetch_latest_job_acc(job_id)
         
         if len(data) != 0:
-            with open(os.path.join(JOBRUNNER_LOCAL_CACHE, jr_job_id, "meta", "acc.json"), "w") as fp:
+            with open(safe_job_path(jr_job_id, "meta", "acc.json"), "w") as fp:
                 json.dump(data, fp)
                 
         return data
@@ -1196,6 +1224,7 @@ def slurm_integration(app, cache):
             if job_id is None:
                 return ({})
 
+            job_id = validate_slurm_job_id(job_id)
             return fetch_latest_job_acc(job_id)
 
         except Exception as e:
@@ -1210,6 +1239,7 @@ def slurm_integration(app, cache):
                 return jsonify({})
 
             # Try to get job logs using scontrol
+            job_id = validate_slurm_job_id(job_id)
             result = remote_command(SLURM_HOST, f'scontrol show job --json {job_id}')
             # result = remote_command(SLURM_HOST, f'sacct --json -j {job_id}')
 
@@ -1235,7 +1265,7 @@ def slurm_integration(app, cache):
     def api_slurm_job_stdout_size(jr_job_id):
         """Get logs for a specific job"""
         try:
-            cache_dir = os.path.join(JOBRUNNER_LOCAL_CACHE, jr_job_id)
+            cache_dir = safe_job_path(jr_job_id)
             cache_file = os.path.join(cache_dir, "log.stdout")
 
             size = 0
@@ -1270,7 +1300,7 @@ def slurm_integration(app, cache):
     def api_slurm_job_stderr_size(jr_job_id):
         """Get logs for a specific job"""
         try:
-            cache_dir = os.path.join(JOBRUNNER_LOCAL_CACHE, jr_job_id)
+            cache_dir = safe_job_path(jr_job_id)
             cache_file = os.path.join(cache_dir, "log.stderr")
             size = 0
             if os.path.exists(cache_file):
@@ -1344,7 +1374,7 @@ def slurm_integration(app, cache):
     def api_slurm_template_content(template_name):
         """Get content of a specific template"""
         try:
-            script_file = os.path.join(SLURM_TEMPLATES, template_name)
+            script_file = safe_path(SLURM_TEMPLATES, template_name)
 
             if not os.path.exists(script_file):
                 return jsonify({'error': f'Template {template_name} not found'}), 404
@@ -1376,7 +1406,7 @@ def slurm_integration(app, cache):
                 return jsonify({'error': 'Template content is required'}), 400
 
             # Create template file
-            script_file = os.path.join(SLURM_TEMPLATES, template_name)
+            script_file = safe_path(SLURM_TEMPLATES, template_name)
 
             with open(script_file, "w") as fp:
                 fp.write(content)
@@ -1466,7 +1496,7 @@ def slurm_integration(app, cache):
 
             pipeline_name = data.get("name")
 
-            with open(os.path.join(PIPELINE_DEF, pipeline_name) + ".json", "w") as fp:
+            with open(safe_path(PIPELINE_DEF, pipeline_name) + ".json", "w") as fp:
                 json.dump(data, fp, indent=2)
 
             return jsonify({"status": "ok"})
@@ -1477,7 +1507,7 @@ def slurm_integration(app, cache):
     @app.route('/api/slurm/pipeline/template/load/<string:name>')
     def api_pipeline_load(name: str):
         try:
-            return send_file(os.path.join(PIPELINE_DEF, name + ".json"), mimetype="application/json")
+            return send_file(safe_path(PIPELINE_DEF, name + ".json"), mimetype="application/json")
 
         except Exception as e:
             return jsonify({'error': f'Failed to save pipeline: {str(e)}'}), 500
@@ -1502,7 +1532,7 @@ def slurm_integration(app, cache):
     def api_pipeline_run_template(name):
         context = request.json["context"]
 
-        with open(os.path.join(PIPELINE_DEF, name + ".json"), "r") as fp:
+        with open(safe_path(PIPELINE_DEF, name + ".json"), "r") as fp:
             definition = json.load(fp)
 
         return pipeline_definition_run(definition, context)
