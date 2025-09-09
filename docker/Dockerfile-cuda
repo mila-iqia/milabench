@@ -59,8 +59,8 @@ ENV CUDA_HOME=/usr/local/cuda-12/
 
 ENV MILAENCH_ENV=/milabench/.env
 
-RUN virtualenv $MILAENCH_ENV                                            &&\
-    $MILAENCH_ENV/bin/python -m pip install -U uv                       &&\
+RUN RUN curl -LsSf https://astral.sh/uv/install.sh | sh                 &&\
+    virtualenv $MILAENCH_ENV                                            &&\
     $MILAENCH_ENV/bin/python -m pip install -U pip                      &&\
     $MILAENCH_ENV/bin/python -m pip install -U setuptools               &&\
     $MILAENCH_ENV/bin/python -m pip install -U poetry                   &&\

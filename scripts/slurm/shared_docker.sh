@@ -1,7 +1,5 @@
 #!/bin/bash
 
-#!/bin/bash
-
 export MILABENCH_BRANCH=staging
 export PYTHON_VERSION=3.12
 export MILABENCH_GPU_ARCH=cuda

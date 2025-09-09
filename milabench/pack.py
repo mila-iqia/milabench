@@ -29,7 +29,10 @@ from .utils import (
 )
 
 
-def should_use_uv():
+def should_use_uv(override):
+    if override is not None:
+        return override
+
     from .system import option
     return option("use_uv", int, 1)
 
@@ -82,7 +85,7 @@ async def install_requires(pack: Package):
     group = pack.config.get("install_group", {})
 
     if group not in installed_requires:
-        await pack.pip_install("setuptools", "poetry", "uv")
+        await pack.pip_install("setuptools", "poetry", "uv", use_uv_override=False)
         installed_requires[group] = 1
 
 
@@ -225,7 +228,7 @@ class BasePackage:
         await self.install()
         self.install_mark_file.touch()
 
-    async def pip_install(self, *args, build_isolation=False, **kwargs):
+    async def pip_install(self, *args, build_isolation=False, use_uv_override=None, **kwargs):
         """Install a package in the virtual environment.
 
         The arguments are given to ``pip install`` verbatim, so you can
@@ -239,7 +242,7 @@ class BasePackage:
         for line in self.config.get("pip", {}).get("args", []):
             args += line.split(" ")
 
-        if should_use_uv():
+        if should_use_uv(use_uv_override):
             pip_install_cmd = ["uv", "pip", "install"] + no_build_isolation(build_isolation) + [ "--index-strategy", "unsafe-best-match", *args]
         else:
             pip_install_cmd = ["pip", "install"] + no_build_isolation(build_isolation) + [*args]
