@@ -61,20 +61,21 @@ class Layer(ValidationLayer):
                     warning.increased_count += 1
 
     def report(self, summary, **kwargs):
-        for bench, warnings in self.warnings.items():
-            with summary.section(bench):
-                nan_counts = warnings.nan_count
-                loss_inc = warnings.increased_count
-                loss_count = warnings.loss_count
+        with summary.section("Loss Tracking"):
+            for bench, warnings in self.warnings.items():
+                with summary.section(bench):
+                    nan_counts = warnings.nan_count
+                    loss_inc = warnings.increased_count
+                    loss_count = warnings.loss_count
 
-                if loss_count == 0:
-                    summary.add("* No loss was found")
+                    if loss_count == 0:
+                        summary.add("* No loss was found")
 
-                if nan_counts > 0:
-                    summary.add(f"* Loss was Nan {nan_counts} times")
+                    if nan_counts > 0:
+                        summary.add(f"* Loss was Nan {nan_counts} times")
 
-                if loss_inc > 0:
-                    summary.add(f"* Loss increased {loss_inc} times")
+                    if loss_inc > 0:
+                        summary.add(f"* Loss increased {loss_inc} times")
 
         self.set_error_code(self.nan_count)
         return self.nan_count

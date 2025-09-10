@@ -152,3 +152,5 @@ class Summary:
                 continue
 
             newline(line)
+        
+        newline("")
