@@ -1,7 +1,7 @@
 # FROM ubuntu:22.04
 
-# For cuda-gdb
-FROM nvidia/cuda:12.9.1-devel-ubuntu24.04
+FROM nvidia/cuda:12.9.1-runtime-ubuntu24.04
+
 
 # Arguments
 # ---------
@@ -59,11 +59,12 @@ ENV CUDA_HOME=/usr/local/cuda-12/
 
 ENV MILAENCH_ENV=/milabench/.env
 
-RUN virtualenv $MILAENCH_ENV                                            &&\
+RUN RUN curl -LsSf https://astral.sh/uv/install.sh | sh                 &&\
+    virtualenv $MILAENCH_ENV                                            &&\
     $MILAENCH_ENV/bin/python -m pip install -U pip                      &&\
     $MILAENCH_ENV/bin/python -m pip install -U setuptools               &&\
     $MILAENCH_ENV/bin/python -m pip install -U poetry                   &&\
-    $MILAENCH_ENV/bin/python -m pip install -e /milabench/milabench/    &&\
+    $MILAENCH_ENV/bin/python -m pip install -e /milabench/milabench[cuda]    &&\
     $MILAENCH_ENV/bin/python -m pip cache purge                       
 
 # Prepare bench

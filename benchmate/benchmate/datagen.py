@@ -6,6 +6,8 @@ import multiprocessing
 import os
 from collections import defaultdict
 from pathlib import Path
+import time
+import random
 
 import torchcompat.core as acc
 import torch
@@ -17,11 +19,18 @@ def write(args):
 
     offset, outdir, prefix, size = args
 
-    img = torch.randn(*size)
-    target = offset % 1000  # torch.randint(0, 1000, size=(1,), dtype=torch.long)[0]
+    seed = int(time.time() + offset)
+    
+    torch.manual_seed(seed)
+    random.seed(seed)
+    
+    img = torch.randint(0, 256, size, dtype=torch.uint8)
+    # img = torch.randn(*size)
+    
     img = transforms.ToPILImage()(img)
+    target = offset % 1000  # torch.randint(0, 1000, size=(1,), dtype=torch.long)[0]
     class_val = int(target)
-
+    
     # Some benches need filenames to match those of imagenet:
     # https://github.com/facebookresearch/dinov2/blob/e1277af2ba9496fbadf7aec6eba56e8d882d1e35/dinov2/data/datasets/image_net.py#L40-L43
     if not prefix:  # train
@@ -110,6 +119,7 @@ def fakeimagenet_args():
     parser.add_argument("--image-size", default=[3, 384, 384], type=int, nargs="+")
     parser.add_argument("--val", default=0.1, type=float, nargs="+")
     parser.add_argument("--test", default=0.1, type=float, nargs="+")
+    parser.add_argument("--output", default=os.getenv("MILABENCH_DIR_DATA", None), type=str)
     args, _ = parser.parse_known_args()
     return args
 
@@ -124,7 +134,8 @@ def generate_fakeimagenet(args=None):
         bs, bc = overrides.split(",")
         args.batch_size, args.batch_count = int(bs), int(bc)
 
-    data_directory = os.environ["MILABENCH_DIR_DATA"]
+    assert args.output is not None, "Output directory is required"
+    data_directory = args.output
     
     dest = os.path.join(data_directory, f"FakeImageNet")
     print(f"Generating fake data into {dest}...")

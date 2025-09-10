@@ -1,0 +1,42 @@
+{
+  "name": "nodes_pin_install_prepare_run",
+  "type": "pipeline",
+  "definition": {
+    "type": "sequential",
+    "name": "Main Sequence",
+    "jobs": [
+      {
+        "type": "job",
+        "script": "run_pin.sh",
+        "profile": "run_pin.sh"
+      },
+      {
+        "type": "job",
+        "script": "shared_install_prepare.sh",
+        "profile": "run_shared_install_prepare"
+      },
+      {
+        "type": "parallel",
+        "name": "New parallel",
+        "jobs": [
+          {
+            "type": "job",
+            "script": "shared_run.sh",
+            "profile": "multi-node-full-H100"
+          },
+          {
+            "type": "job",
+            "script": "shared_run.sh",
+            "profile": "multi-node-a100"
+          },
+          {
+            "type": "job",
+            "script": "shared_run.sh",
+            "profile": "multi-node-rtx"
+          }
+        ]
+      }
+    ]
+  },
+  "job_id": null
+}

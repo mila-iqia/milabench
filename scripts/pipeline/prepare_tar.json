@@ -1,0 +1,21 @@
+{
+  "name": "prepare_tar",
+  "type": "pipeline",
+  "definition": {
+    "type": "sequential",
+    "name": "Main Sequence",
+    "jobs": [
+      {
+        "type": "job",
+        "script": "shared_install_prepare.sh",
+        "profile": "run_shared_install_prepare"
+      },
+      {
+        "type": "job",
+        "script": "shared_tar.sh",
+        "profile": "tar_prepare"
+      }
+    ]
+  },
+  "job_id": null
+}

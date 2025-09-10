@@ -145,7 +145,7 @@ def view_server(config):
             with Session(logger.client) as sess:
                 yield sess
 
-    slurm_integration(app)
+    slurm_integration(app, cache)
     
     metric_receiver(app)
 

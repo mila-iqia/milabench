@@ -50,16 +50,18 @@ single-node-full-A100l:
 - --export=ALL
 - -w cn-d[003-004]
 single-node-full-L40S:
-- -w cn-l[001-091]
-- --ntasks=1
-- --gpus-per-task=4
-- --exclusive
+- --job-name=run_l40s
+- --partition=staff-idt
 - --nodes=1
+- --ntasks=1
 - --cpus-per-task=48
-- --time=1:30:00
-- --ntasks-per-node=1
 - --mem=0
+- --time=4:30:00
+- --gpus-per-task=4
+- --ntasks-per-node=1
+- --exclusive
 - --export=ALL,MILABENCH_SIZER_AUTO=0
+- -w cn-l[001-092]
 single-node-small:
 - --partition=staff-idt
 - --ntasks=1
@@ -170,5 +172,16 @@ run_shared_install_prepare:
 - --mem=32G
 - --time=01:30:00
 - --gpus-per-task=1
+- --ntasks-per-node=1
+- --export=ALL
+tar_prepare:
+- --job-name=tar
+- --partition=staff-idt
+- --nodes=1
+- --ntasks=1
+- --cpus-per-task=2
+- --mem=16G
+- --time=06:00:00
+- --gpus-per-task=0
 - --ntasks-per-node=1
 - --export=ALL
