@@ -229,18 +229,34 @@ standard_run = Sequential(
     )
 )
 
+
+def is_state_terminal(state):
+    return state in ("COMPLETED", "FAILED", "CANCELLED", "TIMEOUT", "NODE_FAIL", "OUT_OF_MEMORY")
+
+
+def get_acc_state(acc):
+    states = acc.get("state", {}).get("current", [])
+
+    if len(states) > 0:
+        return states[0]
+    
+    return None
+
+def get_info_state(acc):
+    states = acc.get("job_state", [])
+
+    if len(states) > 0:
+        return states[0]
+    
+    return None
+
 def is_acc_terminal(acc):
     if type(acc) is list:
         return False
     
-    job_states = acc.get("state", {}).get("current", [])
-    
-    # Cache is good
-    if len(job_states) > 0 and job_states[0] in ("COMPLETED", "FAILED", "CANCELLED", "TIMEOUT", "NODE_FAIL", "OUT_OF_MEMORY"):
-        return True
+    state = get_acc_state(acc)
 
-    print(f"Job states: {job_states}")
-    return False
+    return (state is not None) and is_state_terminal(state)
 
 
 def job_acc_cache_status(filename: str):
@@ -429,6 +445,8 @@ def validate_jr_job_id(jr_job_id):
 def rsync_jobrunner_job(jr_job_id, timeout=5):
     if not validate_jr_job_id(jr_job_id):
         return 1
+
+    # I could check the status to avoid the rsync
 
     with job_rsync_limiter(jr_job_id) as can_run:
         if not can_run:
@@ -886,7 +904,7 @@ def slurm_integration(app, cache):
             return jsonify({'error': str(e)}), 500
 
     @app.route('/api/slurm/jobs/<int:job_id>')
-    def api_slurm_job_status(job_id):
+    def api_slurm_active_job_status(job_id):
         """Get list of all slurm jobs"""
         job_id = validate_slurm_job_id(job_id)
     
@@ -1255,7 +1273,44 @@ def slurm_integration(app, cache):
 
         except Exception as e:
             return jsonify({'error': str(e)}), 500
+    
 
+    def get_cached_state(jr_job_id, job_id):
+        sacct_info = safe_job_path(jr_job_id, "meta", "acc.json")
+        squeue_info = safe_job_path(jr_job_id, "meta", "info.json")
+
+        if os.path.exists(sacct_info):
+            try:
+                with open(sacct_info, "r") as fp:
+                    sacct = json.load(fp)
+                    return get_acc_state(sacct)
+            except:
+                pass
+
+        if os.path.exists(squeue_info):
+            try:
+                with open(squeue_info, "r") as fp:
+                    squeue = json.load(fp)
+                    return get_info_state(squeue)
+            except:
+                pass
+        
+        sacct = fetch_latest_job_acc_cached(jr_job_id, job_id)
+        return get_acc_state(sacct)
+
+    def is_job_state_terminal(jr_job_id, job_id):
+        return is_state_terminal(get_cached_state(jr_job_id, job_id))
+
+    @app.route('/api/slurm/jobs/<string:jr_job_id>/status/<int:job_id>')
+    def api_slurm_job_status(jr_job_id, job_id):
+        """Get the job Status"""
+
+        cached_state = get_cached_state(jr_job_id, job_id)
+
+        return {
+            "status": cached_state
+        }
+            
     @app.route('/api/slurm/jobs/<jr_job_id>/info')
     @local_cache("info.json", "jr_job_id")
     def api_slurm_job_info_cached(jr_job_id):
