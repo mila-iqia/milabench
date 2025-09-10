@@ -3,6 +3,7 @@ import requests
 import subprocess
 from threading import Thread, Lock, Event
 import json
+from flask import request
 
 from ..pack import Package
 from ..structs import BenchLogEntry
@@ -56,8 +57,7 @@ def metric_receiver(app, receiver_factory=lambda x: None):
     def receive_metric(jr_job_id: str):
         nonlocal registry
 
-        from flask import request
-        
+    
         lines = request.get_data(as_text=True).split("\n")
 
         receiver = registry.setdefault(jr_job_id, receiver_factory(jr_job_id))
