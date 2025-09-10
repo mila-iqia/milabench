@@ -27,6 +27,7 @@ from .gated import cli_gated
 from .sharedsetup import cli_shared_setup
 from .docker import cli_docker
 from .multirun import cli_multirun
+from .replay import cli_replay
 
 
 class Main:
@@ -119,6 +120,9 @@ class Main:
 
     def multirun():
         cli_multirun()
+
+    def replay():
+        cli_replay()
 
 
 def main(argv=None):
