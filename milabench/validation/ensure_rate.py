@@ -24,12 +24,13 @@ class Layer(ValidationLayer):
         self.errors += self.rates[entry.tag] <= 0
 
     def report(self, summary, short=True, **kwargs):
-        for tag, rate in self.rates.items():
-            if rate > 0:
-                continue
+        with summary.section("Metric Collection"):
+            for tag, rate in self.rates.items():
+                if rate > 0:
+                    continue
 
-            with summary.section(tag):
-                summary.add("* no training rate retrieved")
+                with summary.section(tag):
+                    summary.add("* no training rate retrieved")
 
         self.set_error_code(self.errors)
         return self.errors

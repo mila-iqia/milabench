@@ -22,6 +22,7 @@ from .plot import pivot_query
 from .utils import database_uri, page, make_selection_key, make_filters, cursor_to_json, cursor_to_dataframe
 from .slurm import slurm_integration
 from .realtime import metric_receiver
+from .push import push_routes
 
 
 class MultiIndexFormater:
@@ -148,6 +149,8 @@ def view_server(config):
     slurm_integration(app, cache)
     
     metric_receiver(app)
+
+    push_routes(app, DATABASE_URI)
 
     #
     # API routes

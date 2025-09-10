@@ -177,15 +177,21 @@ def replay_validation_scenario(folder, *validation, filename=None):
     """Replay events from a data file or folder"""
     gen = None
 
-    path = folder / filename
-    file = str(path) + ".txt"
+    if filename is not None:
+        path = folder / filename
+        file = str(path) + ".txt"
 
-    if os.path.isdir(path):
-        files = [path / f for f in os.scandir(path)]
+        if os.path.isfile(file):
+            gen = replay(file)
+
+        if os.path.isdir(path):
+            files = [path / f for f in os.scandir(path)]
+            gen = interleave(*files)
+
+    elif os.path.isdir(folder):
+        files = [f for f in os.scandir(folder) if f.name.endswith(".data")]
         gen = interleave(*files)
 
-    if os.path.isfile(file):
-        gen = replay(file)
 
     with multilogger(*validation) as log:
         for entry in gen:

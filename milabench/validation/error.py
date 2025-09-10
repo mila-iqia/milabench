@@ -1,5 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass, field
+from os import listdir
 from typing import List
 
 from .validation import ValidationLayer
@@ -149,9 +150,77 @@ class Layer(ValidationLayer):
                 for line in selected.lines:
                     summary.add(f"      | {line}")
 
-    def report(self, summary, short=False, **kwargs):
-        """Print an error report and exit with an error code if any error were found"""
+    def group_errors(self):
+        @dataclass
+        class GroupedError:
+            packs: dict = field(default_factory=lambda: defaultdict(list))
+            early_stopped: int = 0
+            total: int = 0
+            exceptions: list = field(default_factory=lambda: defaultdict(lambda: defaultdict(list)))
+            failures: int = 0
+            success: int = 0
+        
+        grouped = defaultdict(GroupedError)
 
+        for k, error in self.errors.items():
+            name, index = k.rsplit(".", maxsplit=1)
+
+            group: GroupedError =  grouped[name]
+            group.total += 1
+            group.packs[index].append(error)
+
+            total = sum(error.code)
+
+            if total == 0:
+                group.success += 1
+                continue
+                
+            if error.early_stop:
+                group.early_stopped += 1
+            else:
+                group.failures += 1
+
+            if error.trace:
+                exceptions = [ParsedTraceback(error.trace.splitlines())]
+            else:
+                exceptions = _extract_traceback(error.stderr, self.is_install)
+            
+            for exception in exceptions:
+                raised = exception.raised_exception()
+                group.exceptions[raised][k].append(exception)
+
+        return grouped
+
+    def display_grouped(self, summary, short=False):
+        groups = self.group_errors()
+        failures = 0
+    
+        with summary.section("Early Stopped"):
+            for bench, group in groups.items():
+                if group.early_stopped > 0:
+                    summary.add(f"*{group.early_stopped:2d} x {bench:<30} ({group.early_stopped}/{group.total})")
+
+        with summary.section("Errors"):
+            for bench, group in groups.items():
+                failures += group.failures
+
+                with summary.section(bench):
+                    if group.failures > 0:
+                        if len(group.exceptions) == 0:
+                            summary.add("* No exception were found")
+                        else:
+                            for raised, errors in group.exceptions.items():
+                                with summary.section(raised):
+                                    packs = ", ".join([f"{len(_)} x {k}" for k, _ in errors.items()])
+                                    summary.add(f"* {packs}")
+
+                                    _, exceptions = next(iter(errors.items()))
+                                    for line in exceptions[0].lines:
+                                        summary.add(f"      | {line}")
+
+        return failures
+
+    def display_extended(self, summary, short=False):
         failures = 0
         success = 0
 
@@ -175,5 +244,11 @@ class Layer(ValidationLayer):
 
                 self.report_exceptions(summary, error, short)
 
+        return failures
+
+    def report(self, summary, short=False, **kwargs):
+        """Print an error report and exit with an error code if any error were found"""
+        failures = self.display_grouped(summary, short, **kwargs)
+        
         self.set_error_code(failures)
         return failures

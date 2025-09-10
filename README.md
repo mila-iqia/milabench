@@ -69,18 +69,6 @@ Some benchmark use gated models or datasets, which requires the user to request 
 
 Now you are ready to execute `milabench prepare`
 
-## Details
-
-The benchmark suite has been validated on the following configurations:
-
-| Python version |          GPU                   |   Configuration file |
-|       -        |        -                       |           -          |
-| 3.10           | 2 node x 8xNVIDIA A100 80GB    | config/standard.yaml |
-| 3.10           | 2 node x 8xMI300X              | config/standard.yaml |
-| 3.10           | 1 node x 8xGaudi2              | config/standard.yaml |
-
-We are working on validating it on more configurations and will update the above table as we do.
-
 ## Report
   
     =================

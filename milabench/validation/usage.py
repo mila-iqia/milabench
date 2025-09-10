@@ -71,31 +71,32 @@ class Layer(ValidationLayer):
                 stats.max_mem[device] = max(usage, stats.max_mem[device])
 
     def report(self, summary, **kwargs):
-        failed = 0
-        warn = 0
+        with summary.section("GPU Usage Tracking"):
+            failed = 0
+            warn = 0
 
-        for bench, warnings in self.warnings.items():
-            with summary.section(bench):
-                for device in self.devices:
-                    load = warnings.avg_load.get(device, None)
-                    mem = warnings.avg_mem.get(device, None)
-                    mxmem = warnings.max_mem.get(device, None)
-                    mxload = warnings.max_load.get(device, None)
-                    count = warnings.count.get(device, 0)
+            for bench, warnings in self.warnings.items():
+                with summary.section(bench):
+                    for device in self.devices:
+                        load = warnings.avg_load.get(device, None)
+                        mem = warnings.avg_mem.get(device, None)
+                        mxmem = warnings.max_mem.get(device, None)
+                        mxload = warnings.max_load.get(device, None)
+                        count = warnings.count.get(device, 0)
 
-                    if load is not None and load / count < warnings.gpu_load_threshold:
-                        summary.add(
-                            f"* Device {device} loads is below threshold "
-                            f"{load / count:5.2f} < {warnings.gpu_load_threshold:5.2f} (max load: {mxload:5.2f})"
-                        )
-                        failed += 1
+                        if load is not None and load / count < warnings.gpu_load_threshold:
+                            summary.add(
+                                f"* Device {device} loads is below threshold "
+                                f"{load / count:5.2f} < {warnings.gpu_load_threshold:5.2f} (max load: {mxload:5.2f})"
+                            )
+                            failed += 1
 
-                    if mem is not None and mem / count < warnings.gpu_mem_threshold:
-                        summary.add(
-                            f"* Device {device} used memory is below threshold "
-                            f"{mem / count:5.2f} < {warnings.gpu_mem_threshold:5.2f} (max use: {mxmem:5.2f})"
-                        )
-                        warn += 1
+                        if mem is not None and mem / count < warnings.gpu_mem_threshold:
+                            summary.add(
+                                f"* Device {device} used memory is below threshold "
+                                f"{mem / count:5.2f} < {warnings.gpu_mem_threshold:5.2f} (max use: {mxmem:5.2f})"
+                            )
+                            warn += 1
 
         self.set_error_code(failed)
         return failed
