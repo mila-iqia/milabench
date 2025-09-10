@@ -446,6 +446,8 @@ def rsync_jobrunner_job(jr_job_id, timeout=5):
     if not validate_jr_job_id(jr_job_id):
         return 1
 
+    # I could check the status to avoid the rsync
+
     with job_rsync_limiter(jr_job_id) as can_run:
         if not can_run:
             return 0 
@@ -1295,6 +1297,9 @@ def slurm_integration(app, cache):
         
         sacct = fetch_latest_job_acc_cached(jr_job_id, job_id)
         return get_acc_state(sacct)
+
+    def is_job_state_terminal(jr_job_id, job_id):
+        return is_state_terminal(get_cached_state(jr_job_id, job_id))
 
     @app.route('/api/slurm/jobs/<string:jr_job_id>/status/<int:job_id>')
     def api_slurm_job_status(jr_job_id, job_id):
