@@ -346,46 +346,64 @@ def remove_job_from_remote(jr_job_id):
     remote_command("mila", cmd, timeout=30)
 
 
-@contextmanager
-def job_rsync_limiter(jr_job_id, limit=30):
-    cache_dir = JOBRUNNER_LOCAL_CACHE
 
+@contextmanager
+def system_file(jr_job_id, filename, defaults=None, limit=30):
+    cache_dir = JOBRUNNER_LOCAL_CACHE
     if jr_job_id is not None:
         cache_dir = safe_job_path(jr_job_id)
-    
+
     sys_folder = os.path.join(cache_dir, ".sys")
-    cache_file = os.path.join(sys_folder, "limiter.json")
-    lock_file = os.path.join(sys_folder, "LOCK")
+    sys_file = safe_job_path(sys_folder, filename)
+    lock_file = sys_file + ".lock"
 
     os.makedirs(sys_folder, exist_ok=True)
+
     try:
         with FileLock(lock_file):
-            now =  time.time()
+            if defaults is None:
+                defaults = {}
 
-            limiter = {
-                "last": 0
-            }
+            data = defaults
+        
+            if os.path.exists(sys_file):
+                with open(sys_file, "r") as fp:
+                    data = json.load(fp)
 
-            if os.path.exists(cache_file):
-                with open(cache_file, "r") as fp:
-                    limiter = json.load(fp)
+            yield data
 
-            last = limiter.get("last", 0)
-            
-            if (now - last) > limit:
-                limiter["last"] = now
-                yield True
-            else:
-                print("RSYNC limiter prevented rsync")
-                yield False
+            with open(sys_file, "w") as fp:
+                json.dump(data, fp)
+    
 
-            with open(cache_file, "w") as fp:
-                json.dump(limiter, fp)
     except Timeout:
-        yield False
+        yield defaults
 
 
+@contextmanager
+def cache_invalidator(jr_job_id, cache_name, limit=30):
+    defaults = {
+        "last": 0
+    }
 
+    with system_file(jr_job_id, cache_name, defaults=defaults, limit=limit) as data:
+        last = data["last"]
+        now =  time.time()
+
+        if (now - last) > limit:
+            data["last"] = now
+            yield True
+        else:
+            print(f"Cache {cache_name} is old")
+            yield False
+
+
+@contextmanager
+def job_rsync_limiter(jr_job_id, limit=30):
+    with cache_invalidator(jr_job_id, "limiter.json", limit=30) as maybe_valid:
+        yield maybe_valid
+
+    
 def rsync_jobrunner_folder(timeout=5):
     with job_rsync_limiter(None) as can_run:
         if not can_run:
@@ -1229,8 +1247,10 @@ def slurm_integration(app, cache):
         data = fetch_latest_job_acc(job_id)
         
         if len(data) != 0:
-            with open(safe_job_path(jr_job_id, "meta", "acc.json"), "w") as fp:
-                json.dump(data, fp)
+            path = safe_job_path(jr_job_id, "meta", "acc.json")
+            if os.path.exists(path):
+                with open(path, "w") as fp:
+                    json.dump(data, fp)
                 
         return data
 
@@ -1276,25 +1296,28 @@ def slurm_integration(app, cache):
     
 
     def get_cached_state(jr_job_id, job_id):
-        sacct_info = safe_job_path(jr_job_id, "meta", "acc.json")
-        squeue_info = safe_job_path(jr_job_id, "meta", "info.json")
+        with cache_invalidator(jr_job_id, "acc.json", limit=30) as is_valid:
+            if is_valid:
+                sacct_info = safe_job_path(jr_job_id, "meta", "acc.json")
+                squeue_info = safe_job_path(jr_job_id, "meta", "info.json")
 
-        if os.path.exists(sacct_info):
-            try:
-                with open(sacct_info, "r") as fp:
-                    sacct = json.load(fp)
-                    return get_acc_state(sacct)
-            except:
-                pass
+                if os.path.exists(sacct_info):
+                    try:
+                        with open(sacct_info, "r") as fp:
+                            sacct = json.load(fp)
+                            return get_acc_state(sacct)
+                    except:
+                        pass
 
-        if os.path.exists(squeue_info):
-            try:
-                with open(squeue_info, "r") as fp:
-                    squeue = json.load(fp)
-                    return get_info_state(squeue)
-            except:
-                pass
+                if os.path.exists(squeue_info):
+                    try:
+                        with open(squeue_info, "r") as fp:
+                            squeue = json.load(fp)
+                            return get_info_state(squeue)
+                    except:
+                        pass
         
+        # Cache not valid force fetch again
         sacct = fetch_latest_job_acc_cached(jr_job_id, job_id)
         return get_acc_state(sacct)
 
@@ -1305,6 +1328,7 @@ def slurm_integration(app, cache):
     def api_slurm_job_status(jr_job_id, job_id):
         """Get the job Status"""
 
+        # This does not get updated anymore once some data is fetched
         cached_state = get_cached_state(jr_job_id, job_id)
 
         return {

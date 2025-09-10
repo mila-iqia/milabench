@@ -11,6 +11,7 @@ scontrol show job --json $SLURM_JOB_ID | jq '.jobs[0]' > $OUTPUT_DIRECTORY/meta/
 export MILABENCH_USE_UV=1
 export MILABENCH_WORDIR="/tmp/$SLURM_JOB_ID"
 export MILABENCH_BASE="$MILABENCH_WORDIR/results"
+export MILABENCH_BRANCH="uv_compile_missing_extra_url"
 
 export MILABENCH_VENV="$MILABENCH_WORDIR/env"
 export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
@@ -26,9 +27,8 @@ conda activate $MILABENCH_WORDIR/env
 (
     cd $MILABENCH_SOURCE
     git stash
-    git checkout staging
     git fetch origin
-    git reset --hard origin/staging
+    git reset --hard origin/$MILABENCH_BRANCH
 )
 
 pip install -e $MILABENCH_SOURCE
