@@ -10,6 +10,7 @@ import pandas as pd
 from flask import Flask, jsonify, render_template_string, render_template
 from flask_caching import Cache
 from flask import request
+from flask_socketio import SocketIO, emit
 import sqlalchemy
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func, cast, TEXT
@@ -21,7 +22,7 @@ from milabench.report import make_report
 from .plot import pivot_query
 from .utils import database_uri, page, make_selection_key, make_filters, cursor_to_json, cursor_to_dataframe
 from .slurm import slurm_integration
-from .realtime import metric_receiver
+from .realtime import metric_receiver, set_socketio_instance
 from .push import push_routes
 
 
@@ -132,6 +133,12 @@ def view_server(config):
     app.scheduler = scheduler
     app.scheduler.start()
 
+    # Initialize SocketIO
+    socketio = SocketIO(app, cors_allowed_origins="*")
+
+    # Set the socketio instance for the realtime module
+    set_socketio_instance(socketio)
+
     @app.teardown_appcontext
     def cleanup(exception):
         try:
@@ -147,10 +154,40 @@ def view_server(config):
                 yield sess
 
     slurm_integration(app, cache)
-    
+
     metric_receiver(app)
 
     push_routes(app, DATABASE_URI)
+
+    # WebSocket event handlers
+    @socketio.on('connect')
+    def handle_connect():
+        print('Client connected')
+        emit('status', {'msg': 'Connected to milabench metrics server'})
+
+    @socketio.on('disconnect')
+    def handle_disconnect():
+        print('Client disconnected')
+
+    @socketio.on('subscribe_job')
+    def handle_subscribe_job(data):
+        """Allow clients to subscribe to specific job IDs"""
+        job_id = data.get('jr_job_id')
+        if job_id:
+            # Join a room specific to this job ID
+            from flask_socketio import join_room
+            join_room(job_id)
+            emit('status', {'msg': f'Subscribed to job {job_id}'})
+
+    @socketio.on('unsubscribe_job')
+    def handle_unsubscribe_job(data):
+        """Allow clients to unsubscribe from specific job IDs"""
+        job_id = data.get('jr_job_id')
+        if job_id:
+            # Leave the room specific to this job ID
+            from flask_socketio import leave_room
+            leave_room(job_id)
+            emit('status', {'msg': f'Unsubscribed from job {job_id}'})
 
     #
     # API routes
@@ -896,11 +933,11 @@ def view_server(config):
         # return ()
         return page("Milabench", body)
 
-    return app
+    return app, socketio
 
 
 def main():
-    app = view_server({})
+    app, socketio = view_server({})
     return app
 
 
