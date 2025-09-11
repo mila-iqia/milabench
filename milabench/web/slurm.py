@@ -19,13 +19,8 @@ from filelock import FileLock, Timeout
 from cantilever.core.timer import timeit
 from flask import request, jsonify, send_file
 
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+from .constant import *
 
-SLURM_PROFILES = os.path.join(ROOT, 'config', 'slurm.yaml')
-SLURM_TEMPLATES = os.path.join(ROOT, 'scripts', 'slurm')
-PIPELINE_DEF = os.path.join(ROOT, 'scripts', 'pipeline')
-JOBRUNNER_WORKDIR = "scratch/jobrunner"
-JOBRUNNER_LOCAL_CACHE =  os.path.abspath(os.path.join(ROOT, '..', 'data'))
 
 #
 #   The integration assume the server can send SSH command to the SLURM cluster
@@ -346,38 +341,28 @@ def remove_job_from_remote(jr_job_id):
     remote_command("mila", cmd, timeout=30)
 
 
+
 @contextmanager
-def job_rsync_limiter(jr_job_id, limit=30):
+def system_file(jr_job_id, filename, defaults):
     cache_dir = JOBRUNNER_LOCAL_CACHE
 
     if jr_job_id is not None:
         cache_dir = safe_job_path(jr_job_id)
 
     sys_folder = os.path.join(cache_dir, ".sys")
-    cache_file = os.path.join(sys_folder, "limiter.json")
-    lock_file = os.path.join(sys_folder, "LOCK")
+    cache_file = os.path.join(sys_folder, filename)
+    lock_file = cache_file + ".lock"
 
     os.makedirs(sys_folder, exist_ok=True)
     try:
         with FileLock(lock_file):
-            now =  time.time()
-
-            limiter = {
-                "last": 0
-            }
+            limiter = defaults
 
             if os.path.exists(cache_file):
                 with open(cache_file, "r") as fp:
                     limiter = json.load(fp)
 
-            last = limiter.get("last", 0)
-
-            if (now - last) > limit:
-                limiter["last"] = now
-                yield True
-            else:
-                print("RSYNC limiter prevented rsync")
-                yield False
+            yield limiter
 
             with open(cache_file, "w") as fp:
                 json.dump(limiter, fp)
@@ -385,10 +370,29 @@ def job_rsync_limiter(jr_job_id, limit=30):
         yield False
 
 
+@contextmanager
+def cache_invalidator(jr_job_id, filename, limit=30):
+    with system_file(jr_job_id, filename, {"last": 0}) as system:
+        now =  time.time()
+        last = system.get("last", 0)
 
-def rsync_jobrunner_folder(timeout=5):
+        if (now - last) > limit:
+            system["last"] = now
+            yield True
+        else:
+            yield False
+
+
+@contextmanager
+def job_rsync_limiter(jr_job_id, limit=30):
+    with cache_invalidator(jr_job_id, "limiter.json", limit=30) as r:
+        yield r
+
+
+def rsync_jobrunner_folder(timeout=5, force=False):
     with job_rsync_limiter(None) as can_run:
-        if not can_run:
+        if not can_run and not force:
+            print("RSYNC [full] skipped")
             return 0
 
         rsync_cmd = ["rsync", "-az", f"mila:{JOBRUNNER_WORKDIR}/", f"{JOBRUNNER_LOCAL_CACHE}"]
@@ -450,6 +454,7 @@ def rsync_jobrunner_job(jr_job_id, timeout=5):
 
     with job_rsync_limiter(jr_job_id) as can_run:
         if not can_run:
+            print("RSYNC [partial] skipped")
             return 0
 
         rsync_cmd = ["rsync", "-az", f"mila:{JOBRUNNER_WORKDIR}/{jr_job_id}", f"{JOBRUNNER_LOCAL_CACHE}"]
@@ -520,7 +525,7 @@ def book_keeping():
     """
     print("BOOK KEEPING")
     try:
-        if rsync_jobrunner_folder() == 0:
+        if rsync_jobrunner_folder(force=True) == 0:
             #
             results = remote_command("mila", f"ls -1 {JOBRUNNER_WORKDIR}", timeout=30)
             all_jobs = results["stdout"].split('\n')
@@ -729,6 +734,7 @@ def remote_command(host, command, timeout=5):
 def slurm_integration(app, cache):
     """Add Slurm integration routes to the Flask app"""
 
+    book_keeping()
     app.scheduler.add_job(book_keeping, 'interval', seconds=3600)
 
     # Configuration for SSH connection to Slurm cluster
@@ -1229,7 +1235,9 @@ def slurm_integration(app, cache):
         data = fetch_latest_job_acc(job_id)
 
         if len(data) != 0:
-            with open(safe_job_path(jr_job_id, "meta", "acc.json"), "w") as fp:
+            p = safe_job_path(jr_job_id, "meta", "acc.json")
+            os.makedirs(os.path.dirname(p), exist_ok=True)
+            with open(p, "w") as fp:
                 json.dump(data, fp)
 
         return data
@@ -1274,28 +1282,27 @@ def slurm_integration(app, cache):
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
-
     def get_cached_state(jr_job_id, job_id):
         with cache_invalidator(jr_job_id, "acc.json", limit=30) as is_old:
             if not is_old:
                 sacct_info = safe_job_path(jr_job_id, "meta", "acc.json")
                 squeue_info = safe_job_path(jr_job_id, "meta", "info.json")
 
-        if os.path.exists(sacct_info):
-            try:
-                with open(sacct_info, "r") as fp:
-                    sacct = json.load(fp)
-                    return get_acc_state(sacct)
-            except:
-                pass
+                if os.path.exists(sacct_info):
+                    try:
+                        with open(sacct_info, "r") as fp:
+                            sacct = json.load(fp)
+                            return get_acc_state(sacct)
+                    except:
+                        pass
 
-        if os.path.exists(squeue_info):
-            try:
-                with open(squeue_info, "r") as fp:
-                    squeue = json.load(fp)
-                    return get_info_state(squeue)
-            except:
-                pass
+                if os.path.exists(squeue_info):
+                    try:
+                        with open(squeue_info, "r") as fp:
+                            squeue = json.load(fp)
+                            return get_info_state(squeue)
+                    except:
+                        pass
 
         sacct = fetch_latest_job_acc_cached(jr_job_id, job_id)
         return get_acc_state(sacct)

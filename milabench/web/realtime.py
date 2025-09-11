@@ -3,11 +3,10 @@ import requests
 import subprocess
 from threading import Thread, Lock, Event
 import json
-from flask import request
 
 from ..pack import Package
 from ..structs import BenchLogEntry
-from .slurm import JOBRUNNER_LOCAL_CACHE
+from .constant import JOBRUNNER_LOCAL_CACHE
 
 #
 #   1. Have the server register the metric receiver route
@@ -55,27 +54,33 @@ class BenchEntryRebuilder:
 
 
 def metric_receiver(app, receiver_factory=lambda x: BenchEntryRebuilder(x)):
+    from flask import request
     registry = {}
+    
 
     @app.route('/api/metric/<string:jr_job_id>', methods=['POST'])
     def receive_metric(jr_job_id: str):
         nonlocal registry
 
         lines = request.get_data(as_text=True).split("\n")
+        for l in lines:
+            print(l)
 
-        receiver = registry.setdefault(jr_job_id, receiver_factory(jr_job_id))
+        # receiver = registry.setdefault(jr_job_id, receiver_factory(jr_job_id))
 
-        # NOTE: we lose access to entry.pack here
-        if receiver is not None:
+        # # NOTE: we lose access to entry.pack here
+        # if receiver is not None:
 
-            for line in lines:
-                line = json.load(line)
+        #     for line in lines:
+        #         line = json.load(line)
 
-                for entry in receiver(line):
-                    yield entry
+        #         for entry in receiver(line):
+        #             print(entry)
 
 
 def reverse_ssh_tunnel(hostname):
+    # ssh -N -R 5000:localhost:5000 cn-d004.server.mila.quebec
+
     ssh_process = subprocess.Popen([
         "ssh",
         "-N", 
@@ -100,7 +105,7 @@ class HTTPMetricPusher:
         assert jr_job_id is not None
 
         self.jr_job_id = jr_job_id
-        self.url = f"{self.url}/api/metric/{jr_job_id}"
+        self.url = f"{url}/api/metric/{jr_job_id}"
         self.lock = Lock()
         self.pending_messages = []
 
@@ -116,6 +121,9 @@ class HTTPMetricPusher:
         self._stop_event.set()
         self._thread.join()
         self.push()
+
+    def __call__(self, entry):
+        return self.on_event(entry)
 
     def on_event(self, entry: BenchLogEntry):
         with self.lock:
@@ -140,7 +148,7 @@ class HTTPMetricPusher:
             self.pending_messages = []
 
         try:
-            batch = "\n".join(m.json() for m in messages)
+            batch = "\n".join(m for m in messages)
             requests.post(self.url, data=batch, timeout=5)
         except Exception as e:
             print(f"Failed to push metrics: {e}")

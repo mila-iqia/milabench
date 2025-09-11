@@ -1,10 +1,10 @@
 #!/bin/bash
 
-export MILABENCH_BRANCH=staging
+export MILABENCH_BRANCH=realtime_tracking
 export PYTHON_VERSION=3.12
 export MILABENCH_GPU_ARCH=cuda
 export PYTHONUNBUFFERED=1
-export MILABENCH_ARGS=""
+export MILABENCH_ARGS="--plugin http localhost:5000 --plugin term"
 
 set -ex
 
