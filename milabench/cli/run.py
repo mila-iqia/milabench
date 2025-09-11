@@ -1,5 +1,6 @@
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from urllib.parse import urlparse
 
 from coleo import Option, tooled
 
@@ -24,6 +25,7 @@ from ..report import make_report
 from ..sizer import MemoryUsageExtractor
 from ..summary import make_summary
 from ..system import multirun, apply_system, SizerOptions, option
+from ..web.realtime import HTTPMetricPusher
 
 
 # fmt: off
@@ -36,6 +38,7 @@ class Arguments:
     dash        : str = os.getenv("MILABENCH_DASH", "long")
     noterm      : bool = os.getenv("MILABENCH_NOTERM", "0") == "1"
     validations : str = None
+    plugins     : list[str] = field(default_factory=list)
 # fmt: on
 
 
@@ -61,7 +64,11 @@ def arguments():
 
     validations: Option & str = None
 
-    return Arguments(run_name, repeat, fulltrace, report, dash, noterm, validations)
+    # [action: append]
+    # [nargs: +]
+    plugin: Option & str
+
+    return Arguments(run_name, repeat, fulltrace, report, dash, noterm, validations, plugin)
 
 
 
@@ -71,30 +78,95 @@ def _fetch_arch(mp):
     except StopIteration:
         print("no selected bench")
         return None
-    
 
-def run(mp, args, name):
-    layers = validation_names(args.validations)
 
+def dashboard(dash):
     dash_class = {
         "short": ShortDashFormatter,
         "long": LongDashFormatter,
         "no": None,
-    }.get(args.dash, None)
-        
-    success = run_with_loggers(
-        mp.do_run(repeat=args.repeat),
-        loggers=[
-            # Terminal Formatter slows down the dashboard,
-            # if lots of info needs to be printed
-            # in particular rwkv
+    }
+
+    return dash_class.get(dash, None)
+
+
+PLUGINS = {
+    "dash": dashboard,
+    "http": HTTPMetricPusher,
+    "term": TerminalFormatter,
+    "mem": MemoryUsageExtractor,
+    "txt": TextReporter,
+}
+
+
+def instantiate_loggers(*plugins):
+    objects = []
+
+    for logger in plugins:
+        name, *rest = logger
+
+        args = []
+        kwargs = {}
+
+        for p in rest:
+            if "=" not in p:
+                if len(kwargs) == 0:
+                    args.append(p)
+                else:
+                    raise RuntimeError("Positional argument after keyword argument")
+            
+            else:
+                k, v = p.split("=")
+                kwargs[k] = v
+
+        cls = PLUGINS.get(name, None)
+
+        try:
+            objects.append(cls(*args, **kwargs))
+        except Exception:
+            raise
+
+    return objects
+
+
+def fetch_plugins(args):
+    # milabench run \
+    # --plugin term                # TerminalFormatter
+    # --plugin dash short          # ShortDashFormatter
+    # --plugin dash long           # LongDashFormatter
+    # --plugin txt stdout          # TextReporter("stdout")
+    # --plugin txt stderr          # TextReporter("stderr")
+    # --plugin mem                 # MemoryUsageExtractor
+    # --plugin http localhost:5000 # 
+
+    # Layer logic and plugin logic could be merged
+    layer_names = validation_names(args.validations)
+    layers = validation_layers(*layer_names, short=not args.fulltrace)
+
+    plugins = instantiate_loggers(*args.plugins)
+
+    if len(plugins) == 0:
+        dash_class = dashboard(args.dash)
+
+        plugins = [
             TerminalFormatter() if not args.noterm else None,
             dash_class and dash_class(),
             TextReporter("stdout"),
             TextReporter("stderr"),
-            DataReporter(),
             MemoryUsageExtractor(),
-            *validation_layers(*layers, short=not args.fulltrace),
+        ]
+    
+    return plugins + layers
+
+
+def run(mp, args, name):
+    plugins = fetch_plugins(args)
+
+    success = run_with_loggers(
+        mp.do_run(repeat=args.repeat),
+        loggers=[
+            DataReporter(),
+            *plugins,
         ],
         mp=mp,
     )

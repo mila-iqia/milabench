@@ -10,6 +10,7 @@ set -ex
 
 # ===
 OUTPUT_DIRECTORY=$(scontrol show job "$SLURM_JOB_ID" --json | jq -r '.jobs[0].standard_output' | xargs dirname)
+export JR_JOB_ID=$(basename "$OUTPUT_DIRECTORY")
 mkdir -p $OUTPUT_DIRECTORY/meta
 scontrol show job --json $SLURM_JOB_ID | jq '.jobs[0]' > $OUTPUT_DIRECTORY/meta/info.json
 touch $SLURM_SUBMIT_DIR/.no_report

@@ -9,6 +9,10 @@ from ..pack import Package
 from ..structs import BenchLogEntry
 from .slurm import JOBRUNNER_LOCAL_CACHE
 
+#
+#   1. Have the server register the metric receiver route
+#   2. Make milabench use the `HTTPMetricPusher` logger
+#   
 
 class BenchEntryRebuilder:
     """Rebuild the benchentry from a stream of data entry"""
@@ -50,27 +54,25 @@ class BenchEntryRebuilder:
                 yield self.benchentry(*entry)
 
 
-def metric_receiver(app, receiver_factory=lambda x: None):
+def metric_receiver(app, receiver_factory=lambda x: BenchEntryRebuilder(x)):
     registry = {}
 
     @app.route('/api/metric/<string:jr_job_id>', methods=['POST'])
     def receive_metric(jr_job_id: str):
         nonlocal registry
 
-    
         lines = request.get_data(as_text=True).split("\n")
 
         receiver = registry.setdefault(jr_job_id, receiver_factory(jr_job_id))
 
         # NOTE: we lose access to entry.pack here
         if receiver is not None:
+
             for line in lines:
                 line = json.load(line)
 
-                pack = None
-                entry = BenchLogEntry(pack=pack, **line)
-                
-                receiver(entry)
+                for entry in receiver(line):
+                    yield entry
 
 
 def reverse_ssh_tunnel(hostname):
@@ -94,9 +96,11 @@ class HTTPMetricPusher:
         ssh -R 9000:localhost:5000 compute-node
     """
 
-    def __init__(self, url, jr_job_id, interval=1.0) -> None:
+    def __init__(self, url, jr_job_id=os.getenv("JR_JOB_ID"), interval=1.0) -> None:
+        assert jr_job_id is not None
+
         self.jr_job_id = jr_job_id
-        self.url = f"{self.url}/{jr_job_id}"
+        self.url = f"{self.url}/api/metric/{jr_job_id}"
         self.lock = Lock()
         self.pending_messages = []
 
