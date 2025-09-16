@@ -102,16 +102,18 @@ class Pack(Base):
     command = Column(JSON)
     status = Column(String(256))
 
+    __mapper_args__ = {"exclude_properties": ["ngpu"]}
+
     #
     @declared_attr
     def ngpu(cls):
         try:
             if Base.metadata.bind and Base.metadata.bind.dialect.name != 'sqlite':
-                return Column(Integer, Computed("((config->>'num_machines')::int * json_array_length(config->'devices'))"))
+                return Column(Integer, Computed("((config->>'num_machines')::int * json_array_length(config->'devices'))"), name="ngpu")
             else:
-                return Column(Integer)  # Empty placeholder
+                return Column(Integer, name="ngpu")  # Empty placeholder
         except:
-            return Column(Integer)  # Empty placeholder
+            return Column(Integer, name="ngpu")  # Empty placeholder
 
 
     # @property
@@ -434,6 +436,7 @@ class SQLAlchemy:
 
         self.pending_metrics = []
         self.batch_size = 1000
+        self.visibility = visibility
 
     def start_new_run(self):
         self.meta = None
@@ -493,7 +496,7 @@ class SQLAlchemy:
             created_time=datetime.utcnow(),
             meta=self.meta_override or entry.data,
             status="running",
-            visibility=visibility
+            visibility=self.visibility
         )
         self.session.add(self.run)
         self.session.commit()

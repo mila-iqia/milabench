@@ -217,7 +217,7 @@ class MultiLogger:
 
 
 @contextmanager
-def multilogger(*logs, **kwargs):
+def multilogger(*logs, stop_on_exception=False, **kwargs):
     """Combine loggers into a single context manager"""
     results = dict()
 
@@ -227,7 +227,7 @@ def multilogger(*logs, **kwargs):
         for log in logs:
             results[type(log)] = stack.enter_context(log)
 
-        multilog = MultiLogger(results)
+        multilog = MultiLogger(results, stop_on_exception=stop_on_exception)
         yield multilog
 
     multilog.report(**kwargs)
