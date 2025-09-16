@@ -234,7 +234,6 @@ def get_acc_state(acc):
 
     if len(states) > 0:
         return states[0]
-
     return None
 
 def get_info_state(acc):
@@ -242,15 +241,12 @@ def get_info_state(acc):
 
     if len(states) > 0:
         return states[0]
-
     return None
 
 def is_acc_terminal(acc):
     if type(acc) is list:
         return False
-
     state = get_acc_state(acc)
-
     return (state is not None) and is_state_terminal(state)
 
 
@@ -1281,6 +1277,11 @@ def slurm_integration(app, cache):
 
         except Exception as e:
             return jsonify({'error': str(e)}), 500
+    
+
+    def get_cached_state(jr_job_id, job_id):
+        sacct_info = safe_job_path(jr_job_id, "meta", "acc.json")
+        squeue_info = safe_job_path(jr_job_id, "meta", "info.json")
 
     def get_cached_state(jr_job_id, job_id):
         with cache_invalidator(jr_job_id, "acc.json", limit=30) as is_old:
@@ -1319,7 +1320,7 @@ def slurm_integration(app, cache):
         return {
             "status": cached_state
         }
-
+  
     @app.route('/api/slurm/jobs/<jr_job_id>/info')
     @local_cache("info.json", "jr_job_id")
     def api_slurm_job_info_cached(jr_job_id):

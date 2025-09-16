@@ -158,8 +158,7 @@ def view_server(config):
     metric_receiver(app)
 
     push_routes(app, DATABASE_URI)
-
-    # WebSocket event handlers
+   
     @socketio.on('connect')
     def handle_connect():
         print('Client connected')
