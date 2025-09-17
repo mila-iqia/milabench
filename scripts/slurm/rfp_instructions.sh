@@ -14,17 +14,27 @@ export MILABENCH_SYSTEM="$MILABENCH_BASE/runs/system.yaml"
 # Instruction Starts
 # >>>>>>>>>>>>>>>>>>
 
-# 1. Request Access to HuggingFace Gated Repos
-#   - 
-#   - 
-#   - 
+# Dependencies
 #
-# 2. Create a Hugging Face Access Token
-#   - MILABENCH_HUGGING_FACE
+#   Software
+#    1. Podman
+#    2. NVIDIA driver 
 #
-# 3. Now you are ready to run milabench
+#   Data
+#    1. Request Access to HuggingFace Gated Repos
+#        - https://huggingface.co/meta-llama/Llama-2-7b/tree/main
+#        - https://huggingface.co/meta-llama/Llama-3.1-8B
+#        - https://huggingface.co/meta-llama/Llama-3.1-70B
+#
+#   2. Create a Hugging Face Access Token
+#       - https://huggingface.co/settings/tokens/new?tokenType=read
+#       - export MILABENCH_HF_TOKEN={your_token}
+#
+#   3. Now you are ready to run milabench
+#
 
 export MILABENCH_HF_TOKEN="-"
+export SSH_KEY_FILE= ~/.ssh/id_rsa
 
 
 podman pull $MILABENCH_IMAGE
@@ -35,30 +45,13 @@ mkdir -p $MILABENCH_BASE/cache
 
 
 #
-#   Configure the system to run on your nodes
+#   4. Configure the system to run on your nodes
+#       Specify the the list of nodes
 #
 cat > $MILABENCH_SYSTEM << EOF
 system:
   # sshkey used in remote milabench operations
-  # sshkey: ~/.ssh/id_ed25519
-
-  # podman/docker config 
-  # This is used to spawn the worker node
-  docker:
-    executable: podman
-    image: $MILABENCH_IMAGE
-    base: $MILABENCH_BASE
-    args: [
-       --rm, 
-       --ipc=host,
-       --device, nvidia.com/gpu=all, 
-       --security-opt=label=disable,
-       --network=host,
-       -e, MILABENCH_HF_TOKEN=$MILABENCH_HF_TOKEN,
-       -v, "$MILABENCH_BASE/data:/milabench/envs/data",
-       -v, "$MILABENCH_BASE/cache:/milabench/envs/cache",
-       -v, "$MILABENCH_BASE/runs:/milabench/envs/runs",
-    ]
+  sshkey: /milabench/id_milabench
 
   # Nodes list
   nodes:
@@ -71,16 +64,33 @@ system:
       ip: cn-d004
       main: false
       # user: username      # If different from current user
-EOF
 
+  # podman/docker config 
+  # This is used to spawn the worker node
+  docker:
+    executable: podman
+    image: $MILABENCH_IMAGE
+    base: $MILABENCH_BASE
+    args: [
+       --rm, --ipc=host, --network=host,
+       --device, nvidia.com/gpu=all, 
+       --security-opt=label=disable,
+       -e, MILABENCH_HF_TOKEN=$MILABENCH_HF_TOKEN,
+       -v, "$SSH_KEY_FILE:/milabench/id_milabench",
+       -v, "$MILABENCH_BASE/data:/milabench/envs/data",
+       -v, "$MILABENCH_BASE/cache:/milabench/envs/cache",
+       -v, "$MILABENCH_BASE/runs:/milabench/envs/runs",
+       
+    ]
+EOF
 
 #
 #   Download the data on both nodes
 #
-podman run --rm --ipc=host                                  \
+podman run --rm --ipc=host --network=host                   \
       --device nvidia.com/gpu=all                           \
       --security-opt=label=disable                          \
-      --network=host                                        \
+      -v $SSH_KEY_FILE:/milabench/id_milabench              \
       -v $MILABENCH_BASE/runs:/milabench/envs/runs          \
       -v $MILABENCH_BASE/data:/milabench/envs/data          \
       -v $MILABENCH_BASE/cache:/milabench/envs/cache        \
@@ -91,10 +101,10 @@ podman run --rm --ipc=host                                  \
 #
 #   Run milabench
 #
-podman run --rm --ipc=host                                  \
+podman run --rm --ipc=host --network=host                   \
       --device nvidia.com/gpu=all                           \
       --security-opt=label=disable                          \
-      --network=host                                        \
+      -v $SSH_KEY_FILE:/milabench/id_milabench              \
       -v $MILABENCH_BASE/runs:/milabench/envs/runs          \
       -v $MILABENCH_BASE/data:/milabench/envs/data          \
       -v $MILABENCH_BASE/cache:/milabench/envs/cache        \
@@ -115,5 +125,3 @@ rsync -az $MILABENCH_WORDIR/results/runs $OUTPUT_DIRECTORY
 # ===
 scontrol show job --json $SLURM_JOB_ID | jq '.jobs[0]' > $OUTPUT_DIRECTORY/meta/info.json
 # ===
-
-
