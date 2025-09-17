@@ -317,6 +317,10 @@ class WrapperCommand(SingleCmdCommand):
         return [*self.wrapper_argv]
 
 
+def is_inside_docker():
+    return os.environ.get("MILABENCH_DOCKER", None)
+
+
 class DockerRunCommand(WrapperCommand):
     """Execute an `Command` through Docker
 
@@ -372,13 +376,10 @@ class DockerRunCommand(WrapperCommand):
 
         return docker_args + rewritten
 
-    def is_inside_docker(self):
-        return os.environ.get("MILABENCH_DOCKER", None)
-
     def _argv(self, **kwargs) -> List:
         # if the command is executed remotely it does not matter
         # if we are inside docker or not
-        if (self.config.image is None) or (self.is_inside_docker() and not self.remote):
+        if (self.config.image is None) or (is_inside_docker() and not self.remote):
             # No-op when there's no docker image to run or inside a docker
             # container
             return []
@@ -386,6 +387,7 @@ class DockerRunCommand(WrapperCommand):
         argv = super()._argv(**kwargs)
 
         env = self.pack.make_env()
+
         for var in ("XDG_CACHE_HOME", "OMP_NUM_THREADS"):
             if var in env:
                 argv.append("--env")
@@ -491,12 +493,15 @@ class SSHCommand(WrapperCommand):
         # for k in env.keys():
         #     argv.append(f"-oSendEnv={k}")
 
-        envs = [
-            "env",
-            "-C", self.pack.working_directory,
-            "-",
-            f"XDG_CACHE_HOME={str(self.pack.dirs.cache)}",
-        ]
+        # Those mean nothing inside docker
+        envs = []
+        if not is_inside_docker():
+            envs = [
+                "env",
+                "-C", self.pack.working_directory,
+                "-",
+                f"XDG_CACHE_HOME={str(self.pack.dirs.cache)}",
+            ]
 
         argv.extend(["-oPasswordAuthentication=no"])
         argv.extend(["-p", str(self.port)])
