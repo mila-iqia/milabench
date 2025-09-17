@@ -163,7 +163,9 @@ class Layer(ValidationLayer):
         grouped = defaultdict(GroupedError)
 
         for k, error in self.errors.items():
-            name, index = k.rsplit(".", maxsplit=1)
+            name, _, index = k.rpartition(".")
+            if name == "":
+                name, index = k, ''
 
             group: GroupedError =  grouped[name]
             group.total += 1

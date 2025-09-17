@@ -1,22 +1,19 @@
 #!/bin/bash
 
-# SLURM THINGS
-nodes=($(scontrol show hostnames "$SLURM_JOB_NODELIST"))
-first_node=${nodes[0]}
-second_node=${nodes[1]}
-# <<<<<<<<<<<<<<<<<<<<<
-
 set -ex
 
-
+export MILABENCH_GPU_ARCH=cuda
 export MILABENCH_ARGS="--select diffusion-nodes"
-
+export MILABENCH_IMAGE=ghcr.io/mila-iqia/milabench:${MILABENCH_GPU_ARCH}-nightly
 
 # ---
 export MILABENCH_WORDIR=/tmp/
 export MILABENCH_BASE="$MILABENCH_WORDIR"
+export MILABENCH_SYSTEM="$MILABENCH_BASE/runs/system.yaml"
 
-
+nodes=($(scontrol show hostnames "$SLURM_JOB_NODELIST"))
+first_node=${nodes[0]}
+second_node=${nodes[1]}
 
 # >>>>>>>>>>>>>>>>>>
 # Instruction Starts
@@ -45,7 +42,6 @@ export MILABENCH_BASE="$MILABENCH_WORDIR"
 #           MODIFY ME
 # ----------------------------------
 export MILABENCH_HF_TOKEN="-"
-export MILABENCH_BASE=/tmp/
 export SSH_KEY_FILE=$HOME/.ssh/id_rsa
 
 # Node we are running milabench from
@@ -54,9 +50,9 @@ export SECOND_NODE_IP=$second_node
 export USERNAME=$USER
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-export MILABENCH_IMAGE=ghcr.io/mila-iqia/milabench:cuda-nightly
-export MILABENCH_SYSTEM="$MILABENCH_BASE/runs/system.yaml"
-export MILABENCH_GPU_ARCH=cuda
+mkdir -p $MILABENCH_BASE/runs
+mkdir -p $MILABENCH_BASE/data
+mkdir -p $MILABENCH_BASE/cache
 
 #
 #   4. Configure the system to run on your nodes
@@ -64,6 +60,9 @@ export MILABENCH_GPU_ARCH=cuda
 #
 cat > $MILABENCH_SYSTEM << EOF
 system:
+  # sshkey used in remote milabench operations
+  sshkey: /milabench/id_milabench
+
   # Nodes list
   nodes:
     - name: main
@@ -77,7 +76,7 @@ system:
       user: $USERNAME
 
   # podman/docker config 
-  # This is used to spawn the worker node when needed
+  # This is used to spawn the worker node
   docker:
     executable: podman
     image: $MILABENCH_IMAGE
@@ -99,16 +98,11 @@ EOF
 #
 for node in "$FIRST_NODE_IP" "$SECOND_NODE_IP"; do
     ssh -oCheckHostIP=no -oStrictHostKeyChecking=no "$USERNAME@$node" podman pull $MILABENCH_IMAGE &
-
-    ssh -oCheckHostIP=no -oStrictHostKeyChecking=no "$USERNAME@$node" mkdir -p $MILABENCH_BASE/runs
-    ssh -oCheckHostIP=no -oStrictHostKeyChecking=no "$USERNAME@$node" mkdir -p $MILABENCH_BASE/data
-    ssh -oCheckHostIP=no -oStrictHostKeyChecking=no "$USERNAME@$node" mkdir -p $MILABENCH_BASE/cache
 done
 wait
 
 for node in "$FIRST_NODE_IP" "$SECOND_NODE_IP"; do
     ssh -oCheckHostIP=no -oStrictHostKeyChecking=no "$USERNAME@$node" podman run --rm --ipc=host --network=host   \
-        --device nvidia.com/gpu=all                                   \
         --security-opt=label=disable                                  \
         -v "$SSH_KEY_FILE:/root/.ssh/id_rsa:Z"                        \
         -v "$MILABENCH_BASE/runs:/milabench/envs/runs"                \
@@ -118,32 +112,6 @@ for node in "$FIRST_NODE_IP" "$SECOND_NODE_IP"; do
         /milabench/.env/bin/milabench prepare $MILABENCH_ARGS &
 done
 wait
-
-# rsync -a "$MILABENCH_BASE" "$USERNAME@$SECOND_NODE_IP:$MILABENCH_BASE"
-
-#
-#   Run milabench
-#
-podman run --rm --ipc=host --network=host                   \
-      --device nvidia.com/gpu=all                           \
-      --security-opt=label=disable                          \
-      -v $SSH_KEY_FILE:/root/.ssh/id_rsa:Z                  \
-      -v $MILABENCH_BASE/runs:/milabench/envs/runs          \
-      -v $MILABENCH_BASE/data:/milabench/envs/data          \
-      -v $MILABENCH_BASE/cache:/milabench/envs/cache        \
-      $MILABENCH_IMAGE                                      \
-      /milabench/.env/bin/milabench run --system /milabench/envs/runs/system.yaml $MILABENCH_ARGS || :
-    
-
-# Provide this zipped folder
-# zip -r runs.zip $MILABENCH_BASE/runs/
-
-# <<<<<<<<<<<<<<<<<<<
-# Instruction Ends
-# <<<<<<<<<<<<<<<<<<<
-
-rsync -az $MILABENCH_WORDIR/results/runs $OUTPUT_DIRECTORY
-
 
 # ===
 scontrol show job --json $SLURM_JOB_ID | jq '.jobs[0]' > $OUTPUT_DIRECTORY/meta/info.json
