@@ -1,14 +1,19 @@
 #!/bin/bash
 
+set -ex
+
 export MILABENCH_GPU_ARCH=cuda
 export MILABENCH_ARGS="--select diffusion-nodes"
 export MILABENCH_IMAGE=ghcr.io/mila-iqia/milabench:${MILABENCH_GPU_ARCH}-nightly
 
 # ---
-export MILABENCH_WORDIR="/tmp/" 
+export MILABENCH_WORDIR=/tmp/
 export MILABENCH_BASE="$MILABENCH_WORDIR"
 export MILABENCH_SYSTEM="$MILABENCH_BASE/runs/system.yaml"
 
+nodes=($(scontrol show hostnames "$SLURM_JOB_NODELIST"))
+first_node=${nodes[0]}
+second_node=${nodes[1]}
 
 # >>>>>>>>>>>>>>>>>>
 # Instruction Starts
@@ -33,16 +38,21 @@ export MILABENCH_SYSTEM="$MILABENCH_BASE/runs/system.yaml"
 #   3. Now you are ready to run milabench
 #
 
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#           MODIFY ME
+# ----------------------------------
 export MILABENCH_HF_TOKEN="-"
-export SSH_KEY_FILE= ~/.ssh/id_rsa
+export SSH_KEY_FILE=~/.ssh/id_rsa
 
-
-podman pull $MILABENCH_IMAGE
+# Node we are running milabench from
+export FIRST_NODE_IP=$first_node
+export SECOND_NODE_IP=$second_node
+export USERNAME=$USER
+# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 mkdir -p $MILABENCH_BASE/runs
 mkdir -p $MILABENCH_BASE/data
 mkdir -p $MILABENCH_BASE/cache
-
 
 #
 #   4. Configure the system to run on your nodes
@@ -56,14 +66,14 @@ system:
   # Nodes list
   nodes:
     - name: main
-      ip: cn-d003
+      ip: $FIRST_NODE_IP
       main: true
-      # user: username      # If different from current user
+      user: $USERNAME
 
     - name: worker
-      ip: cn-d004
+      ip: $SECOND_NODE_IP
       main: false
-      # user: username      # If different from current user
+      user: $USERNAME
 
   # podman/docker config 
   # This is used to spawn the worker node
@@ -83,6 +93,11 @@ system:
        
     ]
 EOF
+
+#
+#   Download the container
+#
+podman pull $MILABENCH_IMAGE
 
 #
 #   Download the data on both nodes

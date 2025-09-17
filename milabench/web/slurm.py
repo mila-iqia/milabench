@@ -1157,6 +1157,7 @@ def slurm_integration(app, cache):
                 subprocess.check_call(scp_cmd, shell=True)
 
             # Submit job
+            print(sbatch_cmd)
             result = remote_command(SLURM_HOST, sbatch_cmd)
 
             if result['success']:
