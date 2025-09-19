@@ -71,7 +71,7 @@ class Command:
     def options(self):
         if self._pack:
             return self._kwargs
-        
+
         if self.exec:
             # recursively retrieve options
             # this relies on dict insertion order
@@ -79,7 +79,7 @@ class Command:
             opt.update(self.exec.options)
             opt.update(self._kwargs)
             return opt
-    
+
         return self._kwargs
 
     @property
@@ -144,7 +144,7 @@ class Command:
 
         if self.exec:
             frags.append(repr(self.exec))
-            
+
         return f"{typename}({', '.join(frags)})"
 
 
@@ -206,12 +206,12 @@ class ListCommand(Command):
         for e in self.executors:
             frags.append(repr(e))
         return f"{typename}([{', '.join(frags)}])"
-    
+
     def set_run_options(self, **kwargs):
         for exec in self._executors:
             exec.set_run_options(**kwargs)
         return self
-    
+
     def copy(self, pack):
         """Copy the execution plan but use a different pack"""
         copy = deepcopy(self)
@@ -317,6 +317,19 @@ class WrapperCommand(SingleCmdCommand):
         return [*self.wrapper_argv]
 
 
+class WorkingDir(WrapperCommand):
+    """Wrap a command to change the working directory"""
+
+    def __init__(self, cmd: Command, **kwargs):
+        args = [
+            "env",
+            "-C", str(cmd.pack.working_directory),
+            "-",
+            f"XDG_CACHE_HOME={str(cmd.pack.dirs.cache)}",
+        ]
+        super().__init__(cmd, *args)
+
+
 def is_inside_docker():
     return os.environ.get("MILABENCH_DOCKER", None)
 
@@ -336,7 +349,7 @@ class DockerRunCommand(WrapperCommand):
     ) -> None:
         self.config = config
         self.extra_args = docker_argv
-    
+
         super().__init__(
             executor,
             **kwargs,
@@ -463,11 +476,11 @@ class SSHCommand(WrapperCommand):
                 # The ip belongs to the local node
                 or self.host in localnode.get("ipaddrlist", [])
                 # The hostname is the local node
-                or self.host == localnode["hostname"]  
+                or self.host == localnode["hostname"]
 
-                or self.host == localnode["ip"]  
+                or self.host == localnode["ip"]
             )
-    
+
         # self is none; the node we are currently
         # on is not part of the system; we are running
         # milabench remotely, sending remote commands to
@@ -493,15 +506,16 @@ class SSHCommand(WrapperCommand):
         # for k in env.keys():
         #     argv.append(f"-oSendEnv={k}")
 
+        # FIXME: this should not be necessary
         # Those mean nothing inside docker
         envs = []
-        if not is_inside_docker():
-            envs = [
-                "env",
-                "-C", self.pack.working_directory,
-                "-",
-                f"XDG_CACHE_HOME={str(self.pack.dirs.cache)}",
-            ]
+        # if not is_inside_docker():
+        #     envs = [
+        #         "env",
+        #         "-C", self.pack.working_directory,
+        #         "-",
+        #         f"XDG_CACHE_HOME={str(self.pack.dirs.cache)}",
+        #     ]
 
         argv.extend(["-oPasswordAuthentication=no"])
         argv.extend(["-p", str(self.port)])
@@ -512,8 +526,8 @@ class SSHCommand(WrapperCommand):
 
         # We need to set the working directory here because multinode
         # will not use the process cwd
-        return (argv  
-            + envs 
+        return (argv
+            + envs
         )
 
 
@@ -580,7 +594,7 @@ class TorchrunAllGPU(WrapperCommand):
         if self.should_wrap():
             # spawn,fork,forkserver
             multi_gpu_args = (
-                f"--nproc-per-node={nproc}", 
+                f"--nproc-per-node={nproc}",
             )
 
             if self.pack.config["plan"]["method"] == "per_gpu":
@@ -588,7 +602,7 @@ class TorchrunAllGPU(WrapperCommand):
 
             argv = [
 
-                *super()._argv(**kwargs), 
+                *super()._argv(**kwargs),
                 *multi_gpu_args
                 # "--start-method=forkserver"
             ]
@@ -612,7 +626,7 @@ class TorchrunAllGPU(WrapperCommand):
 
                 # everything after torchrun args are script args
                 argv.append("--")
-            
+
             return argv
         return []
 
@@ -666,10 +680,10 @@ class ForeachNode(ListCommand):
         # useless in single node setups
         if len(self.nodes) == 1 or max_num == 1:
             return [self.single_node()]
-        
+
         for rank, node in enumerate(self.nodes):
             options = dict()
-        
+
             # Hummm...
             if rank == 0:
                 options = dict(
@@ -695,7 +709,7 @@ class ForeachNode(ListCommand):
     def set_run_options(self, **kwargs):
         self.executor.set_run_options(**kwargs)
         return self
-    
+
     def copy(self, pack):
         """Copy the execution plan but use a different pack"""
         copy = deepcopy(self)
@@ -723,7 +737,7 @@ class TorchrunAllNodes(ForeachNode):
 
         if backend == "c10d":
             print("Warning: c10d can select the wrong node for RANK=0")
-    
+
         main_addr = f"{main_host}:{main_port}"
 
         config = executor.pack.config
@@ -753,19 +767,19 @@ class TorchrunAllNodes(ForeachNode):
 
         # Specify the node rank so rank 0 is consistently on the local node
         new_args = list(executor.wrapper_argv) +  [
-            f"--node-rank={rank}", 
-            f"--local-addr={node['ip']}",    
+            f"--node-rank={rank}",
+            f"--local-addr={node['ip']}",
             f"--rdzv-conf=rank={rank}",
         ]
         executor.wrapper_argv = new_args
 
         return executor
-    
+
     def __init__(self, executor: Command, *args, **kwargs) -> None:
         base_exec = TorchrunAllNodes.make_base_executor(
-            TorchrunAllGPU, 
+            TorchrunAllGPU,
             executor,
-            *args, 
+            *args,
             **kwargs
         )
         super().__init__(base_exec)
@@ -818,7 +832,7 @@ class VoirCommand(WrapperCommand):
         if not use_voir:
             # voir replace python
             return ["python"]
-        
+
         if voirconf := self.pack.config.get("voir", None):
             hsh = md5(str(voirconf).encode("utf8"))
             voirconf_file = (
@@ -956,10 +970,10 @@ class AccelerateAllNodes(ForeachNode):
         # Multi GPU
         if ngpu > 1:
             return AccelerateLaunchCommand(self.executor, rank=0, **self.options)
-        
+
         # Single GPU
         return self.executor
-    
+
     def make_new_node_executor(self, rank, node, base):
         config = base.pack.config
 
@@ -974,7 +988,7 @@ class AccelerateAllNodes(ForeachNode):
 
 def activator_script():
     """Scripts that activate the venv just before executing a script
-    
+
     Useful for commands that SSH somewhere and need to execute a command in a particular venv
     """
 
@@ -1037,7 +1051,7 @@ class AccelerateLaunchCommand(SingleCmdCommand):
             deepspeed_argv = ["--multi_gpu"]
         else:
             deepspeed_argv = []
-    
+
         cpu_per_process = self.pack.resolve_argument('--cpus_per_gpu', 4)
         main_port = option("torchrun.port", int, default=29400)
 
