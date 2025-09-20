@@ -2,7 +2,7 @@ _llm:
   voir:
     options:
       stop: 30
-  
+
   max_duration: 1200
 
   inherits: _defaults
@@ -29,11 +29,11 @@ llm-rlhf-single:
     checkpointer.checkpoint_dir={milabench_data}/llama3_8B/original: true
     checkpointer.output_dir={milabench_data}/llama3_8B/: true
     metric_logger.log_dir={milabench_extra}/metrics: true
-    repo_id="meta-llama/Meta-Llama-3.1-8B": true
+    repo_id="meta-llama/Llama-3.1-8B": true
     batch_size=8: true
     gradient_accumulation_steps=8: true
 
-  
+
 llm-lora-single:
   inherits: _llm
   definition: .
@@ -50,7 +50,7 @@ llm-lora-single:
     checkpointer.checkpoint_dir={milabench_data}/llama3_8B/original: true
     checkpointer.output_dir={milabench_data}/llama3_8B/: true
     metric_logger.log_dir={milabench_extra}/metrics: true
-    repo_id="meta-llama/Meta-Llama-3.1-8B": true
+    repo_id="meta-llama/Llama-3.1-8B": true
     batch_size=8: true
     gradient_accumulation_steps=8: true
 
@@ -62,7 +62,7 @@ llm-lora-ddp-gpus:
   plan:
     method: njobs
     n: 1
-  
+
   argv:
     "{milabench_code}/recipes/lora_finetune_distributed.py": true
     --config: "{milabench_code}/configs/llama3_8B_lora_single_device.yaml"
@@ -72,7 +72,7 @@ llm-lora-ddp-gpus:
     checkpointer.checkpoint_dir={milabench_data}/llama3_8B/original: true
     checkpointer.output_dir={milabench_data}/llama3_8B/: true
     metric_logger.log_dir={milabench_extra}/metrics: true
-    repo_id="meta-llama/Meta-Llama-3.1-8B": true
+    repo_id="meta-llama/Llama-3.1-8B": true
     batch_size=8: true
     gradient_accumulation_steps=8: true
 
@@ -84,7 +84,7 @@ llm-lora-ddp-nodes:
   plan:
     method: njobs
     n: 1
-  
+
   argv:
     "{milabench_code}/recipes/lora_finetune_distributed.py": true
     --config: "{milabench_code}/configs/llama3_8B_lora_single_device.yaml"
@@ -94,7 +94,7 @@ llm-lora-ddp-nodes:
     checkpointer.checkpoint_dir={milabench_data}/llama3_8B/original: true
     checkpointer.output_dir={milabench_data}/llama3_8B/: true
     metric_logger.log_dir={milabench_extra}/metrics: true
-    repo_id="meta-llama/Meta-Llama-3.1-8B": true
+    repo_id="meta-llama/Llama-3.1-8B": true
     batch_size=8: true
     gradient_accumulation_steps=8: true
 
@@ -120,7 +120,7 @@ llm-lora-mp-gpus:
     checkpointer.checkpoint_dir={milabench_data}/llama3_70B: true
     checkpointer.output_dir={milabench_data}/llama3_70B/: true
     metric_logger.log_dir={milabench_extra}/metrics: true
-    repo_id="meta-llama/Meta-Llama-3.1-70B": true
+    repo_id="meta-llama/Llama-3.1-70B": true
     batch_size=8: true
     gradient_accumulation_steps=1: true
 
@@ -142,7 +142,7 @@ llm-full-mp-gpus:
     checkpointer.checkpoint_dir={milabench_data}/llama3_70B: true
     checkpointer.output_dir={milabench_data}/llama3_70B/: true
     metric_logger.log_dir={milabench_extra}/metrics: true
-    repo_id="meta-llama/Meta-Llama-3.1-70B": true
+    repo_id="meta-llama/Llama-3.1-70B": true
     safetensors=true: true
     batch_size=2: true
     gradient_accumulation_steps=1: true
@@ -165,7 +165,7 @@ llm-full-mp-nodes:
     checkpointer.checkpoint_dir={milabench_data}/llama3_70B: true
     checkpointer.output_dir={milabench_data}/llama3_70B/: true
     metric_logger.log_dir={milabench_extra}/metrics: true
-    repo_id="meta-llama/Meta-Llama-3.1-70B": true
+    repo_id="meta-llama/Llama-3.1-70B": true
     safetensors=true: true
     batch_size=2: true
     gradient_accumulation_steps=1: true
@@ -201,7 +201,6 @@ llm-qlora-single:
     checkpointer.adapter_checkpoint={milabench_data}/llama3_8B/adapter_0.pt: true
     checkpointer.recipe_checkpoint={milabench_data}/llama3_8B/meta_model_0.pt: true
     metric_logger.log_dir={milabench_extra}/metrics: true
-    repo_id="meta-llama/Meta-Llama-3.1-8B": true
+    repo_id="meta-llama/Llama-3.1-8B": true
     batch_size=8: true
     gradient_accumulation_steps=8: true
-    

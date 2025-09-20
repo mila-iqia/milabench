@@ -11,7 +11,7 @@ multi-node-full:
 - --mem=0
 - --export=ALL,MILABENCH_SIZER_AUTO=0
 multi-node-full-H100:
-- --job-name=run
+- --job-name=multi_nodes_run
 - --partition=staff-idt
 - --nodes=2
 - --ntasks=2
@@ -20,7 +20,6 @@ multi-node-full-H100:
 - --time=2:00:00
 - --gpus-per-task=8
 - --ntasks-per-node=1
-- --exclusive
 - --export=ALL,MILABENCH_SIZER_AUTO=0
 - -w cn-n[001-002]
 single-node-full-H100:
@@ -109,16 +108,15 @@ multi-node-v100:
 - --exclusive
 - --export=ALL,MILABENCH_SIZER_AUTO=1,MILABENCH_SIZER_MULTIPLE=8
 multi-node-a100:
-- --partition=staff-idt
-- --gpus-per-task=a100:8
-- --ntasks=1
-- --exclusive
+- --job-name=milabench_job
+- --partition=milabench
 - --nodes=2
+- --ntasks=1
 - --cpus-per-task=128
-- --time=1:30:00
-- --ntasks-per-node=1
 - --mem=0
-- --exclusive
+- --time=4:30:00
+- --gpus-per-task=a100:8
+- --ntasks-per-node=1
 - --export=ALL,MILABENCH_SIZER_AUTO=1,MILABENCH_SIZER_MULTIPLE=8
 tamia-single-node:
 - --partition gpubase_bynode_b3
@@ -185,3 +183,15 @@ tar_prepare:
 - --gpus-per-task=0
 - --ntasks-per-node=1
 - --export=ALL
+multi-node-full-A100l:
+- --job-name=multi_node_run
+- --partition=milabench
+- --nodes=2
+- --ntasks=2
+- --cpus-per-task=128
+- --mem=0
+- --time=4:00:00
+- --gpus-per-task=8
+- --ntasks-per-node=1
+- --export=ALL
+- -w cn-d[003-004]
