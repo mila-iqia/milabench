@@ -5,29 +5,53 @@ include:
 # Enabled tests #
 #################
 
+reformer:
+  enabled: true
+  weight: 1.0
+
+bert-tf32-fp16:
+  enabled: true
+  weight: 1.0
+
+llm-lora-single:
+  enabled: true
+  weight: 1.0
+
+llm-lora-ddp-gpus:
+  enabled: true
+  weight: 1.0
+
+llm-lora-ddp-nodes:
+  enabled: true
+  weight: 2.0
+
+llm-lora-mp-gpus:
+  enabled: true
+  weight: 1.0
+
+llm-full-mp-gpus:
+  enabled: true
+  weight: 1.0
+
+llm-full-mp-nodes:
+  enabled: true
+  weight: 3.0
+
 llama:
+  enabled: true
+  weight: 1.0
+
+vjepa-single:
+  enabled: true
+  weight: 1.0
+
+vjepa-gpus:
   enabled: true
   weight: 1.0
 
 resnet50:
   enabled: true
   weight: 1.0
-
-resnet50-noio:
-  enabled: true
-  weight: 0.0
-
-convnext_large-fp32:
-  enabled: true
-  weight: 0.0
-
-convnext_large-fp16:
-  enabled: true
-  weight: 0.0
-
-convnext_large-tf32:
-  enabled: true
-  weight: 0.0
 
 convnext_large-tf32-fp16:
   enabled: true
@@ -37,141 +61,39 @@ regnet_y_128gf:
   enabled: true
   weight: 1.0
 
-bert-fp32:
-  enabled: true
-  weight: 0.0
-
-bert-fp16:
-  enabled: true
-  weight: 0.0
-
-bert-tf32:
-  enabled: true
-  weight: 0.0
-
-bert-tf32-fp16:
+dinov2-giant-gpus:
   enabled: true
   weight: 1.0
 
-t5:
-  enabled: true
-  weight: 0.0
-
-reformer:
+lightning-gpus:
   enabled: true
   weight: 1.0
-
-whisper:
-  enabled: true
-  weight: 0.0
-
-focalnet:
-  enabled: true
-  weight: 0.0
-
-fp16:
-  enabled: true
-  weight: 0.0
-
-bf16:
-  enabled: true
-  weight: 0.0
-
-tf32:
-  enabled: true
-  weight: 0.0
-
-fp32:
-  enabled: true
-  weight: 0.0
-
-brax:
-  enabled: true
-  weight: 1.0
-
-# Diffusion
-diffusion-single:
-  enabled: true
-  weight: 0.0
 
 diffusion-gpus:
-  enabled: True
+  enabled: true
   weight: 1.0
 
 diffusion-nodes:
   enabled: true
-  weight: 1.0
+  weight: 2.0
 
-# lightning
-lightning:
+llava-single:
   enabled: true
-  weight: 0.0
-
-lightning-gpus:
-  enabled: True
   weight: 1.0
-
-# dinov2
-dinov2-giant-single:
-  enabled: True
-  weight: 0.0
-
-dinov2-giant-gpus:
-  enabled: True
-  weight: 1.0
-
-dinov2-giant-nodes:
-  enabled: false
-  weight: 0.0
-
-# LLM
-llm-lora-single:
-  enabled: True
-  weight: 1.0
-
-llm-lora-ddp-gpus:
-  enabled: True
-  weight: 1.0
-
-llm-lora-ddp-nodes:
-  enabled: True
-  weight: 1.0
-
-llm-lora-mp-gpus:
-  enabled: True
-  weight: 1.0
-
-llm-full-mp-gpus:
-  enabled: True
-  weight: 1.0
-
-llm-full-mp-nodes:
-  enabled: True
-  weight: 1.0
-
-resnet152-ddp-gpus:
-  enabled: true
-  weight: 0.0
-
-# purejaxrl
-dqn:
-  enabled: true
-  weight: 0.0
 
 ppo:
   enabled: true
   weight: 1.0
 
-cleanrljax:
-  enabled: false
-  weight: 0.0
-
-# Geo
-dimenet:
+brax:
   enabled: true
   weight: 1.0
 
-pna: 
+rlhf-gpus:
+  enabled: true
+  weight: 2.0
+
+pna:
   enabled: true
   weight: 1.0
 
@@ -179,34 +101,14 @@ recursiongfn:
   enabled: true
   weight: 1.0
 
-# llava
-llava-single:
-  enabled: true
-  weight: 1.0
-
-llava-gpus:     # This OOM
-  enabled: false
-  weight: 0.0
-
-# rlhf
-rlhf-single:
-  enabled: True
-  weight: 1.0
-
-rlhf-gpus:
-  enabled: true
-  weight: 0.0
-
-# vjepa
-vjepa-single:
-  enabled: true
-  weight: 1.0
-
-vjepa-gpus:
-  enabled: true
-  weight: 1.0
-
 ##################
 # Disabled tests #
 ##################
 
+dimenet:
+  enabled: false
+  weight: 0.0
+
+dqn:
+  enabled: false
+  weight: 0.0
