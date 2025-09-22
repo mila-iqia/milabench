@@ -52,7 +52,7 @@ def _extract_traceback(lines, is_install) -> list[ParsedTraceback]:
                 traceback.lines.append("PipInstallError")
                 parsing_pip_error = False
             output.append(traceback)
-  
+
     # Only extract pip error during installs
     # to avoid false positive
     def is_pip_error(line):
@@ -60,7 +60,7 @@ def _extract_traceback(lines, is_install) -> list[ParsedTraceback]:
 
         if not is_install:
             return False
-        
+
         return "ERROR" in line and not parsing_pip_error
 
     for line in lines:
@@ -77,7 +77,7 @@ def _extract_traceback(lines, is_install) -> list[ParsedTraceback]:
 
             if is_pip_error(line):
                 parsing_pip_error = True
-        
+
             traceback = ParsedTraceback([])
 
         if traceback and line != "":
@@ -159,11 +159,13 @@ class Layer(ValidationLayer):
             exceptions: list = field(default_factory=lambda: defaultdict(lambda: defaultdict(list)))
             failures: int = 0
             success: int = 0
-        
+
         grouped = defaultdict(GroupedError)
 
         for k, error in self.errors.items():
-            name, index = k.rsplit(".", maxsplit=1)
+            name, _, index = k.rpartition(".")
+            if name == "":
+                name, index = k, ''
 
             group: GroupedError =  grouped[name]
             group.total += 1
@@ -174,7 +176,7 @@ class Layer(ValidationLayer):
             if total == 0:
                 group.success += 1
                 continue
-                
+
             if error.early_stop:
                 group.early_stopped += 1
             else:
@@ -184,7 +186,7 @@ class Layer(ValidationLayer):
                 exceptions = [ParsedTraceback(error.trace.splitlines())]
             else:
                 exceptions = _extract_traceback(error.stderr, self.is_install)
-            
+
             for exception in exceptions:
                 raised = exception.raised_exception()
                 group.exceptions[raised][k].append(exception)
@@ -194,7 +196,7 @@ class Layer(ValidationLayer):
     def display_grouped(self, summary, short=False):
         groups = self.group_errors()
         failures = 0
-    
+
         with summary.section("Early Stopped"):
             for bench, group in groups.items():
                 if group.early_stopped > 0:
@@ -249,6 +251,6 @@ class Layer(ValidationLayer):
     def report(self, summary, short=False, **kwargs):
         """Print an error report and exit with an error code if any error were found"""
         failures = self.display_grouped(summary, short, **kwargs)
-        
+
         self.set_error_code(failures)
         return failures

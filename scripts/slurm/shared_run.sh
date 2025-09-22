@@ -1,10 +1,11 @@
 #!/bin/bash
 
-export MILABENCH_BRANCH=staging
+export MILABENCH_BRANCH=stacc
 export PYTHON_VERSION=3.12
 export MILABENCH_GPU_ARCH=cuda
 export PYTHONUNBUFFERED=1
 export MILABENCH_ARGS=""
+export MILABENCH_CONFIG="stacc"
 
 set -ex
 
@@ -34,14 +35,14 @@ if [ -z "${MILABENCH_SOURCE}" ]; then
         git clone https://github.com/mila-iqia/milabench.git -b $MILABENCH_BRANCH
     fi
     export MILABENCH_SOURCE="$MILABENCH_WORDIR/milabench"
-    export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/standard.yaml"
+    export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/$MILABENCH_CONFIG.yaml"
 else
     (
         cd $MILABENCH_SOURCE
         git fetch origin
         git reset --hard origin/$MILABENCH_BRANCH
     )
-    export MILABENCH_CONFIG="$MILABENCH_SOURCE/config/standard.yaml"
+    export MILABENCH_CONFIG="$MILABENCH_SOURCE/config/$MILABENCH_CONFIG.yaml"
 fi
 
 mkdir -p $MILABENCH_WORDIR
