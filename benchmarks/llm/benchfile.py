@@ -5,7 +5,7 @@ from milabench.pack import Package
 
 from milabench.commands import TorchrunAllGPU, TorchrunAllNodes, ForeachNode
 from milabench.pack import BasePackage
-from milabench.commands import SimpleCommand
+from milabench.commands import SimpleCommand, WorkingDir
 
 
 class Torchtune(TorchrunAllGPU):
@@ -24,12 +24,17 @@ class Torchtune(TorchrunAllGPU):
 class TorchtuneAllNodes(TorchrunAllNodes):
     def __init__(self, executor, *args, **kwargs) -> None:
         base_exec = TorchrunAllNodes.make_base_executor(
-            Torchtune, 
+            Torchtune,
             executor,
-            *args, 
+            *args,
             **kwargs
         )
         ForeachNode.__init__(self, base_exec)
+
+    def make_new_node_executor(self, rank, node, base):
+        """Make a new environment and create a new executor for the node"""
+        executor = WorkingDir(super().make_new_node_executor(rank, node, base))
+        return executor
 
 
 class Llm(Package):
@@ -70,4 +75,70 @@ class Llm(Package):
         return TorchtuneAllNodes(exec).use_stdout()
 
 
+
+
 __pack__ = Llm
+
+
+def main():
+    config = {
+        "name": "llm",
+        "definition": ".",
+        "plan": {
+            "method": "njobs",
+            "n": 1
+        },
+        "num_machines": 2,
+        "dirs": {
+            "extra": "extra",
+            "cache": "cache",
+            "venv": "env",
+            "base": "base"
+        },
+        "tag": [],
+        "system": {
+            "self": {
+                    "name": "n1",
+                    "ip": "n1",
+                    "main": True,
+                    "user": "user",
+                    "hostname": "n1"
+            },
+            "nodes": [
+                {
+                    "name": "n3",
+                    "ip": "n1",
+                    "main": True,
+                    "user": "user",
+                    "hostname": "n1"
+                },
+                {
+                    "name": "n2",
+                    "ip": "n2",
+                    "user": "user",
+                    "hostname": "n2"
+                }
+            ],
+            "docker": {
+                "executable": "podman",
+                "image": "$MILABENCH_IMAGE",
+                "base": "$MILABENCH_BASE",
+                "args": [
+                    "--rm", "--ipc=host", "--network=host"
+                ]
+            }
+        }
+    }
+
+    bench = Llm(config)
+
+    plan = bench.build_run_plan()
+
+    print(plan)
+
+    for pack, argv, _ in plan.commands():
+        print(" ".join(argv))
+
+
+if __name__ == "__main__":
+    main()
