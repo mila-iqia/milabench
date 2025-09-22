@@ -67,11 +67,7 @@ jobs:
         env:
           GITHUB_REF_NAME_ENV: ${{ github.ref_name }}
         run: |
-          REGEX="(.*)v(.*)\.(.*)\.(.*)"
-          IMAGE_TAG="nightly"
-          if [[ "${GITHUB_REF_NAME_ENV}" =~ $REGEX ]]; then
-              IMAGE_TAG="${GITHUB_REF_NAME##*/}"
-          fi
+          IMAGE_TAG="${GITHUB_REF_NAME##*/}"
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
     
       - name: Log in to the registry
