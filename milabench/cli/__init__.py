@@ -25,7 +25,7 @@ from .env import cli_env
 from .prepare_run import cli_prepare_run
 from .gated import cli_gated
 from .sharedsetup import cli_shared_setup
-from .docker import cli_docker
+from .container import cli_docker
 from .multirun import cli_multirun
 from .replay import cli_replay
 
@@ -115,7 +115,7 @@ class Main:
     def sharedsetup():
         cli_shared_setup()
 
-    def docker():
+    def container():
         cli_docker()
 
     def multirun():

@@ -66,7 +66,7 @@ def arguments():
 
     # [action: append]
     # [nargs: +]
-    plugin: Option & str
+    plugin: Option & str = []
 
     return Arguments(run_name, repeat, fulltrace, report, dash, noterm, validations, plugin)
 

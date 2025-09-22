@@ -3,6 +3,7 @@ import requests
 import subprocess
 from threading import Thread, Lock, Event
 import json
+from flask import request
 
 from ..pack import Package
 from ..structs import BenchLogEntry
