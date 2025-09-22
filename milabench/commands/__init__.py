@@ -331,7 +331,7 @@ class WorkingDir(WrapperCommand):
             "env",
             "-C", str(cmd.pack.working_directory),
             "-",
-            # We can also force environmentvariables
+            # We can also force environment variables
             f"XDG_CACHE_HOME={str(cmd.pack.dirs.cache)}",
         ]
         super().__init__(cmd, *args)
