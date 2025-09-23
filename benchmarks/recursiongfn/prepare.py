@@ -20,6 +20,12 @@ def parser():
         default=os.getenv("MILABENCH_DIR_DATA", None),
         help="Dataset path",
     )
+    parser.add_argument(
+        "--cache",
+        type=str,
+        default=os.getenv("XDG_CACHE_HOME", None),
+        help="Dataset path",
+    )
     return parser
 
 
@@ -35,11 +41,9 @@ if __name__ == "__main__":
 
     args, _ = parser().parse_known_args()
 
-    xdg_cache = os.getenv("XDG_CACHE_HOME", args.data)
-
-    print("+ Loading proxy model weights to MILABENCH_DIR_DATA={}".format(xdg_cache))
+    print("+ Loading proxy model weights to MILABENCH_DIR_DATA={}".format(args.data))
     _ = load_original_model(
         cache=True,
-        location=Path(os.path.join(xdg_cache, "bengio2021flow_proxy.pkl.gz")),
-        )
+        location=Path(os.path.join(args.data, "bengio2021flow_proxy.pkl.gz")),
+    )
 

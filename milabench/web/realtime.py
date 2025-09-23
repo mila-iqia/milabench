@@ -3,11 +3,9 @@ import requests
 import subprocess
 from threading import Thread, Lock, Event
 import json
-from flask import request
 
 from ..pack import Package
 from ..structs import BenchLogEntry
-from .constant import JOBRUNNER_LOCAL_CACHE
 
 #
 #   1. Have the server register the metric receiver route
@@ -24,6 +22,7 @@ def set_socketio_instance(socketio):
 
 class BenchEntryRebuilder:
     """Rebuild the benchentry from a stream of data entry"""
+    
 
     event_order = [
         "meta",
@@ -43,6 +42,8 @@ class BenchEntryRebuilder:
         return BenchLogEntry(self.pack, **kwargs)
 
     def __call__(self, entry):
+        from .constant import JOBRUNNER_LOCAL_CACHE
+
         match entry["event"]:
             case "meta":
                 self.meta = entry
@@ -56,71 +57,62 @@ class BenchEntryRebuilder:
                 if self.meta is not None:
                     yield self.benchentry(**self.meta)
                     self.meta = None
-            
+
                 yield self.benchentry(**entry)
 
             case _:
                 yield self.benchentry(**entry)
 
 
-def metric_receiver(app, receiver_factory=lambda x: BenchEntryRebuilder(x)):
+def metric_receiver(app):
     from flask import request
-    registry = {}
+    rebuilder_registry = {}
+    process_registry = {}
 
+    @app.route('/api/metric/<string:hostname>')
+    def open_reverse_ssh(hostname: str):
+        cmd = reverse_ssh_tunnel(hostname)
+
+        nonlocal process_registry
+
+        if process_registry.get(hostname) is None:
+            proc = subprocess.Popen(cmd)
+            process_registry[hostname] = proc
+            return {"status": "ok", "message": "created"}
+
+        return {"status": "ok", "message": "already exists"}
+
+    @app.route('/api/metric/<string:hostname>', methods=['DELETE'])
+    def close_reverse_ssh(hostname: str):
+        nonlocal process_registry
+
+        if (proc := process_registry.get(hostname)) is not None:
+            proc.terminate()
+            proc.wait()  # Wait for process to actually terminate
+            del process_registry[hostname]  # Clean up registry
+            return {"status": "ok", "message": "stopped"}
+        return {"status": "ok", "message": "does not exist"}
 
     @app.route('/api/metric/<string:jr_job_id>', methods=['POST'])
     def receive_metric(jr_job_id: str):
-        nonlocal registry
+        # We do not control when we receive the data
+        # we might lose the first few messages
+        nonlocal rebuilder_registry
         global socketio_instance
 
         lines = request.get_data(as_text=True).split("\n")
 
-        # TODO: simlify this when tag is forwarded correctly
-
-        # Process through BenchEntryRebuilder and broadcast to WebSocket clients
+        # Forward the metric to the clients
         if socketio_instance:
-            receiver = registry.setdefault(jr_job_id, receiver_factory(jr_job_id))
-
             for line in lines:
-                if line.strip():  # Only process non-empty lines
+                if line :=  line.strip():
                     try:
-                        # Try to parse as JSON and process through BenchEntryRebuilder
                         json_data = json.loads(line)
 
-                        # Process through the rebuilder to get structured BenchLogEntry
-                        if receiver is not None:
-                            for entry in receiver(json_data):
-                                if entry is not None:
-                                    # Convert BenchLogEntry to dict for WebSocket transmission
-                                    entry_dict = entry.dict()
-                                    # Remove pack object as it's not serializable
-                                    entry_dict.pop('pack', None)
-
-                                    # Add benchmark name from config if available
-                                    if hasattr(entry, 'pack') and entry.pack and hasattr(entry.pack, 'config'):
-                                        entry_dict['tag'] = ".".join(entry.pack.config.get('tag', []))
-
-                                    # Broadcast processed entry
-                                    socketio_instance.emit('metric_data', {
-                                        'jr_job_id': jr_job_id,
-                                        'data': entry_dict,
-                                        'raw_line': line
-                                    })
-                                else:
-                                    # For None entries (like meta), still broadcast raw data
-                                    socketio_instance.emit('metric_data', {
-                                        'jr_job_id': jr_job_id,
-                                        'data': json_data,
-                                        'raw_line': line
-                                    })
-                        else:
-                            # Fallback: broadcast raw JSON data
-                            socketio_instance.emit('metric_data', {
-                                'jr_job_id': jr_job_id,
-                                'data': json_data,
-                                'raw_line': line
-                            })
-
+                        socketio_instance.emit('metric_data', {
+                            'jr_job_id': jr_job_id,
+                            'data': json_data,
+                        })
                     except json.JSONDecodeError:
                         # If not valid JSON, still broadcast as raw data
                         socketio_instance.emit('metric_data', {
@@ -131,17 +123,21 @@ def metric_receiver(app, receiver_factory=lambda x: BenchEntryRebuilder(x)):
 
         return {}
 
+#
+# 
+# milabench benchmarks -> POST to Server -> Server forward to the dashboard through websocket
+# milabench benchmarks -> push to database
+# 
+
 
 def reverse_ssh_tunnel(hostname):
     # ssh -N -R 5000:localhost:5000 cn-d004.server.mila.quebec
-
-    ssh_process = subprocess.Popen([
+    return [
         "ssh",
         "-N",
         "-R", "5000:localhost:5000",
         hostname
-    ])
-    return ssh_process
+    ]
 
 
 class HTTPMetricPusher:
@@ -183,14 +179,14 @@ class HTTPMetricPusher:
         with self.lock:
             d = entry.dict()
             d.pop("pack")
-            
+
             if "tag" not in d:
                 d["tag"] = d.tag
 
             try:
                 self.pending_messages.append(json.dumps(d))
             except TypeError:
-                self.pending_messages.append(f'{{"#unrepresentable": {str(d)} }}')
+                self.pending_messages.append(f'{{"tag": "{d.tag}", "#unrepresentable": {str(d)} }}')
 
     def _loop(self):
         while not self._stop_event.wait(self.interval):

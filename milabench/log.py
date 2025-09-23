@@ -69,10 +69,11 @@ class TagConsole(BaseLogger):
 
 
 class TerminalFormatter(BaseLogger):
-    def __init__(self):
+    def __init__(self, dump_config=True):
         self.consoles = {}
         self.error_happened = set()
         self.early_stop = False
+        self.dump_config = dump_config
 
     def console(self, tag):
         if tag not in self.consoles:
@@ -146,7 +147,6 @@ class TerminalFormatter(BaseLogger):
             pass
 
         elif event == "config":
-
             def _show(k, entry):
                 if k.startswith("config.system"):
                     return
@@ -157,7 +157,8 @@ class TerminalFormatter(BaseLogger):
                 else:
                     console.pretty(T.bold(f"[{k}]"), entry)
 
-            _show("config", data)
+            if self.dump_config:
+                _show("config", data)
 
         elif event == "meta":
             pass

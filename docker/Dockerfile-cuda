@@ -77,7 +77,8 @@ ENV PIP_DEFAULT_TIMEOUT=800
 # https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html#gpu-feature-list
 ENV TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6;8.9"
 
-RUN $MILAENCH_ENV/bin/milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
+RUN ln -s /milabench/.env/bin/milabench /usr/local/bin/milabench                                          &&\
+    $MILAENCH_ENV/bin/milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
     python -m pip cache purge
 
 # CMD milabench run

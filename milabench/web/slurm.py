@@ -727,6 +727,32 @@ def remote_command(host, command, timeout=5):
         }
 
 
+def local_command(*args, timeout=10):
+    try:
+        result = subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            # shell=True
+        )
+        return {
+            'success': result.returncode == 0,
+            'stdout': result.stdout,
+            'stderr': result.stderr,
+            'returncode': result.returncode
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {
+            'success': False,
+            'stdout': '',
+            'stderr': str(e),
+            'returncode': -1
+        }
+
+
 def slurm_integration(app, cache):
     """Add Slurm integration routes to the Flask app"""
 
@@ -990,6 +1016,9 @@ def slurm_integration(app, cache):
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
+        return 
+
+    
     @app.route('/api/slurm/rerun/<string:jr_job_id>')
     def api_slurm_rerun(jr_job_id: str):
         """Rerun a previous job"""
@@ -997,25 +1026,27 @@ def slurm_integration(app, cache):
         old_jr_job_id = jr_job_id
         new_jr_job_id = generate_unique_job_name(from_job_id=jr_job_id)
 
-        old_remote_dir = f"~/scratch/jobrunner/{old_jr_job_id}"
-        new_remote_dir = f"~/scratch/jobrunner/{new_jr_job_id}"
+        old_local_dir = f"{JOBRUNNER_LOCAL_CACHE}/{old_jr_job_id}"
+        new_local_dir = f"{JOBRUNNER_LOCAL_CACHE}/{new_jr_job_id}"
+        new_remote_dir = f"scratch/jobrunner/{new_jr_job_id}"
 
-        old_remote_script = f"{old_remote_dir}/script.sbatch"
-        new_remote_script = f"{new_remote_dir}/script.sbatch"
+        old_local_script = f"{old_local_dir}/script.sbatch"
+        new_local_script = f"{new_local_dir}/script.sbatch"
 
-        old_cmd_path = f"{old_remote_dir}/cmd.sh"
+        old_cmd_path = f"{old_local_dir}/cmd.sh"
 
         # Create remote directory and copy script
-        result = remote_command(SLURM_HOST, f"'mkdir -p {new_remote_dir}'")
+        result = local_command("mkdir", "-p", new_local_dir)
+
         if not result['success']:
             return jsonify({'error': f'Failed to create job directory: {result["stderr"]}'}), 500
 
         # Copy old_remote_script to new job
-        result = remote_command(SLURM_HOST, f"'cp {old_remote_script} {new_remote_script}'")
+        result = local_command('cp', old_local_script, new_local_script)
         if not result['success']:
             return jsonify({'error': f'Failed to copy script: {result["stderr"]}'}), 500
 
-        result = remote_command(SLURM_HOST, f"'cat {old_cmd_path}'")
+        result = local_command('cat', old_cmd_path)
         if not result['success']:
             return jsonify({'error': f'Failed to retrieve previous job command: {result["stderr"]}'}), 500
 
@@ -1026,14 +1057,14 @@ def slurm_integration(app, cache):
 
         new_cmd = "'" + old_cmd.replace(old_jr_job_id, new_jr_job_id) + "'"
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.sh', delete=False) as f:
-            f.write(new_cmd[1:-1])
-            f.flush()
-            cmd_path = f.name
+        with open(f"{new_local_dir}/cmd.sh", "w") as fp:
+            fp.write(new_cmd[1:-1])
+            fp.flush()
 
-            remote_cmd = f"{new_remote_dir}/cmd.sh"
-            scp_cmd = f"scp {cmd_path} mila:{remote_cmd}"
-            subprocess.check_call(scp_cmd, shell=True)
+        # rsync the job to remote
+        result = local_command("rsync", "-az", new_local_dir + "/", f"{SLURM_HOST}:{new_remote_dir}")
+        if not result['success']:
+            return jsonify({'error': f'Failed to retrieve previous job command: {result["stderr"]}'}), 500
 
         # Submit job
         result = remote_command(SLURM_HOST, new_cmd)
