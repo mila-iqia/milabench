@@ -11,7 +11,7 @@ import random
 
 import torchcompat.core as acc
 import torch
-from tqdm import tqdm
+from benchmate.progress import tqdm
 
 
 def write(args):

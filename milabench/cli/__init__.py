@@ -28,6 +28,7 @@ from .sharedsetup import cli_shared_setup
 from .container import cli_docker
 from .multirun import cli_multirun
 from .replay import cli_replay
+from .global_patch import cli_global_patch
 
 
 class Main:
@@ -123,6 +124,9 @@ class Main:
 
     def replay():
         cli_replay()
+
+    def patch():
+        cli_global_patch()
 
 
 def main(argv=None):
