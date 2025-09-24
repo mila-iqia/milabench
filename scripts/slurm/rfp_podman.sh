@@ -3,7 +3,7 @@
 export MILABENCH_BRANCH=realtime_tracking
 export PYTHON_VERSION=3.12
 export MILABENCH_GPU_ARCH=cuda
-export PYTHONUNBUFFERED=1
+export PYTHONUNBUFFERED=0
 export MILABENCH_ARGS=""
 export MILABENCH_IMAGE=ghcr.io/mila-iqia/milabench:cuda-nightly
 export MILABENCH_HF_TOKEN="-"
