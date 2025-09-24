@@ -1,5 +1,7 @@
 import os
 import sys
+import atexit
+import signal
 
 from coleo import run_cli
 
@@ -29,6 +31,30 @@ from .container import cli_docker
 from .multirun import cli_multirun
 from .replay import cli_replay
 from .global_patch import cli_global_patch
+
+
+def force_flush():
+    # We do not want to use unbuffered python 
+    # but we still want all the logs when the job crashes
+    handlers = {}
+
+    def flush_streams():
+        sys.stdout.flush()
+        sys.stderr.flush()
+
+    atexit.register(flush_streams)
+
+    def handle_signal(signum, frame):
+        flush_streams()
+        if (handler := handlers[signum]) not in (None, signal.SIG_IGN, signal.SIG_DFL):
+            handler(signum, frame)
+
+    for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
+        handlers[sig] = signal.getsignal(sig)
+        signal.signal(sig, handle_signal)
+
+
+force_flush()
 
 
 class Main:
