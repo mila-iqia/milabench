@@ -9,7 +9,7 @@ from torch_geometric.data import Data, download_url, extract_tar
 from torch_geometric.data.data import BaseData
 from torch_geometric.datasets import PCQM4Mv2
 from torch_geometric.utils import from_smiles as _from_smiles
-from tqdm import tqdm
+from benchmate.progress import tqdm
 
 
 class PCQM4Mv2Subset(PCQM4Mv2):

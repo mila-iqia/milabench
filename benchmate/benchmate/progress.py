@@ -100,22 +100,25 @@ def force_flush():
     # but we still want all the logs when the job crashes
     handlers = {}
 
-    def flush_streams():
-        sys.stdout.flush()
-        sys.stderr.flush()
+    def flush(name):
+        def flush_streams():
+            sys.stdout.flush()
+            sys.stderr.flush()
+            print(f"Flushing {name}", file=sys.stderr)
+        return flush_streams
 
-    atexit.register(flush_streams)
 
     def handle_signal(signum, frame):
-        flush_streams()
+        flush(f"signal {signum}")()
         if (handler := handlers[signum]) not in (None, signal.SIG_IGN, signal.SIG_DFL):
             handler(signum, frame)
+
+    handle_signal._is_forceflush = True
 
     updated = False
     for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
         current_handler = signal.getsignal(sig)
-        
-        if current_handler is handle_signal:            # Already handled, skip
+        if getattr(current_handler, "_is_forceflush", False):            # Already handled, skip
             continue
 
         handlers[sig] = current_handler
@@ -123,11 +126,15 @@ def force_flush():
         updated = True
     
     if updated:
+        atexit.register(flush("atexit"))
         print("Installing Force flush", file=sys.stderr, flush=True)
 
 
 def timed_flush():
     if not isinstance(sys.stdout, TimedFlushBuffer):
+        sys.stdout.reconfigure(line_buffering=True)
+        sys.stderr.reconfigure(line_buffering=True)
+
         print("Installing TimedFlush", file=sys.stderr, flush=True)
         # Replace sys.stdout/stderr
         sys.stdout = TimedFlushBuffer(sys.stdout, flush_interval=30)
@@ -135,5 +142,4 @@ def timed_flush():
 
 
 patch_tqdm()
-# timed_flush()
 force_flush()

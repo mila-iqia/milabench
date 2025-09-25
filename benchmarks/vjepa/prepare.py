@@ -4,6 +4,9 @@ import os
 import cv2
 import numpy as np
 
+from benchmate.progress import tqdm
+
+
 def generate_random_video(output_file, width=640, height=480, num_frames=300, fps=30):
     """
     Generates a .mp4 video file with random content.
@@ -28,7 +31,6 @@ if __name__ == "__main__":
     import sys
     import csv
     import os
-    import tqdm
     import multiprocessing
 
     sys.path.append(os.path.dirname(__file__) + "/jepa/")
@@ -55,13 +57,13 @@ if __name__ == "__main__":
     n_worker = min(multiprocessing.cpu_count(), 16)
 
     with multiprocessing.Pool(n_worker) as pool:
-        for _ in tqdm.tqdm(pool.imap_unordered(gen_video, range(num_videos)), total=num_videos):
+        for _ in tqdm(pool.imap_unordered(gen_video, range(num_videos)), total=num_videos):
             pass
 
     with open(csv_file, mode='w', newline='') as file:
         # CSV separated by space genius
         writer = csv.writer(file, delimiter=" ")
-        for file in tqdm.tqdm(os.listdir(dest)):
+        for file in tqdm(os.listdir(dest)):
             if file.endswith(".mp4"):
                 writer.writerow([os.path.join(dest, file), 0])
 

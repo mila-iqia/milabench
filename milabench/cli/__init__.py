@@ -32,11 +32,10 @@ from .multirun import cli_multirun
 from .replay import cli_replay
 from .global_patch import cli_global_patch
 
-from benchmate.progress import timed_flush, force_flush
+from benchmate.progress import timed_flush
 
 
 timed_flush()
-force_flush()
 
 
 class Main:

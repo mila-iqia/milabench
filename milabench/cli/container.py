@@ -186,11 +186,14 @@ def run_plan(plan, dry):
         print()
         return 0
     else:
+        def pretty_print(obj):
+            print(obj)
+
         # This is a corountine
         return_code = run_with_loggers(
             plan.execute(),
             loggers = {
-                TerminalFormatter(dump_config=False),
+                TerminalFormatter(dump_config=False, pretty_print=pretty_print),
                 *validation_layers("error")
             }
         )
