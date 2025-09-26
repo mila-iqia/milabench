@@ -1083,6 +1083,27 @@ def slurm_integration(app, cache):
         else:
             return jsonify({'error': result['stderr']}), 500
 
+    @app.route('/api/slurm/jobs/<jr_job_id>/earlysync/<job_id>')
+    def api_early_sync(jr_job_id, job_id):
+        # This can happen quite frequently because it is (compute node -> local)
+        squeue_info = safe_job_path(jr_job_id, "meta", "info.json")
+        if os.path.exists(squeue_info):
+            with open(squeue_info, "r") as fp:
+                info = json.load(fp)
+
+        host = info.get("batch_host")
+        compute_node = f"{host}.server.mila.quebec"
+
+        result = local_command(
+            "rsync", "-az", f"{compute_node}:/tmp/{job_id}/cuda/results/runs/", f"{JOBRUNNER_LOCAL_CACHE}/{jr_job_id}/runs"
+        )
+
+        if result['success']:
+            return {"status": "ok"}
+        else:
+            return {"status": "notok"}
+
+
     # Submit job
     @app.route('/api/slurm/submit', methods=['POST'])
     def api_slurm_submit():
@@ -1310,11 +1331,6 @@ def slurm_integration(app, cache):
         except Exception as e:
             return jsonify({'error': str(e)}), 500
     
-
-    def get_cached_state(jr_job_id, job_id):
-        sacct_info = safe_job_path(jr_job_id, "meta", "acc.json")
-        squeue_info = safe_job_path(jr_job_id, "meta", "info.json")
-
     def get_cached_state(jr_job_id, job_id):
         with cache_invalidator(jr_job_id, "acc.json", limit=30) as is_old:
             if not is_old:

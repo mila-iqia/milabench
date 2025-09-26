@@ -102,9 +102,12 @@ def force_flush():
 
     def flush(name):
         def flush_streams():
-            sys.stdout.flush()
-            sys.stderr.flush()
-            print(f"Flushing {name}", file=sys.stderr)
+            try:
+                sys.stdout.flush()
+                sys.stderr.flush()
+                print(f"Flushing {name}", file=sys.stderr)
+            except ValueError:
+                print("Couldn't do last flush")
         return flush_streams
 
 

@@ -1,0 +1,215 @@
+#!/usr/bin/env python3
+import subprocess
+import sys
+import re
+import json
+import time
+import selectors
+import argparse
+from contextlib import contextmanager
+
+def make_parser(source):
+    """Return a closure that parses lines for a given source."""
+    elapsed = None
+    started = False
+
+    def parse_line(line):
+        nonlocal elapsed, started
+        line = line.strip()
+        if not line:
+            return None
+
+        # header
+        m = re.match(r"=+\s+(\d+)\s+s\s+=+", line)
+        if m:
+            elapsed = int(m.group(1))
+            started = True
+            return None
+
+        if not started:
+            return None
+
+        parts = line.split()
+        if len(parts) < 2:
+            return None
+
+        try:
+            uid = int(parts[0])
+        except ValueError:
+            uid = parts[0]
+
+        data = {"time": time.time(), "elapsed": elapsed, "uid": uid, "source": source}
+
+        i = 1
+        while i < len(parts):
+            if parts[i].isdigit() and i + 1 < len(parts) and parts[i + 1].startswith("["):
+                key = parts[i + 1].strip("[]")
+                data[key] = int(parts[i])
+                i += 2
+            else:
+                i += 1
+
+        return data
+
+    return parse_line
+
+
+@contextmanager
+def live_display(args):
+    if args.pipe:
+        yield None
+    
+    else:
+        from rich.live import Live
+        from rich.table import Table
+
+        table = Table()
+        table.add_column("stats")
+        table.add_column("Description")
+        table.add_column("Level")
+
+        with Live(table, refresh_per_second=1/5):
+            yield table
+
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--pipe", action="store_true", default=False)
+
+    args = parser.parse_args()
+
+    user_uid = subprocess.getoutput("id -u $USER")
+
+    CMD_METADATA = [
+        "beegfs-ctl",
+        "--userstats",
+        f"--filter={user_uid}",
+        "--nodetype=metadata",
+        "--cfgFile=/etc/beegfs/scratch.d/beegfs-client.conf",
+        "--allstats",
+    ]
+
+    CMD_STORAGE = [
+        "beegfs-ctl",
+        "--userstats",
+        f"--filter={user_uid}",
+        "--nodetype=storage",
+        "--cfgFile=/etc/beegfs/scratch.d/beegfs-client.conf",
+        "--allstats",
+    ]
+
+    # launch both processes
+    proc_meta = subprocess.Popen(CMD_METADATA, stdout=subprocess.PIPE, text=True)
+    proc_storage = subprocess.Popen(CMD_STORAGE, stdout=subprocess.PIPE, text=True)
+
+    sel = selectors.DefaultSelector()
+
+    # register both
+    sel.register(proc_meta.stdout, selectors.EVENT_READ, make_parser("metadata"))
+    sel.register(proc_storage.stdout, selectors.EVENT_READ, make_parser("storage"))
+
+
+    line = 0
+
+    with live_display(args) as table:
+        while True:
+            events = sel.select()
+
+            if not events:
+                break
+
+            for key, _ in events:
+                line = key.fileobj.readline()
+                if not line:  # EOF
+                    sel.unregister(key.fileobj)
+                    continue
+
+                parser = key.data
+                data = parser(line)
+
+                if data:
+                    if args.pipe:
+                        sys.stdout.write(json.dumps(data) + "\n")
+                        sys.stdout.flush()
+                    elif table is not None:
+                        pass
+        
+            line += 1
+
+
+if __name__ == "__main__":
+    main()
+
+
+# {
+#   "time": 1758900521.6352537,
+#   "elapsed": 5,
+#   "uid": 1500000082,
+#   "source": "storage",
+#   "sum": 0,
+#   "ack": 0,
+#   "sChDrct": 0,
+#   "getFSize": 0,
+#   "sAttr": 0,
+#   "statfs": 0,
+#   "trunc": 0,
+#   "close": 0,
+#   "fsync": 0,
+#   "ops-rd": 0,
+#   "MiB-rd/s": 0,
+#   "ops-wr": 0,
+#   "MiB-wr/s": 0,
+#   "gendbg": 0,
+#   "hrtbeat": 0,
+#   "remNode": 0,
+#   "storInf": 0,
+#   "unlnk": 0
+# }
+
+
+# {
+#   "time": 1758900521.656461,
+#   "elapsed": 5,
+#   "uid": 1500000082,
+#   "source": "metadata",
+#   "sum": 0,
+#   "ack": 0,
+#   "close": 0,
+#   "entInf": 0,
+#   "fndOwn": 0,
+#   "mkdir": 0,
+#   "create": 0,
+#   "rddir": 0,
+#   "refrEnt": 0,
+#   "mdsInf": 0,
+#   "rmdir": 0,
+#   "rmLnk": 0,
+#   "mvDirIns": 0,
+#   "mvFiIns": 0,
+#   "open": 0,
+#   "ren": 0,
+#   "sChDrct": 0,
+#   "sAttr": 0,
+#   "sDirPat": 0,
+#   "stat": 0,
+#   "statfs": 0,
+#   "trunc": 0,
+#   "symlnk": 0,
+#   "unlnk": 0,
+#   "lookLI": 0,
+#   "statLI": 0,
+#   "revalLI": 0,
+#   "openLI": 0,
+#   "createLI": 0,
+#   "hardlnk": 0,
+#   "flckAp": 0,
+#   "flckEn": 0,
+#   "flckRg": 0,
+#   "dirparent": 0,
+#   "listXA": 0,
+#   "getXA": 0,
+#   "rmXA": 0,
+#   "setXA": 0,
+#   "mirror": 0
+# }
