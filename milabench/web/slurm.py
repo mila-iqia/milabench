@@ -19,13 +19,8 @@ from filelock import FileLock, Timeout
 from cantilever.core.timer import timeit
 from flask import request, jsonify, send_file
 
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+from .constant import *
 
-SLURM_PROFILES = os.path.join(ROOT, 'config', 'slurm.yaml')
-SLURM_TEMPLATES = os.path.join(ROOT, 'scripts', 'slurm')
-PIPELINE_DEF = os.path.join(ROOT, 'scripts', 'pipeline')
-JOBRUNNER_WORKDIR = "scratch/jobrunner"
-JOBRUNNER_LOCAL_CACHE =  os.path.abspath(os.path.join(ROOT, '..', 'data'))
 
 #
 #   The integration assume the server can send SSH command to the SLURM cluster
@@ -239,7 +234,6 @@ def get_acc_state(acc):
 
     if len(states) > 0:
         return states[0]
-    
     return None
 
 def get_info_state(acc):
@@ -247,15 +241,12 @@ def get_info_state(acc):
 
     if len(states) > 0:
         return states[0]
-    
     return None
 
 def is_acc_terminal(acc):
     if type(acc) is list:
         return False
-    
     state = get_acc_state(acc)
-
     return (state is not None) and is_state_terminal(state)
 
 
@@ -346,38 +337,28 @@ def remove_job_from_remote(jr_job_id):
     remote_command("mila", cmd, timeout=30)
 
 
+
 @contextmanager
-def job_rsync_limiter(jr_job_id, limit=30):
+def system_file(jr_job_id, filename, defaults):
     cache_dir = JOBRUNNER_LOCAL_CACHE
 
     if jr_job_id is not None:
         cache_dir = safe_job_path(jr_job_id)
-    
+
     sys_folder = os.path.join(cache_dir, ".sys")
-    cache_file = os.path.join(sys_folder, "limiter.json")
-    lock_file = os.path.join(sys_folder, "LOCK")
+    cache_file = os.path.join(sys_folder, filename)
+    lock_file = cache_file + ".lock"
 
     os.makedirs(sys_folder, exist_ok=True)
     try:
         with FileLock(lock_file):
-            now =  time.time()
-
-            limiter = {
-                "last": 0
-            }
+            limiter = defaults
 
             if os.path.exists(cache_file):
                 with open(cache_file, "r") as fp:
                     limiter = json.load(fp)
 
-            last = limiter.get("last", 0)
-            
-            if (now - last) > limit:
-                limiter["last"] = now
-                yield True
-            else:
-                print("RSYNC limiter prevented rsync")
-                yield False
+            yield limiter
 
             with open(cache_file, "w") as fp:
                 json.dump(limiter, fp)
@@ -385,14 +366,33 @@ def job_rsync_limiter(jr_job_id, limit=30):
         yield False
 
 
+@contextmanager
+def cache_invalidator(jr_job_id, filename, limit=30):
+    with system_file(jr_job_id, filename, {"last": 0}) as system:
+        now =  time.time()
+        last = system.get("last", 0)
 
-def rsync_jobrunner_folder(timeout=5):
+        if (now - last) > limit:
+            system["last"] = now
+            yield True
+        else:
+            yield False
+
+
+@contextmanager
+def job_rsync_limiter(jr_job_id, limit=30):
+    with cache_invalidator(jr_job_id, "limiter.json", limit=30) as r:
+        yield r
+
+
+def rsync_jobrunner_folder(timeout=5, force=False):
     with job_rsync_limiter(None) as can_run:
-        if not can_run:
-            return 0 
+        if not can_run and not force:
+            print("RSYNC [full] skipped")
+            return 0
 
         rsync_cmd = ["rsync", "-az", f"mila:{JOBRUNNER_WORKDIR}/", f"{JOBRUNNER_LOCAL_CACHE}"]
-        
+
         try:
             with timeit("rsync") as chrono:
                 # "ssh -T -c aes128-gcm@openssh.com -o Compression=no -x"
@@ -450,7 +450,8 @@ def rsync_jobrunner_job(jr_job_id, timeout=5):
 
     with job_rsync_limiter(jr_job_id) as can_run:
         if not can_run:
-            return 0 
+            print("RSYNC [partial] skipped")
+            return 0
 
         rsync_cmd = ["rsync", "-az", f"mila:{JOBRUNNER_WORKDIR}/{jr_job_id}", f"{JOBRUNNER_LOCAL_CACHE}"]
 
@@ -497,7 +498,7 @@ def make_comment(dictionary):
 def parse_comment(comment, results=None):
     if results is None:
         results = {}
-    
+
     kv_dict = comment.split(';')
 
     for kv in kv_dict:
@@ -511,8 +512,8 @@ def parse_comment(comment, results=None):
 
 def book_keeping():
     """This function runs to ensure the remote has a little jobs as possible
-    
-    - Do a full rsync 
+
+    - Do a full rsync
     - List all the jobs present on remove
     - Fetch sacct data for the finished jobs, save that data locally
     - Delete finished jobs on remote
@@ -520,11 +521,11 @@ def book_keeping():
     """
     print("BOOK KEEPING")
     try:
-        if rsync_jobrunner_folder() == 0:
-            # 
+        if rsync_jobrunner_folder(force=True) == 0:
+            #
             results = remote_command("mila", f"ls -1 {JOBRUNNER_WORKDIR}", timeout=30)
             all_jobs = results["stdout"].split('\n')
-            
+
             active_jobs = get_active_jobs()
             active_jr_job_id = [
                 parse_comment(job["comment"]).get("jr_job_id", None) for job in active_jobs
@@ -533,10 +534,10 @@ def book_keeping():
             for job in all_jobs:
                 if job == "":
                     continue
-            
+
                 if job in active_jr_job_id:
                     continue
-            
+
                 remove_job_from_remote(job)
     except Exception:
         traceback.print_exc()
@@ -726,9 +727,36 @@ def remote_command(host, command, timeout=5):
         }
 
 
+def local_command(*args, timeout=10):
+    try:
+        result = subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            # shell=True
+        )
+        return {
+            'success': result.returncode == 0,
+            'stdout': result.stdout,
+            'stderr': result.stderr,
+            'returncode': result.returncode
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {
+            'success': False,
+            'stdout': '',
+            'stderr': str(e),
+            'returncode': -1
+        }
+
+
 def slurm_integration(app, cache):
     """Add Slurm integration routes to the Flask app"""
 
+    book_keeping()
     app.scheduler.add_job(book_keeping, 'interval', seconds=3600)
 
     # Configuration for SSH connection to Slurm cluster
@@ -745,7 +773,7 @@ def slurm_integration(app, cache):
                 return jsonify({'error': f'Failed to get jobs: {result["stderr"]}'}), 500
 
             jobs = list(filter(lambda x: x != "", result['stdout'].split("\n")))
-            
+
             # Sort by creation time (oldest first) to preserve server send order
             def get_remote_creation_time(job_id):
                 stat_result = remote_command(SLURM_HOST, f"stat -c %Y scratch/jobrunner/{job_id} 2>/dev/null || echo '0'")
@@ -755,7 +783,7 @@ def slurm_integration(app, cache):
                     except ValueError:
                         return 0
                 return 0
-            
+
             jobs = sorted(jobs, key=get_remote_creation_time)
 
             return jsonify(jobs)
@@ -795,12 +823,12 @@ def slurm_integration(app, cache):
             # jobs.remove(".git")
             def load_info(dir_path, modification_time):
                 key = f"{dir_path}:{modification_time}"
-                
+
                 if value := cache.get(key):
                     return value
-                
+
                 info_path = os.path.join(dir_path, "meta", "info.json")
-                    
+
                 if os.path.exists(info_path):
                     with open(info_path, "r") as fp:
                         try:
@@ -810,35 +838,35 @@ def slurm_integration(app, cache):
                         except Exception:
                             return {}
                 return {}
-            
+
             def load_acc(dir_path, jr_job_id, job_id):
                 key = dir_path
                 def queue_update():
                     if job_id is not None:
                         import threading
-                        
+
                         def update():
                             acc = fetch_latest_job_acc_cached(jr_job_id, job_id)
                             cache.set(key, acc, timeout=3600)
-    
+
                         threading.Thread(target=update).start()
-                
+
                 if value := cache.get(key):
                     if not is_acc_terminal(value):
                         print("Job acc not terminal, updating")
                         queue_update()
                     return value
-                
+
                 acc_path = os.path.join(dir_path, "meta", "acc.json")
-                
-  
+
+
                 # Note that the job acc info might be out dated
                 # We could check the job status make sure it is a terminal state
                 if os.path.exists(acc_path):
                     with open(acc_path, "r") as fp:
                         try:
                             info = json.load(fp)
-                            
+
                             if not is_acc_terminal(info):
                                 print("Job acc not terminal, updating")
                                 queue_update()
@@ -850,13 +878,13 @@ def slurm_integration(app, cache):
                             traceback.print_exc()
                             queue_update()
                             return {}
-                    
+
                 if job_id is not None:
                     print("Job acc missing, loading")
                     queue_update()
 
                 return {}
-            
+
             # Get all job directories and sort by creation time (oldest first) to preserve server send order
             job_dirs = []
             for item in os.listdir(JOBRUNNER_LOCAL_CACHE):
@@ -873,7 +901,7 @@ def slurm_integration(app, cache):
                         "info": info,
                         "acc": load_acc(item_path, item, info.get("job_id"))
                     })
-            
+
             # Sort by creation time (oldest first) to maintain server send order
             jobs = sorted(job_dirs, key=lambda x: x["creation_time"], reverse=True)
 
@@ -907,7 +935,7 @@ def slurm_integration(app, cache):
     def api_slurm_active_job_status(job_id):
         """Get list of all slurm jobs"""
         job_id = validate_slurm_job_id(job_id)
-    
+
         try:
             # Get running and pending jobs using JSON format
             result = remote_command(SLURM_HOST, f"'squeue -u $USER -j {job_id} --json'")
@@ -926,7 +954,7 @@ def slurm_integration(app, cache):
     def api_slurm_old_job_status(job_id):
         """Get list of all slurm jobs"""
         job_id = validate_slurm_job_id(job_id)
-    
+
         try:
             # Get running and pending jobs using JSON format
             result = remote_command(SLURM_HOST, f"'sacct -u $USER -j {job_id} --json'")
@@ -988,6 +1016,9 @@ def slurm_integration(app, cache):
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
+        return 
+
+    
     @app.route('/api/slurm/rerun/<string:jr_job_id>')
     def api_slurm_rerun(jr_job_id: str):
         """Rerun a previous job"""
@@ -995,25 +1026,27 @@ def slurm_integration(app, cache):
         old_jr_job_id = jr_job_id
         new_jr_job_id = generate_unique_job_name(from_job_id=jr_job_id)
 
-        old_remote_dir = f"~/scratch/jobrunner/{old_jr_job_id}"
-        new_remote_dir = f"~/scratch/jobrunner/{new_jr_job_id}"
+        old_local_dir = f"{JOBRUNNER_LOCAL_CACHE}/{old_jr_job_id}"
+        new_local_dir = f"{JOBRUNNER_LOCAL_CACHE}/{new_jr_job_id}"
+        new_remote_dir = f"scratch/jobrunner/{new_jr_job_id}"
 
-        old_remote_script = f"{old_remote_dir}/script.sbatch"
-        new_remote_script = f"{new_remote_dir}/script.sbatch"
+        old_local_script = f"{old_local_dir}/script.sbatch"
+        new_local_script = f"{new_local_dir}/script.sbatch"
 
-        old_cmd_path = f"{old_remote_dir}/cmd.sh"
+        old_cmd_path = f"{old_local_dir}/cmd.sh"
 
         # Create remote directory and copy script
-        result = remote_command(SLURM_HOST, f"'mkdir -p {new_remote_dir}'")
+        result = local_command("mkdir", "-p", new_local_dir)
+
         if not result['success']:
             return jsonify({'error': f'Failed to create job directory: {result["stderr"]}'}), 500
 
         # Copy old_remote_script to new job
-        result = remote_command(SLURM_HOST, f"'cp {old_remote_script} {new_remote_script}'")
+        result = local_command('cp', old_local_script, new_local_script)
         if not result['success']:
             return jsonify({'error': f'Failed to copy script: {result["stderr"]}'}), 500
 
-        result = remote_command(SLURM_HOST, f"'cat {old_cmd_path}'")
+        result = local_command('cat', old_cmd_path)
         if not result['success']:
             return jsonify({'error': f'Failed to retrieve previous job command: {result["stderr"]}'}), 500
 
@@ -1024,14 +1057,14 @@ def slurm_integration(app, cache):
 
         new_cmd = "'" + old_cmd.replace(old_jr_job_id, new_jr_job_id) + "'"
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.sh', delete=False) as f:
-            f.write(new_cmd[1:-1])
-            f.flush()
-            cmd_path = f.name
+        with open(f"{new_local_dir}/cmd.sh", "w") as fp:
+            fp.write(new_cmd[1:-1])
+            fp.flush()
 
-            remote_cmd = f"{new_remote_dir}/cmd.sh"
-            scp_cmd = f"scp {cmd_path} mila:{remote_cmd}"
-            subprocess.check_call(scp_cmd, shell=True)
+        # rsync the job to remote
+        result = local_command("rsync", "-az", new_local_dir + "/", f"{SLURM_HOST}:{new_remote_dir}")
+        if not result['success']:
+            return jsonify({'error': f'Failed to retrieve previous job command: {result["stderr"]}'}), 500
 
         # Submit job
         result = remote_command(SLURM_HOST, new_cmd)
@@ -1049,6 +1082,27 @@ def slurm_integration(app, cache):
             })
         else:
             return jsonify({'error': result['stderr']}), 500
+
+    @app.route('/api/slurm/jobs/<jr_job_id>/earlysync/<job_id>')
+    def api_early_sync(jr_job_id, job_id):
+        # This can happen quite frequently because it is (compute node -> local)
+        squeue_info = safe_job_path(jr_job_id, "meta", "info.json")
+        if os.path.exists(squeue_info):
+            with open(squeue_info, "r") as fp:
+                info = json.load(fp)
+
+        host = info.get("batch_host")
+        compute_node = f"{host}.server.mila.quebec"
+
+        result = local_command(
+            "rsync", "-az", f"{compute_node}:/tmp/{job_id}/cuda/results/runs/", f"{JOBRUNNER_LOCAL_CACHE}/{jr_job_id}/runs"
+        )
+
+        if result['success']:
+            return {"status": "ok"}
+        else:
+            return {"status": "notok"}
+
 
     # Submit job
     @app.route('/api/slurm/submit', methods=['POST'])
@@ -1155,6 +1209,7 @@ def slurm_integration(app, cache):
                 subprocess.check_call(scp_cmd, shell=True)
 
             # Submit job
+            print(sbatch_cmd)
             result = remote_command(SLURM_HOST, sbatch_cmd)
 
             if result['success']:
@@ -1197,20 +1252,20 @@ def slurm_integration(app, cache):
 
     def fetch_latest_job_acc(job_id):
         nonlocal _last_fetch_time
-        
+
         with _fetch_lock:
             # Calculate time since last execution
             current_time = time.time()
             time_since_last = current_time - _last_fetch_time
-            
+
             # If less than 2 seconds have passed, wait for the remaining time
             if time_since_last < _min_interval:
                 sleep_time = _min_interval - time_since_last
                 time.sleep(sleep_time)
-            
+
             # Update the last execution time
             _last_fetch_time = time.time()
-            
+
             print(f"Fetching job acc for {job_id}")
             # Try to get job logs using scontrol
             result = remote_command(SLURM_HOST, f'sacct --json -j {job_id}')
@@ -1222,16 +1277,18 @@ def slurm_integration(app, cache):
 
             if len(jobs) > 0:
                 return jobs[0]
-            
+
             return {}
-        
+
     def fetch_latest_job_acc_cached(jr_job_id, job_id):
         data = fetch_latest_job_acc(job_id)
-        
+
         if len(data) != 0:
-            with open(safe_job_path(jr_job_id, "meta", "acc.json"), "w") as fp:
+            p = safe_job_path(jr_job_id, "meta", "acc.json")
+            os.makedirs(os.path.dirname(p), exist_ok=True)
+            with open(p, "w") as fp:
                 json.dump(data, fp)
-                
+
         return data
 
     @app.route('/api/slurm/jobs/<jr_job_id>/acc/<job_id>')
@@ -1274,27 +1331,28 @@ def slurm_integration(app, cache):
         except Exception as e:
             return jsonify({'error': str(e)}), 500
     
-
     def get_cached_state(jr_job_id, job_id):
-        sacct_info = safe_job_path(jr_job_id, "meta", "acc.json")
-        squeue_info = safe_job_path(jr_job_id, "meta", "info.json")
+        with cache_invalidator(jr_job_id, "acc.json", limit=30) as is_old:
+            if not is_old:
+                sacct_info = safe_job_path(jr_job_id, "meta", "acc.json")
+                squeue_info = safe_job_path(jr_job_id, "meta", "info.json")
 
-        if os.path.exists(sacct_info):
-            try:
-                with open(sacct_info, "r") as fp:
-                    sacct = json.load(fp)
-                    return get_acc_state(sacct)
-            except:
-                pass
+                if os.path.exists(sacct_info):
+                    try:
+                        with open(sacct_info, "r") as fp:
+                            sacct = json.load(fp)
+                            return get_acc_state(sacct)
+                    except:
+                        pass
 
-        if os.path.exists(squeue_info):
-            try:
-                with open(squeue_info, "r") as fp:
-                    squeue = json.load(fp)
-                    return get_info_state(squeue)
-            except:
-                pass
-        
+                if os.path.exists(squeue_info):
+                    try:
+                        with open(squeue_info, "r") as fp:
+                            squeue = json.load(fp)
+                            return get_info_state(squeue)
+                    except:
+                        pass
+
         sacct = fetch_latest_job_acc_cached(jr_job_id, job_id)
         return get_acc_state(sacct)
 
@@ -1310,7 +1368,7 @@ def slurm_integration(app, cache):
         return {
             "status": cached_state
         }
-            
+  
     @app.route('/api/slurm/jobs/<jr_job_id>/info')
     @local_cache("info.json", "jr_job_id")
     def api_slurm_job_info_cached(jr_job_id):

@@ -61,6 +61,9 @@ milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
 
 milabench slurm_system > $MILABENCH_WORDIR/system.yaml
 
+rm -rf $MILABENCH_WORDIR/results/venv
+milabench install --system $MILABENCH_WORDIR/system.yaml $MILABENCH_ARGS
+
 milabench patch --venv $BENCHMARK_VENV
 
 milabench run --system $MILABENCH_WORDIR/system.yaml $MILABENCH_ARGS || :

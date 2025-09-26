@@ -183,17 +183,49 @@ def init_arch(arch=None):
     return select_backend(arch)
 
 
-def is_selected(defn, args):
-    if defn["name"] == "*":
-        return False
-    keys = selection_keys(defn)
-    return (
-        defn["enabled"]
-        and not defn["name"].startswith("_")
-        and defn.get("definition", None)
-        and (not args.select or (keys & args.select))
-        and (not args.exclude or not (keys & args.exclude))
+def assemble_config(runname, config_filepath, base_path, overrides=None, system_path=None):
+    if overrides is None:
+        overrides = {}
+
+    arch = deduce_arch()
+
+    base_defaults = get_base_defaults(
+        base=base_path,
+        arch=arch,
+        run_name=runname
     )
+
+    system_config = build_system_config(
+        system_path,
+        defaults={"system": base_defaults["_defaults"]["system"]},
+        gpu=True
+    )
+
+    overrides = merge({"*": system_config}, overrides)
+
+    return build_config(base_defaults, config_filepath, overrides)
+
+
+def is_selected(args):
+    def _(defn):
+        if defn["name"] == "*":
+            return False
+        keys = selection_keys(defn)
+        return (
+            defn["enabled"]
+            and not defn["name"].startswith("_")
+            and defn.get("definition", None)
+            and (not args.select or (keys & args.select))
+            and (not args.exclude or not (keys & args.exclude))
+        )
+    return _
+
+
+def filter_config(config, filter):
+    return {
+        name: defn for name, defn in config.items() if filter(defn)
+    }
+
 
 def _get_multipack(
     args: CommonArguments = None,
@@ -233,34 +265,33 @@ def _get_multipack(
             sys.exit(1)
         overrides = merge(overrides, {"*": {"dirs": {"venv": venv}}})
 
-    if run_name is None:
-        run_name = blabla() + ".{time}"
+    run_name = resolve_run_name(run_name)
 
-    now = str(datetime.today()).replace(" ", "_")
-    run_name = run_name.format(time=now)
-
-    arch = deduce_arch()
-    base_defaults = get_base_defaults(
-        base=args.base,
-        arch=arch,
-        run_name=run_name
+    config = assemble_config(
+        run_name, 
+        args.config, 
+        args.base, 
+        overrides=overrides, 
+        system_path=args.system
     )
-    system_config = build_system_config(
-        args.system,
-        defaults={"system": base_defaults["_defaults"]["system"]},
-        gpu=True
-    )
-    overrides = merge({"*": system_config}, overrides)
 
-    config = build_config(base_defaults, args.config, overrides)
+    selected_config = filter_config(config, is_selected(args))
 
-    selected_config = {name: defn for name, defn in config.items() if is_selected(defn, args)}
     if return_config:
         return selected_config
     else:
         return MultiPackage(
             {name: get_pack(defn) for name, defn in selected_config.items()}
         )
+
+
+def resolve_run_name(run_name):
+    if run_name is None:
+        run_name = blabla() + ".{time}"
+
+    now = datetime.today().strftime("%Y-%m-%d_%H-%M-%S")
+    run_name = run_name.format(time=now)
+    return run_name
 
 
 def _parse_report(pth, open=lambda x: x.open()):

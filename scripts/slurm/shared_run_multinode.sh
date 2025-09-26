@@ -1,11 +1,10 @@
 #!/bin/bash
 
-export MILABENCH_BRANCH=realtime_tracking
+export MILABENCH_BRANCH=stacc
 export PYTHON_VERSION=3.12
 export MILABENCH_GPU_ARCH=cuda
-export PYTHONUNBUFFERED=0
+export PYTHONUNBUFFERED=1
 export MILABENCH_ARGS=""
-export MILABENCH_CONFIG_NAME=standard
 
 set -ex
 
@@ -27,6 +26,7 @@ export MILABENCH_WORDIR="/tmp/$SLURM_JOB_ID/$MILABENCH_GPU_ARCH"
 
 export MILABENCH_ENV="$MILABENCH_SHARED/.env/$PYTHON_VERSION/"
 export MILABENCH_SIZER_SAVE="$MILABENCH_WORDIR/results/runs/scaling.yaml"
+export MILABENCH_SYSTEM="$MILABENCH_WORDIR/results/runs/system.yaml"
 export MILABENCH_BASE="$MILABENCH_WORDIR/results"
 export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
 
@@ -36,40 +36,33 @@ if [ -z "${MILABENCH_SOURCE}" ]; then
         git clone https://github.com/mila-iqia/milabench.git -b $MILABENCH_BRANCH
     fi
     export MILABENCH_SOURCE="$MILABENCH_WORDIR/milabench"
-    export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/$MILABENCH_CONFIG_NAME.yaml"
+    export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/standard.yaml"
 else
     (
         cd $MILABENCH_SOURCE
         git fetch origin
         git reset --hard origin/$MILABENCH_BRANCH
     )
-    export MILABENCH_CONFIG="$MILABENCH_SOURCE/config/$MILABENCH_CONFIG_NAME.yaml"
+    export MILABENCH_CONFIG="$MILABENCH_SOURCE/config/standard.yaml"
 fi
 
-mkdir -p $MILABENCH_WORDIR
-cd $MILABENCH_WORDIR
+cd /tmp
+srun --ntasks-per-node=1 mkdir -p $MILABENCH_BASE
 
 conda activate $MILABENCH_ENV
 
-mkdir -p $MILABENCH_WORDIR/results/runs
-python -u /home/mila/d/delaunap/beefgs.py --pipe > $MILABENCH_WORDIR/results/runs/stats.jsonl &
-BEEGFS_PID=$!
-
 pip install -e $MILABENCH_SOURCE
 
-milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
+srun --ntasks-per-node=1 bash -c "$(which milabench) sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE"
 
-milabench slurm_system > $MILABENCH_WORDIR/system.yaml
+cd $MILABENCH_WORDIR
 
-milabench patch --venv $BENCHMARK_VENV
+milabench slurm_system > $MILABENCH_SYSTEM
 
-milabench run --system $MILABENCH_WORDIR/system.yaml $MILABENCH_ARGS || :
+milabench run --select multinode --system $MILABENCH_SYSTEM $MILABENCH_ARGS || :
 
 rsync -az $MILABENCH_WORDIR/results/runs $OUTPUT_DIRECTORY
 
 # ===
 scontrol show job --json $SLURM_JOB_ID | jq '.jobs[0]' > $OUTPUT_DIRECTORY/meta/info.json
 # ===
-
-kill $BEEGFS_PID
-wait $BEEGFS_PID 2>/dev/null
