@@ -1,0 +1,46 @@
+defaults: &defaults
+  dirs:
+    code: ./_dev_fsbench
+    venv: venv/fsbench
+    data: data
+    runs: runs
+
+  venv:
+    type: virtualenv
+
+  plan:
+    method: njobs
+    n: 1
+
+  voir:
+    --forward:
+      - "#stdout"
+      - "#stderr"
+      - "#end"
+      - train_rate
+      - progress
+      - total
+    --train-rate: true
+
+  definition: ./
+
+benchmarks:
+  raw-fs:
+    <<<: *defaults
+    argv:
+      --load-type: fs
+
+  squash-fs:
+    <<<: *defaults
+    argv:
+      --load-type: squash
+
+  deeplake-fs:
+    <<<: *defaults
+    argv:
+      --load-type: deeplake
+
+  decode-fs:
+    <<<: *defaults
+    argv:
+      --load-type: decode
