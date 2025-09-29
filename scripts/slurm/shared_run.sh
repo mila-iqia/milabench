@@ -61,4 +61,4 @@ scontrol show job --json $SLURM_JOB_ID | jq '.jobs[0]' > $OUTPUT_DIRECTORY/meta/
 # ===
 
 kill $BEEGFS_PID
-wait $BEEGFS_PID 2>/dev/null
+wait $BEEGFS_PID 2>/dev/null || :

@@ -903,7 +903,7 @@ def slurm_integration(app, cache):
                     })
 
             # Sort by creation time (oldest first) to maintain server send order
-            jobs = sorted(job_dirs, key=lambda x: x["creation_time"], reverse=True)
+            jobs = sorted(job_dirs, key=lambda x: x["freshness"], reverse=False)
 
             if limit is None:
                 return jobs

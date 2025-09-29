@@ -18,7 +18,7 @@ class TimmBenchmarkPack(Package):
         return [
             *super().argv,
             "--output",
-            self.dirs.extra / self.logdir.name / self.tag,
+            self.dirs.data / "FakeImageNet",
             "--checkpoint-hist",
             1,
         ]

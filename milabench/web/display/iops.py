@@ -13,7 +13,7 @@ from ..constant import JOBRUNNER_LOCAL_CACHE
 #
 #                           
 
-def beegfs_iops(job_name="A100_run_334bf5e2") -> alt.Chart:
+def beegfs_iops(job_name="tar_91eb81ee") -> alt.Chart:
     """Display distributed IOPS used during the run"""
     lines = []
 

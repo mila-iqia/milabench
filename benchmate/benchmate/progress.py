@@ -6,6 +6,7 @@ import time
 import threading
 import atexit
 import signal
+import multiprocessing
 
 import tqdm as _tqdm
 
@@ -32,6 +33,9 @@ tqdm = PatchedTQDM
 
 
 def patch_tqdm():
+    if multiprocessing.current_process().name != "MainProcess":
+        return
+
     if not hasattr(_tqdm, "_original_tqdm"):
         print("Installing SlowTQDM", file=sys.stderr, flush=True)
 
@@ -89,23 +93,32 @@ class TimedFlushBuffer:
                 if self.should_flush():
                     self._flush()
 
-    def stop(self):
+    def stop(self, timeout=2.0):
         self._stop_thread = True
-        self.thread.join()
+        self.thread.join(timeout)
         self.flush()
 
 
 def force_flush():
+    if multiprocessing.current_process().name != "MainProcess":
+        return
+
     # We do not want to use unbuffered python 
     # but we still want all the logs when the job crashes
     handlers = {}
 
     def flush(name):
         def flush_streams():
+            if isinstance(sys.stdout, TimedFlushBuffer):
+                sys.stdout.stop()
+            
+            if isinstance(sys.stderr, TimedFlushBuffer):
+                sys.stderr.stop()
+
             try:
                 sys.stdout.flush()
                 sys.stderr.flush()
-                print(f"Flushing {name}", file=sys.stderr)
+                print(f"{multiprocessing.current_process().name} Flushing {name}", file=sys.stderr)
             except ValueError:
                 print("Couldn't do last flush")
         return flush_streams
@@ -113,8 +126,16 @@ def force_flush():
 
     def handle_signal(signum, frame):
         flush(f"signal {signum}")()
+
         if (handler := handlers[signum]) not in (None, signal.SIG_IGN, signal.SIG_DFL):
             handler(signum, frame)
+
+        signal.signal(signum, signal.SIG_DFL)
+
+        try:
+            os.kill(os.getpid(), signum)
+        except Exception:
+            os._exit(1)
 
     handle_signal._is_forceflush = True
 
@@ -134,6 +155,9 @@ def force_flush():
 
 
 def timed_flush():
+    if multiprocessing.current_process().name != "MainProcess":
+        return
+
     if not isinstance(sys.stdout, TimedFlushBuffer):
         sys.stdout.reconfigure(line_buffering=True)
         sys.stderr.reconfigure(line_buffering=True)
