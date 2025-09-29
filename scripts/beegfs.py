@@ -1,13 +1,22 @@
 #!/usr/bin/env python3
-import subprocess
+import os
+import io
 import sys
 import re
 import json
 import time
 import selectors
+import subprocess
 import argparse
 from contextlib import contextmanager
 
+#
+# TODO: make this a voir monitor ?
+#
+
+# -----------------------------
+# Parser for lines
+# -----------------------------
 def make_parser(source):
     """Return a closure that parses lines for a given source."""
     elapsed = None
@@ -53,12 +62,13 @@ def make_parser(source):
 
     return parse_line
 
-
+# -----------------------------
+# Live display
+# -----------------------------
 @contextmanager
 def live_display(args):
     if args.pipe:
         yield None
-    
     else:
         from rich.live import Live
         from rich.table import Table
@@ -71,12 +81,40 @@ def live_display(args):
         with Live(table, refresh_per_second=1/5):
             yield table
 
+# -----------------------------
+# Spawn subprocess with PTY
+# -----------------------------
+def spawn_with_pty(cmd):
+    """Spawn a subprocess with a pseudo-TTY and return a file-like object for reading output."""
+    master_fd, slave_fd = os.openpty()  # create a pty pair
+    proc = subprocess.Popen(
+        cmd,
+        stdin=slave_fd,
+        stdout=slave_fd,
+        stderr=slave_fd,
+        close_fds=True,
+        text=True
+    )
+    os.close(slave_fd)  # parent closes slave
+    # wrap master_fd into a text stream (line-buffered)
+    return proc, io.open(master_fd, "r", encoding="utf-8", errors="replace", buffering=1)
 
+# -----------------------------
+# Strip ANSI/control codes
+# -----------------------------
+def clean_line(line):
+    # remove ANSI escape sequences
+    line = re.sub(r'\x1b\[[0-9;]*[A-Za-z]', '', line)
+    # convert carriage return line updates (\r) to \n
+    line = line.replace('\r', '\n')
+    return line
 
+# -----------------------------
+# Main
+# -----------------------------
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--pipe", action="store_true", default=False)
-
     args = parser.parse_args()
 
     user_uid = subprocess.getoutput("id -u $USER")
@@ -99,24 +137,19 @@ def main():
         "--allstats",
     ]
 
-    # launch both processes
-    proc_meta = subprocess.Popen(CMD_METADATA, stdout=subprocess.PIPE, text=True)
-    proc_storage = subprocess.Popen(CMD_STORAGE, stdout=subprocess.PIPE, text=True)
+    # spawn both processes with pseudo-tty
+    proc_meta, stream_meta = spawn_with_pty(CMD_METADATA)
+    proc_storage, stream_storage = spawn_with_pty(CMD_STORAGE)
 
     sel = selectors.DefaultSelector()
-
-    # register both
-    sel.register(proc_meta.stdout, selectors.EVENT_READ, make_parser("metadata"))
-    sel.register(proc_storage.stdout, selectors.EVENT_READ, make_parser("storage"))
-
-
-    line = 0
+    sel.register(stream_meta, selectors.EVENT_READ, make_parser("metadata"))
+    sel.register(stream_storage, selectors.EVENT_READ, make_parser("storage"))
 
     with live_display(args) as table:
         while True:
-            events = sel.select()
-
-            if not events:
+            events = sel.select(timeout=1.0)
+            # exit if both processes have finished
+            if not events and proc_meta.poll() is not None and proc_storage.poll() is not None:
                 break
 
             for key, _ in events:
@@ -125,6 +158,7 @@ def main():
                     sel.unregister(key.fileobj)
                     continue
 
+                line = clean_line(line)
                 parser = key.data
                 data = parser(line)
 
@@ -133,83 +167,11 @@ def main():
                         sys.stdout.write(json.dumps(data) + "\n")
                         sys.stdout.flush()
                     elif table is not None:
-                        pass
-        
-            line += 1
+                        pass  # optionally update rich table
 
+    # wait for both processes to exit
+    proc_meta.wait()
+    proc_storage.wait()
 
 if __name__ == "__main__":
     main()
-
-
-# {
-#   "time": 1758900521.6352537,
-#   "elapsed": 5,
-#   "uid": 1500000082,
-#   "source": "storage",
-#   "sum": 0,
-#   "ack": 0,
-#   "sChDrct": 0,
-#   "getFSize": 0,
-#   "sAttr": 0,
-#   "statfs": 0,
-#   "trunc": 0,
-#   "close": 0,
-#   "fsync": 0,
-#   "ops-rd": 0,
-#   "MiB-rd/s": 0,
-#   "ops-wr": 0,
-#   "MiB-wr/s": 0,
-#   "gendbg": 0,
-#   "hrtbeat": 0,
-#   "remNode": 0,
-#   "storInf": 0,
-#   "unlnk": 0
-# }
-
-
-# {
-#   "time": 1758900521.656461,
-#   "elapsed": 5,
-#   "uid": 1500000082,
-#   "source": "metadata",
-#   "sum": 0,
-#   "ack": 0,
-#   "close": 0,
-#   "entInf": 0,
-#   "fndOwn": 0,
-#   "mkdir": 0,
-#   "create": 0,
-#   "rddir": 0,
-#   "refrEnt": 0,
-#   "mdsInf": 0,
-#   "rmdir": 0,
-#   "rmLnk": 0,
-#   "mvDirIns": 0,
-#   "mvFiIns": 0,
-#   "open": 0,
-#   "ren": 0,
-#   "sChDrct": 0,
-#   "sAttr": 0,
-#   "sDirPat": 0,
-#   "stat": 0,
-#   "statfs": 0,
-#   "trunc": 0,
-#   "symlnk": 0,
-#   "unlnk": 0,
-#   "lookLI": 0,
-#   "statLI": 0,
-#   "revalLI": 0,
-#   "openLI": 0,
-#   "createLI": 0,
-#   "hardlnk": 0,
-#   "flckAp": 0,
-#   "flckEn": 0,
-#   "flckRg": 0,
-#   "dirparent": 0,
-#   "listXA": 0,
-#   "getXA": 0,
-#   "rmXA": 0,
-#   "setXA": 0,
-#   "mirror": 0
-# }

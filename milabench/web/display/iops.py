@@ -9,31 +9,44 @@ import pandas as pd
 from ..constant import JOBRUNNER_LOCAL_CACHE
 
 # Force early copy straight from the compute node
-# scp cn-d004.server.mila.quebec:/tmp/7793606/cuda/results/runs/stats.jsonl /home/delaunap/work/milabench_dev/data/A100_run_f8fead63/runs/
+# scp cn-d004.server.mila.quebec:/tmp/7800607/cuda/results/runs/stats.jsonl /home/delaunap/work/milabench_dev/data/A100_run_334bf5e2/runs/
 #
 #                           
 
-def beegfs_iops(job_name="A100_run_f8fead63") -> alt.Chart:
+def beegfs_iops(job_name="A100_run_334bf5e2") -> alt.Chart:
     """Display distributed IOPS used during the run"""
     lines = []
 
     with open(os.path.join(JOBRUNNER_LOCAL_CACHE, job_name, "runs", "stats.jsonl"), "r") as fp:
         for line in fp.readlines():
-            lines.append(json.loads(line))
+            data = json.loads(line)
+            lines.append(data)
 
     df = pd.DataFrame(filter(lambda row: row["elapsed"] != 0, lines))
 
+    df['smoothed'] = df.groupby('source')['sum'].transform(lambda s: s.ewm(alpha=0.1).mean())
+
     storage = (
-        alt.Chart(df)
+        alt.Chart(df[df["source"] == "storage"])
             .mark_line().encode(
                 x="elapsed",
-                y="sum",
+                y=alt.Y("sum", title="R/W"),
                 color="source"
-            ).resolve_scale(y="independent")
+            )
     )
 
-    storage.save(f"iops.png")
-    return storage
+    metadata = (
+        alt.Chart(df[df["source"] == "metadata"])
+            .mark_line().encode(
+                x="elapsed",
+                y=alt.Y("sum", title="IOPs"),
+                color="source"
+            )
+    )
+
+    chart = alt.layer(metadata, storage).resolve_scale(y='independent')
+    chart.save(f"iops.png")
+    return chart
 
 
 

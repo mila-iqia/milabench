@@ -18,33 +18,28 @@ scontrol show job --json $SLURM_JOB_ID | jq '.jobs[0]' > $OUTPUT_DIRECTORY/meta/
 touch $SLURM_SUBMIT_DIR/.no_report
 # ===
 
-export MILABENCH_SHARED="$HOME/scratch/shared/$MILABENCH_GPU_ARCH"
-export MILABENCH_ENV="$MILABENCH_SHARED/.env/$PYTHON_VERSION/"
+export MILABENCH_SHARED="$HOME/scratch/shared"
 export MILABENCH_WORDIR="/tmp/$SLURM_JOB_ID/$MILABENCH_GPU_ARCH"  
+export MILABENCH_ENV="$MILABENCH_WORDIR/.env/$PYTHON_VERSION/"
 export MILABENCH_NODES=$(scontrol show hostnames $SLURM_NODELIST)
-
-mkdir -p $MILABENCH_WORDIR
-
-if [ -z "${MILABENCH_SOURCE}" ]; then
-    if [ ! -d "$MILABENCH_WORDIR/milabench" ]; then
-        git clone https://github.com/mila-iqia/milabench.git -b $MILABENCH_BRANCH
-    fi
-    export MILABENCH_SOURCE="$MILABENCH_WORDIR/milabench"
-    export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/$MILABENCH_CONFIG.yaml"
-else
-    (
-        cd $MILABENCH_SOURCE
-        git fetch origin
-        git reset --hard origin/$MILABENCH_BRANCH
-    )
-    export MILABENCH_CONFIG="$MILABENCH_SOURCE/config/$MILABENCH_CONFIG.yaml"
-fi
+export MILABENCH_BASE="$MILABENCH_WORDIR/results"
+export MILABENCH_SOURCE="$MILABENCH_WORDIR/milabench"
+export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/standard.yaml"
 
 CONDA_EXEC="$(which conda)"
 CONDA_BASE=$(dirname $CONDA_EXEC)
 source $CONDA_BASE/../etc/profile.d/conda.sh
 
+mkdir -p $MILABENCH_WORDIR
+cd $MILABENCH_WORDIR
+conda create --prefix $MILABENCH_ENV python=$PYTHON_VERSION -y
 conda activate $MILABENCH_ENV
+
+mkdir -p $MILABENCH_WORDIR
+cd $MILABENCH_WORDIR
+git clone https://github.com/mila-iqia/milabench.git -b $MILABENCH_BRANCH
+pip install -e $MILABENCH_SOURCE[$MILABENCH_GPU_ARCH]
+
 #
 # SLURM BOILERPLATE ENDS
 #

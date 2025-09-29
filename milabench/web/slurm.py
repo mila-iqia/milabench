@@ -1091,17 +1091,17 @@ def slurm_integration(app, cache):
             with open(squeue_info, "r") as fp:
                 info = json.load(fp)
 
-        host = info.get("batch_host")
-        compute_node = f"{host}.server.mila.quebec"
+            host = info.get("batch_host")
+            compute_node = f"{host}.server.mila.quebec"
 
-        result = local_command(
-            "rsync", "-az", f"{compute_node}:/tmp/{job_id}/cuda/results/runs/", f"{JOBRUNNER_LOCAL_CACHE}/{jr_job_id}/runs"
-        )
+            result = local_command(
+                "rsync", "-az", f"{compute_node}:/tmp/{job_id}/cuda/results/runs/", f"{JOBRUNNER_LOCAL_CACHE}/{jr_job_id}/runs"
+            )
 
-        if result['success']:
-            return {"status": "ok"}
-        else:
-            return {"status": "notok"}
+            if result['success']:
+                return {"status": "ok"}
+
+        return {"status": "notok"}
 
 
     # Submit job

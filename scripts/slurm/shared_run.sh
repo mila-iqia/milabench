@@ -21,45 +21,34 @@ CONDA_EXEC="$(which conda)"
 CONDA_BASE=$(dirname $CONDA_EXEC)
 source $CONDA_BASE/../etc/profile.d/conda.sh
 
-export MILABENCH_SHARED="$HOME/scratch/shared/$MILABENCH_GPU_ARCH"
-
+export MILABENCH_SHARED="$HOME/scratch/shared"
 export MILABENCH_WORDIR="/tmp/$SLURM_JOB_ID/$MILABENCH_GPU_ARCH"  
-
-export MILABENCH_ENV="$MILABENCH_SHARED/.env/$PYTHON_VERSION/"
-export MILABENCH_SIZER_SAVE="$MILABENCH_WORDIR/results/runs/scaling.yaml"
+export MILABENCH_ENV="$MILABENCH_WORDIR/.env/$PYTHON_VERSION/"
 export MILABENCH_BASE="$MILABENCH_WORDIR/results"
+export MILABENCH_SIZER_SAVE="$MILABENCH_WORDIR/results/runs/scaling.yaml"
 export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
-
-
-if [ -z "${MILABENCH_SOURCE}" ]; then
-    if [ ! -d "$MILABENCH_WORDIR/milabench" ]; then
-        git clone https://github.com/mila-iqia/milabench.git -b $MILABENCH_BRANCH
-    fi
-    export MILABENCH_SOURCE="$MILABENCH_WORDIR/milabench"
-    export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/$MILABENCH_CONFIG_NAME.yaml"
-else
-    (
-        cd $MILABENCH_SOURCE
-        git fetch origin
-        git reset --hard origin/$MILABENCH_BRANCH
-    )
-    export MILABENCH_CONFIG="$MILABENCH_SOURCE/config/$MILABENCH_CONFIG_NAME.yaml"
-fi
+export MILABENCH_SOURCE="$MILABENCH_WORDIR/milabench"
+export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/$MILABENCH_CONFIG_NAME.yaml"
 
 mkdir -p $MILABENCH_WORDIR
 cd $MILABENCH_WORDIR
+git clone https://github.com/mila-iqia/milabench.git -b $MILABENCH_BRANCH
 
+conda create --prefix $MILABENCH_ENV python=$PYTHON_VERSION -y
 conda activate $MILABENCH_ENV
 
 mkdir -p $MILABENCH_WORDIR/results/runs
 python -u /home/mila/d/delaunap/beefgs.py --pipe > $MILABENCH_WORDIR/results/runs/stats.jsonl &
 BEEGFS_PID=$!
 
-pip install -e $MILABENCH_SOURCE
+pip install -e $MILABENCH_SOURCE[$MILABENCH_GPU_ARCH]
 
 milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
 
 milabench slurm_system > $MILABENCH_WORDIR/system.yaml
+rm -rf $MILABENCH_WORDIR/results/venv
+
+milabench install --system $MILABENCH_WORDIR/system.yaml $MILABENCH_ARGS
 
 milabench patch --venv $BENCHMARK_VENV
 
