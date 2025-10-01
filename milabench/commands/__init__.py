@@ -318,13 +318,20 @@ class WrapperCommand(SingleCmdCommand):
 
 
 class WorkingDir(WrapperCommand):
-    """Wrap a command to change the working directory"""
+    """Wrap a command to change the working directory or force environment variables.
+    
+    This wrapper is usefull for commands that executes remotely or inside a container where
+    the environment or the working directory might be changed by the SSH command or the container.
+    """
+    #  Maybe we should wrap ALL the commands with it so it can be invariant for how it is executed 
+    #  and we don't have to worry about it
 
     def __init__(self, cmd: Command, **kwargs):
         args = [
             "env",
             "-C", str(cmd.pack.working_directory),
             "-",
+            # We can also force environment variables
             f"XDG_CACHE_HOME={str(cmd.pack.dirs.cache)}",
         ]
         super().__init__(cmd, *args)
@@ -404,7 +411,7 @@ class DockerRunCommand(WrapperCommand):
         for var in ("XDG_CACHE_HOME", "OMP_NUM_THREADS"):
             if var in env:
                 argv.append("--env")
-                argv.append(f"{var}='{self.as_container_path(env[var])}'")
+                argv.append(f"{var}={self.as_container_path(env[var])}")
 
         return self.config.command(argv)
 
@@ -506,13 +513,13 @@ class SSHCommand(WrapperCommand):
         # for k in env.keys():
         #     argv.append(f"-oSendEnv={k}")
 
-        # FIXME: this should not be necessary
         # Those mean nothing inside docker
+        # TODO: is the XDG_CACHE_HOME still needed or was it taken care somehwere else?
         envs = []
         # if not is_inside_docker():
         #     envs = [
         #         "env",
-        #         "-C", self.pack.working_directory,
+        #         "-C", str(self.pack.working_directory),
         #         "-",
         #         f"XDG_CACHE_HOME={str(self.pack.dirs.cache)}",
         #     ]
@@ -639,11 +646,12 @@ def node_address(node):
 
 
 class ForeachNode(ListCommand):
-    def __init__(self, executor: Command, **kwargs) -> None:
+    def __init__(self, executor: Command, use_docker=True, **kwargs) -> None:
         super().__init__(None, **kwargs)
         self.options.update(kwargs)
         self.executor = executor
         self.base_tags = self.executor.pack.config["tag"]
+        self.use_docker = use_docker
 
     def make_new_node_pack(self, rank, node, base) -> "BasePackage":
         """Make a new environment/config for the run"""
@@ -693,7 +701,12 @@ class ForeachNode(ListCommand):
 
             bench_cmd = self.make_new_node_executor(rank, node, self.executor)
 
-            docker_cmd = DockerRunCommand(bench_cmd, DockerConfig(**config["system"].get("docker", {})))
+            # Hum, I think the docker wrapping could be done somewhere else
+            # so we do not need that use_docker flag
+            if self.use_docker:
+                docker_cmd = DockerRunCommand(bench_cmd, DockerConfig(**config["system"].get("docker", {})))
+            else:
+                docker_cmd = bench_cmd
 
             worker = SSHCommand(
                 host=node_address(node),
