@@ -31,6 +31,7 @@ from .container import cli_docker
 from .multirun import cli_multirun
 from .replay import cli_replay
 from .global_patch import cli_global_patch
+from .tunnel import cli_port_forwarding
 
 from benchmate.progress import timed_flush
 
@@ -134,6 +135,9 @@ class Main:
 
     def patch():
         cli_global_patch()
+
+    def tunnel():
+        cli_port_forwarding()
 
 
 def main(argv=None):

@@ -98,6 +98,17 @@ PLUGINS = {
     "txt": TextReporter,
 }
 
+try:
+    from milabench.metrics.sqlalchemy import SQLAlchemy
+
+    PLUGINS["sql"] = SQLAlchemy
+
+except ImportError as err:
+    def sql_error(*args, **kwargs):
+        raise err
+
+    PLUGINS["sql"] = sql_error
+
 
 def instantiate_loggers(*plugins):
     objects = []
@@ -131,13 +142,18 @@ def instantiate_loggers(*plugins):
 
 def fetch_plugins(args):
     # milabench run \
-    # --plugin term                # TerminalFormatter
-    # --plugin dash short          # ShortDashFormatter
-    # --plugin dash long           # LongDashFormatter
-    # --plugin txt stdout          # TextReporter("stdout")
-    # --plugin txt stderr          # TextReporter("stderr")
-    # --plugin mem                 # MemoryUsageExtractor
-    # --plugin http localhost:5000 # 
+    # --plugin term                                         # TerminalFormatter
+    # --plugin dash short                                   # ShortDashFormatter
+    # --plugin dash long                                    # LongDashFormatter
+    # --plugin txt stdout                                   # TextReporter("stdout")
+    # --plugin txt stderr                                   # TextReporter("stderr")
+    # --plugin mem                                          # MemoryUsageExtractor
+    # --plugin http localhost:5000                          # HTTPMetricPusher              # Push to a dashboard
+    # --plugin sql postgresql://<user>:<pwd>@host:port/db   # SQLAlchemyMetricPusher        # Push to a database
+    #   testing url: postgresql://milabench_write:1234@localhost:5432/milabench 
+
+    # ====
+    # --plugin sql postgresql://milabench_write:1234@localhost:5432/milabench --plugin term 
 
     # Layer logic and plugin logic could be merged
     layer_names = validation_names(args.validations)

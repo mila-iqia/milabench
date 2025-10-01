@@ -327,7 +327,10 @@ def cli_shared_setup(args = None):
     remote_data = os.path.join(args.network, "data")
     remote_cache = os.path.join(args.network, "cache")
 
-    assert os.path.exists(remote_code), "missing venv, was milabench install run ?"
+    if not os.path.exists(remote_code):
+        print("missing venv, was milabench install run ?")
+        print("You should run milabench install")
+
     assert os.path.exists(remote_data), "missing data, was milabench prepare run ?"
     
     os.makedirs(args.local, exist_ok=True)

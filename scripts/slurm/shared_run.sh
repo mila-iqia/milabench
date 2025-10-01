@@ -43,6 +43,9 @@ BEEGFS_PID=$!
 
 pip install -e $MILABENCH_SOURCE[$MILABENCH_GPU_ARCH]
 
+milabench tunnel &
+TUNNEL_PID=$!
+
 milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
 
 milabench slurm_system > $MILABENCH_WORDIR/system.yaml
@@ -62,3 +65,6 @@ scontrol show job --json $SLURM_JOB_ID | jq '.jobs[0]' > $OUTPUT_DIRECTORY/meta/
 
 kill $BEEGFS_PID
 wait $BEEGFS_PID 2>/dev/null || :
+
+kill $TUNNEL_PID
+wait $TUNNEL_PID 2>/dev/null || :
