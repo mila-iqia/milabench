@@ -57,20 +57,19 @@ class TimedFlushBuffer:
     def __init__(self, stream, flush_interval=30):
         self.stream = stream
         self.buffer = []
+        self.size = 0
         self.flush_interval = flush_interval
         self.lock = threading.Lock()
         self.last_flush = time.time()
-        # Start background flusher
-        self._stop_thread = False
-        self.thread = threading.Thread(target=self._flusher, daemon=True)
-        self.thread.start()
 
     def should_flush(self):
-        return time.time() - self.last_flush >= self.flush_interval or len(self.buffer) > 8 * 1024 * 1024
+        elapsed = time.time() - self.last_flush
+        return elapsed >= self.flush_interval or self.size > 8 * 1024 * 1024
 
     def write(self, s):
         with self.lock:
             self.buffer.append(s)
+            self.size += len(s)
             
             if self.should_flush():
                 self._flush()
@@ -84,19 +83,8 @@ class TimedFlushBuffer:
             self.stream.write("".join(self.buffer))
             self.stream.flush()
             self.buffer = []
+            self.size = 0
             self.last_flush = time.time()
-
-    def _flusher(self):
-        while not self._stop_thread:
-            time.sleep(1)
-            with self.lock:
-                if self.should_flush():
-                    self._flush()
-
-    def stop(self, timeout=2.0):
-        self._stop_thread = True
-        self.thread.join(timeout)
-        self.flush()
 
 
 def force_flush():
@@ -109,12 +97,6 @@ def force_flush():
 
     def flush(name):
         def flush_streams():
-            if isinstance(sys.stdout, TimedFlushBuffer):
-                sys.stdout.stop()
-            
-            if isinstance(sys.stderr, TimedFlushBuffer):
-                sys.stderr.stop()
-
             try:
                 sys.stdout.flush()
                 sys.stderr.flush()
@@ -168,5 +150,6 @@ def timed_flush():
         sys.stderr = TimedFlushBuffer(sys.stderr, flush_interval=30)
 
 
-patch_tqdm()
-force_flush()
+if int(os.getenv("MILABENCH_GLOBAL_PATCH", 0)) == 1:
+    patch_tqdm()
+    force_flush()

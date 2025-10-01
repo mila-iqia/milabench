@@ -155,7 +155,8 @@ def generate_fakeimagenet(args=None):
 
     generate_sets(dest, size_spec, args.image_size)
 
-    labels = set([int(entry.name) for entry in Path(dest).glob("*/*/")])
+    labels = set([int(entry.name) for entry in Path(dest).glob("*/[0-9]*/")])
+
     with open(os.path.join(dest, "labels.txt"), "wt") as _f:
         # class_id,class_name
         _f.writelines([f"{l},{l}\n" for l in sorted(labels)])

@@ -39,6 +39,12 @@ BEEGFS_PID=$!
 mkdir -p $MILABENCH_WORDIR
 cd $MILABENCH_WORDIR
 git clone https://github.com/mila-iqia/milabench.git -b $MILABENCH_BRANCH
+
+cd milabench
+git describe --tags --always --dirty
+git log -1 --pretty=format:"%H %s\n"
+
+cd $MILABENCH_WORDIR
 pip install -e $MILABENCH_SOURCE[$MILABENCH_GPU_ARCH]
 
 ARGS="$@"
