@@ -42,8 +42,11 @@ python -u /home/mila/d/delaunap/beefgs.py --pipe > $MILABENCH_WORDIR/results/run
 BEEGFS_PID=$!
 
 pip install -e $MILABENCH_SOURCE[$MILABENCH_GPU_ARCH]
+pip install psycopg2-binary
 
-milabench tunnel &
+LOCAL_PORT=8123
+export MILABENCH_DB="--plugin term --plugin sql postgresql://milabench_write:1234@localhost:$LOCAL_PORT/milabench"
+milabench tunnel --local-port $LOCAL_PORT &
 TUNNEL_PID=$!
 
 milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
@@ -55,7 +58,7 @@ milabench install --system $MILABENCH_WORDIR/system.yaml $MILABENCH_ARGS
 
 milabench patch --venv $BENCHMARK_VENV
 
-milabench run --system $MILABENCH_WORDIR/system.yaml $MILABENCH_ARGS || :
+milabench run --system $MILABENCH_WORDIR/system.yaml $MILABENCH_ARGS $MILABENCH_DB || :
 
 rsync -az $MILABENCH_WORDIR/results/runs $OUTPUT_DIRECTORY
 

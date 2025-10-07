@@ -153,7 +153,7 @@ def fetch_plugins(args):
     #   testing url: postgresql://milabench_write:1234@localhost:5432/milabench 
 
     # ====
-    # --plugin sql postgresql://milabench_write:1234@localhost:5432/milabench --plugin term 
+    # --plugin sql postgresql://milabench_write:1234@127.0.0.1:5432/milabench --plugin term 
 
     # Layer logic and plugin logic could be merged
     layer_names = validation_names(args.validations)

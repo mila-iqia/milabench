@@ -115,6 +115,19 @@ if __name__ == "__main__":
     cli_port_forwarding()
 
 
+# LOCAL_PORT=8123
+# milabench tunnel --local-port $LOCAL_PORT
+# milabench run --plugin sql postgresql://milabench_write:1234@127.0.0.1:$LOCAL_PORT/milabench --plugin term 
 #
-# milabench tunnel --local-port
+# PSQL
+# ----
+# psql -h 127.0.0.1 -p 8123 -U milabench_write milabench
+# select * from execs;
 #
+# Python
+# ------
+# from sqlalchemy import create_engine, text
+# engine = create_engine(f"postgresql://milabench_write:1234@127.0.0.1:8123/milabench")
+# with engine.connect() as conn:
+#     result = conn.execute(text("SELECT version();"))
+#     print(result.scalar())
