@@ -1,9 +1,13 @@
+from dataclasses import dataclass
+
 import subprocess
 import time
 import atexit
 import sys
 import threading
 import os
+
+from coleo import Option, tooled
 
 
 HOSTNAME = "milabench_sql"
@@ -18,6 +22,7 @@ def start_tunnel(local_port=DB_PORT, hostname=HOSTNAME, db_port=None, stop_event
         try:
             proc = subprocess.Popen([
                 "ssh",
+                "-v",
                 "-N",
                 "-L", f"127.0.0.1:{local_port}:127.0.0.1:{db_port}",
                 "-o", "ExitOnForwardFailure=yes",
@@ -61,9 +66,38 @@ def start_tunnel(local_port=DB_PORT, hostname=HOSTNAME, db_port=None, stop_event
             time.sleep(5)
 
 
-def cli_port_forwarding():
+@dataclass
+class Arguments:
+    local_port: int = DB_PORT
+    remote_port: int = DB_PORT
+    hostname: str = HOSTNAME
+
+
+@tooled
+def arguments() -> Arguments:
+
+    local_port: Option & int = DB_PORT
+
+    remote_port: Option & int = DB_PORT
+
+    hostname: Option & str = HOSTNAME
+
+    return Arguments(local_port, remote_port, hostname)
+
+
+@tooled
+def cli_port_forwarding(args=None):
+    if args is None:
+        args = arguments()
+
     stop_event = threading.Event()
-    tunnel_thread = threading.Thread(target=start_tunnel, kwargs={"stop_event": stop_event}, daemon=True)
+    kwargs = {
+        "stop_event": stop_event, 
+        "local_port": args.local_port,
+        "db_port": args.remote_port,
+        "hostname": args.hostname
+    }
+    tunnel_thread = threading.Thread(target=start_tunnel, kwargs=kwargs, daemon=True)
     tunnel_thread.start()
 
     try:
@@ -79,3 +113,8 @@ def cli_port_forwarding():
 
 if __name__ == "__main__":
     cli_port_forwarding()
+
+
+#
+# milabench tunnel --local-port
+#

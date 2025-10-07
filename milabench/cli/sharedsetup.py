@@ -331,6 +331,7 @@ def cli_shared_setup(args = None):
         print("missing venv, was milabench install run ?")
         print("You should run milabench install")
 
+    # FIXME: this should work if we have the archive
     assert os.path.exists(remote_data), "missing data, was milabench prepare run ?"
     
     os.makedirs(args.local, exist_ok=True)
