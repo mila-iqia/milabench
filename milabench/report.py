@@ -8,6 +8,7 @@ from pandas import DataFrame
 
 from milabench.utils import error_guard
 from milabench.summary import Summary
+from milabench.common import get_base_loaded_config
 
 nan = math.nan
 
@@ -228,12 +229,13 @@ def make_dataframe(summary, compare=None, weights=None, query=None):
         for key in required:
             if key not in summary:
                 summary[key] = {
-                    "name": key, 
-                    "n": 0, 
+                    "name": key,
+                    "n": 0,
                     "successes": 0,
-                    "failures": 0, 
+                    "failures": 0,
                     "enabled": weights[key]["enabled"],
-                    "empty": True
+                    "empty": True,
+                    "weight": weights[key]["weight"]
                 }
 
     if weights is None:
@@ -252,7 +254,7 @@ def make_dataframe(summary, compare=None, weights=None, query=None):
         if summary:
             priority = summary.get(key, {}).get("priority", None)
             if priority:
-                return priority 
+                return priority
 
         if weights:
             return weights.get(key, {}).get("group", key)
@@ -294,7 +296,7 @@ def normalize_dataframe(df):
 
     for col in columns:
         df[col] = df[col].astype(float)
-    
+
     return df[columns]
 
 
@@ -311,7 +313,7 @@ def print_meta(out, meta):
     out.section("System")
 
     for k, v in meta.items():
-        
+
         if k == "accelerators":
             gpus = v["gpus"]
             n = len(gpus)
@@ -368,7 +370,7 @@ def to_latex(df):
     class LatexTable:
         output: str = option("latex.output", str, None)
         columns: str = option("latex.columns", str, ",".join(default_columns))
-    
+
     options = LatexTable()
 
     columns = options.columns.split(",")
@@ -380,6 +382,14 @@ def to_latex(df):
             txt = df.to_latex(formatters=_formatters, escape=False)
             txt = txt.replace("%", "\\%").replace("_", "\\_")
             fp.write(txt)
+
+
+
+def get_weight_total(config):
+    total = 0
+    for _, bench in config.items():
+        total += bench["weight"] * int(bench["enabled"] is True)
+    return total
 
 
 @error_guard({})
@@ -395,13 +405,12 @@ def make_report(
     weights=None,
     stream=sys.stdout,
 ):
+    # We want the score to be consistent with the loaded config
+    # that means select/exclude and unsupported bench weight still counts
     if weights is None:
-        weights = dict()
+        weights = get_base_loaded_config()
 
     meta = get_meta(summary)
-
-    # FIXME: we need this because if benchamrks are missing the total weight might be wrong
-    weight_total_override = summary.get(list(summary.keys())[0]).get("weight_total")
 
     df = make_dataframe(summary, compare, weights)
     out = Outputter(stdout=stream, html=html)
@@ -433,7 +442,7 @@ def make_report(
 
             # perf can be object np.float64 !?
             # success_ratio = 1 - row["fail"] / max(row["n"], 1)
-            
+
             # score = (acc if acc > 0 else row["perf"]) * success_ratio
             score = df[column].astype(float)
             score = score.fillna(0)  # Replace nan by 0
@@ -449,7 +458,7 @@ def make_report(
 
             # score cannot be 0
             logscore = np.sum(np.log(score + 1) * weights) / weight_total
-            
+
             return np.exp(logscore)
         except ZeroDivisionError:
             return -1
@@ -498,7 +507,7 @@ def make_report(
                     H.div["collapsible"](lines),
                 )
             )
-        
+
     out.finalize()
     return normalized
 
