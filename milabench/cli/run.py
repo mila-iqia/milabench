@@ -8,10 +8,12 @@ from milabench.utils import validation_layers
 from ..common import (
     _error_report,
     _read_reports,
+    _get_multipack,
     get_multipack,
     init_arch,
     run_with_loggers,
     validation_names,
+    arguments as multipack_args
 )
 from ..log import (
     DataReporter,
@@ -71,7 +73,7 @@ def _fetch_arch(mp):
     except StopIteration:
         print("no selected bench")
         return None
-    
+
 
 def run(mp, args, name):
     layers = validation_names(args.validations)
@@ -81,7 +83,7 @@ def run(mp, args, name):
         "long": LongDashFormatter,
         "no": None,
     }.get(args.dash, None)
-        
+
     success = run_with_loggers(
         mp.do_run(repeat=args.repeat),
         loggers=[
@@ -114,6 +116,10 @@ def run(mp, args, name):
             summary = make_summary(reports)
             assert len(summary) != 0, "No summaries"
 
+            margs = multipack_args()
+            margs.config = args.config
+            config = _get_multipack(margs, return_config=True)
+
             make_report(
                 summary,
                 compare=compare,
@@ -123,6 +129,7 @@ def run(mp, args, name):
                 title=None,
                 sources=runs,
                 errdata=reports and _error_report(reports),
+                weights=config
             )
 
     return success
@@ -140,14 +147,14 @@ def cli_run(args=None):
 
     # Initialize the backend here so we can retrieve GPU stats
     init_arch(arch)
-    
+
     success = 0
     for name, conf in multirun():
         run_name = name or args.run_name
-        
+
         # Note that this function overrides the system config
         mp = get_multipack(run_name=run_name)
-        
+
         with apply_system(conf):
             try:
                 success += run(mp, args, run_name)
