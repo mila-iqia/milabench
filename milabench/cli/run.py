@@ -75,7 +75,7 @@ def _fetch_arch(mp):
         return None
 
 
-def run(mp, args, name):
+def run(mp, args, name, common_args):
     layers = validation_names(args.validations)
 
     dash_class = {
@@ -116,9 +116,10 @@ def run(mp, args, name):
             summary = make_summary(reports)
             assert len(summary) != 0, "No summaries"
 
-            margs = multipack_args()
-            margs.config = args.config
-            config = _get_multipack(margs, return_config=True)
+            # This makes the config smaller but we want the full config for the weights
+            common_args.select = ""
+            common_args.exclude = ""
+            config = _get_multipack(args=common_args, return_config=True)
 
             make_report(
                 summary,
@@ -136,13 +137,17 @@ def run(mp, args, name):
 
 
 @tooled
-def cli_run(args=None):
+def cli_run(run_args=None):
     """Run the benchmarks."""
-    if args is None:
-        args = arguments()
+
+    if run_args is None:
+        run_args = arguments()
+
+    common_args = multipack_args()
 
     # Load the configuration and system
-    mp = get_multipack(run_name=args.run_name)
+    mp = get_multipack(args=common_args, run_name=run_args.run_name)
+
     arch = _fetch_arch(mp)
 
     # Initialize the backend here so we can retrieve GPU stats
@@ -150,14 +155,14 @@ def cli_run(args=None):
 
     success = 0
     for name, conf in multirun():
-        run_name = name or args.run_name
+        run_name = name or run_args.run_name
 
         # Note that this function overrides the system config
-        mp = get_multipack(run_name=run_name)
+        mp = get_multipack(args=common_args, run_name=run_name)
 
         with apply_system(conf):
             try:
-                success += run(mp, args, run_name)
+                success += run(mp, run_args, run_name, common_args)
             except AssertionError as err:
                 print(err)
 
