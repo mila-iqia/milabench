@@ -183,7 +183,7 @@ def init_arch(arch=None):
     return select_backend(arch)
 
 
-def is_selected(defn, args):
+def is_selected(defn, select, exclude):
     if defn["name"] == "*":
         return False
     keys = selection_keys(defn)
@@ -191,9 +191,50 @@ def is_selected(defn, args):
         defn["enabled"]
         and not defn["name"].startswith("_")
         and defn.get("definition", None)
-        and (not args.select or (keys & args.select))
-        and (not args.exclude or not (keys & args.exclude))
+        and (not select or (keys & select))
+        and (not exclude or not (keys & exclude))
     )
+
+
+def make_run_name(run_name):
+    if run_name is None:
+        run_name = blabla() + ".{time}"
+
+    now = str(datetime.today()).replace(" ", "_")
+    return run_name.format(time=now)
+
+
+_base_loaded_config = None
+
+def get_base_loaded_config():
+    global _base_loaded_config
+    return _base_loaded_config
+
+def load_config_file(config, base=None, system=None, run_name=None, select=None, exclude=None, overrides=None):
+    global _base_loaded_config
+
+    if overrides is None:
+        overrides = {}
+
+    arch = deduce_arch()
+
+    base_defaults = get_base_defaults(
+        base=base,
+        arch=arch,
+        run_name=make_run_name(run_name)
+    )
+    system_config = build_system_config(
+        system,
+        defaults={"system": base_defaults["_defaults"]["system"]},
+        gpu=True
+    )
+    overrides = merge({"*": system_config}, overrides)
+
+    config = build_config(base_defaults, config, overrides)
+
+    _base_loaded_config = config
+    return {name: defn for name, defn in config.items() if is_selected(defn, select, exclude)}
+
 
 def _get_multipack(
     args: CommonArguments = None,
@@ -233,33 +274,21 @@ def _get_multipack(
             sys.exit(1)
         overrides = merge(overrides, {"*": {"dirs": {"venv": venv}}})
 
-    if run_name is None:
-        run_name = blabla() + ".{time}"
-
-    now = str(datetime.today()).replace(" ", "_")
-    run_name = run_name.format(time=now)
-
-    arch = deduce_arch()
-    base_defaults = get_base_defaults(
-        base=args.base,
-        arch=arch,
-        run_name=run_name
-    )
-    system_config = build_system_config(
+    config = load_config_file(
+        args.config,
+        args.base,
         args.system,
-        defaults={"system": base_defaults["_defaults"]["system"]},
-        gpu=True
+        args.run_name,
+        args.select,
+        args.exclude,
+        overrides
     )
-    overrides = merge({"*": system_config}, overrides)
 
-    config = build_config(base_defaults, args.config, overrides)
-
-    selected_config = {name: defn for name, defn in config.items() if is_selected(defn, args)}
     if return_config:
-        return selected_config
+        return config
     else:
         return MultiPackage(
-            {name: get_pack(defn) for name, defn in selected_config.items()}
+            {name: get_pack(defn) for name, defn in config.items()}
         )
 
 
@@ -313,7 +342,7 @@ def _error_report(reports):
                 out[r] = [line for line in data if "#stdout" in line or "#stderr" in line]
         except:
             pass
-    
+
     return out
 
 
@@ -373,7 +402,7 @@ def _short_make_report(runs, config):
         summary = make_summary(reports)
 
     if config:
-        config = _get_multipack(CommonArguments(config), return_config=True)
+        config = load_config_file(config)
 
     stream = io.StringIO()
 
