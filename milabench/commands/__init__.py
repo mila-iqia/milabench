@@ -318,7 +318,6 @@ class WrapperCommand(SingleCmdCommand):
 
 
 class WorkingDir(WrapperCommand):
-<<<<<<< HEAD
     """Wrap a command to change the working directory or force environment variables.
     
     This wrapper is usefull for commands that executes remotely or inside a container where
@@ -326,19 +325,13 @@ class WorkingDir(WrapperCommand):
     """
     #  Maybe we should wrap ALL the commands with it so it can be invariant for how it is executed 
     #  and we don't have to worry about it
-=======
-    """Wrap a command to change the working directory"""
->>>>>>> b620c493ffac9ff185f4fd36f07da47d3976e7c8
 
     def __init__(self, cmd: Command, **kwargs):
         args = [
             "env",
             "-C", str(cmd.pack.working_directory),
             "-",
-<<<<<<< HEAD
             # We can also force environment variables
-=======
->>>>>>> b620c493ffac9ff185f4fd36f07da47d3976e7c8
             f"XDG_CACHE_HOME={str(cmd.pack.dirs.cache)}",
         ]
         super().__init__(cmd, *args)
@@ -520,22 +513,13 @@ class SSHCommand(WrapperCommand):
         # for k in env.keys():
         #     argv.append(f"-oSendEnv={k}")
 
-<<<<<<< HEAD
         # Those mean nothing inside docker
         # TODO: is the XDG_CACHE_HOME still needed or was it taken care somehwere else?
-=======
-        # FIXME: this should not be necessary
-        # Those mean nothing inside docker
->>>>>>> b620c493ffac9ff185f4fd36f07da47d3976e7c8
         envs = []
         # if not is_inside_docker():
         #     envs = [
         #         "env",
-<<<<<<< HEAD
         #         "-C", str(self.pack.working_directory),
-=======
-        #         "-C", self.pack.working_directory,
->>>>>>> b620c493ffac9ff185f4fd36f07da47d3976e7c8
         #         "-",
         #         f"XDG_CACHE_HOME={str(self.pack.dirs.cache)}",
         #     ]
@@ -661,6 +645,70 @@ def node_address(node):
     return ip or host
 
 
+class ClientServer(ListCommand):
+    # We have to pick which one is pushing metrics
+    # and if one is not pushing anything
+
+    #
+    # TODO: Allow the client and server to be on different nodes
+    #
+
+    @staticmethod
+    def new_pack(pack, tag, has_logs=True):
+        config = pack.config
+        tags = [*pack.config["tag"], tag]
+
+        if not has_logs:
+            tags.append("nolog")
+
+        run = clone_with(config, {"tag": tags})
+        return pack.copy(run)
+
+    @staticmethod
+    def new_client_pack(pack, has_logs=True):
+        return ClientServer.new_pack(pack, 'client', has_logs)
+
+    @staticmethod
+    def new_server_pack(pack, has_logs=True):
+        return ClientServer.new_pack(pack, 'server', has_logs)
+
+    def __init__(self, pack, client, server, different_nodes=False, **kwargs):
+        self.pack = pack
+        self.client = client 
+        self.server = server
+
+        # TODO: Implement me
+        # There is a problem if we are running the client or server on the milabench host
+        # we do not want to run 2 docker container if one of the host is already running one
+        #
+        # if different_nodes:
+        #     config = self.pack.config
+        #     nodes = select_nodes(config["system"]["nodes"], 2)
+            
+        #     cn, sn = nodes
+        #     key = config["system"].get("sshkey")
+        #     config = DockerConfig(**config["system"].get("docker", {}))
+
+        #     self.client = SSHCommand(
+        #         host=node_address(cn),
+        #         user=cn["user"],
+        #         key=key,
+        #         port=cn.get("sshport", 22)
+        #         executor=DockerRunCommand(self.client, config)
+        #     )
+
+        #     self.server = SSHCommand(
+        #         host=node_address(sn),
+        #         user=sn["user"],
+        #         key=key,
+        #         port=sn.get("sshport", 22)
+
+        #         executor=DockerRunCommand(self.server, config)
+        #     )
+
+        super().__init__(self.client, self.server)
+
+
 class ForeachNode(ListCommand):
     def __init__(self, executor: Command, use_docker=True, **kwargs) -> None:
         super().__init__(None, **kwargs)
@@ -744,7 +792,6 @@ class ForeachNode(ListCommand):
         copy = deepcopy(self)
         copy.executor._set_pack(pack)
         return copy
-
 
 class TorchrunAllNodes(ForeachNode):
     """executes torchrun on multiple machines"""
