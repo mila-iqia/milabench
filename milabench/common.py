@@ -206,6 +206,15 @@ def assemble_config(runname, config_filepath, base_path, overrides=None, system_
     return build_config(base_defaults, config_filepath, overrides)
 
 
+def assemble_or_get_config(runname, config_filepath, base_path, overrides=None, system_path=None):
+    from .config import get_config_global
+    
+    if config := get_config_global():
+        return config
+
+    return assemble_config(runname, config_filepath, base_path, overrides, system_path)
+
+
 def is_selected(args):
     def _(defn):
         if defn["name"] == "*":
@@ -344,7 +353,7 @@ def _error_report(reports):
                 out[r] = [line for line in data if "#stdout" in line or "#stderr" in line]
         except:
             pass
-    
+
     return out
 
 
@@ -404,7 +413,7 @@ def _short_make_report(runs, config):
         summary = make_summary(reports)
 
     if config:
-        config = _get_multipack(CommonArguments(config), return_config=True)
+        config = load_config_file(config)
 
     stream = io.StringIO()
 

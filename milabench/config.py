@@ -19,6 +19,10 @@ def set_run_count(total_run, total_bench):
     execution_count = (total_run, total_bench)
 
 
+def get_config_global():
+    return config_global.get()
+
+
 def get_run_count():
     return execution_count[0]
 
@@ -30,6 +34,7 @@ def get_bench_count():
 def get_base_folder():
     config = config_global.get()
     return XPath(config["_defaults"]["dirs"]["base"])
+
 
 def relative_to(pth, cwd):
     pth = XPath(pth).expanduser()

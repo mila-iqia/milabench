@@ -2,6 +2,13 @@
 
 set -ex
 
+# ===
+OUTPUT_DIRECTORY=$(scontrol show job "$SLURM_JOB_ID" --json | jq -r '.jobs[0].standard_output' | xargs dirname)
+mkdir -p $OUTPUT_DIRECTORY/meta
+scontrol show job --json $SLURM_JOB_ID | jq '.jobs[0]' > $OUTPUT_DIRECTORY/meta/info.json
+touch $SLURM_SUBMIT_DIR/.no_report
+# ===
+
 # >>>>>>>>>>>>>>>>>>
 # Instruction Starts
 # >>>>>>>>>>>>>>>>>>
@@ -20,7 +27,7 @@ set -ex
 #
 #   2. Create a Hugging Face Access Token
 #       - https://huggingface.co/settings/tokens/new?tokenType=read
-#       - export MILABENCH_HF_TOKEN={your_token}
+#       - export MILABENCH_HF_TOKEN={$your_token}
 #
 #   3. Now you are ready to run milabench
 #
@@ -34,22 +41,23 @@ milabench_run () {
   # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   #           MODIFY ME
   # ----------------------------------
-  export MILABENCH_HF_TOKEN=$1
-  export MILABENCH_BASE=$2
-  export SSH_KEY_FILE=$3
+  export MILABENCH_MODE=$1
+  export MILABENCH_HF_TOKEN=$2
+  export MILABENCH_BASE=$3
+  export SSH_KEY_FILE=$4
 
   # Node we are running milabench from
-  export FIRST_NODE_IP=$4
-  export SECOND_NODE_IP=$5
-  export USERNAME=$6
-  export MILABENCH_VERSION=$7
+  export FIRST_NODE_IP=$5
+  export SECOND_NODE_IP=dummy
+  export USERNAME=$7
+  export MILABENCH_VERSION=$8
   # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
   export MILABENCH_SYSTEM="$MILABENCH_BASE/runs/system.yaml"
   export MILABENCH_GPU_ARCH=cuda
   export MILABENCH_IMAGE=ghcr.io/mila-iqia/milabench:$MILABENCH_VERSION
-  export MILABENCH_ARGS=$8
+  export MILABENCH_ARGS=$9
 
 #
 #   4. Configure the system to run on your nodes
@@ -58,18 +66,6 @@ milabench_run () {
 mkdir -p $MILABENCH_BASE/runs
 cat > $MILABENCH_SYSTEM << EOF
 system:
-  # Nodes list
-  nodes:
-    - name: main
-      ip: $FIRST_NODE_IP
-      main: true
-      user: $USERNAME
-
-    - name: worker
-      ip: $SECOND_NODE_IP
-      main: false
-      user: $USERNAME
-
   # podman/docker config 
   # This is used to spawn the worker node when needed
   docker:
@@ -89,10 +85,36 @@ system:
     ]
 EOF
 
+  if [[ "$MILABENCH_MODE" == "single" ]]; then
+    NODE_LIST=("$FIRST_NODE_IP")
+    cat >> $MILABENCH_SYSTEM << EOF
+  # Nodes list
+  nodes:
+    - name: main
+      ip: $FIRST_NODE_IP
+      main: true
+      user: $USERNAME
+EOF
+  else
+    NODE_LIST=("$FIRST_NODE_IP" "$SECOND_NODE_IP")
+    cat >> $MILABENCH_SYSTEM << EOF
+  # Nodes list
+  nodes:
+    - name: main
+      ip: $FIRST_NODE_IP
+      main: true
+      user: $USERNAME
+    - name: worker
+      ip: $SECOND_NODE_IP
+      main: false
+      user: $USERNAME
+EOF
+  fi
+
   #
   #   Download the data on both nodes
   #
-  for node in "$FIRST_NODE_IP" "$SECOND_NODE_IP"; do
+  for node in "${NODE_LIST[@]}"; do
       ssh -oCheckHostIP=no -oStrictHostKeyChecking=no "$USERNAME@$node" podman pull $MILABENCH_IMAGE &
 
       ssh -oCheckHostIP=no -oStrictHostKeyChecking=no "$USERNAME@$node" mkdir -p $MILABENCH_BASE/runs
@@ -101,7 +123,7 @@ EOF
   done
   wait
 
-  for node in "$FIRST_NODE_IP" "$SECOND_NODE_IP"; do
+  for node in "${NODE_LIST[@]}"; do
       ssh -oCheckHostIP=no -oStrictHostKeyChecking=no "$USERNAME@$node" podman run --rm --ipc=host --network=host   \
           --device nvidia.com/gpu=all                                   \
           --security-opt=label=disable                                  \
@@ -136,12 +158,22 @@ EOF
 
 
   # Provide this zipped folder
-  zip -r runs.zip $MILABENCH_BASE/runs/
+  PWD=$(pwd)
+  (cd $MILABENCH_BASE && zip -r $PWD/runs.zip runs/)
 }
 
-milabench_run "$@"
+
+export HF_TOKEN=t
+export BASE=/tmp/
+export SSH_KEY=$HOME/.ssh/id_ed25519
+export FIRST_NODE=$HOSTNAME
+export SECOND_NODE_IP=dummy
+export USERNAME=$USER
+export VERSION=cuda-stacc-v1
 
 
+# milabench_run single "$@"
 
+milabench_run single $HF_TOKEN $BASE $SSH_KEY $FIRST_NODE $SECOND_NODE_IP $USERNAME $VERSION
 
-
+rsync -az $BASE/runs $OUTPUT_DIRECTORY

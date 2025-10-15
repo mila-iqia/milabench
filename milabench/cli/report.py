@@ -13,7 +13,6 @@ from ..summary import make_summary
 @dataclass
 class Arguments:
     runs:        list = field(default_factory=list)
-    config      : str = os.environ.get("MILABENCH_CONFIG", None)
     compare     : str = None
     compare_gpus: bool = False
     html        : str = None
@@ -26,9 +25,6 @@ def arguments():
     # Runs directory
     # [action: append]
     runs: Option = []
-
-    # Configuration file (for weights)
-    config: Option & str = os.environ.get("MILABENCH_CONFIG", None)
 
     # Comparison summary
     compare: Option & configuration = None
@@ -77,7 +73,6 @@ def cli_report(args=None):
         from milabench.common import arguments as multipack_args
 
         margs = multipack_args()
-        margs.config = args.config
 
         args.config = _get_multipack(margs, return_config=True)
 

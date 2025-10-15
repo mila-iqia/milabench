@@ -26,6 +26,7 @@ from ..sizer import MemoryUsageExtractor
 from ..summary import make_summary
 from ..system import multirun, apply_system, SizerOptions, option
 from ..web.realtime import HTTPMetricPusher
+from ..config import get_config_global
 
 
 # fmt: off
@@ -202,6 +203,9 @@ def run(mp, args, name):
             summary = make_summary(reports)
             assert len(summary) != 0, "No summaries"
 
+            # This gets config BEFORE filters (select & exclude)
+            weights = get_config_global()
+
             make_report(
                 summary,
                 compare=compare,
@@ -211,6 +215,7 @@ def run(mp, args, name):
                 title=None,
                 sources=runs,
                 errdata=reports and _error_report(reports),
+                weights=weights,
             )
 
     return success
