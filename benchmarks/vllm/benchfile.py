@@ -3,6 +3,23 @@ import milabench.commands as cmd
 from milabench.utils import assemble_options
 
 
+class VLLMParallel(cmd.Command):
+    """This is like a torchrun but it handles the tensor parallel as well"""
+    def __init__(self, base_cmd, dataparallel_gpu, tensorparallel_gpu):
+        # assert dataparallel_gpu * tensorparallel_gpu <= ngpu
+
+        self.local_world = ngpu / tensorparallel_gpu
+        self.world_size = self.local_world * self.num_machine
+        
+    def rank():
+        os.environ["VLLM_DP_RANK"] = str(global_dp_rank)
+        os.environ["VLLM_DP_RANK_LOCAL"] = str(local_dp_rank)
+        os.environ["VLLM_DP_SIZE"] = str(self.world_size)
+
+        os.environ["VLLM_DP_MASTER_IP"] = dp_master_ip
+        os.environ["VLLM_DP_MASTER_PORT"] = str(dp_master_port)
+
+
 class VLLM(Package):
     # Requirements file installed by install(). It can be empty or absent.
     base_requirements = "requirements.in"
@@ -28,47 +45,35 @@ class VLLM(Package):
     async def prepare(self):
         await super().prepare()  # super() call executes prepare_script
 
+    def client_argv(self, prepare=False):
+        args = self.config.get("client", {}).get("argv", [])
+
+        if prepare and isinstance(args, dict):
+            args['--num-prompts'] = 1
+    
+        return assemble_options(args)
+
+    def server_argv(self, prepare=False):
+        return assemble_options(self.config.get("server", {}).get("argv", []))
+    
     @property
-    def client_argv(self):
-        return assemble_options(self.config.get("client", {}).get("argv"))
+    def argv(self):
+        return self.server_argv() + ['--'] + self.client_argv()
 
     @property
-    def server_argv(self):
-        return assemble_options(self.config.get("server", {}).get("argv"))
+    def prepare_argv(self):
+        return self.server_argv(True) + ['--'] + self.client_argv(True)
+
+    def build_prepare_plan(self):
+        # Run the same script but with fast arguments
+        main = self.dirs.code / self.main_script
+        pack = cmd.PackCommand(self, *self.prepare_argv, lazy=True)
+        return cmd.VoirCommand(pack, cwd=main.parent).use_stdout()
 
     def build_run_plan(self):
-        # main = self.dirs.code / self.main_script
-        # pack = cmd.PackCommand(self, *self.argv, lazy=True)
-        # return cmd.VoirCommand(pack, cwd=main.parent)
-        # super().build_run_plan().use_stdout()
+        main = self.dirs.code / self.main_script
+        pack = cmd.PackCommand(self, *self.argv, lazy=True)
+        return cmd.VoirCommand(pack, cwd=main.parent).use_stdout()
 
-
-        # we can send early stop events when we want to stop one
-        # but what about the other ?
-        # What will end the server in particular ?
-        # The client might be able to send a stop server
-        # but that is unlikely
-
-        client_pack = cmd.ClientServer.new_client_pack(self)
-
-        server_pack = cmd.ClientServer.new_server_pack(self)
-
-        client_cmd = cmd.PackCommand(
-            client_pack, self.client_main, *self.client_argv
-        )
-
-        server_cmd = cmd.PackCommand(
-            server_pack, self.server_main, *self.server_argv
-        )
-
-        return cmd.ClientServer(
-            self,
-            client_cmd,
-            server_cmd,
-        )
-
-#
-# 
-#
 
 __pack__ = VLLM

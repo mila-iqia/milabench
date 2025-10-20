@@ -1,0 +1,78 @@
+_inference:
+  inherits: _defaults
+  definition: .
+  install-variant: unpinned
+  install_group: torch
+  tags:
+    - monogpu
+
+
+inference-single:
+  inherits: _inference
+
+  num_machines: 1
+  plan:
+    method: per_gpu
+
+  server:
+    argv:
+      # Server args
+      # mistralai/Mistral-Small-3.1-24B-Instruct-2503: true
+      meta-llama/Meta-Llama-3-8B-Instruct: true
+      --served-model-name: model
+      --dtype: bfloat16
+      --api-server-count: 1
+  
+  client:
+    argv:
+      # Benchmarking args
+      # --model: mistralai/Mistral-Small-3.1-24B-Instruct-2503
+      --model: model
+      --request-rate: inf
+      --dataset-name: random
+      --label: milabench
+      --backend: openai 
+      --num-prompts: 100
+
+inference-gpus:
+  inherits: _inference
+
+  num_machines: 1
+  plan:
+    method: njobs
+    n: 1
+ 
+  server:
+   argv:
+      # Server args
+      # mistralai/Mistral-Small-3.1-24B-Instruct-2503: true
+      meta-llama/Meta-Llama-3-8B-Instruct: true
+      --served-model-name: model
+      --dtype: bfloat16
+      --api-server-count: 1
+      # --port: 8000
+      # --host: 127.0.0.1
+    
+  client:
+    argv:
+      # Benchmarking args
+      --model: meta-llama/Meta-Llama-3-8B-Instruct
+      --served-model-name: model
+      --request-rate: inf
+      --dataset-name: random
+      --label: milabench
+      --backend: openai 
+      --num-prompts: 100
+      # --port: 8000
+      # --host: 127.0.0.1
+    
+inference-nodes:
+  inherits: _inference
+
+  num_machines: 2
+  plan:
+    method: njobs
+    n: 1
+  
+  requires_capabilities:
+    - "len(nodes) >= ${num_machines}"

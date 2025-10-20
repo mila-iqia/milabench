@@ -8,7 +8,7 @@ from pandas import DataFrame
 
 from milabench.utils import error_guard
 from milabench.summary import Summary
-from milabench.common import get_base_loaded_config
+from milabench.config import get_config_global
 
 nan = math.nan
 
@@ -233,9 +233,9 @@ def make_dataframe(summary, compare=None, weights=None, query=None):
                     "n": 0,
                     "successes": 0,
                     "failures": 0,
-                    "enabled": weights[key]["enabled"],
+                    "enabled": weights.get(key, {}).get("enabled", 1),
                     "empty": True,
-                    "weight": weights[key]["weight"]
+                    "weight": weights.get(key, {}).get("weight", 0)
                 }
 
     if weights is None:
@@ -408,7 +408,7 @@ def make_report(
     # We want the score to be consistent with the loaded config
     # that means select/exclude and unsupported bench weight still counts
     if weights is None:
-        weights = get_base_loaded_config()
+        weights = get_config_global()
 
     meta = get_meta(summary)
 
@@ -451,10 +451,6 @@ def make_report(
 
             # if total weight is 0 ?
             weight_total = np.sum(weights)
-
-            # FIXME: we need this because if benchamrks are missing the total weight might be wrong
-            if weight_total_override:
-                weight_total = weight_total_override
 
             # score cannot be 0
             logscore = np.sum(np.log(score + 1) * weights) / weight_total

@@ -1,9 +1,6 @@
-# milabench run --config /home/mila/d/delaunap/scratch/milabench/benchmarks/vllm/dev.yaml --base /tmp/data/ --select vllm-gpus --use-current-env
-
 _vllm:
   inherits: _defaults
-  definition: .
-  install-variant: unpinned
+  definition: ../benchmarks/vllm
   install_group: torch
 
   # Inference Server Args
@@ -11,7 +8,7 @@ _vllm:
    argv:
       --served-model-name: model
       --dtype: bfloat16
-    
+
   # Benchmarking client Args
   client:
     argv:
@@ -21,31 +18,15 @@ _vllm:
       --dataset-name: random
       --label: milabench
       --backend: openai 
-      --num-prompts: 100
-
-vllm-single:
-  inherits: _vllm
-  tags:
-    - monogpu
-  num_machines: 1
-  plan:
-    method: per_gpu
-
-  server:
-   argv:
-      mistralai/Mistral-Small-3.1-24B-Instruct-2503: true
-      --served-model-name: model
-      --dtype: bfloat16
-      --tensor-parallel-size: 1
+      --num-prompts: 1000
 
 
 vllm-dense-physics-gpus:
   inherits: _vllm
-
-  num_machines: 1
   tags:
     - multigpu
 
+  num_machines: 1
   plan:
     method: njobs
     n: 1
@@ -60,8 +41,6 @@ vllm-dense-physics-gpus:
   server:
    argv:
       mistralai/Mistral-Small-3.1-24B-Instruct-2503: true
-      --served-model-name: model
-      --dtype: bfloat16
       --tensor-parallel-size: "{gpu_count}"
       --tokenizer-mode: mistral
       --config_format: mistral
@@ -69,7 +48,7 @@ vllm-dense-physics-gpus:
       --tool-call-parser: mistral
       --enable-auto-tool-choice: true
       --limit-mm-per-prompt: '{"image":10}' 
-
+  
 
 vllm-moe-math-gpus:
   inherits: _vllm
@@ -93,14 +72,6 @@ vllm-moe-math-gpus:
    argv:
       # Out of Memory on L40S
       # meta-llama/Llama-4-Maverick-17B-128E-Instruct: true
-      # meta-llama/Llama-4-Scout-17B-16E-Instruct: true
-      mistralai/Mistral-Small-3.1-24B-Instruct-2503: true
-      --served-model-name: model
+      meta-llama/Llama-4-Scout-17B-16E-Instruct: true
       --dtype: bfloat16
       --tensor-parallel-size: "{gpu_count}"
-      --tokenizer-mode: mistral
-      --config_format: mistral
-      --load_format: mistral 
-      --tool-call-parser: mistral
-      --enable-auto-tool-choice: true
-      --limit-mm-per-prompt: '{"image":10}' 

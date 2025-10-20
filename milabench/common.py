@@ -20,8 +20,6 @@ from .fs import XPath
 from .log import TerminalFormatter
 from .merge import merge
 from .multi import MultiPackage
-from .report import make_report
-from .summary import aggregate, make_summary
 from .system import build_system_config, option
 
 
@@ -344,6 +342,8 @@ def _read_reports(*runs):
 
 
 def _error_report(reports):
+    from .summary import aggregate
+
     out = {}
     for r, data in reports.items():
         try:
@@ -406,6 +406,9 @@ def validation_names(layers):
 
 
 def _short_make_report(runs, config):
+    from .report import make_report
+    from .summary import make_summary
+
     reports = None
 
     if runs:
@@ -413,7 +416,7 @@ def _short_make_report(runs, config):
         summary = make_summary(reports)
 
     if config:
-        config = load_config_file(config)
+        config = get_base_defaults(config)
 
     stream = io.StringIO()
 

@@ -165,5 +165,11 @@ def build_config(*config_files):
     for name, bench_config in all_configs.items():
         all_configs[name] = finalize_config(name, bench_config)
 
-    config_global.set(all_configs)
+    config_global.set(_filter_config(all_configs))
     return all_configs
+
+
+def _filter_config(config, filter= lambda dfn: not (dfn["name"].startswith("_") or dfn["name"] == "*")):
+    return {
+        name: defn for name, defn in config.items() if filter(defn)
+    }
