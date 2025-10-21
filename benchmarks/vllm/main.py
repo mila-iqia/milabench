@@ -167,32 +167,40 @@ def benchmark(argv):
     #       reasoning questions
 
 
+    def open_dataset(dataset_cls, args, tokenizer):
+        hf_kwargs = {}
+        return dataset_cls(
+            dataset_path=args.dataset_path,
+            dataset_subset=args.hf_subset,
+            dataset_split=args.hf_split,
+            random_seed=args.seed,
+            no_stream=args.no_stream,
+            hf_name=args.hf_name,
+            # missing arg ?
+            # disable_shuffle=args.disable_shuffle,
+        ).sample(
+            num_requests=args.num_prompts,
+            tokenizer=tokenizer,
+            output_len=args.hf_output_len,
+            request_id_prefix=args.request_id_prefix,
+            no_oversample=args.no_oversample,
+            # missing arg ?
+            # skip_chat_template=args.skip_chat_template,
+            **hf_kwargs,
+        )
+           
+
     original_get_samples = bench.get_samples
     def get_samples(args, tokenizer):
-        try:
-            return original_get_samples(args, tokenizer)
-        except:
-            hf_kwargs = {}
-            input_requests = GPQADiamond(
-                dataset_path=args.dataset_path,
-                dataset_subset=args.hf_subset,
-                dataset_split=args.hf_split,
-                random_seed=args.seed,
-                no_stream=args.no_stream,
-                hf_name=args.hf_name,
-                # missing arg ?
-                # disable_shuffle=args.disable_shuffle,
-            ).sample(
-                num_requests=args.num_prompts,
-                tokenizer=tokenizer,
-                output_len=args.hf_output_len,
-                request_id_prefix=args.request_id_prefix,
-                no_oversample=args.no_oversample,
-                # missing arg ?
-                # skip_chat_template=args.skip_chat_template,
-                **hf_kwargs,
-            )
-            return input_requests
+        match args.hf_name:
+            case "openslr/librispeech_asr":
+                return open_dataset(datasets.ASRDataset, args, tokenizer)
+            
+            case "hendrydong/gpqa_diamond":
+                return open_dataset(GPQADiamond, args, tokenizer)
+
+            case _:
+                return original_get_samples(args, tokenizer)
 
     bench.get_samples = get_samples
 

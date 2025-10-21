@@ -34,7 +34,6 @@ vllm-single:
   server:
    argv:
       mistralai/Mistral-Small-3.1-24B-Instruct-2503: true
-      --served-model-name: model
       --dtype: bfloat16
       --tensor-parallel-size: 1
 
@@ -55,7 +54,7 @@ vllm-dense-physics-gpus:
       --dataset-name: hf
       --dataset-path: hendrydong/gpqa_diamond
       --hf-name: hendrydong/gpqa_diamond
-      --num-prompts: 198
+      --num-prompts: 1000
 
   server:
    argv:
@@ -71,7 +70,7 @@ vllm-dense-physics-gpus:
       --limit-mm-per-prompt: '{"image":10}' 
 
 
-vllm-moe-math-gpus:
+vllm-moe-code-gpus:
   inherits: _vllm
 
   num_machines: 1
@@ -85,9 +84,9 @@ vllm-moe-math-gpus:
   client:
     argv:
       --dataset-name: hf
-      --dataset-path: HuggingFaceH4/MATH-500
-      --hf-name: HuggingFaceH4/MATH-500
-      --num-prompts: 198
+      --dataset-path: vdaita/edit_10k_char
+      --hf-name: vdaita/edit_10k_char
+      --num-prompts: 500
 
   server:
    argv:
@@ -104,3 +103,35 @@ vllm-moe-math-gpus:
       --tool-call-parser: mistral
       --enable-auto-tool-choice: true
       --limit-mm-per-prompt: '{"image":10}' 
+
+vllm-whisper-gpus:
+  # Does not work, the model seems to never return
+  # the right reply for the bench process to start
+  inherits: _vllm
+
+  num_machines: 1
+  tags:
+    - multigpu
+
+  plan:
+    method: njobs
+    n: 1
+
+  client:
+    argv:
+      --model: openai/whisper-large-v3
+      --dataset-name: hf
+      --dataset-path: openslr/librispeech_asr
+      --hf-name: openslr/librispeech_asr
+      --hf-split: test.clean
+      --num-prompts: 1
+      --backend: openai-audio
+      --endpoint: /v1/audio/transcriptions
+      # --trust-remote-code 
+
+  server:
+   argv:
+      openai/whisper-large-v3: true
+      --served-model-name: model
+      --dtype: bfloat16
+      --tensor-parallel-size: 1
