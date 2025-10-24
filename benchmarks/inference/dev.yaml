@@ -13,10 +13,17 @@ whisper-transcribe-single:
   plan:
     method: per_gpu
 
+  url: 
+    - https://huggingface.co/openai/whisper-large-v3
+    - https://huggingface.co/datasets/openslr/librispeech_asr
+
   argv:
-    --model: 
-    --dataset:
-    --batch-size:
+    --mode: whisper
+    --model: openai/whisper-large-v3
+    --dataset: openslr/librispeech_asr
+    --subset: "clean"
+    --split: "train.100"
+    --batch-size: 32
 
 
 txt-to-image-gpus:
@@ -28,7 +35,26 @@ txt-to-image-gpus:
     method: njobs
     n: 1
 
+  url: https://huggingface.co/black-forest-labs/FLUX.1-dev
   argv:
-    --model: 
-    --dataset:
-    --batch-size:
+    --mode: flux
+    --model: black-forest-labs/FLUX.1-dev
+    --dataset: jackyhate/text-to-image-2M
+    --batch-size: 32
+  
+
+llm-chat-completion:
+  inherits: _inference
+  num_machines: 1
+  tags:
+    - multigpu
+  plan:
+    method: njobs
+    n: 1
+
+  url: https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct
+  argv:
+    --mode: chat
+    --model: meta-llama/Llama-3.1-8B-Instruct
+    --dataset: wikitext/wikitext-103-v1
+    --batch-size: 32
