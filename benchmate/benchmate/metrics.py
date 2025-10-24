@@ -293,10 +293,11 @@ class TimedIterator:
         self.previous_overhead = 0
 
         for data in iterator:
-            yield data
-
             # Simple one iteration = one backward
+            # ... huggingface ... is changing the batch sometimes...
             bs = self.deduce_batch_size(data)
+
+            yield data
 
             if should_break := self.step(bs):
                 break

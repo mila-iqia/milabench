@@ -19,6 +19,10 @@ def set_run_count(total_run, total_bench):
     execution_count = (total_run, total_bench)
 
 
+def get_config_global():
+    return config_global.get()
+
+
 def get_run_count():
     return execution_count[0]
 
@@ -30,6 +34,7 @@ def get_bench_count():
 def get_base_folder():
     config = config_global.get()
     return XPath(config["_defaults"]["dirs"]["base"])
+
 
 def relative_to(pth, cwd):
     pth = XPath(pth).expanduser()
@@ -160,5 +165,11 @@ def build_config(*config_files):
     for name, bench_config in all_configs.items():
         all_configs[name] = finalize_config(name, bench_config)
 
-    config_global.set(all_configs)
+    config_global.set(_filter_config(all_configs))
     return all_configs
+
+
+def _filter_config(config, filter= lambda dfn: not (dfn["name"].startswith("_") or dfn["name"] == "*")):
+    return {
+        name: defn for name, defn in config.items() if filter(defn)
+    }

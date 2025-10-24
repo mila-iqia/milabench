@@ -20,8 +20,6 @@ from .fs import XPath
 from .log import TerminalFormatter
 from .merge import merge
 from .multi import MultiPackage
-from .report import make_report
-from .summary import aggregate, make_summary
 from .system import build_system_config, option
 
 
@@ -183,57 +181,57 @@ def init_arch(arch=None):
     return select_backend(arch)
 
 
-def is_selected(defn, select, exclude):
-    if defn["name"] == "*":
-        return False
-    keys = selection_keys(defn)
-    return (
-        defn["enabled"]
-        and not defn["name"].startswith("_")
-        and defn.get("definition", None)
-        and (not select or (keys & select))
-        and (not exclude or not (keys & exclude))
-    )
-
-
-def make_run_name(run_name):
-    if run_name is None:
-        run_name = blabla() + ".{time}"
-
-    now = str(datetime.today()).replace(" ", "_")
-    return run_name.format(time=now)
-
-
-_base_loaded_config = None
-
-def get_base_loaded_config():
-    global _base_loaded_config
-    return _base_loaded_config
-
-def load_config_file(config, base=None, system=None, run_name=None, select=None, exclude=None, overrides=None):
-    global _base_loaded_config
-
+def assemble_config(runname, config_filepath, base_path, overrides=None, system_path=None):
     if overrides is None:
         overrides = {}
 
     arch = deduce_arch()
 
     base_defaults = get_base_defaults(
-        base=base,
+        base=base_path,
         arch=arch,
-        run_name=make_run_name(run_name)
+        run_name=runname
     )
+
     system_config = build_system_config(
-        system,
+        system_path,
         defaults={"system": base_defaults["_defaults"]["system"]},
         gpu=True
     )
+
     overrides = merge({"*": system_config}, overrides)
 
-    config = build_config(base_defaults, config, overrides)
+    return build_config(base_defaults, config_filepath, overrides)
 
-    _base_loaded_config = config
-    return {name: defn for name, defn in config.items() if is_selected(defn, select, exclude)}
+
+def assemble_or_get_config(runname, config_filepath, base_path, overrides=None, system_path=None):
+    from .config import get_config_global
+    
+    if config := get_config_global():
+        return config
+
+    return assemble_config(runname, config_filepath, base_path, overrides, system_path)
+
+
+def is_selected(args):
+    def _(defn):
+        if defn["name"] == "*":
+            return False
+        keys = selection_keys(defn)
+        return (
+            defn["enabled"]
+            and not defn["name"].startswith("_")
+            and defn.get("definition", None)
+            and (not args.select or (keys & args.select))
+            and (not args.exclude or not (keys & args.exclude))
+        )
+    return _
+
+
+def filter_config(config, filter):
+    return {
+        name: defn for name, defn in config.items() if filter(defn)
+    }
 
 
 def _get_multipack(
@@ -274,22 +272,33 @@ def _get_multipack(
             sys.exit(1)
         overrides = merge(overrides, {"*": {"dirs": {"venv": venv}}})
 
-    config = load_config_file(
-        args.config,
-        args.base,
-        args.system,
-        args.run_name,
-        args.select,
-        args.exclude,
-        overrides
+    run_name = resolve_run_name(run_name)
+
+    config = assemble_config(
+        run_name, 
+        args.config, 
+        args.base, 
+        overrides=overrides, 
+        system_path=args.system
     )
 
+    selected_config = filter_config(config, is_selected(args))
+
     if return_config:
-        return config
+        return selected_config
     else:
         return MultiPackage(
-            {name: get_pack(defn) for name, defn in config.items()}
+            {name: get_pack(defn) for name, defn in selected_config.items()}
         )
+
+
+def resolve_run_name(run_name):
+    if run_name is None:
+        run_name = blabla() + ".{time}"
+
+    now = datetime.today().strftime("%Y-%m-%d_%H-%M-%S")
+    run_name = run_name.format(time=now)
+    return run_name
 
 
 def _parse_report(pth, open=lambda x: x.open()):
@@ -333,6 +342,8 @@ def _read_reports(*runs):
 
 
 def _error_report(reports):
+    from .summary import aggregate
+
     out = {}
     for r, data in reports.items():
         try:
@@ -395,6 +406,9 @@ def validation_names(layers):
 
 
 def _short_make_report(runs, config):
+    from .report import make_report
+    from .summary import make_summary
+
     reports = None
 
     if runs:
@@ -402,7 +416,7 @@ def _short_make_report(runs, config):
         summary = make_summary(reports)
 
     if config:
-        config = load_config_file(config)
+        config = get_base_defaults(config)
 
     stream = io.StringIO()
 

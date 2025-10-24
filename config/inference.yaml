@@ -1,0 +1,77 @@
+_vllm:
+  inherits: _defaults
+  definition: ../benchmarks/vllm
+  install_group: torch
+
+  # Inference Server Args
+  server:
+   argv:
+      --served-model-name: model
+      --dtype: bfloat16
+
+  # Benchmarking client Args
+  client:
+    argv:
+      --model: meta-llama/Meta-Llama-3-8B-Instruct
+      --served-model-name: model
+      --request-rate: inf
+      --dataset-name: random
+      --label: milabench
+      --backend: openai 
+      --num-prompts: 198
+
+
+vllm-dense-physics-gpus:
+  inherits: _vllm
+  tags:
+    - multigpu
+
+  num_machines: 1
+  plan:
+    method: njobs
+    n: 1
+
+  client:
+    argv:
+      --dataset-name: hf
+      --dataset-path: hendrydong/gpqa_diamond
+      --hf-name: hendrydong/gpqa_diamond
+      --num-prompts: 500
+
+  server:
+   argv:
+      mistralai/Mistral-Small-3.1-24B-Instruct-2503: true
+      --tensor-parallel-size: "{gpu_count}"
+      --tokenizer-mode: mistral
+      --config_format: mistral
+      --load_format: mistral 
+      --tool-call-parser: mistral
+      --enable-auto-tool-choice: true
+      --limit-mm-per-prompt: '{"image":10}' 
+  
+
+vllm-moe-math-gpus:
+  inherits: _vllm
+
+  num_machines: 1
+  tags:
+    - multigpu
+
+  plan:
+    method: njobs
+    n: 1
+
+  client:
+    argv:
+      --dataset-name: hf
+      --dataset-path: HuggingFaceH4/MATH-500
+      --hf-name: HuggingFaceH4/MATH-500
+      --num-prompts: 198
+
+  server:
+   argv:
+      # Out of Memory on L40S
+      # meta-llama/Llama-4-Maverick-17B-128E-Instruct: true
+      meta-llama/Llama-4-Scout-17B-16E-Instruct: true
+      --dtype: bfloat16
+      --tensor-parallel-size: "{gpu_count}"
