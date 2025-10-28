@@ -300,6 +300,7 @@ class TimedIterator:
             yield data
 
             if should_break := self.step(bs):
+                self.break_count += 1
                 break
 
         self._push()
@@ -319,7 +320,6 @@ class TimedIterator:
 
             # check for early stopping to avoid doing the full epoch
             if self.is_done() and self.break_count == 0:
-                self.break_count += 1
                 should_break = True
 
             self.start = end
@@ -467,10 +467,14 @@ class ManualTimedIterator(TimedIterator):
         self.accumulation_steps = 0
         self.epochs = 0
 
-    def step(self):
-        self.should_stop = super().step(self.acc_batch_size)
+    def step(self, batch_override=None):
+        if batch_override is None:
+            batch_override = self.acc_batch_size
+
+        self.should_stop = super().step(batch_override)
         self.acc_batch_size = 0
         self.accumulation_steps = 0
+        return self.should_stop
        
     def wrapped(self, iterator):
         # Time IO wait + batch compute

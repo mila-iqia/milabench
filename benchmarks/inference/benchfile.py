@@ -32,7 +32,16 @@ class Inference(Package):
         main = self.dirs.code / self.main_script
         pack = cmd.PackCommand(self, *self.argv, lazy=True)
         return cmd.VoirCommand(pack, cwd=main.parent).use_stdout()
-        # return super().build_run_plan().use_stdout()
+
+    @property
+    def prepare_argv(self):
+        return ["--prepare"] + self.argv
+
+    def build_prepare_plan(self):
+        # Run the same script but with fast arguments
+        main = self.dirs.code / self.main_script
+        pack = cmd.PackCommand(self, *self.prepare_argv, lazy=True)
+        return cmd.VoirCommand(pack, cwd=main.parent).use_stdout()
 
 
 __pack__ = Inference
