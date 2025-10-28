@@ -8,6 +8,8 @@ import torchcompat.core as accelerator
 from torch.utils.data import DataLoader
 
 
+
+
 whisper_defaults_generation_args = {
     # "max_new_tokens": 448,
     "num_beams": 1,
@@ -34,134 +36,91 @@ chat_default_generation_args = {
 }
 
 
-def load_model(args, device):
-    match args.mode:
-        case "whisper":
-            from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
+class InferenceBenchmark:
+    def get_batch_size(self, item):
+        return len(item)
 
-            model = AutoModelForSpeechSeq2Seq.from_pretrained(
-                args.model, 
-                dtype=args.dtype, 
-                low_cpu_mem_usage=True,
-                use_safetensors=True
-            )
+    def prepare_voir(self, args):
+        from benchmate.observer import BenchObserver
+        from benchmate.monitor import bench_monitor
+        
+        observer = BenchObserver(
+            accelerator.Event, 
+            earlystop=65,
+            batch_size_fn=self.get_batch_size,
+            raise_stop_program=False,
+            stdout=True,
+        )
 
-            model.to(device)
+        return observer, bench_monitor
 
-            processor = AutoProcessor.from_pretrained(args.model)
+    def load_model(self, args, device):
+        pass
 
-            pipe = pipeline(
-                "automatic-speech-recognition",
-                model=model,
-                tokenizer=processor.tokenizer,
-                feature_extractor=processor.feature_extractor,
-                dtype=args.dtype,
-                device=device,
-            )
+    def transform(self, item):
+        return item
 
-            kwargs = dict(args.kwargs) or whisper_defaults_generation_args
-            return pipe, kwargs
+    def collate(self, group):
+        batch = []
+        for item in group:
+            batch.append(self.transform(item))
+        return batch
 
-        case "chat":
-            pipeline = transformers.pipeline(
-                "text-generation",
-                model=args.model,
-                model_kwargs={"dtype": torch.bfloat16},
-                device_map="auto",
-            )
+    def load_dataset(self, args):
+        # dataset = load_dataset("distil-whisper/librispeech_long", "clean", split="validation")
+        dataset = load_dataset(
+            args.dataset,
+            name=args.subset,  # Subset
+            split=args.split,  # Split
+        )
 
-            kwargs = dict(args.kwargs) or chat_default_generation_args
-            return pipe, kwargs
+        return self.dataloader(dataset, args)
 
-        case "flux":
-            from diffusers import FluxPipeline
+    def dataloader(self, dataset, args):
+        return DataLoader(
+            dataset,
+            batch_size=args.batch_size,
+            num_workers=1,
+            pin_memory=True,
+            prefetch_factor=2,
+            collate_fn=self.collate
+        )
 
-            pipe = FluxPipeline.from_pretrained(
-                args.model, 
-                dtype=args.dtype,
-                device=device,
-            )
-
-            # save some VRAM by offloading the model to CPU. Remove this if you have enough GPU power
-            # pipe.enable_model_cpu_offload()
-
-            kwargs = dict(args.kwargs) or flux_default_generation_args
-            return pipe, kwargs
-
+    def run(self, pipe, batch, kwargs):
+        return pipe(batch, **kwargs, batch_size=len(batch))
 
 
-class TransformedDataset:
-    def __init__(self, dataset, transform):
-        self.dataset = dataset
-        self.transform = transform
+class WhisperBenchmark(InferenceBenchmark):
+    def load_model(self, args, device):
+        from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 
-    def __len__(self):
-        return len(self.dataset)
-    
-    def __getitem(self, x):
-        return self.transform(self.dataset[x])
+        model = AutoModelForSpeechSeq2Seq.from_pretrained(
+            args.model, 
+            dtype=args.dtype, 
+            low_cpu_mem_usage=True,
+            use_safetensors=True
+        )
 
+        model.to(device)
 
-def transform_audio(item):
-    audio = item["audio"]
-    data = audio.get_all_samples()
-    array = data.data.mean(dim=0)
+        processor = AutoProcessor.from_pretrained(args.model)
 
-    return {
-        "array": array,
-        "sampling_rate": data.sample_rate
-    }
+        pipe = pipeline(
+            "automatic-speech-recognition",
+            model=model,
+            tokenizer=processor.tokenizer,
+            feature_extractor=processor.feature_extractor,
+            dtype=args.dtype,
+            device=device,
+        )
 
+        kwargs = dict(args.kwargs) or whisper_defaults_generation_args
+        return pipe, kwargs
 
-
-def image_dataset(args):
-    base_url = "https://huggingface.co/datasets/jackyhate/text-to-image-2M/resolve/main/data_512_2M/data_{i:06d}.tar"
-    num_shards = 10  # Number of webdataset tar files
-    urls = [base_url.format(i=i) for i in range(num_shards)]
-    return load_dataset("webdataset", data_files={"train": urls}, split="train", streaming=False)
-
-
-def setup_dataset(args):
-    # dataset = load_dataset("distil-whisper/librispeech_long", "clean", split="validation")
-    dataset = load_dataset(
-        args.dataset,
-        name=args.subset,       # Subset
-        split=args.split,  # Split
-    )
-
-    match args.mode:
-        case "whisper":
-            def collate(group):
-                batch = []
-                for item in group:
-                    batch.append(transform_audio(item))
-                return batch
-
-        case "flux":
-            pass
-
-        case "chat":
-            pass
-
-    return DataLoader(
-        dataset,
-        batch_size=args.batch_size,
-        num_workers=1,
-        pin_memory=True,
-        prefetch_factor=2,
-        collate_fn=collate
-    )
-
-
-def prepare_voir(args):
-    from benchmate.observer import BenchObserver
-    from benchmate.monitor import bench_monitor
-
-    def get_batch_size(x):
+    def get_batch_size(self, x):
         # Audio is Samples/sec
         # Image is Img/Sec
         # Chat is Token/Sec
-        
         samples = 0
         for item in x:
             # 16000 is usually the sampling rate
@@ -173,15 +132,84 @@ def prepare_voir(args):
         
         return samples
 
-    observer = BenchObserver(
-        accelerator.Event, 
-        earlystop=65,
-        batch_size_fn=get_batch_size,
-        raise_stop_program=False,
-        stdout=True,
-    )
+    def transform(self, item):
+        audio = item["audio"]
+        data = audio.get_all_samples()
+        array = data.data.mean(dim=0)
+        return {
+            "array": array,
+            "sampling_rate": data.sample_rate
+        }
 
-    return observer, bench_monitor
+
+class FluxBenchmark(InferenceBenchmark):
+    def load_model(self, args, device):
+        from diffusers import FluxPipeline
+
+        # FluxFillPipeline
+        # FluxControlPipeline
+        
+
+        pipe = FluxPipeline.from_pretrained(
+            args.model, 
+            torch_dtype=torch.bfloat16,
+            # Unexpected by FLux
+            # dtype=args.dtype,
+            # device=device,
+        ).to("cuda")
+
+        # save some VRAM by offloading the model to CPU. Remove this if you have enough GPU power
+        # pipe.enable_model_cpu_offload()
+
+        kwargs = dict(args.kwargs) or flux_default_generation_args
+        return pipe, kwargs
+
+    def load_dataset(self, args):
+        base_url = "https://huggingface.co/datasets/jackyhate/text-to-image-2M/resolve/main/data_512_2M/data_{i:06d}.tar"
+        num_shards = 10  # Number of webdataset tar files
+        urls = [base_url.format(i=i) for i in range(num_shards)]
+        dataset = load_dataset(
+            "webdataset", 
+            data_files={"train": urls}, 
+            split="train", 
+            streaming=False
+        )
+
+        return self.dataloader(dataset, args)
+
+    def transform(self, item):
+        print(item)
+        return item["json"]["prompt"]
+
+    def run(self, pipe, batch, kwargs):
+        return pipe(batch, **kwargs)
+
+
+class ChatBenchmark(InferenceBenchmark):
+    def load_model(self, args, device):
+        pipeline = transformers.pipeline(
+            "text-generation",
+            model=args.model,
+            model_kwargs={"dtype": torch.bfloat16},
+            device_map="auto",
+        )
+
+        kwargs = dict(args.kwargs) or chat_default_generation_args
+        return pipe, kwargs
+
+
+def load_benchmark(argv):
+    match argv.mode:
+        case "whisper":
+            return WhisperBenchmark()
+
+        case "flux":
+            return FluxBenchmark()
+    
+        case "chat":
+            return ChatBenchmark()
+    
+    raise RuntimeError(f"Benchmark {argv.mode} does not exist")
 
 
 def parse_kv(s):
@@ -201,31 +229,30 @@ class Arguments:
     dtype: str = "bfloat16"
 
 
-def main(argv):
-    global _log 
-
+def main(argv=None):
     parser = ArgumentParser()
     parser.add_arguments(Arguments)
-    args, _ = parser.parse_known_args()
+    args, _ = parser.parse_known_args(argv)
 
-    observer, monitor = prepare_voir(args)
+    bench = load_benchmark(args) 
+    observer, monitor = bench.prepare_voir(args)
     device = accelerator.fetch_device(0)
-
+    
     with monitor():
         with torch.no_grad():
-            pipe, kwargs = load_model(args, device)
+            dataset = observer.loader(bench.load_dataset(args))
+
+            pipe, kwargs = bench.load_model(args, device)
 
             # We cannot wrap the dataset with out timed loader anymore
             # dataset = setup_dataset(args)
             # output = pipe(dataset, **kwargs, batch_size=args.batch_size)
-
-            dataset = observer.loader(setup_dataset(args))
             for batch in dataset:
-                output = pipe(batch, **kwargs, batch_size=len(batch))
+                output = bench.run(pipe, batch, kwargs)
 
 
 if __name__ == "__main__":
     # milabench run --config /home/mila/d/delaunap/scratch/milabench/benchmarks/inference/dev.yaml --base /tmp/data/ --use-current-env --select whisper-transcribe-single
-    import sys
+    # milabench run --config /home/mila/d/delaunap/scratch/milabench/benchmarks/inference/dev.yaml --base /tmp/data/ --use-current-env --select txt-to-image-gpus
 
-    main(sys.argv)
+    main()
