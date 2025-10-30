@@ -11,11 +11,7 @@ multi-node-full:
 - --mem=0
 - --export=ALL,MILABENCH_SIZER_AUTO=0
 multi-node-full-H100:
-<<<<<<< HEAD:config/clusters/slurm.yaml
-- --job-name=h100_mn_run
-=======
-- --job-name=multi_nodes_run
->>>>>>> b620c493ffac9ff185f4fd36f07da47d3976e7c8:config/slurm.yaml
+- --job-name=2x8xH100_run
 - --partition=staff-idt
 - --nodes=2
 - --ntasks=2
@@ -27,7 +23,7 @@ multi-node-full-H100:
 - --export=ALL,MILABENCH_SIZER_AUTO=0
 - -w cn-n[001-002]
 single-node-full-H100:
-- --job-name=run
+- --job-name=1x8xH100_run
 - --partition=staff-idt
 - --nodes=1
 - --ntasks=1
@@ -40,7 +36,7 @@ single-node-full-H100:
 - --export=ALL
 - -w cn-n[001-002]
 single-node-full-A100l:
-- --job-name=A100_run
+- --job-name=1x8xA100_run
 - --partition=milabench
 - --nodes=1
 - --ntasks=1
@@ -52,7 +48,7 @@ single-node-full-A100l:
 - --export=ALL
 - -w cn-d[003-004]
 single-node-full-L40S:
-- --job-name=run_l40s
+- --job-name=1x4xL40s_run
 - --partition=staff-idt
 - --nodes=1
 - --ntasks=1
@@ -87,7 +83,7 @@ multi-node-small:
 - --mem=128G
 - --export=ALL,MILABENCH_SIZER_AUTO=1,MILABENCH_SIZER_MULTIPLE=8
 multi-node-rtx:
-- --job-name=rtx_run
+- --job-name=1x8xRTX8000_run
 - --nodes=2
 - --ntasks=2
 - --cpus-per-task=64
@@ -184,28 +180,19 @@ tar_prepare:
 - --ntasks-per-node=1
 - --export=ALL
 multi-node-full-A100l:
-<<<<<<< HEAD:config/clusters/slurm.yaml
-- --job-name=A100_mn_run
-=======
-- --job-name=multi_node_run
->>>>>>> b620c493ffac9ff185f4fd36f07da47d3976e7c8:config/slurm.yaml
+- --job-name=2x8xA100_run
 - --partition=milabench
 - --nodes=2
 - --ntasks=2
 - --cpus-per-task=128
 - --mem=0
-<<<<<<< HEAD:config/clusters/slurm.yaml
 - --time=6:00:00
-=======
-- --time=4:00:00
->>>>>>> b620c493ffac9ff185f4fd36f07da47d3976e7c8:config/slurm.yaml
 - --gpus-per-task=8
 - --ntasks-per-node=1
 - --export=ALL
 - -w cn-d[003-004]
-<<<<<<< HEAD:config/clusters/slurm.yaml
 multi-node-full-L40S:
-- --job-name=run_l40s
+- --job-name=1x4xL40s_run
 - --nodes=2
 - --ntasks=2
 - --cpus-per-task=48
@@ -224,5 +211,3 @@ multi-node-cpu:
 - --time=2:00:00
 - --ntasks-per-node=1
 - --export=ALL
-=======
->>>>>>> b620c493ffac9ff185f4fd36f07da47d3976e7c8:config/slurm.yaml
