@@ -146,6 +146,8 @@ def view_server(config):
         except SchedulerNotRunningError:
             pass
 
+    print(DATABASE_URI)
+
 
     @contextmanager
     def sqlexec():
@@ -879,6 +881,10 @@ def view_server(config):
         profile = request.cookies.get('scoreProfile')
         args = request.args
 
+        if profile is None:
+            print("PROFILE is none")
+            profile = 'default'
+
         i = 0
         def counter():
             nonlocal i
@@ -909,6 +915,7 @@ def view_server(config):
             return jsonify({})
 
         with sqlexec() as sess:
+            print(rows, cols, values, filters, profile)
             query = pivot_query(sess, rows, cols, values, filters, profile)
             cursor = sess.execute(query)
             results = cursor_to_json(cursor)

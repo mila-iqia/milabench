@@ -37,14 +37,25 @@ conda activate $MILABENCH_ENV
 
 mkdir -p $MILABENCH_WORDIR
 cd $MILABENCH_WORDIR
-git clone https://github.com/mila-iqia/milabench.git -b $MILABENCH_BRANCH
-pip install -e $MILABENCH_SOURCE[$MILABENCH_GPU_ARCH]
 
 #
 # SLURM BOILERPLATE ENDS
 #
 
-pip install -e $MILABENCH_SOURCE
+
+
+
+
+
+
+
+
+
+
+
+
+git clone https://github.com/mila-iqia/milabench.git -b $MILABENCH_BRANCH
+pip install -e $MILABENCH_SOURCE[$MILABENCH_GPU_ARCH]
 
 milabench container                                         \
         --base $MILABENCH_WORDIR                            \
@@ -55,6 +66,18 @@ milabench container                                         \
         --args "$MILABENCH_ARGS"
 
 rsync -az $MILABENCH_WORDIR/runs $OUTPUT_DIRECTORY
+
+
+
+
+
+
+
+
+
+
+
+
 
 # ===
 scontrol show job --json $SLURM_JOB_ID | jq '.jobs[0]' > $OUTPUT_DIRECTORY/meta/info.json
