@@ -40,7 +40,7 @@ def arguments():
     # Name of the benchmark
     name: Option & str
 
-    # Number of times to repeat the benchmark
+    # Name of the template to use (simple, voir, stdout)
     template: Option & str = "simple"
 
     # Repo URL to clone

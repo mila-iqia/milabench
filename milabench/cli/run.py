@@ -4,6 +4,7 @@ from urllib.parse import urlparse
 
 from coleo import Option, tooled
 
+from milabench.loggers.http import HTTPMetricPusher
 from milabench.utils import validation_layers
 
 from ..common import (
@@ -25,7 +26,6 @@ from ..report import make_report
 from ..sizer import MemoryUsageExtractor
 from ..summary import make_summary
 from ..system import multirun, apply_system, SizerOptions, option
-from ..web.realtime import HTTPMetricPusher
 from ..config import get_config_global
 
 

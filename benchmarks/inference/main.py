@@ -281,6 +281,7 @@ class ChatBenchmark(InferenceBenchmark):
 
     def load_model(self, args, device):
         import transformers
+ 
 
         # TextGenerationPipeline
         pipe = transformers.pipeline(
@@ -291,6 +292,28 @@ class ChatBenchmark(InferenceBenchmark):
         )
 
         pipe.tokenizer = TokenizerWrapper(pipe.tokenizer)
+
+        def async_generation(inputs, **kwargs):
+            from transformers.generation.streamers import TextIteratorStreamer
+            from threading import Thread
+            import time
+
+            streamer = TextIteratorStreamer(pipe.tokenizer)
+            model = pipe.model
+
+            generation_kwargs = {
+                **inputs, 
+                "streamer": streamer, 
+                **kwargs,
+                # max_new_tokens=20
+            }
+
+            thread = Thread(target=model.generate, kwargs=generation_kwargs)
+            thread.start()
+
+            start = time.time()
+            for txt in streamer:
+                yield start, time.time(), txt
 
         kwargs = dict(args.kwargs) or chat_default_generation_args
         return pipe, kwargs

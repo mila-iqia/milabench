@@ -1,7 +1,8 @@
 #!/bin/bash
 
 
-export MILABENCH_BRANCH=uv_compile_py3.12
+export MILABENCH_BRANCH=realtime_tracking
+export CONFIG=inference.yaml
 
 
 set -ex
@@ -33,9 +34,9 @@ if [ -z "${MILABENCH_PREPARE}" ]; then
 fi
 
 if [ -z "${MILABENCH_SOURCE}" ]; then
-    export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/standard.yaml"
+    export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/$CONFIG"
 else
-    export MILABENCH_CONFIG="$MILABENCH_SOURCE/config/standard.yaml"
+    export MILABENCH_CONFIG="$MILABENCH_SOURCE/config/$CONFIG"
 fi
 
 ARGS="$@"
@@ -78,16 +79,16 @@ install_prepare() {
 
     which pip
 
-    (
-        . $BENCHMARK_VENV/bin/activate
-        which pip
-        pip install torch torchvision torchaudio
+    # (
+    #     . $BENCHMARK_VENV/bin/activate
+    #     which pip
+    #     pip install torch torchvision torchaudio
 
-        # DALI stuff
-        pip install --extra-index-url https://pypi.nvidia.com --upgrade nvidia-dali-cuda120
-        pip install nvidia-pyindex
-        pip install nvidia-nvjpeg-cu12
-    )
+    #     # DALI stuff
+    #     pip install --extra-index-url https://pypi.nvidia.com --upgrade nvidia-dali-cuda120
+    #     pip install nvidia-pyindex
+    #     pip install nvidia-nvjpeg-cu12
+    # )
 
     #
     #   Generate/download datasets, download models etc...

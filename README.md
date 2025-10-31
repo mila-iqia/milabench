@@ -1,5 +1,4 @@
-
-# Milabench
+![Milabench](https://raw.githubusercontent.com/milabench/dashboard/refs/heads/main/dashboard/ui/public/name.svg)
 
 * [Stable Documentation](https://milabench.readthedocs.io/en/stable/)
 * [Nightly Documentation](https://mila-iqia.github.io/milabench/)
