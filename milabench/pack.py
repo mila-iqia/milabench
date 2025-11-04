@@ -378,13 +378,14 @@ class Package(BasePackage):
         from .sizer import resolve_placeholder
 
         env = {
-            f"MILABENCH_DIR_{name.upper()}": path
-            for name, path in self.config["dirs"].items()
+            f"MILABENCH_DIR_{name.upper()}": path 
+                for name, path in self.config["dirs"].items()
         }
 
         env["OMP_NUM_THREADS"] = resolve_placeholder(self, "{cpu_per_gpu}")
 
         env["MILABENCH_CONFIG"] = json.dumps(self.config)
+        
         if self.phase == "prepare" or self.phase == "run":
             # XDG_CACHE_HOME controls basically all caches (pip, torch, huggingface,
             # etc.). HOWEVER, we do not want pip's cache to be in self.dirs.cache,
@@ -395,6 +396,8 @@ class Package(BasePackage):
             # building an image, but it is overall nicer for development to use
             # the default cache).
             env["XDG_CACHE_HOME"] = str(self.dirs.cache)
+            env["TORCH_HOME"] = str(self.dirs.cache)
+            env["HF_HOME"] = str(self.dirs.data)
 
         return env
 

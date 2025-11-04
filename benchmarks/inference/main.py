@@ -26,7 +26,7 @@ flux_default_generation_args = {
     "guidance_scale": 3.5,
     "num_inference_steps": 50,
     "max_sequence_length": 512,
-    "generator": torch.Generator("cuda").manual_seed(0)
+    "generator": torch.Generator(accelerator.device_type).manual_seed(0)
 }
 
 chat_default_generation_args = {
@@ -403,7 +403,7 @@ def main(argv=None):
 if __name__ == "__main__":
     # milabench run --config /home/mila/d/delaunap/scratch/milabench/benchmarks/inference/dev.yaml --base /tmp/data/ --use-current-env --select whisper-transcribe-single
     # milabench run --config /home/mila/d/delaunap/scratch/milabench/benchmarks/inference/dev.yaml --base /tmp/data/ --use-current-env --select txt-to-image-gpus
-    # milabench run --config /home/mila/d/delaunap/scratch/milabench/benchmarks/inference/dev.yaml --base /tmp/data/ --use-current-env --select llm-chat-completion
+    # milabench run --config dev.yaml --base /tmp/data/ --use-current-env --select llm-chat-completion
 
 
     main()
