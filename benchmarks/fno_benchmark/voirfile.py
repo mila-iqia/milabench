@@ -41,12 +41,14 @@ def instrument_main(ov, options: Config):
 
     rfstr = ptera.refstring(getDataLoaders)
 
+    def get_batch(x):
+        return x[0].shape[0]
     #
     # Insert milabench tools
     #
     observer = BenchObserver(
         earlystop=options.stop + options.skip,
-        batch_size_fn=lambda x: x.shape[0]
+        batch_size_fn=get_batch
     )
 
     probe = ov.probe(f"{rfstr}() as loader", overridable=True)
