@@ -9,7 +9,6 @@ from .merge import merge
 
 
 config_global = contextvars.ContextVar("config", default=None)
-raw_config_global = contextvars.ContextVar("raw_config", default=None)
 execution_count = (0, 0)
 
 _MONITOR_TAGS = {"monogpu", "multigpu", "multinode"}
@@ -21,7 +20,7 @@ def set_run_count(total_run, total_bench):
 
 
 def get_config_global():
-    return config_global.get()
+    return _filter_config(config_global.get())
 
 
 def get_run_count():
@@ -33,7 +32,7 @@ def get_bench_count():
 
 
 def get_base_folder():
-    config = raw_config_global.get()
+    config = config_global.get()
     return XPath(config["_defaults"]["dirs"]["base"])
 
 
@@ -167,12 +166,8 @@ def build_config(*config_files):
         all_configs[name] = finalize_config(name, bench_config)
 
     raw_config = all_configs
-    all_configs = _filter_config(all_configs)
-    
-    raw_config_global.set(raw_config)
-    config_global.set(all_configs)
-
-    return all_configs
+    config_global.set(raw_config)
+    return _filter_config(all_configs)
 
 
 def _filter_config(config, filter= lambda dfn: not (dfn["name"].startswith("_") or dfn["name"] == "*")):

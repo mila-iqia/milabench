@@ -19,6 +19,8 @@ from .metrics import sumggle_push, give_push, file_push
 
 
 def log_patterns():
+    return "*"
+
     debug_metrics = ("__iter__", "overhead", "process_time")
 
     base_metrics = (

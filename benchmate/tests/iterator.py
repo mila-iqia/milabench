@@ -1,0 +1,161 @@
+import time
+from cantilever.core.timer import timeit, show_timings
+
+LOADER_TO_ITER = 2
+ITER_TO_ITER = 2
+NEXT = 1
+WORK = 1
+
+
+class FakeIterator:
+    def __init__(self):
+        self.i = 0
+        
+    def __iter__(self):
+        time.sleep(ITER_TO_ITER)
+        return self
+        
+    def __next__(self):
+        time.sleep(NEXT)
+        self.i += 1
+        
+        if self.i >= 10:
+            raise StopIteration()
+        
+        return [self.i]
+
+
+class FakeDataloader:
+    def __iter__(self):
+        time.sleep(LOADER_TO_ITER)
+        return FakeIterator()
+    
+
+
+
+def test_timed_iterator():
+    from benchmate.metrics import TimedIterator, file_push
+    from benchmate.observer import BenchObserver
+
+    data = FakeDataloader()
+    loader = TimedIterator.with_stdout(data)
+
+    for i in loader:
+        print(i)
+        time.sleep(WORK)
+        
+
+def test_observer():
+    from benchmate.metrics import TimedIterator, file_push
+    from benchmate.observer import BenchObserver
+
+    obs = BenchObserver(stdout=True)
+    obs.pusher = file_push()
+    data = FakeDataloader()
+
+
+    for i in obs.loader(data):
+        print(i)
+        time.sleep(WORK)
+
+
+    show_timings(force=True)
+
+
+class FakeDataset:
+    def __init__(self, s):
+        self.s = s
+
+    def __len__(self):
+        return 16 * 10 // 2
+
+    def __getitem__(self, i):
+        time.sleep(self.s)
+        return i
+
+
+def dataloader_run(worker, s, w, c=None):
+    from benchmate.metrics import TimedIterator
+    from torch.utils.data import DataLoader
+    
+    d = list(range(16))
+    def collate(*args):
+        if c:
+            time.sleep(c)
+        return d
+
+    print("===")
+    data = DataLoader(
+        FakeDataset(s),
+        batch_size=16,
+        num_workers=worker,
+        collate_fn=collate,
+    )
+    loader = TimedIterator.with_stdout(data, earlystop=10)
+
+    for e in range(2):
+        for i in loader:
+            time.sleep(w)
+
+
+def test_dataloader_timed_iterator():
+    # dataloader_run(0)
+    
+    dataloader_run(0, 0.1, 1, 0.1)
+
+    dataloader_run(1, 0.1, 1, 0.1)
+    # 16 / (16 * 0.5 + 1) = 1.777777
+    # 16 / (16 * 0.5 - 1) = 2.28
+    # {"rate": 1.7759813184032993, "units": "items/s", "task": "train", "time": 1762312191.6276882}
+    # {"rate": 1.999982297577191, "units": "items/s", "task": "train", "time": 1762312199.627759}
+    # {"rate": 1.9994120538611577, "units": "items/s", "task": "train", "time": 1762312207.6301115}
+    # {"rate": 1.9995584270970586, "units": "items/s", "task": "train", "time": 1762312215.6318781}
+    # {"rate": 1.9995995965692595, "units": "items/s", "task": "train", "time": 1762312223.63348}
+    # {"rate": 1.9994159854628586, "units": "items/s", "task": "train", "time": 1762312231.6358168}
+    # {"rate": 1.999392157810872, "units": "items/s", "task": "train", "time": 1762312239.638249}
+    # {"rate": 1.9993749426857004, "units": "items/s", "task": "train", "time": 1762312247.64075}
+    # {"rate": 1.9995662318884755, "units": "items/s", "task": "train", "time": 1762312255.6424854}
+    # {"rate": 1.9993826864769488, "units": "items/s", "task": "train", "time": 1762312263.6449554}
+
+
+    dataloader_run(2, 0.1, 1, 0.1)
+    # {"rate": 1.7768168524624766, "units": "items/s", "task": "train", "time": 1762312277.67241}
+    # {"rate": 15.978856407865607, "units": "items/s", "task": "train", "time": 1762312278.6737332}
+    # {"rate": 2.285903479216933, "units": "items/s", "task": "train", "time": 1762312285.6731539}
+    # {"rate": 15.929828759156662, "units": "items/s", "task": "train", "time": 1762312286.677559}
+    # {"rate": 2.286569331192533, "units": "items/s", "task": "train", "time": 1762312293.6749413}
+    # {"rate": 15.97771129874969, "units": "items/s", "task": "train", "time": 1762312294.6763363}
+    # {"rate": 2.2854265069349786, "units": "items/s", "task": "train", "time": 1762312301.6772177}
+    # {"rate": 15.978563457352038, "units": "items/s", "task": "train", "time": 1762312302.6785593}
+    # {"rate": 2.2853087541508974, "units": "items/s", "task": "train", "time": 1762312309.6798015}
+    # {"rate": 15.98164187656372, "units": "items/s", "task": "train", "time": 1762312310.6809502}
+
+    dataloader_run(3, 0.1, 1, 0.1)
+    # {"rate": 1.7764977153709705, "units": "items/s", "task": "train", "time": 1762312325.7252388}
+    # {"rate": 15.963272671394597, "units": "items/s", "task": "train", "time": 1762312326.7275395}
+    # {"rate": 15.979933188413769, "units": "items/s", "task": "train", "time": 1762312327.7287953}
+    # {"rate": 2.6674725530076233, "units": "items/s", "task": "train", "time": 1762312333.7269826}
+    # {"rate": 15.978517803694002, "units": "items/s", "task": "train", "time": 1762312334.728327}
+    # {"rate": 15.979720103713973, "units": "items/s", "task": "train", "time": 1762312335.7295961}
+    # {"rate": 2.6669744210926236, "units": "items/s", "task": "train", "time": 1762312341.7289038}
+    # {"rate": 15.979933188413769, "units": "items/s", "task": "train", "time": 1762312342.7301595}
+    # {"rate": 15.982593420328126, "units": "items/s", "task": "train", "time": 1762312343.7312486}
+    # {"rate": 2.6670946172103998, "units": "items/s", "task": "train", "time": 1762312349.730286}
+
+    dataloader_run(4, 0.1, 1, 0.1)    
+    # {"rate": 1.7756260232810182, "units": "items/s", "task": "train", "time": 1762312365.7828047}
+    # {"rate": 15.929212429410985, "units": "items/s", "task": "train", "time": 1762312366.7872486}
+    # {"rate": 15.984059019356259, "units": "items/s", "task": "train", "time": 1762312367.788246}
+    # {"rate": 15.965904567905728, "units": "items/s", "task": "train", "time": 1762312368.7903814}
+    # {"rate": 3.1990103159461087, "units": "items/s", "task": "train", "time": 1762312373.7919283}
+    # {"rate": 15.925349166402663, "units": "items/s", "task": "train", "time": 1762312374.7966158}
+    # {"rate": 15.979172197722209, "units": "items/s", "task": "train", "time": 1762312375.7979193}
+    # {"rate": 15.982163308513844, "units": "items/s", "task": "train", "time": 1762312376.7990353}
+    # {"rate": 3.1950179918598267, "units": "items/s", "task": "train", "time": 1762312381.8068318}
+    # {"rate": 15.92156332422057, "units": "items/s", "task": "train", "time": 1762312382.8117583}
+
+
+if __name__ == "__main__":
+    test_dataloader_timed_iterator()
+
+    # dataloader_run(6, 0.1, 1, 0.1)    

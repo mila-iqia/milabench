@@ -13,6 +13,8 @@ mkdir -p $OUTPUT_DIRECTORY/meta
 scontrol show job --json $SLURM_JOB_ID | jq '.jobs[0]' > $OUTPUT_DIRECTORY/meta/info.json
 # ===
 
+module load cuda/12.6.0
+
 CONDA_EXEC="$(which conda)"
 CONDA_BASE=$(dirname $CONDA_EXEC)
 source $CONDA_BASE/../etc/profile.d/conda.sh
@@ -26,6 +28,8 @@ export MILABENCH_BASE="$MILABENCH_WORDIR/results"
 export MILABENCH_ENV="$MILABENCH_WORDIR/.env/$PYTHON_VERSION/"
 export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
 export MILABENCH_SIZER_SAVE="$MILABENCH_WORDIR/scaling.yaml"
+export MILABENCH_HF=""
+export HF_TOKEN=""
 
 mkdir -p $MILABENCH_WORDIR
 
@@ -63,15 +67,15 @@ install_prepare() {
     fi
     
     conda activate $MILABENCH_ENV
-    pip install -e $MILABENCH_SOURCE
+    pip install -e $MILABENCH_SOURCE[$MILABENCH_GPU_ARCH]
 
     milabench slurm_system > $MILABENCH_WORDIR/system.yaml
 
     #
     # Install milabench's benchmarks in their venv
     #
-    # pip install torch
-    # milabench pin --variant cuda --from-scratch $ARGS 
+    pip install torch
+    milabench pin --variant cuda --from-scratch $ARGS 
 
     export MILABENCH_NO_BUILD_ISOLATION=1
     export MILABENCH_USE_UV=1

@@ -1,7 +1,9 @@
+from dataclasses import dataclass
 import json
 import os
 import sys
 import time
+from contextlib import contextmanager
 
 from voir.helpers import current_overseer
 from voir.phase import StopProgram
@@ -117,6 +119,9 @@ class CPUTimer:
 
     def elapsed(self):
         return self._end + self._start
+    
+    def synchronize(self):
+        pass
 
 
 class DeviceTimer:
@@ -158,7 +163,68 @@ def default_device():
     except:
         print("Could not find a device")
         return None
-    
+
+def sync(device):
+    try:
+        import torchcompat.core as accelerator
+        accelerator.synchronize(device)
+    except:
+        print("Could not find a device")
+        return None
+
+@contextmanager
+def record_timing(event_fn):
+    start = event_fn(enable_timing=True)
+    end = event_fn(enable_timing=True)
+    start.record()
+
+    yield TimedEvent(None, start, end)
+
+    end.record()
+    end.synchronize()
+
+
+@contextmanager
+def lazy_record_timing(name, event_fn):
+    start = event_fn(enable_timing=True)
+    end = event_fn(enable_timing=True)
+
+    start.record()
+    yield TimedEvent(name, start, end)
+    end.record()
+
+
+@dataclass
+class TimedEvent:
+    name: str
+    start: 'Event'
+    end: 'Event'
+    batch_size: int = None
+    batch_id: int = None
+
+    def elapsed_time(self):
+        self.end.synchronize()
+        return self.start.elapsed_time(self.end)
+
+
+@dataclass
+class LapEvent:
+    name: str
+    time: float
+
+
+def _get_flag(name, type, default):
+    return type(os.getenv(name, default))
+
+
+@dataclass
+class Flags:
+    record_laps: int = _get_flag("BENCHMATE_RECORD_LAPS", int, 0)
+    record_overhead: int = _get_flag("BENCHMATE_RECORD_OVERHEAD", int, 0)
+    record_fine_grained: int  = _get_flag("BENCHMATE_RECORD_FINE", int, 0)
+
+_flags = Flags()
+
 
 class TimedIterator:
     """Time the body of a loop, ignoring the time it took to initialize the iterator.`
@@ -225,7 +291,7 @@ class TimedIterator:
     def __init__(
         self,
         loader,
-        event_fn=default_event(),
+        event_fn=None,
         rank=int(os.getenv("RANK", 0)),
         push=file_push(),
         device=default_device(),
@@ -233,8 +299,9 @@ class TimedIterator:
         raise_stop_program=False,
         batch_size_fn=None,
     ):
+        self.recored_laps = [LapEvent('first', time.time())]
         self.loader = loader  # original iterator
-        self.events = []  # accumulated events to be pushed
+        self.events: list[TimedEvent] = []  # accumulated events to be pushed
 
         self.task = "train"  # voir task usually train but could be validation/test
         self.total_obs = 0  # Number of "pushed" observations
@@ -257,17 +324,28 @@ class TimedIterator:
         self.raise_stop_program = (
             raise_stop_program  # Does TimedIterator raise StopProgram
         )
-        self.profile_instrumentation = False
         self.overhead = []
         self.previous_overhead = 0
         self.loader_init_time = []
+        self.recorded_timers = []
+        
         self.sub_overhead = 0
+        self.batch_id = 0
+
+        if event_fn is None:
+            self.event_fn = default_event()
 
         if not TORCH_ERROR and dist.is_initialized():
             self.rank = rank
             assert (
                 self.device is not None
             ), "device is required to compute the final batch size"
+
+    def record_lap(self, name):
+        """A lap event is a unique event that gets recorded when the code execute a particular path.
+        This allow us to compute the lap time.
+        """
+        self.recored_laps.append(LapEvent(name, time.time()))
 
     def __getattr__(self, item):
         return getattr(self.loader, item)
@@ -276,6 +354,7 @@ class TimedIterator:
         return len(self.loader)
 
     def __iter__(self):
+        self.record_lap("iter_create")
         self.log_progress()
 
         # This takes much more time than expected good thing to keep track of it
@@ -285,26 +364,54 @@ class TimedIterator:
         self.loader_init_time.append(ct.elapsed())
         return self.wrapped(iterator)
 
+    def _record_event(self, event: TimedEvent):
+        """A TimedEvent is something that records a particular code duration"""
+        if _flags.record_fine_grained:
+            event.batch_id = self.batch_id
+            self.recorded_timers.append(event)
+
     def wrapped(self, iterator):
         # Time IO wait + batch compute
+        self.record_lap("iter_start")
         self.last_time = time.time()
         self.start = self.event_fn(enable_timing=True)
         self.start.record()
         self.previous_overhead = 0
 
-        for data in iterator:
-            # Simple one iteration = one backward
-            # ... huggingface ... is changing the batch sometimes...
-            bs = self.deduce_batch_size(data)
+        while True:
+            try:
+                with lazy_record_timing("next", self.event_fn) as next_time:
+                    data = next(iterator)
 
-            yield data
+                # Simple one iteration = one backward
+                # ... huggingface ... is changing the batch sometimes...
+                bs = self.deduce_batch_size(data)
 
-            if should_break := self.step(bs):
-                self.break_count += 1
+                with lazy_record_timing("work", self.event_fn) as work_time: 
+                    yield data
+
+                self._record_event(next_time)
+                self._record_event(work_time)
+
+                if should_break := self.step(bs):
+                    self.break_count += 1
+                    break
+                    
+                self.batch_id += 1
+            
+            except StopIteration:
                 break
-
+        
+        self.record_lap("iter_end")
         self._push()
+        self._push_total_time_elapsed()
         self.earlystop()
+
+    def _make_rate(self, start, end, batch_size):
+        elapsed = (start.elapsed_time(end)) / self.unit
+        rate = self.batch_size(batch_size) / elapsed
+        self.last_time += elapsed
+        self.log_rate(rate, time=time.time())
 
     def step(self, batch_size):
         should_break = False
@@ -313,7 +420,9 @@ class TimedIterator:
             end = self.event_fn(enable_timing=True)
             end.record()
 
-            self.events.append((self.start, end, batch_size, self.previous_overhead))
+            # We could use event.query() to push events without blocking
+            event = TimedEvent("rate", self.start, end, batch_size, self.batch_id)
+            self.events.append(event)
 
             # Log progress so it looks somewhat responsive
             self.log_progress()
@@ -330,7 +439,9 @@ class TimedIterator:
         # since we avoid sync it is possible the device is working during
         # the overhead section and that the effective overhead ends up being minimal
         self.previous_overhead = ct.elapsed()
-        self.overhead.append(self.previous_overhead)
+       
+        if _flags.record_overhead:
+            self.overhead.append(self.previous_overhead)
     
         return should_break
 
@@ -371,39 +482,62 @@ class TimedIterator:
         return bs
 
     def _push_time_steps(self):
-        for start, end, bs, overhead in self.events:
-            end.synchronize()
-            elapsed = (start.elapsed_time(end)) / self.unit
-            rate = self.batch_size(bs) / elapsed
+        for event in self.events:
+            event.end.synchronize()
+            sync(self.device)
+            
+            elapsed = (event.elapsed_time()) / self.unit
+            rate = self.batch_size(event.batch_size) / elapsed
 
             self.last_time += elapsed
-            self.log_rate(rate, time=self.last_time)
+            self.log_rate(rate, time=self.last_time, elapsed=elapsed, batch_id=event.batch_id)
 
         self.total_obs += len(self.events)
         self.events = []
 
     def _push_profile_metrics(self):
-        if self.profile_instrumentation:
-            for ov in self.overhead:
-                self.message(overhead=ov, units="s", task=self.task)
+        for ov in self.overhead:
+            self.message(overhead=ov, units="s", task=self.task)
 
-            for iterinit in self.loader_init_time:
-                self.message(__iter__=iterinit, units="s", task=self.task)
+        for iterinit in self.loader_init_time:
+            self.message(__iter__=iterinit, units="s", task=self.task)
+        
+        for event in self.recorded_timers:
+            kwargs = {
+                event.name: event.elapsed_time() / self.unit,
+                "units": "s",
+                "task": self.task,
+                "batch_id": event.batch_id
+            }
+            self.message(**kwargs)
+
         self.previous_overhead = 0
         self.overhead = []
         self.loader_init_time = []
+        self.recorded_timers = []
 
     def __del__(self):
         try:
             if self.events:
                 self._push()
+
         except ValueError as err:
             print("Some events could not be pushed because: ", str(err))
+
     def __enter__(self):
         return self
 
     def __exit__(self, *args):
         self._push()
+
+    def _push_lap_events(self):
+        start = self.recored_laps[0]
+        for lap in self.recored_laps[1:]:
+            self.message(**{lap.name: lap.time - start.time}, task=self.task, units="s", time=lap.time)
+        self.recored_laps = [start]
+
+    def _push_total_time_elapsed(self):
+        self.message(total_elapsed=time.time() - self.recored_laps[0].time, task=self.task, units="s")
 
     def _push(self):
         """Push all the accumulated metrics"""
@@ -422,12 +556,14 @@ class TimedIterator:
             # Optional
             self._push_profile_metrics()
 
+            self._push_lap_events()
+
         if False:
             self.message(sync_time=sync_time.elapsed(), units="s", task=self.task)
             self.message(process_time=process_time.elapsed(), units="s", task=self.task)
 
-    def log_rate(self, rate, time=None):
-        self.message(rate=rate, units="items/s", task=self.task, time=time)
+    def log_rate(self, rate, time=None, elapsed=None, batch_id=None):
+        self.message(rate=rate, units="items/s", task=self.task, time=time, elapsed=elapsed, batch_id=batch_id)
 
     def log_progress(self):
         if self.early_stop is not None:
