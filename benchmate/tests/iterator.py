@@ -98,6 +98,37 @@ def dataloader_run(worker, s, w, c=None):
             time.sleep(w)
 
 
+
+def test_double_iterator(s=0.1, c=0.1):
+    from benchmate.metrics import TimedIterator
+    from torch.utils.data import DataLoader
+    
+    d = list(range(16))
+    def collate(*args):
+        if c:
+            time.sleep(c)
+        return d
+
+    print("===")
+    data = DataLoader(
+        FakeDataset(s),
+        batch_size=16,
+        num_workers=4,
+        collate_fn=collate,
+    )
+
+    loader_1 = TimedIterator.with_stdout(data, earlystop=10)
+     #loader_2 = TimedIterator.with_stdout(data, earlystop=10)
+
+    iter_1 = iter(loader_1)
+    iter_2 = iter(loader_1)
+
+    for e in range(2):
+        for i in iter_2:
+            time.sleep(1)
+
+
+
 def test_dataloader_timed_iterator():
     # dataloader_run(0)
     
@@ -156,6 +187,8 @@ def test_dataloader_timed_iterator():
 
 
 if __name__ == "__main__":
-    test_dataloader_timed_iterator()
+    # test_dataloader_timed_iterator()
 
     # dataloader_run(6, 0.1, 1, 0.1)    
+
+    test_double_iterator()

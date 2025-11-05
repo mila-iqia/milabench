@@ -275,6 +275,8 @@ class TimedIterator:
            for i in loader:
                loss = criterion(model(x), y)
     """
+    TIMED_ITERATOR_INSTANCE = 0
+    ACTIVE_WRAPPED_ITERATOR = 0
 
     @classmethod
     def with_sumggler(cls, *args, push=None, **kwargs):
@@ -328,12 +330,18 @@ class TimedIterator:
         self.previous_overhead = 0
         self.loader_init_time = []
         self.recorded_timers = []
+
+        self.unique_iterator = 0
+        self.multi_call_guard = 0
         
         self.sub_overhead = 0
         self.batch_id = 0
 
         if event_fn is None:
             self.event_fn = default_event()
+
+        # assert TimedIterator.TIMED_ITERATOR_INSTANCE == 0, f"One timed iterator only {TimedIterator.TIMED_ITERATOR_INSTANCE}"
+        # TimedIterator.TIMED_ITERATOR_INSTANCE += 1
 
         if not TORCH_ERROR and dist.is_initialized():
             self.rank = rank
@@ -354,6 +362,10 @@ class TimedIterator:
         return len(self.loader)
 
     def __iter__(self):
+        if self.multi_call_guard != 0:
+            raise RuntimeError("Cannot use multiple timed iterator at the same time")
+        self.multi_call_guard += 1
+        
         self.record_lap("iter_create")
         self.log_progress()
 
@@ -361,6 +373,7 @@ class TimedIterator:
         with CPUTimer() as ct:
             iterator = iter(self.loader)
 
+        self.unique_iterator = self.unique_iterator or id(iterator)
         self.loader_init_time.append(ct.elapsed())
         return self.wrapped(iterator)
 
@@ -402,16 +415,21 @@ class TimedIterator:
             except StopIteration:
                 break
         
+        self.multi_call_guard -= 1
+        self.unique_iterator = None
         self.record_lap("iter_end")
         self._push()
         self._push_total_time_elapsed()
         self.earlystop()
 
-    def _make_rate(self, start, end, batch_size):
-        elapsed = (start.elapsed_time(end)) / self.unit
-        rate = self.batch_size(batch_size) / elapsed
-        self.last_time += elapsed
-        self.log_rate(rate, time=time.time())
+    def _make_rate(self, event: TimedEvent):
+        event.end.synchronize()
+        sync(self.device)
+
+        elapsed = (event.elapsed_time()) / self.unit
+        rate = self.batch_size(event.batch_size) / elapsed
+
+        return rate, elapsed
 
     def step(self, batch_size):
         should_break = False
@@ -483,11 +501,7 @@ class TimedIterator:
 
     def _push_time_steps(self):
         for event in self.events:
-            event.end.synchronize()
-            sync(self.device)
-            
-            elapsed = (event.elapsed_time()) / self.unit
-            rate = self.batch_size(event.batch_size) / elapsed
+            rate, elapsed = self._make_rate(event)
 
             self.last_time += elapsed
             self.log_rate(rate, time=self.last_time, elapsed=elapsed, batch_id=event.batch_id)
