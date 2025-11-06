@@ -181,6 +181,15 @@ def get_rate(events, skip_event):
 
     return acc / cnt
 
+def get_elapsed(events, skip_event):
+    acc = 0
+
+    for e in events:
+        if (elapsed := e.get("elapsed")) and (e.get("batch_id") not in skip_event):
+            acc += elapsed
+
+    return acc
+
 
 def dataloader_run(method, worker, s, w, collate_sleep=None):
     reset()
@@ -210,7 +219,7 @@ def dataloader_run(method, worker, s, w, collate_sleep=None):
         batch_size=batch_size,
         num_workers=worker,
         collate_fn=collate,
-        persistent_workers=True,
+        persistent_workers=False,
     )
 
 
@@ -250,18 +259,35 @@ def dataloader_run(method, worker, s, w, collate_sleep=None):
     samples = batch_count * batch_size
 
     show_timings(force=True)
-    skip_batch_id = (0, 1, 7, 8)
+    skip_batch_id = tuple() # (0, 1, 7, 8)
 
+    mb_rate = get_rate(events, skip_batch_id)
+    mb_elapsed = get_elapsed(events, skip_batch_id)
     print(method)
     print(f"  (epoch) with CPU Timer {samples / elapsed:5.2f} (item/s)    {elapsed:5.2f} s")
     print(f"  (batch) with CPU Timer {samples / batch_time:5.2f} (item/s)    {batch_time:5.2f} s")
-    print(f"               milabench {get_rate(events, skip_batch_id):5.2f} (item/s)")
+    print(f"               milabench {mb_rate:5.2f} (item/s)    {mb_elapsed:5.2f} s")
 
+    # to_csv(events)
+    show_events(events)
+    
+
+def show_events(events):
     for e in events:
         if "rate" in e:
             print(e)
 
-if __name__ == "__main__":
+def to_csv(events):
+    headers = None
+    for e in events:
+        if "rate" in e:
+            if headers is None:
+                headers = list(e.keys())
+                print(",".join(headers))
 
+            print(",".join([str(e[k]) for k in headers]))
+
+
+if __name__ == "__main__":
     dataloader_run("fork", 6, 0.1, 1, 0.1)  
     dataloader_run("spawn", 6, 0.1, 1, 0.1)    

@@ -225,6 +225,7 @@ class Flags:
     record_overhead: int = _get_flag("BENCHMATE_RECORD_OVERHEAD", int, 0)
     record_fine_grained: int  = _get_flag("BENCHMATE_RECORD_FINE", int, 0)
     eager_sync: int  = _get_flag("BENCHMATE_EAGER_SYNC", int, 0)
+    force_batch_fetch: int  = _get_flag("BENCHMATE_BATCH_FETCH", int, 1)
 
 _flags = Flags()
 
@@ -369,13 +370,14 @@ class TimedIterator:
         self.record_lap("iter_create")
         self.log_progress()
 
-        # This takes much more time than expected good thing to keep track of it
         with CPUTimer() as ct:
             iterator = iter(self.loader)
+            # This takes much more time than expected good thing to keep track of it
+            first_batches = [next(iterator) for i in range(_flags.force_batch_fetch)]
 
         self.unique_iterator = id(iterator)
         self.loader_init_time.append(ct.elapsed())
-        return self.wrapped(iterator)
+        return self.wrapped(iterator, list(reversed(first_batches)))
 
     def _record_event(self, event: TimedEvent):
         """A TimedEvent is something that records a particular code duration"""
@@ -383,7 +385,7 @@ class TimedIterator:
             event.batch_id = self.batch_id
             self.recorded_timers.append(event)
 
-    def wrapped(self, iterator):
+    def wrapped(self, iterator, first_batches):
         # Time IO wait + batch compute
         self.record_lap("iter_start")
         self.last_time = time.time()
@@ -391,13 +393,19 @@ class TimedIterator:
         self.start.record()
         self.previous_overhead = 0
 
+        next_time = None
+
         try:
             while True:
                 assert self.unique_iterator == id(iterator)
 
                 try:
-                    with lazy_record_timing("next", self.event_fn) as next_time:
-                        data = next(iterator)
+                    if first_batches:
+                        while first_batches:
+                            data = first_batches.pop()
+                    else:
+                        with lazy_record_timing("next", self.event_fn) as next_time:
+                            data = next(iterator)
 
                     # Simple one iteration = one backward
                     # ... huggingface ... is changing the batch sometimes...
@@ -411,7 +419,9 @@ class TimedIterator:
                             self.break_count += 1
                             break
                         
-                    self._record_event(next_time)
+                    if next_time:
+                        self._record_event(next_time)
+                
                     self._record_event(work_time)
                     self._record_event(step_time)
                     self.batch_id += 1
