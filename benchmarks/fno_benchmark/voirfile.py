@@ -4,6 +4,7 @@ from voir.phase import StopProgram
 from voir import configurable
 from benchmate.monitor import voirfile_monitor
 from benchmate.observer import BenchObserver
+from cantilever.core.timer import show_timings
 
 
 @dataclass
@@ -20,7 +21,7 @@ class Config:
     skip: int = 5
 
     # Number of rates to log before stopping
-    stop: int = 20
+    stop: int = 160
 
     # Number of seconds between each gpu poll
     gpu_poll: int = 1
@@ -37,7 +38,7 @@ def instrument_main(ov, options: Config):
 
     import ptera
     from operator_learning.data import getDataLoaders
-    from operator_learning.utils.misc import get_loss_fn
+    from operator_learning.loss.data_loss import get_loss_fn
 
     rfstr = ptera.refstring(getDataLoaders)
 
@@ -65,5 +66,11 @@ def instrument_main(ov, options: Config):
     #
     try:
         yield ov.phases.run_script
+        show_timings(force=True)
     except StopProgram:
-        print("early stopped")
+        pass
+
+    finally:
+        from cantilever.core.timer import show_timings
+        show_timings(force=True)
+        print("VOIR early stopped")

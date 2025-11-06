@@ -21,6 +21,19 @@ T = Terminal()
 color_wheel = [T.cyan, T.magenta, T.yellow, T.red, T.green, T.blue]
 
 
+def pretty_print():
+    def use_pprint(obj):
+        return pprint.pformat(obj, width=120)
+
+    def use_print(obj):
+        return str(obj)
+
+    return use_print
+
+
+milabench_pprint = pretty_print()
+
+
 class BaseLogger:
     def start(self):
         pass
@@ -37,7 +50,7 @@ class BaseLogger:
 
 
 class TagConsole(BaseLogger):
-    def __init__(self, tag, i, pretty_print = lambda obj: pprint.pformat(obj, width=120)):
+    def __init__(self, tag, i, pretty_print=milabench_pprint):
         self.header = color_wheel[i % len(color_wheel)](T.bold(tag))
         self.pretty_print = pretty_print
 
@@ -70,7 +83,7 @@ class TagConsole(BaseLogger):
 
 
 class TerminalFormatter(BaseLogger):
-    def __init__(self, dump_config=True, pretty_print=lambda obj: pprint.pformat(obj, width=120)):
+    def __init__(self, dump_config=True, pretty_print=milabench_pprint):
         self.consoles = {}
         self.error_happened = set()
         self.early_stop = False

@@ -2,8 +2,8 @@ from milabench.pack import Package
 
 
 SOURCE_DIR = "src"
-REPO_URL = "https://github.com/chelseajohn/operator_learning.git"
-BRANCH = "main"
+REPO_URL = "https://github.com/Delaunay/operator_learning"
+BRANCH = "milabench"
 
 
 class Fno_benchmark(Package):
@@ -35,6 +35,9 @@ class Fno_benchmark(Package):
             )
 
     async def prepare(self):
+        #
+        # THIS REQUIRES GIT LFS
+        #
         import os
 
         url = "https://huggingface.co/datasets/chelseajohn/FNOBenchmark"

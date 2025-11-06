@@ -18,9 +18,14 @@ from voir.helpers import current_overseer
 from .metrics import sumggle_push, give_push, file_push
 
 
-def log_patterns():
-    return "*"
+def _get_flag(name, type, default):
+    return type(os.getenv(name, default))
 
+
+log_pattern = _get_flag("BENCHMATE_LOG_MODE", str, 'lean')
+
+
+def log_patterns():
     debug_metrics = ("__iter__", "overhead", "process_time")
 
     base_metrics = (
@@ -35,7 +40,20 @@ def log_patterns():
         "cpudata", "process", "iodata", "netdata"
     )
 
-    return base_metrics + gpu_metrics + system_metrics
+    lean = base_metrics + gpu_metrics + system_metrics
+
+    match log_pattern.lower():
+        case 'lean':
+            return lean
+
+        case 'debug':
+            return lean + debug_metrics
+
+        case 'all':
+            return "*"
+
+        case _:
+            return lean
 
 
 def auto_push():
