@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/pytorch:24.02-py3
+FROM nvcr.io/nvidia/pytorch:25.10-py3
 
 # Arguments
 # ---------
@@ -11,12 +11,13 @@ ARG ARCH=cuda
 ENV MILABENCH_GPU_ARCH=$ARCH
 ENV MILABENCH_CONFIG_NAME=$CONFIG
 ENV MILABENCH_DOCKER=1
+ENV TORCH_CUDA_ARCH_LIST="10.0;12.0"
 
 # Paths
 # -----
 
 ENV MILABENCH_CONFIG=/milabench/milabench/config/$MILABENCH_CONFIG_NAME
-ENV MILABENCH_BASE=/milabench/envs
+ENV MILABENCH_BASE=/milabench/results/
 ENV MILABENCH_OUTPUT=/milabench/results/
 ENV MILABENCH_ARGS=""
 
@@ -35,13 +36,14 @@ COPY . /milabench/milabench/
 #           rustc: used by BERT models inside https://pypi.org/project/tokenizers/
 # build-essential: for rust
 
-
 ENV DEBIAN_FRONTEND=noninteractive
-RUN cd $HOME                                                         &&
-    rm -rf /milabench/env                                            &&
-    pip install virtualenv                                           &&
-    virtualenv --system-site-packages /milabench/env                 &&
-    /milabench/env/bin/pip install -e milabench                      &&
-    /milabench/env/bin/milabench install --use-current-env           &&
-    /milabench/env/bin/pip uninstall torch torchvision torchaudio -y &&
+RUN cd $HOME                                                            &&\
+    rm -rf /milabench/env                                               &&\
+    pip install virtualenv                                              &&\
+    virtualenv --system-site-packages /milabench/env                    &&\
+    source /milabench/env/bin/activate                                  &&\
+    /milabench/env/bin/pip install -e /milabench/milabench              &&\
+    bash /milabench/milabench/docker/scripts/install.sh                 &&\
+    milabench install --variant unpinned --use-current-env              &&\
+    /milabench/env/bin/pip uninstall torch torchvision torchaudio -y    &&\
     /milabench/env/bin/pip cache purge
