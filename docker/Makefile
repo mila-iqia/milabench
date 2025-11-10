@@ -16,17 +16,3 @@ hpu:
 	docker run --rm -it   --runtime=habana  -e PT_HPU_LAZY_MODE=$(lazy) -e HABANA_VISIBLE_DEVICES=all   -e OMPI_MCA_btl_vader_single_copy_mechanism=none --shm-size 50G   --cap-add=sys_nice   --net=host   dockerfile-hpu:latest bash -c '. $$MILABENCH_VENV/bin/activate && milabench install --use-current-env --select $(bench) && pip uninstall torch torchvision torchaudio -y  &&  milabench prepare --use-current-env --select $(bench) && milabench run --use-current-env $(args) --select $(bench)'
 
 
-github-login:
-	echo $(GITHUB_MILABENCH_TOK) | sudo docker login ghcr.io -u Delaunay --password-stdin
-
-ngc:
-	sudo docker build 															\
-		--build-arg CACHEBUST=`git rev-parse $(git branch --show-current)`	\
-	 	-f Dockerfile-ngc 													\
-		-t milabench:cuda-ngc-nightly . 
-	
-	sudo docker tag 																\
-		milabench:cuda-ngc-nightly											\
-	 	ghcr.io/mila-iqia/milabench:cuda-ngc-nightly
-
-	sudo docker push ghcr.io/mila-iqia/milabench:cuda-ngc-nightly

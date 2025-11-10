@@ -25,9 +25,6 @@ class Inference(Package):
     async def install(self):
         await super().install()
 
-    async def prepare(self):
-        await super().prepare()  # super() call executes prepare_script
-
     def build_run_plan(self):
         main = self.dirs.code / self.main_script
         pack = cmd.PackCommand(self, *self.argv, lazy=True)
@@ -40,8 +37,8 @@ class Inference(Package):
     def build_prepare_plan(self):
         # Run the same script but with fast arguments
         main = self.dirs.code / self.main_script
-        pack = cmd.PackCommand(self, *self.prepare_argv, lazy=True)
-        return cmd.VoirCommand(pack, cwd=main.parent).use_stdout()
+        pack = cmd.PackCommand(self, *self.prepare_argv, lazy=False)
+        return pack
 
 
 __pack__ = Inference

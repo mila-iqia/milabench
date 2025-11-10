@@ -50,6 +50,7 @@ class VLLM(Package):
 
         if prepare and isinstance(args, dict):
             args['--num-prompts'] = 1
+            # args['--prepare'] = True
     
         return assemble_options(args)
 

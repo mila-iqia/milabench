@@ -135,3 +135,32 @@ vllm-whisper-gpus:
       --served-model-name: model
       --dtype: bfloat16
       --tensor-parallel-size: 1
+
+
+
+# vllm-moe-math-gpus:
+#   inherits: _vllm
+
+#   num_machines: 1
+#   tags:
+#     - multigpu
+
+#   plan:
+#     method: njobs
+#     n: 1
+
+#   client:
+#     argv:
+#       --dataset-name: hf
+#       --dataset-path: HuggingFaceH4/MATH-500
+#       --hf-name: HuggingFaceH4/MATH-500
+#       --num-prompts: 198
+
+#   server:
+#    argv:
+#       # Out of Memory on L40S
+#       # meta-llama/Llama-4-Maverick-17B-128E-Instruct: true
+#       meta-llama/Llama-4-Scout-17B-16E-Instruct: true
+#       --dtype: bfloat16
+#       --tensor-parallel-size: "{gpu_count}"
+

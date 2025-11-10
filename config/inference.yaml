@@ -52,8 +52,7 @@ vllm-dense-physics-gpus:
       --enable-auto-tool-choice: true
       --limit-mm-per-prompt: '{"image":10}' 
   
-
-vllm-moe-math-gpus:
+vllm-moe-code-gpus:
   inherits: _vllm
 
   num_machines: 1
@@ -67,18 +66,24 @@ vllm-moe-math-gpus:
   client:
     argv:
       --dataset-name: hf
-      --dataset-path: HuggingFaceH4/MATH-500
-      --hf-name: HuggingFaceH4/MATH-500
-      --num-prompts: 198
+      --dataset-path: vdaita/edit_10k_char
+      --hf-name: vdaita/edit_10k_char
+      --num-prompts: 500
 
   server:
    argv:
       # Out of Memory on L40S
       # meta-llama/Llama-4-Maverick-17B-128E-Instruct: true
-      meta-llama/Llama-4-Scout-17B-16E-Instruct: true
+      mistralai/Mistral-Small-3.1-24B-Instruct-2503: true
+      --served-model-name: model
       --dtype: bfloat16
       --tensor-parallel-size: "{gpu_count}"
-
+      --tokenizer-mode: mistral
+      --config_format: mistral
+      --load_format: mistral 
+      --tool-call-parser: mistral
+      --enable-auto-tool-choice: true
+      --limit-mm-per-prompt: '{"image":10}' 
 
 _inference:
   inherits: _defaults
@@ -125,14 +130,37 @@ txt-to-image-gpus:
 
 llm-chat-completion:
   inherits: _inference
+  num_machines: 1
   tags:
-    - monogpu
+    - multigpu
   plan:
     method: per_gpu
+    n: 1
 
   url: https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct
   argv:
     --mode: chat
     --model: meta-llama/Llama-3.1-8B-Instruct
-    --dataset: wikitext/wikitext-103-v1
-    --batch_size: 32
+    --dataset: hendrydong/gpqa_diamond
+    --split: "test"
+    # --dataset: wikitext/wikitext-103-v1
+    --batch_size: 1
+
+
+llm-chat-completion-gpus:
+  inherits: _inference
+  num_machines: 1
+  tags:
+    - multigpu
+  plan:
+    method: njobs
+    n: 1
+
+  url: https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct
+  argv:
+    --mode: chat
+    --model: meta-llama/Llama-3.1-8B-Instruct
+    --dataset: hendrydong/gpqa_diamond
+    --split: "test"
+    # --dataset: wikitext/wikitext-103-v1
+    --batch_size: 1

@@ -13,6 +13,7 @@ from ..summary import make_summary
 @dataclass
 class Arguments:
     runs:        list = field(default_factory=list)
+    config      : str = os.getenv("MILABENCH_CONFIG")
     compare     : str = None
     compare_gpus: bool = False
     html        : str = None
@@ -25,6 +26,8 @@ def arguments():
     # Runs directory
     # [action: append]
     runs: Option = []
+
+    config: Option & str = os.getenv("MILABENCH_CONFIG")
 
     # Comparison summary
     compare: Option & configuration = None

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from dataclasses import dataclass
 
 from datasets import load_dataset, Audio
@@ -375,16 +376,16 @@ def main(argv=None):
     bench = load_benchmark(args) 
     observer, monitor = bench.prepare_voir(args)
     device = accelerator.fetch_device(0)
+
+    if args.prepare:
+        dataset = bench.load_dataset(observer, args)
+        pipe, kwargs = bench.load_model(args, device)
+        return 0
     
     with monitor():
         with torch.no_grad():
             dataset = bench.load_dataset(observer, args)
-
             pipe, kwargs = bench.load_model(args, device)
-
-            if args.prepare:
-                return 0
-
             # We cannot wrap the dataset with our timed loader anymore
             # dataset = setup_dataset(args)
             # output = pipe(dataset, **kwargs, batch_size=args.batch_size)

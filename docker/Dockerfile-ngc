@@ -27,14 +27,6 @@ ENV MILABENCH_ARGS=""
 WORKDIR /milabench
 COPY . /milabench/milabench/
 
-# Install Dependencies
-# --------------------
-
-#            curl: used to download anaconda and rust
-#             git: used by milabench
-#      libibverbs: used for infiniband
-#           rustc: used by BERT models inside https://pypi.org/project/tokenizers/
-# build-essential: for rust
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN cd $HOME                                                            &&\
@@ -45,5 +37,4 @@ RUN cd $HOME                                                            &&\
     /milabench/env/bin/pip install -e /milabench/milabench              &&\
     bash /milabench/milabench/docker/scripts/install.sh                 &&\
     milabench install --variant unpinned --use-current-env              &&\
-    /milabench/env/bin/pip uninstall torch torchvision torchaudio -y    &&\
     /milabench/env/bin/pip cache purge
