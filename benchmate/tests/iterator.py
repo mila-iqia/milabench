@@ -1,6 +1,5 @@
 import time
-import multiprocessing as mp
-from cantilever.core.timer import timeit, show_timings, reset
+from cantilever.core.timer import timeit, show_timings
 
 LOADER_TO_ITER = 2
 ITER_TO_ITER = 2
@@ -64,26 +63,57 @@ def test_observer():
 
 
 class FakeDataset:
-    def __init__(self, s, n):
+    def __init__(self, s):
         self.s = s
-        self.n = n
 
     def __len__(self):
-        return self.n
+        return 16 * 10 // 2
 
     def __getitem__(self, i):
         time.sleep(self.s)
         return i
 
 
-def test_double_iterator(s=0.1, c=0.1):
+def dataloader_run(worker, s, w, c=None):
     from benchmate.metrics import TimedIterator
     from torch.utils.data import DataLoader
     
+    d = list(range(16))
+    def collate(*args):
+        if c:
+            time.sleep(c)
+        return d
+
     print("===")
     data = DataLoader(
         FakeDataset(s),
         batch_size=16,
+        num_workers=worker,
+        collate_fn=collate,
+    )
+    loader = TimedIterator.with_stdout(data, earlystop=10)
+
+    for e in range(2):
+        for i in loader:
+            time.sleep(w)
+
+
+
+def test_double_iterator(s=0.1, c=0.1):
+    from benchmate.metrics import TimedIterator
+    from torch.utils.data import DataLoader
+    
+    d = list(range(16))
+    def collate(*args):
+        if c:
+            time.sleep(c)
+        return d
+
+    print("===")
+    data = DataLoader(
+        FakeDataset(s),
+        batch_size=16,
+        
         num_workers=4,
         collate_fn=collate,
     )
@@ -157,137 +187,9 @@ def test_dataloader_timed_iterator():
     # {"rate": 15.92156332422057, "units": "items/s", "task": "train", "time": 1762312382.8117583}
 
 
-
-
-c = 0.1
-d = list(range(16))
-
-def collate(*args):
-    global c, d
-    if c:
-        time.sleep(c)
-    return d
-
-
-
-def get_rate(events, skip_event):
-    acc = 0
-    cnt = 0
-
-    for e in events:
-        if (rate := e.get("rate")) and (e.get("batch_id") not in skip_event):
-            acc += rate
-            cnt += 1
-
-    return acc / cnt
-
-def get_elapsed(events, skip_event):
-    acc = 0
-
-    for e in events:
-        if (elapsed := e.get("elapsed")) and (e.get("batch_id") not in skip_event):
-            acc += elapsed
-
-    return acc
-
-
-def dataloader_run(method, worker, s, w, collate_sleep=None):
-    reset()
-
-    from threading import get_native_id
-    import os
-
-    mp.set_start_method(method, force=True)
-    mp.freeze_support()
-
-    from benchmate.metrics import TimedIterator
-    from torch.utils.data import DataLoader
-    
-    global c
-    c = collate_sleep
-
-    batch_size = 16
-    batch_count = 10
-    skip_batch = 0
-    epoch = 2
-    total_batch = batch_count + skip_batch * epoch
-    total_samples = batch_size * total_batch // epoch
-
-    print("===")
-    data = DataLoader(
-        FakeDataset(s,  total_samples),
-        batch_size=batch_size,
-        num_workers=worker,
-        collate_fn=collate,
-        persistent_workers=False,
-    )
-
-
-    events = []
-    def push(**kwargs):
-        nonlocal events
-        events.append(kwargs)
-
-    loader = TimedIterator(data, earlystop=total_batch, push=push)
-
-    with timeit(f"train"):
-        for e in range(2):
-            with timeit("epoch") as epoch_time:
-                with timeit("iter"):
-                    iterator = iter(loader)
-
-                for i in range(skip_batch):
-                    with timeit(f"step_{i}"):
-                        next(iterator)
-                        time.sleep(w)
-
-                while True:
-                    with timeit(f"step_n") as step_time:
-                        with timeit("data"):
-                            try:
-                                i = next(iterator)
-                            except StopIteration:
-                                break
-
-                        with timeit("compute"):
-                            time.sleep(w)
-
-
-
-    elapsed = epoch_time.timing.value.avg * epoch_time.timing.value.count
-    batch_time = step_time.timing.value.avg * step_time.timing.value.count
-    samples = batch_count * batch_size
-
-    show_timings(force=True)
-    skip_batch_id = tuple() # (0, 1, 7, 8)
-
-    mb_rate = get_rate(events, skip_batch_id)
-    mb_elapsed = get_elapsed(events, skip_batch_id)
-    print(method)
-    print(f"  (epoch) with CPU Timer {samples / elapsed:5.2f} (item/s)    {elapsed:5.2f} s")
-    print(f"  (batch) with CPU Timer {samples / batch_time:5.2f} (item/s)    {batch_time:5.2f} s")
-    print(f"               milabench {mb_rate:5.2f} (item/s)    {mb_elapsed:5.2f} s")
-
-    # to_csv(events)
-    show_events(events)
-    
-
-def show_events(events):
-    for e in events:
-        if "rate" in e:
-            print(e)
-
-def to_csv(events):
-    headers = None
-    for e in events:
-        if "rate" in e:
-            if headers is None:
-                headers = list(e.keys())
-                print(",".join(headers))
-
-            print(",".join([str(e[k]) for k in headers]))
-
-
 if __name__ == "__main__":
-    dataloader_run("fork", 6, 0.1, 1, 0.1)  
-    dataloader_run("spawn", 6, 0.1, 1, 0.1)    
+    # test_dataloader_timed_iterator()
+
+    # dataloader_run(6, 0.1, 1, 0.1)    
+
+    test_double_iterator()

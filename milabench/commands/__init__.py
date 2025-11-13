@@ -333,6 +333,8 @@ class WorkingDir(WrapperCommand):
             "-",
             # We can also force environment variables
             f"XDG_CACHE_HOME={str(cmd.pack.dirs.cache)}",
+            f"HF_HOME={str(cmd.pack.dirs.cache)}",
+            f"TORCH_HOME={str(cmd.pack.dirs.cache)}",
         ]
         super().__init__(cmd, *args)
 
