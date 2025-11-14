@@ -17,7 +17,7 @@ def arguments():
     parser.add_argument('--dataset-name', type=str, help='Dataset name (random, hf, etc.)')
     parser.add_argument('--dataset-path', type=str, help='Path to HuggingFace dataset')
     parser.add_argument('--hf-name', type=str, help='HuggingFace dataset name')
-    parser.add_argument('--hf-split', type=str, default='train', help='Dataset split to use')
+    parser.add_argument('--hf-split', type=str, default=None, help='Dataset split to use')
 
     args, _ = parser.parse_known_args(argv)
     return args
