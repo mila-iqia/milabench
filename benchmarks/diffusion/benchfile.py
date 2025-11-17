@@ -17,10 +17,9 @@ class Diffusion(Package):
     main_script = "main.py"
 
     # You can remove the functions below if you don't need to modify them.
-
     async def install(self):
         await super().install()  # super() call installs the requirements
-        
+
     async def prepare(self):
         await super().prepare()  # super() call executes prepare_script
 

@@ -37,7 +37,7 @@ def patch_tqdm():
         return
 
     if not hasattr(_tqdm, "_original_tqdm"):
-        print("Installing SlowTQDM", file=sys.stderr, flush=True)
+        # print("Installing SlowTQDM", file=sys.stderr, flush=True)
 
         _tqdm._original_tqdm = _tqdm.tqdm
         _tqdm.tqdm = PatchedTQDM
@@ -133,7 +133,7 @@ def force_flush():
     
     if updated:
         atexit.register(flush("atexit"))
-        print("Installing Force flush", file=sys.stderr, flush=True)
+        # print("Installing Force flush", file=sys.stderr, flush=True)
 
 
 def timed_flush():
@@ -144,7 +144,7 @@ def timed_flush():
         sys.stdout.reconfigure(line_buffering=True)
         sys.stderr.reconfigure(line_buffering=True)
 
-        print("Installing TimedFlush", file=sys.stderr, flush=True)
+        # print("Installing TimedFlush", file=sys.stderr, flush=True)
         # Replace sys.stdout/stderr
         sys.stdout = TimedFlushBuffer(sys.stdout, flush_interval=30)
         sys.stderr = TimedFlushBuffer(sys.stderr, flush_interval=30)

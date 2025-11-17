@@ -169,7 +169,7 @@ export SSH_KEY=$HOME/.ssh/id_ed25519
 export FIRST_NODE=$HOSTNAME
 export SECOND_NODE_IP=dummy
 export USERNAME=$USER
-export VERSION=cuda-stacc-v1
+export VERSION=cuda-stacc-v3
 
 
 # milabench_run single "$@"

@@ -30,7 +30,20 @@ def main():
     args = arguments()
 
     # Download dataset
-    download_hf_dataset(args.dataset, args.split, name=args.subset)
+    if args.mode == "flux":
+        from datasets import load_dataset
+
+        base_url = "https://huggingface.co/datasets/jackyhate/text-to-image-2M/resolve/main/data_512_2M/data_{i:06d}.tar"
+        num_shards = 10  # Number of webdataset tar files
+        urls = [base_url.format(i=i) for i in range(num_shards)]
+        _ = load_dataset(
+            "webdataset", 
+            data_files={"train": urls}, 
+            split="train", 
+            streaming=False
+        )
+    else:
+        download_hf_dataset(args.dataset, args.split, name=args.subset)
 
     # Download model
     download_hf_model(args.model)

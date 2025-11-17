@@ -6,6 +6,7 @@ export MILABENCH_GPU_ARCH=cuda
 export PYTHONUNBUFFERED=0
 export MILABENCH_ARGS=""
 export MILABENCH_CONFIG_NAME=standard
+export MILABENCH_REPO=https://github.com/milabench/milabench.git
 
 set -ex
 
@@ -32,7 +33,7 @@ export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/$MILABENCH_CONFIG_NA
 
 mkdir -p $MILABENCH_WORDIR
 cd $MILABENCH_WORDIR
-git clone https://github.com/mila-iqia/milabench.git -b $MILABENCH_BRANCH
+git clone $MILABENCH_REPO -b $MILABENCH_BRANCH
 
 conda create --prefix $MILABENCH_ENV python=$PYTHON_VERSION -y
 conda activate $MILABENCH_ENV
@@ -53,6 +54,10 @@ milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
 
 milabench slurm_system > $MILABENCH_WORDIR/system.yaml
 rm -rf $MILABENCH_WORDIR/results/venv
+
+
+pip install torch
+milabench pin --variant cuda
 
 milabench install --system $MILABENCH_WORDIR/system.yaml $MILABENCH_ARGS
 

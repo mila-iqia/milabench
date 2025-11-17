@@ -99,7 +99,8 @@ class WhisperBenchmark(InferenceBenchmark):
 
         model = AutoModelForSpeechSeq2Seq.from_pretrained(
             args.model, 
-            dtype=args.dtype, 
+            # dtype=args.dtype, 
+            torch_dtype=torch.bfloat16,
             low_cpu_mem_usage=True,
             use_safetensors=True
         )
