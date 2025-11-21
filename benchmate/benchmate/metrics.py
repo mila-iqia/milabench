@@ -649,20 +649,25 @@ class ManualTimedIterator(TimedIterator):
         self.accumulation_steps = 0
         return self.should_stop
        
-    def wrapped(self, iterator):
+    def wrapped(self, iterator, first_batches):
         # Time IO wait + batch compute
         self.start = self.event_fn(enable_timing=True)
         self.start.record()
         self.previous_overhead = 0
         
+        if first_batches:
+            while first_batches:
+                yield first_batches.pop()
+                
         for data in iterator:
             # we have to compute the batch size now because 
             # step might be call before the execution returns to this  block
             self.accumulation_steps += 1
             self.acc_batch_size += self.deduce_batch_size(data)
           
-            yield data # step will probably be called right before the control
-                       # returns to this block
+            with lazy_record_timing("work", self.event_fn) as work_time:
+                yield data # step will probably be called right before the control
+                        # returns to this block
 
             # step was called, should we stop ?
             if self.should_stop:

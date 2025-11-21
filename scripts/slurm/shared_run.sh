@@ -7,6 +7,7 @@ export PYTHONUNBUFFERED=0
 export MILABENCH_ARGS=""
 export MILABENCH_CONFIG_NAME=standard
 export MILABENCH_REPO=https://github.com/milabench/milabench.git
+export HF_TOKEN=""
 
 set -ex
 
@@ -30,6 +31,7 @@ export MILABENCH_SIZER_SAVE="$MILABENCH_WORDIR/results/runs/scaling.yaml"
 export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
 export MILABENCH_SOURCE="$MILABENCH_WORDIR/milabench"
 export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/$MILABENCH_CONFIG_NAME.yaml"
+export MILABENCH_HF_TOKEN=$HF_TOKEN
 
 mkdir -p $MILABENCH_WORDIR
 cd $MILABENCH_WORDIR
@@ -55,6 +57,7 @@ milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
 milabench slurm_system > $MILABENCH_WORDIR/system.yaml
 rm -rf $MILABENCH_WORDIR/results/venv
 
+module load cuda/12.6.0
 
 pip install torch
 milabench pin --variant cuda

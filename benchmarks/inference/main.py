@@ -114,12 +114,15 @@ class WhisperBenchmark(InferenceBenchmark):
             model=model,
             tokenizer=processor.tokenizer,
             feature_extractor=processor.feature_extractor,
-            dtype=args.dtype,
+            # dtype=args.dtype,
             device=device,
         )
 
         kwargs = dict(args.kwargs) or whisper_defaults_generation_args
         return pipe, kwargs
+
+    def run(self, pipe, batch, kwargs):
+        return pipe(batch, generate_kwargs=kwargs, batch_size=len(batch))
 
     def get_batch_size(self, x):
         # Audio is Samples/sec
@@ -289,7 +292,7 @@ class ChatBenchmark(InferenceBenchmark):
         pipe = transformers.pipeline(
             "text-generation",
             model=args.model,
-            model_kwargs={"dtype": torch.bfloat16},
+            # model_kwargs={"dtype": torch.bfloat16},
             device_map="auto",
         )
 

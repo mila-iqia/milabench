@@ -395,9 +395,18 @@ class Package(BasePackage):
             # install or pin. (We could also specifically clear out cache/pip when
             # building an image, but it is overall nicer for development to use
             # the default cache).
+            #
+            # data will be XDG_CACHE_HOME/huggingface/hub
+            #
             env["XDG_CACHE_HOME"] = str(self.dirs.cache)
             env["TORCH_HOME"] = str(self.dirs.cache)
+
+            # Huggingface cachin logic is a mess between all its different libraries
+            # we have to specify those to force huggingface to behave the same
+            # across benchmarks
+            # data will be data/hub
             env["HF_HOME"] = str(self.dirs.data)
+            env["HF_HUB_CACHE "] = str(self.dirs.data / "hub")
 
         return env
 

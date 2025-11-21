@@ -19,6 +19,9 @@ def download_hf_model(model_id, token=None, cache_dir=None, ignore_patterns=None
         snapshot_kwargs["token"] = token
 
     print(f"Downloading {model_id}...")
+
+    # snapshot_download() respects HF_HOME as the primary cache location
+    # Falls back to HF_HOME/hub for storing models
     local_path = snapshot_download(**snapshot_kwargs)
 
     print(f"Model is available at {local_path}")
