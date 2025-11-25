@@ -407,7 +407,7 @@ class Package(BasePackage):
             # data will be data/hub
             env["HF_HOME"] = str(self.dirs.data)
             env["HF_HUB_CACHE "] = str(self.dirs.data / "hub")
-
+            env["FLASHINFER_CACHE_DIR "] = str(self.dirs.cache / "flashinfer")
         return env
 
     def full_env(self, env={}):

@@ -40,6 +40,7 @@ vllm-dense-physics-gpus:
       --dataset-path: hendrydong/gpqa_diamond
       --hf-name: hendrydong/gpqa_diamond
       --num-prompts: 500
+      --model: mistralai/Mistral-Small-3.1-24B-Instruct-2503
 
   server:
    argv:
@@ -69,20 +70,19 @@ vllm-moe-code-gpus:
       --dataset-path: vdaita/edit_10k_char
       --hf-name: vdaita/edit_10k_char
       --num-prompts: 500
+      --model: meta-llama/Llama-4-Scout-17B-16E
 
   server:
    argv:
       # Out of Memory on L40S
       # meta-llama/Llama-4-Maverick-17B-128E-Instruct: true
-      mistralai/Mistral-Small-3.1-24B-Instruct-2503: true
+      
+      meta-llama/Llama-4-Scout-17B-16E: true
+      
+      # mistralai/Mistral-Small-3.1-24B-Instruct-2503: true
       --served-model-name: model
       --dtype: bfloat16
       --tensor-parallel-size: "{gpu_count}"
-      --tokenizer-mode: mistral
-      --config_format: mistral
-      --load_format: mistral 
-      --tool-call-parser: mistral
-      --enable-auto-tool-choice: true
       --limit-mm-per-prompt: '{"image":10}' 
 
 _inference:
@@ -110,7 +110,7 @@ whisper-transcribe-single:
     --dataset: openslr/librispeech_asr
     --subset: "clean"
     --split: "train.100"
-    --batch_size: 32
+    --batch_size: "auto_batch(32)"
 
 
 txt-to-image-gpus:
@@ -125,7 +125,7 @@ txt-to-image-gpus:
     --mode: flux
     --model: black-forest-labs/FLUX.1-dev
     --dataset: jackyhate/text-to-image-2M
-    --batch_size: 1
+    --batch_size: "auto_batch(1)"
   
 
 llm-chat-completion:
@@ -143,24 +143,26 @@ llm-chat-completion:
     --model: meta-llama/Llama-3.1-8B-Instruct
     --dataset: hendrydong/gpqa_diamond
     --split: "test"
-    # --dataset: wikitext/wikitext-103-v1
-    --batch_size: 1
+    --batch_size: "auto_batch(1)"
 
 
-llm-chat-completion-gpus:
-  inherits: _inference
-  num_machines: 1
-  tags:
-    - multigpu
-  plan:
-    method: njobs
-    n: 1
+#
+# Huggingface does not use multiple processes to do multi GPU here
+#
+# llm-chat-completion-gpus:
+#   inherits: _inference
+#   num_machines: 1
+#   tags:
+#     - multigpu
+#   plan:
+#     method: njobs
+#     n: 1
 
-  url: https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct
-  argv:
-    --mode: chat
-    --model: meta-llama/Llama-3.1-8B-Instruct
-    --dataset: hendrydong/gpqa_diamond
-    --split: "test"
-    # --dataset: wikitext/wikitext-103-v1
-    --batch_size: 1
+#   url: https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct
+#   argv:
+#     --mode: chat
+#     --model: meta-llama/Llama-3.1-8B-Instruct
+#     --dataset: hendrydong/gpqa_diamond
+#     --split: "test"
+#     # --dataset: wikitext/wikitext-103-v1
+#     --batch_size: 1

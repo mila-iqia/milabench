@@ -93,22 +93,13 @@ class InferenceBenchmark:
         return pipe(batch, **kwargs, batch_size=len(batch))
 
 
+
+
+
+
 class WhisperBenchmark(InferenceBenchmark):
-    def load_model(self, args, device):
-        from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 
-        model = AutoModelForSpeechSeq2Seq.from_pretrained(
-            args.model, 
-            # dtype=args.dtype, 
-            torch_dtype=torch.bfloat16,
-            low_cpu_mem_usage=True,
-            use_safetensors=True
-        )
-
-        model.to(device)
-
-        processor = AutoProcessor.from_pretrained(args.model)
-
+    def huggingface_pipeline(self, model, processor, device):
         pipe = pipeline(
             "automatic-speech-recognition",
             model=model,
@@ -121,10 +112,60 @@ class WhisperBenchmark(InferenceBenchmark):
         kwargs = dict(args.kwargs) or whisper_defaults_generation_args
         return pipe, kwargs
 
+    def custom_pipeline(self, model, processor, device):
+        def inference_pipe(batch, generate_kwargs, batch_size):
+            # processor expects numpy ....
+            audio = [x["array"].numpy() for x in batch]
+
+            inputs = processor(
+                audio, 
+                return_tensors="pt", 
+                #truncation=False, 
+                #padding="longest", 
+                #return_attention_mask=True, 
+                sampling_rate=16_000
+            )
+
+            with torch.inference_mode(), torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+                features = inputs.input_features.to(device).to(torch.bfloat16)
+                generated_ids = model.generate(inputs=features)
+
+            return processor.batch_decode(generated_ids, skip_special_tokens=True)
+        return inference_pipe, {}
+
+    def load_model(self, args, device):
+        from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
+
+        model = AutoModelForSpeechSeq2Seq.from_pretrained(
+            args.model, 
+            # dtype=args.dtype, 
+            torch_dtype=torch.bfloat16,
+            low_cpu_mem_usage=False,
+            use_safetensors=True
+        )
+
+        model.to(device)
+
+        processor = AutoProcessor.from_pretrained(args.model)
+
+        if False:
+            pipe, kwargs = self.huggingface_pipeline(model, processor, device)
+        else:
+            pipe, kwargs = self.custom_pipeline(model, processor, device)
+
+        # try:
+        #     pipe = torch.compile(pipe, backend="inductor", mode="max-autotune")
+        # except Exception as e:
+        #     print("Could not compile manual pipe")
+
+        return pipe, kwargs
+
     def run(self, pipe, batch, kwargs):
         return pipe(batch, generate_kwargs=kwargs, batch_size=len(batch))
 
     def get_batch_size(self, x):
+        return len(x)
+        # Audio is padded anyway
         # Audio is Samples/sec
         # Image is Img/Sec
         # Chat is Token/Sec
@@ -210,7 +251,7 @@ class FluxBenchmark(InferenceBenchmark):
             split="train", 
             streaming=False
         )
-
+        self.bs = args.batch_size
         self.dataset = observer.loader(self.dataloader(dataset, args), custom_step=self.custom_step)
         return self.dataset
 
