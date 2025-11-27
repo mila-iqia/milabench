@@ -8,6 +8,7 @@ from hashlib import md5
 from typing import Dict, Generator, List, Tuple
 from contextlib import contextmanager
 import warnings
+import shutil
 
 from voir.instruments.gpu import get_gpu_info
 
@@ -16,7 +17,7 @@ from ..fs import XPath
 from ..merge import merge
 from ..utils import select_nodes
 from .executors import execute_command
-from ..system import option, DockerConfig
+from ..system import option, DockerConfig, SlurmConfig
 
 
 def clone_with(cfg, new_cfg):
@@ -330,6 +331,18 @@ class WorkingDir(WrapperCommand):
         super().__init__(cmd, *args)
 
 
+class Srun(WrapperCommand):
+    """Wrap a command to change the working directory"""
+
+    def __init__(self, cmd: Command, node_count=1, task_per_node=1, **kwargs):
+        args = [
+            "srun",
+            f"--natasks-per-node={task_per_node}",
+            f"--nodes={node_count}"
+        ]
+        super().__init__(cmd, *args)
+
+
 def is_inside_docker():
     return os.environ.get("MILABENCH_DOCKER", None)
 
@@ -638,6 +651,16 @@ def node_address(node):
     return ip or host
 
 
+def use_slurm_if_available():
+    enabled = SlurmConfig().enabled
+    available = shutil.which("srun") is not None and shutil.which("sbatch") is not None
+    
+    if enabled and not available:
+        raise RuntimeError("Configuration asks for slurm but slurm is not available")
+        
+    return enabled and available
+
+
 class ForeachNode(ListCommand):
     def __init__(self, executor: Command, **kwargs) -> None:
         super().__init__(None, **kwargs)
@@ -665,6 +688,13 @@ class ForeachNode(ListCommand):
 
     def single_node(self):
         return self.executor
+    
+    def node_count(self):
+        config = self.executor.pack.config
+        return len(config["system"]["nodes"])
+    
+    def task_per_node(self):
+        return 1
 
     @property
     def executors(self):
@@ -692,9 +722,7 @@ class ForeachNode(ListCommand):
                 )
 
             bench_cmd = self.make_new_node_executor(rank, node, self.executor)
-
             docker_cmd = DockerRunCommand(bench_cmd, DockerConfig(**config["system"].get("docker", {})))
-
             worker = SSHCommand(
                 host=node_address(node),
                 user=node["user"],
@@ -703,6 +731,13 @@ class ForeachNode(ListCommand):
                 executor=docker_cmd,
                 **options
             )
+            
+            #
+            #   When using slurm, slurm will launch all those job for us
+            #
+            if use_slurm_if_available():
+                return [Srun(docker_cmd, self.node_count(), self.task_per_node())]
+        
             executors.append(worker)
         return executors
 

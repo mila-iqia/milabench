@@ -13,7 +13,7 @@ all:
 	install prepare single gpus nodes
 
 install:
-	milabench install $(MILABENCH_ARGS) --force
+	milabench install $(MILABENCH_ARGS) --use-current-env
 
 prepare:
 	milabench prepare $(MILABENCH_ARGS)
