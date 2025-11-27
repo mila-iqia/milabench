@@ -410,6 +410,11 @@ def default_device():
 
 
 @dataclass
+class SlurmConfig:
+    enabled: int = defaultfield("slurm.enabled", bool, 0)
+    
+
+@dataclass
 class SystemConfig:
     """This is meant to be an exhaustive list of all the environment overrides"""
 
@@ -425,6 +430,7 @@ class SystemConfig:
     dash: bool = defaultfield("dash", bool, 1)
     noterm: bool = defaultfield("noterm", bool, 0)
     github: Github = field(default_factory=Github)
+    slurm: SlurmConfig = field(default_factory=SlurmConfig)
 
     use_uv: bool = defaultfield("use_uv", bool, 0)
 
