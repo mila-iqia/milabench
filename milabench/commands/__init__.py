@@ -711,6 +711,12 @@ class ForeachNode(ListCommand):
         if len(self.nodes) == 1 or max_num == 1:
             return [self.single_node()]
 
+        #   
+        #   When using slurm, slurm will launch all those job for us
+        #
+        if use_slurm_if_available():
+            return [Srun(self.single_node(), self.node_count(), self.task_per_node())]
+    
         for rank, node in enumerate(self.nodes):
             options = dict()
 
@@ -731,13 +737,7 @@ class ForeachNode(ListCommand):
                 executor=docker_cmd,
                 **options
             )
-            
-            #
-            #   When using slurm, slurm will launch all those job for us
-            #
-            if use_slurm_if_available():
-                return [Srun(docker_cmd, self.node_count(), self.task_per_node())]
-        
+
             executors.append(worker)
         return executors
 
