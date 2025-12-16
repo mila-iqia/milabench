@@ -10,7 +10,6 @@ export PYTHONUNBUFFERED=0
 export MILABENCH_ARGS=""
 export MILABENCH_CONFIG_NAME=inference
 export MILABENCH_REPO=https://github.com/milabench/milabench.git
-export HF_TOKEN=""
 export MILABENCH_SHARED="$HOME/scratch/shared"
 
 export MILABENCH_WORDIR="$(pwd)"  
@@ -37,23 +36,6 @@ conda activate $MILABENCH_ENV
 pip install -e $MILABENCH_SOURCE[$MILABENCH_GPU_ARCH]
 pip install psycopg2-binary
 
-export MILABENCH_SIZER_CONFIG="$MILABENCH_WORDIR/milabench/config/scaling/inference.yaml"
-export MILABENCH_SIZER_SAVE="$MILABENCH_WORDIR/milabench/config/scaling/inference.yaml"
-export MILABENCH_SIZER_AUTO=1
-export MILABENCH_SIZER_BATCH_SIZE=2
-milabench run --system $MILABENCH_WORDIR/system.yaml
-export MILABENCH_SIZER_BATCH_SIZE=4
-milabench run --system $MILABENCH_WORDIR/system.yaml
-export MILABENCH_SIZER_BATCH_SIZE=8
-milabench run --system $MILABENCH_WORDIR/system.yaml
-export MILABENCH_SIZER_BATCH_SIZE=16
-milabench run --system $MILABENCH_WORDIR/system.yaml
-
-export MILABENCH_SIZER_BATCH_SIZE=160
-milabench run --system $MILABENCH_WORDIR/system.yaml
-export MILABENCH_SIZER_BATCH_SIZE=256
-milabench run --system $MILABENCH_WORDIR/system.yaml
-
 
 unset HF_DATASETS_CACHE
 unset HF_HOME
@@ -65,6 +47,9 @@ milabench slurm_system > $MILABENCH_WORDIR/system.yaml
 milabench install --system $MILABENCH_WORDIR/system.yaml --force
 milabench prepare --system $MILABENCH_WORDIR/system.yaml
 milabench run --system $MILABENCH_WORDIR/system.yaml
+
+
+milabench run --config "$MILABENCH_WORDIR/milabench/config/vllm.yaml"
 
 
 
@@ -149,3 +134,23 @@ wait $TUNNEL_PID 2>/dev/null || :
 ./results/venv/torch/bin/pip install flashinfer-python flashinfer-cubin==0.5.2
 # JIT cache package (replace cu129 with your CUDA version: cu128, cu129, or cu130)
 ./results/venv/torch/bin/pip install flashinfer-jit-cache==0.5.2 --index-url https://flashinfer.ai/whl/cu129
+
+
+
+
+# export MILABENCH_SIZER_CONFIG="$MILABENCH_WORDIR/milabench/config/scaling/inference.yaml"
+# export MILABENCH_SIZER_SAVE="$MILABENCH_WORDIR/milabench/config/scaling/inference.yaml"
+# export MILABENCH_SIZER_AUTO=1
+# export MILABENCH_SIZER_BATCH_SIZE=2
+# milabench run --system $MILABENCH_WORDIR/system.yaml
+# export MILABENCH_SIZER_BATCH_SIZE=4
+# milabench run --system $MILABENCH_WORDIR/system.yaml
+# export MILABENCH_SIZER_BATCH_SIZE=8
+# milabench run --system $MILABENCH_WORDIR/system.yaml
+# export MILABENCH_SIZER_BATCH_SIZE=16
+# milabench run --system $MILABENCH_WORDIR/system.yaml
+
+# export MILABENCH_SIZER_BATCH_SIZE=160
+# milabench run --system $MILABENCH_WORDIR/system.yaml
+# export MILABENCH_SIZER_BATCH_SIZE=256
+# milabench run --system $MILABENCH_WORDIR/system.yaml

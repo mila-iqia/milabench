@@ -533,6 +533,10 @@ def new_argument_resolver(pack):
         
         broadcast(on_cpu_count_set, pack, default, newvalue)
         return newvalue
+
+    
+    def mult(a, b):
+        return a * b
     
     gpu_opt = SizerOptions.instance()
     def batch_resize(default):

@@ -280,6 +280,15 @@ def split_args(argv):
     server_argv = argv[1:i]
     bench_argv = argv[(i + 1):]
 
+    args = []
+    for arg in server_argv:
+        # Voir already has a --config argument so we have to rename it
+        if arg == "--wth-config":
+            args.append("--config")
+        else:
+            args.append(arg)
+    server_argv = args
+
     return server_argv, bench_argv
 
 

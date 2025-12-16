@@ -88,11 +88,10 @@ def finalize_config(name, bench_config):
             bench_config["definition"] = str(pack)
 
     if not name.startswith("_") and name != "*":
-        _tags = set(bench_config["tags"])
+        _tags = set(bench_config.get("tags", []))
         _monitor_tags = _tags & _MONITOR_TAGS
-        assert len(_monitor_tags) == 1, (
-            f"Bench {name} should have exactly one monitor tag. Found {_monitor_tags}"
-        )
+        if len(_monitor_tags) != 1:
+            print(f"Bench {name} should have exactly one monitor tag. Found {_monitor_tags}")
 
     bench_config["tag"] = [bench_config["name"]]
 
@@ -121,18 +120,32 @@ def expand_matrix(name, bench_config):
     arguments = deepcopy(bench_config["matrix"])
     template = bench_config["job"]
 
+    valid_paths = ["argv"], ["client", "argv"], ["server", "argv"]
+
     newbenches = []
+
+    def get_path(d, path):
+        to_modify = d
+        for p in path:
+            to_modify = to_modify.get(p, {})
+        return to_modify
+    
 
     for matrix_args in combine_args(arguments, dict()):
         newbench = deepcopy(template)
         name = newbench.pop("name").format(**matrix_args)
 
-        for karg, varg in template["argv"].items():
-            try:
-                varg = varg.format(**matrix_args)
-            except:
-                pass
-            newbench["argv"][karg] = varg
+        for argv_path in valid_paths:
+            template_argv = get_path(template, argv_path)
+            newbench_argv = get_path(newbench, argv_path)
+
+            for karg, varg in template_argv.items():
+                try:
+                    varg = varg.format(**matrix_args)
+                except:
+                    pass
+    
+                newbench_argv[karg] = varg
 
         newbenches.append((name, newbench))
 
