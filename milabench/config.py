@@ -35,6 +35,14 @@ def get_base_folder():
     config = config_global.get()
     return XPath(config["_defaults"]["dirs"]["base"])
 
+def get_run_folder():
+    config = get_config_global()
+    
+    for k, conf in config.items():
+        name = conf["run_name"]
+        break
+
+    return get_base_folder() / "runs" / name
 
 def relative_to(pth, cwd):
     pth = XPath(pth).expanduser()
