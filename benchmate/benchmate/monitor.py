@@ -170,7 +170,8 @@ def _monitors(monogpu=True):
     if monogpu:
         monitors = [
             ("gpudata", gpu_monitor_fun()),
-            ("process", process_monitor(os.getpid())),
+            # This is too slow and slows down everything
+            # ("process", process_monitor(os.getpid())),
             ("worker_init", lambda: select_backend(None, True)),
         ]
     else:
@@ -211,9 +212,9 @@ def bench_monitor(*args, **kwargs):
 #
 # Legacy compatibility
 #
-def setupvoir(monogpu=True, enabled=True):
+def setupvoir(monogpu=True, enabled=True, interval=3):
     return _smuggle_monitor(
-        poll_interval=3, 
+        poll_interval=interval, 
         **_monitors(monogpu)
     )
 

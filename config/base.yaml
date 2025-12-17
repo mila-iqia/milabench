@@ -159,6 +159,16 @@ _accelerate_opt:
   use_deepspeed: true
   num_machines: 1
 
+fp8:
+  inherits: _flops
+
+  argv:
+    --number: 30
+    --repeat: 90
+    --m: 8192
+    --n: 8192
+    --dtype: fp8
+
 fp16:
   inherits: _flops
 

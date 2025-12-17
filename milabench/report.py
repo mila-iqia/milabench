@@ -34,6 +34,7 @@ def _make_row(summary, compare, config, query=None):
         "score": nan,
         "weight": weight,
         "enabled": is_enabled,
+        "energy (Kj)": summary.get("energy", 0)
     }
 
     if not summary or summary.get("empty", False):
@@ -217,6 +218,7 @@ columns_order = {
         "peak_memory",
         "score",
         "weight",
+        "energy (Kj)",
     ])
 }
 
@@ -528,6 +530,7 @@ _formatters = {
     "peak_memory": "{:11.0f}".format,
     "elapsed": "{:5.0f}".format,
     "batch_size": "{:3.0f}".format,
+    "energy (Kj)": "{:3.3f}".format,
     0: "{:.0%}".format,
     1: "{:.0%}".format,
     2: "{:.0%}".format,

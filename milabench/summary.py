@@ -50,9 +50,15 @@ def aggregate(run_data):
         elif event == "data":
             data = dict(entry["data"])
             task = data.pop("task", None)
+            time = data.pop("time", None)
+        
             for k, v in data.items():
                 if task is not None and k == "rate":
                     k = f"{task}_{k}"
+        
+                if time and isinstance(v, dict):
+                    v["time"] = time
+        
                 omnibus[k].append(v)
 
         elif event == "line":
@@ -76,11 +82,42 @@ def aggregate(run_data):
     assert config and start and end
 
     device = config.get("device", None)
-    omnibus["gpudata"] = [
-        {str(device): entry[str(device)]} if device is not None else entry
-        for entry in omnibus.get("gpudata", [])
-        if device is None or str(device) in entry
-    ]
+    new_gpudata = []
+    energy = 0
+    last_time = None
+
+    for entry in omnibus.get("gpudata", []):
+        # If a device is specified, filter entries that don't contain it
+        now = entry.pop("time", None)
+
+        if device is not None:
+            dev_key = str(device)
+
+            if dev_key not in entry:
+                continue  # skip this entry
+
+            gpu_entry = entry[dev_key]
+
+            # Keep only the requested device
+            new_entry = {
+                dev_key: gpu_entry,
+            }
+        else:
+            new_entry = entry
+        
+        new_gpudata.append(new_entry)
+
+        for gpu, data in new_entry.items():
+            elasped = 0
+            if now is not None and last_time is not None:
+                elapsed = now - last_time
+                energy += data["power"] * elapsed
+            print(now, last_time)
+
+        last_time = now
+
+    omnibus["energy"] = [energy/1000]
+    omnibus["gpudata"] = new_gpudata
 
     if device is not None:
         omnibus["per_gpu"] = [(device, tr) for tr in omnibus["train_rate"]]
@@ -257,6 +294,7 @@ def _summarize(group, query=tuple([])) -> Summary:
         "weight": config.get("weight", 0),
         "extra": additional,
         "enabled": config.get("enabled", False),
+        "energy": agg["energy"][0],
     }
 
 
@@ -269,6 +307,8 @@ def make_summary(runs, query=tuple([])) -> dict[str, Summary]:
         except AssertionError:
             syslog("Ignoring run {0}: it looks like it did not finish successfully", name)
         except Exception as err:
+            import traceback
+            traceback.print_exc()
             syslog("Ignoring run {0}: beause of exception: {1}", name, err)
 
     classified = _classify(aggs)
