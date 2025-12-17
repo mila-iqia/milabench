@@ -29,6 +29,8 @@ def replace_unit(unit):
     match unit:
         case "degrees C":
             return "C"
+        case "Readable":
+            return None
         case "reading":
             return None
         case _:
@@ -37,6 +39,8 @@ def replace_unit(unit):
 def process_value(value):
     match value:
         case "no reading":
+            return None
+        case "Not":
             return None
         case _ :
             return value

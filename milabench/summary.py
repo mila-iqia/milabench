@@ -85,10 +85,14 @@ def aggregate(run_data):
     new_gpudata = []
     energy = 0
     last_time = None
+    first_time = None
 
     for entry in omnibus.get("gpudata", []):
         # If a device is specified, filter entries that don't contain it
         now = entry.pop("time", None)
+
+        if first_time is None: 
+            first_time = now
 
         if device is not None:
             dev_key = str(device)
@@ -112,12 +116,13 @@ def aggregate(run_data):
             if now is not None and last_time is not None:
                 elapsed = now - last_time
                 energy += data["power"] * elapsed
-            print(now, last_time)
 
         last_time = now
 
     omnibus["energy"] = [energy/1000]
     omnibus["gpudata"] = new_gpudata
+    omnibus["elapsed"] = [last_time - first_time]
+    # omnibus["perf_watt"] = perf / (energy / elapsed)
 
     if device is not None:
         omnibus["per_gpu"] = [(device, tr) for tr in omnibus["train_rate"]]
@@ -270,6 +275,8 @@ def _summarize(group, query=tuple([])) -> Summary:
 
     additional = augment(group, query)
 
+    perf =  _metrics(agg["train_rate"])
+
     return {
         "meta": meta,
         "name": config["name"],
@@ -279,7 +286,7 @@ def _summarize(group, query=tuple([])) -> Summary:
         "ngpu": max(agg["ngpu"]),
         "successes": sum(agg["success"]),
         "failures": sum(not x for x in agg["success"]),
-        "train_rate": _metrics(agg["train_rate"]),
+        "train_rate": perf,
         "walltime": _metrics(agg["walltime"]),
         "per_gpu": {
             device: _metrics(train_rates) for device, train_rates in per_gpu.items()
@@ -295,6 +302,9 @@ def _summarize(group, query=tuple([])) -> Summary:
         "extra": additional,
         "enabled": config.get("enabled", False),
         "energy": agg["energy"][0],
+        "elpased": agg["elapsed"][0],
+        # ---
+        "perf_watt": perf["mean"] / (agg["energy"][0] / agg["elapsed"][0])
     }
 
 

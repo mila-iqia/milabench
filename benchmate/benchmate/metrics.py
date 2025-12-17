@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import json
 import os
 import sys
@@ -203,6 +203,7 @@ class TimedEvent:
     end: 'Event'
     batch_size: int = None
     batch_id: int = None
+    cpu_timer: float = field(default_factory=time.time)
 
     def elapsed_time(self):
         self.end.synchronize()
@@ -456,7 +457,6 @@ class TimedIterator:
             event = TimedEvent("rate", self.start, end, batch_size, self.batch_id)
             
             if _flags.eager_sync:
-                print("HERE")
                 rate, elapsed = self._make_rate(event)
                 self.log_rate(rate, time=time.time(), elapsed=elapsed, batch_id=event.batch_id)
                 self.total_obs += 1
@@ -524,7 +524,7 @@ class TimedIterator:
         for event in self.events:
             rate, elapsed = self._make_rate(event)
             self.last_time += elapsed
-            self.log_rate(rate, time=self.last_time, elapsed=elapsed, batch_id=event.batch_id)
+            self.log_rate(rate, time=event.cpu_timer, elapsed=elapsed, batch_id=event.batch_id)
 
         self.total_obs += len(self.events)
         self.events = []
