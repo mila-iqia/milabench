@@ -11,14 +11,14 @@ from milabench.commands import SimpleCommand, WorkingDir
 class Torchtune(TorchrunAllGPU):
     @property
     def executable(self):
-        return f"{self.binfolder}/bin/tune"
+        return f"{self.binfolder}/bin/python"
 
     def should_wrap(self):
        # Always wrap inside torchtune even if the bench is single device
        return True
 
     def __init__(self, pack: BasePackage, *torchrun_args, **kwargs):
-        super().__init__(pack, "run", *torchrun_args, module=False, **kwargs)
+        super().__init__(pack, "-m", "torchtune._cli.tune", "run", *torchrun_args, module=False, **kwargs)
 
 
 class TorchtuneAllNodes(TorchrunAllNodes):

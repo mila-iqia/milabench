@@ -371,6 +371,10 @@ class Torchrun:
     port: int = defaultfield("torchrun.port", int, default=29400)
     backend: str = defaultfield("torchrun.backend", str, default="c10d")
 
+@dataclass
+class Report:
+    lean: bool = defaultfield("report.lean", int, default=0)
+
 
 @dataclass
 class Options:

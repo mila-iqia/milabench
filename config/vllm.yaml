@@ -17,19 +17,88 @@ llm-chat-completion:
   enabled: false
 
 # https://github.com/InferenceMAX/InferenceMAX/blob/main/benchmarks/gptoss_fp4_h100_slurm.sh
-vllm-sweep:
+# vllm-sweep:
+#   matrix:
+#     concurrency: [8, 16, 32, 64, 128]
+#     # isl{input_len}-osl{output_len}
+#     # input_len: [8192, 1024]
+#     # output_len: [8192, 1024]
+#     max_context: [4K, 8K, 10K]
+#     max_batched_token: [512, 1K, 2K, 8K]
+
+#   job:
+#     name: 'vllm-sweep-conc{concurrency}-mxctx{max_context}-mxbt{max_batched_token}-small'
+#     inherits: _vllm
+#     enabled: true
+#     tags:
+#       - multigpu
+  
+#     plan:
+#       method: njobs
+#       n: 1
+
+#     client:
+#       argv:
+#         --dataset-name: hf
+#         --dataset-path: vdaita/edit_10k_char
+#         --hf-name: vdaita/edit_10k_char
+#         # --dataset-path: hendrydong/gpqa_diamond
+#         # --hf-name: hendrydong/gpqa_diamond
+#         --num-prompts: 500
+#         --model: mistralai/Mistral-Small-3.1-24B-Instruct-2503
+#         --custom-skip-chat-template: true
+#         # ---
+#         --max-concurrency: "{concurrency}"
+
+#         # Not really used because we use a dataset
+#         # --input-len: "{input_len}"
+#         # --output-len: "{output_len}"
+#         # [--random-input-len RANDOM_INPUT_LEN]
+#         # [--random-output-len RANDOM_OUTPUT_LEN]
+#         # [--random-range-ratio RANDOM_RANGE_RATIO]
+
+#         # --random-range-ratio "$RANDOM_RANGE_RATIO" \
+
+#     server:
+#       argv:
+#           mistralai/Mistral-Small-3.1-24B-Instruct-2503: true
+#           --tensor-parallel-size: "{gpu_count}"
+#           --tokenizer-mode: mistral
+#           --config_format: mistral
+#           --load_format: mistral 
+#           --tool-call-parser: mistral
+#           --enable-auto-tool-choice: true
+#           --limit-mm-per-prompt: '{"image":10}' 
+
+#           # ---
+#           --gpu-memory-utilization: 0.9
+#           --max-num-seqs: "{concurrency}"
+#           --async-scheduling: true
+#           --no-enable-prefix-caching: true
+#           # --max-cudagraph-capture-size: 2048
+
+#           # We recommend you set max_num_batched_tokens > 2048 for throughput.
+#           --max-num-batched-tokens: "{max_batched_token}"
+
+#           # Model context length (prompt and output)
+#           --max-model-len: "{max_context}"
+
+vllm-sweep-moe:
   matrix:
+    # effective_max_context_per_sequence ≤ max_num_batched_tokens / max_num_seqs
+
     concurrency: [8, 16, 32, 64, 128]
-    # isl{input_len}-osl{output_len}
-    # input_len: [8192, 1024]
-    # output_len: [8192, 1024]
-    max_context: [4K, 8K, 10K]
-    max_batched_token: [512, 1K, 2K, 8K]
+
+    # max-num-batched-tokens ≥ max-model-len × max-num-seqs
+    max_batched_token: [4096, 8192, 16384]
+
+    max_context: [16384, 32768]
 
   job:
-    name: 'vllm-sweep-conc{concurrency}-mxctx{max_context}-mxbt{max_batched_token}'
+    name: 'vllm-sweep-conc{concurrency}-mxctx{max_context}-mxbt{max_batched_token}-moe'
     inherits: _vllm
     enabled: true
+    max_duration: 3600
     tags:
       - multigpu
   
@@ -40,43 +109,30 @@ vllm-sweep:
     client:
       argv:
         --dataset-name: hf
-        --dataset-path: hendrydong/gpqa_diamond
-        --hf-name: hendrydong/gpqa_diamond
-        --num-prompts: 500
-        --model: mistralai/Mistral-Small-3.1-24B-Instruct-2503
-
-        # ---
+        --dataset-path: vdaita/edit_10k_char
+        --hf-name: vdaita/edit_10k_char
+        --num-prompts: "expr(min({concurrency} * 10, 500))"
+        --model: meta-llama/Llama-4-Scout-17B-16E
         --max-concurrency: "{concurrency}"
-
-        # Not really used because we use a dataset
-        # --input-len: "{input_len}"
-        # --output-len: "{output_len}"
-        # [--random-input-len RANDOM_INPUT_LEN]
-        # [--random-output-len RANDOM_OUTPUT_LEN]
-        # [--random-range-ratio RANDOM_RANGE_RATIO]
-
-        # --random-range-ratio "$RANDOM_RANGE_RATIO" \
+        # -endpoint: /v1/chat/completions
 
     server:
       argv:
-          mistralai/Mistral-Small-3.1-24B-Instruct-2503: true
+          meta-llama/Llama-4-Scout-17B-16E: true
           --tensor-parallel-size: "{gpu_count}"
-          --tokenizer-mode: mistral
-          --config_format: mistral
-          --load_format: mistral 
-          --tool-call-parser: mistral
-          --enable-auto-tool-choice: true
           --limit-mm-per-prompt: '{"image":10}' 
+          --served-model-name: model
+          --dtype: bfloat16
 
           # ---
           --gpu-memory-utilization: 0.9
-          --max-num-seqs: "{concurrency}"
           --async-scheduling: true
           --no-enable-prefix-caching: true
-          --max-cudagraph-capture-size: 2048
 
-          # We recommend you set max_num_batched_tokens > 2048 for throughput.
+          --max-num-seqs: "{concurrency}"
+
+          # # We recommend you set max_num_batched_tokens > 2048 for throughput.
           --max-num-batched-tokens: "{max_batched_token}"
 
-          # Model context length (prompt and output)
+          # # Model context length (prompt and output)
           --max-model-len: "{max_context}"

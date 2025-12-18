@@ -9,6 +9,7 @@ from pandas import DataFrame
 from milabench.utils import error_guard
 from milabench.summary import Summary
 from milabench.config import get_config_global
+from milabench.system import option
 
 nan = math.nan
 
@@ -287,6 +288,9 @@ def make_dataframe(summary, compare=None, weights=None, query=None):
             for key in all_keys
         }
     ).transpose()
+
+    if option("report.lean", int, 0) != 0:
+        df = df.dropna(subset=["n"])
 
     # Reorder columns
     df = df[sorted(df.columns, key=lambda k: columns_order.get(k, 2000))]

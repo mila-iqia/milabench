@@ -581,6 +581,9 @@ def new_argument_resolver(pack):
     context["milabench_name"] = pack.config.get("name", None)
     context["benchmark_folder"] = pack.config.get('definition', None)
 
+    def expr(ex):
+        return ex
+
     def auto_eval(arg):
         try:
             newvalue: str = str(arg).format(**context)
@@ -591,8 +594,8 @@ def new_argument_resolver(pack):
                 name, newvalue = newvalue.split("=", maxsplit=1)
                 finalize_val = lambda x: f"{name}={x}"
 
-            if newvalue.startswith("auto"):
-                newvalue = str(eval(newvalue, {"auto": cpu, "auto_batch": batch_resize}, {}))
+            if newvalue.startswith("auto") or newvalue.startswith("expr") :
+                newvalue = str(eval(newvalue, {"auto": cpu, "expr": expr, "auto_batch": batch_resize}, {}))
             
             return finalize_val(newvalue)
         except KeyError as err:

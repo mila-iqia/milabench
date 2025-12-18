@@ -121,7 +121,10 @@ def aggregate(run_data):
 
     omnibus["energy"] = [energy/1000]
     omnibus["gpudata"] = new_gpudata
-    omnibus["elapsed"] = [last_time - first_time]
+    elasped = 0
+    if last_time and first_time:
+        elasped = last_time - first_time
+    omnibus["elapsed"] = [elasped]
     # omnibus["perf_watt"] = perf / (energy / elapsed)
 
     if device is not None:
