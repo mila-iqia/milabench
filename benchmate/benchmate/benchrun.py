@@ -32,6 +32,7 @@ def get_subprocess_handler(
     stdout: str,
     stderr: str,
     local_rank_id: int,
+    numa_options = None
 ):
     return NewSubprocessHandler(
         entrypoint=entrypoint,
@@ -40,6 +41,7 @@ def get_subprocess_handler(
         stdout=stdout,
         stderr=stderr,
         local_rank_id=local_rank_id,
+        numa_options=numa_options,
     )
 
 
