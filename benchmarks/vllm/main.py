@@ -10,6 +10,7 @@ import numpy as np
 import torchcompat.core as accelerator
 from vllm.benchmarks.serve import SampleRequest, RequestFuncOutput, PreTrainedTokenizerBase, BenchmarkMetrics, MILLISECONDS_TO_SECONDS_CONVERSION
 import vllm.benchmarks.datasets as datasets
+from benchmate.timeline import timeline
 
 push_metric = None
 
@@ -35,6 +36,10 @@ def calculate_metrics(
     Returns:
         A tuple of the benchmark metrics and the actual output lengths.
     """
+
+    for sampled_obs in timeline(outputs, 30):
+        push_metric(**sampled_obs)
+
     actual_output_lens: list[int] = []
     total_input = 0
     completed = 0
@@ -73,18 +78,18 @@ def calculate_metrics(
             ttfts.append(outputs[i].ttft)
             e2els.append(outputs[i].latency)
 
-            push_metric(ttfts=outputs[i].ttft, unit="ms")
-            push_metric(e2els=outputs[i].latency, unit="ms")
+            push_metric(ttfts=outputs[i].ttft, unit="s")
+            push_metric(e2els=outputs[i].latency, unit="s")
             
             if len(outputs[i].itl) > 0:
-                push_metric(itl=sum(outputs[i].itl)/len(outputs[i].itl), unit="ms")
+                push_metric(itl=sum(outputs[i].itl)/len(outputs[i].itl), unit="s")
 
-            push_metric(tpot=outputs[i].tpot, unit="ms")
+            # push_metric(tpot=outputs[i].tpot, unit="ms")
             push_metric(input_tok=input_requests[i].prompt_len, unit="count")
             push_metric(output_tok=output_len, unit="count")
 
             tok_s = (input_requests[i].prompt_len + output_len) / outputs[i].latency
-            push_metric(rate=tok_s, unit="tok/s")
+            push_metric(request_rate=tok_s, unit="tok/s")
             
             completed += 1
         else:

@@ -301,7 +301,10 @@ def resolve_run_name(run_name):
     return run_name
 
 
-def _parse_report(pth, open=lambda x: x.open()):
+def _parse_report(pth, open=lambda x: x.open(), shared=None):
+    if shared is None:
+        shared = {}
+    
     with open(pth) as f:
         lines = f.readlines()
         data = []
@@ -310,7 +313,9 @@ def _parse_report(pth, open=lambda x: x.open()):
 
         for line in lines:
             try:
-                data.append(json.loads(line))
+                msg = json.loads(line)
+                msg.update(shared)
+                data.append(msg)
                 good_lines += 1
             except Exception:
                 import traceback

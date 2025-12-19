@@ -89,13 +89,15 @@ vllm-sweep-moe:
 
     concurrency: [8, 16, 32, 64, 128]
 
+    # max-num-batched-tokens: 8192: is fixed in InferenceMax
     # max-num-batched-tokens ≥ max-model-len × max-num-seqs
-    max_batched_token: [4096, 8192, 16384]
+    max_batched_token: [2048, 4096, 8192]
 
-    max_context: [16384, 32768]
+    # max-model-len: 10240 is fixed in InferenceMAX
+    max_context: [10240]       # [16384, 32768]
 
   job:
-    name: 'vllm-sweep-conc{concurrency}-mxctx{max_context}-mxbt{max_batched_token}-moe'
+    name: 'vllm-sweep-conc{concurrency}-mxbt{max_batched_token}-moe'
     inherits: _vllm
     enabled: true
     max_duration: 3600
@@ -114,7 +116,6 @@ vllm-sweep-moe:
         --num-prompts: "expr(min({concurrency} * 10, 500))"
         --model: meta-llama/Llama-4-Scout-17B-16E
         --max-concurrency: "{concurrency}"
-        # -endpoint: /v1/chat/completions
 
     server:
       argv:

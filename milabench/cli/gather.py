@@ -2,16 +2,20 @@ import argparse
 import os
 import re
 from dataclasses import dataclass, field
+from collections import defaultdict
 
 import pandas as pd
 
-from ..common import _read_reports
+from ..common import _read_reports, _parse_report
 from ..report import make_dataframe, pandas_to_string
 from ..summary import make_summary
-
+from ..fs import XPath
 
 def default_tags():
     return [
+        "concurrency=conc([0-9]*)",
+        "max_context=mxctx([0-9]*)",
+        "max_batch_token=mxbt([0-9]*)",
         "worker=w([a-z0-9]*)",
         "multiple=m([0-9]*)",
         "power=p([0-9]*)",
@@ -55,15 +59,54 @@ def get_config(reports):
     return config
 
 
-def extract_tags(name, tags):
+def extract_tags(name, tags, found):
     for tag, pat in tags.items():
         if m := pat.search(name):
             value = m.group(1)
+            found[tag] += 1
             yield tag, value
-        else:
-            print(f"{tag} not found in {name}")
-            yield tag, "NA"
+        # else:
+        #     print(f"{tag} not found in {name}")
+        #     yield tag, "NA"
 
+
+
+def matrix_run():
+    runs = []
+    for folder in os.listdir(args.runs):
+        if folder.startswith("prepare"):
+            continue
+
+        if folder.startswith("install"):
+            continue
+
+        path = f"{args.runs}/{folder}"
+        if os.path.isdir(path):
+            runs.append(path)
+
+    found_tags = defaultdict(int)
+    tags = dict()
+    for tag in args.tags:
+        name, regex = tag.split("=")
+        tags[name] = re.compile(regex)
+
+    query = ("batch_size", "elapsed")
+    data = []
+    for run in runs:
+        reports = _read_reports(run)
+        summary = make_summary(reports, query=query)
+        df = make_dataframe(summary, None, None, query=query)
+
+        name = run.split("/")[-1]
+        df["name"] = name.split(".", maxsplit=1)[0]
+        for tag, value in extract_tags(name, tags, found_tags):
+            if value != "NA":
+                df[tag] = value
+
+        data.append(df)
+
+    gathered = pd.concat(data)
+    print(pandas_to_string(gathered))
 
 def gather_cli(args=None):
     """Gather metrics from runs inside a folder in a neat format.
@@ -86,39 +129,49 @@ def gather_cli(args=None):
     if args is None:
         args = arguments()
 
-    runs = []
-    for folder in os.listdir(args.runs):
-        if folder.startswith("prepare"):
-            continue
-
-        if folder.startswith("install"):
-            continue
-
-        path = f"{args.runs}/{folder}"
-        if os.path.isdir(path):
-            runs.append(path)
-
+    found_tags = defaultdict(int)
     tags = dict()
     for tag in args.tags:
         name, regex = tag.split("=")
         tags[name] = re.compile(regex)
 
-    query = ("batch_size", "elapsed")
-    data = []
-    for run in runs:
-        reports = _read_reports(run)
-        summary = make_summary(reports, query=query)
-        df = make_dataframe(summary, None, None, query=query)
+    lines = []
 
-        name = run.split("/")[-1]
-        df["name"] = name.split(".", maxsplit=1)[0]
-        for tag, value in extract_tags(name, tags):
-            df[tag] = value
+    for folder in os.listdir(args.runs):
+        for parent, _, filenames in os.walk(os.path.join(args.runs, folder)):
+            for file in filenames:
+                if not file.endswith(".data"):
+                    continue
 
-        data.append(df)
+                data = { k: v
+                    for k, v in extract_tags(file, tags, found_tags)
+                }
 
-    gathered = pd.concat(data)
-    print(pandas_to_string(gathered))
+                data["bench"] = file[:-5]
+                pth = XPath(parent) / file
+                
+                report = _parse_report(pth, shared=data)
+
+                for line in report:
+                    match line["event"]:
+                        case "data":
+                            payload = line["data"]
+
+                            if "gpudata" in payload:
+                                continue
+
+                            unit = payload.pop("unit", None)
+                            time = payload.pop("time", None)
+                            task = payload.pop("task", None)
+
+                            for k, v in payload.items():
+                                lines.append({"metric": k, "value": v, **data})
+
+    # print(lines)
+    
+    pd.DataFrame(lines).to_csv("output.csv")
+    # data = pandas_to_string(lines)
+
 
 
 if __name__ == "__main__":
