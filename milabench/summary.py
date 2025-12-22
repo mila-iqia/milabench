@@ -280,6 +280,16 @@ def _summarize(group, query=tuple([])) -> Summary:
 
     perf =  _metrics(agg["train_rate"])
 
+    def energy():
+        try:
+            return {
+                "energy": agg["energy"][0],
+                "elpased": agg["elapsed"][0],
+                "perf_watt": perf["mean"] / (agg["energy"][0] / agg["elapsed"][0])
+            }
+        except:
+            return {}
+
     return {
         "meta": meta,
         "name": config["name"],
@@ -304,10 +314,7 @@ def _summarize(group, query=tuple([])) -> Summary:
         "weight": config.get("weight", 0),
         "extra": additional,
         "enabled": config.get("enabled", False),
-        "energy": agg["energy"][0],
-        "elpased": agg["elapsed"][0],
-        # ---
-        "perf_watt": perf["mean"] / (agg["energy"][0] / agg["elapsed"][0])
+        **energy()
     }
 
 

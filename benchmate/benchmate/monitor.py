@@ -115,7 +115,7 @@ def monitor_node(ov, poll_interval=1, arch=None):
     )
 
 
-def _smuggle_monitor(poll_interval=1 worker_init=None, **monitors):
+def _smuggle_monitor(poll_interval=1, worker_init=None, **monitors):
     # USE auto push
     data_file = SmuggleWriter(sys.stdout)
     def mblog(data):

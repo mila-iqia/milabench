@@ -3,7 +3,7 @@ import os
 import re
 from dataclasses import dataclass, field
 from collections import defaultdict
-
+import hashlib
 import pandas as pd
 
 from ..common import _read_reports, _parse_report
@@ -13,13 +13,13 @@ from ..fs import XPath
 
 def default_tags():
     return [
-        "concurrency=conc([0-9]*)",
-        "max_context=mxctx([0-9]*)",
-        "max_batch_token=mxbt([0-9]*)",
-        "worker=w([a-z0-9]*)",
-        "multiple=m([0-9]*)",
-        "power=p([0-9]*)",
-        "capacity=c([A-Za-z0-9]*(Go)?)",
+        "concurrency=conc([0-9]+)",
+        "max_context=mxctx([0-9]+)",
+        "max_batch_token=mxbt([0-9]+)",
+        "worker=w([0-9]+)",
+        "multiple=m([0-9]+)",
+        "power=p([0-9]+)",
+        "capacity=c([0-9]+(Go)?)",
     ]
 
 
@@ -41,6 +41,23 @@ def arguments():
     )
     parser.add_argument(
         "--tags",
+        type=str,
+        help="Tags defined in run names",
+        nargs="+",
+        default=default_tags(),
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        default="output.csv"
+    )
+    parser.add_argument(
+        "--append",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "--more",
         type=str,
         help="Tags defined in run names",
         nargs="+",
@@ -135,6 +152,7 @@ def gather_cli(args=None):
         name, regex = tag.split("=")
         tags[name] = re.compile(regex)
 
+    more = dict(more.split("=") for more in args.more)
     lines = []
     folders = os.listdir(args.runs)
 
@@ -149,25 +167,47 @@ def gather_cli(args=None):
             for k, v in extract_tags(file, tags, found_tags)
         }
 
-        data["bench"] = file[:-5]
         pth = XPath(parent) / file
-        
+
+        name, device = file[:-5].split('.')
+
+        data["bench"] = name
+        data["device"] = device
+        data["run_id"] = hashlib.sha256(str(pth).encode("utf-8")).hexdigest()[:8]
+
         report = _parse_report(pth, shared=data)
+
+        def flatten_values(payload, namespace=None):
+            if namespace is None:
+                namespace = tuple()
+
+            if isinstance(payload, list):
+                for i, val in enumerate(payload):
+                    yield from flatten_values(val, namespace + (str(i),))
+
+            elif isinstance(payload, dict):
+                for k, v in payload.items():
+                    nspace = namespace + (str(k),)
+                    yield from flatten_values(v, nspace)
+
+            else:
+                yield ".".join(namespace), payload      
 
         for line in report:
             match line["event"]:
                 case "data":
                     payload = line["data"]
 
-                    if "gpudata" in payload:
-                        continue
-
                     unit = payload.pop("unit", None)
+                    units = payload.pop("units", None)
                     time = payload.pop("time", None)
                     task = payload.pop("task", None)
 
-                    for k, v in payload.items():
-                        lines.append({"metric": k, "value": v, **data, "time": time})
+                    for k, v in flatten_values(payload, tuple([])):
+                        if k.startswith("progress"):
+                            continue
+
+                        lines.append({"metric": k, "value": v, "time": time, "unit": units or unit, "task": task, **data, **more})
 
     for folder in folders:
         process_file(args.runs, folder)
@@ -178,11 +218,50 @@ def gather_cli(args=None):
 
 
     # print(lines)
-    
-    pd.DataFrame(lines).to_csv("output.csv")
-    # data = pandas_to_string(lines)
 
+    df = pd.DataFrame(lines)
+    df["time_norm"] = df["time"] - df.groupby("run_id")["time"].transform("min")
+
+    options = {
+        "mode": "a" if args.append else "w",
+        "header": not os.path.exists(args.output)
+    }
+    df.to_csv(args.output, index=False, **options)
+
+    power_over_time(df)
+
+
+
+def power_over_time(df):
+    df = df[df["clock"] == 1785]
+    df["metric"] = df["metric"].str.replace(r"gpudata\.\d+\.power", "power", regex=True)
+    df = df[df["metric"] == "power"]
+    
+    df.to_csv("power_only.csv")
+
+    import altair as alt
+
+    chart = alt.Chart(df).mark_point().encode(
+        x=alt.X("time_norm:Q", title="Time since start (s)"),
+        y=alt.Y("value:Q", title="Metric Value"),
+        color=alt.Color("power:O", title="Power"), 
+    ).properties(
+        width=500,
+        height=500
+    ).facet(
+        column=alt.Column("bench:N", title="Bench")
+    ).resolve_scale(
+        x='independent',
+        y='independent'
+    )
+
+    chart.save("power_evol.png")
 
 
 if __name__ == "__main__":
     gather_cli()
+
+    
+    # import pandas as pd
+    # df = pd.read_csv("output.csv")
+    # power_over_time(df)
