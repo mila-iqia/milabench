@@ -45,11 +45,15 @@ class Timeline:
 class Worker:
     worker_id: int
     active_job = None
+    job_count: int = 0
 
     def set_job(self, job):
         self.active_job = job
+
         if job is not None:
+            self.job_count += 1
             self.active_job.worker = self.worker_id
+            self.active_job.batch_id = self.job_count
 
     def end(self):
         if self.active_job:
@@ -65,6 +69,7 @@ class JobAdapter:
         self.pct = None
         self.worker = None
         self.accounted = 0
+        self.batch_id = None
 
     def completion_percentage(self, start, end):
         total_time = self.end - self.start
@@ -87,6 +92,14 @@ class JobAdapter:
         elapsed = self.data["latency"]
         return total / elapsed
 
+    def __json__(self):
+        return {
+            **self.data,
+            "start": self.start,
+            "end": self.end,
+            "worker": self.worker,
+            "batch_id": self.batch_id
+        }
 
 def convert(obj):
     if isinstance(obj, dict):
@@ -324,16 +337,9 @@ def timeline(outputs, number):
 
 
 def plot_timeline(jobs):
-    with open("data.json", "w") as fp:
-        import json
-        json.dump(jobs, fp)
-
-
-    import pandas as pd
     import altair as alt
 
-    df = pd.DataFrame(jobs)
-    base = alt.Chart(df).encode(
+    base = alt.Chart(jobs).encode(
         y=alt.Y(
             "worker:O",
             title="Request",
@@ -344,25 +350,57 @@ def plot_timeline(jobs):
             title="Time (s)",
             axis=alt.Axis(format=".2f"),
         ),
+        color="batch_id:O",
         x2="end:Q",
     )
 
     bars = base.mark_bar(height=12).properties(
         width=900,
-        height=25 * len(set(df["worker"])),
+        height=25 * len(set(jobs["worker"])),
         title="Request Timeline (Gantt)"
     )
-
     bars.save('chart.png', scale_factor=2)
     return bars
 
 
-if __name__ == "__main__":
-    with open("raw_data.json", "r") as fp:
-        import json
-        obj = json.load(fp)
+def main():
+    import json
+    from argparse import ArgumentParser
+    import pandas as pd
 
-    for p in (timeline(obj)):
-        for k, v in p.items():
-            print(f"{k},{v},", end="")
-        print()
+    parser = ArgumentParser()
+    parser.add_argument("file", type=str)
+    parser.add_argument("-n", type=int, default=30)
+    
+    args = parser.parse_args()
+
+    with open(args.file, "r") as fp:
+        outputs = json.load(fp)
+
+    proc = TimelineProcessor()
+
+    #
+    # Generate the global rate
+    #
+    jobs = [JobAdapter(convert(l)) for l in outputs]
+
+    jobs.sort(key=lambda item: item.end)
+    jobs.sort(key=lambda item: item.start)
+
+    results = proc.method_2(jobs, args.n)
+
+    for line in results:
+        print(line)
+
+    #
+    # Plot the Jobs
+    #
+    _ = proc.method_1(jobs, args.n)
+
+    data = pd.DataFrame([job.__json__() for job in jobs])
+    print(data)
+    plot_timeline(data)
+
+
+if __name__ == "__main__":
+    main()

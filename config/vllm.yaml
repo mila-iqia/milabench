@@ -87,11 +87,11 @@ vllm-sweep-moe:
   matrix:
     # effective_max_context_per_sequence ≤ max_num_batched_tokens / max_num_seqs
 
-    concurrency: [8, 16, 32, 64, 128]
+    concurrency: [256, 512, 1024]
 
     # max-num-batched-tokens: 8192: is fixed in InferenceMax
     # max-num-batched-tokens ≥ max-model-len × max-num-seqs
-    max_batched_token: [2048, 4096, 8192]
+    max_batched_token: [4096]
 
     # max-model-len: 10240 is fixed in InferenceMAX
     max_context: [10240]       # [16384, 32768]
@@ -113,7 +113,7 @@ vllm-sweep-moe:
         --dataset-name: hf
         --dataset-path: vdaita/edit_10k_char
         --hf-name: vdaita/edit_10k_char
-        --num-prompts: "expr(min({concurrency} * 10, 500))"
+        --num-prompts: "expr({concurrency} * 10)"
         --model: meta-llama/Llama-4-Scout-17B-16E
         --max-concurrency: "{concurrency}"
 

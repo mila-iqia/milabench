@@ -143,6 +143,9 @@ def expand_matrix(name, bench_config):
         newbench = deepcopy(template)
         name = newbench.pop("name").format(**matrix_args)
 
+        # Save the matrix values in the config so it is query able
+        newbench["matrix"] = matrix_args
+
         for argv_path in valid_paths:
             template_argv = get_path(template, argv_path)
             newbench_argv = get_path(newbench, argv_path)
