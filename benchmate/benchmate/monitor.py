@@ -22,7 +22,13 @@ def _get_flag(name, type, default):
     return type(os.getenv(name, default))
 
 
+
+def get_poll_interval(value):
+    return _get_flag("BENCHMATE_POLL_INTERVAL", float, value)
+
+
 log_pattern = _get_flag("BENCHMATE_LOG_MODE", str, 'lean')
+poll_interval_default = get_poll_interval(0.25)
 
 
 def log_patterns():
@@ -81,17 +87,17 @@ def auto_push():
 def monitor_monogpu(ov, poll_interval=1, arch=None):
     return monitor(
         ov,
-        poll_interval=poll_interval,
+        poll_interval=get_poll_interval(poll_interval),
         gpudata=gpu_monitor_fun(),
         worker_init=lambda: select_backend(arch, force=True),
     )
 
 
 @instrument_definition
-def monitor_process_monogpu(ov, poll_interval=3, arch=None):
+def monitor_process_monogpu(ov, poll_interval=1, arch=None):
     return monitor(
         ov,
-        poll_interval=poll_interval,
+        poll_interval=get_poll_interval(poll_interval),
         process=process_monitor(os.getpid()),
     )
 
@@ -100,7 +106,7 @@ def monitor_process_monogpu(ov, poll_interval=3, arch=None):
 def monitor_node(ov, poll_interval=1, arch=None):
     return monitor(
         ov,
-        poll_interval=poll_interval,
+        poll_interval=get_poll_interval(poll_interval),
         gpudata=gpu_monitor_fun(),
         iodata=io_monitor(),
         netdata=network_monitor(),
@@ -109,7 +115,7 @@ def monitor_node(ov, poll_interval=1, arch=None):
     )
 
 
-def _smuggle_monitor(poll_interval=10, worker_init=None, **monitors):
+def _smuggle_monitor(poll_interval=1 worker_init=None, **monitors):
     # USE auto push
     data_file = SmuggleWriter(sys.stdout)
     def mblog(data):
@@ -139,7 +145,7 @@ def _smuggle_monitor(poll_interval=10, worker_init=None, **monitors):
             mblog(entry)
 
     mon = generic_monitor(
-        poll_interval,
+        get_poll_interval(poll_interval),
         get,
         push,
         process=False,
@@ -151,10 +157,10 @@ def _smuggle_monitor(poll_interval=10, worker_init=None, **monitors):
 
 
 @contextmanager
-def smuggle_monitor(poll_interval=10, worker_init=None, enabled=True, **monitors):
+def smuggle_monitor(poll_interval=1, worker_init=None, enabled=True, **monitors):
     if enabled:
         # rank == 0
-        mblog, mon = _smuggle_monitor(poll_interval, worker_init, **monitors)
+        mblog, mon = _smuggle_monitor(get_poll_interval(poll_interval), worker_init, **monitors)
 
         try:
             yield mblog
@@ -212,9 +218,9 @@ def bench_monitor(*args, **kwargs):
 #
 # Legacy compatibility
 #
-def setupvoir(monogpu=True, enabled=True, interval=3):
+def setupvoir(monogpu=True, enabled=True, interval=1):
     return _smuggle_monitor(
-        poll_interval=interval, 
+        poll_interval=get_poll_interval(interval), 
         **_monitors(monogpu)
     )
 
@@ -248,14 +254,16 @@ def voirfile_monitor(ov, options):
     # -1 & 0 early stop
     if rank <= 0:
         instruments.append(early_stop(n=options.stop, key="rate", task="train", signal="stop"))
-        
+    
+    poll_interval = get_poll_interval(options.gpu_poll)
+
     # mono gpu if rank is not set
     if rank == -1:
-        instruments.append(monitor_monogpu(poll_interval=options.gpu_poll))
-        instruments.append(monitor_process_monogpu(poll_interval=options.gpu_poll))
+        instruments.append(monitor_monogpu(poll_interval=poll_interval))
+        instruments.append(monitor_process_monogpu(poll_interval=poll_interval))
 
     # rank is set only monitor main rank
     if rank == 0:
-        instruments.append(monitor_node(poll_interval=options.gpu_poll))
+        instruments.append(monitor_node(poll_interval=poll_interval))
 
     ov.require(*instruments)

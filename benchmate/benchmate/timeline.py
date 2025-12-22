@@ -147,9 +147,6 @@ class Bucket:
         return self._for_each(self.ran_in_bucket)
 
 
-
-
-
 class TimelineProcessor:
     def __init__(self):
         self.finished_jobs = []
@@ -167,12 +164,22 @@ class TimelineProcessor:
         self.samples = [self.start + self.step * (i + 1) for i in range(number)]
 
     def __call__(self, outputs: list[RequestFuncOutput], number=30):
-        return self.method_2(outputs, number)
-
-    def method_2(self, outputs: list[RequestFuncOutput], number=30):
         jobs = [JobAdapter(convert(l)) for l in outputs]
         jobs.sort(key=lambda item: item.start)
 
+        self.save_normalized_data(jobs)
+    
+        return self.method_2(jobs, number)
+
+    def save_normalized_data(self, jobs):
+        if True:
+            import time
+            import json
+
+            with open(f"fjobs_{int(time.time())}.json", "w") as fp:    
+                json.dump([j.data for j in jobs], fp)
+
+    def method_2(self, jobs: list[jobs], number=30):
         start = jobs[0].start
         for job in jobs:
             job.start -= start
@@ -265,10 +272,7 @@ class TimelineProcessor:
 
         self._on_time_change(end_time, workers)
 
-    def method_1(self, outputs: list[RequestFuncOutput], number):
-        jobs = [JobAdapter(convert(l)) for l in outputs]
-        jobs.sort(key=lambda item: item.start)
-
+    def method_1(self, jobs: list[RequestFuncOutput], number):
         start = jobs[0].start
         for job in jobs:
             job.start -= start

@@ -136,36 +136,46 @@ def gather_cli(args=None):
         tags[name] = re.compile(regex)
 
     lines = []
+    folders = os.listdir(args.runs)
 
-    for folder in os.listdir(args.runs):
+    if len(folders) == 0:
+        folders = [""]
+
+    def process_file(parent, file):
+        if not file.endswith(".data"):
+            return
+
+        data = { k: v
+            for k, v in extract_tags(file, tags, found_tags)
+        }
+
+        data["bench"] = file[:-5]
+        pth = XPath(parent) / file
+        
+        report = _parse_report(pth, shared=data)
+
+        for line in report:
+            match line["event"]:
+                case "data":
+                    payload = line["data"]
+
+                    if "gpudata" in payload:
+                        continue
+
+                    unit = payload.pop("unit", None)
+                    time = payload.pop("time", None)
+                    task = payload.pop("task", None)
+
+                    for k, v in payload.items():
+                        lines.append({"metric": k, "value": v, **data, "time": time})
+
+    for folder in folders:
+        process_file(args.runs, folder)
+
         for parent, _, filenames in os.walk(os.path.join(args.runs, folder)):
             for file in filenames:
-                if not file.endswith(".data"):
-                    continue
+                process_file(parent, file)
 
-                data = { k: v
-                    for k, v in extract_tags(file, tags, found_tags)
-                }
-
-                data["bench"] = file[:-5]
-                pth = XPath(parent) / file
-                
-                report = _parse_report(pth, shared=data)
-
-                for line in report:
-                    match line["event"]:
-                        case "data":
-                            payload = line["data"]
-
-                            if "gpudata" in payload:
-                                continue
-
-                            unit = payload.pop("unit", None)
-                            time = payload.pop("time", None)
-                            task = payload.pop("task", None)
-
-                            for k, v in payload.items():
-                                lines.append({"metric": k, "value": v, **data})
 
     # print(lines)
     
