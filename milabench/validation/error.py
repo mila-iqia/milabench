@@ -40,6 +40,13 @@ class ParsedTraceback:
         return self.lines[-1]
 
 
+    def append_line(self, line):
+        if all(c in "^ " for c in line) and all(c in "^ " for c in self.lines[-1]):
+            self.lines[-1] += line
+        else:
+            self.lines.append(line.replace("\n", ""))
+    
+
 def _extract_traceback(lines, is_install) -> list[ParsedTraceback]:
     output = []
     traceback = None
@@ -49,7 +56,7 @@ def _extract_traceback(lines, is_install) -> list[ParsedTraceback]:
         nonlocal parsing_pip_error, traceback, output
         if traceback is not None:
             if parsing_pip_error:
-                traceback.lines.append("PipInstallError")
+                traceback.append_line("PipInstallError")
                 parsing_pip_error = False
             output.append(traceback)
 
@@ -63,10 +70,18 @@ def _extract_traceback(lines, is_install) -> list[ParsedTraceback]:
 
         return "ERROR" in line and not parsing_pip_error
 
-    for line in lines:
-        line = line.rstrip()
+    line = ""
+
+    for l in lines:
+        line += l
+        if "\n" not in line:
+            continue
 
         if "During handling of the above exception" in line:
+            # The exceptions that happened afterwards are not relevant
+            break
+
+        if "Exception in thread Thread" in line:
             # The exceptions that happened afterwards are not relevant
             break
 
@@ -81,7 +96,9 @@ def _extract_traceback(lines, is_install) -> list[ParsedTraceback]:
             traceback = ParsedTraceback([])
 
         if traceback and line != "":
-            traceback.lines.append(line)
+            traceback.append_line(line)
+        
+        line = ""
 
     push_trace()
 

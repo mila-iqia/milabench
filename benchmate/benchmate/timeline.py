@@ -92,6 +92,12 @@ class JobAdapter:
         elapsed = self.data["latency"]
         return total / elapsed
 
+    def __repr__(self):
+        data = self.__json__()
+        data.pop("generated_text", None)
+        args = ", ".join([f"{k}={v}" for k, v in data.items()])
+        return f"Job({args})"
+
     def __json__(self):
         return {
             **self.data,
@@ -210,9 +216,15 @@ class TimelineProcessor:
         for job in jobs:
             for bucket in buckets:
                 if job.start <= bucket.end and job.end >= bucket.start:
-                    total = job.end - job.start
+                    raw_total = job.end - job.start
+
+                    if raw_total == 0:
+                        print("Malformed job: ", job)
+
+                    total = max(raw_total, 0.001)
                     overlap = max(0, min(job.end, bucket.end) - max(job.start, bucket.start))
                     bucket.jobs.append(PartialJob(job, overlap/total))
+    
 
         for bucket in buckets:
             for partial in bucket.jobs:
