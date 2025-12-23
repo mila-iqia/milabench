@@ -2,6 +2,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from os import listdir
 from typing import List
+import re
 
 from .validation import ValidationLayer
 
@@ -47,6 +48,10 @@ class ParsedTraceback:
             self.lines.append(line.replace("\n", ""))
     
 
+def split_on_4plus_spaces(s: str) -> str:
+    return s
+
+
 def _extract_traceback(lines, is_install) -> list[ParsedTraceback]:
     output = []
     traceback = None
@@ -69,10 +74,14 @@ def _extract_traceback(lines, is_install) -> list[ParsedTraceback]:
             return False
 
         return "ERROR" in line and not parsing_pip_error
-
+    
+    lines = [split_on_4plus_spaces(l) for l in lines]
     line = ""
-
-    for l in lines:
+    for l in lines: 
+        # Sometimes newlines get stripped
+        if l == "":
+            l = "\n"
+        
         line += l
         if "\n" not in line:
             continue
