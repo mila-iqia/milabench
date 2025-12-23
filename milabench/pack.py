@@ -85,7 +85,7 @@ async def install_requires(pack: Package):
     group = pack.config.get("install_group", {})
 
     if group not in installed_requires:
-        await pack.pip_install("setuptools", "poetry", "uv", use_uv_override=False)
+        await pack.pip_install("setuptools", "poetry", "uv", "flit_core", use_uv_override=False)
         installed_requires[group] = 1
 
 
@@ -220,13 +220,13 @@ class BasePackage:
         * Check if the benchmark is installed.
         * :meth:`~milabench.pack.BasePackage.install`
         """
-        if self.install_mark_file.exists():
-            name = self.config["name"]
-            await self.message(f"Benchmark {name} is already installed")
-            return
+        # if self.install_mark_file.exists():
+        #     name = self.config["name"]
+        #     await self.message(f"Benchmark {name} is already installed")
+        #     return
 
         await self.install()
-        self.install_mark_file.touch()
+        # self.install_mark_file.touch()
 
     async def pip_install(self, *args, build_isolation=False, use_uv_override=None, **kwargs):
         """Install a package in the virtual environment.
