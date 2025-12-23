@@ -46,7 +46,7 @@ def process_value(value):
             return value
 
 
-def ipmi_monitor(ip="172.29.1.202", user="admin", password="password", sensor_subset=None, extra=None):
+def ipmi_monitor(ip=None, user="admin", password="password", sensor_subset=None, extra=None):
     """Use IPMI to monitor a system, IPMI has access to sensors outside of the linux system"""
 
     if extra is None:
@@ -55,6 +55,8 @@ def ipmi_monitor(ip="172.29.1.202", user="admin", password="password", sensor_su
     ip = os.getenv("VOIR_IPMI_IP", ip)
     user = os.getenv("VOIR_IPMI_USER", user)
     password = os.getenv("VOIR_IPMI_PASSWORD", password)
+
+    assert ip is not None
 
     ipmi_cmd = command.format(ip=ip, user=user, password=password)
 
