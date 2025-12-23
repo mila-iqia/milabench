@@ -61,7 +61,7 @@ def arguments():
         type=str,
         help="Tags defined in run names",
         nargs="+",
-        default=default_tags(),
+        default="",
     )
     return parser.parse_args()  # Arguments()
 
@@ -198,6 +198,9 @@ def gather_cli(args=None):
                 case "data":
                     payload = line["data"]
 
+                    if "gpudata" in payload:
+                        continue
+
                     unit = payload.pop("unit", None)
                     units = payload.pop("units", None)
                     time = payload.pop("time", None)
@@ -207,7 +210,16 @@ def gather_cli(args=None):
                         if k.startswith("progress"):
                             continue
 
-                        lines.append({"metric": k, "value": v, "time": time, "unit": units or unit, "task": task, **data, **more})
+                        line = {
+                            "metric": k, 
+                            "value": v, 
+                            "time": time, 
+                            "unit": units or unit, 
+                            "task": task, 
+                            **data, 
+                            **more
+                        }
+                        lines.append(line)
 
     for folder in folders:
         process_file(args.runs, folder)
@@ -228,7 +240,7 @@ def gather_cli(args=None):
     }
     df.to_csv(args.output, index=False, **options)
 
-    power_over_time(df)
+    # power_over_time(df)
 
 
 

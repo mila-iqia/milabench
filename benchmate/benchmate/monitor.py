@@ -16,19 +16,9 @@ from voir.helpers import current_overseer
 
 
 from .metrics import sumggle_push, give_push, file_push
+from .toggles import get_poll_interval, log_pattern, get_observation_count
 
 
-def _get_flag(name, type, default):
-    return type(os.getenv(name, default))
-
-
-
-def get_poll_interval(value):
-    return _get_flag("BENCHMATE_POLL_INTERVAL", float, value)
-
-
-log_pattern = _get_flag("BENCHMATE_LOG_MODE", str, 'lean')
-poll_interval_default = get_poll_interval(0.25)
 
 
 def log_patterns():
@@ -253,7 +243,9 @@ def voirfile_monitor(ov, options):
 
     # -1 & 0 early stop
     if rank <= 0:
-        instruments.append(early_stop(n=options.stop, key="rate", task="train", signal="stop"))
+        instruments.append(
+            early_stop(n=get_observation_count(options.stop), key="rate", task="train", signal="stop")
+        )
     
     poll_interval = get_poll_interval(options.gpu_poll)
 

@@ -18,6 +18,9 @@ except ImportError as err:
     TORCH_ERROR = err
 
 
+from .toggles import get_observation_count
+
+
 def file_push(fp=sys.stdout):
     def message(**kwargs):
         kwargs.setdefault("task", "train")
@@ -46,10 +49,10 @@ def give_push():
     return file_push()
 
 
-def earlystop_count():
-    return int(os.getenv("VOIR_EARLYSTOP_COUNT", 60)) + int(
-        os.getenv("VOIR_EARLYSTOP_SKIP", 10)
-    )
+def earlystop_count(provided):
+    default_count = int(os.getenv("VOIR_EARLYSTOP_COUNT", 60)) 
+    skip_count = int(os.getenv("VOIR_EARLYSTOP_SKIP", 10))
+    return default_count + skip_count
 
 
 class LazyMetricPusher:
@@ -313,7 +316,7 @@ class TimedIterator:
         self.task = "train"  # voir task usually train but could be validation/test
         self.total_obs = 0  # Number of "pushed" observations
         self.event_fn = event_fn  # function to create a device event
-        self.early_stop = earlystop  # Number of observation to target
+        self.early_stop = get_observation_count(earlystop)  # Number of observation to target
         self.unit = 1000  # device timer is ms
         self.last_time = time.time()
         self.message_push = push  # How to push the metrics usually voir or stdout

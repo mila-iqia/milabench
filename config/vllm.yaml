@@ -1,5 +1,20 @@
 include:
   - inference.yaml
+  - standard.yaml
+
+_defaults:
+  enabled: false
+  max_duration: 600
+  voir:
+    options:
+      stop: 500
+      gpu_poll: 0.25
+
+  validation:
+    usage:
+      gpu_load_threshold: 0.5
+      gpu_mem_threshold: 0.5
+
 
 vllm-dense-physics-gpus:
   enabled: false
@@ -87,7 +102,7 @@ vllm-sweep-moe:
   matrix:
     # effective_max_context_per_sequence ≤ max_num_batched_tokens / max_num_seqs
 
-    concurrency: [256, 512, 1024]
+    concurrency: [8, 64, 512]
 
     # max-num-batched-tokens: 8192: is fixed in InferenceMax
     # max-num-batched-tokens ≥ max-model-len × max-num-seqs
@@ -113,7 +128,7 @@ vllm-sweep-moe:
         --dataset-name: hf
         --dataset-path: vdaita/edit_10k_char
         --hf-name: vdaita/edit_10k_char
-        --num-prompts: "expr({concurrency} * 10)"
+        --num-prompts: "expr({concurrency} * 5)"
         --model: meta-llama/Llama-4-Scout-17B-16E
         --max-concurrency: "{concurrency}"
 
