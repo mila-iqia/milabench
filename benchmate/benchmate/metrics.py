@@ -49,7 +49,7 @@ def give_push():
     return file_push()
 
 
-def earlystop_count(provided):
+def earlystop_count():
     default_count = int(os.getenv("VOIR_EARLYSTOP_COUNT", 60)) 
     skip_count = int(os.getenv("VOIR_EARLYSTOP_SKIP", 10))
     return default_count + skip_count
