@@ -527,7 +527,7 @@ class TimedIterator:
         for event in self.events:
             rate, elapsed = self._make_rate(event)
             self.last_time += elapsed
-            self.log_rate(rate, time=event.cpu_timer, elapsed=elapsed, batch_id=event.batch_id)
+            self.log_rate(rate, time=self.last_time, elapsed=elapsed, batch_id=event.batch_id)
 
         self.total_obs += len(self.events)
         self.events = []

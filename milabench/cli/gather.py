@@ -169,7 +169,7 @@ def gather_cli(args=None):
 
         pth = XPath(parent) / file
 
-        name, device = file[:-5].split('.')
+        name, _, device = file[:-5].partition('.')
 
         data["bench"] = name
         data["device"] = device
@@ -199,6 +199,9 @@ def gather_cli(args=None):
                     payload = line["data"]
 
                     if "gpudata" in payload:
+                        continue
+
+                    if "rate" not in payload:
                         continue
 
                     unit = payload.pop("unit", None)
