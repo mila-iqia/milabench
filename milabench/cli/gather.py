@@ -13,12 +13,18 @@ from ..fs import XPath
 
 def default_tags():
     return [
+        # Run Tgs
+        "clock=g([0-9]+)",
+        "power=p([0-9]+)",
+        "observation=o([0-9]+)",
+
+        # Bench Tags
         "concurrency=conc([0-9]+)",
         "max_context=mxctx([0-9]+)",
         "max_batch_token=mxbt([0-9]+)",
         "worker=w([0-9]+)",
         "multiple=m([0-9]+)",
-        "power=p([0-9]+)",
+        "batch_power=bp([0-9]+)",
         "capacity=c([0-9]+(Go)?)",
     ]
 
@@ -125,6 +131,84 @@ def matrix_run():
     gathered = pd.concat(data)
     print(pandas_to_string(gathered))
 
+
+def flatten_values(payload, namespace=None):
+    if namespace is None:
+        namespace = tuple()
+
+    if isinstance(payload, list):
+        for i, val in enumerate(payload):
+            yield from flatten_values(val, namespace + (str(i),))
+
+    elif isinstance(payload, dict):
+        for k, v in payload.items():
+            nspace = namespace + (str(k),)
+            yield from flatten_values(v, nspace)
+
+    else:
+        yield ".".join(namespace), payload   
+
+
+def process_file(parent, file, tags, more, skip=None):
+    if not file.endswith(".data"):
+        return []
+
+    if skip is None:
+        skip = set()
+
+    parent = XPath(parent)
+    pth =   parent / file
+    found_tags = defaultdict(int)
+
+    filename_tags = { k: v
+        for k, v in extract_tags(file, tags, found_tags)
+    }
+
+    runname_tags = { k: v
+        for k, v in extract_tags(parent.name, tags, found_tags)
+    }
+
+    data = {
+        **runname_tags,
+        **filename_tags
+    }
+
+    name, _, device = file[:-5].partition('.')
+
+    data["bench"] = name
+    data["device"] = device
+    data["run_id"] = hashlib.sha256(str(pth).encode("utf-8")).hexdigest()[:8]
+
+    report = _parse_report(pth, shared=data)   
+
+    lines = []
+    for line in report:
+        match line["event"]:
+            case "data":
+                payload = line["data"]
+
+                unit = payload.pop("unit", None)
+                units = payload.pop("units", None)
+                time = payload.pop("time", None)
+                task = payload.pop("task", None)
+
+                for k, v in flatten_values(payload, tuple([])):
+                    if k.startswith("progress"):
+                        continue
+
+                    line = {
+                        "metric": k, 
+                        "value": v, 
+                        "time": time, 
+                        "unit": units or unit, 
+                        "task": task, 
+                        **data, 
+                        **more
+                    }
+                    lines.append(line)
+    return lines
+
+
 def gather_cli(args=None):
     """Gather metrics from runs inside a folder in a neat format.
     It can extract tags/flags from the runname and create new columns to uniquely identify runs.
@@ -159,87 +243,36 @@ def gather_cli(args=None):
     if len(folders) == 0:
         folders = [""]
 
-    def process_file(parent, file):
-        if not file.endswith(".data"):
-            return
-
-        data = { k: v
-            for k, v in extract_tags(file, tags, found_tags)
-        }
-
-        pth = XPath(parent) / file
-
-        name, _, device = file[:-5].partition('.')
-
-        data["bench"] = name
-        data["device"] = device
-        data["run_id"] = hashlib.sha256(str(pth).encode("utf-8")).hexdigest()[:8]
-
-        report = _parse_report(pth, shared=data)
-
-        def flatten_values(payload, namespace=None):
-            if namespace is None:
-                namespace = tuple()
-
-            if isinstance(payload, list):
-                for i, val in enumerate(payload):
-                    yield from flatten_values(val, namespace + (str(i),))
-
-            elif isinstance(payload, dict):
-                for k, v in payload.items():
-                    nspace = namespace + (str(k),)
-                    yield from flatten_values(v, nspace)
-
-            else:
-                yield ".".join(namespace), payload      
-
-        for line in report:
-            match line["event"]:
-                case "data":
-                    payload = line["data"]
-
-                    if "gpudata" in payload:
-                        continue
-
-                    if "rate" not in payload:
-                        continue
-
-                    unit = payload.pop("unit", None)
-                    units = payload.pop("units", None)
-                    time = payload.pop("time", None)
-                    task = payload.pop("task", None)
-
-                    for k, v in flatten_values(payload, tuple([])):
-                        if k.startswith("progress"):
-                            continue
-
-                        line = {
-                            "metric": k, 
-                            "value": v, 
-                            "time": time, 
-                            "unit": units or unit, 
-                            "task": task, 
-                            **data, 
-                            **more
-                        }
-                        lines.append(line)
-
+    lines = []
     for folder in folders:
-        process_file(args.runs, folder)
+        lines.extend(process_file(args.runs, folder, tags, more))
 
         for parent, _, filenames in os.walk(os.path.join(args.runs, folder)):
             for file in filenames:
-                process_file(parent, file)
+                lines.extend(process_file(parent, file, tags, more))
 
 
     # print(lines)
 
     df = pd.DataFrame(lines)
+
+    metric = df["metric"]
+
+    gpu_match = metric.str.extract(r'^gpudata\.(\d+)\.(.*)')
+
+    df["gpu"] = gpu_match[0].astype("Int64")
+    df["metric"] = (
+        gpu_match[1]
+        .where(gpu_match[1].notna(), df["metric"])
+    )
+
+    df.loc[df["gpu"].notna(), "metric"] = "gpu." + df["metric"]
+
     df["time_norm"] = df["time"] - df.groupby("run_id")["time"].transform("min")
 
     options = {
         "mode": "a" if args.append else "w",
-        "header": not os.path.exists(args.output)
+        "header": not os.path.exists(args.output) if args.append else True
     }
     df.to_csv(args.output, index=False, **options)
 

@@ -63,6 +63,9 @@ def _make_row(summary, compare, config, query=None):
         memory = [data["memory"]["max"] for data in summary["gpu_load"].values()]
         row["peak_memory"] = max(memory)
 
+        power = [data["power"]["median"] for data in summary["gpu_load"].values()]
+        row["median_watt"] = sum(power) / len(power)
+
     # Sum of all the GPU performance
     # to get the overall perf of the whole machine
     if "per_gpu" in summary:
@@ -222,6 +225,7 @@ columns_order = {
         "weight",
         "energy (Kj)",
         "perf_watt",
+        "median_watt",
     ])
 }
 
@@ -538,6 +542,7 @@ _formatters = {
     "batch_size": "{:3.0f}".format,
     "energy (Kj)": "{:3.3f}".format,
     "perf_watt": "{:3.3f}".format,
+    "median_watt": "{:3.3f}".format,
     0: "{:.0%}".format,
     1: "{:.0%}".format,
     2: "{:.0%}".format,
