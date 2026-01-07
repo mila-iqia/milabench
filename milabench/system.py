@@ -371,6 +371,10 @@ class Torchrun:
     port: int = defaultfield("torchrun.port", int, default=29400)
     backend: str = defaultfield("torchrun.backend", str, default="c10d")
 
+@dataclass
+class Report:
+    lean: bool = defaultfield("report.lean", int, default=0)
+
 
 @dataclass
 class Options:
@@ -401,6 +405,12 @@ class Github:
     pat: str = defaultfield("github.path", str, None)
 
 
+
+@dataclass
+class Executor:
+    timeout: int = defaultfield("executor.timeout", int, None)
+
+
 def default_device():
     try:
         gpu_info = get_gpu_info()
@@ -427,6 +437,7 @@ class SystemConfig:
     github: Github = field(default_factory=Github)
 
     use_uv: bool = defaultfield("use_uv", bool, 0)
+    executor: Executor = field(default_factory=Executor)
 
 def check_node_config(nodes):
     mandatory_fields = ["name", "ip", "user"]

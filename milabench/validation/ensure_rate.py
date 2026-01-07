@@ -1,4 +1,4 @@
-from .validation import BenchLogEntry, ValidationLayer
+from .validation import BenchLogEntry, ValidationLayer, group_by_benchname
 
 
 class Layer(ValidationLayer):
@@ -24,13 +24,25 @@ class Layer(ValidationLayer):
         self.errors += self.rates[entry.tag] <= 0
 
     def report(self, summary, short=True, **kwargs):
+        grouped = group_by_benchname(self.rates)
+
         with summary.section("Metric Collection"):
-            for tag, rate in self.rates.items():
-                if rate > 0:
-                    continue
+            for bench, rates in grouped.items():
+                with summary.section(bench):
+                    low_rates = []
+                    no_rates = []
 
-                with summary.section(tag):
-                    summary.add("* no training rate retrieved")
+                    for tag, rate in rates:
+                        if rate == 0:
+                            no_rates.append(tag)
+                        elif rate < 30:
+                            low_rates.append(tag)
 
+                    if len(low_rates) > 0:
+                        summary.add(f"* {len(low_rates)} x Few training rate retrieved ({', '.join(low_rates)})")
+
+                    if len(no_rates) > 0:
+                        summary.add(f"* {len(no_rates)} x no training rate retrieved ({', '.join(no_rates)})")
+                    
         self.set_error_code(self.errors)
         return self.errors

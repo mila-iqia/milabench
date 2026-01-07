@@ -9,6 +9,7 @@ from pandas import DataFrame
 from milabench.utils import error_guard
 from milabench.summary import Summary
 from milabench.config import get_config_global
+from milabench.system import option
 
 nan = math.nan
 
@@ -34,6 +35,8 @@ def _make_row(summary, compare, config, query=None):
         "score": nan,
         "weight": weight,
         "enabled": is_enabled,
+        "energy (Kj)": summary.get("energy", 0),
+        "perf_watt": summary.get("perf_watt", 0)
     }
 
     if not summary or summary.get("empty", False):
@@ -59,6 +62,9 @@ def _make_row(summary, compare, config, query=None):
     if summary["gpu_load"]:
         memory = [data["memory"]["max"] for data in summary["gpu_load"].values()]
         row["peak_memory"] = max(memory)
+
+        power = [data["power"]["median"] for data in summary["gpu_load"].values()]
+        row["median_watt"] = sum(power) / len(power)
 
     # Sum of all the GPU performance
     # to get the overall perf of the whole machine
@@ -207,6 +213,7 @@ def _report_pergpu(entries, measure="50"):
 
 columns_order = {
     n: i for i, n in enumerate([
+        "bench",
         "fail",
         "n",
         "ngpu",
@@ -217,6 +224,9 @@ columns_order = {
         "peak_memory",
         "score",
         "weight",
+        "energy (Kj)",
+        "perf_watt",
+        "median_watt",
     ])
 }
 
@@ -284,6 +294,9 @@ def make_dataframe(summary, compare=None, weights=None, query=None):
         }
     ).transpose()
 
+    if option("report.lean", int, 0) != 0:
+        df = df.dropna(subset=["n"])
+
     # Reorder columns
     df = df[sorted(df.columns, key=lambda k: columns_order.get(k, 2000))]
 
@@ -291,13 +304,14 @@ def make_dataframe(summary, compare=None, weights=None, query=None):
 
 
 def normalize_dataframe(df):
-    columns = filter(lambda k: k in columns_order, df.columns)
-    columns = sorted(columns, key=lambda k: columns_order.get(k, 0))
+    # columns = filter(lambda k: k in columns_order, df.columns)
+    # columns = sorted(columns, key=lambda k: columns_order.get(k, 0))
 
-    for col in columns:
-        df[col] = df[col].astype(float)
+    # for col in columns:
+    #     df[col] = df[col].astype(float)
 
-    return df[columns]
+    # return df[columns]
+    return df
 
 
 def get_meta(summary):
@@ -509,6 +523,7 @@ def make_report(
 
 
 _formatters = {
+    "bench": "{}".format,
     "fail": "{:4.0f}".format,
     "n": "{:3.0f}".format,
     "ngpu": "{:4.0f}".format,
@@ -528,6 +543,9 @@ _formatters = {
     "peak_memory": "{:11.0f}".format,
     "elapsed": "{:5.0f}".format,
     "batch_size": "{:3.0f}".format,
+    "energy (Kj)": "{:3.3f}".format,
+    "perf_watt": "{:3.3f}".format,
+    "median_watt": "{:3.3f}".format,
     0: "{:.0%}".format,
     1: "{:.0%}".format,
     2: "{:.0%}".format,
@@ -558,7 +576,7 @@ def pandas_to_string(df, formatters=_formatters):
     # Compute column size
     col_size = defaultdict(int)
     for index, row in df.iterrows():
-        col_size["bench"] = max(col_size["bench"], len(str(index)), len("bench"))
+        col_size["index"] = max(col_size["index"], len(str(index)), len("index"))
         for col, val in zip(columns, row):
             fmt = formatters.get(col)
             if fmt is not None:
@@ -569,7 +587,7 @@ def pandas_to_string(df, formatters=_formatters):
     sep = " | "
     lines = []
     for index, row in df.iterrows():
-        size = col_size["bench"]
+        size = col_size["index"]
         line = [f"{index:<{size}}"]
 
         for col, val in zip(columns, row):
@@ -589,8 +607,8 @@ def pandas_to_string(df, formatters=_formatters):
         size = col_size[col]
         return f"{col:>{size}}"
 
-    size = col_size["bench"]
-    header = sep.join([f"{'bench':<{size}}"] + [fmtcol(col) for col in columns])
+    size = col_size["index"]
+    header = sep.join([f"{'index':<{size}}"] + [fmtcol(col) for col in columns])
 
     return "\n".join([header] + lines)
 

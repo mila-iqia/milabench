@@ -76,7 +76,6 @@ def cli_report(args=None):
         from milabench.common import arguments as multipack_args
 
         margs = multipack_args()
-
         args.config = _get_multipack(margs, return_config=True)
 
     make_report(
@@ -91,3 +90,91 @@ def cli_report(args=None):
         errdata=reports and _error_report(reports),
         stream=sys.stdout,
     )
+
+
+
+def make_report_for_single_run(run_folder, output=sys.stdout):
+    reports = _read_reports(run_folder)
+    summary = make_summary(reports)
+
+    # FIXME
+    from milabench.common import arguments as multipack_args
+    margs = multipack_args()
+    config = _get_multipack(margs, return_config=True)
+
+    df = make_report(
+        summary,
+        weights=config,
+        title=None,
+        errdata=reports and _error_report(reports),
+        stream=output,
+    )
+
+    return df
+
+
+def report_combine():
+    from argparse import ArgumentParser
+    from collections import defaultdict
+
+    import pandas as pd
+
+    from ..report import pandas_to_string
+    from .gather import default_tags, extract_tags, make_tags
+    from collections import defaultdict
+
+    parser = ArgumentParser()
+    parser.add_argument("--folder", type=str, help="run folder")
+    args = parser.parse_args()
+
+    found_tags = defaultdict(int)
+    tags = make_tags(default_tags())
+    reports = []
+
+    for folder_name in os.listdir(args.folder):
+        full_pth = os.path.join(args.folder, folder_name)
+
+        if (os.path.isfile(full_pth)):
+            continue
+        
+        columns = {
+            "power": "600",
+            "clock": "1785",
+        }
+
+        # Tag Extraction from the run name
+        for tag, value in extract_tags(folder_name, tags, found_tags):
+            if value != "NA":
+                columns[tag] = value
+        
+        # ---
+
+        # Report Generation
+        with open(os.devnull, "w") as devnull:
+            df = make_report_for_single_run(
+                full_pth,
+                output=devnull
+            )
+
+        print(args.folder, folder_name, columns)
+
+        # Insert columns to the data frame
+        for key, value in columns.items():
+            df[key] = value
+
+        df = df.rename_axis("bench").reset_index()
+        df["bench"] = df["bench"].astype("string")
+        #
+        reports.append(df)
+
+    # Print the full df
+    all_reports = pd.concat(reports, ignore_index=True)
+
+    all_reports.to_csv("big_beautiful_report.csv", index=False)
+
+    print(pandas_to_string(all_reports))
+
+
+
+if __name__ == "__main__":
+    report_combine()

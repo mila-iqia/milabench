@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import json
 import os
 import sys
@@ -16,6 +16,9 @@ try:
     import torch.distributed as dist
 except ImportError as err:
     TORCH_ERROR = err
+
+
+from .toggles import get_observation_count
 
 
 def file_push(fp=sys.stdout):
@@ -47,9 +50,9 @@ def give_push():
 
 
 def earlystop_count():
-    return int(os.getenv("VOIR_EARLYSTOP_COUNT", 60)) + int(
-        os.getenv("VOIR_EARLYSTOP_SKIP", 10)
-    )
+    default_count = int(os.getenv("VOIR_EARLYSTOP_COUNT", 60)) 
+    skip_count = int(os.getenv("VOIR_EARLYSTOP_SKIP", 10))
+    return default_count + skip_count
 
 
 class LazyMetricPusher:
@@ -203,6 +206,7 @@ class TimedEvent:
     end: 'Event'
     batch_size: int = None
     batch_id: int = None
+    cpu_timer: float = field(default_factory=time.time)
 
     def elapsed_time(self):
         self.end.synchronize()
@@ -312,7 +316,7 @@ class TimedIterator:
         self.task = "train"  # voir task usually train but could be validation/test
         self.total_obs = 0  # Number of "pushed" observations
         self.event_fn = event_fn  # function to create a device event
-        self.early_stop = earlystop  # Number of observation to target
+        self.early_stop = get_observation_count(earlystop)  # Number of observation to target
         self.unit = 1000  # device timer is ms
         self.last_time = time.time()
         self.message_push = push  # How to push the metrics usually voir or stdout
@@ -456,7 +460,6 @@ class TimedIterator:
             event = TimedEvent("rate", self.start, end, batch_size, self.batch_id)
             
             if _flags.eager_sync:
-                print("HERE")
                 rate, elapsed = self._make_rate(event)
                 self.log_rate(rate, time=time.time(), elapsed=elapsed, batch_id=event.batch_id)
                 self.total_obs += 1

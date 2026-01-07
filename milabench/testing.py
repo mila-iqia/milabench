@@ -84,7 +84,8 @@ def replay_run(folder):
         if file.name.endswith(".data"):
             files.append(folder / file)
         else:
-            print(f"Skiping {file.name}")
+            pass
+            #print(f"Skiping {file.name}")
 
     files = sorted(files)
     benches = defaultdict(list)
