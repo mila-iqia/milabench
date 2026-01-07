@@ -1,9 +1,10 @@
 #!/bin/bash
 
-
 export MILABENCH_BRANCH=realtime_tracking
-export CONFIG=inference.yaml
-
+export CONFIG=all.yaml
+export PYTHON_VERSION='3.12'
+export MILABENCH_GPU_ARCH=cuda
+export HF_TOKEN=""
 
 set -ex
 
@@ -19,17 +20,13 @@ CONDA_EXEC="$(which conda)"
 CONDA_BASE=$(dirname $CONDA_EXEC)
 source $CONDA_BASE/../etc/profile.d/conda.sh
 
-export PYTHON_VERSION='3.12'
-export MILABENCH_GPU_ARCH=cuda
 
 export MILABENCH_WORDIR="/tmp/$SLURM_JOB_ID/$MILABENCH_GPU_ARCH"
 export MILABENCH_BASE="$MILABENCH_WORDIR/results"
-
 export MILABENCH_ENV="$MILABENCH_WORDIR/.env/$PYTHON_VERSION/"
 export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
 export MILABENCH_SIZER_SAVE="$MILABENCH_WORDIR/scaling.yaml"
-export MILABENCH_HF=""
-export HF_TOKEN=""
+export MILABENCH_HF_TOKEN="$HF_TOKEN"
 
 mkdir -p $MILABENCH_WORDIR
 
@@ -74,12 +71,10 @@ install_prepare() {
     #
     # Install milabench's benchmarks in their venv
     #
-    pip install torch
-    milabench pin --variant cuda --from-scratch $ARGS 
+    # pip install torch
+    # milabench pin --variant cuda --from-scratch $ARGS 
 
-    export MILABENCH_NO_BUILD_ISOLATION=1
-    export MILABENCH_USE_UV=1
-    milabench install --system $MILABENCH_WORDIR/system.yaml $ARGS
+    milabench install --variant unpinned --system $MILABENCH_WORDIR/system.yaml $ARGS
 
     which pip
 

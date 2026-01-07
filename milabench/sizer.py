@@ -257,8 +257,11 @@ def batch_sizer() -> Sizer:
 
 
 def get_batch_size(config, start_event):
-    sizer = batch_sizer()
-    return sizer.find_batch_size(config, start_event)
+    try:
+        sizer = batch_sizer()
+        return sizer.find_batch_size(config, start_event)
+    except:
+        return 'NA'
 
 
 def suggested_batch_size(pack):
