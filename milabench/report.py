@@ -213,6 +213,7 @@ def _report_pergpu(entries, measure="50"):
 
 columns_order = {
     n: i for i, n in enumerate([
+        "bench",
         "fail",
         "n",
         "ngpu",
@@ -303,13 +304,14 @@ def make_dataframe(summary, compare=None, weights=None, query=None):
 
 
 def normalize_dataframe(df):
-    columns = filter(lambda k: k in columns_order, df.columns)
-    columns = sorted(columns, key=lambda k: columns_order.get(k, 0))
+    # columns = filter(lambda k: k in columns_order, df.columns)
+    # columns = sorted(columns, key=lambda k: columns_order.get(k, 0))
 
-    for col in columns:
-        df[col] = df[col].astype(float)
+    # for col in columns:
+    #     df[col] = df[col].astype(float)
 
-    return df[columns]
+    # return df[columns]
+    return df
 
 
 def get_meta(summary):
@@ -521,6 +523,7 @@ def make_report(
 
 
 _formatters = {
+    "bench": "{}".format,
     "fail": "{:4.0f}".format,
     "n": "{:3.0f}".format,
     "ngpu": "{:4.0f}".format,
@@ -573,7 +576,7 @@ def pandas_to_string(df, formatters=_formatters):
     # Compute column size
     col_size = defaultdict(int)
     for index, row in df.iterrows():
-        col_size["bench"] = max(col_size["bench"], len(index), len("bench"))
+        col_size["index"] = max(col_size["index"], len(str(index)), len("index"))
         for col, val in zip(columns, row):
             fmt = formatters.get(col)
             if fmt is not None:
@@ -584,7 +587,7 @@ def pandas_to_string(df, formatters=_formatters):
     sep = " | "
     lines = []
     for index, row in df.iterrows():
-        size = col_size["bench"]
+        size = col_size["index"]
         line = [f"{index:<{size}}"]
 
         for col, val in zip(columns, row):
@@ -604,8 +607,8 @@ def pandas_to_string(df, formatters=_formatters):
         size = col_size[col]
         return f"{col:>{size}}"
 
-    size = col_size["bench"]
-    header = sep.join([f"{'bench':<{size}}"] + [fmtcol(col) for col in columns])
+    size = col_size["index"]
+    header = sep.join([f"{'index':<{size}}"] + [fmtcol(col) for col in columns])
 
     return "\n".join([header] + lines)
 

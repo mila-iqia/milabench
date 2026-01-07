@@ -94,6 +94,14 @@ def extract_tags(name, tags, found):
 
 
 
+def make_tags(tags_def):
+    tags = dict()
+    for tag in tags_def:
+        name, regex = tag.split("=")
+        tags[name] = re.compile(regex)
+    return tags
+
+
 def matrix_run():
     runs = []
     for folder in os.listdir(args.runs):
@@ -108,10 +116,8 @@ def matrix_run():
             runs.append(path)
 
     found_tags = defaultdict(int)
-    tags = dict()
-    for tag in args.tags:
-        name, regex = tag.split("=")
-        tags[name] = re.compile(regex)
+    tags = make_tags(args.args)
+
 
     query = ("batch_size", "elapsed")
     data = []
