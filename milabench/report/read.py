@@ -1,12 +1,49 @@
+"""Generic milabench datafolder processor, it also supports extracting data from the run and bench name
+
+The MetricExtractor generate a flat structure so we can directly process the results using pandas
+"""
 
 import multiprocessing as mp
 import queue
 import traceback
-import os
 import json
 import re
+from collections import defaultdict
 import glob
 from pathlib import Path
+import threading
+
+from hrepr.j import dataclass
+
+_bench_tags = [
+    "concurrency=conc([0-9]+)",
+    "max_context=mxctx([0-9]+)",
+    "max_batch_token=mxbt([0-9]+)",
+    "worker=w([0-9]+)",
+    "multiple=m([0-9]+)",
+    "batch_power=bp([0-9]+)",
+    "capacity=c([0-9]+(Go)?)",
+    "device=D([0-9]+)",
+]
+
+_run_tags = [
+    "clock=g([0-9]+)",
+    "power=p([0-9]+)",
+    "observation=o([0-9]+)",
+]
+
+
+def make_tags(tags_def):
+    tags = dict()
+    for tag in tags_def:
+        name, regex = tag.split("=")
+        tags[name] = re.compile(regex)
+    return tags
+
+bench_tags = make_tags(_bench_tags)
+
+
+run_tags = make_tags(_run_tags)
 
 
 def extract_tags(name, tags):
@@ -14,10 +51,6 @@ def extract_tags(name, tags):
         if m := pat.search(name):
             value = m.group(1)
             yield tag, value
-        else:
-            print(f"{tag} not found in {name}")
-            yield tag, "NA"
-
 
 
 def workitem_readfolder(folder, meta):
@@ -84,23 +117,45 @@ def worker_fn(i, cls, worker_pack, *args):
     worker.run()
 
 
+class _Value:
+    def __init__(self, type: str, value) -> None:
+        self.value = value
+        self.lock = threading.RLock()
+
+    def get_lock(self):
+        return self.lock
+
+
+class Multiprocessing:
+    Queue = mp.Queue
+    Event = mp.Event
+    Value = mp.Value
+    Worker = mp.Process
+
+
+class Threading:
+    Queue = queue.Queue
+    Event = threading.Event
+    Value = _Value
+    Worker = threading.Thread
+
 
 class DataProcessor:
-    def __init__(self, worker_cls, *args, worker_count=mp.cpu_count()):
-        self.work_queue = mp.Queue(maxsize=0)
-        self.result_queue = mp.Queue()
-        self.error_queue = mp.Queue()
-        self.active = mp.Event()
+    def __init__(self, worker_cls, *args, worker_count=mp.cpu_count(), backend=Multiprocessing):
+        self.work_queue = backend.Queue(maxsize=0)
+        self.result_queue = backend.Queue()
+        self.error_queue = backend.Queue()
+        self.active = backend.Event()
         self.active.set()
 
-        self.jobs = mp.Value("i", 0)
-        self.done = mp.Value("i", 0)
-        self.results = mp.Value("i", 0)
+        self.jobs = backend.Value("i", 0)
+        self.done = backend.Value("i", 0)
+        self.results = backend.Value("i", 0)
         self.retrieved = 0
 
         worker_pack = self.work_queue, self.result_queue, self.error_queue, self.active, self.jobs, self.done, self.results
         args = (worker_cls, worker_pack, *args)
-        self.workers = [mp.Process(target=worker_fn, args=(i,) + args) for i in range(worker_count)]
+        self.workers = [backend.Worker(target=worker_fn, args=(i,) + args) for i in range(worker_count)]
     
         for w in self.workers:
             w.start()
@@ -173,13 +228,17 @@ class DataProcessor:
         # To start up the worker the main train do the first work
         # which will schedule more work
         #
-
+        found = 0
         for folder in glob.iglob(folderpat, recursive=False):
             folder = Path(folder)
             if folder.is_file():
                 meta = extract_meta_from_run_folder(folder.parent, meta)
 
             readfolder(self, folder, meta)
+            found += 1
+
+        if found == 0:
+            raise RuntimeError(f"folder not found {folderpat}")
 
         while not self.is_finished():
             try:
@@ -193,22 +252,6 @@ class DataProcessor:
 
         for i, w in enumerate(self.workers):
             w.join()
-
-
-def make_tags(tags_def):
-    tags = dict()
-    for tag in tags_def:
-        name, regex = tag.split("=")
-        tags[name] = re.compile(regex)
-    return tags
-
-
-def extract_tags(name, tags):
-    for tag, pat in tags.items():
-        if m := pat.search(name):
-            value = m.group(1)
-            yield tag, value
-
 
 
 def flatten_values(payload, namespace=None):
@@ -226,29 +269,6 @@ def flatten_values(payload, namespace=None):
 
     else:
         yield ".".join(namespace), payload   
-
-
-
-_bench_tags = [
-    "concurrency=conc([0-9]+)",
-    "max_context=mxctx([0-9]+)",
-    "max_batch_token=mxbt([0-9]+)",
-    "worker=w([0-9]+)",
-    "multiple=m([0-9]+)",
-    "batch_power=bp([0-9]+)",
-    "capacity=c([0-9]+(Go)?)",
-    "device=D([0-9]+)",
-]
-
-bench_tags = make_tags(_bench_tags)
-
-
-_run_tags = [
-    "clock=g([0-9]+)",
-    "power=p([0-9]+)",
-    "observation=o([0-9]+)",
-]
-run_tags = make_tags(_run_tags)
 
 
 def insert_path(job_meta, name, entry):
@@ -284,9 +304,12 @@ def readfolder(worker, entry, meta):
         worker.push_work(workitem_readfile(entry, job_meta))
 
 
+DEFAULT_IGNORED = tuple(["$queued", "progress.0", "progress.1", "progress"])
+
+
 class EventProcessor(Worker):
     """Base milabench event processor"""
-    def __init__(self, worker_pack, accept_pattern=tuple(), ignored=tuple(["$queued"]), *args, **kwargs):
+    def __init__(self, worker_pack, *args, accept_pattern=tuple(), ignored=DEFAULT_IGNORED, **kwargs):
         super().__init__(worker_pack)
         self.ignored = ignored
         self.pattern = accept_pattern
@@ -399,7 +422,132 @@ class EventProcessor(Worker):
         pass
 
 
+@dataclass
+class EventTracking:
+    start_time: float = None
+    rc_code: int = None
+    stop: bool = False
+    error: bool = False
+    gpu_count: int  = 1
+
+    def success(self):
+        if self.stop:
+            return True
+
+        if self.rc_code != 0:
+            return False
+        
+        return True
+
+
 class MetricExtractor(EventProcessor):
+    def __init__(self, worker_pack, *args, accept_pattern=tuple(), ignored=DEFAULT_IGNORED, **kwargs):
+        super().__init__(worker_pack, accept_pattern=accept_pattern, ignored=ignored)
+
+        self.should_simplify_gpudata = True
+        self.start_event = {}
+
+    @staticmethod
+    def makekey(meta):
+        frags = []
+        for k, v in sorted(meta.items(), key=lambda item: item[0]):
+            frags.append(v)
+        return tuple(v)
+
+    def start(self, event, meta):
+        if start_time := event["data"].get("time"):
+            key = MetricExtractor.makekey(meta)
+            tracking = self.start_event.setdefault(key, EventTracking())
+            tracking.start_time = start_time
+            
+    def end(self, event, meta):
+        key = MetricExtractor.makekey(meta)
+        data = event["data"]
+
+        if tracking := self.start_event.get(key):
+            end_time = data["time"]
+            self.push_result({**meta, "metric": "elapsed", "value": end_time- tracking.start_time, "unit": "s", "time": end_time})
+
+            tracking.rc_code = data["return_code"]
+            self.push_result({**meta, "metric": "success", "value": int(tracking.success()), "time": end_time})
+
+            self.push_result({**meta, "metric": "ngpu", "value": int(tracking.ngpu), "time": end_time})
+
+    def stop(self, event, meta):
+        key = MetricExtractor.makekey(meta)
+        if tracking := self.start_event.get(key):
+            tracking.stop = True
+
+    def error(self, event, meta):
+        print(event)
+
+    def simplify_gpudata(self, meta, gpudata, time, task, units, unit):
+        key = MetricExtractor.makekey(meta)
+        if tracking := self.start_event.get(key):
+            tracking.ngpu = len(gpudata)
+
+        if "device" in meta:
+            # Single device
+            assert len(gpudata) <= 1, f"{gpudata}"
+
+            for device_id, metrics in gpudata.items():
+                for k, v in metrics.items():
+                    if isinstance(v, list):
+                        # For memory [0, 1]
+                        for i, item in enumerate(v):
+                            metric = {
+                                "metric": f"gpudata.{k}.{i}", 
+                                "value": item, 
+                                "time": time, 
+                                "unit": units or unit, 
+                                "task": task, 
+                                "count": 1,
+                                **meta
+                            }
+                            self.push_result(metric)
+                    else:
+                        # Standard
+                        metric = {
+                            "metric": f"gpudata.{k}", 
+                            "value": v, 
+                            "time": time, 
+                            "unit": units or unit, 
+                            "task": task, 
+                            "count": 1,
+                            **meta
+                        }
+                        self.push_result(metric)
+        else:
+            # for multiGPU workloads
+            device_sum = defaultdict(float)
+            device_cnt = defaultdict(float)
+
+            for device_id, metrics in gpudata.items():
+                for k, v in metrics.items():
+                    if isinstance(v, list):
+                        for i, item in enumerate(v):
+                            device_sum[f"{k}.{i}"] += item
+                            device_cnt[f"{k}.{i}"] += 1
+                    else:
+                        device_sum[k] += v
+                        device_cnt[k] += 1
+
+
+            for k, v in device_cnt.items():
+                sum = device_sum[k]
+                cnt = device_cnt[k]
+
+                metric = {
+                    "metric": f"gpudata.{k}", 
+                    "value": sum/cnt, 
+                    "time": time, 
+                    "unit": units or unit, 
+                    "task": task, 
+                    "count": cnt,
+                    **meta
+                }
+                self.push_result(metric)
+
     def data(self, data, meta):
         unit = data.pop("unit", None)
         units = data.pop("units", None)
@@ -407,10 +555,16 @@ class MetricExtractor(EventProcessor):
         task = data.pop("task", None)
         batch_id = data.pop("batch_id", None)
 
+        if (gpudata := data.pop("gpudata", {})) and self.should_simplify_gpudata:
+            self.simplify_gpudata(meta, gpudata, time, task, units, unit)
+
         for k, v in flatten_values(data, tuple([])):
             if k in self.ignored:
                 continue
 
+            # if time is None:
+            #    print(data, "missing time", meta)
+                
             metric = {
                 "metric": k, 
                 "value": v, 
@@ -449,6 +603,7 @@ class LogExtractor(EventProcessor):
         self.push_result({**event["data"], **meta})
 
 
+
 def extract_milabench_metrics(folder):
     """Milabench metric extractor.
 
@@ -472,43 +627,153 @@ def extract_milabench_metrics(folder):
     Output
     ------
 
-        {'metric': 'gpudata.2.memory.0'   , 'value': 47281.3125, 'time': 1766765836.8106523, 'unit': None, 'task': 'main', 'bench': 'convnext_large-fp32', 'clock': '1440', 'observation': '350', 'p0': 'g1440.o350.2025-12-26_09-59-43', 'device': '2'}
-        {'metric': 'gpudata.2.memory.1'   , 'value': 143771.0  , 'time': 1766765836.8106523, 'unit': None, 'task': 'main', 'bench': 'convnext_large-fp32', 'clock': '1440', 'observation': '350', 'p0': 'g1440.o350.2025-12-26_09-59-43', 'device': '2'}
-        {'metric': 'gpudata.2.load'       , 'value': 1.0       , 'time': 1766765836.8106523, 'unit': None, 'task': 'main', 'bench': 'convnext_large-fp32', 'clock': '1440', 'observation': '350', 'p0': 'g1440.o350.2025-12-26_09-59-43', 'device': '2'}
-        {'metric': 'gpudata.2.temperature', 'value': 65.0      , 'time': 1766765836.8106523, 'unit': None, 'task': 'main', 'bench': 'convnext_large-fp32', 'clock': '1440', 'observation': '350', 'p0': 'g1440.o350.2025-12-26_09-59-43', 'device': '2'}
-        {'metric': 'gpudata.2.power'      , 'value': 442.059   , 'time': 1766765836.8106523, 'unit': None, 'task': 'main', 'bench': 'convnext_large-fp32', 'clock': '1440', 'observation': '350', 'p0': 'g1440.o350.2025-12-26_09-59-43', 'device': '2'}
+        {'metric': 'gpudata.memory.0'   , 'value': 47281.3125, 'time': 1766765836.8106523, 'unit': None, 'task': 'main', 'bench': 'convnext_large-fp32', 'clock': '1440', 'observation': '350', 'p0': 'g1440.o350.2025-12-26_09-59-43', 'device': '2'}
+        {'metric': 'gpudata.memory.1'   , 'value': 143771.0  , 'time': 1766765836.8106523, 'unit': None, 'task': 'main', 'bench': 'convnext_large-fp32', 'clock': '1440', 'observation': '350', 'p0': 'g1440.o350.2025-12-26_09-59-43', 'device': '2'}
+        {'metric': 'gpudata.load'       , 'value': 1.0       , 'time': 1766765836.8106523, 'unit': None, 'task': 'main', 'bench': 'convnext_large-fp32', 'clock': '1440', 'observation': '350', 'p0': 'g1440.o350.2025-12-26_09-59-43', 'device': '2'}
+        {'metric': 'gpudata.temperature', 'value': 65.0      , 'time': 1766765836.8106523, 'unit': None, 'task': 'main', 'bench': 'convnext_large-fp32', 'clock': '1440', 'observation': '350', 'p0': 'g1440.o350.2025-12-26_09-59-43', 'device': '2'}
+        {'metric': 'gpudata.power'      , 'value': 442.059   , 'time': 1766765836.8106523, 'unit': None, 'task': 'main', 'bench': 'convnext_large-fp32', 'clock': '1440', 'observation': '350', 'p0': 'g1440.o350.2025-12-26_09-59-43', 'device': '2'}
 
     """
-    with DataProcessor(MetricExtractor) as proc:
+    with DataProcessor(MetricExtractor, worker_count=mp.cpu_count(), backend=Multiprocessing) as proc:
         for item in proc(folder):
             yield item
 
 
-if __name__ == "__main__":
+def augment_energy_estimator(metrics):
+    previous = {}
 
-    #
-    # The data processor can take as argument all those arguments
-    #   multi run folder
-    #   single run folder
-    #   single bench file
-    #   glob pattern
+    for metric in sorted(metrics, key=lambda item: item.get("time") or 0):
+        if metric["metric"] == "gpudata.power":
+            bench = metric["bench"]
+            device = metric.get("device", -1)
+            p0 = metric["p0"]
+            key = (bench, device, p0)
+
+            prev = previous.get(key)
+            if prev is not None:
+                energy_p = prev["value"]
+                energy_n = metric["value"]
+                elapsed = metric["time"] - prev["time"]
+
+                # Number of GPUs
+                count = metric["count"]        
+            
+                # Riemann sum using midpoint rule
+                energy_spent = elapsed * count * (energy_p + energy_n) / 2 
+
+                # push the new metric measurements
+                newmetric = {**metric}
+                newmetric["metric"] = "energy"
+                newmetric["value"] = energy_spent
+                yield newmetric
+                
+            previous[key] = metric
+
+        yield metric
+        
+
+def aggregate(metrics):
+    results = {}
+
+    for metric in metrics:
+
+        bench = metric["bench"]
+        device = metric.get("device", -1)
+        p0 = metric["p0"]
+
+        key = (bench, device, p0)
+
+        data = results.setdefault(key, {})
+        data.setdefault(metric["metric"], []).append(metric["value"])
+    
+    return results
+    
+
+def accumulate_per_device(aggregated_metric, acc_fun):
+    results = {}
+
+    for (bench, device, _), accumulated_metrics in aggregated_metric.items():
+        bench_data = results.setdefault((bench, _), {})
+
+        for metric, values in accumulated_metrics.items():
+            fun = acc_fun.get(metric)
+
+            if fun is None:
+                continue
+
+            per_device = bench_data.setdefault(metric, {})
+            per_device[device] = fun(values)
+    
+    return results
+
+
+def accumulate_per_bench(accumulated_metrics, acc_fun):
+    results = {}
+
+    for (bench, _), metrics in accumulated_metrics.items():
+        bench_data = results.setdefault((bench, _), {})
+
+        for metric, per_device in metrics.items():
+            fun = acc_fun.get(metric)
+
+            if fun is None:
+                continue
+        
+            devices = []
+            for d, value in per_device.items():
+                devices.append(value)
+
+            if isinstance(fun, dict):
+                for k, v in fun.items():
+                    bench_data[k] = v(devices)
+            else:
+                bench_data[metric] = fun(devices)
+
+    for (bench, p0), values in results.items():
+        for metric, value in values.items():
+            yield {"bench": bench, "p0": p0, "metric": metric, "value": value}
+
+
+def compute_global_score(metrics, weights, default_weight=0):
+    import numpy as np
+
+    sum_score = 0
+    total_weight = 0
+
+    for _, v in weights.items():
+        total_weight += v.get("weight", default_weight)
+
+    for metric in metrics:
+
+        if metric["metric"] == "score":
+            weight = weights.get(metric["bench"]).get("weight", default_weight)
+    
+            score = metric.get("value", 0)
+            sum_score += np.log(score + 1) * weight
+    
+    return np.exp(sum_score / total_weight)
+
+
+
+if __name__ == "__main__":
 
     p = "/home/delaunao/workspace/benchdevenv/projects/hypertec/sxm_runs/"
     p = "/home/delaunao/workspace/benchdevenv/projects/hypertec/sxm_runs/p600.o500.2025-12-26_07-20-23"
     # p = "/home/delaunao/workspace/benchdevenv/projects/hypertec/sxm_runs/p600.o*"
     # p = "/home/delaunao/workspace/benchdevenv/projects/hypertec/sxm_runs/p600.o500.2025-12-26_07-20-23/convnext_large-tf32-fp16.D0.data"
     # p = "/home/delaunao/workspace/benchdevenv/projects/hypertec/nvl_runs/g1440.o350.2025-12-26_09-59-43/convnext_large-fp32.D*"
+    p = "/home/delaunap/work/milabench_dev/data/A100_mn_run_2b90373c/runs/fafuvegu.2025-10-16_01:37:14.739584"
 
     from collections import defaultdict
 
     metrics = defaultdict(int)
     total = 0
 
-    with DataProcessor(LogExtractor) as proc:
+    with DataProcessor(LogExtractor, backend=Threading) as proc:
         for i, item in enumerate(proc(p)):
             # metrics[item["metric"]] += 1
             total += 1
-            # print(item)
+            print(item)
 
         
     for k, v in metrics.items():
