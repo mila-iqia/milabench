@@ -125,38 +125,48 @@ def selection_keys(defn):
     return sel
 
 
-def get_base_defaults(base, arch="none", run_name="none"):
+def get_default_system():
     try:
         user = os.getlogin()
     except OSError:
         user = "root"
+
+    return {
+        "arch": arch,
+        "sshkey": None,
+        "nodes": [
+            {
+                "name": "local",
+                "ip": "127.0.0.1",
+                "sshport": 22,
+                "user": user,
+                "main": True,
+            }
+        ],
+        "base": base,
+        "dirs": {
+            "venv": option("dirs.venv", str, default="${system.base}/venv"),
+            "data": option("dirs.data", str, default="${system.base}/data"),
+            "runs": option("dirs.runs", str, default="${system.base}/runs"),
+            "extra": option("dirs.extra", str, default="${system.base}/extra"),
+            "cache": option("dirs.cache", str, default="${system.base}/cache"),
+        }
+    }
+
+
+def get_base_defaults(base, arch="none", run_name="none"):
     return {
         "_defaults": {
-            "system": {
-                "arch": arch,
-                "sshkey": None,
-                "nodes": [
-                    {
-                        "name": "local",
-                        "ip": "127.0.0.1",
-                        "sshport": 22,
-                        "user": user,
-                        "main": True,
-                    }
-                ],
-            },
             "dirs": {
-                "base": base,
-                "venv": option("dirs.venv", str, default="${dirs.base}/venv/${install_group}"),
-                "data": option("dirs.data", str, default="${dirs.base}/data"),
-                "runs": option("dirs.runs", str, default="${dirs.base}/runs"),
-                "extra": option("dirs.extra", str, default="${dirs.base}/extra/${group}"),
-                "cache": option("dirs.cache", str, default="${dirs.base}/cache"),
+                "venv": option("dirs.venv", str, default="${system.dirs.venv}/${install_group}"),
+                "data": option("dirs.data", str, default="${system.dirs.data}"),
+                "runs": option("dirs.runs", str, default="${system.dirs.runs}"),
+                "extra": option("dirs.extra", str, default="${system.dirs.extra}/${group}"),
+                "cache": option("dirs.cache", str, default="${system.dirs.cache}"),
             },
             "group": "${name}",
             "install_group": "${group}",
             "install_variant": "${system.arch}",
-            "run_name": run_name,
             "enabled": True,
             "capabilities": {
                 "nodes": 1,
@@ -195,7 +205,7 @@ def assemble_config(runname, config_filepath, base_path, overrides=None, system_
 
     system_config = build_system_config(
         system_path,
-        defaults={"system": base_defaults["_defaults"]["system"]},
+        defaults={"system": get_default_system()},
         gpu=True
     )
 
@@ -239,6 +249,7 @@ def _get_multipack(
     run_name=None,
     overrides={},
     return_config=False,
+    resume=False,
 ):
     if args is None:
         args = arguments()
@@ -272,8 +283,13 @@ def _get_multipack(
             sys.exit(1)
         overrides = merge(overrides, {"*": {"dirs": {"venv": venv}}})
 
-    run_name = resolve_run_name(run_name)
-
+    if resume:
+        if "{"  in run_name and "}" in run_name:
+            run_pat = run_name
+            run_name = find_matching_runfolder(base, run_name)
+    else:
+        run_name = resolve_run_name(run_pattern)
+    
     config = assemble_config(
         run_name, 
         args.config, 
@@ -284,12 +300,19 @@ def _get_multipack(
 
     selected_config = filter_config(config, is_selected(args))
 
+    packs = {name: get_pack(defn) for name, defn in selected_config.items()}
+
+    if resume:
+        packs = resume_as_bench_selector(
+            packs, 
+            os.path.join(args.base, "runs"), 
+            run_name
+        )
+
     if return_config:
         return selected_config
     else:
-        return MultiPackage(
-            {name: get_pack(defn) for name, defn in selected_config.items()}
-        )
+        return MultiPackage(packs)
 
 
 def resolve_run_name(run_name):

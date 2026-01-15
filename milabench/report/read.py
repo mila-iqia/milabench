@@ -140,8 +140,13 @@ class Threading:
     Worker = threading.Thread
 
 
+def nice_cpu_count():
+    return max(1, mp.cpu_count() - 2)
+
+
 class DataProcessor:
-    def __init__(self, worker_cls, *args, worker_count=mp.cpu_count(), backend=Multiprocessing):
+    """We need to process per group of bench, processing everything in parallel takes too much memory"""
+    def __init__(self, worker_cls, *args, worker_count=nice_cpu_count(), backend=Multiprocessing):
         self.work_queue = backend.Queue(maxsize=0)
         self.result_queue = backend.Queue()
         self.error_queue = backend.Queue()
@@ -639,18 +644,23 @@ def extract_milabench_metrics(folder):
             yield item
 
 
-def augment_energy_estimator(metrics):
+def augment_energy_estimator(metrics, force_sort=True):
     previous = {}
 
-    for metric in sorted(metrics, key=lambda item: item.get("time") or 0):
+    if force_sort:
+        metrics = sorted(metrics, key=lambda item: item.get("time") or 0)
+
+    for metric in metrics:
         if metric["metric"] == "gpudata.power":
+            
             bench = metric["bench"]
             device = metric.get("device", -1)
             p0 = metric["p0"]
+
             key = (bench, device, p0)
 
             prev = previous.get(key)
-            if prev is not None:
+            if prev is not None and prev.get("time") is not None:
                 energy_p = prev["value"]
                 energy_n = metric["value"]
                 elapsed = metric["time"] - prev["time"]
