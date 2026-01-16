@@ -464,7 +464,7 @@ diffusion-nodes:
     n: 1
   num_machines: 2
   requires_capabilities:
-    - "len(nodes) >= ${num_machines}"
+    - "len(nodes) >= ${..num_machines}"
 
 _lightning:
   inherits: _defaults
@@ -560,7 +560,7 @@ dinov2-giant-nodes:
 
   num_machines: 2
   requires_capabilities:
-    - "len(nodes) >= ${num_machines}"
+    - "len(nodes) >= ${..num_machines}"
 
 _llm:
   voir:
@@ -657,7 +657,7 @@ llm-lora-ddp-nodes:
     device={device_name}: true
   num_machines: 2
   requires_capabilities:
-    - "len(nodes) >= ${num_machines}"
+    - "len(nodes) >= ${..num_machines}"
 
 llm-lora-mp-gpus:
   inherits: _llm
@@ -741,7 +741,7 @@ llm-full-mp-nodes:
   
   num_machines: 2
   requires_capabilities:
-    - "len(nodes) >= ${num_machines}"
+    - "len(nodes) >= ${..num_machines}"
 
 _purejaxrl:
   inherits: _defaults

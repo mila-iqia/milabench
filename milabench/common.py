@@ -125,7 +125,7 @@ def selection_keys(defn):
     return sel
 
 
-def get_default_system():
+def get_default_system(base, run_name="none", arch="none"):
     try:
         user = os.getlogin()
     except OSError:
@@ -143,6 +143,7 @@ def get_default_system():
                 "main": True,
             }
         ],
+        "run_name": run_name,
         "base": base,
         "dirs": {
             "venv": option("dirs.venv", str, default="${system.base}/venv"),
@@ -157,19 +158,19 @@ def get_default_system():
 def get_base_defaults(base, arch="none", run_name="none"):
     return {
         "_defaults": {
-            "dirs": {
-                "venv": option("dirs.venv", str, default="${system.dirs.venv}/${install_group}"),
-                "data": option("dirs.data", str, default="${system.dirs.data}"),
-                "runs": option("dirs.runs", str, default="${system.dirs.runs}"),
-                "extra": option("dirs.extra", str, default="${system.dirs.extra}/${group}"),
-                "cache": option("dirs.cache", str, default="${system.dirs.cache}"),
-            },
-            "group": "${name}",
-            "install_group": "${group}",
+            "group": "${.name}",
+            "install_group": "${.group}",
             "install_variant": "${system.arch}",
             "enabled": True,
             "capabilities": {
                 "nodes": 1,
+            },
+            "dirs": {
+                "venv": option("dirs.venv", str, default="${system.dirs.venv}/${..install_group}"),
+                "data": option("dirs.data", str, default="${system.dirs.data}"),
+                "runs": option("dirs.runs", str, default="${system.dirs.runs}"),
+                "extra": option("dirs.extra", str, default="${system.dirs.extra}/${..group}"),
+                "cache": option("dirs.cache", str, default="${system.dirs.cache}"),
             },
         }
     }
@@ -205,13 +206,20 @@ def assemble_config(runname, config_filepath, base_path, overrides=None, system_
 
     system_config = build_system_config(
         system_path,
-        defaults={"system": get_default_system()},
+        defaults={"system": get_default_system(base_path, runname, arch)},
         gpu=True
     )
 
-    overrides = merge({"*": system_config}, overrides)
+    # overrides = merge({"*": system_config}, overrides)
 
-    return build_config(base_defaults, config_filepath, overrides)
+    system_config["packs"] = build_config(base_defaults, config_filepath, overrides)
+
+    with open("dump.json", "w") as fp:
+        json.dump(system_config, fp, indent=2)
+
+    system_config = OmegaConf.to_object(OmegaConf.create(system_config))
+
+    return system_config["packs"]
 
 
 def assemble_or_get_config(runname, config_filepath, base_path, overrides=None, system_path=None):
@@ -288,7 +296,7 @@ def _get_multipack(
             run_pat = run_name
             run_name = find_matching_runfolder(base, run_name)
     else:
-        run_name = resolve_run_name(run_pattern)
+        run_name = resolve_run_name(run_name)
     
     config = assemble_config(
         run_name, 

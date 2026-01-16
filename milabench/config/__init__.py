@@ -4,8 +4,8 @@ from copy import deepcopy
 import yaml
 from omegaconf import OmegaConf
 
-from .fs import XPath
-from .merge import merge
+from ..fs import XPath
+from ..merge import merge
 
 
 config_global = contextvars.ContextVar("config", default=None)
@@ -102,8 +102,6 @@ def finalize_config(name, bench_config):
             print(f"Bench {name} should have exactly one monitor tag. Found {_monitor_tags}")
 
     bench_config["tag"] = [bench_config["name"]]
-
-    bench_config = OmegaConf.to_object(OmegaConf.create(bench_config))
     return bench_config
 
 

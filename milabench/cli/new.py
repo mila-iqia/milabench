@@ -18,7 +18,7 @@ multigpu = "\n".join([
 multinode = "\n".join([
     "  num_machines: 2",
     "  requires_capabilities:",
-    "    - \"len(nodes) >= ${num_machines}\"\n\n",
+    "    - \"len(nodes) >= ${..num_machines}\"\n\n",
 ])
 
 placeholder_repo = "https://github.com/Delaunay/extern_example.git"
