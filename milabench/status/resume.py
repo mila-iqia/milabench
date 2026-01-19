@@ -29,7 +29,12 @@ def _expected_logfiles(packs, repeat):
     return files
 
 
-def is_run_complete(runfolder, logfiles):
+def is_run_complete(runfolder, logfiles, missing=None):
+    from ..report.read import fetch_benchmark_status
+
+    if missing is None:
+        missing = []
+    
     for logfile in logfiles:
         full_path = os.path.join(runfolder, logfile)
 
@@ -38,9 +43,17 @@ def is_run_complete(runfolder, logfiles):
             return False
 
         # Check if the logs are valid
+        match fetch_benchmark_status(full_path):
+            case "success":
+                pass
 
+            case _:
+                # If we only wanted the status we could shortcut here
+                # but if missing is specified that means we want
+                # the full list of the missing bench
+                missing.append(logfile)
 
-    return True
+    return len(missing) == 0
 
 
 def resume_from_files(packs, runfolder, repeat):
@@ -99,8 +112,11 @@ def resume_as_bench_selector(packs, base, run_name):
             epack = exec.pack
             logfiles.append(epack.logfile("data").name)
         
+        # 
         if not is_run_complete(run_folder, logfiles):
             filtered_packs[name] = pack
+        else:
+            syslog(f"Skipping benchmark {name}, finished run found")
 
     return filtered_packs
 

@@ -341,11 +341,21 @@ class EventProcessor(Worker):
                 # Build a shared metadata, that events can modify
                 file_meta = {**meta}
 
+                self.file_start(self, file)
+
                 for line in fp.readlines():
                     metric_line = json.loads(line)
                     
                     if (stop := self.processline(metric_line, file_meta)) is True:
                         break
+
+                self.file_end(file)
+
+    def file_start(self, filename):
+        pass
+
+    def file_end(self, filename):
+        pass
 
     def processline(self, line, meta):
         """Dispatch events"""
@@ -606,6 +616,49 @@ class LogExtractor(EventProcessor):
 
     def message(self, event, meta):
         self.push_result({**event["data"], **meta})
+
+
+class BenchmarkStatusExtractor(EventProcessor):
+    def __init__(self, worker_pack, *args, accept_pattern=tuple(), ignored=DEFAULT_IGNORED, **kwargs):
+        super().__init__(worker_pack, *args, accept_pattern=accept_pattern, ignored=ignored, **kwargs)
+        self.start_event = {}
+
+    def file_end(self, filename):
+        key, tracking = self.start_event.popitem()
+
+        if tracking.success():
+            self.push_result({"status": "success"})
+        else:
+            self.push_result({"status": "failed"})
+
+    def start(self, event, meta):
+        if start_time := event["data"].get("time"):
+            key = MetricExtractor.makekey(meta)
+            tracking = self.start_event.setdefault(key, EventTracking())
+            tracking.start_time = start_time
+            
+    def end(self, event, meta):
+        key = MetricExtractor.makekey(meta)
+        data = event["data"]
+
+        if tracking := self.start_event.get(key):
+            tracking.rc_code = data["return_code"]
+
+    def stop(self, event, meta):
+        key = MetricExtractor.makekey(meta)
+        if tracking := self.start_event.get(key):
+            tracking.stop = True
+
+    def error(self, event, meta):
+        key = MetricExtractor.makekey(meta)
+        if tracking := self.start_event.get(key):
+            tracking.error = True
+
+
+def fetch_benchmark_status(name):
+    with DataProcessor(LogExtractor, backend=Threading) as proc:
+            for i, item in enumerate(proc(name)):
+                return item["status"]
 
 
 

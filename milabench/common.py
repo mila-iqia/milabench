@@ -21,6 +21,7 @@ from .log import TerminalFormatter
 from .merge import merge
 from .multi import MultiPackage
 from .system import build_system_config, option
+from .status.resume import find_matching_runfolder, resume_as_bench_selector
 
 
 def get_pack(defn):
@@ -46,6 +47,7 @@ class CommonArguments:
     exclude         : str       = ""        # Packs to exclude
     override        : list[str] = dlist()   # Override configuration values
     capabilities    : str       = ""        # Define capabilities
+    resume          : bool      = False     # Resume milabench runs
 # fmt : on
 
 @tooled
@@ -75,6 +77,9 @@ def arguments():
     # Define capabilities
     capabilities: Option = ""
 
+    # Try to resume milabench from previous run
+    resume: Option & bool = False
+
     return CommonArguments(
         config,
         system,
@@ -84,6 +89,7 @@ def arguments():
         exclude,
         override,
         capabilities,
+        resume
     )
 
 @tooled
@@ -210,12 +216,7 @@ def assemble_config(runname, config_filepath, base_path, overrides=None, system_
         gpu=True
     )
 
-    # overrides = merge({"*": system_config}, overrides)
-
     system_config["packs"] = build_config(base_defaults, config_filepath, overrides)
-
-    with open("dump.json", "w") as fp:
-        json.dump(system_config, fp, indent=2)
 
     system_config = OmegaConf.to_object(OmegaConf.create(system_config))
 
@@ -256,8 +257,7 @@ def _get_multipack(
     args: CommonArguments = None,
     run_name=None,
     overrides={},
-    return_config=False,
-    resume=False,
+    return_config=False
 ):
     if args is None:
         args = arguments()
@@ -291,10 +291,10 @@ def _get_multipack(
             sys.exit(1)
         overrides = merge(overrides, {"*": {"dirs": {"venv": venv}}})
 
-    if resume:
+    if args.resume:
         if "{"  in run_name and "}" in run_name:
             run_pat = run_name
-            run_name = find_matching_runfolder(base, run_name)
+            run_name = find_matching_runfolder(args.base, run_name)
     else:
         run_name = resolve_run_name(run_name)
     
@@ -310,7 +310,7 @@ def _get_multipack(
 
     packs = {name: get_pack(defn) for name, defn in selected_config.items()}
 
-    if resume:
+    if args.resume:
         packs = resume_as_bench_selector(
             packs, 
             os.path.join(args.base, "runs"), 
