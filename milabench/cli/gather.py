@@ -94,6 +94,14 @@ def extract_tags(name, tags, found):
 
 
 
+def make_tags(tags_def):
+    tags = dict()
+    for tag in tags_def:
+        name, regex = tag.split("=")
+        tags[name] = re.compile(regex)
+    return tags
+
+
 def matrix_run():
     runs = []
     for folder in os.listdir(args.runs):
@@ -108,10 +116,8 @@ def matrix_run():
             runs.append(path)
 
     found_tags = defaultdict(int)
-    tags = dict()
-    for tag in args.tags:
-        name, regex = tag.split("=")
-        tags[name] = re.compile(regex)
+    tags = make_tags(args.args)
+
 
     query = ("batch_size", "elapsed")
     data = []
@@ -209,7 +215,59 @@ def process_file(parent, file, tags, more, skip=None):
     return lines
 
 
-def gather_cli(args=None):
+
+def gather_matrix_cli(args=None):
+    if args is None:
+        args = arguments()
+
+    tags = dict()
+    for tag in args.tags:
+        name, regex = tag.split("=")
+        tags[name] = re.compile(regex)
+
+    all_data = []
+    from milabench.common import _parse_report, XPath
+
+    metrics = [
+        "rate",
+        "output_tok",
+        "input_tok",
+        "tpot",
+        "itl",
+        "e2els",
+        "ttfts",
+    ]
+
+    for parent, _, filenames in os.walk(args.runs):
+        for file in filenames:
+            if not file.endswith(".data"):
+                continue
+    
+            pth = XPath(parent) / file
+            tag_values = dict(extract_tags(file, tags))
+
+            for event in _parse_report(pth):
+                match event["event"]:
+                    case "data": 
+                        for m in metrics:
+                            if m in event["data"]:
+                                all_data.append({
+                                    "bench": str(file),
+                                    **tag_values,
+                                    "value": event["data"][m],
+                                    "name": m
+                                })
+
+    dump = pandas_to_string(pd.DataFrame(all_data))
+
+    with open("result.txt", "w") as fp:
+        fp.write(dump)
+
+    print(dump)
+
+
+
+def gather_multi_run_cli(args=None):
     """Gather metrics from runs inside a folder in a neat format.
     It can extract tags/flags from the runname and create new columns to uniquely identify runs.
 
@@ -230,6 +288,19 @@ def gather_cli(args=None):
     if args is None:
         args = arguments()
 
+    runs = []
+    for folder in os.listdir(args.runs):
+        if folder.startswith("prepare"):
+            continue
+
+        if folder.startswith("install"):
+            continue
+
+        path = f"{args.runs}/{folder}"
+        if os.path.isdir(path):
+            runs.append(path)
+
+    print(runs)
     found_tags = defaultdict(int)
     tags = dict()
     for tag in args.tags:
@@ -307,9 +378,11 @@ def power_over_time(df):
 
 
 if __name__ == "__main__":
-    gather_cli()
+    # gather_matrix_cli()
+    # gather_cli()
 
     
     # import pandas as pd
     # df = pd.read_csv("output.csv")
     # power_over_time(df)
+    pass

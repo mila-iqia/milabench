@@ -3,6 +3,7 @@ import traceback
 from collections import defaultdict
 from copy import deepcopy
 from contextlib import contextmanager
+import traceback
 
 from filelock import FileLock, Timeout
 from voir.instruments.gpu import get_gpu_info
@@ -214,6 +215,7 @@ class MultiPackage:
         assert is_main_local(setup), "Running benchmarks only works on the main node"
         await self.count_runs(repeat)
         
+
         for index in range(repeat):
             for pack in self.packs.values():
                 try:
@@ -222,12 +224,9 @@ class MultiPackage:
 
                     exec_plan = make_execution_plan(pack, index, repeat)
 
-                    print(repr(exec_plan))
                     await exec_plan.execute("run", timeout=True, timeout_delay=600)
 
                 except Exception as exc:
-                    import traceback
-
                     traceback.print_exc()
                     await pack.message_error(exc)
 
