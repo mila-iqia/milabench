@@ -1,6 +1,7 @@
 import os
 import sys
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from coleo import Option, config as configuration, tooled
 
@@ -113,6 +114,22 @@ def make_report_for_single_run(run_folder, output=sys.stdout):
     return df
 
 
+def gather_run_folders(folder, runs=None):
+    if runs is None:
+        runs = []
+    
+    for folder_name in os.listdir(folder):
+        full_pth = os.path.join(folder, folder_name)
+
+        if os.path.isfile(full_pth):
+            if full_pth.endswith(".data"):
+                runs.append(Path(full_pth).parent)
+        else:
+            runs.extend(gather_run_folders(full_pth))
+
+    return runs
+        
+
 def report_combine():
     from argparse import ArgumentParser
     from collections import defaultdict
@@ -131,10 +148,12 @@ def report_combine():
     tags = make_tags(default_tags())
     reports = []
 
-    for folder_name in os.listdir(args.folder):
-        full_pth = os.path.join(args.folder, folder_name)
+    run_folders = list(set(gather_run_folders(args.folder)))
 
-        if (os.path.isfile(full_pth)):
+    for folder in run_folders:
+        full_pth = Path(folder)
+
+        if (full_pth.is_file()):
             continue
         
         columns = {
@@ -143,7 +162,7 @@ def report_combine():
         }
 
         # Tag Extraction from the run name
-        for tag, value in extract_tags(folder_name, tags, found_tags):
+        for tag, value in extract_tags(full_pth.name, tags, found_tags):
             if value != "NA":
                 columns[tag] = value
         
@@ -152,11 +171,11 @@ def report_combine():
         # Report Generation
         with open(os.devnull, "w") as devnull:
             df = make_report_for_single_run(
-                full_pth,
+                str(full_pth),
                 output=devnull
             )
 
-        print(args.folder, folder_name, columns)
+        print(full_pth, columns)
 
         # Insert columns to the data frame
         for key, value in columns.items():
