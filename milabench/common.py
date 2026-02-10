@@ -164,6 +164,13 @@ def get_default_system(base, run_name="none", arch="none"):
 def get_base_defaults(base, arch="none", run_name="none"):
     return {
         "_defaults": {
+            # This are coming from the system and makes things easier
+            # we can access the system config directly from the pack
+            # 
+            "run_name": "${system.run_name}",
+            "system": "${system}",
+
+            # Config
             "group": "${.name}",
             "install_group": "${.group}",
             "install_variant": "${system.arch}",

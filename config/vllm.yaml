@@ -7,7 +7,7 @@ _defaults:
   max_duration: 600
   voir:
     options:
-      stop: 500
+      stop: 50
       gpu_poll: 0.25
 
   validation:
@@ -55,7 +55,7 @@ vllm-sweep-dense:
           --dataset-name: hf
           --dataset-path: hendrydong/gpqa_diamond
           --hf-name: hendrydong/gpqa_diamond
-          --num-prompts: "expr({concurrency} * 30)"
+          --num-prompts: "expr({concurrency} * 10)"
           --model: mistralai/Mistral-Small-3.1-24B-Instruct-2503
           --max-concurrency: "{concurrency}"
 
@@ -101,7 +101,7 @@ vllm-sweep-moe:
         --dataset-name: hf
         --dataset-path: vdaita/edit_10k_char
         --hf-name: vdaita/edit_10k_char
-        --num-prompts: "expr({concurrency} * 30)"
+        --num-prompts: "expr({concurrency} * 10)"
         --model: meta-llama/Llama-4-Scout-17B-16E
         --max-concurrency: "{concurrency}"
 

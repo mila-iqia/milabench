@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from .validation import BenchLogEntry, ValidationLayer, group_by_benchname
 
 
@@ -5,7 +7,7 @@ class Layer(ValidationLayer):
     """Makes sure the training rate is generated for each benchmarks"""
 
     def __init__(self, **kwargs) -> None:
-        self.rates = dict()
+        self.rates = defaultdict(lambda: 0)
         self.errors = 0
 
     def on_start(self, entry):

@@ -75,8 +75,10 @@ def arguments():
 
 
 def _fetch_arch(mp):
+    from milabench.system import system_global
+    
     try:
-        arch = next(iter(mp.packs.values())).config["system"]["arch"]
+        arch = system_global.get()["arch"]
     except StopIteration:
         print("no selected bench")
         return None

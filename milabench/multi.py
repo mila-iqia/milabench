@@ -213,7 +213,7 @@ class MultiPackage:
             return
 
         assert is_main_local(setup), "Running benchmarks only works on the main node"
-        await self.count_runs(repeat)
+        self.count_runs(repeat)
 
         # from .status.resume import schedule_run
 
@@ -326,12 +326,12 @@ class MultiPackage:
                         requirements=all_requirements
                     )
 
-    async def count_runs(self, repeat):
+    def count_runs(self, repeat):
         total_run = 0
         total_bench = 0
         for index in range(repeat):
             for pack in self.packs.values():
-                if not await is_system_capable(pack):
+                if not is_system_capable(pack):
                     continue
 
                 exec_plan = make_execution_plan(pack, index, repeat)

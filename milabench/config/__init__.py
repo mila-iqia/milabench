@@ -32,15 +32,19 @@ def get_bench_count():
 
 
 def get_base_folder():
-    config = config_global.get()
-    return XPath(config["_defaults"]["dirs"]["base"])
+    from ..system import system_global
+
+    system = system_global.get()
+    
+    return XPath(system["base"])
+
 
 def get_run_folder():
-    config = get_config_global()
-    
-    for k, conf in config.items():
-        name = conf["run_name"]
-        break
+    from ..system import system_global
+
+    system = system_global.get()
+
+    name = system["run_name"]
 
     return get_base_folder() / "runs" / name
 
