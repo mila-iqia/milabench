@@ -7,11 +7,9 @@ FROM rocm/dev-ubuntu-24.04:6.4.3
 ARG ARCH=rocm
 ENV MILABENCH_GPU_ARCH=$ARCH
 
-ARG CONFIG=standard.yaml
+ARG CONFIG=all.yaml
 ENV MILABENCH_CONFIG_NAME=$CONFIG
 ENV MILABENCH_DOCKER=1
-
-ARG PYTHON="3.10"
 
 
 # Paths
@@ -53,13 +51,13 @@ ENV ROCM_HOME="/opt/rocm"
 # -----------------
 ENV MILAENCH_ENV=/milabench/.env
 
-RUN virtualenv $MILAENCH_ENV                                            &&\
+RUN RUN curl -LsSf https://astral.sh/uv/install.sh | sh                 &&\
+    virtualenv $MILAENCH_ENV                                            &&\
     $MILAENCH_ENV/bin/python -m pip install -U pip                      &&\
     $MILAENCH_ENV/bin/python -m pip install -U setuptools               &&\
     $MILAENCH_ENV/bin/python -m pip install -U poetry                   &&\
-    $MILAENCH_ENV/bin/python -m pip install -e /milabench/milabench/    &&\
-    $MILAENCH_ENV/bin/python -m pip cache purge                       
-
+    $MILAENCH_ENV/bin/python -m pip install -e /milabench/milabench[rocm]    &&\
+    $MILAENCH_ENV/bin/python -m pip cache purge
 
 # Prepare bench
 # -------------
