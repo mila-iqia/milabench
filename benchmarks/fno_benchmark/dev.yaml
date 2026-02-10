@@ -1,0 +1,45 @@
+
+_fno_benchmark:
+  inherits: _defaults
+  definition: .
+  install-variant: unpinned
+  install_group: torch
+  plan:
+    method: njobs
+    n: 1
+  
+  tags:
+    - monogpu
+  
+  argv:
+    --benchmark: true
+    --use_amp: 1
+    --use_complex_amp: 0
+    --compile_train: 0
+    --compile_mode: default
+
+pic1d:
+  inherits: _fno_benchmark
+  argv:
+    --configf: "{benchmark_folder}/src/config/electrostatic_plasma1d_pic.yaml"
+    --dataFile: "{milabench_data}/FNOBenchmark/PIC1D_electrostatic.h5"
+
+pic2d:
+  inherits: _fno_benchmark
+  argv:
+    --configf: "{benchmark_folder}/src/config/electrostatic_plasma2d_pic.yaml"
+    --dataFile: "{milabench_data}/FNOBenchmark/PIC2D_electrostatic.h5"
+    
+
+rbc2d:
+  inherits: _fno_benchmark
+  argv:
+    --configf: "{benchmark_folder}/src/config/rbc2d_dedalus.yaml"
+    --dataFile: "{milabench_data}/FNOBenchmark/RBC2D_256x64_Ra1e7_dt1e-3_update.h5"
+    
+rbc3d:
+  inherits: _fno_benchmark
+  argv:
+    --configf: "{benchmark_folder}/src/config/rbc3d_pysdc.yaml"
+    --dataFile: "{milabench_data}/FNOBenchmark/RBC3D_64x64x32_Ra1e5_dt0_5_solution.h5"
+    

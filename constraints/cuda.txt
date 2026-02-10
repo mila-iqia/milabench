@@ -1,18 +1,27 @@
 --extra-index-url https://download.pytorch.org/whl/cu129
+--extra-index-url https://flashinfer.ai/whl/cu129
 
 #
-#
+# 
 voir >= 0.2.19
 torchcompat >= 1.0.0
 
-torch >= 2.8
+# https://github.com/pytorch/ao/issues/2919
+torch < 2.9
+torchao < 0.14.0
+
+# https://github.com/meta-pytorch/torchcodec?tab=readme-ov-file#installing-torchcodec
+torchcodec==0.7
 
 # Py Arrow 20
 datasets >= 3.5.1
 
-# OR
-# pyarrow<20
-
 # Jax non sense
 navix >= 0.7.1
 gymnax >= 0.0.8
+
+# All those need to match
+flashinfer-python==0.5.3
+flashinfer-cubin==0.5.3
+flashinfer-jit-cache==0.5.3
+

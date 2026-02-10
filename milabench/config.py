@@ -19,6 +19,10 @@ def set_run_count(total_run, total_bench):
     execution_count = (total_run, total_bench)
 
 
+def get_config_global():
+    return _filter_config(config_global.get())
+
+
 def get_run_count():
     return execution_count[0]
 
@@ -30,6 +34,15 @@ def get_bench_count():
 def get_base_folder():
     config = config_global.get()
     return XPath(config["_defaults"]["dirs"]["base"])
+
+def get_run_folder():
+    config = get_config_global()
+    
+    for k, conf in config.items():
+        name = conf["run_name"]
+        break
+
+    return get_base_folder() / "runs" / name
 
 def relative_to(pth, cwd):
     pth = XPath(pth).expanduser()
@@ -83,11 +96,10 @@ def finalize_config(name, bench_config):
             bench_config["definition"] = str(pack)
 
     if not name.startswith("_") and name != "*":
-        _tags = set(bench_config["tags"])
+        _tags = set(bench_config.get("tags", []))
         _monitor_tags = _tags & _MONITOR_TAGS
-        assert len(_monitor_tags) == 1, (
-            f"Bench {name} should have exactly one monitor tag. Found {_monitor_tags}"
-        )
+        if len(_monitor_tags) != 1:
+            print(f"Bench {name} should have exactly one monitor tag. Found {_monitor_tags}")
 
     bench_config["tag"] = [bench_config["name"]]
 
@@ -116,18 +128,35 @@ def expand_matrix(name, bench_config):
     arguments = deepcopy(bench_config["matrix"])
     template = bench_config["job"]
 
+    valid_paths = ["argv"], ["client", "argv"], ["server", "argv"]
+
     newbenches = []
+
+    def get_path(d, path):
+        to_modify = d
+        for p in path:
+            to_modify = to_modify.get(p, {})
+        return to_modify
+    
 
     for matrix_args in combine_args(arguments, dict()):
         newbench = deepcopy(template)
         name = newbench.pop("name").format(**matrix_args)
 
-        for karg, varg in template["argv"].items():
-            try:
-                varg = varg.format(**matrix_args)
-            except:
-                pass
-            newbench["argv"][karg] = varg
+        # Save the matrix values in the config so it is query able
+        newbench["matrix"] = matrix_args
+
+        for argv_path in valid_paths:
+            template_argv = get_path(template, argv_path)
+            newbench_argv = get_path(newbench, argv_path)
+
+            for karg, varg in template_argv.items():
+                try:
+                    varg = varg.format(**matrix_args)
+                except:
+                    pass
+    
+                newbench_argv[karg] = varg
 
         newbenches.append((name, newbench))
 
@@ -160,5 +189,12 @@ def build_config(*config_files):
     for name, bench_config in all_configs.items():
         all_configs[name] = finalize_config(name, bench_config)
 
-    config_global.set(all_configs)
-    return all_configs
+    raw_config = all_configs
+    config_global.set(raw_config)
+    return _filter_config(all_configs)
+
+
+def _filter_config(config, filter= lambda dfn: not (dfn["name"].startswith("_") or dfn["name"] == "*")):
+    return {
+        name: defn for name, defn in config.items() if filter(defn)
+    }

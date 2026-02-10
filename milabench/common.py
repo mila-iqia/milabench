@@ -20,8 +20,6 @@ from .fs import XPath
 from .log import TerminalFormatter
 from .merge import merge
 from .multi import MultiPackage
-from .report import make_report
-from .summary import aggregate, make_summary
 from .system import build_system_config, option
 
 
@@ -183,17 +181,58 @@ def init_arch(arch=None):
     return select_backend(arch)
 
 
-def is_selected(defn, args):
-    if defn["name"] == "*":
-        return False
-    keys = selection_keys(defn)
-    return (
-        defn["enabled"]
-        and not defn["name"].startswith("_")
-        and defn.get("definition", None)
-        and (not args.select or (keys & args.select))
-        and (not args.exclude or not (keys & args.exclude))
+def assemble_config(runname, config_filepath, base_path, overrides=None, system_path=None):
+    if overrides is None:
+        overrides = {}
+
+    arch = deduce_arch()
+
+    base_defaults = get_base_defaults(
+        base=base_path,
+        arch=arch,
+        run_name=runname
     )
+
+    system_config = build_system_config(
+        system_path,
+        defaults={"system": base_defaults["_defaults"]["system"]},
+        gpu=True
+    )
+
+    overrides = merge({"*": system_config}, overrides)
+
+    return build_config(base_defaults, config_filepath, overrides)
+
+
+def assemble_or_get_config(runname, config_filepath, base_path, overrides=None, system_path=None):
+    from .config import get_config_global
+    
+    if config := get_config_global():
+        return config
+
+    return assemble_config(runname, config_filepath, base_path, overrides, system_path)
+
+
+def is_selected(args):
+    def _(defn):
+        if defn["name"] == "*":
+            return False
+        keys = selection_keys(defn)
+        return (
+            defn["enabled"]
+            and not defn["name"].startswith("_")
+            and defn.get("definition", None)
+            and (not args.select or (keys & args.select))
+            and (not args.exclude or not (keys & args.exclude))
+        )
+    return _
+
+
+def filter_config(config, filter):
+    return {
+        name: defn for name, defn in config.items() if filter(defn)
+    }
+
 
 def _get_multipack(
     args: CommonArguments = None,
@@ -233,28 +272,18 @@ def _get_multipack(
             sys.exit(1)
         overrides = merge(overrides, {"*": {"dirs": {"venv": venv}}})
 
-    if run_name is None:
-        run_name = blabla() + ".{time}"
+    run_name = resolve_run_name(run_name)
 
-    now = str(datetime.today()).replace(" ", "_")
-    run_name = run_name.format(time=now)
-
-    arch = deduce_arch()
-    base_defaults = get_base_defaults(
-        base=args.base,
-        arch=arch,
-        run_name=run_name
+    config = assemble_config(
+        run_name, 
+        args.config, 
+        args.base, 
+        overrides=overrides, 
+        system_path=args.system
     )
-    system_config = build_system_config(
-        args.system,
-        defaults={"system": base_defaults["_defaults"]["system"]},
-        gpu=True
-    )
-    overrides = merge({"*": system_config}, overrides)
 
-    config = build_config(base_defaults, args.config, overrides)
+    selected_config = filter_config(config, is_selected(args))
 
-    selected_config = {name: defn for name, defn in config.items() if is_selected(defn, args)}
     if return_config:
         return selected_config
     else:
@@ -263,7 +292,19 @@ def _get_multipack(
         )
 
 
-def _parse_report(pth, open=lambda x: x.open()):
+def resolve_run_name(run_name):
+    if run_name is None:
+        run_name = blabla() + ".{time}"
+
+    now = datetime.today().strftime("%Y-%m-%d_%H-%M-%S")
+    run_name = run_name.format(time=now)
+    return run_name
+
+
+def _parse_report(pth, open=lambda x: x.open(), shared=None):
+    if shared is None:
+        shared = {}
+    
     with open(pth) as f:
         lines = f.readlines()
         data = []
@@ -272,7 +313,9 @@ def _parse_report(pth, open=lambda x: x.open()):
 
         for line in lines:
             try:
-                data.append(json.loads(line))
+                msg = json.loads(line)
+                msg.update(shared)
+                data.append(msg)
                 good_lines += 1
             except Exception:
                 import traceback
@@ -304,6 +347,8 @@ def _read_reports(*runs):
 
 
 def _error_report(reports):
+    from .summary import aggregate
+
     out = {}
     for r, data in reports.items():
         try:
@@ -313,7 +358,7 @@ def _error_report(reports):
                 out[r] = [line for line in data if "#stdout" in line or "#stderr" in line]
         except:
             pass
-    
+
     return out
 
 
@@ -366,6 +411,9 @@ def validation_names(layers):
 
 
 def _short_make_report(runs, config):
+    from .report import make_report
+    from .summary import make_summary
+
     reports = None
 
     if runs:
@@ -373,7 +421,7 @@ def _short_make_report(runs, config):
         summary = make_summary(reports)
 
     if config:
-        config = _get_multipack(CommonArguments(config), return_config=True)
+        config = get_base_defaults(config)
 
     stream = io.StringIO()
 

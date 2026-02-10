@@ -107,6 +107,7 @@ def load_dataset(recipe, cfg):
         setattr(recipe, "dp_size", 1)
         setattr(recipe, "dp_rank", 0)
 
+        # This is slow AF though
         recipe._tokenizer = config.instantiate(cfg.tokenizer)
         recipe._loss_fn = config.instantiate(cfg.loss)
 

@@ -3,7 +3,7 @@
 from pathlib import Path
 import os
 from benchmate.datagen import generate_fakeimagenet, device_count
-from tqdm import tqdm
+from benchmate.progress import tqdm
 
 
 def loop_on(iterable:list):
