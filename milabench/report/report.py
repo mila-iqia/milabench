@@ -102,13 +102,13 @@ def custom(folder):
 if __name__ == "__main__":
     pd.set_option("display.float_format", "{:.2f}".format)
 
-    p = "/home/delaunap/work/milabench_dev/data/A100_mn_run_2b90373c/runs/fafuvegu.2025-10-16_01:37:14.739584/bert-tf32-fp16.*"
+    # p = "/home/delaunap/work/milabench_dev/data/A100_mn_run_2b90373c/runs/fafuvegu.2025-10-16_01:37:14.739584/bert-tf32-fp16.*"
+    # df = report(p)
 
-    df = report(p)
+    # print(df)
+    # print(df.columns)
 
-    print(df)
-    print(df.columns)
-
+    p = "/home/delaunap/work/milabench_dev/projects/hypertec/nvl/p600*"
     df = custom(p)
 
     print(df)

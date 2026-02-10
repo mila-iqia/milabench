@@ -8,8 +8,10 @@ Then we check for a `bench.D0.data` file and check if it is valid. if not re run
 """
 import json
 import time
-from filelock import FileLock
+import os
 import traceback
+
+from filelock import FileLock
 
 
 def serialize_exception(exc_type, exc_value, exc_tb):
@@ -59,23 +61,6 @@ class StatusTracker:
 
 
 
-def _expected_logfiles(packs, repeat):
-    from ..multi import make_execution_plan
-    files = []
-
-    for index in range(repeat):
-        for pack in packs.values():
-            plan = make_execution_plan(pack, index, repeat)
-            plan_files = []
-
-            for exec in plan.executors:
-                epack = exec.pack
-                plan_files.append(epack.logfile("data"))
-            
-            files.append(plan, plan_files)
-
-    return files
-
 
 def resume_from_status(packs, runfolder, repeat):
     if repeat > 1:
@@ -100,40 +85,3 @@ def resume_from_status(packs, runfolder, repeat):
     have = {}
 
     return missing_packs
-
-
-
-def is_run_complete(runfolder, logfiles):
-    return False
-
-
-def schedule_run(packs, runfolder, repeat, resume):
-    if resume:
-        return resume_from_files(packs, runfolder, repeat)
-    else:
-        return full_run(packs, repeat)
-
-
-def resume_from_files(packs, runfolder, repeat):
-    if repeat > 1:
-        print("repeat > 1 is not supported")
-
-    expected = _expected_logfiles(packs, repeat)
-
-    missing = []
-    for plan, logfiles in expected:
-        if not is_run_complete(runfolder, logfiles):
-            missing.append(plan)
-        
-    return missing
-
-
-def full_run(packs, repeat):
-    expected = _expected_logfiles(packs, repeat)
-
-    missing = []
-    for plan, _ in expected:
-        missing.append(plan)
-        
-    return missing
-

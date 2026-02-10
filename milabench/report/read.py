@@ -140,8 +140,13 @@ class Threading:
     Worker = threading.Thread
 
 
+def nice_cpu_count():
+    return max(1, mp.cpu_count() - 2)
+
+
 class DataProcessor:
-    def __init__(self, worker_cls, *args, worker_count=mp.cpu_count(), backend=Multiprocessing):
+    """We need to process per group of bench, processing everything in parallel takes too much memory"""
+    def __init__(self, worker_cls, *args, worker_count=nice_cpu_count(), backend=Multiprocessing):
         self.work_queue = backend.Queue(maxsize=0)
         self.result_queue = backend.Queue()
         self.error_queue = backend.Queue()
@@ -336,11 +341,21 @@ class EventProcessor(Worker):
                 # Build a shared metadata, that events can modify
                 file_meta = {**meta}
 
+                self.file_start(self, file)
+
                 for line in fp.readlines():
                     metric_line = json.loads(line)
                     
                     if (stop := self.processline(metric_line, file_meta)) is True:
                         break
+
+                self.file_end(file)
+
+    def file_start(self, filename):
+        pass
+
+    def file_end(self, filename):
+        pass
 
     def processline(self, line, meta):
         """Dispatch events"""
@@ -603,6 +618,49 @@ class LogExtractor(EventProcessor):
         self.push_result({**event["data"], **meta})
 
 
+class BenchmarkStatusExtractor(EventProcessor):
+    def __init__(self, worker_pack, *args, accept_pattern=tuple(), ignored=DEFAULT_IGNORED, **kwargs):
+        super().__init__(worker_pack, *args, accept_pattern=accept_pattern, ignored=ignored, **kwargs)
+        self.start_event = {}
+
+    def file_end(self, filename):
+        key, tracking = self.start_event.popitem()
+
+        if tracking.success():
+            self.push_result({"status": "success"})
+        else:
+            self.push_result({"status": "failed"})
+
+    def start(self, event, meta):
+        if start_time := event["data"].get("time"):
+            key = MetricExtractor.makekey(meta)
+            tracking = self.start_event.setdefault(key, EventTracking())
+            tracking.start_time = start_time
+            
+    def end(self, event, meta):
+        key = MetricExtractor.makekey(meta)
+        data = event["data"]
+
+        if tracking := self.start_event.get(key):
+            tracking.rc_code = data["return_code"]
+
+    def stop(self, event, meta):
+        key = MetricExtractor.makekey(meta)
+        if tracking := self.start_event.get(key):
+            tracking.stop = True
+
+    def error(self, event, meta):
+        key = MetricExtractor.makekey(meta)
+        if tracking := self.start_event.get(key):
+            tracking.error = True
+
+
+def fetch_benchmark_status(name):
+    with DataProcessor(LogExtractor, backend=Threading) as proc:
+            for i, item in enumerate(proc(name)):
+                return item["status"]
+
+
 
 def extract_milabench_metrics(folder):
     """Milabench metric extractor.
@@ -639,18 +697,23 @@ def extract_milabench_metrics(folder):
             yield item
 
 
-def augment_energy_estimator(metrics):
+def augment_energy_estimator(metrics, force_sort=True):
     previous = {}
 
-    for metric in sorted(metrics, key=lambda item: item.get("time") or 0):
+    if force_sort:
+        metrics = sorted(metrics, key=lambda item: item.get("time") or 0)
+
+    for metric in metrics:
         if metric["metric"] == "gpudata.power":
+            
             bench = metric["bench"]
             device = metric.get("device", -1)
             p0 = metric["p0"]
+
             key = (bench, device, p0)
 
             prev = previous.get(key)
-            if prev is not None:
+            if prev is not None and prev.get("time") is not None:
                 energy_p = prev["value"]
                 energy_n = metric["value"]
                 elapsed = metric["time"] - prev["time"]

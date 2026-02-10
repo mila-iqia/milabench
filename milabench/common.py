@@ -21,6 +21,7 @@ from .log import TerminalFormatter
 from .merge import merge
 from .multi import MultiPackage
 from .system import build_system_config, option
+from .status.resume import find_matching_runfolder, resume_as_bench_selector
 
 
 def get_pack(defn):
@@ -46,6 +47,7 @@ class CommonArguments:
     exclude         : str       = ""        # Packs to exclude
     override        : list[str] = dlist()   # Override configuration values
     capabilities    : str       = ""        # Define capabilities
+    resume          : bool      = False     # Resume milabench runs
 # fmt : on
 
 @tooled
@@ -75,6 +77,9 @@ def arguments():
     # Define capabilities
     capabilities: Option = ""
 
+    # Try to resume milabench from previous run
+    resume: Option & bool = False
+
     return CommonArguments(
         config,
         system,
@@ -84,6 +89,7 @@ def arguments():
         exclude,
         override,
         capabilities,
+        resume
     )
 
 @tooled
@@ -125,41 +131,52 @@ def selection_keys(defn):
     return sel
 
 
-def get_base_defaults(base, arch="none", run_name="none"):
+def get_default_system(base, run_name="none", arch="none"):
     try:
         user = os.getlogin()
     except OSError:
         user = "root"
+
+    return {
+        "arch": arch,
+        "sshkey": None,
+        "nodes": [
+            {
+                "name": "local",
+                "ip": "127.0.0.1",
+                "sshport": 22,
+                "user": user,
+                "main": True,
+            }
+        ],
+        "run_name": run_name,
+        "base": base,
+        "dirs": {
+            "venv": option("dirs.venv", str, default="${system.base}/venv"),
+            "data": option("dirs.data", str, default="${system.base}/data"),
+            "runs": option("dirs.runs", str, default="${system.base}/runs"),
+            "extra": option("dirs.extra", str, default="${system.base}/extra"),
+            "cache": option("dirs.cache", str, default="${system.base}/cache"),
+        }
+    }
+
+
+def get_base_defaults(base, arch="none", run_name="none"):
     return {
         "_defaults": {
-            "system": {
-                "arch": arch,
-                "sshkey": None,
-                "nodes": [
-                    {
-                        "name": "local",
-                        "ip": "127.0.0.1",
-                        "sshport": 22,
-                        "user": user,
-                        "main": True,
-                    }
-                ],
-            },
-            "dirs": {
-                "base": base,
-                "venv": option("dirs.venv", str, default="${dirs.base}/venv/${install_group}"),
-                "data": option("dirs.data", str, default="${dirs.base}/data"),
-                "runs": option("dirs.runs", str, default="${dirs.base}/runs"),
-                "extra": option("dirs.extra", str, default="${dirs.base}/extra/${group}"),
-                "cache": option("dirs.cache", str, default="${dirs.base}/cache"),
-            },
-            "group": "${name}",
-            "install_group": "${group}",
+            "group": "${.name}",
+            "install_group": "${.group}",
             "install_variant": "${system.arch}",
-            "run_name": run_name,
             "enabled": True,
             "capabilities": {
                 "nodes": 1,
+            },
+            "dirs": {
+                "venv": option("dirs.venv", str, default="${system.dirs.venv}/${..install_group}"),
+                "data": option("dirs.data", str, default="${system.dirs.data}"),
+                "runs": option("dirs.runs", str, default="${system.dirs.runs}"),
+                "extra": option("dirs.extra", str, default="${system.dirs.extra}/${..group}"),
+                "cache": option("dirs.cache", str, default="${system.dirs.cache}"),
             },
         }
     }
@@ -195,13 +212,15 @@ def assemble_config(runname, config_filepath, base_path, overrides=None, system_
 
     system_config = build_system_config(
         system_path,
-        defaults={"system": base_defaults["_defaults"]["system"]},
+        defaults={"system": get_default_system(base_path, runname, arch)},
         gpu=True
     )
 
-    overrides = merge({"*": system_config}, overrides)
+    system_config["packs"] = build_config(base_defaults, config_filepath, overrides)
 
-    return build_config(base_defaults, config_filepath, overrides)
+    system_config = OmegaConf.to_object(OmegaConf.create(system_config))
+
+    return system_config["packs"]
 
 
 def assemble_or_get_config(runname, config_filepath, base_path, overrides=None, system_path=None):
@@ -238,7 +257,7 @@ def _get_multipack(
     args: CommonArguments = None,
     run_name=None,
     overrides={},
-    return_config=False,
+    return_config=False
 ):
     if args is None:
         args = arguments()
@@ -272,8 +291,13 @@ def _get_multipack(
             sys.exit(1)
         overrides = merge(overrides, {"*": {"dirs": {"venv": venv}}})
 
-    run_name = resolve_run_name(run_name)
-
+    if args.resume:
+        if "{"  in run_name and "}" in run_name:
+            run_pat = run_name
+            run_name = find_matching_runfolder(args.base, run_name)
+    else:
+        run_name = resolve_run_name(run_name)
+    
     config = assemble_config(
         run_name, 
         args.config, 
@@ -284,12 +308,19 @@ def _get_multipack(
 
     selected_config = filter_config(config, is_selected(args))
 
+    packs = {name: get_pack(defn) for name, defn in selected_config.items()}
+
+    if args.resume:
+        packs = resume_as_bench_selector(
+            packs, 
+            os.path.join(args.base, "runs"), 
+            run_name
+        )
+
     if return_config:
         return selected_config
     else:
-        return MultiPackage(
-            {name: get_pack(defn) for name, defn in selected_config.items()}
-        )
+        return MultiPackage(packs)
 
 
 def resolve_run_name(run_name):

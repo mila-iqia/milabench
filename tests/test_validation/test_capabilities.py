@@ -11,7 +11,7 @@ def _fake_config(n):
         "dirs": dict(extra=".", venv="."),
         "system": {"nodes": list(range(n))},
         "num_machines": 2,
-        "requires_capabilities": ["len(nodes) >= ${num_machines}"],
+        "requires_capabilities": ["len(nodes) >= ${..num_machines}"],
     }
 
 

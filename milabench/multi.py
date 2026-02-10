@@ -214,12 +214,20 @@ class MultiPackage:
 
         assert is_main_local(setup), "Running benchmarks only works on the main node"
         await self.count_runs(repeat)
-        
 
+        # from .status.resume import schedule_run
+
+        # for exec_plan in schedule_run(self.packs, repeat):
+        #     try:
+        #         await exec_plan.execute("run", timeout=True, timeout_delay=600)
+        #     except Exception as exc:
+        #         traceback.print_exc()
+        #         await exec_plan.pack.message_error(exc)
+                
         for index in range(repeat):
             for pack in self.packs.values():
                 try:
-                    if not await is_system_capable(pack):
+                    if not is_system_capable(pack):
                         continue
 
                     exec_plan = make_execution_plan(pack, index, repeat)

@@ -1,28 +1,46 @@
 from copy import deepcopy
 
+from .syslog import syslog
+
 
 async def _failure(pack, condition):
     msg = f"Skip {pack.config['name']} because the following capability is not satisfied: {condition}"
     await pack.message(msg)
 
 
-async def is_system_capable(pack) -> bool:
+
+def is_system_capable_with_reasons(pack) -> bool:
     # eval add __builtins__ to the dictionary, we copy it to not
     # spoil our beautiful config
     capability_context = deepcopy(pack.config["system"])
     is_compatible = True
+    whys = []
 
     for condition in pack.config.get("requires_capabilities", []):
         if not eval(condition, capability_context):
-            await _failure(pack, condition)
             is_compatible = False
+            whys.append(condition)
+
+    return is_compatible, whys
+
+
+def is_system_capable(pack) -> bool:
+    is_compatible, whys = is_system_capable_with_reasons(pack)
+
+    for reason in whys:
+        syslog(
+            "Skip {name} because the following capability is not satisfied: {condition}", 
+            name=pack.config['name'],
+            condition=reason
+        )
 
     return is_compatible
 
 
-def sync_is_system_capable(pack):
-    import asyncio
+async def is_system_capable_report(pack) -> bool:
+    is_compatible, whys = is_system_capable_with_reasons(pack)
 
-    loop = asyncio.get_event_loop()
-    task = loop.create_task(is_system_capable(pack))
-    return loop.run_until_complete(task)
+    for reason in whys:
+        await _failure(pack, reason)
+
+    return is_compatible
