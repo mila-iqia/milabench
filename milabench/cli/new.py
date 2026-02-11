@@ -12,13 +12,13 @@ template =  benchmark / "_templates"
 
 multigpu = "\n".join([
     "method: njobs", 
-    "    n: 1\n\n",
+    "    n: 1\n",
 ])
 
 multinode = "\n".join([
     "  num_machines: 2",
     "  requires_capabilities:",
-    "    - \"len(nodes) >= ${..num_machines}\"\n\n",
+    "    - \"len(nodes) >= ${num_machines}\"\n",
 ])
 
 placeholder_repo = "https://github.com/Delaunay/extern_example.git"
@@ -40,7 +40,7 @@ def arguments():
     # Name of the benchmark
     name: Option & str
 
-    # Name of the template to use (simple, voir, stdout)
+    # Number of times to repeat the benchmark
     template: Option & str = "simple"
 
     # Repo URL to clone
@@ -87,16 +87,11 @@ def cli_new(args=None):
             (placeholder_repo, args.repo_url),
         ]
 
-        if args.multi_gpu or args.multi_node:
+        if args.multi_gpu:
             placeholders.append(("method: per_gpu\n", multigpu))
-            
-            if not args.multi_node:
-                placeholders.append("multigpu")
-            else:
-                placeholders.append("multinode")
 
         if args.repo_url:
-            placeholders.append(("https://github.com/Delaunay/extern_example.git",  args.repo_url))
+            placeholders.append(("method: per_gpu\n",  args.repo_url))
 
         if args.multi_node:
             placeholders((None, multinode))

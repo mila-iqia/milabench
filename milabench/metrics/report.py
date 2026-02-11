@@ -153,7 +153,6 @@ default_metrics = {
     "mean": no_nan(mean),
     "std": no_nan(std),
     "sem": no_nan(sem),
-    "sum": np.sum,
     "count": no_nan(count),
     "debug_count": no_nan(debug_count),
 }

@@ -8,7 +8,7 @@ from ..alt_async import destroy, run
 from ..metadata import machine_metadata
 from ..structs import BenchLogEntry
 from ..syslog import syslog
-from ..system import overrides_snapshot, option
+from ..system import overrides_snapshot
 
 
 async def execute(pack, *args, cwd=None, env={}, external=False, use_stdout=False, **kwargs):
@@ -83,10 +83,6 @@ async def trigger_exceptions(futures, packs):
             })
 
 
-def get_executor_timeout(provided):
-    return option("executor.timeout", int, provided)
-
-
 async def execute_command(
     command, phase="run", timeout=False, timeout_delay=600, with_gpu_warden=True, **kwargs
 ):
@@ -110,7 +106,7 @@ async def execute_command(
             delay = None
             if timeout:
                 delay = pack.config.get("max_duration", timeout_delay)
-                max_delay = get_executor_timeout(max(max_delay, delay))
+                max_delay = max(max_delay, delay)
 
             fut = asyncio.create_task(execute(pack, *argv, **{**_kwargs, **kwargs}))
             packs[fut] = pack

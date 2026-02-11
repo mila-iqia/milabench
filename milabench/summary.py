@@ -50,15 +50,9 @@ def aggregate(run_data):
         elif event == "data":
             data = dict(entry["data"])
             task = data.pop("task", None)
-            time = data.pop("time", None)
-        
             for k, v in data.items():
                 if task is not None and k == "rate":
                     k = f"{task}_{k}"
-        
-                if time and isinstance(v, dict):
-                    v["time"] = time
-        
                 omnibus[k].append(v)
 
         elif event == "line":
@@ -82,50 +76,11 @@ def aggregate(run_data):
     assert config and start and end
 
     device = config.get("device", None)
-    new_gpudata = []
-    energy = 0
-    last_time = None
-    first_time = None
-
-    for entry in omnibus.get("gpudata", []):
-        # If a device is specified, filter entries that don't contain it
-        now = entry.pop("time", None)
-
-        if first_time is None: 
-            first_time = now
-
-        if device is not None:
-            dev_key = str(device)
-
-            if dev_key not in entry:
-                continue  # skip this entry
-
-            gpu_entry = entry[dev_key]
-
-            # Keep only the requested device
-            new_entry = {
-                dev_key: gpu_entry,
-            }
-        else:
-            new_entry = entry
-        
-        new_gpudata.append(new_entry)
-
-        for gpu, data in new_entry.items():
-            elasped = 0
-            if now is not None and last_time is not None:
-                elapsed = now - last_time
-                energy += data["power"] * elapsed
-
-        last_time = now
-
-    omnibus["energy"] = [energy/1000]
-    omnibus["gpudata"] = new_gpudata
-    elasped = 0
-    if last_time and first_time:
-        elasped = last_time - first_time
-    omnibus["elapsed"] = [elasped]
-    # omnibus["perf_watt"] = perf / (energy / elapsed)
+    omnibus["gpudata"] = [
+        {str(device): entry[str(device)]} if device is not None else entry
+        for entry in omnibus.get("gpudata", [])
+        if device is None or str(device) in entry
+    ]
 
     if device is not None:
         omnibus["per_gpu"] = [(device, tr) for tr in omnibus["train_rate"]]
@@ -268,7 +223,6 @@ def _summarize(group, query=tuple([])) -> Summary:
                 continue
             gpudata[device]["memory"].append(data["memory"][0])
             gpudata[device]["load"].append(data["load"])
-            gpudata[device]["power"].append(data["power"])
 
     per_gpu = defaultdict(list)
     for device, tr in agg["per_gpu"]:
@@ -279,18 +233,6 @@ def _summarize(group, query=tuple([])) -> Summary:
 
     additional = augment(group, query)
 
-    perf =  _metrics(agg["train_rate"])
-
-    def energy():
-        try:
-            return {
-                "energy": agg["energy"][0],
-                "elpased": agg["elapsed"][0],
-                "perf_watt": perf["mean"] / (agg["energy"][0] / agg["elapsed"][0])
-            }
-        except:
-            return {}
-
     return {
         "meta": meta,
         "name": config["name"],
@@ -300,7 +242,7 @@ def _summarize(group, query=tuple([])) -> Summary:
         "ngpu": max(agg["ngpu"]),
         "successes": sum(agg["success"]),
         "failures": sum(not x for x in agg["success"]),
-        "train_rate": perf,
+        "train_rate": _metrics(agg["train_rate"]),
         "walltime": _metrics(agg["walltime"]),
         "per_gpu": {
             device: _metrics(train_rates) for device, train_rates in per_gpu.items()
@@ -309,14 +251,12 @@ def _summarize(group, query=tuple([])) -> Summary:
             device: {
                 "memory": _metrics(data["memory"]),
                 "load": _metrics(data["load"]),
-                "power": _metrics(data["power"]),
             }
             for device, data in gpudata.items()
         },
         "weight": config.get("weight", 0),
         "extra": additional,
         "enabled": config.get("enabled", False),
-        **energy()
     }
 
 
@@ -329,8 +269,6 @@ def make_summary(runs, query=tuple([])) -> dict[str, Summary]:
         except AssertionError:
             syslog("Ignoring run {0}: it looks like it did not finish successfully", name)
         except Exception as err:
-            import traceback
-            traceback.print_exc()
             syslog("Ignoring run {0}: beause of exception: {1}", name, err)
 
     classified = _classify(aggs)

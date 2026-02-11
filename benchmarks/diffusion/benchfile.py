@@ -17,9 +17,10 @@ class Diffusion(Package):
     main_script = "main.py"
 
     # You can remove the functions below if you don't need to modify them.
+
     async def install(self):
         await super().install()  # super() call installs the requirements
-
+        
     async def prepare(self):
         await super().prepare()  # super() call executes prepare_script
 
@@ -27,7 +28,7 @@ class Diffusion(Package):
         from milabench.commands import PackCommand
 
         if "HF_TOKEN" in os.environ or "MILABENCH_HF_TOKEN" in os.environ:
-            os.environ["HF_TOKEN"] = os.environ.get("HF_TOKEN", os.environ.get("MILABENCH_HF_TOKEN"))
+            os.environ["HF_TOKEN"] = os.environ.get("HF_TOKEN", os.environ["MILABENCH_HF_TOKEN"])
 
         main = self.dirs.code / self.main_script
         plan = PackCommand(self, *self.argv, lazy=True)

@@ -6,7 +6,7 @@ import os
 
 @dataclass
 class TrainingConfig:
-    model: str = "Milabench/stable-diffusion-2"
+    model: str = "stabilityai/stable-diffusion-2"
     dataset: str = "lambdalabs/naruto-blip-captions"
     revision: str = None
     variant: str = None

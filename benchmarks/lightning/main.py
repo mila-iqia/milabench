@@ -41,7 +41,6 @@ def prepare_voir():
     from benchmate.observer import BenchObserver
     from benchmate.monitor import bench_monitor
     import torchcompat.core as accelerator
-    
     observer = BenchObserver(
         accelerator.Event, 
         earlystop=100,
@@ -51,7 +50,6 @@ def prepare_voir():
     )
 
     return observer, bench_monitor
-
 
 def main():
     rank = int(os.getenv("RANK", 0))

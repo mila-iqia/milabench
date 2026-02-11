@@ -30,15 +30,10 @@ class SEHFragTrainerMonkeyPatch(SEHFragTrainer):
         self.data = data
         super().__init__(*args, **kwargs)
         self.batch_size_in_nodes = []
-        self.dl = None
 
         def batch_size(x):
             """Measures the batch size as the sum of all nodes in the batch."""
-            try:
-                val = self.batch_size_in_nodes.pop()
-                return val
-            except IndexError:
-                return 0
+            return self.batch_size_in_nodes.pop()
 
         self.observer = BenchObserver(
             accelerator.Event,
@@ -68,7 +63,6 @@ class SEHFragTrainerMonkeyPatch(SEHFragTrainer):
 
     def build_training_data_loader(self) -> DataLoader:
         original_output = super().build_training_data_loader()
-        self.dl = original_output
         return self.observer.loader(original_output)
 
     def setup_task(self):

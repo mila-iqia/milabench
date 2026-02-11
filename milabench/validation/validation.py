@@ -1,23 +1,7 @@
 from contextlib import contextmanager
-from collections import defaultdict
 from dataclasses import dataclass, field
 
 from ..structs import BenchLogEntry
-
-
-
-def group_by_benchname(data):
-    """dictionnay key needs to be the tagged benchmark"""
-    grouped = defaultdict(list)
-
-    for k, value in data.items():
-        name, _, index = k.rpartition(".")
-        if name == "":
-            name, index = k, ''
-
-        grouped[name].append((index, value))
-
-    return grouped
 
 
 class ValidationLayer:
@@ -123,7 +107,7 @@ class Summary:
         self.endsection()
 
     def newsection(self, title):
-        s = None # self.sections_lookup.get(title)
+        s = self.sections_lookup.get(title)
         if s is None:
             s = Summary._Section(title)
             self.stack[-1].body.append(s)

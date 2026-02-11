@@ -30,7 +30,7 @@ def arguments():
     # On error show full stacktrace
     shorttrace: Option & bool = False
 
-    # Install variant (unpinned, cuda, hpu, xpu, rocm)
+    # Install variant
     variant: Option & str = None
 
     return Arguments(force, update, shorttrace, variant)

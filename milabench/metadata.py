@@ -8,9 +8,10 @@ import functools
 import cpuinfo
 import voir.instruments.gpu as gpu
 
-
+import milabench.scripts.torchversion as torchversion
 
 from ._version import __commit__, __date__, __tag__
+from .scripts.vcs import retrieve_git_versions
 from .utils import error_guard
 
 
@@ -30,8 +31,6 @@ def _get_gpu_info():
 
 @error_guard({})
 def fetch_torch_version(pack):
-    import milabench.scripts.torchversion as torchversion
-
     cwd = pack.dirs.code
     exec_env = pack.full_env(dict())
     
@@ -42,18 +41,13 @@ def fetch_torch_version(pack):
         capture_output=True,
     )
 
-    try:
-        return json.loads(result.stdout)
-    except json.decoder.JSONDecodeError:
-        print(result.stdout)
-        return {}
+    return json.loads(result.stdout)
+
 
 @functools.cache
 @error_guard({})
 def machine_metadata(pack=None):
     """Retrieve machine metadata"""
-    from .scripts.vcs import retrieve_git_versions
-    import milabench.scripts.torchversion as torchversion
 
     uname = os.uname()
     gpus = _get_gpu_info()

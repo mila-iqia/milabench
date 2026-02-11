@@ -6,12 +6,12 @@ import multiprocessing
 import os
 from collections import defaultdict
 from pathlib import Path
+import time
 import random
-import sys
 
 import torchcompat.core as acc
 import torch
-from benchmate.progress import tqdm
+from tqdm import tqdm
 
 
 def write(args):
@@ -19,7 +19,8 @@ def write(args):
 
     offset, outdir, prefix, size = args
 
-    seed = int(0 + offset)
+    seed = int(time.time() + offset)
+    
     torch.manual_seed(seed)
     random.seed(seed)
     
@@ -109,11 +110,7 @@ def device_count():
         return 1
     
 
-def fakeimagenet_args(argv=None):
-
-    if argv is None:
-        argv = sys.argv
-
+def fakeimagenet_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--batch-size", default=512, type=int)
     parser.add_argument("--batch-count", default=60, type=int)
@@ -123,14 +120,11 @@ def fakeimagenet_args(argv=None):
     parser.add_argument("--val", default=0.1, type=float, nargs="+")
     parser.add_argument("--test", default=0.1, type=float, nargs="+")
     parser.add_argument("--output", default=os.getenv("MILABENCH_DIR_DATA", None), type=str)
-    
-    args, _ = parser.parse_known_args(argv)
+    args, _ = parser.parse_known_args()
     return args
 
 
 def generate_fakeimagenet(args=None):
-    multiprocessing.set_start_method("spawn", force=True)
-
     # config = json.loads(os.environ["MILABENCH_CONFIG"])
 
     if args is None:
@@ -155,8 +149,7 @@ def generate_fakeimagenet(args=None):
 
     generate_sets(dest, size_spec, args.image_size)
 
-    labels = set([int(entry.name) for entry in Path(dest).glob("*/[0-9]*/")])
-
+    labels = set([int(entry.name) for entry in Path(dest).glob("*/*/")])
     with open(os.path.join(dest, "labels.txt"), "wt") as _f:
         # class_id,class_name
         _f.writelines([f"{l},{l}\n" for l in sorted(labels)])

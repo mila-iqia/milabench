@@ -2,7 +2,7 @@ import math
 from collections import defaultdict
 from dataclasses import dataclass
 
-from .validation import ValidationLayer, group_by_benchname
+from .validation import ValidationLayer
 
 
 @dataclass
@@ -61,37 +61,21 @@ class Layer(ValidationLayer):
                     warning.increased_count += 1
 
     def report(self, summary, **kwargs):
-        grouped = group_by_benchname(self.warnings)
-
         with summary.section("Loss Tracking"):
-            for bench, warnings in grouped.items():
+            for bench, warnings in self.warnings.items():
                 with summary.section(bench):
-                    no_loss = []
-                    loss_was_nan = []
-                    loss_increased = []
+                    nan_counts = warnings.nan_count
+                    loss_inc = warnings.increased_count
+                    loss_count = warnings.loss_count
 
-                    for tag, warning in warnings:
-                        nan_counts = warning.nan_count
-                        loss_inc = warning.increased_count
-                        loss_count = warning.loss_count
+                    if loss_count == 0:
+                        summary.add("* No loss was found")
 
-                        if loss_count == 0:
-                            no_loss.append(tag)
-                        
-                        if nan_counts > 0:
-                            loss_was_nan.append(tag)
+                    if nan_counts > 0:
+                        summary.add(f"* Loss was Nan {nan_counts} times")
 
-                        if loss_inc > 0:
-                            loss_increased.append(tag)
-
-                    if len(no_loss):
-                        summary.add(f"* {len(no_loss)} x {bench} No loss was found ({', '.join(no_loss)})")
-                
-                    if len(loss_was_nan):
-                        summary.add(f"* {len(loss_was_nan)} x {bench} Loss was NaN ({', '.join(loss_was_nan)})")
-                        
-                    if len(loss_increased):
-                        summary.add(f"* {len(loss_increased)} x {bench} Loss increased ({', '.join(loss_increased)})")
+                    if loss_inc > 0:
+                        summary.add(f"* Loss increased {loss_inc} times")
 
         self.set_error_code(self.nan_count)
         return self.nan_count

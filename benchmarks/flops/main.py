@@ -4,7 +4,6 @@ from argparse import ArgumentParser
 import time
 
 import torch
-import torch.nn as nn
 import torchcompat.core as accelerator
 
 from benchmate.monitor import setupvoir
@@ -59,78 +58,13 @@ def modelflops(
     return (flops * repeat) / (end - start) / unit
 
 
-
-def default_mm(x, a, out, device):
-    return torch.mm(
-        x,
-        a,
-        out=out,
-    )
-
-
-def mxfp_mm(x, a, out, device):
-    # Works
-    return torch._scaled_mm(
-        x,
-        a.t(),
-        out=out,
-        scale_a=torch.tensor(1.0, device=device),
-        scale_b=torch.tensor(1.0, device=device)
-    )
-
-def mxfp_tensor_scaling_mm(x, a, out, device):
-    #  For TensorWise scaling, a and b should be float8, scales should be float and singletons.
-    return torch._scaled_mm(
-        x,
-        a.t(),
-        # out=out,
-        out_dtype=torch.bfloat16,
-        scale_a=torch.tensor(1.0, device=device),
-        scale_b=torch.tensor(1.0, device=device)
-    )
-
-def mxfp_rowwise_mm(x, a, out, device):
-    # For RowWise scaling, a and b should be float8, 
-    #   scales should be float, scale_a should be (8192, 1) and scale_b should be (1, 8192), and both should be contiguous.
-    _, n = x.shape()
-
-    return torch._scaled_mm(
-        x,
-        a.t(),
-        # out=out,
-        out_dtype=torch.bfloat16,
-        scale_a=torch.ones((1, n), device=device),
-        scale_b=torch.ones((n, 1), device=device)
-    )
-
-def mxfp_blockwise_fp4_mm(x, a, out, device):
-    # For RowWise scaling, a and b should be float8, 
-    #   scales should be float, scale_a should be (8192, 1) and scale_b should be (1, 8192), and both should be contiguous.
-    _, n = x.shape()
-
-    n = n * n / 8
-
-    scale_a = torch.ones(n, device=device, dtype=torch.float8_e4m3fn),
-    scale_b = torch.ones(n, device=device, dtype=torch.float8_e4m3fn),
-
-    return torch._scaled_mm(
-        x,          # float4
-        a.t(),      # float4
-        out_dtype=torch.bfloat16,
-        scale_a=scale_a,
-        scale_b=scale_b
-    )
-
-
-
-def f(N, R=30, m=5000000, n=256, unit=TERA, dtype_mm=torch.float32, log=None):
+def f(N, R=30, m=5000000, n=256, unit=TERA, dtype=torch.float32, log=None):
     device = accelerator.fetch_device(0)
 
     empty_cache()
-    dtype, mm = dtype_mm
 
-    a = torch.eye(n, dtype=torch.float32, device=device).to(dtype)
-    x = torch.randn((m, n), dtype=torch.float32, device=device).to(dtype)
+    a = torch.eye(n, dtype=dtype, device=device)
+    x = torch.randn((m, n), dtype=dtype, device=device)
     y = torch.zeros_like(x)
 
     F = N * (2 * m * n * n + 2 * m * n * n)
@@ -141,10 +75,8 @@ def f(N, R=30, m=5000000, n=256, unit=TERA, dtype_mm=torch.float32, log=None):
 
         for _ in range(N):
             # No allocation in main loop using dual-out strategy
-            
-            y = mm(x, a, out=y, device=device)
-            x = mm(y, a, out=x, device=device)
-            
+            y = torch.mm(x, a, out=y)
+            x = torch.mm(y, a, out=x)
             accelerator.mark_step()
 
         synchronize()
@@ -158,12 +90,9 @@ def f(N, R=30, m=5000000, n=256, unit=TERA, dtype_mm=torch.float32, log=None):
 
 def main():
     dtypes = {
-        "bf16": (torch.bfloat16, default_mm),
-        "fp16": (torch.float16, default_mm),
-        "fp32": (torch.float32, default_mm),
-        "fp8": (torch.float8_e4m3fn , mxfp_mm),
-        
-        "fp4": (torch.float4_e2m1fn_x2, mxfp_blockwise_fp4_mm),
+        "bf16": torch.bfloat16,
+        "fp16": torch.float16,
+        "fp32": torch.float32,
     }
 
     parser = ArgumentParser()
@@ -178,7 +107,7 @@ def main():
 
     accelerator.set_enable_tf32(args.tf32)
 
-    log, monitor = setupvoir(interval=0.1)
+    log, monitor = setupvoir()
 
     f(args.number, args.repeat, args.m, args.n, TERA, dtypes[args.dtype], log)
 
