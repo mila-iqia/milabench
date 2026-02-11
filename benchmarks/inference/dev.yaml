@@ -1,0 +1,81 @@
+_inference:
+  inherits: _defaults
+  definition: .
+  install-variant: unpinned
+  install_group: torch
+
+
+whisper-transcribe-single:
+  inherits: _inference
+  num_machines: 1
+  tags:
+    - monogpu
+  plan:
+    method: per_gpu
+
+  url: 
+    - https://huggingface.co/openai/whisper-large-v3
+    - https://huggingface.co/datasets/openslr/librispeech_asr
+
+  argv:
+    --mode: whisper
+    --model: openai/whisper-large-v3
+    --dataset: openslr/librispeech_asr
+    --subset: "clean"
+    --split: "train.100"
+    --batch_size: 32
+
+
+txt-to-image-gpus:
+  inherits: _inference
+  num_machines: 1
+  tags:
+    - multigpu
+  plan:
+    method: njobs
+    n: 1
+
+  url: https://huggingface.co/black-forest-labs/FLUX.1-dev
+  argv:
+    --mode: flux
+    --model: black-forest-labs/FLUX.1-dev
+    --dataset: jackyhate/text-to-image-2M
+    --batch_size: 1
+  
+
+llm-chat-completion:
+  inherits: _inference
+  num_machines: 1
+  tags:
+    - multigpu
+  plan:
+    method: per_gpu
+    n: 1
+
+  url: https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct
+  argv:
+    --mode: chat
+    --model: meta-llama/Llama-3.1-8B-Instruct
+    --dataset: hendrydong/gpqa_diamond
+    --split: "test"
+    # --dataset: wikitext/wikitext-103-v1
+    --batch_size: 1
+
+
+llm-chat-completion-gpus:
+  inherits: _inference
+  num_machines: 1
+  tags:
+    - multigpu
+  plan:
+    method: njobs
+    n: 1
+
+  url: https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct
+  argv:
+    --mode: chat
+    --model: meta-llama/Llama-3.1-8B-Instruct
+    --dataset: hendrydong/gpqa_diamond
+    --split: "test"
+    # --dataset: wikitext/wikitext-103-v1
+    --batch_size: 1

@@ -1,5 +1,5 @@
 """This file is generated, do not modify"""
 
-__tag__ = "v1.2.2-8-gaab9090"
-__commit__ = "aab909089a077526e8658a8843ac62bfbf2a4c22"
-__date__ = "2025-09-19 17:36:10 +0000"
+__tag__ = "v1.2.2-72-gf2a5327"
+__commit__ = "f2a53271ffef3ffbe1d3f335dfffc42623b9cda6"
+__date__ = "2025-12-23 02:04:09 +0000"

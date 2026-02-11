@@ -11,6 +11,7 @@ _defaults:
       gpu_load_threshold: 0.5
       gpu_mem_threshold: 0.5
 
+
 _torchvision:
   inherits: _defaults
   definition: ../benchmarks/torchvision
@@ -26,6 +27,7 @@ _torchvision:
     --num-workers: "auto({n_worker}, 8)"
     --loader: pytorch
     --data: "{milabench_data}/FakeImageNet"
+
 
 _torchvision_ddp:
   inherits: _defaults
@@ -156,6 +158,16 @@ _accelerate_opt:
   # Accelerate Args
   use_deepspeed: true
   num_machines: 1
+
+fp8:
+  inherits: _flops
+
+  argv:
+    --number: 30
+    --repeat: 90
+    --m: 8192
+    --n: 8192
+    --dtype: fp8
 
 fp16:
   inherits: _flops
@@ -420,6 +432,7 @@ _diffusion:
     method: per_gpu
 
   argv:
+    --model: Milabench/stable-diffusion-2
     --num_epochs: 5
     --batch_size: "auto_batch(32)"
     --num_workers: "auto({n_worker}, 8)"
@@ -451,7 +464,7 @@ diffusion-nodes:
     n: 1
   num_machines: 2
   requires_capabilities:
-    - "len(nodes) >= ${num_machines}"
+    - "len(nodes) >= ${..num_machines}"
 
 _lightning:
   inherits: _defaults
@@ -547,7 +560,7 @@ dinov2-giant-nodes:
 
   num_machines: 2
   requires_capabilities:
-    - "len(nodes) >= ${num_machines}"
+    - "len(nodes) >= ${..num_machines}"
 
 _llm:
   voir:
@@ -644,7 +657,7 @@ llm-lora-ddp-nodes:
     device={device_name}: true
   num_machines: 2
   requires_capabilities:
-    - "len(nodes) >= ${num_machines}"
+    - "len(nodes) >= ${..num_machines}"
 
 llm-lora-mp-gpus:
   inherits: _llm
@@ -728,7 +741,7 @@ llm-full-mp-nodes:
   
   num_machines: 2
   requires_capabilities:
-    - "len(nodes) >= ${num_machines}"
+    - "len(nodes) >= ${..num_machines}"
 
 _purejaxrl:
   inherits: _defaults

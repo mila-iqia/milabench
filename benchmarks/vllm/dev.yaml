@@ -1,0 +1,166 @@
+# milabench run --config /home/mila/d/delaunap/scratch/milabench/benchmarks/vllm/dev.yaml --base /tmp/data/ --select vllm-gpus --use-current-env
+
+_vllm:
+  inherits: _defaults
+  definition: .
+  install-variant: unpinned
+  install_group: torch
+
+  # Inference Server Args
+  server:
+   argv:
+      --served-model-name: model
+      --dtype: bfloat16
+    
+  # Benchmarking client Args
+  client:
+    argv:
+      --model: meta-llama/Meta-Llama-3-8B-Instruct
+      --served-model-name: model
+      --request-rate: inf
+      --dataset-name: random
+      --label: milabench
+      --backend: openai 
+      --num-prompts: 100
+
+vllm-single:
+  inherits: _vllm
+  tags:
+    - monogpu
+  num_machines: 1
+  plan:
+    method: per_gpu
+
+  server:
+   argv:
+      mistralai/Mistral-Small-3.1-24B-Instruct-2503: true
+      --dtype: bfloat16
+      --tensor-parallel-size: 1
+
+
+vllm-dense-physics-gpus:
+  inherits: _vllm
+
+  num_machines: 1
+  tags:
+    - multigpu
+
+  plan:
+    method: njobs
+    n: 1
+
+  client:
+    argv:
+      --dataset-name: hf
+      --dataset-path: hendrydong/gpqa_diamond
+      --hf-name: hendrydong/gpqa_diamond
+      --num-prompts: 1000
+
+  server:
+   argv:
+      mistralai/Mistral-Small-3.1-24B-Instruct-2503: true
+      --served-model-name: model
+      --dtype: bfloat16
+      --tensor-parallel-size: "{gpu_count}"
+      --tokenizer-mode: mistral
+      --config_format: mistral
+      --load_format: mistral 
+      --tool-call-parser: mistral
+      --enable-auto-tool-choice: true
+      --limit-mm-per-prompt: '{"image":10}' 
+
+
+vllm-moe-code-gpus:
+  inherits: _vllm
+
+  num_machines: 1
+  tags:
+    - multigpu
+
+  plan:
+    method: njobs
+    n: 1
+
+  client:
+    argv:
+      --dataset-name: hf
+      --dataset-path: vdaita/edit_10k_char
+      --hf-name: vdaita/edit_10k_char
+      --num-prompts: 500
+
+  server:
+   argv:
+      # Out of Memory on L40S
+      # meta-llama/Llama-4-Maverick-17B-128E-Instruct: true
+      # meta-llama/Llama-4-Scout-17B-16E-Instruct: true
+      mistralai/Mistral-Small-3.1-24B-Instruct-2503: true
+      --served-model-name: model
+      --dtype: bfloat16
+      --tensor-parallel-size: "{gpu_count}"
+      --tokenizer-mode: mistral
+      --config_format: mistral
+      --load_format: mistral 
+      --tool-call-parser: mistral
+      --enable-auto-tool-choice: true
+      --limit-mm-per-prompt: '{"image":10}' 
+
+vllm-whisper-gpus:
+  # Does not work, the model seems to never return
+  # the right reply for the bench process to start
+  inherits: _vllm
+
+  num_machines: 1
+  tags:
+    - multigpu
+
+  plan:
+    method: njobs
+    n: 1
+
+  client:
+    argv:
+      --model: openai/whisper-large-v3
+      --dataset-name: hf
+      --dataset-path: openslr/librispeech_asr
+      --hf-name: openslr/librispeech_asr
+      --hf-split: test.clean
+      --num-prompts: 1
+      --backend: openai-audio
+      --endpoint: /v1/audio/transcriptions
+      # --trust-remote-code 
+
+  server:
+   argv:
+      openai/whisper-large-v3: true
+      --served-model-name: model
+      --dtype: bfloat16
+      --tensor-parallel-size: 1
+
+
+
+# vllm-moe-math-gpus:
+#   inherits: _vllm
+
+#   num_machines: 1
+#   tags:
+#     - multigpu
+
+#   plan:
+#     method: njobs
+#     n: 1
+
+#   client:
+#     argv:
+#       --dataset-name: hf
+#       --dataset-path: HuggingFaceH4/MATH-500
+#       --hf-name: HuggingFaceH4/MATH-500
+#       --num-prompts: 198
+
+#   server:
+#    argv:
+#       # Out of Memory on L40S
+#       # meta-llama/Llama-4-Maverick-17B-128E-Instruct: true
+#       meta-llama/Llama-4-Scout-17B-16E-Instruct: true
+#       --dtype: bfloat16
+#       --tensor-parallel-size: "{gpu_count}"
+

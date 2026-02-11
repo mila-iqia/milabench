@@ -85,7 +85,7 @@ async def install_requires(pack: Package):
     group = pack.config.get("install_group", {})
 
     if group not in installed_requires:
-        await pack.pip_install("setuptools", "poetry", "uv", use_uv_override=False)
+        await pack.pip_install("setuptools", "poetry", "uv", "flit_core", use_uv_override=False)
         installed_requires[group] = 1
 
 
@@ -220,13 +220,13 @@ class BasePackage:
         * Check if the benchmark is installed.
         * :meth:`~milabench.pack.BasePackage.install`
         """
-        if self.install_mark_file.exists():
-            name = self.config["name"]
-            await self.message(f"Benchmark {name} is already installed")
-            return
+        # if self.install_mark_file.exists():
+        #     name = self.config["name"]
+        #     await self.message(f"Benchmark {name} is already installed")
+        #     return
 
         await self.install()
-        self.install_mark_file.touch()
+        # self.install_mark_file.touch()
 
     async def pip_install(self, *args, build_isolation=False, use_uv_override=None, **kwargs):
         """Install a package in the virtual environment.
@@ -378,13 +378,14 @@ class Package(BasePackage):
         from .sizer import resolve_placeholder
 
         env = {
-            f"MILABENCH_DIR_{name.upper()}": path
-            for name, path in self.config["dirs"].items()
+            f"MILABENCH_DIR_{name.upper()}": path 
+                for name, path in self.config["dirs"].items()
         }
 
         env["OMP_NUM_THREADS"] = resolve_placeholder(self, "{cpu_per_gpu}")
 
         env["MILABENCH_CONFIG"] = json.dumps(self.config)
+        
         if self.phase == "prepare" or self.phase == "run":
             # XDG_CACHE_HOME controls basically all caches (pip, torch, huggingface,
             # etc.). HOWEVER, we do not want pip's cache to be in self.dirs.cache,
@@ -394,8 +395,19 @@ class Package(BasePackage):
             # install or pin. (We could also specifically clear out cache/pip when
             # building an image, but it is overall nicer for development to use
             # the default cache).
+            #
+            # data will be XDG_CACHE_HOME/huggingface/hub
+            #
             env["XDG_CACHE_HOME"] = str(self.dirs.cache)
+            env["TORCH_HOME"] = str(self.dirs.cache)
 
+            # Huggingface cachin logic is a mess between all its different libraries
+            # we have to specify those to force huggingface to behave the same
+            # across benchmarks
+            # data will be data/hub
+            env["HF_HOME"] = str(self.dirs.data)
+            env["HF_HUB_CACHE "] = str(self.dirs.data / "hub")
+            env["FLASHINFER_CACHE_DIR "] = str(self.dirs.cache / "flashinfer")
         return env
 
     def full_env(self, env={}):
