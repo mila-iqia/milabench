@@ -117,6 +117,22 @@ def save_path():
     return run_folder / "ipmi.jsonl"
 
 
+@contextmanager
+def ipmi_logger(enabled=True):
+
+    ip = os.getenv("VOIR_IPMI_IP")
+    user = os.getenv("VOIR_IPMI_USER")
+    password = os.getenv("VOIR_IPMI_PASSWORD")
+
+    can_be_enabled = ip is not None and user is not None and password is not None
+    
+    if can_be_enabled and enabled:
+        with IPMIParallelMonitor() as monitor:
+            yield monitor
+    else:
+        yield lambda x: None
+
+
 class IPMIParallelMonitor:
     def __init__(self, path=None, interval=10, **kwargs):
         if path is None:

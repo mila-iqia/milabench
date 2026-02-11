@@ -27,7 +27,7 @@ from ..sizer import MemoryUsageExtractor
 from ..summary import make_summary
 from ..system import multirun, apply_system, SizerOptions, option
 from ..config import get_config_global
-from benchmate.ipmi import IPMIParallelMonitor
+from benchmate.ipmi import ipmi_logger
 
 
 # fmt: off
@@ -100,7 +100,7 @@ PLUGINS = {
     "term": TerminalFormatter,
     "mem": MemoryUsageExtractor,
     "txt": TextReporter,
-    "ipmi": IPMIParallelMonitor
+    "ipmi": ipmi_logger
 }
 
 try:
@@ -175,7 +175,7 @@ def fetch_plugins(args):
             TextReporter("stdout"),
             TextReporter("stderr"),
             MemoryUsageExtractor(),
-            IPMIParallelMonitor(),
+            ipmi_logger(),
         ]
     
     return plugins + layers
