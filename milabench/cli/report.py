@@ -1,7 +1,6 @@
 import os
 import sys
 from dataclasses import dataclass, field
-from pathlib import Path
 
 from coleo import Option, config as configuration, tooled
 
@@ -14,7 +13,7 @@ from ..summary import make_summary
 @dataclass
 class Arguments:
     runs:        list = field(default_factory=list)
-    config      : str = os.getenv("MILABENCH_CONFIG")
+    config      : str = os.environ.get("MILABENCH_CONFIG", None)
     compare     : str = None
     compare_gpus: bool = False
     html        : str = None
@@ -28,7 +27,8 @@ def arguments():
     # [action: append]
     runs: Option = []
 
-    config: Option & str = os.getenv("MILABENCH_CONFIG")
+    # Configuration file (for weights)
+    config: Option & str = os.environ.get("MILABENCH_CONFIG", None)
 
     # Comparison summary
     compare: Option & configuration = None
@@ -77,6 +77,8 @@ def cli_report(args=None):
         from milabench.common import arguments as multipack_args
 
         margs = multipack_args()
+        margs.config = args.config
+
         args.config = _get_multipack(margs, return_config=True)
 
     make_report(
@@ -91,109 +93,3 @@ def cli_report(args=None):
         errdata=reports and _error_report(reports),
         stream=sys.stdout,
     )
-
-
-
-def make_report_for_single_run(run_folder, output=sys.stdout):
-    reports = _read_reports(run_folder)
-    summary = make_summary(reports)
-
-    # FIXME
-    from milabench.common import arguments as multipack_args
-    margs = multipack_args()
-    config = _get_multipack(margs, return_config=True)
-
-    df = make_report(
-        summary,
-        weights=config,
-        title=None,
-        errdata=reports and _error_report(reports),
-        stream=output,
-    )
-
-    return df
-
-
-def gather_run_folders(folder, runs=None):
-    if runs is None:
-        runs = []
-    
-    for folder_name in os.listdir(folder):
-        full_pth = os.path.join(folder, folder_name)
-
-        if os.path.isfile(full_pth):
-            if full_pth.endswith(".data"):
-                runs.append(Path(full_pth).parent)
-        else:
-            runs.extend(gather_run_folders(full_pth))
-
-    return runs
-        
-
-def report_combine():
-    from argparse import ArgumentParser
-    from collections import defaultdict
-
-    import pandas as pd
-
-    from ..report import pandas_to_string
-    from .gather import default_tags, extract_tags, make_tags
-    from collections import defaultdict
-
-    parser = ArgumentParser()
-    parser.add_argument("--folder", type=str, help="run folder")
-    args = parser.parse_args()
-
-    found_tags = defaultdict(int)
-    tags = make_tags(default_tags())
-    reports = []
-
-    run_folders = list(set(gather_run_folders(args.folder)))
-
-    for folder in run_folders:
-        full_pth = Path(folder)
-
-        if (full_pth.is_file()):
-            continue
-        
-        columns = {
-            "power": "600",
-            "clock": "1785",
-        }
-
-        # Tag Extraction from the run name
-        for tag, value in extract_tags(full_pth.name, tags, found_tags):
-            if value != "NA":
-                columns[tag] = value
-        
-        # ---
-
-        # Report Generation
-        with open(os.devnull, "w") as devnull:
-            df = make_report_for_single_run(
-                str(full_pth),
-                output=devnull
-            )
-
-        print(full_pth, columns)
-
-        # Insert columns to the data frame
-        for key, value in columns.items():
-            df[key] = value
-
-        df = df.rename_axis("bench").reset_index()
-        df["bench"] = df["bench"].astype("string")
-        #
-        reports.append(df)
-
-    # Print the full df
-    all_reports = pd.concat(reports, ignore_index=True)
-
-    all_reports.to_csv("big_beautiful_report.csv", index=False)
-
-    print(pandas_to_string(all_reports))
-
-
-
-if __name__ == "__main__":
-    report_combine()

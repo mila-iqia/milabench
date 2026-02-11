@@ -2,9 +2,7 @@
 
 import os
 import subprocess
-from packaging import version
 
-import torch
 import torch.distributed.run as distrun
 import torch.distributed.elastic.multiprocessing.api as elastic
 import torch.distributed.elastic.multiprocessing.subprocess_handler as sub
@@ -27,8 +25,22 @@ class NewSubprocessHandler(sub.SubprocessHandler):
             **kwargs,
         )
 
-def get_subprocess_handler(*args, **kwargs):
-    return NewSubprocessHandler(*args, **kwargs)
+def get_subprocess_handler(
+    entrypoint: str,
+    args,
+    env,
+    stdout: str,
+    stderr: str,
+    local_rank_id: int,
+):
+    return NewSubprocessHandler(
+        entrypoint=entrypoint,
+        args=args,
+        env=env,
+        stdout=stdout,
+        stderr=stderr,
+        local_rank_id=local_rank_id,
+    )
 
 
 @contextmanager

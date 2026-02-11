@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Milabench Pivot View</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .pivot-container {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            height: 100vh;
+        }
+
+        .fields-panel {
+            width: 300px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+        }
+
+        .pivot-builder {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+        }
+
+        .pivot-area {
+            display: flex;
+            gap: 15px;
+            flex: 1;
+            min-height: 200px;
+        }
+
+        .pivot-box {
+            flex: 1;
+            background: #fff;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 150px;
+        }
+
+        .pivot-box.active {
+            border-color: #0d6efd;
+        }
+
+        .field-item {
+            background: #fff;
+            padding: 8px 12px;
+            margin: 5px 0;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            cursor: move;
+            user-select: none;
+            font-size: 0.9em;
+        }
+
+        .field-item:hover {
+            background: #e9ecef;
+        }
+
+        .field-item.dragging {
+            opacity: 0.5;
+        }
+
+        .pivot-box h5 {
+            margin-bottom: 15px;
+            color: #495057;
+        }
+
+        .pivot-result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow: auto;
+        }
+
+        .field-tag {
+            display: inline-flex;
+            align-items: center;
+            background: #e9ecef;
+            padding: 4px 8px;
+            margin: 2px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .field-tag .remove {
+            margin-left: 5px;
+            cursor: pointer;
+            color: #dc3545;
+        }
+
+        .field-tag .remove:hover {
+            color: #bd2130;
+        }
+
+        .pivot-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .field-list {
+            overflow-y: auto;
+        }
+
+        table {
+            text-align: right;
+        }
+
+        .filter-dialog {
+            position: fixed;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: none;
+            width: 250px;
+        }
+
+        .filter-dialog.active {
+            display: block;
+        }
+
+        .filter-dialog select,
+        .filter-dialog input {
+            margin: 5px 0;
+            width: 100%;
+        }
+
+        .filter-dialog .btn-group {
+            margin-top: 10px;
+            display: flex;
+            gap: 5px;
+        }
+
+        .filter-tag {
+            display: inline-flex;
+            align-items: center;
+            background: #e9ecef;
+            padding: 4px 8px;
+            margin: 2px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+
+        .filter-tag:hover {
+            background: #dee2e6;
+        }
+
+        .filter-tag .remove {
+            margin-left: 5px;
+            cursor: pointer;
+            color: #dc3545;
+        }
+
+        .filter-tag .remove:hover {
+            color: #bd2130;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="pivot-container">
+        <!-- Fields Panel -->
+        <div class="fields-panel">
+            <h5>Available Fields</h5>
+            <div class="field-list" id="fieldsList"></div>
+        </div>
+
+        <!-- Pivot Builder -->
+        <div class="pivot-builder">
+            <div class="row">
+                <div class="pivot-area">
+                    <div class="pivot-box" id="rowsBox">
+                        <h5>Rows</h5>
+                        <div class="field-container" id="rowsContainer">
+                            <div class="field-tag" data-field="Exec:name" title="Exec:name"> Exec:name
+                                <span class="remove" onclick="removeField(this)">×</span>
+                            </div>
+                            <div class="field-tag" data-field="Pack:name" title="Pack:name"> Pack:name
+                                <span class="remove" onclick="removeField(this)">×</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="pivot-box" id="columnsBox">
+                        <h5>Columns</h5>
+                        <div class="field-container" id="columnsContainer">
+                            <div class="field-tag" data-field="Metric:name" title="Metric:name">Metric:name
+                                <span class="remove" onclick="removeField(this)">×</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="pivot-box" id="valuesBox">
+                        <h5>Values</h5>
+                        <div class="field-container" id="valuesContainer">
+                            <div class="field-tag" data-field="Metric:value" title="Metric:value">Metric:value
+                                <span class="remove" onclick="removeField(this)">×</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="pivot-box" id="filterBox">
+                        <h5>Filters</h5>
+                        <div class="field-container" id="filterContainer">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-dialog" id="filterDialog">
+                    <select id="filterOperator">
+                        <option value="==">Equals (==)</option>
+                        <option value="!=">Not Equals (!=)</option>
+                        <option value=">">Greater Than (>)</option>
+                        <option value=">=">Greater Than or Equal (>=)</option>
+                        <option value="<">Less Than (<)< /option>
+                        <option value="<=">Less Than or Equal (<=)< /option>
+                        <option value="in">In List (in)</option>
+                        <option value="not in">Not In List (not in)</option>
+                    </select>
+                    <input type="text" id="filterValue" placeholder="Enter filter value">
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-primary" onclick="applyFilter()">Apply</button>
+                        <button class="btn btn-sm btn-secondary" onclick="closeFilterDialog()">Cancel</button>
+                    </div>
+                </div>
+
+                <div class="pivot-actions">
+                    <button class="btn btn-primary" onclick="generatePivot()">Generate Pivot</button>
+                    <button class="btn btn-secondary" onclick="resetPivot()">Reset</button>
+                </div>
+            </div>
+
+            <div class="row pivot-result" id="pivotResult">
+                <!-- Pivot table will be displayed here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let draggedItem = null;
+        let activeBox = null;
+        let currentFilterField = null;
+        let selectors = {}
+
+        function selector(key) {
+            if (selectors[key] === undefined) {
+                selectors[key] = "s" + Object.keys(selectors).length;
+            }
+            return selectors[key];
+        }
+
+        // Fetch available fields from the server
+        fetch('/api/keys')
+            .then(response => response.json())
+            .then(fields => {
+                const fieldsList = document.getElementById('fieldsList');
+
+                fields.forEach(field => {
+                    const fieldItem = createFieldItem(field);
+                    fieldsList.appendChild(fieldItem);
+                });
+
+                // Initialize drag and drop for all field items
+                document.querySelectorAll('.field-item').forEach(item => {
+                    item.addEventListener('dragstart', handleDragStart);
+                    item.addEventListener('dragend', handleDragEnd);
+                });
+            });
+
+        document.querySelectorAll('.pivot-box').forEach(box => {
+            box.addEventListener('dragover', handleDragOver);
+            box.addEventListener('dragenter', handleDragEnter);
+            box.addEventListener('dragleave', handleDragLeave);
+            box.addEventListener('drop', handleDrop);
+        });
+
+        function createFieldItem(field) {
+            const div = document.createElement('div');
+            div.className = 'field-item';
+            div.draggable = true;
+            div.dataset.field = selector(field);
+            div.textContent = field;
+            div.title = field; // Show full field name on hover
+            return div;
+        }
+
+        function handleDragStart(e) {
+            draggedItem = this;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', this.title);
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            document.querySelectorAll('.pivot-box').forEach(box => {
+                box.classList.remove('active');
+            });
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleDragEnter(e) {
+            e.preventDefault();
+            this.classList.add('active');
+            activeBox = this;
+        }
+
+        function handleDragLeave(e) {
+            this.classList.remove('active');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            this.classList.remove('active');
+
+            const field = e.dataTransfer.getData('text/plain');
+            const container = this.querySelector('.field-container');
+
+            // If dropping in filter box, show filter dialog
+            if (this.id === 'filterBox') {
+                showFilterDialog(field);
+            } else {
+                // Check if field already exists in this container
+                if (!container.querySelector(`[data-field="${selector(field)}"]`)) {
+                    const fieldTag = createFieldTag(field);
+                    container.appendChild(fieldTag);
+                }
+            }
+        }
+
+        function createFieldTag(field) {
+            const tag = document.createElement('div');
+            tag.className = 'field-tag';
+            tag.dataset.field = field;
+            tag.innerHTML = `
+                ${field}
+                <span class="remove" onclick="removeField(this)">×</span>
+            `;
+            tag.title = field; // Show full field name on hover
+            return tag;
+        }
+
+        function removeField(element) {
+            element.parentElement.remove();
+        }
+
+        function showFilterDialog(field) {
+            currentFilterField = field;
+            const dialog = document.getElementById('filterDialog');
+
+            // Reset the dialog inputs
+            document.getElementById('filterOperator').value = '==';
+            document.getElementById('filterValue').value = '';
+
+            // Show the dialog
+            dialog.style.display = 'block';
+
+            // Position the dialog in the center of the screen
+            const rect = dialog.getBoundingClientRect();
+            dialog.style.top = `${(window.innerHeight - rect.height) / 2}px`;
+            dialog.style.left = `${(window.innerWidth - rect.width) / 2}px`;
+        }
+
+        function closeFilterDialog() {
+            document.getElementById('filterDialog').style.display = 'none';
+            currentFilterField = null;
+        }
+
+        function applyFilter() {
+            if (!currentFilterField) return;
+
+            const operator = document.getElementById('filterOperator').value;
+            const value = document.getElementById('filterValue').value;
+
+            if (!value) {
+                alert('Please enter a filter value');
+                return;
+            }
+
+            const filterContainer = document.getElementById('filterContainer');
+            const filterTag = document.createElement('div');
+            filterTag.className = 'filter-tag';
+            filterTag.dataset.field = currentFilterField;
+            filterTag.dataset.operator = operator;
+            filterTag.dataset.value = value;
+
+            let displayValue = value;
+            if (operator === 'in' || operator === 'not in') {
+                displayValue = `[${value}]`;
+            }
+
+            filterTag.innerHTML = `
+                ${currentFilterField} ${operator} ${displayValue}
+                <span class="remove" onclick="removeFilter(this)">×</span>
+            `;
+
+            filterContainer.appendChild(filterTag);
+            closeFilterDialog();
+        }
+
+        function removeFilter(element) {
+            element.parentElement.remove();
+        }
+
+        function generatePivot() {
+            const rows = Array.from(document.getElementById('rowsContainer').children)
+                .map(el => el.dataset.field.trim());
+            const columns = Array.from(document.getElementById('columnsContainer').children)
+                .map(el => el.dataset.field.trim());
+            const values = Array.from(document.getElementById('valuesContainer').children)
+                .map(el => el.dataset.field.trim());
+
+            // Create structured filter objects
+            const filters = Array.from(document.getElementById('filterContainer').children)
+                .map(el => ({
+                    field: el.dataset.field,
+                    operator: el.dataset.operator,
+                    value: el.dataset.value
+                }));
+
+            // Build query parameters
+            const params = new URLSearchParams();
+            params.append('rows', rows.join(','));
+            params.append('cols', columns.join(','));
+            params.append('values', values.join(','));
+
+            // Add filters as JSON string
+            if (filters.length > 0) {
+                params.append('filters', btoa(JSON.stringify(filters)));
+            }
+
+            // Fetch pivot data
+            fetch(`/html/pivot?${params.toString()}`)
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('pivotResult').innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error generating pivot:', error);
+                    document.getElementById('pivotResult').innerHTML =
+                        '<div class="alert alert-danger">Error generating pivot table</div>';
+                });
+        }
+
+        function resetPivot() {
+            document.querySelectorAll('.field-container').forEach(container => {
+                container.innerHTML = '';
+            });
+            document.getElementById('pivotResult').innerHTML = '';
+            closeFilterDialog();
+        }
+
+        // Close filter dialog when clicking outside
+        document.addEventListener('click', function (e) {
+            const dialog = document.getElementById('filterDialog');
+            if (dialog.style.display === 'block' &&
+                !dialog.contains(e.target) &&
+                e.target.id !== 'filterBox' &&
+                !e.target.closest('#filterBox')) {
+                closeFilterDialog();
+            }
+        });
+    </script>
+</body>
+
+</html>

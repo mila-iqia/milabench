@@ -2,7 +2,6 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from os import listdir
 from typing import List
-import re
 
 from .validation import ValidationLayer
 
@@ -41,17 +40,6 @@ class ParsedTraceback:
         return self.lines[-1]
 
 
-    def append_line(self, line):
-        if all(c in "^ " for c in line) and all(c in "^ " for c in self.lines[-1]):
-            self.lines[-1] += line
-        else:
-            self.lines.append(line.replace("\n", ""))
-    
-
-def split_on_4plus_spaces(s: str) -> str:
-    return s
-
-
 def _extract_traceback(lines, is_install) -> list[ParsedTraceback]:
     output = []
     traceback = None
@@ -61,7 +49,7 @@ def _extract_traceback(lines, is_install) -> list[ParsedTraceback]:
         nonlocal parsing_pip_error, traceback, output
         if traceback is not None:
             if parsing_pip_error:
-                traceback.append_line("PipInstallError")
+                traceback.lines.append("PipInstallError")
                 parsing_pip_error = False
             output.append(traceback)
 
@@ -74,23 +62,11 @@ def _extract_traceback(lines, is_install) -> list[ParsedTraceback]:
             return False
 
         return "ERROR" in line and not parsing_pip_error
-    
-    lines = [split_on_4plus_spaces(l) for l in lines]
-    line = ""
-    for l in lines: 
-        # Sometimes newlines get stripped
-        if l == "":
-            l = "\n"
-        
-        line += l
-        if "\n" not in line:
-            continue
+
+    for line in lines:
+        line = line.rstrip()
 
         if "During handling of the above exception" in line:
-            # The exceptions that happened afterwards are not relevant
-            break
-
-        if "Exception in thread Thread" in line:
             # The exceptions that happened afterwards are not relevant
             break
 
@@ -105,9 +81,7 @@ def _extract_traceback(lines, is_install) -> list[ParsedTraceback]:
             traceback = ParsedTraceback([])
 
         if traceback and line != "":
-            traceback.append_line(line)
-        
-        line = ""
+            traceback.lines.append(line)
 
     push_trace()
 

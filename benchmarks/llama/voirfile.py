@@ -1,12 +1,9 @@
 from voir.phase import StopProgram
 from voir import configurable
-from voir.overseer import Overseer
 
 
 @configurable
-def instrument_main(ov: Overseer):
-    yield ov.phases.load_script
-
+def instrument_main(ov):
     try:
         yield ov.phases.run_script
     except StopProgram:

@@ -20,8 +20,9 @@ from .fs import XPath
 from .log import TerminalFormatter
 from .merge import merge
 from .multi import MultiPackage
+from .report import make_report
+from .summary import aggregate, make_summary
 from .system import build_system_config, option
-from .status.resume import find_matching_runfolder, resume_as_bench_selector
 
 
 def get_pack(defn):
@@ -47,7 +48,6 @@ class CommonArguments:
     exclude         : str       = ""        # Packs to exclude
     override        : list[str] = dlist()   # Override configuration values
     capabilities    : str       = ""        # Define capabilities
-    resume          : bool      = False     # Resume milabench runs
 # fmt : on
 
 @tooled
@@ -77,9 +77,6 @@ def arguments():
     # Define capabilities
     capabilities: Option = ""
 
-    # Try to resume milabench from previous run
-    resume: Option & bool = False
-
     return CommonArguments(
         config,
         system,
@@ -89,7 +86,6 @@ def arguments():
         exclude,
         override,
         capabilities,
-        resume
     )
 
 @tooled
@@ -131,59 +127,41 @@ def selection_keys(defn):
     return sel
 
 
-def get_default_system(base, run_name="none", arch="none"):
+def get_base_defaults(base, arch="none", run_name="none"):
     try:
         user = os.getlogin()
     except OSError:
         user = "root"
-
-    return {
-        "arch": arch,
-        "sshkey": None,
-        "nodes": [
-            {
-                "name": "local",
-                "ip": "127.0.0.1",
-                "sshport": 22,
-                "user": user,
-                "main": True,
-            }
-        ],
-        "run_name": run_name,
-        "base": base,
-        "dirs": {
-            "venv": option("dirs.venv", str, default="${system.base}/venv"),
-            "data": option("dirs.data", str, default="${system.base}/data"),
-            "runs": option("dirs.runs", str, default="${system.base}/runs"),
-            "extra": option("dirs.extra", str, default="${system.base}/extra"),
-            "cache": option("dirs.cache", str, default="${system.base}/cache"),
-        }
-    }
-
-
-def get_base_defaults(base, arch="none", run_name="none"):
     return {
         "_defaults": {
-            # This are coming from the system and makes things easier
-            # we can access the system config directly from the pack
-            # 
-            "run_name": "${system.run_name}",
-            "system": "${system}",
-
-            # Config
-            "group": "${.name}",
-            "install_group": "${.group}",
+            "system": {
+                "arch": arch,
+                "sshkey": None,
+                "nodes": [
+                    {
+                        "name": "local",
+                        "ip": "127.0.0.1",
+                        "sshport": 22,
+                        "user": user,
+                        "main": True,
+                    }
+                ],
+            },
+            "dirs": {
+                "base": base,
+                "venv": option("dirs.venv", str, default="${dirs.base}/venv/${install_group}"),
+                "data": option("dirs.data", str, default="${dirs.base}/data"),
+                "runs": option("dirs.runs", str, default="${dirs.base}/runs"),
+                "extra": option("dirs.extra", str, default="${dirs.base}/extra/${group}"),
+                "cache": option("dirs.cache", str, default="${dirs.base}/cache"),
+            },
+            "group": "${name}",
+            "install_group": "${group}",
             "install_variant": "${system.arch}",
+            "run_name": run_name,
             "enabled": True,
             "capabilities": {
                 "nodes": 1,
-            },
-            "dirs": {
-                "venv": option("dirs.venv", str, default="${system.dirs.venv}/${..install_group}"),
-                "data": option("dirs.data", str, default="${system.dirs.data}"),
-                "runs": option("dirs.runs", str, default="${system.dirs.runs}"),
-                "extra": option("dirs.extra", str, default="${system.dirs.extra}/${..group}"),
-                "cache": option("dirs.cache", str, default="${system.dirs.cache}"),
             },
         }
     }
@@ -205,66 +183,23 @@ def init_arch(arch=None):
     return select_backend(arch)
 
 
-def assemble_config(runname, config_filepath, base_path, overrides=None, system_path=None):
-    if overrides is None:
-        overrides = {}
-
-    arch = deduce_arch()
-
-    base_defaults = get_base_defaults(
-        base=base_path,
-        arch=arch,
-        run_name=runname
+def is_selected(defn, args):
+    if defn["name"] == "*":
+        return False
+    keys = selection_keys(defn)
+    return (
+        defn["enabled"]
+        and not defn["name"].startswith("_")
+        and defn.get("definition", None)
+        and (not args.select or (keys & args.select))
+        and (not args.exclude or not (keys & args.exclude))
     )
-
-    system_config = build_system_config(
-        system_path,
-        defaults={"system": get_default_system(base_path, runname, arch)},
-        gpu=True
-    )
-
-    system_config["packs"] = build_config(base_defaults, config_filepath, overrides)
-
-    system_config = OmegaConf.to_object(OmegaConf.create(system_config))
-
-    return system_config["packs"]
-
-
-def assemble_or_get_config(runname, config_filepath, base_path, overrides=None, system_path=None):
-    from .config import get_config_global
-    
-    if config := get_config_global():
-        return config
-
-    return assemble_config(runname, config_filepath, base_path, overrides, system_path)
-
-
-def is_selected(args):
-    def _(defn):
-        if defn["name"] == "*":
-            return False
-        keys = selection_keys(defn)
-        return (
-            defn["enabled"]
-            and not defn["name"].startswith("_")
-            and defn.get("definition", None)
-            and (not args.select or (keys & args.select))
-            and (not args.exclude or not (keys & args.exclude))
-        )
-    return _
-
-
-def filter_config(config, filter):
-    return {
-        name: defn for name, defn in config.items() if filter(defn)
-    }
-
 
 def _get_multipack(
     args: CommonArguments = None,
     run_name=None,
     overrides={},
-    return_config=False
+    return_config=False,
 ):
     if args is None:
         args = arguments()
@@ -298,51 +233,37 @@ def _get_multipack(
             sys.exit(1)
         overrides = merge(overrides, {"*": {"dirs": {"venv": venv}}})
 
-    if args.resume:
-        if "{"  in run_name and "}" in run_name:
-            run_pat = run_name
-            run_name = find_matching_runfolder(args.base, run_name)
-    else:
-        run_name = resolve_run_name(run_name)
-    
-    config = assemble_config(
-        run_name, 
-        args.config, 
-        args.base, 
-        overrides=overrides, 
-        system_path=args.system
-    )
-
-    selected_config = filter_config(config, is_selected(args))
-
-    packs = {name: get_pack(defn) for name, defn in selected_config.items()}
-
-    if args.resume:
-        packs = resume_as_bench_selector(
-            packs, 
-            os.path.join(args.base, "runs"), 
-            run_name
-        )
-
-    if return_config:
-        return selected_config
-    else:
-        return MultiPackage(packs)
-
-
-def resolve_run_name(run_name):
     if run_name is None:
         run_name = blabla() + ".{time}"
 
-    now = datetime.today().strftime("%Y-%m-%d_%H-%M-%S")
+    now = str(datetime.today()).replace(" ", "_")
     run_name = run_name.format(time=now)
-    return run_name
+
+    arch = deduce_arch()
+    base_defaults = get_base_defaults(
+        base=args.base,
+        arch=arch,
+        run_name=run_name
+    )
+    system_config = build_system_config(
+        args.system,
+        defaults={"system": base_defaults["_defaults"]["system"]},
+        gpu=True
+    )
+    overrides = merge({"*": system_config}, overrides)
+
+    config = build_config(base_defaults, args.config, overrides)
+
+    selected_config = {name: defn for name, defn in config.items() if is_selected(defn, args)}
+    if return_config:
+        return selected_config
+    else:
+        return MultiPackage(
+            {name: get_pack(defn) for name, defn in selected_config.items()}
+        )
 
 
-def _parse_report(pth, open=lambda x: x.open(), shared=None):
-    if shared is None:
-        shared = {}
-    
+def _parse_report(pth, open=lambda x: x.open()):
     with open(pth) as f:
         lines = f.readlines()
         data = []
@@ -351,9 +272,7 @@ def _parse_report(pth, open=lambda x: x.open(), shared=None):
 
         for line in lines:
             try:
-                msg = json.loads(line)
-                msg.update(shared)
-                data.append(msg)
+                data.append(json.loads(line))
                 good_lines += 1
             except Exception:
                 import traceback
@@ -385,8 +304,6 @@ def _read_reports(*runs):
 
 
 def _error_report(reports):
-    from .summary import aggregate
-
     out = {}
     for r, data in reports.items():
         try:
@@ -396,7 +313,7 @@ def _error_report(reports):
                 out[r] = [line for line in data if "#stdout" in line or "#stderr" in line]
         except:
             pass
-
+    
     return out
 
 
@@ -449,9 +366,6 @@ def validation_names(layers):
 
 
 def _short_make_report(runs, config):
-    from .report import make_report
-    from .summary import make_summary
-
     reports = None
 
     if runs:
@@ -459,7 +373,7 @@ def _short_make_report(runs, config):
         summary = make_summary(reports)
 
     if config:
-        config = get_base_defaults(config)
+        config = _get_multipack(CommonArguments(config), return_config=True)
 
     stream = io.StringIO()
 

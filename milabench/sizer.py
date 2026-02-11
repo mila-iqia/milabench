@@ -257,11 +257,8 @@ def batch_sizer() -> Sizer:
 
 
 def get_batch_size(config, start_event):
-    try:
-        sizer = batch_sizer()
-        return sizer.find_batch_size(config, start_event)
-    except:
-        return 'NA'
+    sizer = batch_sizer()
+    return sizer.find_batch_size(config, start_event)
 
 
 def suggested_batch_size(pack):
@@ -536,10 +533,6 @@ def new_argument_resolver(pack):
         
         broadcast(on_cpu_count_set, pack, default, newvalue)
         return newvalue
-
-    
-    def mult(a, b):
-        return a * b
     
     gpu_opt = SizerOptions.instance()
     def batch_resize(default):
@@ -562,7 +555,6 @@ def new_argument_resolver(pack):
     total_available = total_cpu - cpu_opt.reserved_cores
 
     context["cpu_count"] = total_available
-    context["gpu_count"] = device_count_system
     context["cpu_per_gpu"] = total_available // max(device_count_system, 1)
     context["n_worker"] = clamp(context["cpu_per_gpu"])
 
@@ -584,9 +576,6 @@ def new_argument_resolver(pack):
     context["milabench_name"] = pack.config.get("name", None)
     context["benchmark_folder"] = pack.config.get('definition', None)
 
-    def expr(ex):
-        return ex
-
     def auto_eval(arg):
         try:
             newvalue: str = str(arg).format(**context)
@@ -597,8 +586,8 @@ def new_argument_resolver(pack):
                 name, newvalue = newvalue.split("=", maxsplit=1)
                 finalize_val = lambda x: f"{name}={x}"
 
-            if newvalue.startswith("auto") or newvalue.startswith("expr") :
-                newvalue = str(eval(newvalue, {"auto": cpu, "expr": expr, "auto_batch": batch_resize}, {}))
+            if newvalue.startswith("auto"):
+                newvalue = str(eval(newvalue, {"auto": cpu, "auto_batch": batch_resize}, {}))
             
             return finalize_val(newvalue)
         except KeyError as err:

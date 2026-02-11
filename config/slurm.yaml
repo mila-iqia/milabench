@@ -1,0 +1,197 @@
+multi-node-full:
+- --partition=milabench
+- -w cn-d[003-004]
+- --ntasks=2
+- --gpus-per-task=a100l:8
+- --exclusive
+- --nodes=2
+- --cpus-per-task=128
+- --time=2:00:00
+- --ntasks-per-node=1
+- --mem=0
+- --export=ALL,MILABENCH_SIZER_AUTO=0
+multi-node-full-H100:
+- --job-name=multi_nodes_run
+- --partition=staff-idt
+- --nodes=2
+- --ntasks=2
+- --cpus-per-task=192
+- --mem=0
+- --time=2:00:00
+- --gpus-per-task=8
+- --ntasks-per-node=1
+- --export=ALL,MILABENCH_SIZER_AUTO=0
+- -w cn-n[001-002]
+single-node-full-H100:
+- --job-name=run
+- --partition=staff-idt
+- --nodes=1
+- --ntasks=1
+- --cpus-per-task=192
+- --mem=0
+- --time=2:30:00
+- --gpus-per-task=8
+- --ntasks-per-node=1
+- --exclusive
+- --export=ALL
+- -w cn-n[001-002]
+single-node-full-A100l:
+- --job-name=run
+- --partition=milabench
+- --nodes=1
+- --ntasks=1
+- --cpus-per-task=128
+- --mem=0
+- --time=4:00:00
+- --gpus-per-task=8
+- --ntasks-per-node=1
+- --exclusive
+- --export=ALL
+- -w cn-d[003-004]
+single-node-full-L40S:
+- --job-name=run_l40s
+- --partition=staff-idt
+- --nodes=1
+- --ntasks=1
+- --cpus-per-task=48
+- --mem=0
+- --time=4:30:00
+- --gpus-per-task=4
+- --ntasks-per-node=1
+- --exclusive
+- --export=ALL,MILABENCH_SIZER_AUTO=0
+- -w cn-l[001-092]
+single-node-small:
+- --partition=staff-idt
+- --ntasks=1
+- --gpus-per-task=2
+- --exclusive
+- --nodes=1
+- --cpus-per-task=16
+- --time=1:30:00
+- --ntasks-per-node=1
+- --mem=128G
+- --export=ALL,MILABENCH_SIZER_AUTO=1,MILABENCH_SIZER_MULTIPLE=8
+multi-node-small:
+- --partition=staff-idt
+- --gpus-per-task=rtx8000:2
+- --ntasks=1
+- --exclusive
+- --nodes=2
+- --cpus-per-task=16
+- --time=1:30:00
+- --ntasks-per-node=1
+- --mem=128G
+- --export=ALL,MILABENCH_SIZER_AUTO=1,MILABENCH_SIZER_MULTIPLE=8
+multi-node-rtx:
+- --partition=staff-idt
+- --gpus-per-task=rtx8000:8
+- --ntasks=1
+- --exclusive
+- --nodes=2
+- --cpus-per-task=64
+- --time=1:30:00
+- --ntasks-per-node=1
+- --mem=0
+- --exclusive
+- --export=ALL,MILABENCH_SIZER_AUTO=1,MILABENCH_SIZER_MULTIPLE=8
+multi-node-v100:
+- --partition=staff-idt
+- --gpus-per-task=v100:8
+- --ntasks=1
+- --exclusive
+- --nodes=2
+- --cpus-per-task=40
+- --time=1:30:00
+- --ntasks-per-node=1
+- --mem=0
+- --exclusive
+- --export=ALL,MILABENCH_SIZER_AUTO=1,MILABENCH_SIZER_MULTIPLE=8
+multi-node-a100:
+- --job-name=milabench_job
+- --partition=milabench
+- --nodes=2
+- --ntasks=1
+- --cpus-per-task=128
+- --mem=0
+- --time=4:30:00
+- --gpus-per-task=a100:8
+- --ntasks-per-node=1
+- --export=ALL,MILABENCH_SIZER_AUTO=1,MILABENCH_SIZER_MULTIPLE=8
+tamia-single-node:
+- --partition gpubase_bynode_b3
+- --gpus-per-task=4
+- --ntasks=1
+- --exclusive
+- --nodes=1
+- --cpus-per-task=48
+- --time=2:00:00
+- --ntasks-per-node=1
+- --mem=0
+- --exclusive
+- --export=ALL,MILABENCH_SIZER_AUTO=0
+tamia-multi-node:
+- --partition gpubase_bynode_b3
+- --gpus-per-task=4
+- --ntasks=2
+- --exclusive
+- --nodes=2
+- --cpus-per-task=48
+- --time=1:30:00
+- --ntasks-per-node=1
+- --mem=0
+- --exclusive
+- --export=ALL,MILABENCH_SIZER_AUTO=0
+test_profile:
+- --nodes=1
+- --ntasks=1
+- --cpus-per-task=1
+- --mem=0
+- --time=0:10:00
+- --gpus-per-task=0
+- --ntasks-per-node=1
+- --export=ALL
+run_pin.sh:
+- --job-name=pin
+- --nodes=1
+- --ntasks=1
+- --cpus-per-task=2
+- --mem=16G
+- --time=02:00:00
+- --gpus-per-task=1
+- --ntasks-per-node=1
+- --export=ALL
+run_shared_install_prepare:
+- --job-name=setup
+- --partition=staff-idt
+- --nodes=1
+- --ntasks=1
+- --cpus-per-task=4
+- --mem=32G
+- --time=01:30:00
+- --gpus-per-task=1
+- --ntasks-per-node=1
+- --export=ALL
+tar_prepare:
+- --job-name=tar
+- --partition=staff-idt
+- --nodes=1
+- --ntasks=1
+- --cpus-per-task=2
+- --mem=16G
+- --time=06:00:00
+- --gpus-per-task=0
+- --ntasks-per-node=1
+- --export=ALL
+multi-node-full-A100l:
+- --job-name=multi_node_run
+- --partition=milabench
+- --nodes=2
+- --ntasks=2
+- --cpus-per-task=128
+- --mem=0
+- --time=4:00:00
+- --gpus-per-task=8
+- --ntasks-per-node=1
+- --export=ALL
+- -w cn-d[003-004]

@@ -1,7 +1,5 @@
 import os
 import sys
-import atexit
-import signal
 
 from coleo import run_cli
 
@@ -27,16 +25,9 @@ from .env import cli_env
 from .prepare_run import cli_prepare_run
 from .gated import cli_gated
 from .sharedsetup import cli_shared_setup
-from .container import cli_docker
+from .docker import cli_docker
 from .multirun import cli_multirun
 from .replay import cli_replay
-from .global_patch import cli_global_patch
-from .tunnel import cli_port_forwarding
-
-from benchmate.progress import timed_flush
-
-
-timed_flush()
 
 
 class Main:
@@ -124,7 +115,7 @@ class Main:
     def sharedsetup():
         cli_shared_setup()
 
-    def container():
+    def docker():
         cli_docker()
 
     def multirun():
@@ -132,12 +123,6 @@ class Main:
 
     def replay():
         cli_replay()
-
-    def patch():
-        cli_global_patch()
-
-    def tunnel():
-        cli_port_forwarding()
 
 
 def main(argv=None):

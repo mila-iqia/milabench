@@ -1,9 +1,6 @@
 def get_pytorch_version():
     def clean(k: str):
         pad = "  - "
-        if k is None:
-            return ""
-
         if k.startswith(pad):
             return k[len(pad) :].strip()
         return k.strip()

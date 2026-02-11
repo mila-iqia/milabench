@@ -1,5 +1,4 @@
 import os
-from time import time as get_time
 
 from voir.helpers import current_overseer
 
@@ -56,12 +55,6 @@ class BenchObserver:
         if self.rank is None or self.rank == 0:
             self.losses.record(loss)
         return loss
-    
-    def record_metric(self, time=None, **kwargs):
-        if time is None:
-            time = get_time()
-        
-        self.pusher(**kwargs, time=time)
 
     def override_return_value(self, function, override):
         import ptera

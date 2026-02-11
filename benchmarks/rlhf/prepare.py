@@ -1,39 +1,60 @@
 #!/usr/bin/env python
 
-from dataclasses import dataclass
+import shutil
 
-from argklass import ArgumentParser
-from benchmate.hugginface import download_hf_dataset, download_hf_model
-
-
-@dataclass
-class Arguments:
-    dataset: str = "trl-internal-testing/descriptiveness-sentiment-trl-style"
-    split: str = "descriptiveness"
-    subset: str = None
-    model_name_or_path: str = "EleutherAI/pythia-1b-deduped"
-    per_device_train_batch_size: int = 16
-
-
-def arguments() -> Arguments:
-    parser = ArgumentParser()
-    parser.add_arguments(Arguments)
-    args, _ = parser.parse_known_args()
-    return args
-
-
-def new_prepare():
-    args = arguments()
-
-    download_hf_dataset(args.dataset, args.split, name=args.subset)
-
-    # Download model
-    download_hf_model(args.model_name_or_path)
-
-    print("=" * 60)
-    print("Prepare script completed successfully")
-    print("=" * 60)
-
+from transformers import (
+    AutoModelForCausalLM,
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+    HfArgumentParser,
+)
+from datasets import load_dataset
+from trl.trainer.utils import SIMPLE_CHAT_TEMPLATE
+from trl.scripts.utils import ScriptArguments
+from trl import (
+    ModelConfig,
+    PPOConfig,
+    PPOTrainer,
+    get_kbit_device_map,
+    get_peft_config,
+    get_quantization_config,
+)
 
 if __name__ == "__main__":
-    new_prepare()
+    parser = HfArgumentParser((ScriptArguments, PPOConfig, ModelConfig))
+    script_args, config, model_config = parser.parse_args_into_dataclasses()
+    
+    # remove output_dir if exists
+    shutil.rmtree(config.output_dir, ignore_errors=True)
+
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_config.model_name_or_path,
+        padding_side="left",
+        trust_remote_code=model_config.trust_remote_code,
+    )
+
+    tokenizer.add_special_tokens({"pad_token": "[PAD]"})
+
+    if tokenizer.chat_template is None:
+        tokenizer.chat_template = SIMPLE_CHAT_TEMPLATE
+    
+    value_model = AutoModelForSequenceClassification.from_pretrained(
+        config.reward_model_path, 
+        trust_remote_code=model_config.trust_remote_code, 
+        num_labels=1
+    )
+    reward_model = AutoModelForSequenceClassification.from_pretrained(
+        config.reward_model_path, 
+        trust_remote_code=model_config.trust_remote_code, 
+        num_labels=1
+    )
+    ref_policy = AutoModelForCausalLM.from_pretrained(
+        config.sft_model_path,
+        trust_remote_code=model_config.trust_remote_code
+    )
+    policy = AutoModelForCausalLM.from_pretrained(
+        config.sft_model_path, 
+        trust_remote_code=model_config.trust_remote_code
+    )
+
+    raw_datasets = load_dataset("trl-internal-testing/descriptiveness-sentiment-trl-style", split="descriptiveness")

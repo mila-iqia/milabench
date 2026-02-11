@@ -371,16 +371,13 @@ class Torchrun:
     port: int = defaultfield("torchrun.port", int, default=29400)
     backend: str = defaultfield("torchrun.backend", str, default="c10d")
 
-@dataclass
-class Report:
-    lean: bool = defaultfield("report.lean", int, default=0)
-
 
 @dataclass
 class Options:
     sizer: SizerOptions = field(default_factory=SizerOptions)
     cpu: CPUOptions = field(default_factory=CPUOptions)
     dataset: DatasetConfig = field(default_factory=DatasetConfig)
+    dirs: Dirs = field(default_factory=Dirs)
     torchrun: Torchrun = field(default_factory=Torchrun)
 
 
@@ -404,12 +401,6 @@ class Github:
     pat: str = defaultfield("github.path", str, None)
 
 
-
-@dataclass
-class Executor:
-    timeout: int = defaultfield("executor.timeout", int, None)
-
-
 def default_device():
     try:
         gpu_info = get_gpu_info()
@@ -429,18 +420,13 @@ class SystemConfig:
     gpu: GPUConfig = field(default_factory=GPUConfig)
     options: Options = field(default_factory=Options)
 
-    run_name: str = defaultfield("run_name", str, None)
     base: str = defaultfield("base", str, None)
-    dirs: Dirs = field(default_factory=Dirs)
-
     config: str = defaultfield("config", str, None)
     dash: bool = defaultfield("dash", bool, 1)
     noterm: bool = defaultfield("noterm", bool, 0)
     github: Github = field(default_factory=Github)
 
     use_uv: bool = defaultfield("use_uv", bool, 0)
-    executor: Executor = field(default_factory=Executor)
-
 
 def check_node_config(nodes):
     mandatory_fields = ["name", "ip", "user"]

@@ -24,7 +24,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session, declarative_base
-from sqlalchemy.orm import declared_attr, sessionmaker
+from sqlalchemy.orm import declared_attr
 
 from ..structs import BenchLogEntry
 
@@ -426,11 +426,10 @@ class SQLAlchemy:
             future=True,
             json_serializer=to_json,
             json_deserializer=from_json,
-            pool_pre_ping=True,
         )
 
         self.meta_override = meta_override
-        self.session = sessionmaker(bind=self.engine)
+        self.session = Session(self.engine)
         self.meta = None
         self.run = None
         self.states = defaultdict(PackState)
@@ -438,8 +437,6 @@ class SQLAlchemy:
         self.pending_metrics = []
         self.batch_size = 1000
         self.visibility = visibility
-        self.assertion_error_count = 0
-        self.error_count = 0
 
     def start_new_run(self):
         self.meta = None
@@ -454,24 +451,7 @@ class SQLAlchemy:
         return self.states[entry.tag]
 
     def __call__(self, entry):
-        try:
-            return self.on_event(entry)
-
-        # Start to ignore errors after a while
-        # To avoid printing the same errors all the time
-        except AssertionError:
-            self.assertion_error_count += 1
-            if self.assertion_error_count > 100:
-                return
-            else:
-                raise
-
-        except Exception as err:
-            self.error_count += 1
-            if self.error_count > 100:
-                return
-            else:
-                raise
+        return self.on_event(entry)
 
     def __enter__(self):
         return self
@@ -492,18 +472,16 @@ class SQLAlchemy:
             self.update_run_status(status)
 
         self.states = defaultdict(PackState)
+        self.session.commit()
+        self.session.__exit__(*args, **kwargs)
 
     def update_run_status(self, status):
-        with self.session() as sesh:
-            self.run = sesh.get(Exec, self.run._id)
-            self.run.status = status
-            sesh.commit()
+        self.run.status = status
+        self.session.commit()
 
     def update_pack_status(self, pack, status):
-        with self.session() as sesh:
-            pack = sesh.get(Pack, pack._id)
-            pack.status = status
-            sesh.commit()
+        pack.status = status
+        self.session.commit()
 
     def on_event(self, entry: BenchLogEntry):
         method = getattr(self, f"on_{entry.event}", None)
@@ -520,10 +498,9 @@ class SQLAlchemy:
             status="running",
             visibility=self.visibility
         )
-        with self.session() as sesh:
-            sesh.add(self.run)
-            sesh.commit()
-            sesh.refresh(self.run)
+        self.session.add(self.run)
+        self.session.commit()
+        self.session.refresh(self.run)
 
     def on_new_pack(self, entry):
         state = self.pack_state(entry)
@@ -534,11 +511,9 @@ class SQLAlchemy:
             tag=entry.tag,
             config=entry.pack.config,
         )
-
-        with self.session() as sesh:
-            sesh.add(state.pack)
-            sesh.commit()
-            sesh.refresh(state.pack)
+        self.session.add(state.pack)
+        self.session.commit()
+        self.session.refresh(state.pack)
 
     def on_meta(self, entry: BenchLogEntry):
         if self.run is None:
@@ -710,10 +685,8 @@ class SQLAlchemy:
         if len(self.pending_metrics) <= 0:
             return
 
-        with self.session() as sesh:
-            sesh.add_all(self.pending_metrics)
-            sesh.commit()
-    
+        self.session.add_all(self.pending_metrics)
+        self.session.commit()
         self.pending_metrics = []
 
     def on_stop(self, entry):
