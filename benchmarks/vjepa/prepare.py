@@ -4,7 +4,10 @@ import os
 import cv2
 import numpy as np
 
-def generate_random_video(output_file, width=640, height=480, num_frames=300, fps=30):
+from benchmate.progress import tqdm
+
+
+def generate_random_video(offset, output_file, width=640, height=480, num_frames=300, fps=30):
     """
     Generates a .mp4 video file with random content.
 
@@ -17,6 +20,9 @@ def generate_random_video(output_file, width=640, height=480, num_frames=300, fp
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Use MP4 encoding
     video_writer = cv2.VideoWriter(output_file, fourcc, fps, (width, height))
 
+    seed = int(0 + offset)
+    np.random.seed(seed)
+
     for _ in range(num_frames):
         frame = np.random.randint(0, 256, (height, width, 3), dtype=np.uint8)
         video_writer.write(frame)
@@ -28,7 +34,6 @@ if __name__ == "__main__":
     import sys
     import csv
     import os
-    import tqdm
     import multiprocessing
 
     sys.path.append(os.path.dirname(__file__) + "/jepa/")
@@ -50,18 +55,18 @@ if __name__ == "__main__":
     def gen_video(i):
         output_file = os.path.join(dest, f"{i + 1}.mp4")
         if not os.path.exists(output_file):
-            generate_random_video(output_file=output_file, width=640, height=480, num_frames=num_frames, fps=30)
+            generate_random_video(offset=i, output_file=output_file, width=640, height=480, num_frames=num_frames, fps=30)
         
     n_worker = min(multiprocessing.cpu_count(), 16)
 
     with multiprocessing.Pool(n_worker) as pool:
-        for _ in tqdm.tqdm(pool.imap_unordered(gen_video, range(num_videos)), total=num_videos):
+        for _ in tqdm(pool.imap_unordered(gen_video, range(num_videos)), total=num_videos):
             pass
 
     with open(csv_file, mode='w', newline='') as file:
         # CSV separated by space genius
         writer = csv.writer(file, delimiter=" ")
-        for file in tqdm.tqdm(os.listdir(dest)):
+        for file in tqdm(os.listdir(dest)):
             if file.endswith(".mp4"):
                 writer.writerow([os.path.join(dest, file), 0])
 

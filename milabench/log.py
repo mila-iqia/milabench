@@ -21,6 +21,19 @@ T = Terminal()
 color_wheel = [T.cyan, T.magenta, T.yellow, T.red, T.green, T.blue]
 
 
+def pretty_print():
+    def use_pprint(obj):
+        return pprint.pformat(obj, width=120)
+
+    def use_print(obj):
+        return str(obj)
+
+    return use_print
+
+
+milabench_pprint = pretty_print()
+
+
 class BaseLogger:
     def start(self):
         pass
@@ -37,8 +50,9 @@ class BaseLogger:
 
 
 class TagConsole(BaseLogger):
-    def __init__(self, tag, i):
+    def __init__(self, tag, i, pretty_print=milabench_pprint):
         self.header = color_wheel[i % len(color_wheel)](T.bold(tag))
+        self.pretty_print = pretty_print
 
     def _ensure_line(self, x):
         if not x.endswith("\n"):
@@ -54,7 +68,7 @@ class TagConsole(BaseLogger):
         parts = [
             self.header,
             *parts,
-            obj if isinstance(obj, str) else pprint.pformat(obj, width=120),
+            obj if isinstance(obj, str) else self.pretty_print(obj),
         ]
         return self._ensure_line(" ".join(map(str, parts)))
 
@@ -69,14 +83,16 @@ class TagConsole(BaseLogger):
 
 
 class TerminalFormatter(BaseLogger):
-    def __init__(self):
+    def __init__(self, dump_config=True, pretty_print=milabench_pprint):
         self.consoles = {}
         self.error_happened = set()
         self.early_stop = False
+        self.dump_config = dump_config
+        self.pretty_print = pretty_print
 
     def console(self, tag):
         if tag not in self.consoles:
-            self.consoles[tag] = TagConsole(tag, len(self.consoles))
+            self.consoles[tag] = TagConsole(tag, len(self.consoles), pretty_print=self.pretty_print)
 
         return self.consoles[tag]
 
@@ -146,7 +162,6 @@ class TerminalFormatter(BaseLogger):
             pass
 
         elif event == "config":
-
             def _show(k, entry):
                 if k.startswith("config.system"):
                     return
@@ -157,7 +172,8 @@ class TerminalFormatter(BaseLogger):
                 else:
                     console.pretty(T.bold(f"[{k}]"), entry)
 
-            _show("config", data)
+            if self.dump_config:
+                _show("config", data)
 
         elif event == "meta":
             pass

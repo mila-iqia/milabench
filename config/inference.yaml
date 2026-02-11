@@ -1,0 +1,173 @@
+_vllm:
+  inherits: _defaults
+  definition: ../benchmarks/vllm
+  group: vllm
+  install_group: torch
+  enabled: true
+  tags:
+    - inference
+    - vllm
+
+  # Inference Server Args
+  server:
+   argv:
+      --served-model-name: model
+      --dtype: bfloat16
+
+  # Benchmarking client Args
+  client:
+    argv:
+      --model: meta-llama/Meta-Llama-3-8B-Instruct
+      --served-model-name: model
+      --request-rate: inf
+      --dataset-name: random
+      --label: milabench
+      --backend: openai 
+      --num-prompts: 198
+      --endpoint: /v1/completions
+
+
+vllm-dense-physics-gpus:
+  inherits: _vllm
+  tags:
+    - multigpu
+
+  num_machines: 1
+  plan:
+    method: njobs
+    n: 1
+
+  client:
+    argv:
+      --dataset-name: hf
+      --dataset-path: hendrydong/gpqa_diamond
+      --hf-name: hendrydong/gpqa_diamond
+      --num-prompts: 500
+      --model: mistralai/Mistral-Small-3.1-24B-Instruct-2503
+      --max-concurrency: 64
+
+  server:
+   argv:
+      mistralai/Mistral-Small-3.1-24B-Instruct-2503: true
+      --tensor-parallel-size: "{gpu_count}"
+      --tokenizer-mode: mistral
+      --config_format: mistral
+      --load_format: mistral 
+      --tool-call-parser: mistral
+      --enable-auto-tool-choice: true
+      --limit-mm-per-prompt: '{"image":10}' 
+  
+vllm-moe-code-gpus:
+  inherits: _vllm
+
+  num_machines: 1
+  tags:
+    - multigpu
+
+  plan:
+    method: njobs
+    n: 1
+
+  client:
+    argv:
+      --dataset-name: hf
+      --dataset-path: vdaita/edit_10k_char
+      --hf-name: vdaita/edit_10k_char
+      --num-prompts: 500
+      --model: meta-llama/Llama-4-Scout-17B-16E
+      --max-concurrency: 64
+
+  server:
+   argv:
+      # Out of Memory on L40S
+      # meta-llama/Llama-4-Maverick-17B-128E-Instruct: true
+      
+      meta-llama/Llama-4-Scout-17B-16E: true
+      
+      # mistralai/Mistral-Small-3.1-24B-Instruct-2503: true
+      --served-model-name: model
+      --dtype: bfloat16
+      --tensor-parallel-size: "{gpu_count}"
+      --limit-mm-per-prompt: '{"image":10}' 
+
+_inference:
+  inherits: _defaults
+  definition:  ../benchmarks/inference
+  install_group: torch
+  enabled: true
+  tags:
+    - inference
+
+whisper-transcribe-single:
+  inherits: _inference
+  tags:
+    - monogpu
+  plan:
+    method: per_gpu
+
+  url: 
+    - https://huggingface.co/openai/whisper-large-v3
+    - https://huggingface.co/datasets/openslr/librispeech_asr
+
+  argv:
+    --mode: whisper
+    --model: openai/whisper-large-v3
+    --dataset: openslr/librispeech_asr
+    --subset: "clean"
+    --split: "train.100"
+    --batch_size: "auto_batch(64)"
+
+
+txt-to-image-gpus:
+  inherits: _inference
+  tags:
+    - monogpu
+  plan:
+    method: per_gpu
+  
+  url: https://huggingface.co/black-forest-labs/FLUX.1-dev
+  argv:
+    --mode: flux
+    --model: black-forest-labs/FLUX.1-dev
+    --dataset: jackyhate/text-to-image-2M
+    --batch_size: "auto_batch(16)"
+  
+
+llm-chat-completion:
+  inherits: _inference
+  num_machines: 1
+  tags:
+    - multigpu
+  plan:
+    method: per_gpu
+    n: 1
+
+  url: https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct
+  argv:
+    --mode: chat
+    --model: meta-llama/Llama-3.1-8B-Instruct
+    --dataset: hendrydong/gpqa_diamond
+    --split: "test"
+    --batch_size: "auto_batch(1)"
+
+
+#
+# Huggingface does not use multiple processes to do multi GPU here
+#
+# llm-chat-completion-gpus:
+#   inherits: _inference
+#   num_machines: 1
+#   tags:
+#     - multigpu
+#   plan:
+#     method: njobs
+#     n: 1
+
+#   url: https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct
+#   argv:
+#     --mode: chat
+#     --model: meta-llama/Llama-3.1-8B-Instruct
+#     --dataset: hendrydong/gpqa_diamond
+#     --split: "test"
+#     # --dataset: wikitext/wikitext-103-v1
+#     --batch_size: 1

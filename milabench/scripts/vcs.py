@@ -39,15 +39,15 @@ def read_previous():
         for line in file.readlines():
             if "tag" in line:
                 _, v = line.split("=")
-                info[0] = v.strip()
+                info[0] = v.strip().strip('"')
 
             if "commit" in line:
                 _, v = line.split("=")
-                info[1] = v.strip()
+                info[1] = v.strip().strip('"')
 
             if "date" in line:
                 _, v = line.split("=")
-                info[2] = v.strip()
+                info[2] = v.strip().strip('"')
 
     return info
 
