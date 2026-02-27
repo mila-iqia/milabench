@@ -169,10 +169,11 @@ class Sizer:
 
         config = self.benchscaling(benchmark)
 
-        if config and "model" in config:
-            mem, size = self._scaling_v1(config)
-        else:
-            mem, size, _ = self._scaling_v2(config)
+        if config:
+            if "model" in config:
+                mem, size = self._scaling_v1(config)
+            else:
+                mem, size, _ = self._scaling_v2(config)
 
         if len(mem) <= 1:
             syslog(f"Not enough data for {benchmark.config['name']}")
