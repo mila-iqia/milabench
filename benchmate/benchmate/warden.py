@@ -10,7 +10,7 @@ import time
 import traceback
 import warnings
 from collections import defaultdict
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager
 from dataclasses import dataclass
 
 from voir.instruments.gpu import get_gpu_info
@@ -152,7 +152,10 @@ def gpu_warden(*args, enabled=True, **kwargs):
 
 
 @contextmanager
-def pipe_warden():
+def pipe_warden(enabled: bool = True):
+    if not enabled:
+        yield
+        return
     fd_folder = f"/proc/{os.getpid()}/fd/"
 
     before = set(os.listdir(fd_folder))
@@ -178,7 +181,10 @@ def pipe_warden():
 
 
 @contextmanager
-def children_warden():
+def children_warden(enabled: bool = True):
+    if not enabled:
+        yield
+        return
     pid = os.getpid()
 
     def get_children():
@@ -439,16 +445,13 @@ def process_cleaner(timeout=30, with_gpu_warden=True):
 
         return _
 
-    pipe_ctx = nullcontext if platform_unsupported else pipe_warden
-    children_ctx = nullcontext if platform_unsupported else children_warden
-
     with Protected() as signalhandler:
         # Makes sure we are not leaking pipes/fd
-        with pipe_ctx():
+        with pipe_warden(enabled=not platform_unsupported):
             # Makes sure we are the the only one using the GPUs
             with gpu_warden(enabled=with_gpu_warden) as procs_on_gpu:  # => SIGTERM all processes using GPUs
                 # Makes sure all our children processes die after each benchmark
-                with children_ctx():
+                with children_warden(enabled=not platform_unsupported):
                     processes = []
 
                     # when a signal is received kill the known processes first
