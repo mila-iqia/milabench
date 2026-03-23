@@ -1,20 +1,35 @@
+import ctypes
+import json
 import logging
 import os
 import re
 import signal
 import subprocess
+import sys
 import time
 import traceback
 import warnings
-import json
 from collections import defaultdict
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from dataclasses import dataclass
 
-from milabench.syslog import syslog
 from voir.instruments.gpu import get_gpu_info
 
+from milabench.syslog import syslog
+
 log = logging.getLogger(__name__)
+
+# Warden uses the Linux file system to list file descriptors and track
+# resources opened by processes as well as reparenting through reaper.
+# Neither are cross-platform. To offer minimal support for running locally
+# on incompatible platforms, the functionality is disabled.
+#
+# Feasibility of cross-platform support:
+#   1) psutil offers open_files() and net_connections(), but lacks a
+#      cross-platform method of obtaining file descriptors of open pipes.
+#   2) Subreaper only exists on Linux. Alternatives would need to be
+#      implimented.
+platform_unsupported = sys.platform in {"darwin", "win32"}
 
 
 @dataclass
@@ -74,7 +89,6 @@ def _default():
 def _rocm_parse_processes():
     cmd = ["rocm-smi", "--loglevel", "error", "--showpids", "--json"]
     output = subprocess.check_output(cmd, text=True)
-    
     info = []
 
     try:
@@ -116,7 +130,7 @@ def safe_get_gpu_info():
 class BaseWarden:
     def __enter__(self):
         return self
-    
+
     def __exit__(self, *args):
         pass
 
@@ -138,12 +152,8 @@ def gpu_warden(*args, enabled=True, **kwargs):
 
 
 @contextmanager
-def pipe_warden(enabled=True):
-    if not enabled:
-        yield
-        return
-
-    fd_folder = f"/proc/{os.getpid()}/fd/" 
+def pipe_warden():
+    fd_folder = f"/proc/{os.getpid()}/fd/"
 
     before = set(os.listdir(fd_folder))
 
@@ -168,11 +178,7 @@ def pipe_warden(enabled=True):
 
 
 @contextmanager
-def children_warden(enabled=True):
-    if not enabled:
-        yield
-        return
-
+def children_warden():
     pid = os.getpid()
 
     def get_children():
@@ -283,10 +289,10 @@ class GPUProcessWarden(BaseWarden):
                 return
 
             sig = "KILL" if signal_code == signal.SIGKILL else "TERM"
-            syslog("warden: {0}: Found {1} processes still using devices: {2}", 
+            syslog("warden: {0}: Found {1} processes still using devices: {2}",
                 sig, len(processes), [p.pid for p in processes]
             )
- 
+
             # Those processes might not be known by milabench
             # Depending on whose the parent the reaping might be happening later
             # and we cannot wait for the process to die
@@ -418,7 +424,7 @@ def destroy(*processes, step=1, timeout=30):
             del processes[i]
 
         k += 1
-    
+
     if stats["alive"] != 0:
         syslog("{0} processes needed to be killed, retried {1} times, waited {2} s", stats["alive"], k, elapsed)
 
@@ -433,31 +439,34 @@ def process_cleaner(timeout=30, with_gpu_warden=True):
 
         return _
 
+    pipe_ctx = nullcontext if platform_unsupported else pipe_warden
+    children_ctx = nullcontext if platform_unsupported else children_warden
+
     with Protected() as signalhandler:
         # Makes sure we are not leaking pipes/fd
-        with pipe_warden(enabled=True):
+        with pipe_ctx():
             # Makes sure we are the the only one using the GPUs
-            with gpu_warden(enabled=with_gpu_warden) as warden:  # => SIGTERM all processes using GPUs
+            with gpu_warden(enabled=with_gpu_warden) as procs_on_gpu:  # => SIGTERM all processes using GPUs
                 # Makes sure all our children processes die after each benchmark
-                with children_warden(enabled=True):
+                with children_ctx():
                     processes = []
-        
+
                     # when a signal is received kill the known processes first
                     # then handle the signal
                     signalhandler.stop = kill_everything(processes)
 
                     try:                            # NOTE: we have not waited much between both signals
-                        warden.kill()               # => SIGKILL all processes using GPUs
+                        procs_on_gpu.kill()               # => SIGKILL all processes using GPUs
 
                         yield processes             # => Run milabench, spawning processes for the benches
 
                     finally:
-                        warden.terminate()          # => SIGTERM all processes using GPUs
+                        procs_on_gpu.terminate()          # => SIGTERM all processes using GPUs
 
                         destroy(*processes, timeout=timeout) # => SIGTERM+SIGKILL milabench processes
 
                                                     # destroy waited 30s
-                                                
+
                         # warden.__exit__           # => SIGKILL all  processes still using GPUs
 
 
@@ -469,14 +478,19 @@ def subreaper():
     # if torchrun dies then the children get reparented to milabench instead of PID:1
     #
     # Thanks to this we can rely on `children_warden` to kill all milabench children
-    #
-    from ctypes import CDLL, c_int
-    import ctypes.util
     libc_path = ctypes.util.find_library("c")
 
     if libc_path:
         libc = ctypes.CDLL(libc_path)
-        PR_SET_CHILD_SUBREAPER = 36 
+        PR_SET_CHILD_SUBREAPER = 36
+        # PR_SET_CHILD_SUBREAPER is not available on MacOS's libc
         libc.prctl(PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0)
 
-subreaper()
+
+if platform_unsupported:
+    log.warning(
+        f"Warden has limited support for the {repr(sys.platform)} platform. "
+        + "Processes which leak file descriptors or subprocesses may not be properly closed."
+    )
+else:
+    subreaper()
