@@ -27,11 +27,14 @@ from .env import cli_env
 from .prepare_run import cli_prepare_run
 from .gated import cli_gated
 from .sharedsetup import cli_shared_setup
+from .archive import cli_archive
 from .container import cli_docker
 from .multirun import cli_multirun
 from .replay import cli_replay
 from .global_patch import cli_global_patch
 from .tunnel import cli_port_forwarding
+from .ci import cli_ci
+from .prefer_system import cli_prefer_system
 
 from benchmate.progress import timed_flush
 
@@ -122,7 +125,12 @@ class Main:
         cli_gated()
 
     def sharedsetup():
+        """Restore data from a shared/network location to local disk."""
         cli_shared_setup()
+
+    def archive():
+        """Create deterministic tar archives of data and cache for sharing."""
+        cli_archive()
 
     def container():
         cli_docker()
@@ -138,6 +146,14 @@ class Main:
 
     def tunnel():
         cli_port_forwarding()
+
+    def ci():
+        """Output benchmark groups as JSON for CI matrix generation."""
+        cli_ci()
+
+    def prefer_system():
+        """Uninstall local packages that shadow system-provided ones."""
+        cli_prefer_system()
 
 
 def main(argv=None):

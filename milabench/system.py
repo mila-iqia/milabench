@@ -29,6 +29,17 @@ def get_gpu_capacity(strict=False):
             raise
         return 0
 
+def get_gpu_count(strict=False):
+    try:
+        return len(get_gpu_info()["gpus"])
+    except:
+        print("GPU not available, defaulting to 0 MiB")
+
+        if strict:
+            raise
+
+        return 0
+
 
 def getenv(name, expected_type):
     value = os.getenv(name)
@@ -388,6 +399,7 @@ class Options:
 class GPUConfig:
     arch: str = defaultfield("gpu.arch", str, None)
     capacity: str = defaultfield("gpu.capacity", str, str(get_gpu_capacity()))
+    count: int = defaultfield("gpu.count", int, int(get_gpu_count()))
 
 
 @dataclass
@@ -479,10 +491,13 @@ def build_system_config(config_file, defaults=None, gpu=True):
 
     # capacity is only required if batch resizer is enabled
     if (gpu or is_autoscale_enabled()) and not "gpu" not in system:
-        system["gpu"] = {"capacity": f"{int(get_gpu_capacity())} MiB"}
+        system["gpu"] = {
+            "capacity": f"{int(get_gpu_capacity())} MiB",
+            "count": get_gpu_count()
+        }
 
     if system.get("sshkey") is not None:
-        system["sshkey"] = str(XPath(system["sshkey"]).resolve())
+        system["sshkey"] = str(XPath(system["sshkey"]).expanduser().resolve())
 
     check_node_config(system["nodes"])
 

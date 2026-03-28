@@ -22,6 +22,8 @@ class Arguments:
     network: str
     local: str
     remote_data: str = None
+    archive: bool = False
+    maybe: bool = False
 
 
 @tooled
@@ -32,7 +34,13 @@ def arguments():
 
     remote_data: Option & str = None
 
-    return Arguments(network, local, remote_data)
+    # Only look for tar archives, do not fall back to rsync/rclone
+    archive: Option & bool = False
+
+    # Do not fail if the archive or data is not available
+    maybe: Option & bool = False
+
+    return Arguments(network, local, remote_data, archive, maybe)
 
 
 def is_interactive():
@@ -294,7 +302,7 @@ COPY_METHODS = {
 }
 
 
-def sync_folder(src, dst, folder):
+def sync_folder(src, dst, folder, archive_only=False):
     # unzip         2550.70
     # rclone        2587.07
     # untar         1067.72  <===
@@ -306,6 +314,9 @@ def sync_folder(src, dst, folder):
     else:
         if archive_name(src) is not None:
             return simple_untar(src, dst, folder)
+
+        if archive_only:
+            return
         
         if is_installed("rclone"):
             return simple_rclone(src, dst, folder)
@@ -313,44 +324,44 @@ def sync_folder(src, dst, folder):
         return simple_rsync(src, dst, folder)
 
 
+
 @tooled
 def cli_shared_setup(args = None):
-    #
-    # TODO: Do this for each node
-    #
+    """Restore data from a shared/network location to local disk."""
     if args is None:
         args = arguments()
-    
+
     remote_code = os.path.join(args.network, "venv")
     local_code  = os.path.join(args.local, "venv")
 
     remote_data = os.path.join(args.network, "data")
     remote_cache = os.path.join(args.network, "cache")
 
-    if not os.path.exists(remote_code):
-        print("missing venv, was milabench install run ?")
-        print("You should run milabench install")
+    has_data_dir = os.path.exists(remote_data)
+    has_data_archive = archive_name(remote_data) is not None
 
-    # FIXME: this should work if we have the archive
-    assert os.path.exists(remote_data), "missing data, was milabench prepare run ?"
+    if not has_data_dir and not has_data_archive:
+        if args.maybe:
+            print(f"Data not found at {remote_data}[.tar[.gz]], skipping (--maybe)")
+            return
+        assert False, "missing data, was milabench prepare run ?"
     
     os.makedirs(args.local, exist_ok=True)
 
     with timeit(f"sync_{COPY_METHOD}_{COPY_NPROC}"):
-        # rsync datasets & checkpoints to local disk
         with timeit("sync_data"):
-            sync_folder(remote_data, args.local, "data")
+            sync_folder(remote_data, args.local, "data", archive_only=args.archive)
 
         with timeit("sync_cache"):
-            sync_folder(remote_cache, args.local, "cache")
+            sync_folder(remote_cache, args.local, "cache", archive_only=args.archive)
+
+    if os.path.exists(remote_code):
+        try:
+            os.symlink(remote_code, local_code, target_is_directory=True)
+        except:
+            pass
 
     show_timings(force=True)
-
-    # create a soft link for the code
-    try:
-        os.symlink(remote_code, local_code, target_is_directory=True)
-    except:
-        pass
 
     print("use for local excution of milabench")
     print("")

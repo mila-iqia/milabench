@@ -29,10 +29,11 @@ from transformers import (
     HfArgumentParser,
 )
 
+from trl.experimental.ppo import PPOConfig, PPOTrainer
+from trl.experimental.utils import SIMPLE_CHAT_TEMPLATE
+
 from trl import (
     ModelConfig,
-    PPOConfig,
-    PPOTrainer,
     get_kbit_device_map,
     get_peft_config,
     get_quantization_config,
@@ -106,7 +107,6 @@ class PPOv2TrainerIntrumented(PPOTrainer):
 
 
 def main():
-    from trl.trainer.utils import SIMPLE_CHAT_TEMPLATE
     from trl.scripts.utils import ScriptArguments
     # SIMPLE_CHAT_TEMPLATE = "{% for message in messages %}{{message['role'].capitalize() + ': ' + message['content'] + '\n\n'}}{% endfor %}{% if add_generation_prompt %}{{ 'Assistant:' }}{% endif %}"
 
@@ -119,13 +119,13 @@ def main():
     # Model & Tokenizer
     ################
     torch_dtype = (
-        model_args.torch_dtype if model_args.torch_dtype in ["auto", None] else getattr(torch, model_args.torch_dtype)
+        model_args.dtype if model_args.dtype in ["auto", None] else getattr(torch, model_args.dtype)
     )
     quantization_config = get_quantization_config(model_args)
     model_kwargs = dict(
         revision=model_args.model_revision,
         attn_implementation=model_args.attn_implementation,
-        torch_dtype=torch_dtype,
+        dtype=torch_dtype,
         device_map=get_kbit_device_map() if quantization_config is not None else None,
         quantization_config=quantization_config,
     )

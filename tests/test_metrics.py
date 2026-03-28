@@ -1,7 +1,8 @@
 import os
 import zipfile
 
-from milabench.common import _read_reports, make_summary
+from milabench.summary import make_summary
+from milabench.common import _read_reports
 from milabench.metrics.report import fetch_data, make_pivot_summary
 from milabench.metrics.sqlalchemy import SQLAlchemy
 from milabench.testing import replay_run, replay_zipfile, show_diff

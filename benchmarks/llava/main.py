@@ -97,7 +97,6 @@ def main():
 
     for epoch in range(args.epochs):
         for i, batch in enumerate(observer.iterate(dataloader)):
-            print("HERE")
             images = batch["images"][0]  # Access the first item in the list of images
             texts = batch["texts"]
             prompt = apply_chat_template(texts)

@@ -13,12 +13,14 @@ from ..summary import make_summary
 # fmt: off
 @dataclass
 class Arguments:
-    runs:        list = field(default_factory=list)
-    config      : str = os.getenv("MILABENCH_CONFIG")
-    compare     : str = None
-    compare_gpus: bool = False
-    html        : str = None
-    price       : int = None
+    runs:            list = field(default_factory=list)
+    config         : str  = os.getenv("MILABENCH_CONFIG")
+    compare        : str  = None
+    compare_gpus   : bool = False
+    html           : str  = None
+    price          : int  = None
+    filter_failures: bool = False
+    latest         : bool = False
 # fmt: on
 
 
@@ -42,7 +44,13 @@ def arguments():
     # Price per unit
     price: Option & int = None
 
-    return Arguments(runs, config, compare, compare_gpus, html, price)
+    # Filter out failed runs
+    filter_failures: Option & bool = False
+
+    # Only consider the latest run for each benchmark
+    latest: Option & bool = False
+
+    return Arguments(runs, config, compare, compare_gpus, html, price, filter_failures, latest)
 
 
 @tooled
@@ -71,7 +79,11 @@ def cli_report(args=None):
     reports = None
     if args.runs:
         reports = _read_reports(*args.runs)
-        summary = make_summary(reports)
+        summary = make_summary(
+            reports,
+            filter_failures=args.filter_failures,
+            latest_only=args.latest,
+        )
 
     if args.config:
         from milabench.common import arguments as multipack_args
@@ -94,9 +106,13 @@ def cli_report(args=None):
 
 
 
-def make_report_for_single_run(run_folder, output=sys.stdout):
+def make_report_for_single_run(run_folder, output=sys.stdout, filter_failures=False, latest_only=False):
     reports = _read_reports(run_folder)
-    summary = make_summary(reports)
+    summary = make_summary(
+        reports,
+        filter_failures=filter_failures,
+        latest_only=latest_only,
+    )
 
     # FIXME
     from milabench.common import arguments as multipack_args
@@ -138,22 +154,26 @@ def report_combine():
 
     from ..report import pandas_to_string
     from .gather import default_tags, extract_tags, make_tags
-    from collections import defaultdict
 
     parser = ArgumentParser()
     parser.add_argument("--folder", type=str, help="run folder")
+    parser.add_argument("--filter-failures", action="store_true", help="filter out failed benchmarks")
+    parser.add_argument("--latest", action="store_true", help="only keep the latest run per benchmark")
     args = parser.parse_args()
 
     found_tags = defaultdict(int)
     tags = make_tags(default_tags())
     reports = []
 
-    run_folders = list(set(gather_run_folders(args.folder)))
+    run_folders = sorted(
+        set(gather_run_folders(args.folder)),
+        key=lambda f: os.path.getmtime(f),
+    )
 
     for folder in run_folders:
         full_pth = Path(folder)
 
-        if (full_pth.is_file()):
+        if full_pth.is_file():
             continue
         
         columns = {
@@ -172,7 +192,8 @@ def report_combine():
         with open(os.devnull, "w") as devnull:
             df = make_report_for_single_run(
                 str(full_pth),
-                output=devnull
+                output=devnull,
+                filter_failures=args.filter_failures,
             )
 
         print(full_pth, columns)
@@ -183,11 +204,16 @@ def report_combine():
 
         df = df.rename_axis("bench").reset_index()
         df["bench"] = df["bench"].astype("string")
-        #
         reports.append(df)
 
     # Print the full df
     all_reports = pd.concat(reports, ignore_index=True)
+
+    if args.filter_failures:
+        all_reports = all_reports[all_reports["fail"] <= 0]
+
+    if args.latest:
+        all_reports = all_reports.drop_duplicates(subset=["bench"], keep="last")
 
     all_reports.to_csv("big_beautiful_report.csv", index=False)
 

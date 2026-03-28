@@ -10,6 +10,7 @@ import torch
 
 from voir.phase import StopProgram
 from benchmate.monitor import setupvoir
+from benchmate.toggles import get_observation_count
 import torchcompat.core as accelerator
 
 root = os.path.dirname(__file__)
@@ -106,6 +107,7 @@ def huggingface_main(args, model, config):
     start = time.time()
 
     log, monitor = setupvoir()
+    max_obs = get_observation_count(40)
 
     # loader = Wrapper(dataset["train"], accelerator.Event, earlystop=60)
     loader = dataset["train"]
@@ -148,7 +150,7 @@ def huggingface_main(args, model, config):
             if log is not None:
                 log({"task": "train", "rate": total / elapsed, "units": "Tok/s", "time": time.time()})
 
-        if count > 40:
+        if count > max_obs:
             break
 
     monitor.stop()

@@ -149,6 +149,9 @@ def get_default_system(base, run_name="none", arch="none"):
                 "main": True,
             }
         ],
+        "gpu": {
+            "count": 0
+        },
         "run_name": run_name,
         "base": base,
         "dirs": {
@@ -223,7 +226,9 @@ def assemble_config(runname, config_filepath, base_path, overrides=None, system_
         gpu=True
     )
 
-    system_config["packs"] = build_config(base_defaults, config_filepath, overrides)
+    packs = build_config(base_defaults, config_filepath, overrides)
+
+    system_config["packs"] = packs
 
     system_config = OmegaConf.to_object(OmegaConf.create(system_config))
 

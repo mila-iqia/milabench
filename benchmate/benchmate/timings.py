@@ -56,7 +56,7 @@ class StepTimer:
         self.end_time = time.perf_counter()
         self.pusher(rate=self.n_size/(self.end_time - self.start_time), units="items/s", task="train")
         self.pusher(progress=(self.n_obs, self.total_obs), task="early_stop")
-        self.size = 0
+        self.n_size = 0
         self.n_obs += 1
         self.start_time = self.end_time
 

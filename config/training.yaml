@@ -1,0 +1,919 @@
+include:
+  - _defaults.yaml
+
+_torchvision:
+  inherits: _defaults
+  definition: ../benchmarks/torchvision
+  group: torchvision
+  install_group: torch
+  plan:
+    method: per_gpu
+  argv:
+    --precision: 'tf32-fp16'
+    --lr: 0.01
+    --no-stdout: true
+    --epochs: 50
+    --num-workers: "auto({n_worker}, 8)"
+    --loader: pytorch
+    --data: "{milabench_data}/FakeImageNet"
+
+
+_torchvision_ddp:
+  inherits: _defaults
+  definition: ../benchmarks/torchvision_ddp
+  group: torchvision
+  install_group: torch
+  tags:
+    - multigpu
+  plan:
+    method: njobs
+    n: 1
+  argv:
+    --epochs: 10
+    --num-workers: "auto({n_worker}, 8)"
+    --loader: pytorch
+    --data: "{milabench_data}/FakeImageNet"
+  
+  requires_capabilities:
+    - "gpu['count'] > 1"
+
+_flops:
+  inherits: _defaults
+  definition: ../benchmarks/flops
+  group: flops
+  install_group: torch
+  plan:
+    method: per_gpu
+  
+  tags:
+    - diagnostic
+    - flops
+    - monogpu
+    - nobatch
+  
+  argv:
+    --number: 10
+    --repeat: 90
+
+_hf:
+  inherits: _defaults
+  definition: ../benchmarks/huggingface
+  group: hf
+  install_group: torch
+  argv:
+    --precision: 'tf32-fp16'
+    --num-workers: "auto({n_worker}, 8)"
+
+  plan:
+    method: per_gpu
+
+_timm:
+  inherits: _defaults
+  definition: ../benchmarks/timm
+  group: timm
+  install_group: torch
+  tags:
+    - timm
+  plan:
+    method: per_gpu
+  argv:
+    --amp: true
+    --amp-dtype: bfloat16
+    --device: '{device_name}'
+    --val-split: ''
+    --data-dir: "{milabench_data}"
+    --dataset: "FakeImageNet"
+    --workers: "auto({n_worker}, 8)"
+    --batch-size: "auto_batch(128)"
+  
+_accelerate_opt:
+  inherits: _defaults
+  tags:
+    - nlp
+    - language-modeling
+    - transformer
+    - huggingface
+    - llm
+  definition: ../benchmarks/accelerate_opt
+  group: opt
+  install_group: torch
+  plan:
+    method: njobs
+    n: 1
+  
+  # Accelerate
+  # accelerate:
+  #   - --mixed_precision=bf16
+  #   - --dynamo_backend=no
+  #   - --gradient_accumulation_steps=1
+
+  # Script Args
+  argv:
+    --max_train_steps: 100
+    --dataset_name: "wikitext"
+    --dataset_config_name: "wikitext-103-v1"
+    --dataset_rev: "b08601e"
+    --validation_split_percentage: 5
+    --per_gpu_batch_size: "auto_batch(1)"
+    --cpus_per_gpu: "auto({n_worker}, 8)"
+    --cache: "{milabench_cache}"
+
+  # Accelerate Args
+  use_deepspeed: true
+  num_machines: 1
+
+fp8:
+  inherits: _flops
+
+  argv:
+    --number: 30
+    --repeat: 90
+    --m: 8192
+    --n: 8192
+    --dtype: fp8
+
+fp16:
+  inherits: _flops
+
+  argv:
+    --number: 30
+    --repeat: 90
+    --m: 8192
+    --n: 8192
+    --dtype: fp16
+
+bf16:
+  inherits: _flops
+ 
+  argv:
+    --m: 8192
+    --n: 8192
+    --dtype: bf16
+
+tf32:
+  inherits: _flops
+ 
+  argv:
+    --m: 8192
+    --n: 8192
+    --dtype: fp32
+    --tf32: true
+
+fp32:
+  inherits: _flops
+ 
+  argv:
+    --m: 8192
+    --n: 8192
+    --dtype: fp32  
+
+resnet50:
+  voir:
+    options:
+      stop: 60
+      gpu_poll: 0.1
+    
+  inherits: _torchvision
+  tags:
+    - vision
+    - classification
+    - convnet
+    - resnet
+    - monogpu
+  
+  argv:
+    --model: resnet50
+    --batch-size: "auto_batch(256)"
+    --num-workers: "auto({n_worker}, 8)"
+    --loader: pytorch
+    --optim: channel_last
+  
+resnet50-noio:
+  inherits: _torchvision
+  voir:
+    options:
+      stop: 500
+      interval: "1s"
+
+  tags:
+    - vision
+    - classification
+    - convnet
+    - resnet
+    - noio
+    - monogpu
+  
+  argv:
+    --model: resnet50
+    --batch-size: "auto_batch(256)"
+    --loader: synthetic_fixed
+    --optim: channel_last
+
+resnet152-ddp-gpus:
+  inherits: _torchvision_ddp
+  tags:
+    - vision
+    - classification
+    - convnet
+    - resnet
+    - multigpu
+  
+  voir:
+    options:
+      stop: 60
+      gpu_poll: 0.1
+
+  argv:
+    --model: resnet152
+    --batch-size: "auto_batch(256)"
+    --num-workers: "auto({n_worker}, 8)"
+    --loader: torch
+
+_convnext_large-base:
+  inherits: _torchvision
+  tags:
+    - vision
+    - classification
+    - convnet
+    - precision-showcase
+    - monogpu
+  argv:
+    --model: convnext_large
+    --batch-size: "auto_batch(128)"
+  voir:
+    options:
+      stop: 30
+
+convnext_large-fp32:
+  inherits: _convnext_large-base
+  argv:
+    --precision: 'fp32'
+
+convnext_large-fp16:
+  inherits: _convnext_large-base
+  argv:
+    --precision: 'fp16'
+
+convnext_large-tf32:
+  inherits: _convnext_large-base
+  argv:
+    --precision: 'tf32'
+
+convnext_large-tf32-fp16:
+  inherits: _convnext_large-base
+  argv:
+    --precision: 'tf32-fp16'
+
+regnet_y_128gf:
+  inherits: _torchvision
+  tags:
+    - vision
+    - classification
+    - convnet
+    - resnet
+    - lstm
+    - monogpu
+  argv:
+    --model: regnet_y_128gf
+    --batch-size: "auto_batch(64)"
+
+_bert-base:
+  inherits: _hf
+  tags:
+    - nlp
+    - language-modeling
+    - transformer
+    - huggingface
+    - precision-showcase
+    - noio
+    - monogpu
+  argv:
+    --model: "Bert"
+    --batch-size: "auto_batch(32)"
+  voir:
+    options:
+      stop: 30
+
+bert-fp32:
+  inherits: _bert-base
+  argv:
+    --precision: 'fp32'
+
+bert-fp16:
+  inherits: _bert-base
+  argv:
+    --precision: 'fp16'
+
+bert-tf32:
+  inherits: _bert-base
+  argv:
+    --precision: 'tf32'
+
+bert-tf32-fp16:
+  inherits: _bert-base
+  argv:
+    --precision: 'tf32-fp16'
+
+t5:
+  inherits: _hf
+  tags:
+    - nlp
+    - language-modeling
+    - transformer
+    - huggingface
+    - noio
+    - monogpu
+  argv:
+    --model: "T5"
+    --batch-size: "auto_batch(16)"
+
+reformer:
+  inherits: _hf
+  tags:
+    - nlp
+    - language-modeling
+    - transformer
+    - huggingface
+    - noio
+    - monogpu
+  argv:
+    --model: "Reformer"
+    --batch-size: "auto_batch(32)"
+
+whisper:
+  inherits: _hf
+  tags:
+    - audio
+    - huggingface
+    - noio
+    - monogpu
+  argv:
+    --model: "Whisper"
+    --batch-size: "auto_batch(64)"
+
+focalnet:
+  inherits: _timm
+  tags:
+    - vision
+    - classification
+    - convnet
+    - monogpu
+  plan:
+    method: per_gpu
+  argv:
+    --model: focalnet_base_lrf
+
+brax:
+  # Brax requires very specific sizes to work
+  # so the resizer is not capable of handling resizing this bench
+  inherits: _defaults
+  tags:
+    - rl
+    - jax
+    - multigpu
+    - gym
+    - nobatch
+  definition: ../benchmarks/brax
+  group: brax
+  install_group: torch
+  plan:
+    method: njobs
+    n: 1
+  argv:
+    --episode-length: 20
+    --batch-size: "auto_batch(1024)"
+    --num-minibatches: 32
+    --num-envs: 8192
+
+_diffusion:
+  inherits: _defaults
+  definition: ../benchmarks/diffusion
+  install_group: torch
+  tags:
+    - diffusion
+  plan:
+    method: per_gpu
+
+  argv:
+    --model: Milabench/stable-diffusion-2
+    --num_epochs: 5
+    --batch_size: "auto_batch(32)"
+    --num_workers: "auto({n_worker}, 8)"
+    --cache: "{milabench_cache}"
+
+diffusion-single:
+  inherits: _diffusion
+  num_machines: 1
+  tags:
+    - monogpu
+  plan:
+    method: per_gpu
+
+diffusion-gpus:
+  inherits: _diffusion
+  tags:
+    - multigpu
+  plan:
+    method: njobs
+    n: 1
+  num_machines: 1
+
+diffusion-nodes:
+  tags:
+    - multinode
+  inherits: _diffusion
+  plan:
+    method: njobs
+    n: 1
+  num_machines: 2
+  requires_capabilities:
+    - "len(nodes) >= ${..num_machines}"
+
+_lightning:
+  inherits: _defaults
+  definition: ../benchmarks/lightning
+  install_group: torch
+  tags:
+    - lightning
+  argv:
+    --epochs: 10
+    --num-workers: "auto({n_worker}, 8)"
+    --loader: pytorch
+    --data: "{milabench_data}/FakeImageNet"
+    --model: resnet152
+    --batch-size: "auto_batch(256)"
+
+lightning:
+  inherits: _lightning
+  tags:
+    - monogpu
+  num_machines: 1
+  plan:
+    method: per_gpu
+
+lightning-gpus:
+  inherits: _lightning
+  tags:
+    - multigpu
+  num_machines: 1
+  plan:
+    method: njobs
+    n: 1
+
+_dinov2:
+  inherits: _defaults
+  definition: ../benchmarks/dinov2
+  install_group: torch
+  num_machines: 1
+  tags:
+    - image
+    - transformer
+  plan:
+    method: njobs
+    n: 1
+
+  argv:
+    --output-dir: "{milabench_extra}/output"
+    --no-resume: true
+
+dinov2-giant-single:
+  inherits: _dinov2
+  plan:
+    method: per_gpu
+  tags:
+    - monogpu
+  argv:
+    --config-file: "{benchmark_folder}/src/dinov2/configs/train/vitg14.yaml"
+    # THOSE NEED TO BE LAST
+    train.dataset_path=ImageNet:split=TRAIN:root={milabench_data}/FakeImageNet:extra={milabench_data}/FakeImageNet: true
+    train.batch_size_per_gpu=auto_batch(32): true
+    train.saveckp_freq=100: true
+    train.num_workers=10: true
+
+dinov2-giant-gpus:
+  inherits: _dinov2
+  tags:
+    - multigpu
+  plan:
+    method: njobs
+    n: 1
+  argv:
+    --config-file: "{benchmark_folder}/src/dinov2/configs/train/vitg14.yaml"
+    # THOSE NEED TO BE LAST
+    train.dataset_path=ImageNet:split=TRAIN:root={milabench_data}/FakeImageNet:extra={milabench_data}/FakeImageNet: true
+    train.batch_size_per_gpu=auto_batch(32): true
+    train.saveckp_freq=100: true
+    train.num_workers=10: true
+
+dinov2-giant-nodes:
+  plan:
+    method: njobs
+    n: 1
+  tags:
+    - multinode
+  max_duration: 3600
+  inherits: _dinov2
+  argv:
+    --config-file: "{benchmark_folder}/src/dinov2/configs/train/vitg14.yaml"
+    # THOSE NEED TO BE LAST
+    train.dataset_path=ImageNet:split=TRAIN:root={milabench_data}/FakeImageNet:extra={milabench_data}/FakeImageNet: true
+    train.batch_size_per_gpu=auto_batch(12): true
+    train.saveckp_freq=100: true
+    train.num_workers=10: true
+
+  num_machines: 2
+  requires_capabilities:
+    - "len(nodes) >= ${..num_machines}"
+
+_llm:
+  voir:
+    options:
+      stop: 30
+  tags:
+    - nlp
+    - llm
+    - gated
+
+  max_duration: 3600
+  num_machines: 1
+  inherits: _defaults
+  definition: ../benchmarks/llm
+  install_group: torch
+
+llm-lora-single:
+  inherits: _llm
+  url: https://huggingface.co/meta-llama/Llama-3.1-8B
+  tags:
+    - monogpu
+  plan:
+    method: per_gpu
+
+  argv:
+    # "{milabench_code}/bench/lora_finetune_single_device.py": true
+    bench/lora_finetune_single_device.py: true
+    --config: "{milabench_code}/configs/llama3_8B_lora.yaml"
+    epochs=1: true
+    output_dir={milabench_extra}/output: true
+    tokenizer.path={milabench_data}/llama3_8B/original/tokenizer.model: true
+    safetensors=true: true
+    checkpointer.checkpoint_dir={milabench_data}/llama3_8B: true
+    checkpointer.output_dir={milabench_extra}/llama3_8B: true
+    metric_logger.log_dir={milabench_extra}/metrics: true
+    repo_id="meta-llama/Llama-3.1-8B": true
+    batch_size=auto_batch(8): true
+    gradient_accumulation_steps=8: true
+    device={device_name}: true
+
+
+llm-lora-ddp-gpus:
+  inherits: _llm
+  plan:
+    method: njobs
+    n: 1
+
+  url: https://huggingface.co/meta-llama/Llama-3.1-8B
+  tags:
+    - multigpu
+
+  argv:
+    # "{milabench_code}/bench/lora_finetune_distributed.py": true
+    bench/lora_finetune_distributed.py: true
+    --config: "{milabench_code}/configs/llama3_8B_lora.yaml"
+    epochs=1: true
+    output_dir={milabench_extra}/output: true
+    tokenizer.path={milabench_data}/llama3_8B/original/tokenizer.model: true
+    checkpointer.checkpoint_dir={milabench_data}/llama3_8B/: true
+    checkpointer.output_dir={milabench_extra}/llama3_8B/: true
+    safetensors=true: true
+    metric_logger.log_dir={milabench_extra}/metrics: true
+    repo_id="meta-llama/Llama-3.1-8B": true
+    batch_size=auto_batch(8): true
+    gradient_accumulation_steps=8: true
+    device={device_name}: true
+
+
+
+llm-lora-ddp-nodes:
+  tags:
+    - multinode
+  max_duration: 3600
+  inherits: _llm
+  plan:
+    method: njobs
+    n: 1
+  
+  url: https://huggingface.co/meta-llama/Llama-3.1-8B
+  argv:
+    # "{milabench_code}/bench/lora_finetune_distributed.py": true
+    bench/lora_finetune_distributed.py: true
+    --config: "{milabench_code}/configs/llama3_8B_lora.yaml"
+    epochs=1: true
+    output_dir={milabench_extra}/output: true
+    tokenizer.path={milabench_data}/llama3_8B/original/tokenizer.model: true
+    checkpointer.checkpoint_dir={milabench_data}/llama3_8B: true
+    checkpointer.output_dir={milabench_extra}/llama3_8B/: true
+    safetensors=true: true
+    metric_logger.log_dir={milabench_extra}/metrics: true
+    repo_id="meta-llama/Llama-3.1-8B": true
+    batch_size=auto_batch(8): true
+    gradient_accumulation_steps=8: true
+    device={device_name}: true
+  num_machines: 2
+  requires_capabilities:
+    - "len(nodes) >= ${..num_machines}"
+
+llm-lora-mp-gpus:
+  inherits: _llm
+  url: https://huggingface.co/meta-llama/Llama-3.1-70B
+  tags:
+    - multigpu
+
+  plan:
+    method: njobs
+    n: 1
+
+  requires_capabilities:
+    - "gpu['count'] > 1"
+  
+  argv:
+    # "{milabench_code}/bench/lora_finetune_distributed.py": true
+    bench/lora_finetune_distributed.py: true
+    --config: "{milabench_code}/configs/llama3_70B_lora.yaml"
+    epochs=1: true
+    output_dir={milabench_extra}/output: true
+    tokenizer.path={milabench_data}/llama3_70B/original/tokenizer.model: true
+    checkpointer.checkpoint_dir={milabench_data}/llama3_70B: true
+    checkpointer.output_dir={milabench_extra}/llama3_70B/: true
+    safetensors=true: true
+    metric_logger.log_dir={milabench_extra}/metrics: true
+    repo_id="meta-llama/Llama-3.1-70B": true
+    batch_size=auto_batch(8): true
+    gradient_accumulation_steps=1: true
+    device={device_name}: true
+  
+llm-full-mp-gpus:
+  voir:
+    options:
+      stop: 30
+  inherits: _llm
+
+  url: https://huggingface.co/meta-llama/Llama-3.1-70B
+  tags:
+    - multigpu
+  plan:
+    method: njobs
+    n: 1
+
+  requires_capabilities:
+    - "gpu['count'] > 1"
+
+  argv:
+    # "{milabench_code}/bench/full_finetune_distributed.py": true
+    bench/full_finetune_distributed.py: true
+    --config: "{milabench_code}/configs/llama3_70B_full.yaml"
+    epochs=1: true
+    output_dir={milabench_extra}/output: true
+    tokenizer.path={milabench_data}/llama3_70B/original/tokenizer.model: true
+    checkpointer.checkpoint_dir={milabench_data}/llama3_70B: true
+    checkpointer.output_dir={milabench_extra}/llama3_70B: true
+    metric_logger.log_dir={milabench_extra}/metrics: true
+    repo_id="meta-llama/Llama-3.1-70B": true
+    safetensors=true: true
+    batch_size=auto_batch(2): true
+    gradient_accumulation_steps=1: true
+    device={device_name}: true
+  
+llm-full-mp-nodes:
+  url: https://huggingface.co/meta-llama/Llama-3.1-70B
+  tags:
+    - multinode
+  max_duration: 3600
+  inherits: _llm
+  plan:
+    method: njobs
+    n: 1
+
+  argv:
+    # "{milabench_code}/bench/full_finetune_distributed.py": true
+    bench/full_finetune_distributed.py: true
+    --config: "{milabench_code}/configs/llama3_70B_full.yaml"
+    epochs=1: true
+    output_dir={milabench_extra}/output: true
+    tokenizer.path={milabench_data}/llama3_70B/original/tokenizer.model: true
+    checkpointer.checkpoint_dir={milabench_data}/llama3_70B: true
+    checkpointer.output_dir={milabench_extra}/llama3_70B/: true
+    metric_logger.log_dir={milabench_extra}/metrics: true
+    repo_id="meta-llama/Llama-3.1-70B": true
+    safetensors=true: true
+    batch_size=auto_batch(2): true
+    gradient_accumulation_steps=1: true
+    device={device_name}: true
+  
+  num_machines: 2
+  requires_capabilities:
+    - "len(nodes) >= ${..num_machines}"
+
+_purejaxrl:
+  inherits: _defaults
+  install_group: torch
+  tags:
+    - monogpu
+    - gym
+    - rl
+    - jax
+  definition: ../benchmarks/purejaxrl
+  plan:
+    method: per_gpu
+
+dqn:
+  inherits: _purejaxrl
+  argv:
+    dqn: true
+    --num_envs: auto({cpu_per_gpu}, 128)
+    --buffer_size: 131072
+    --buffer_batch_size: 65536
+    --env_name: SpaceInvaders-MinAtar
+    --training_interval: 10
+
+ppo:
+  inherits: _purejaxrl
+  argv:
+    ppo: true
+    --num_envs: auto({cpu_per_gpu}, 128)
+    --num_steps: 10
+    --num_minibatches: 32
+    --update_epochs: 4
+    --env_name: hopper
+    --total_timesteps: 2000000
+
+_geo_gnn:
+  inherits: _defaults
+  tags:
+    - monogpu
+    - graph
+  install_group: torch
+  definition: ../benchmarks/geo_gnn
+  plan:
+    method: per_gpu
+
+
+pna:
+  inherits: _geo_gnn
+  argv:
+    --model: 'PNA'
+    --num-samples: 100000
+    --batch-size: "auto_batch(4096)" 
+    --num-workers: "auto({n_worker}, 0)"
+    --root: "{milabench_data}"
+
+dimenet:
+  inherits: _geo_gnn
+  argv:
+    --model: 'DimeNet'
+    --num-samples: 100000
+    --use3d: True
+    --batch-size: "auto_batch(16)"
+    --num-workers: "auto({n_worker}, 0)"
+    --root: "{milabench_data}"
+
+recursiongfn:
+  inherits: _defaults
+  definition: ../benchmarks/recursiongfn
+  install_group: torch
+  tags:
+    - graph
+    - monogpu
+  plan:
+    method: per_gpu
+
+  argv:
+    --batch_size: "auto_batch(128)"
+    --num_workers: "auto({n_worker}, 8)"
+    --num_steps: 100
+    --layer_width: 128
+    --num_layers: 4
+    --data: "{milabench_data}"
+
+_llava:
+  max_duration: 3600
+  inherits: _defaults
+  definition: ../benchmarks/llava
+  install_group: torch
+  plan:
+    method: per_gpu
+  tags:
+    - llm
+  argv:
+    --batch_size: "auto_batch(1)"
+    --num_workers: "auto({n_worker}, 4)"
+    --gradient_accumulation_steps: 1
+
+llava-single:
+  inherits: _llava
+  tags:
+    - monogpu
+  plan:
+    method: per_gpu
+  argv:
+    --batch_size: "auto_batch(1)"
+    --num_workers: "auto({n_worker}, 4)"
+    --gradient_accumulation_steps: 1
+
+llava-gpus:
+  inherits: _llava
+  tags:
+    - multigpu
+  plan:
+    method: njobs
+    n: 1
+  argv:
+    --batch_size: "auto_batch(1)"
+    --num_workers: "auto({n_worker}, 4)"
+    --gradient_accumulation_steps: 1
+
+
+_rlhf:
+  inherits: _defaults
+  definition: ../benchmarks/rlhf
+  install_group: torch
+  plan:
+    method: per_gpu
+  tags:
+    - rl
+    - rlhf
+    - llm
+  argv:
+    --output_dir: "{milabench_extra}/output"
+    --model_name_or_path: EleutherAI/pythia-1b-deduped
+
+    --per_device_train_batch_size: "auto_batch(64)"
+    --logging_strategy: "no"
+    --log_level: "critical"
+    --dtype: bfloat16
+    --dataset-name: "trl-internal-testing/descriptiveness-sentiment-trl-style"
+    --dataset_train_split: "descriptiveness"
+  
+rlhf-single:
+  inherits: _rlhf
+  tags:
+    - monogpu
+  plan:
+    method: per_gpu
+
+rlhf-gpus:
+  inherits: _rlhf
+  tags:
+    - multigpu
+  plan:
+    method: njobs
+    n: 1
+
+_vjepa:
+  inherits: _defaults
+  install_group: torch
+  definition: ../benchmarks/vjepa
+  tags:
+    - video
+  argv:
+    --batch_size: "auto_batch(24)"
+    --num_workers: "auto({n_worker}, 12)"
+    --dataset: "{milabench_data}/FakeVideo/video_metainfo.csv"
+    --output: "{milabench_extra}"
+
+vjepa-single:
+  inherits: _vjepa
+  tags:
+    - monogpu
+  plan:
+    method: per_gpu
+
+vjepa-gpus:
+  inherits: _vjepa
+  tags:
+    - multigpu
+  plan:
+    method: njobs
+    n: 1
+
+cleanrljax:
+  inherits: _defaults
+  install_group: torch
+  definition: ../benchmarks/cleanrl_jax
+  tags:
+    - monogpu
+    - jax
+  plan:
+    method: per_gpu
+  
+  # args.batch_size     = int(args.num_envs * args.num_steps)
+  # args.minibatch_size = int(args.batch_size // args.num_minibatches)
+  # args.num_iterations = args.total_timesteps // args.batch_size
+  # --total_timesteps
+  # --num_steps
+  # --num_minibatches
+
+  argv:
+    --num_envs: auto({cpu_per_gpu}, 128)
+    --num_steps: 128
+    --num_minibatches: 4
+    --total_timesteps: 10000000

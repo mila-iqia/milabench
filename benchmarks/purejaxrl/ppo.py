@@ -27,36 +27,38 @@ from wrappers import (
 class ActorCritic(nn.Module):
     action_dim: Sequence[int]
     activation: str = "tanh"
+    dtype: jnp.dtype = jnp.float32
 
     @nn.compact
     def __call__(self, x):
+        x = x.astype(self.dtype)
         if self.activation == "relu":
             activation = nn.relu
         else:
             activation = nn.tanh
         actor_mean = nn.Dense(
-            256, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0)
+            256, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0), dtype=self.dtype
         )(x)
         actor_mean = activation(actor_mean)
         actor_mean = nn.Dense(
-            256, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0)
+            256, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0), dtype=self.dtype
         )(actor_mean)
         actor_mean = activation(actor_mean)
         actor_mean = nn.Dense(
-            self.action_dim, kernel_init=orthogonal(0.01), bias_init=constant(0.0)
+            self.action_dim, kernel_init=orthogonal(0.01), bias_init=constant(0.0), dtype=self.dtype
         )(actor_mean)
         actor_logtstd = self.param("log_std", nn.initializers.zeros, (self.action_dim,))
         pi = distrax.MultivariateNormalDiag(actor_mean, jnp.exp(actor_logtstd))
 
         critic = nn.Dense(
-            256, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0)
+            256, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0), dtype=self.dtype
         )(x)
         critic = activation(critic)
         critic = nn.Dense(
-            256, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0)
+            256, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0), dtype=self.dtype
         )(critic)
         critic = activation(critic)
-        critic = nn.Dense(1, kernel_init=orthogonal(1.0), bias_init=constant(0.0))(
+        critic = nn.Dense(1, kernel_init=orthogonal(1.0), bias_init=constant(0.0), dtype=self.dtype)(
             critic
         )
 
@@ -105,7 +107,7 @@ def make_train(config):
     def train(rng):
         # INIT NETWORK
         network = ActorCritic(
-            env.action_space(env_params).shape[0], activation=config["ACTIVATION"]
+            env.action_space(env_params).shape[0], activation=config["ACTIVATION"], dtype=config["DTYPE"]
         )
         rng, _rng = jax.random.split(rng)
         init_x = jnp.zeros(env.observation_space(env_params).shape)
@@ -135,59 +137,63 @@ def make_train(config):
         def _update_step(runner_state, unused):
             # COLLECT TRAJECTORIES
             def _env_step(runner_state, unused):
-                train_state, env_state, last_obs, rng = runner_state
+                train_state, env_state, last_obs, rng, n_updates = runner_state
 
-                # SELECT ACTION
-                rng, _rng = jax.random.split(rng)
-                pi, value = network.apply(train_state.params, last_obs)
-                action = pi.sample(seed=_rng)
-                log_prob = pi.log_prob(action)
+                with jax.named_scope("select_action"):
+                    rng, _rng = jax.random.split(rng)
+                    pi, value = network.apply(train_state.params, last_obs)
+                    action = pi.sample(seed=_rng)
+                    log_prob = pi.log_prob(action)
 
-                # STEP ENV
-                rng, _rng = jax.random.split(rng)
-                rng_step = jax.random.split(_rng, config["NUM_ENVS"])
-                obsv, env_state, reward, done, info = env.step(
-                    rng_step, env_state, action, env_params
-                )
+                with jax.named_scope("env_step"):
+                    rng, _rng = jax.random.split(rng)
+                    rng_step = jax.random.split(_rng, config["NUM_ENVS"])
+                    obsv, env_state, reward, done, info = env.step(
+                        rng_step, env_state, action, env_params
+                    )
+
                 transition = Transition(
                     done, action, value, reward, log_prob, last_obs, info
                 )
-                runner_state = (train_state, env_state, obsv, rng)
+                runner_state = (train_state, env_state, obsv, rng, n_updates)
                 return runner_state, transition
 
-            runner_state, traj_batch = jax.lax.scan(
-                _env_step, runner_state, None, config["NUM_STEPS"]
-            )
+            with jax.named_scope("collect_trajectories"):
+                runner_state, traj_batch = jax.lax.scan(
+                    _env_step, runner_state, None, config["NUM_STEPS"]
+                )
 
             # CALCULATE ADVANTAGE
-            train_state, env_state, last_obs, rng = runner_state
-            _, last_val = network.apply(train_state.params, last_obs)
+            train_state, env_state, last_obs, rng, n_updates = runner_state
 
-            def _calculate_gae(traj_batch, last_val):
-                def _get_advantages(gae_and_next_value, transition):
-                    gae, next_value = gae_and_next_value
-                    done, value, reward = (
-                        transition.done,
-                        transition.value,
-                        transition.reward,
+            with jax.named_scope("gae"):
+                _, last_val = network.apply(train_state.params, last_obs)
+
+                def _calculate_gae(traj_batch, last_val):
+                    def _get_advantages(gae_and_next_value, transition):
+                        gae, next_value = gae_and_next_value
+                        done, value, reward = (
+                            transition.done,
+                            transition.value,
+                            transition.reward,
+                        )
+                        delta = reward + config["GAMMA"] * next_value * (1 - done) - value
+                        gae = (
+                            delta
+                            + config["GAMMA"] * config["GAE_LAMBDA"] * (1 - done) * gae
+                        )
+                        return (gae, value), gae
+
+                    _, advantages = jax.lax.scan(
+                        _get_advantages,
+                        (jnp.zeros_like(last_val), last_val),
+                        traj_batch,
+                        reverse=True,
+                        unroll=16,
                     )
-                    delta = reward + config["GAMMA"] * next_value * (1 - done) - value
-                    gae = (
-                        delta
-                        + config["GAMMA"] * config["GAE_LAMBDA"] * (1 - done) * gae
-                    )
-                    return (gae, value), gae
+                    return advantages, advantages + traj_batch.value
 
-                _, advantages = jax.lax.scan(
-                    _get_advantages,
-                    (jnp.zeros_like(last_val), last_val),
-                    traj_batch,
-                    reverse=True,
-                    unroll=16,
-                )
-                return advantages, advantages + traj_batch.value
-
-            advantages, targets = _calculate_gae(traj_batch, last_val)
+                advantages, targets = _calculate_gae(traj_batch, last_val)
 
             # UPDATE NETWORK
             def _update_epoch(update_state, unused):
@@ -195,11 +201,9 @@ def make_train(config):
                     traj_batch, advantages, targets = batch_info
 
                     def _loss_fn(params, traj_batch, gae, targets):
-                        # RERUN NETWORK
                         pi, value = network.apply(params, traj_batch.obs)
                         log_prob = pi.log_prob(traj_batch.action)
 
-                        # CALCULATE VALUE LOSS
                         value_pred_clipped = traj_batch.value + (
                             value - traj_batch.value
                         ).clip(-config["CLIP_EPS"], config["CLIP_EPS"])
@@ -209,7 +213,6 @@ def make_train(config):
                             0.5 * jnp.maximum(value_losses, value_losses_clipped).mean()
                         )
 
-                        # CALCULATE ACTOR LOSS
                         ratio = jnp.exp(log_prob - traj_batch.log_prob)
                         gae = (gae - gae.mean()) / (gae.std() + 1e-8)
                         loss_actor1 = ratio * gae
@@ -232,11 +235,15 @@ def make_train(config):
                         )
                         return total_loss, (value_loss, loss_actor, entropy)
 
-                    grad_fn = jax.value_and_grad(_loss_fn, has_aux=True)
-                    total_loss, grads = grad_fn(
-                        train_state.params, traj_batch, advantages, targets
-                    )
-                    train_state = train_state.apply_gradients(grads=grads)
+                    with jax.named_scope("loss_and_grad"):
+                        grad_fn = jax.value_and_grad(_loss_fn, has_aux=True)
+                        total_loss, grads = grad_fn(
+                            train_state.params, traj_batch, advantages, targets
+                        )
+
+                    with jax.named_scope("param_update"):
+                        train_state = train_state.apply_gradients(grads=grads)
+
                     return train_state, total_loss
 
                 train_state, traj_batch, advantages, targets, rng = update_state
@@ -245,30 +252,37 @@ def make_train(config):
                 assert (
                     batch_size == config["NUM_STEPS"] * config["NUM_ENVS"]
                 ), "batch size must be equal to number of steps * number of envs"
-                permutation = jax.random.permutation(_rng, batch_size)
-                batch = (traj_batch, advantages, targets)
-                batch = jax.tree_util.tree_map(
-                    lambda x: x.reshape((batch_size,) + x.shape[2:]), batch
-                )
-                shuffled_batch = jax.tree_util.tree_map(
-                    lambda x: jnp.take(x, permutation, axis=0), batch
-                )
-                minibatches = jax.tree_util.tree_map(
-                    lambda x: jnp.reshape(
-                        x, [config["NUM_MINIBATCHES"], -1] + list(x.shape[1:])
-                    ),
-                    shuffled_batch,
-                )
-                train_state, total_loss = jax.lax.scan(
-                    _update_minbatch, train_state, minibatches
-                )
+
+                with jax.named_scope("shuffle_minibatches"):
+                    permutation = jax.random.permutation(_rng, batch_size)
+                    batch = (traj_batch, advantages, targets)
+                    batch = jax.tree_util.tree_map(
+                        lambda x: x.reshape((batch_size,) + x.shape[2:]), batch
+                    )
+                    shuffled_batch = jax.tree_util.tree_map(
+                        lambda x: jnp.take(x, permutation, axis=0), batch
+                    )
+                    minibatches = jax.tree_util.tree_map(
+                        lambda x: jnp.reshape(
+                            x, [config["NUM_MINIBATCHES"], -1] + list(x.shape[1:])
+                        ),
+                        shuffled_batch,
+                    )
+
+                with jax.named_scope("minibatch_updates"):
+                    train_state, total_loss = jax.lax.scan(
+                        _update_minbatch, train_state, minibatches
+                    )
+
                 update_state = (train_state, traj_batch, advantages, targets, rng)
                 return update_state, total_loss
 
-            update_state = (train_state, traj_batch, advantages, targets, rng)
-            update_state, loss_info = jax.lax.scan(
-                _update_epoch, update_state, None, config["UPDATE_EPOCHS"]
-            )
+            with jax.named_scope("update_epochs"):
+                update_state = (train_state, traj_batch, advantages, targets, rng)
+                update_state, loss_info = jax.lax.scan(
+                    _update_epoch, update_state, None, config["UPDATE_EPOCHS"]
+                )
+
             train_state = update_state[0]
             metric = traj_batch.info
             rng = update_state[-1]
@@ -285,14 +299,23 @@ def make_train(config):
                 step_timer.log(loss=loss)
                 step_timer.log(memory_peak=fetch_memory_peak(), units="MiB")
                 step_timer.end()
-                
-            jax.debug.callback(callback, metrics)
 
-            runner_state = (train_state, env_state, last_obs, rng)
+            def _do_callback(_metrics):
+                jax.debug.callback(callback, _metrics)
+                return jnp.int32(0)
+
+            jax.lax.cond(
+                n_updates % 10 == 0,
+                _do_callback,
+                lambda _: jnp.int32(0),
+                metrics,
+            )
+
+            runner_state = (train_state, env_state, last_obs, rng, n_updates + 1)
             return runner_state, metric
 
         rng, _rng = jax.random.split(rng)
-        runner_state = (train_state, env_state, obsv, _rng)
+        runner_state = (train_state, env_state, obsv, _rng, jnp.int32(0))
         runner_state, metric = jax.lax.scan(
             _update_step, runner_state, None, config["NUM_UPDATES"]
         )
@@ -320,11 +343,19 @@ class Arguments:
     env_name: str = "hopper"
     anneal_lr: bool = False
     normalize_env: bool = True
+    dtype: str = "fp32"
 
 
 def add_ppo_command(subparser):
     parser = subparser.add_parser('ppo', help='RL dqn benchmark')
     parser.add_arguments(Arguments)
+
+
+_DTYPE_MAP = {
+    "fp32": jnp.float32,
+    "fp16": jnp.float16,
+    "bf16": jnp.bfloat16,
+}
 
 
 def main(args: Arguments = None):
@@ -348,15 +379,18 @@ def main(args: Arguments = None):
         "ENV_NAME": args.env_name,
         "ANNEAL_LR": args.anneal_lr,
         "NORMALIZE_ENV": args.normalize_env,
+        "DTYPE": _DTYPE_MAP[args.dtype],
     }
     rng = jax.random.PRNGKey(30)
     train_jit = jax.jit(make_train(config))
     compiled_fn = train_jit.lower(rng).compile()
 
     from benchmate.monitor import bench_monitor
+    from benchmate.profiler import jax_profiler
 
     with bench_monitor():
-        out = compiled_fn(rng)
+        with jax_profiler():
+            out = compiled_fn(rng)
 
 
 if __name__ == "__main__":

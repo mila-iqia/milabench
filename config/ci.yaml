@@ -1,86 +1,223 @@
 include:
-  - standard.yaml
+  - all.yaml
+
+#
+# CI overrides: minimum runtime while still exercising each benchmark.
+#
+# - voir stop reduced to 5 iterations (just enough to confirm it runs)
+# - max_duration capped to 300s
+# - epochs / steps / repeats reduced to minimum
+# - inference prompts reduced
+# - multinode benchmarks can be excluded via CI workflow_dispatch exclude_tags
+#
 
 _defaults:
+  max_duration: 300
   voir:
     options:
       skip: 1
-      stop: 10
+      stop: 5
+      interval: "1s"
 
-efficientnet_b4:
-  argv:
-    --batch-size: 32
+# ---- torchvision ----
 
-efficientnet_b7:
+_torchvision:
   argv:
-    --batch-size: 32
+    --epochs: 2
+
+_torchvision_ddp:
+  argv:
+    --epochs: 2
+
+resnet50:
+  voir:
+    options:
+      stop: 5
+
+resnet50-noio:
+  voir:
+    options:
+      stop: 5
+
+resnet152-ddp-gpus:
+  voir:
+    options:
+      stop: 5
 
 _convnext_large-base:
-  argv:
-    --batch-size: 16
+  voir:
+    options:
+      stop: 5
 
-regnet_y_128gf:
+# ---- flops ----
+
+_flops:
   argv:
-    --batch-size: 4
+    --number: 5
+    --repeat: 10
+
+# ---- huggingface ----
 
 _bert-base:
-  argv:
-    --batch-size: 8
+  voir:
+    options:
+      stop: 5
 
-t5:
-  argv:
-    --batch-size: 2
-
-reformer:
-  argv:
-    --batch-size: 16
-
-whisper:
-  argv:
-    --batch-size: 16
-
-resnet152:
-  argv:
-    --batch-size: 32
-
-vit_l_32:
-  argv:
-    --batch-size: 32
-
-davit_large:
-  argv:
-    --batch-size: 32
-
-opt-1_3b:
-  enabled: false
-
-opt-1_3b-multinode:
-  enabled: false
-
-opt-6_7b:
-  argv:
-    --model_name: "facebook/bart-base"
-
-opt-6_7b-multinode:
-  enabled: false
+# ---- timm ----
 
 focalnet:
-  argv:
-    --batch-size: 8
+  voir:
+    options:
+      stop: 5
 
-stargan:
-  argv:
-    --batch_size: 2
+# ---- diffusion ----
 
-super-slomo:
+_diffusion:
   argv:
-    --train_batch_size: 8
+    --num_epochs: 1
 
-dlrm:
+# ---- lightning ----
+
+_lightning:
   argv:
-    --mini-batch-size: 2048
+    --epochs: 2
 
-  # This bench does not use a lot of GPUs
-  validation:
-    usage:
-      gpu_load_threshold: 0
+# ---- dinov2 ----
+
+_dinov2:
+  voir:
+    options:
+      stop: 5
+
+# ---- llm ----
+
+_llm:
+  max_duration: 600
+  voir:
+    options:
+      stop: 5
+
+llm-lora-single:
+  argv:
+    gradient_accumulation_steps=1: true
+
+llm-lora-ddp-gpus:
+  argv:
+    gradient_accumulation_steps=1: true
+
+llm-lora-mp-gpus:
+  argv:
+    gradient_accumulation_steps=1: true
+
+llm-full-mp-gpus:
+  argv:
+    gradient_accumulation_steps=1: true
+
+# ---- purejaxrl ----
+
+dqn:
+  argv:
+    --buffer_size: 8192
+    --buffer_batch_size: 4096
+
+ppo:
+  argv:
+    --total_timesteps: 100000
+
+# ---- geo_gnn ----
+
+pna:
+  argv:
+    --num-samples: 1000
+
+dimenet:
+  argv:
+    --num-samples: 1000
+
+# ---- recursiongfn ----
+
+recursiongfn:
+  argv:
+    --num_steps: 10
+
+# ---- llava ----
+
+_llava:
+  max_duration: 300
+
+# ---- rlhf ----
+
+_rlhf:
+  voir:
+    options:
+      stop: 5
+
+# ---- vjepa ----
+
+_vjepa:
+  voir:
+    options:
+      stop: 5
+
+# ---- llama (inference) ----
+
+llama:
+  max_duration: 300
+  voir:
+    options:
+      stop: 5
+
+# ---- vllm ----
+
+vllm-dense-physics-gpus:
+  client:
+    argv:
+      --num-prompts: 50
+
+vllm-moe-code-gpus:
+  client:
+    argv:
+      --num-prompts: 50
+
+# ---- inference pipelines ----
+
+whisper-transcribe-single:
+  voir:
+    options:
+      stop: 5
+
+txt-to-image-single:
+  voir:
+    options:
+      stop: 5
+  argv:
+    --batch_size: "auto_batch(1)"
+
+llm-chat-completion:
+  voir:
+    options:
+      stop: 5
+
+# ---- multinode ----
+
+diffusion-nodes:
+  enabled: true
+
+llm-lora-ddp-nodes:
+  enabled: true
+
+llm-full-mp-nodes:
+  enabled: false
+
+dinov2-giant-nodes:
+  #
+  # dinov2 uses voir which is not compatible with multi node running
+  # dinov2 also overide a lot of things using voir so we need to modify it
+  #
+  enabled: false
+
+# ---- cleanrljax (already disabled in standard) ----
+
+cleanrljax:
+  argv:
+    --total_timesteps: 100000

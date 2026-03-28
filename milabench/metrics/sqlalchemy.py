@@ -416,7 +416,7 @@ def _get_pack_ids(pack):
 
 
 class SQLAlchemy:
-    def __init__(self, uri="sqlite:///sqlite.db", meta_override=None, visibility=0) -> None:
+    def __init__(self, uri="sqlite:///sqlite.db", meta_override=None, meta_tags=None, visibility=0) -> None:
         if uri.startswith("sqlite"):
             create_database(uri)
 
@@ -430,6 +430,7 @@ class SQLAlchemy:
         )
 
         self.meta_override = meta_override
+        self.meta_tags = meta_tags or {}
         self.session = sessionmaker(bind=self.engine)
         self.meta = None
         self.run = None
@@ -512,11 +513,14 @@ class SQLAlchemy:
             method(entry)
 
     def on_new_run(self, entry):
+        metadata = self.meta_override or entry.data
+        metadata.update(self.meta_tags)
+
         self.run = Exec(
             name=entry.pack.config["run_name"],
             namespace=None,
             created_time=datetime.utcnow(),
-            meta=self.meta_override or entry.data,
+            meta=metadata,
             status="running",
             visibility=self.visibility
         )

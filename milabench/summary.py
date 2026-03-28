@@ -165,6 +165,25 @@ def _classify(all_aggregates):
     return classified
 
 
+def _filter_failures(classified):
+    """Per benchmark, drop aggregates that failed."""
+    filtered = {}
+    for name, aggs in classified.items():
+        successful = [a for a in aggs if all(a["data"]["success"])]
+        if successful:
+            filtered[name] = successful
+    return filtered
+
+
+def _keep_latest(classified):
+    """Per benchmark, keep only the aggregate with the most recent start time."""
+    filtered = {}
+    for name, aggs in classified.items():
+        if aggs:
+            filtered[name] = [max(aggs, key=lambda a: a["start"]["time"])]
+    return filtered
+
+
 def _merge(aggs):
     """Merge same bench data into a single list of observations"""
 
@@ -320,7 +339,7 @@ def _summarize(group, query=tuple([])) -> Summary:
     }
 
 
-def make_summary(runs, query=tuple([])) -> dict[str, Summary]:
+def make_summary(runs, query=tuple([]), filter_failures=False, latest_only=False) -> dict[str, Summary]:
     aggs = []
     for name, run in runs.items():
         try:
@@ -334,6 +353,13 @@ def make_summary(runs, query=tuple([])) -> dict[str, Summary]:
             syslog("Ignoring run {0}: beause of exception: {1}", name, err)
 
     classified = _classify(aggs)
+
+    if filter_failures:
+        classified = _filter_failures(classified)
+
+    if latest_only:
+        classified = _keep_latest(classified)
+
     merged = {name: _merge(runs) for name, runs in classified.items()}
     summarized = {name: _summarize(agg, query) for name, agg in merged.items()}
     return summarized

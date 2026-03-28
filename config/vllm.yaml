@@ -1,6 +1,6 @@
 include:
   - inference.yaml
-  - standard.yaml
+  - training.yaml
 
 _defaults:
   enabled: true
@@ -25,7 +25,7 @@ vllm-moe-code-gpus:
 whisper-transcribe-single:
   enabled: true
 
-txt-to-image-gpus:
+txt-to-image-single:
   enabled: true
 
 llm-chat-completion:
@@ -34,7 +34,7 @@ llm-chat-completion:
 vllm-sweep-dense:
   matrix:
     # effective_max_context_per_sequence ≤ max_num_batched_tokens / max_num_seqs
-    concurrency: [8, 64, 512]
+    concurrency: [8, 64, 512, 1024, 2048, 4096]
 
   job:
     name: 'vllm-sweep-dense-conc{concurrency}'
@@ -75,7 +75,7 @@ vllm-sweep-moe:
   matrix:
     # effective_max_context_per_sequence ≤ max_num_batched_tokens / max_num_seqs
 
-    concurrency: [8, 64, 512]
+    concurrency: [8, 64, 512, 1024, 2048, 4096]
 
     # max-num-batched-tokens: 8192: is fixed in InferenceMax
     # max-num-batched-tokens ≥ max-model-len × max-num-seqs
@@ -85,7 +85,7 @@ vllm-sweep-moe:
     max_context: [10240]       # [16384, 32768]
 
   job:
-    name: 'vllm-sweep-conc{concurrency}-mxbt{max_batched_token}-moe'
+    name: 'vllm-sweep-moe-conc{concurrency}'
     inherits: _vllm
     enabled: true
     max_duration: 3600

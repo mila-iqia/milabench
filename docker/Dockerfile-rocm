@@ -5,11 +5,15 @@ FROM rocm/dev-ubuntu-24.04:6.4.3
 # ---------
 
 ARG ARCH=rocm
-ENV MILABENCH_GPU_ARCH=$ARCH
-
 ARG CONFIG=all.yaml
+ARG SELECT=""
+ARG VARIANT=""
+
+ENV MILABENCH_GPU_ARCH=$ARCH
 ENV MILABENCH_CONFIG_NAME=$CONFIG
 ENV MILABENCH_DOCKER=1
+ENV MILABENCH_SELECT=$SELECT
+ENV MILABENCH_VARIANT=$VARIANT
 
 
 # Paths
@@ -41,7 +45,7 @@ RUN apt-get update            &&\
     apt-get install -y rocthrust hipsparse &&\
     apt-get clean &&\
     rm -rf /var/lib/apt/lists/*
-    
+
 
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
@@ -65,7 +69,7 @@ RUN RUN curl -LsSf https://astral.sh/uv/install.sh | sh                 &&\
 # pip times out often when downloading pytorch
 ENV PIP_DEFAULT_TIMEOUT=800
 ENV ROCM_HOME="/opt/rocm"
-RUN $MILAENCH_ENV/bin/milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
+RUN $MILAENCH_ENV/bin/milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE ${MILABENCH_SELECT:+--select $MILABENCH_SELECT} ${MILABENCH_VARIANT:+--variant $MILABENCH_VARIANT} $MILABENCH_ARGS &&\
     python -m pip cache purge
 
 CMD ["milabench", "run"]

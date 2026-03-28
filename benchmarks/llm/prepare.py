@@ -16,6 +16,7 @@ import torch.distributed
 from torchtune._cli.tune import TuneCLIParser
 from transformers import LlamaConfig, LlamaForCausalLM
 
+
 from benchmate.ux import long_action
 
 
@@ -81,43 +82,16 @@ def generate_model(
 
 def load_dataset(recipe, cfg):
     import sys
-    import os
     from torchtune import config
+    from omegaconf import ListConfig
     sys.path.append(os.path.join(os.path.dirname(__file__), "bench"))
 
-    os.environ["MILABENCH_PREPARE"] = "1"
-    os.environ["RANK"] = "0"
-    os.environ["WORLD_SIZE"] = "1"
-
-    if recipe.endswith("full_finetune_distributed.py"):
-        from full_finetune_distributed import FullFinetuneRecipeDistributed as Recipe
-
-    if recipe.endswith("lora_finetune_distributed.py"):
-        from lora_finetune_distributed import LoRAFinetuneRecipeDistributed as Recipe
-        
-    if recipe.endswith("lora_finetune_single_device.py"):
-        from lora_finetune_single_device import LoRAFinetuneRecipeSingleDevice as Recipe
-
     with long_action("Still working", 30):
-        cfg.dtype = "fp32"
-        cfg.enable_activation_offloading = False
-        recipe = Recipe(cfg=cfg)
+        tokenizer = config.instantiate(cfg.tokenizer)
 
-        # recipe.setup(cfg=cfg)
-        setattr(recipe, "dp_size", 1)
-        setattr(recipe, "dp_rank", 0)
-
-        # This is slow AF though
-        recipe._tokenizer = config.instantiate(cfg.tokenizer)
-        recipe._loss_fn = config.instantiate(cfg.loss)
-
-        collate_name = cfg.get("collate_fn", "torchtune.data.padded_collate_sft")
-        recipe._setup_data(
-            cfg_dataset=cfg.dataset,
-            shuffle=cfg.shuffle,
-            batch_size=cfg.batch_size,
-            collate_fn=collate_name,
-        )
+        datasets = cfg.dataset if isinstance(cfg.dataset, ListConfig) else [cfg.dataset]
+        for single_cfg_dataset in datasets:
+            config.instantiate(single_cfg_dataset, tokenizer)
 
 
 def generate_weights(args, config):

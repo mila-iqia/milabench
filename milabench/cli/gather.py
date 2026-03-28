@@ -378,6 +378,8 @@ def power_over_time(df):
 
 
 if __name__ == "__main__":
+    gather_multi_run_cli()
+    
     # gather_matrix_cli()
     # gather_cli()
 

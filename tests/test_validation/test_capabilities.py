@@ -1,6 +1,6 @@
 from omegaconf import OmegaConf
 
-from milabench.capability import sync_is_system_capable
+
 from milabench.pack import BasePackage
 
 
@@ -22,6 +22,7 @@ def fake_config(n):
 
 # This does not work anymore ?
 # def test_capabilties_ok():
+#     from milabench.capability import sync_is_system_capable
 #     pack = BasePackage(fake_config(10))
 #     assert sync_is_system_capable(pack) is True
 

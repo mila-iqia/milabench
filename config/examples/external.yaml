@@ -1,0 +1,34 @@
+
+
+
+_external:
+  inherits: _defaults
+
+  definition: 
+    git: https://github.com/milabench/flops
+    branch: main
+
+  group: flops
+  install_group: torch
+  plan:
+    method: per_gpu
+  
+  tags:
+    - diagnostic
+    - flops
+    - monogpu
+    - nobatch
+  
+  argv:
+    --number: 10
+    --repeat: 90
+
+external:
+  inherits: _external
+
+  argv:
+    --number: 30
+    --repeat: 90
+    --m: 8192
+    --n: 8192
+    --dtype: fp8
