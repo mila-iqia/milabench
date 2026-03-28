@@ -8,7 +8,8 @@ import os
 
 import numpy as np
 import torchcompat.core as accelerator
-from vllm.benchmarks.serve import SampleRequest, RequestFuncOutput, PreTrainedTokenizerBase, BenchmarkMetrics, MILLISECONDS_TO_SECONDS_CONVERSION
+from vllm.benchmarks.serve import SampleRequest, RequestFuncOutput, BenchmarkMetrics, MILLISECONDS_TO_SECONDS_CONVERSION
+from transformers import PreTrainedTokenizerBase
 import vllm.benchmarks.datasets as datasets
 from benchmate.timeline import timeline
 

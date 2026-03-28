@@ -21,14 +21,16 @@ from benchmate.metrics import give_push
 
 class QNetwork(nn.Module):
     action_dim: int
+    dtype: jnp.dtype = jnp.float32
 
     @nn.compact
     def __call__(self, x: jnp.ndarray):
-        x = nn.Dense(120)(x)
+        x = x.astype(self.dtype)
+        x = nn.Dense(120, dtype=self.dtype)(x)
         x = nn.relu(x)
-        x = nn.Dense(84)(x)
+        x = nn.Dense(84, dtype=self.dtype)(x)
         x = nn.relu(x)
-        x = nn.Dense(self.action_dim)(x)
+        x = nn.Dense(self.action_dim, dtype=self.dtype)(x)
         return x
 
 
@@ -93,7 +95,7 @@ def make_train(config):
         buffer_state = buffer.init(_timestep)
 
         # INIT NETWORK AND OPTIMIZER
-        network = QNetwork(action_dim=env.action_space(env_params).n)
+        network = QNetwork(action_dim=env.action_space(env_params).n, dtype=config["DTYPE"])
         rng, _rng = jax.random.split(rng)
         init_x = jnp.zeros(env.observation_space(env_params).shape)
         network_params = network.init(_rng, init_x)
@@ -145,40 +147,44 @@ def make_train(config):
             train_state, buffer_state, env_state, last_obs, rng = runner_state
 
             # STEP THE ENV
-            rng, rng_a, rng_s = jax.random.split(rng, 3)
-            q_vals = network.apply(train_state.params, last_obs)
-            action = eps_greedy_exploration(
-                rng_a, q_vals, train_state.timesteps
-            )  # explore with epsilon greedy_exploration
-            obs, env_state, reward, done, info = vmap_step(config["NUM_ENVS"])(
-                rng_s, env_state, action
-            )
-            train_state = train_state.replace(
-                timesteps=train_state.timesteps + config["NUM_ENVS"]
-            )  # update timesteps count
+            with jax.named_scope("env_step"):
+                rng, rng_a, rng_s = jax.random.split(rng, 3)
+                q_vals = network.apply(train_state.params, last_obs)
+                action = eps_greedy_exploration(
+                    rng_a, q_vals, train_state.timesteps
+                )
+                obs, env_state, reward, done, info = vmap_step(config["NUM_ENVS"])(
+                    rng_s, env_state, action
+                )
+                train_state = train_state.replace(
+                    timesteps=train_state.timesteps + config["NUM_ENVS"]
+                )
 
             # BUFFER UPDATE
-            timestep = TimeStep(obs=last_obs, action=action, reward=reward, done=done)
-            buffer_state = buffer.add(buffer_state, timestep)
+            with jax.named_scope("buffer_update"):
+                timestep = TimeStep(obs=last_obs, action=action, reward=reward, done=done)
+                buffer_state = buffer.add(buffer_state, timestep)
 
             # NETWORKS UPDATE
             def _learn_phase(train_state, rng):
 
-                learn_batch = buffer.sample(buffer_state, rng).experience
+                with jax.named_scope("buffer_sample"):
+                    learn_batch = buffer.sample(buffer_state, rng).experience
 
-                q_next_target = network.apply(
-                    train_state.target_network_params, learn_batch.second.obs
-                )  # (batch_size, num_actions)
-                q_next_target = jnp.max(q_next_target, axis=-1)  # (batch_size,)
-                target = (
-                    learn_batch.first.reward
-                    + (1 - learn_batch.first.done) * config["GAMMA"] * q_next_target
-                )
+                with jax.named_scope("target_q"):
+                    q_next_target = network.apply(
+                        train_state.target_network_params, learn_batch.second.obs
+                    )
+                    q_next_target = jnp.max(q_next_target, axis=-1)
+                    target = (
+                        learn_batch.first.reward
+                        + (1 - learn_batch.first.done) * config["GAMMA"] * q_next_target
+                    )
 
                 def _loss_fn(params):
                     q_vals = network.apply(
                         params, learn_batch.first.obs
-                    )  # (batch_size, num_actions)
+                    )
                     chosen_action_qvals = jnp.take_along_axis(
                         q_vals,
                         jnp.expand_dims(learn_batch.first.action, axis=-1),
@@ -186,42 +192,47 @@ def make_train(config):
                     ).squeeze(axis=-1)
                     return jnp.mean((chosen_action_qvals - target) ** 2)
 
-                loss, grads = jax.value_and_grad(_loss_fn)(train_state.params)
-                train_state = train_state.apply_gradients(grads=grads)
-                train_state = train_state.replace(n_updates=train_state.n_updates + 1)
+                with jax.named_scope("loss_and_grad"):
+                    loss, grads = jax.value_and_grad(_loss_fn)(train_state.params)
+
+                with jax.named_scope("param_update"):
+                    train_state = train_state.apply_gradients(grads=grads)
+                    train_state = train_state.replace(n_updates=train_state.n_updates + 1)
+
                 return train_state, loss
 
             rng, _rng = jax.random.split(rng)
             is_learn_time = (
                 (buffer.can_sample(buffer_state))
-                & (  # enough experience in buffer
+                & (
                     train_state.timesteps > config["LEARNING_STARTS"]
                 )
-                & (  # pure exploration phase ended
+                & (
                     train_state.timesteps % config["TRAINING_INTERVAL"] == 0
-                )  # training interval
+                )
             )
-            train_state, loss = jax.lax.cond(
-                is_learn_time,
-                lambda train_state, rng: _learn_phase(train_state, rng),
-                lambda train_state, rng: (train_state, jnp.array(0.0)),  # do nothing
-                train_state,
-                _rng,
-            )
+            with jax.named_scope("learn_phase"):
+                train_state, loss = jax.lax.cond(
+                    is_learn_time,
+                    lambda train_state, rng: _learn_phase(train_state, rng),
+                    lambda train_state, rng: (train_state, jnp.array(0.0)),
+                    train_state,
+                    _rng,
+                )
 
-            # update target network
-            train_state = jax.lax.cond(
-                train_state.timesteps % config["TARGET_UPDATE_INTERVAL"] == 0,
-                lambda train_state: train_state.replace(
-                    target_network_params=optax.incremental_update(
-                        train_state.params,
-                        train_state.target_network_params,
-                        config["TAU"],
-                    )
-                ),
-                lambda train_state: train_state,
-                operand=train_state,
-            )
+            with jax.named_scope("target_network_update"):
+                train_state = jax.lax.cond(
+                    train_state.timesteps % config["TARGET_UPDATE_INTERVAL"] == 0,
+                    lambda train_state: train_state.replace(
+                        target_network_params=optax.incremental_update(
+                            train_state.params,
+                            train_state.target_network_params,
+                            config["TAU"],
+                        )
+                    ),
+                    lambda train_state: train_state,
+                    operand=train_state,
+                )
 
             metrics = {
                 "timesteps": train_state.timesteps,
@@ -231,19 +242,26 @@ def make_train(config):
             }
 
             def callback(metrics):
-                # .block_until_ready()
-                if (metrics["timesteps"] + 1) % 1000:
-                    returns = metrics["returns"].item()
-                    loss = metrics["loss"].block_until_ready().item()
-                    delta = metrics["timesteps"] - step_timer.timesteps
-                    step_timer.timestep = metrics["timesteps"]
-                    
-                    step_timer.step(delta.item())
-                    step_timer.log(returns=returns, loss=loss)
-                    step_timer.log(memory_peak=fetch_memory_peak(), units="MiB")
-                    step_timer.end()
+                returns = metrics["returns"].item()
+                loss = metrics["loss"].block_until_ready().item()
+                delta = metrics["timesteps"] - step_timer.timesteps
+                step_timer.timesteps = metrics["timesteps"]
+                
+                step_timer.step(delta.item())
+                step_timer.log(returns=returns, loss=loss)
+                step_timer.log(memory_peak=fetch_memory_peak(), units="MiB")
+                step_timer.end()
 
-            jax.debug.callback(callback, metrics)
+            def _do_callback(_metrics):
+                jax.debug.callback(callback, _metrics)
+                return jnp.int32(0)
+
+            jax.lax.cond(
+                metrics["timesteps"] % 1000 == 0,
+                _do_callback,
+                lambda _: jnp.int32(0),
+                metrics,
+            )
 
             runner_state = (train_state, buffer_state, env_state, obs, rng)
 
@@ -318,12 +336,20 @@ class Arguments:
     seed: int = 0
     num_seeds: int = 1
     project: str = ""
+    dtype: str = "fp32"
 
 
 def add_dqn_command(subparser):
     parser = subparser.add_parser('dqn', help='RL dqn benchmark')
     parser.add_arguments(Arguments)
 
+
+
+_DTYPE_MAP = {
+    "fp32": jnp.float32,
+    "fp16": jnp.float16,
+    "bf16": jnp.bfloat16,
+}
 
 
 def main(args: Arguments = None):
@@ -349,6 +375,7 @@ def main(args: Arguments = None):
         "SEED": args.seed,
         "NUM_SEEDS": args.num_seeds,
         "PROJECT": args.project,
+        "DTYPE": _DTYPE_MAP[args.dtype],
     }
 
     rng = jax.random.PRNGKey(config["SEED"])
@@ -357,8 +384,10 @@ def main(args: Arguments = None):
     compiled_fn = train_vjit.lower(rngs).compile()
 
     from benchmate.monitor import bench_monitor
+    from benchmate.profiler import jax_profiler
     with bench_monitor():
-        outs = jax.block_until_ready(compiled_fn(rngs))
+        with jax_profiler():
+            outs = jax.block_until_ready(compiled_fn(rngs))
 
 
 if __name__ == "__main__":

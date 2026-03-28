@@ -6,14 +6,15 @@ The MetricExtractor generate a flat structure so we can directly process the res
 import multiprocessing as mp
 import queue
 import traceback
+from datetime import datetime
 import json
 import re
 from collections import defaultdict
 import glob
 from pathlib import Path
 import threading
-
-from hrepr.j import dataclass
+import hashlib
+from dataclasses import dataclass
 
 _bench_tags = [
     "concurrency=conc([0-9]+)",
@@ -112,8 +113,8 @@ class Worker:
         pass
 
 
-def worker_fn(i, cls, worker_pack, *args):
-    worker = cls(worker_pack, *args)
+def worker_fn(i, cls, worker_pack, args, kwargs):
+    worker = cls(worker_pack, *args, **kwargs)
     worker.run()
 
 
@@ -146,7 +147,7 @@ def nice_cpu_count():
 
 class DataProcessor:
     """We need to process per group of bench, processing everything in parallel takes too much memory"""
-    def __init__(self, worker_cls, *args, worker_count=nice_cpu_count(), backend=Multiprocessing):
+    def __init__(self, worker_cls, *args, worker_count=nice_cpu_count(), backend=Multiprocessing, **kwargs):
         self.work_queue = backend.Queue(maxsize=0)
         self.result_queue = backend.Queue()
         self.error_queue = backend.Queue()
@@ -159,7 +160,7 @@ class DataProcessor:
         self.retrieved = 0
 
         worker_pack = self.work_queue, self.result_queue, self.error_queue, self.active, self.jobs, self.done, self.results
-        args = (worker_cls, worker_pack, *args)
+        args = (worker_cls, worker_pack, args, kwargs)
         self.workers = [backend.Worker(target=worker_fn, args=(i,) + args) for i in range(worker_count)]
     
         for w in self.workers:
@@ -291,8 +292,15 @@ def insert_path(job_meta, name, entry):
 def extract_meta_from_run_folder(entry, meta):
     """Keep the folder path to the data file as it might be information"""
     run_meta = dict(extract_tags(entry.name, run_tags))
-    job_meta = {**meta, **run_meta}
+
+    match = re.search(r'(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})', entry.name)
+    if match:
+        run_meta["date"] = datetime.strptime(match.group(1), "%Y-%m-%d_%H-%M-%S")
+
+    job_meta = {**meta, **run_meta} 
+
     insert_path(job_meta, "p", entry)
+
     return job_meta
 
 
@@ -310,14 +318,16 @@ def readfolder(worker, entry, meta):
 
 
 DEFAULT_IGNORED = tuple(["$queued", "progress.0", "progress.1", "progress"])
+ACCEPT_FILE = lambda file, meta: True
+
 
 
 class EventProcessor(Worker):
     """Base milabench event processor"""
-    def __init__(self, worker_pack, *args, accept_pattern=tuple(), ignored=DEFAULT_IGNORED, **kwargs):
+    def __init__(self, worker_pack, *args, accept_file=ACCEPT_FILE, ignored=DEFAULT_IGNORED, **kwargs):
         super().__init__(worker_pack)
         self.ignored = ignored
-        self.pattern = accept_pattern
+        self.accept_file = accept_file
 
     def __call__(self, task):
         match task["action"]:
@@ -335,13 +345,15 @@ class EventProcessor(Worker):
 
     def readfile(self, file, meta):
         """Read data files produced by milabench and process them line by line"""
-        if file.endswith(".data"):
+        if file.endswith(".data") and self.accept_file(file, meta):
             with open(file, "r") as fp:
 
-                # Build a shared metadata, that events can modify
-                file_meta = {**meta}
+                run_id = hashlib.sha256(file.encode()).hexdigest()[:8]
 
-                self.file_start(self, file)
+                # Build a shared metadata, that events can modify
+                file_meta = {"run_id": run_id, **meta}
+
+                self.file_start(file)
 
                 for line in fp.readlines():
                     metric_line = json.loads(line)
@@ -456,8 +468,8 @@ class EventTracking:
 
 
 class MetricExtractor(EventProcessor):
-    def __init__(self, worker_pack, *args, accept_pattern=tuple(), ignored=DEFAULT_IGNORED, **kwargs):
-        super().__init__(worker_pack, accept_pattern=accept_pattern, ignored=ignored)
+    def __init__(self, worker_pack, *args, accept_file=ACCEPT_FILE, ignored=DEFAULT_IGNORED, **kwargs):
+        super().__init__(worker_pack, accept_file=accept_file, ignored=ignored)
 
         self.should_simplify_gpudata = True
         self.start_event = {}
@@ -486,7 +498,7 @@ class MetricExtractor(EventProcessor):
             tracking.rc_code = data["return_code"]
             self.push_result({**meta, "metric": "success", "value": int(tracking.success()), "time": end_time})
 
-            self.push_result({**meta, "metric": "ngpu", "value": int(tracking.ngpu), "time": end_time})
+            self.push_result({**meta, "metric": "ngpu", "value": int(tracking.gpu_count), "time": end_time})
 
     def stop(self, event, meta):
         key = MetricExtractor.makekey(meta)
@@ -619,8 +631,8 @@ class LogExtractor(EventProcessor):
 
 
 class BenchmarkStatusExtractor(EventProcessor):
-    def __init__(self, worker_pack, *args, accept_pattern=tuple(), ignored=DEFAULT_IGNORED, **kwargs):
-        super().__init__(worker_pack, *args, accept_pattern=accept_pattern, ignored=ignored, **kwargs)
+    def __init__(self, worker_pack, *args, accept_file=ACCEPT_FILE, ignored=DEFAULT_IGNORED, **kwargs):
+        super().__init__(worker_pack, *args, accept_file=accept_file, ignored=ignored, **kwargs)
         self.start_event = {}
 
     def file_end(self, filename):
@@ -820,25 +832,275 @@ def compute_global_score(metrics, weights, default_weight=0):
 
 if __name__ == "__main__":
 
-    p = "/home/delaunao/workspace/benchdevenv/projects/hypertec/sxm_runs/"
-    p = "/home/delaunao/workspace/benchdevenv/projects/hypertec/sxm_runs/p600.o500.2025-12-26_07-20-23"
-    # p = "/home/delaunao/workspace/benchdevenv/projects/hypertec/sxm_runs/p600.o*"
-    # p = "/home/delaunao/workspace/benchdevenv/projects/hypertec/sxm_runs/p600.o500.2025-12-26_07-20-23/convnext_large-tf32-fp16.D0.data"
-    # p = "/home/delaunao/workspace/benchdevenv/projects/hypertec/nvl_runs/g1440.o350.2025-12-26_09-59-43/convnext_large-fp32.D*"
-    p = "/home/delaunap/work/milabench_dev/data/A100_mn_run_2b90373c/runs/fafuvegu.2025-10-16_01:37:14.739584"
+    # 
+    selected = (
+        # "vllm-dense-physics-gpus",
+        "vllm-moe-code-gpus",
+        # "whisper-transcribe-single",
+        # "txt-to-image-gpus",
+        # "llm-chat-completion",
 
-    from collections import defaultdict
+       # "vllm-sweep-conc512-mxbt4096-moe",
+        # "vllm-sweep-conc64-mxbt4096-moe",
+        # "vllm-sweep-conc64-mxbt4096-moe",
 
-    metrics = defaultdict(int)
-    total = 0
+       # "vllm-sweep-dense-conc512",
+        # "vllm-sweep-dense-conc64",
+        # "vllm-sweep-dense-conc8",
+        # "llm-lora-mp-gpus",
 
-    with DataProcessor(LogExtractor, backend=Threading) as proc:
-        for i, item in enumerate(proc(p)):
-            # metrics[item["metric"]] += 1
-            total += 1
-            print(item)
+        # "fp8",
+        # "bf16",
+
+        # "bert-tf32-fp16",
+        # "diffusion-gpus",
+        # "resnet152-ddp-gpus"
+        # "llm-lora-ddp-gpus",
+
+        # "llm-lora-mp-gpus",
+    )
+
+    # selected = ("fp8",) # "fp8")
+
+    powers = ('700', '600', '480', '420', '360', '300')
+    p1s = ('nvl', 'wvl')
+    clocks = ('1980', '1785')
+    obss = ("350",)
+    
+    def accept_file(file, meta):
+        
+        bench = meta["bench"]
+        p1 = meta["p1"]
+        power = meta.get("power")
+        clock = meta.get("clock", "1785")
+        obs = meta.get("observation")
+
+        r = (
+            bench in selected and 
+            power in powers and 
+            p1 in p1s and 
+            clock in clocks and 
+            obs in obss
+        )
+
+        if r:
+            print(meta)
+        
+        return r
+
+
+        if bench in selected:
+            print(meta)
+
+        return False
+        return bench in selected
+
+
+    p = "/home/delaunap/workspace/hypertech"
+
+    data = []
+    with DataProcessor(MetricExtractor, accept_file=accept_file, backend=Threading) as proc:
+        for event in proc(p):
+            if event["metric"] in ("rate", "gpudata.temperature", "gpudata.power"):
+                data.append(event)
+    
+    import pandas as pd
+
+    df = pd.DataFrame(data)
+
+    print(list(df.columns))
+    # df = df[df[metric_cols].count(axis=1) >= 10]
+
+    # DROP the run without enough observation
+    run_counts = df.groupby('run_id').size()
+    valid_runs = run_counts[run_counts >= 10].index
+    df = df[df['run_id'].isin(valid_runs)]
+
+    # Use latest run
+    latest_runs = (
+        df
+        .sort_values('date', ascending=False)
+        .drop_duplicates(subset=['bench', 'p1', 'clock', 'power', 'observation'], keep='first')
+        ['run_id']
+    )
+
+    df = df[df['run_id'].isin(latest_runs)]
+
+    df.to_csv("timeseries_raw.csv", index=False)
+
+    df["time_norm"] = df["time"] - df.groupby(["run_id", "metric"])["time"].transform("min")
+
+
+    print(df["metric"].unique())
+
+    rate_df = (
+        df[df["metric"] == "rate"]
+        .sort_values(["run_id", "time_norm"])
+        .copy()
+    )
+
+    rate_df["dvalue_dt"] = (
+        rate_df.groupby("run_id")["value"].diff() /
+        rate_df.groupby("run_id")["time_norm"].diff()
+    )
+
+    rate_df["dvalue_dt_smooth"] = (
+    rate_df.groupby("run_id")["dvalue_dt"]
+            .transform(lambda x: x.rolling(10, center=True).mean())
+    )
+
+    rate_df = rate_df[["run_id", "time_norm", "dvalue_dt_smooth"]].copy()
+    df_merged = df.merge(
+        rate_df,
+        on=["run_id", "time_norm"],
+        how="left"  # keeps all original rows, NaN if not "rate"
+    )
+
+    bin_size = 1  # 100ms
+    df["time_bin"] = (df["time_norm"] / bin_size).round() * bin_size
+    df = (
+        df
+        .groupby(["time_bin", "power", "p1", "bench", "metric", "run_id"])
+        .agg({"value": "mean"})   # or sum / max / median
+        .reset_index()
+    )
+
+    t_min, t_max = (
+        df.loc[df["metric"] == "rate", "time_bin"]
+        .agg(["min", "max"])
+    )
+
+    df = df[
+        (df["time_bin"] >= t_min) &
+        (df["time_bin"] <= t_max)
+    ]
+
+    df["p1"] = df["p1"].replace({
+        "hgx": "SXM immersion",
+        "sxm": "SXM air",
+        "wvl": "PCIe immersion",
+        "nvl": "PCIe air",
+    })
+
+    df.to_csv("timeseries.csv", index=False)
+
+    import altair as alt
+
+    def power_over_time():
+        power_over_time = df
+        power_over_time = power_over_time[power_over_time["metric"] == "gpudata.power"]
+        chart = alt.Chart(power_over_time).mark_line().encode(
+            x=alt.X("time_bin:Q", title="Time (s)"),
+            y=alt.Y("value:Q", title="Power (W)", scale=alt.Scale(zero=False)),
+            color=alt.Color("power:O", title="Power"), 
+            # strokeDash=alt.StrokeDash("p1:N", title="Machine")
+        ).properties(
+            width=500,
+            height=500
+        ).facet(
+            column=alt.Column("bench:N", title="Bench"),
+            row=alt.Row("p1:N", title="Machine")
+        ).resolve_scale(
+            x='independent',
+            y='independent'
+        )
+        chart.save("power_evol.png")
+        return chart
+
+
+    def temp_overtime():
+        temperature_over_time = df
+        temperature_over_time = temperature_over_time[temperature_over_time["metric"] == "gpudata.temperature"]
+        chart = alt.Chart(temperature_over_time).mark_line().encode(
+            x=alt.X("time_bin:Q", title="Time (s)"),
+            y=alt.Y("value:Q", title="Temperature (C)", scale=alt.Scale(zero=False)),
+            color=alt.Color("power:O", title="Power"), 
+            # strokeDash=alt.StrokeDash()
+        ).properties(
+            width=500,
+            height=500
+        ).facet(
+            column=alt.Column("bench:N", title="Bench"),
+            row=alt.Row("p1:N", title="Machine")
+        ).resolve_scale(
+            x='independent',
+            y='independent'
+        )
+        chart.save("temperature_over_time.png")
+        return chart
+
+
+    def perf_overtime():
+        perf = df
+        perf = perf[perf["metric"] == "rate"]
+
+        chart = alt.Chart(perf).mark_line().encode(
+            x=alt.X("time_bin:Q", title="Time (s)"),
+            y=alt.Y("value:Q", title="Perf (item/s)", scale=alt.Scale(zero=False)),
+            color=alt.Color("power:O", title="Power"), 
+            # strokeDash=alt.StrokeDash()
+        ).properties(
+            width=500,
+            height=500
+        ).facet(
+            column=alt.Column("bench:N", title="Bench"),
+            row=alt.Row("p1:N", title="Machine")
+        ).resolve_scale(
+            x='independent',
+            y='independent'
+        )
+
+        chart.save("pref_over_time.png")
+        return chart
+    
+    power_ot = power_over_time()
+    temp_ot = temp_overtime()
+    perf_ot = perf_overtime()
+
+    (power_ot | temp_ot | perf_ot).configure(
+            axis=alt.AxisConfig(
+                labelFontSize=16,
+                titleFontSize=18
+            ),
+            legend=alt.LegendConfig(
+                labelFontSize=16,
+                titleFontSize=18
+            )
+        ).configure_header(
+            titleFontSize=20,   # controls "Bench"
+            labelFontSize=18    # controls each facet value
+        ).save("all.png")
+
+
+    # max_per_bench = (
+    #     df[df["metric"].isin(["gpudata.power", "gpudata.temperature", "rate"])]
+    #     .groupby(["bench", "p1", "power"])["value"]
+    #     .median()
+    #     .reset_index()
+    # )
+    # print(max_per_bench)
+
+    pd.pivot()
+    
+    # p = "/home/delaunao/workspace/benchdevenv/projects/hypertec/sxm_runs/"
+    # p = "/home/delaunao/workspace/benchdevenv/projects/hypertec/sxm_runs/p600.o500.2025-12-26_07-20-23"
+    # # p = "/home/delaunao/workspace/benchdevenv/projects/hypertec/sxm_runs/p600.o*"
+    # # p = "/home/delaunao/workspace/benchdevenv/projects/hypertec/sxm_runs/p600.o500.2025-12-26_07-20-23/convnext_large-tf32-fp16.D0.data"
+    # # p = "/home/delaunao/workspace/benchdevenv/projects/hypertec/nvl_runs/g1440.o350.2025-12-26_09-59-43/convnext_large-fp32.D*"
+    # p = "/home/delaunap/work/milabench_dev/data/A100_mn_run_2b90373c/runs/fafuvegu.2025-10-16_01:37:14.739584"
+
+    # from collections import defaultdict
+
+    # metrics = defaultdict(int)
+    # total = 0
+
+    # with DataProcessor(LogExtractor, backend=Threading) as proc:
+    #     for i, item in enumerate(proc(p)):
+    #         # metrics[item["metric"]] += 1
+    #         total += 1
+    #         print(item)
 
         
-    for k, v in metrics.items():
-        print(f"{k:>30}: {v:6d}    {v/total:5.2%}") 
+    # for k, v in metrics.items():
+    #     print(f"{k:>30}: {v:6d}    {v/total:5.2%}") 
     

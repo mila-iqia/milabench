@@ -4,8 +4,11 @@
 # clone_subtree in the benchfile.py, in which case this file can simply
 # be deleted.
 
-import argklass
+import os
 
+os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "False"
+
+import argklass
 import torch  # This is a bit of a trick to make jax use torch's packaged libs
 
 from dqn import add_dqn_command, main as dqn_main

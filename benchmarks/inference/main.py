@@ -19,6 +19,7 @@ whisper_defaults_generation_args = {
     "logprob_threshold": -1.0,
     "no_speech_threshold": 0.6,
     "return_timestamps": True,
+    'language': 'en',
 }
 
 flux_default_generation_args = {
@@ -128,7 +129,7 @@ class WhisperBenchmark(InferenceBenchmark):
 
             with torch.inference_mode(), torch.autocast(device_type="cuda", dtype=torch.bfloat16):
                 features = inputs.input_features.to(device).to(torch.bfloat16)
-                generated_ids = model.generate(inputs=features)
+                generated_ids = model.generate(input_features=features)
 
             return processor.batch_decode(generated_ids, skip_special_tokens=True)
         return inference_pipe, {}

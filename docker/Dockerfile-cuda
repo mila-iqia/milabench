@@ -10,10 +10,14 @@ FROM nvidia/cuda:12.9.1-runtime-ubuntu24.04
 ARG MOFED_VERSION=5.4-3.4.0.0
 ARG CONFIG=all.yaml
 ARG ARCH=cuda
+ARG SELECT=""
+ARG VARIANT=""
 
 ENV MILABENCH_GPU_ARCH=$ARCH
 ENV MILABENCH_CONFIG_NAME=$CONFIG
 ENV MILABENCH_DOCKER=1
+ENV MILABENCH_SELECT=$SELECT
+ENV MILABENCH_VARIANT=$VARIANT
 
 
 # Paths
@@ -80,15 +84,15 @@ ENV PIP_DEFAULT_TIMEOUT=800
 # https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html#gpu-feature-list
 #
 #       7.5
-# A100: 8.0,8.6 
+# A100: 8.0,8.6
 #       8.9
 # H100: 9.0
 # B100: 10.0,10.1,12
 ENV TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6;8.9;9.0,10.0,10.1,12.1"
 
-RUN ln -s /milabench/.env/bin/milabench /usr/local/bin/milabench                                          &&\
-    $MILAENCH_ENV/bin/milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS &&\
-    $MILAENCH_ENV/bin/milabench patch --venv $MILABENCH_BASE/venv/torch                                   &&\
+RUN ln -s /milabench/.env/bin/milabench /usr/local/bin/milabench                                                                                             &&\
+    $MILAENCH_ENV/bin/milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE ${MILABENCH_SELECT:+--select $MILABENCH_SELECT} ${MILABENCH_VARIANT:+--variant $MILABENCH_VARIANT} $MILABENCH_ARGS   &&\
+    $MILAENCH_ENV/bin/milabench patch --venv $MILABENCH_BASE/venv/torch                                                                                    &&\
     python -m pip cache purge
 
 # CMD milabench run

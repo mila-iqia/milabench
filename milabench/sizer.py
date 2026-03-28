@@ -138,7 +138,7 @@ class Sizer:
         return mem, size
     
     def _scaling_v2(self, config):
-        data = config["observations"]
+        data = config.get("observations", [])
 
         data = list(sorted(data, key=lambda x: x["batch_size"]))
 
@@ -169,12 +169,15 @@ class Sizer:
 
         config = self.benchscaling(benchmark)
 
-        if config and "model" in config:
-            mem, size = self._scaling_v1(config)
+        if config:
+            if "model" in config:
+                mem, size = self._scaling_v1(config)
+            else:
+                mem, size, _ = self._scaling_v2(config)
         else:
-            mem, size, _ = self._scaling_v2(config)
+            return 1
 
-        if len(mem) == 1:
+        if len(mem) <= 1:
             syslog(f"Not enough data for {benchmark.config['name']}")
             return 1
         # This does not extrapolate

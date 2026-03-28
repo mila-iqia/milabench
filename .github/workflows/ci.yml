@@ -1,0 +1,277 @@
+name: ci
+
+on:
+  workflow_dispatch:
+    inputs:
+      config:
+        description: "Benchmark config file to use"
+        default: "ci.yaml"
+        type: string
+      exclude_tags:
+        description: "Comma-separated tags to exclude (e.g. multinode,gated)"
+        default: ""
+        type: string
+      dockerfile:
+        description: "Dockerfile to use (e.g. Dockerfile-cuda, Dockerfile-ngc)"
+        default: "Dockerfile-cuda"
+        type: choice
+        options:
+          - Dockerfile-cuda
+          - Dockerfile-ngc
+          - Dockerfile-rocm
+          - Dockerfile-hpu
+
+  push:
+    branches:
+      - main
+      - staging
+
+  pull_request:
+    branches:
+      - staging
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  MILABENCH_CONFIG: config/${{ inputs.config || 'ci.yaml' }}
+  MILABENCH_CONFIG_DOCKER: /milabench/milabench/config/${{ inputs.config || 'ci.yaml' }}
+  MILABENCH_SYSTEM: /opt/milabench/data/system.yaml
+  EXCLUDE_TAGS: ${{ inputs.exclude_tags }}
+
+concurrency:
+  group: "ci-${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
+permissions:
+  packages: write
+  contents: read
+
+jobs:
+  # ------------------------------------------------------------------
+  # 1. Parse the config and emit a JSON matrix of benchmark groups.
+  #    Each group contains benchmarks sharing the same definition
+  #    (i.e. same code/data) so they benefit from running together.
+  # ------------------------------------------------------------------
+  groups:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.groups.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install milabench
+        run: pip install .
+
+      - name: Compute benchmark groups
+        id: groups
+        run: |
+          matrix=$(python -m milabench.cli.ci \
+            --config "$MILABENCH_CONFIG" \
+            --exclude-tags "$EXCLUDE_TAGS")
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "Groups: $matrix"
+
+  # ------------------------------------------------------------------
+  # 2. For each group, build a Docker image with only that group's
+  #    benchmarks installed, then prepare and run them on GPU.
+  # ------------------------------------------------------------------
+  bench:
+    needs: groups
+    runs-on: [self-hosted]
+    name: bench/${{ matrix.group.name }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        group: ${{ fromJson(needs.groups.outputs.matrix) }}
+
+    concurrency:
+      group: "ci-${{ github.ref }}-${{ matrix.group.name }}"
+      cancel-in-progress: true
+
+    env:
+      IMAGE_TAG: milabench-ci:${{ github.sha }}
+      MILABENCH_BASE: ${{ vars.MILABENCH_BASE || '/opt/milabench/' }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Ensure host directories exist
+        run: |
+          mkdir -p "$MILABENCH_BASE/data"
+          mkdir -p "$MILABENCH_BASE/cache"
+          mkdir -p "$MILABENCH_BASE/runs/${{ github.sha }}"
+      
+      # - name: Pin Dependencies
+      #   run: |
+      #     pip install -e .
+      #     pip install torch torchvision --index-url https://download.pytorch.org/whl/cu130
+      #     UV_TORCH_BACKEND=cu130 MILABENCH_GPU_ARCH=cuda milabench pin --from-scratch --variant cuda
+
+      - name: Detect architecture and Dockerfile
+        id: arch
+        run: |
+          ARCH=$(uname -m)
+          echo "arch=$ARCH" >> "$GITHUB_OUTPUT"
+
+          DOCKERFILE="${{ inputs.dockerfile }}"
+          if [ -z "$DOCKERFILE" ]; then
+            if [ "$ARCH" = "aarch64" ]; then
+              DOCKERFILE="Dockerfile-ngc"
+            else
+              DOCKERFILE="Dockerfile-cuda"
+            fi
+          fi
+
+          echo "dockerfile=docker/$DOCKERFILE" >> "$GITHUB_OUTPUT"
+
+          if [ "$DOCKERFILE" = "Dockerfile-ngc" ]; then
+            echo "extra_args=--use-current-env" >> "$GITHUB_OUTPUT"
+          else
+            echo "extra_args=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Make System File
+        run: |
+          export MILABENCH_IMAGE="$IMAGE_TAG-${{ matrix.group.name }}"
+          envsubst '$MILABENCH_IMAGE' < "$MILABENCH_BASE/data/system.yaml.in" > "$MILABENCH_BASE/data/system.yaml"
+
+      - name: Build Docker image for group
+        run: |
+          docker build                                                \
+            -f "${{ steps.arch.outputs.dockerfile }}"                 \
+            --build-arg CONFIG=$(basename "$MILABENCH_CONFIG")        \
+            --build-arg SELECT="${{ matrix.group.select }}"           \
+            -t "$IMAGE_TAG-${{ matrix.group.name }}"                  \
+            .
+
+      - name: Prepare benchmarks
+        run: |
+          docker run --rm --gpus all                                            \
+            --ipc=host --ulimit memlock=-1 --ulimit stack=67108864              \
+            --network=host                                                      \
+            --security-opt=label=disable                                        \
+            -v "/home/github/.ssh/id_ed25519_shared:/root/.ssh/id_rsa:Z"        \
+            -e HF_TOKEN=${{ secrets.MILABENCH_HF_TOKEN }}                       \
+            -v "$MILABENCH_BASE/data:/milabench/results/data"                   \
+            -v "$MILABENCH_BASE/cache:/milabench/results/cache"                 \
+            -v "$MILABENCH_BASE/runs/${{ github.sha }}:/milabench/results/runs" \
+            "$IMAGE_TAG-${{ matrix.group.name }}"                               \
+            milabench prepare                                                   \
+              --config "$MILABENCH_CONFIG_DOCKER"                               \
+              --select "${{ matrix.group.select }}"                             \
+              ${{ steps.arch.outputs.extra_args }}
+
+      - name: Push Container
+        run: |
+          docker save "$IMAGE_TAG-${{ matrix.group.name }}" | ssh spark2 'docker load'
+  
+      - name: Run benchmarks
+        run: |
+          docker run --rm --gpus all                                            \
+            --ipc=host --ulimit memlock=-1 --ulimit stack=67108864              \
+            --network=host                                                      \
+            --security-opt=label=disable                                        \
+            -e MILABENCH_REPORT_LEAN=1                                          \
+            -e HF_TOKEN=${{ secrets.MILABENCH_HF_TOKEN }}                       \
+            -e BENCHMATE_OBSERVATION_COUNT=10                                   \
+            -e BENCHMATE_POLL_INTERVAL=5                                        \
+            -v "/home/github/.ssh/id_ed25519_shared:/root/.ssh/id_rsa:Z"        \
+            -v "$MILABENCH_BASE/data:/milabench/results/data"                   \
+            -v "$MILABENCH_BASE/cache:/milabench/results/cache"                 \
+            -v "$MILABENCH_BASE/runs/${{ github.sha }}:/milabench/results/runs" \
+            "$IMAGE_TAG-${{ matrix.group.name }}"                               \
+            milabench run                                                       \
+              --config "$MILABENCH_CONFIG_DOCKER"                               \
+              --system /milabench/results/data/system.yaml                      \
+              --select "${{ matrix.group.select }}"                             \
+              ${{ steps.arch.outputs.extra_args }}
+
+      - name: report
+        run: |
+          docker run --rm --gpus all                                            \
+            --ipc=host --ulimit memlock=-1 --ulimit stack=67108864              \
+            --network=host                                                      \
+            --security-opt=label=disable                                        \
+            -e MILABENCH_REPORT_LEAN=1                                          \
+            -v "$MILABENCH_BASE/runs/${{ github.sha }}:/milabench/results/runs" \
+            "$IMAGE_TAG-${{ matrix.group.name }}"                               \
+            milabench report --runs /milabench/results/runs
+
+      - name: Cleanup Docker image
+        if: always()
+        run: |
+          IMAGE="$IMAGE_TAG-${{ matrix.group.name }}"
+
+          docker rmi "$IMAGE" || true
+          ssh spark2 "docker rmi '$IMAGE'" || true
+
+  # ------------------------------------------------------------------
+  # 3. Once every group passes, build a single image with ALL
+  #    benchmarks and publish it to GitHub Container Registry.
+  # ------------------------------------------------------------------
+  publish:
+    needs: bench
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: easimon/maximize-build-space@master
+        with:
+          remove-dotnet: "true"
+          remove-codeql: "true"
+          remove-haskell: "true"
+          remove-android: "true"
+          build-mount-path: /home/runner/work/milabench/
+          root-reserve-mb: 30000
+
+      - uses: actions/checkout@v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get image tag
+        run: |
+          IMAGE_TAG="${GITHUB_REF_NAME##*/}"
+          echo "IMAGE_TAG=$IMAGE_TAG" >> "$GITHUB_ENV"
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=cuda-${{ env.IMAGE_TAG }}
+            type=sha,prefix=cuda-
+
+      - name: Build and push full image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          file: docker/Dockerfile-cuda
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=local,src=/home/runner/work/milabench/
+          cache-to: type=local,dest=/home/runner/work/milabench/
+          build-args: |
+            ARCH=cuda
+            CONFIG=all.yaml

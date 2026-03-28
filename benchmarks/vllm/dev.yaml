@@ -3,7 +3,7 @@
 _vllm:
   inherits: _defaults
   definition: .
-  install-variant: unpinned
+  install_variant: unpinned
   install_group: torch
 
   # Inference Server Args
@@ -11,7 +11,7 @@ _vllm:
    argv:
       --served-model-name: model
       --dtype: bfloat16
-    
+
   # Benchmarking client Args
   client:
     argv:
@@ -20,7 +20,7 @@ _vllm:
       --request-rate: inf
       --dataset-name: random
       --label: milabench
-      --backend: openai 
+      --backend: openai
       --num-prompts: 100
 
 vllm-single:
@@ -64,10 +64,10 @@ vllm-dense-physics-gpus:
       --tensor-parallel-size: "{gpu_count}"
       --tokenizer-mode: mistral
       --config_format: mistral
-      --load_format: mistral 
+      --load_format: mistral
       --tool-call-parser: mistral
       --enable-auto-tool-choice: true
-      --limit-mm-per-prompt: '{"image":10}' 
+      --limit-mm-per-prompt: '{"image":10}'
 
 
 vllm-moe-code-gpus:
@@ -99,10 +99,10 @@ vllm-moe-code-gpus:
       --tensor-parallel-size: "{gpu_count}"
       --tokenizer-mode: mistral
       --config_format: mistral
-      --load_format: mistral 
+      --load_format: mistral
       --tool-call-parser: mistral
       --enable-auto-tool-choice: true
-      --limit-mm-per-prompt: '{"image":10}' 
+      --limit-mm-per-prompt: '{"image":10}'
 
 vllm-whisper-gpus:
   # Does not work, the model seems to never return
@@ -127,7 +127,7 @@ vllm-whisper-gpus:
       --num-prompts: 1
       --backend: openai-audio
       --endpoint: /v1/audio/transcriptions
-      # --trust-remote-code 
+      # --trust-remote-code
 
   server:
    argv:

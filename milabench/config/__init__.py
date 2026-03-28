@@ -92,8 +92,13 @@ def resolve_inheritance(bench_config, all_configs):
 
 
 def finalize_config(name, bench_config):
+    from .external import resolve_extern_definition
+
     bench_config["name"] = name
+
     if "definition" in bench_config:
+        resolve_extern_definition(bench_config)
+
         pack = XPath(bench_config["definition"]).expanduser()
         if not pack.is_absolute():
             pack = (XPath(bench_config["config_base"]) / pack).resolve()

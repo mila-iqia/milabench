@@ -26,29 +26,5 @@ $VENV_BIN/pip install --no-build-isolation --no-deps -v --force-reinstall .
 rm -rf /tmp/pytorch_geometric
 
 
-# -- Pytorch SCATTER
-cd /tmp
-git clone $GIT_ARGS https://github.com/rusty1s/pytorch_scatter.git
-cd /tmp/pytorch_scatter
-
-$VENV_BIN/pip install --no-build-isolation --no-deps -v --force-reinstall .
-
-rm -rf /tmp/pytorch_scatter
-
-# -- Pytorch SPARSE
-cd /tmp
-git clone $GIT_ARGS https://github.com/rusty1s/pytorch_sparse.git
-cd /tmp/pytorch_sparse
-
-$VENV_BIN/pip install --no-build-isolation --no-deps -v --force-reinstall .
-
-rm -rf /tmp/pytorch_sparse
-
-# -- Pytorch CLUSTER
-cd /tmp
-git clone $GIT_ARGS https://github.com/rusty1s/pytorch_cluster.git
-cd /tmp/pytorch_cluster
-
-$VENV_BIN/pip install --no-build-isolation --no-deps -v --force-reinstall .
-
-rm -rf /tmp/pytorch_cluster
+sudo apt-get install pybind11-dev ffmpeg
+I_CONFIRM_THIS_IS_NOT_A_LICENSE_VIOLATION=1 pip install "git+https://github.com/pytorch/torchcodec.git@release/0.10" --no-build-isolation

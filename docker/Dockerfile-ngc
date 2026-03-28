@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/pytorch:25.10-py3
+FROM nvcr.io/nvidia/pytorch:26.02-py3
 
 # Arguments
 # ---------
@@ -7,11 +7,14 @@ FROM nvcr.io/nvidia/pytorch:25.10-py3
 ARG MOFED_VERSION=5.4-3.4.0.0
 ARG CONFIG=all.yaml
 ARG ARCH=cuda
+ARG SELECT=""
 
 ENV MILABENCH_GPU_ARCH=$ARCH
 ENV MILABENCH_CONFIG_NAME=$CONFIG
 ENV MILABENCH_DOCKER=1
-ENV TORCH_CUDA_ARCH_LIST="10.0;12.0"
+ENV MILABENCH_SELECT=$SELECT
+ENV TORCH_CUDA_ARCH_LIST="10.0;12.0;12.1"
+ENV CUDA_HOME=/usr/local/cuda/
 
 # Paths
 # -----
@@ -29,12 +32,20 @@ COPY . /milabench/milabench/
 
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV VIRTUAL_ENV=/milabench/env
+ENV PATH="/milabench/env/bin:${PATH}"
+
+# 
+
+
 RUN cd $HOME                                                            &&\
     rm -rf /milabench/env                                               &&\
     pip install virtualenv                                              &&\
     virtualenv --system-site-packages /milabench/env                    &&\
     source /milabench/env/bin/activate                                  &&\
     /milabench/env/bin/pip install -e /milabench/milabench              &&\
-    bash /milabench/milabench/docker/scripts/install.sh                 &&\
-    milabench install --variant unpinned --use-current-env              &&\
+    bash /milabench/milabench/docker/scripts/aa_before_install.sh       &&\
+    milabench install --variant unpinned --use-current-env ${MILABENCH_SELECT:+--select $MILABENCH_SELECT}  &&\
+    milabench prefer_system                                             &&\
+    bash /milabench/milabench/docker/scripts/bb_after_install.sh        &&\
     /milabench/env/bin/pip cache purge
