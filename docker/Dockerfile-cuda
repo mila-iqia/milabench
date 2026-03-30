@@ -1,6 +1,6 @@
 # FROM ubuntu:22.04
 
-FROM nvidia/cuda:12.9.1-runtime-ubuntu24.04
+FROM nvidia/cuda:13.2.0-devel-ubuntu24.04
 
 
 # Arguments
@@ -49,15 +49,15 @@ RUN apt-get update -y &&\
     apt-get install -y --no-install-recommends zip ssh rsync git build-essential curl python3 python3-virtualenv python-is-python3 python3-pip libgl1 libglib2.0-0 gcc g++ python3-dev &&\
     curl -o /etc/apt/trusted.gpg.d/mellanox.asc https://content.mellanox.com/ofed/RPM-GPG-KEY-Mellanox &&\
     curl -o /etc/apt/sources.list.d/mellanox.list https://linux.mellanox.com/public/repo/mlnx_ofed/${MOFED_VERSION}/ubuntu22.04/mellanox_mlnx_ofed.list &&\
-    apt-get update -y &&\
-    apt-get install -y --no-install-recommends libibverbs1 &&\
-    apt-get clean &&\
-    rm -rf /var/lib/apt/lists/*
+    apt-get update -y                                       &&\
+    apt-get install -y --no-install-recommends libibverbs1  &&\
+    apt-get clean                                           &&\
+    rm -rf /var/lib/apt/lists/*                             &&\
+    curl https://sh.rustup.rs -sSf | sh -s -- -y
 
-# Install Rust
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
-ENV CUDA_HOME=/usr/local/cuda-12/
+# ENV CUDA_HOME=/milabench/envs/venv/torch/lib/python3.12/site-packages/nvidia/cu13
+ENV CUDA_HOME=/usr/local/cuda/
+ENV PATH="$CUDA_HOME/bin:/root/.cargo/bin:${PATH}"
 ENV XDG_CACHE_HOME=/milabench/envs/cache
 ENV HF_HOME=/milabench/envs/cache
 ENV TORCH_HOME=/milabench/envs/cache
@@ -66,7 +66,6 @@ ENV TORCH_HOME=/milabench/envs/cache
 # -----------------
 
 ENV MILAENCH_ENV=/milabench/.env
-
 RUN RUN curl -LsSf https://astral.sh/uv/install.sh | sh                 &&\
     virtualenv $MILAENCH_ENV                                            &&\
     $MILAENCH_ENV/bin/python -m pip install -U pip                      &&\
@@ -87,11 +86,17 @@ ENV PIP_DEFAULT_TIMEOUT=800
 # A100: 8.0,8.6
 #       8.9
 # H100: 9.0
-# B100: 10.0,10.1,12
-ENV TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6;8.9;9.0,10.0,10.1,12.1"
+# B100: 10.0,12 GB10: 12.1
+#
+ENV TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6;8.9;9.0;10.0;12.0;12.1"
+ENV MILABENCH_WHEELS=https://github.com/milabench/wheels/releases/expanded_assets/cu130-wheels
 
+# If the wheels are available locally we can do something like below
+# RUN --mount=type=bind,source=wheels,target=/tmp/wheels           \
+
+# But we can also publish wheels to github and use those instead
 RUN ln -s /milabench/.env/bin/milabench /usr/local/bin/milabench                                                                                             &&\
-    $MILAENCH_ENV/bin/milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE ${MILABENCH_SELECT:+--select $MILABENCH_SELECT} ${MILABENCH_VARIANT:+--variant $MILABENCH_VARIANT} $MILABENCH_ARGS   &&\
+    MILABENCH_PIP_ARGS="--find-links,$MILABENCH_WHEELS" $MILAENCH_ENV/bin/milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE ${MILABENCH_SELECT:+--select $MILABENCH_SELECT} ${MILABENCH_VARIANT:+--variant $MILABENCH_VARIANT} $MILABENCH_ARGS   &&\
     $MILAENCH_ENV/bin/milabench patch --venv $MILABENCH_BASE/venv/torch                                                                                    &&\
     python -m pip cache purge
 

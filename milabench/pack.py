@@ -111,6 +111,20 @@ def exclude_system_packages(pack, enabled=True):
         os.unlink(exclude_filepath)
 
 
+def find_pytorch(requirement):
+    pip_args = []
+
+    with open(requirement, "r") as fp:
+        for line in fp.readlines():
+            if "pytorch.org/whl/" in line:
+                pip_args.extend(line.strip().split(" "))
+
+            if line.startswith("torch=="):
+                pip_args.append(line.strip())
+    
+    return pip_args
+
+
 @contextmanager
 def filter_system_packages(pack, requirements_file, enabled=True):
     """"Generate a new requirements file that filter out packages already on the system
@@ -179,12 +193,12 @@ async def install_benchmate(pack: Package):
         installed_benchmate[group] = 1
 
 
-async def install_requires(pack: Package):
+async def install_requires(pack: Package, *extras):
     global installed_requires
     group = pack.config.get("install_group", {})
 
     if group not in installed_requires:
-        await pack.pip_install("setuptools", "poetry", "uv", "flit_core", use_uv_override=False)
+        await pack.pip_install("setuptools", "poetry", "uv", "flit_core", *extras, use_uv_override=False)
         installed_requires[group] = 1
 
 
@@ -229,6 +243,14 @@ class PackageCore:
         grp = config.get("group", config["name"])
         ig = config.get("install_group", grp)
         self.install_mark_file = self.dirs.extra / f"mark_{ig}"
+
+
+def pip_more_args():
+    from .system import option
+
+    system_extras = option("pip.args", str, "").split(",")
+
+    return system_extras
 
 
 class BasePackage:
@@ -345,9 +367,9 @@ class BasePackage:
 
         with exclude_system_packages(self, enabled=should_use_uv(use_uv_override)) as exclude_args:
             if should_use_uv(use_uv_override):
-                pip_install_cmd = ["uv", "pip", "install"] + exclude_args + no_build_isolation(build_isolation) + [ "--index-strategy", "unsafe-best-match", *args]
+                pip_install_cmd = ["uv", "pip", "install"] + exclude_args + no_build_isolation(build_isolation) + pip_more_args() + [ "--index-strategy", "unsafe-best-match", *args]
             else:
-                pip_install_cmd = ["pip", "install"] + no_build_isolation(build_isolation) + [*args]
+                pip_install_cmd = ["pip", "install"] + no_build_isolation(build_isolation) + pip_more_args() + [*args]
 
             await run(
                 pip_install_cmd,
@@ -543,8 +565,25 @@ class Package(BasePackage):
         """
         assert self.phase == "install"
 
-        await install_requires(self)
+        #
+        # Find pytorch to install
+        #   a lot of packages rely on pytorch to be built
+        #       xformers, pytorch-geo, torch-scatter, torch-gather, torch-cluster
+        #
+        pytorch_version = []
+        for reqs in self.requirements_files(self.config.get("install_variant", None)):
+            if torch := find_pytorch(reqs):
+                pytorch_version = torch
+                break
+        
+        #
+        # Install build system and pytorch first
+        #
+        await install_requires(self, *pytorch_version)
 
+        #
+        #
+        #
         for reqs in self.requirements_files(self.config.get("install_variant", None)):
             if reqs.exists():
                 with filter_system_packages(self, reqs) as filtered_reqs:
