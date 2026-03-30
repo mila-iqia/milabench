@@ -17,7 +17,7 @@ class Dimenet(Package):
     #
 
     # Requirements file installed by install(). It can be empty or absent.
-    base_requirements = ["requirements-pre.in", "requirements.in"]
+    base_requirements = ["requirements.in"]
 
     # The preparation script called by prepare(). It must be executable,
     # but it can be any type of script. It can be empty or absent.

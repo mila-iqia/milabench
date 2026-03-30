@@ -403,6 +403,11 @@ class GPUConfig:
 
 
 @dataclass
+class Pip:
+    args: str = defaultfield("pip.args", str, None)
+
+
+@dataclass
 class Nodes:
     name: str
     ip: str
@@ -414,7 +419,6 @@ class Nodes:
 @dataclass
 class Github:
     pat: str = defaultfield("github.path", str, None)
-
 
 
 @dataclass
