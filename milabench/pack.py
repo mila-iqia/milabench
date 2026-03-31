@@ -202,6 +202,17 @@ async def install_requires(pack: Package, *extras):
         installed_requires[group] = 1
 
 
+def pip_more_args():
+    from .system import option
+
+    system_extras = option("pip.args", str, "")
+
+    if system_extras:
+        return system_extras.split(",")
+
+    return []
+
+
 class PackageCore:
     def __init__(self, config):
         self.pack_path = XPath(config["definition"])
