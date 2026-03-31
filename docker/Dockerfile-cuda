@@ -24,7 +24,7 @@ ENV MILABENCH_VARIANT=$VARIANT
 # -----
 
 ENV MILABENCH_CONFIG=/milabench/milabench/config/$MILABENCH_CONFIG_NAME
-ENV MILABENCH_BASE=/milabench/envs
+ENV MILABENCH_BASE=/milabench/results
 ENV MILABENCH_OUTPUT=/milabench/results/
 ENV MILABENCH_ARGS=""
 
@@ -55,18 +55,18 @@ RUN apt-get update -y &&\
     rm -rf /var/lib/apt/lists/*                             &&\
     curl https://sh.rustup.rs -sSf | sh -s -- -y
 
-# ENV CUDA_HOME=/milabench/envs/venv/torch/lib/python3.12/site-packages/nvidia/cu13
+# ENV CUDA_HOME=/milabench/results/venv/torch/lib/python3.12/site-packages/nvidia/cu13
 ENV CUDA_HOME=/usr/local/cuda/
 ENV PATH="$CUDA_HOME/bin:/root/.cargo/bin:${PATH}"
-ENV XDG_CACHE_HOME=/milabench/envs/cache
-ENV HF_HOME=/milabench/envs/cache
-ENV TORCH_HOME=/milabench/envs/cache
+ENV XDG_CACHE_HOME=/milabench/results/cache
+ENV HF_HOME=/milabench/results/cache
+ENV TORCH_HOME=/milabench/results/cache
 
 # Install Milabench
 # -----------------
 
 ENV MILAENCH_ENV=/milabench/.env
-RUN RUN curl -LsSf https://astral.sh/uv/install.sh | sh                 &&\
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh                 &&\
     virtualenv $MILAENCH_ENV                                            &&\
     $MILAENCH_ENV/bin/python -m pip install -U pip                      &&\
     $MILAENCH_ENV/bin/python -m pip install -U setuptools               &&\
