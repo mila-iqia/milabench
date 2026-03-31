@@ -256,6 +256,14 @@ class PackageCore:
         self.install_mark_file = self.dirs.extra / f"mark_{ig}"
 
 
+def pip_more_args():
+    from .system import option
+
+    system_extras = option("pip.args", str, "").split(",")
+
+    return system_extras
+
+
 class BasePackage:
     """Base package, with no behavior defined for install/prepare/run.
 
