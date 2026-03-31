@@ -87,6 +87,8 @@
 <li class="toctree-l3"><a class="reference internal" href="#milabench.pack.Package.run"><code class="docutils literal notranslate"><span class="pre">Package.run()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="#milabench.pack.exclude_system_packages"><code class="docutils literal notranslate"><span class="pre">exclude_system_packages()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#milabench.pack.filter_system_packages"><code class="docutils literal notranslate"><span class="pre">filter_system_packages()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -353,6 +355,24 @@ access the data directory for the benchmark.</p>
 </dl>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="milabench.pack.exclude_system_packages">
+<span class="sig-prename descclassname"><span class="pre">milabench.pack.</span></span><span class="sig-name descname"><span class="pre">exclude_system_packages</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pack</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enabled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.exclude_system_packages" title="Link to this definition"></a></dt>
+<dd><p>Generate an exclude file to not install packages already on the system</p>
+<p class="rubric">Notes</p>
+<p>This seems like a duplicate of <cite>filter_system_packages</cite> but the <cite>–exclude</cite> arguments does not seem to work
+ALL the time despite looking to be the more elegant way of doing it.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="milabench.pack.filter_system_packages">
+<span class="sig-prename descclassname"><span class="pre">milabench.pack.</span></span><span class="sig-name descname"><span class="pre">filter_system_packages</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pack</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">requirements_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enabled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#milabench.pack.filter_system_packages" title="Link to this definition"></a></dt>
+<dd><p>“Generate a new requirements file that filter out packages already on the system</p>
+<p class="rubric">Notes</p>
+<p>This seems like a duplicate of <cite>exclude_system_packages</cite> but it does not work as expected
+so we are reduced to filter those packages ourselves</p>
 </dd></dl>
 
 </section>
