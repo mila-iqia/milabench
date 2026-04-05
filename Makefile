@@ -32,3 +32,29 @@ docker-build:
 
 tests:
 	coverage run --source=milabench -m pytest --ignore=tests/integration tests/ -vv -x 
+
+
+
+# docker build                                                \
+# 	-f docker/Dockerfile-cuda                 				\
+# 	--build-arg CONFIG=all.yaml        				\
+# 	--build-arg SELECT=whisper-transcribe-single           	\
+# 	-t cuda-whisper-transcribe-single                 		\
+# 	.
+
+docker run --rm --gpus all  -it                                            \
+	--ipc=host --ulimit memlock=-1 --ulimit stack=67108864              \
+	--network=host                                                      \
+	--security-opt=label=disable                                        \
+	-v "/home/github/.ssh/id_ed25519_shared:/root/.ssh/id_rsa:Z"        \
+	-e HF_TOKEN=<>                    									\
+	-v "/opt/milabench/data:/milabench/results/data"                   \
+	-v "/opt/milabench/cache:/milabench/results/cache"                 \
+	-v "/opt/milabench/runs/manual:/milabench/results/runs" 			\
+	"docker.io/library/cuda-whisper-transcribe-single"                  \
+	bash
+	
+	milabench run                                                   	\
+		--config /milabench/milabench/config/all.yaml                \
+		--system /milabench/results/data/system.yaml \
+		--select whisper-transcribe-single

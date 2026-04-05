@@ -70,7 +70,11 @@ def huggingface_main(args, model, config):
     println("Tokenizer")
     # LLAMA tokenizer official tokenizer is hidden behind a login
     tokenizer = WrappedTokenizer(
-        LlamaTokenizerFast.from_pretrained("hf-internal-testing/llama-tokenizer")
+        LlamaTokenizerFast.from_pretrained(
+            "hf-internal-testing/llama-tokenizer",
+            model_max_length=256,
+            truncation=True,
+        )
     )
 
     if args.pretrained and args.prepare:
@@ -87,18 +91,21 @@ def huggingface_main(args, model, config):
     print(device)
 
     if args.pretrained:
-        model = LlamaForCausalLM.from_pretrained(config["_name_or_path"]).to(device=device)
+        model = LlamaForCausalLM.from_pretrained(
+            config["_name_or_path"], 
+            device_map="cuda",
+            torch_dtype=torch.bfloat16,
+        )
     else:
-        model = LlamaForCausalLM(LlamaConfig.from_dict(config)).to(device=device)
+        model = LlamaForCausalLM(LlamaConfig.from_dict(config)).to(device=device, dtype=torch.bfloat16)
 
     println("Pipeline")
     pipeline = transformers.pipeline(
         "text-generation",
         model=model,
         torch_dtype=torch.bfloat16,
-        # device_map="cuda",
+        # 
         tokenizer=tokenizer,
-        device=device,
     )
 
     in_token_count = 0
@@ -128,7 +135,8 @@ def huggingface_main(args, model, config):
             top_k=10,
             num_return_sequences=1,
             eos_token_id=tokenizer.eos_token_id,
-            max_length=400,
+            max_new_tokens=256,
+            truncation=True,
         )
 
         for seq in sequences:

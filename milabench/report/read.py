@@ -75,20 +75,20 @@ class Worker:
 
     def inc_done(self):
         with self.done.get_lock():
-            self.done.value += 1   
+            self.done.value += 1
 
     def inc_jobs(self):
         with self.jobs.get_lock():
-            self.jobs.value += 1   
-    
+            self.jobs.value += 1
+
     def push_work(self, work):
         self.inc_jobs()
         self.work_queue.put(work)
-    
+
     def inc_results(self):
         with self.results.get_lock():
-            self.results.value += 1   
-    
+            self.results.value += 1
+
     def push_result(self, result):
         self.inc_results()
         self.result_queue.put(result)
@@ -102,10 +102,10 @@ class Worker:
                     self(task)
                 finally:
                     self.inc_done()
-                
+
             except queue.Empty:
                 continue
-        
+
             except Exception as err:
                 traceback.print_exc()
 
@@ -162,14 +162,14 @@ class DataProcessor:
         worker_pack = self.work_queue, self.result_queue, self.error_queue, self.active, self.jobs, self.done, self.results
         args = (worker_cls, worker_pack, args, kwargs)
         self.workers = [backend.Worker(target=worker_fn, args=(i,) + args) for i in range(worker_count)]
-    
+
         for w in self.workers:
             w.start()
-    
+
     def is_finished(self):
         with self.jobs.get_lock():
             jobs = self.jobs.value
-        
+
         with self.done.get_lock():
             done = self.done.value
 
@@ -177,13 +177,13 @@ class DataProcessor:
             results = self.results.value
 
         return jobs == done and self.result_queue.empty() and results == self.retrieved
-    
+
     def __enter__(self):
         return self
 
     def __exit__(self, *args, **kwargs):
         self.active.clear()
-        
+
         unfinished = 0
         ignored = 0
 
@@ -194,11 +194,11 @@ class DataProcessor:
 
                 with self.done.get_lock():
                     self.done.value += 1
-                
+
                 unfinished += 1
             except queue.Empty:
                 pass
-        
+
             #
             #   remove results
             #
@@ -220,8 +220,8 @@ class DataProcessor:
 
     def inc_jobs(self):
         with self.jobs.get_lock():
-            self.jobs.value += 1   
-    
+            self.jobs.value += 1
+
     def push_work(self, work):
         self.inc_jobs()
         self.work_queue.put(work)
@@ -253,7 +253,7 @@ class DataProcessor:
                 yield item
             except queue.Empty:
                 continue
-        
+
         self.active.clear()
 
         for i, w in enumerate(self.workers):
@@ -274,7 +274,7 @@ def flatten_values(payload, namespace=None):
             yield from flatten_values(v, nspace)
 
     else:
-        yield ".".join(namespace), payload   
+        yield ".".join(namespace), payload
 
 
 def insert_path(job_meta, name, entry):
@@ -297,7 +297,7 @@ def extract_meta_from_run_folder(entry, meta):
     if match:
         run_meta["date"] = datetime.strptime(match.group(1), "%Y-%m-%d_%H-%M-%S")
 
-    job_meta = {**meta, **run_meta} 
+    job_meta = {**meta, **run_meta}
 
     insert_path(job_meta, "p", entry)
 
@@ -357,7 +357,7 @@ class EventProcessor(Worker):
 
                 for line in fp.readlines():
                     metric_line = json.loads(line)
-                    
+
                     if (stop := self.processline(metric_line, file_meta)) is True:
                         break
 
@@ -377,7 +377,7 @@ class EventProcessor(Worker):
 
             case "meta":
                 return self.meta(line, meta)
-            
+
             case "start":
                 return self.start(line, meta)
 
@@ -387,25 +387,25 @@ class EventProcessor(Worker):
             # data
             case "data":
                 return self.data(line["data"], meta)
-            
+
             case "line":
                 return self.line(line["data"], line["pipe"], meta)
 
             case "overseer_error":
                 return self.overseer_error(line, meta)
-            
+
             case "error":
                 return self.error(line, meta)
-            
+
             case "end":
                 return self.end(line, meta)
-            
+
             case "message":
                 return self.message(line, meta)
 
             case "format_error":
                 return self.format_error(line, meta)
-            
+
             case "stop":
                 return self.stop(line, meta)
 
@@ -417,7 +417,7 @@ class EventProcessor(Worker):
 
     def meta(self, event, meta):
         pass
-    
+
     def start(self, event, meta):
         pass
 
@@ -463,7 +463,7 @@ class EventTracking:
 
         if self.rc_code != 0:
             return False
-        
+
         return True
 
 
@@ -486,7 +486,7 @@ class MetricExtractor(EventProcessor):
             key = MetricExtractor.makekey(meta)
             tracking = self.start_event.setdefault(key, EventTracking())
             tracking.start_time = start_time
-            
+
     def end(self, event, meta):
         key = MetricExtractor.makekey(meta)
         data = event["data"]
@@ -523,11 +523,11 @@ class MetricExtractor(EventProcessor):
                         # For memory [0, 1]
                         for i, item in enumerate(v):
                             metric = {
-                                "metric": f"gpudata.{k}.{i}", 
-                                "value": item, 
-                                "time": time, 
-                                "unit": units or unit, 
-                                "task": task, 
+                                "metric": f"gpudata.{k}.{i}",
+                                "value": item,
+                                "time": time,
+                                "unit": units or unit,
+                                "task": task,
                                 "count": 1,
                                 **meta
                             }
@@ -535,11 +535,11 @@ class MetricExtractor(EventProcessor):
                     else:
                         # Standard
                         metric = {
-                            "metric": f"gpudata.{k}", 
-                            "value": v, 
-                            "time": time, 
-                            "unit": units or unit, 
-                            "task": task, 
+                            "metric": f"gpudata.{k}",
+                            "value": v,
+                            "time": time,
+                            "unit": units or unit,
+                            "task": task,
                             "count": 1,
                             **meta
                         }
@@ -565,11 +565,11 @@ class MetricExtractor(EventProcessor):
                 cnt = device_cnt[k]
 
                 metric = {
-                    "metric": f"gpudata.{k}", 
-                    "value": sum/cnt, 
-                    "time": time, 
-                    "unit": units or unit, 
-                    "task": task, 
+                    "metric": f"gpudata.{k}",
+                    "value": sum/cnt,
+                    "time": time,
+                    "unit": units or unit,
+                    "task": task,
                     "count": cnt,
                     **meta
                 }
@@ -591,19 +591,19 @@ class MetricExtractor(EventProcessor):
 
             # if time is None:
             #    print(data, "missing time", meta)
-                
+
             metric = {
-                "metric": k, 
-                "value": v, 
-                "time": time, 
-                "unit": units or unit, 
-                "task": task, 
+                "metric": k,
+                "value": v,
+                "time": time,
+                "unit": units or unit,
+                "task": task,
                 **meta
             }
 
             if batch_id is not None:
                 metric["batch_id"] = batch_id
-        
+
             self.push_result(metric)
 
 
@@ -648,7 +648,7 @@ class BenchmarkStatusExtractor(EventProcessor):
             key = MetricExtractor.makekey(meta)
             tracking = self.start_event.setdefault(key, EventTracking())
             tracking.start_time = start_time
-            
+
     def end(self, event, meta):
         key = MetricExtractor.makekey(meta)
         data = event["data"]
@@ -686,7 +686,7 @@ def extract_milabench_metrics(folder):
     Arguments
     ---------
     folder: str
-        it can a path to a 
+        it can a path to a
 
         1. folder containing multiple runs (./sxm_runs)
         2. folder of a single run          (./sxm_runs/p600.o500.2025-12-26_07-20-23)
@@ -717,7 +717,7 @@ def augment_energy_estimator(metrics, force_sort=True):
 
     for metric in metrics:
         if metric["metric"] == "gpudata.power":
-            
+
             bench = metric["bench"]
             device = metric.get("device", -1)
             p0 = metric["p0"]
@@ -731,21 +731,21 @@ def augment_energy_estimator(metrics, force_sort=True):
                 elapsed = metric["time"] - prev["time"]
 
                 # Number of GPUs
-                count = metric["count"]        
-            
+                count = metric["count"]
+
                 # Riemann sum using midpoint rule
-                energy_spent = elapsed * count * (energy_p + energy_n) / 2 
+                energy_spent = elapsed * count * (energy_p + energy_n) / 2
 
                 # push the new metric measurements
                 newmetric = {**metric}
                 newmetric["metric"] = "energy"
                 newmetric["value"] = energy_spent
                 yield newmetric
-                
+
             previous[key] = metric
 
         yield metric
-        
+
 
 def aggregate(metrics):
     results = {}
@@ -760,9 +760,9 @@ def aggregate(metrics):
 
         data = results.setdefault(key, {})
         data.setdefault(metric["metric"], []).append(metric["value"])
-    
+
     return results
-    
+
 
 def accumulate_per_device(aggregated_metric, acc_fun):
     results = {}
@@ -778,7 +778,7 @@ def accumulate_per_device(aggregated_metric, acc_fun):
 
             per_device = bench_data.setdefault(metric, {})
             per_device[device] = fun(values)
-    
+
     return results
 
 
@@ -793,7 +793,7 @@ def accumulate_per_bench(accumulated_metrics, acc_fun):
 
             if fun is None:
                 continue
-        
+
             devices = []
             for d, value in per_device.items():
                 devices.append(value)
@@ -822,29 +822,29 @@ def compute_global_score(metrics, weights, default_weight=0):
 
         if metric["metric"] == "score":
             weight = weights.get(metric["bench"]).get("weight", default_weight)
-    
+
             score = metric.get("value", 0)
             sum_score += np.log(score + 1) * weight
-    
+
     return np.exp(sum_score / total_weight)
 
 
 
-if __name__ == "__main__":
+def multi_run_report():
 
-    # 
+    #
     selected = (
         # "vllm-dense-physics-gpus",
-        "vllm-moe-code-gpus",
+        # "vllm-moe-code-gpus",
         # "whisper-transcribe-single",
-        # "txt-to-image-gpus",
+        "txt-to-image-gpus",
         # "llm-chat-completion",
 
-       # "vllm-sweep-conc512-mxbt4096-moe",
+        # "vllm-sweep-conc512-mxbt4096-moe",
         # "vllm-sweep-conc64-mxbt4096-moe",
-        # "vllm-sweep-conc64-mxbt4096-moe",
+        # "vllm-sweep-conc8-mxbt4096-moe",
 
-       # "vllm-sweep-dense-conc512",
+        # "vllm-sweep-dense-conc512",
         # "vllm-sweep-dense-conc64",
         # "vllm-sweep-dense-conc8",
         # "llm-lora-mp-gpus",
@@ -862,13 +862,25 @@ if __name__ == "__main__":
 
     # selected = ("fp8",) # "fp8")
 
-    powers = ('700', '600', '480', '420', '360', '300')
-    p1s = ('nvl', 'wvl')
+    # hgx
+    # sxm
+    # nvl
+    # wvl
+
+    # effect on the higher clock under same power limit
+    # effect of same clock with higher power limit
+    # then same clock same power limit as base line
+    # + max max comme comparaison
+
+    # , '480', '420', '360', '300'
+
+    powers = ('700', '600')
+    p1s = ('nvl', 'wvl', 'hgx', 'sxm')
     clocks = ('1980', '1785')
     obss = ("350",)
-    
+
     def accept_file(file, meta):
-        
+
         bench = meta["bench"]
         p1 = meta["p1"]
         power = meta.get("power")
@@ -876,16 +888,16 @@ if __name__ == "__main__":
         obs = meta.get("observation")
 
         r = (
-            bench in selected and 
-            power in powers and 
-            p1 in p1s and 
-            clock in clocks and 
+            bench in selected and
+            power in powers and
+            p1 in p1s and
+            clock in clocks and
             obs in obss
         )
 
         if r:
             print(meta)
-        
+
         return r
 
 
@@ -903,7 +915,7 @@ if __name__ == "__main__":
         for event in proc(p):
             if event["metric"] in ("rate", "gpudata.temperature", "gpudata.power"):
                 data.append(event)
-    
+
     import pandas as pd
 
     df = pd.DataFrame(data)
@@ -925,10 +937,15 @@ if __name__ == "__main__":
     )
 
     df = df[df['run_id'].isin(latest_runs)]
+    df["power"] = df["power"].fillna(600)
+    df["clock"] = df["clock"].fillna(1785)
+
+    df["power_clock"] = df["power"].astype(str) + " - " + df["clock"].astype(str)
 
     df.to_csv("timeseries_raw.csv", index=False)
 
-    df["time_norm"] = df["time"] - df.groupby(["run_id", "metric"])["time"].transform("min")
+    # df["time_norm"] = df["time"] - df.groupby(["run_id", "metric"])["time"].transform("min")
+    df["time_norm"] = df["time"] - df.groupby(["run_id"])["time"].transform("min")
 
 
     print(df["metric"].unique())
@@ -956,33 +973,36 @@ if __name__ == "__main__":
         how="left"  # keeps all original rows, NaN if not "rate"
     )
 
-    bin_size = 1  # 100ms
-    df["time_bin"] = (df["time_norm"] / bin_size).round() * bin_size
-    df = (
-        df
-        .groupby(["time_bin", "power", "p1", "bench", "metric", "run_id"])
-        .agg({"value": "mean"})   # or sum / max / median
-        .reset_index()
-    )
+    # bin_size = 1  # 100ms
+    # df["time_bin"] = (df["time_norm"] / bin_size).round() * bin_size
+    # df = (
+    #     df
+    #     .groupby(["time_bin", "power", "clock", "power_clock", "p1", "bench", "metric", "run_id"])
+    #     .agg({"value": "mean"})   # or sum / max / median
+    #     .reset_index()
+    # )
 
-    t_min, t_max = (
-        df.loc[df["metric"] == "rate", "time_bin"]
-        .agg(["min", "max"])
-    )
+    # t_min, t_max = (
+    #     df.loc[df["metric"] == "rate", "time_bin"]
+    #     .agg(["min", "max"])
+    # )
 
-    df = df[
-        (df["time_bin"] >= t_min) &
-        (df["time_bin"] <= t_max)
-    ]
+    # df = df[
+    #     (df["time_bin"] >= t_min) &
+    #     (df["time_bin"] <= t_max)
+    # ]
 
-    df["p1"] = df["p1"].replace({
-        "hgx": "SXM immersion",
-        "sxm": "SXM air",
-        "wvl": "PCIe immersion",
-        "nvl": "PCIe air",
-    })
+    machine_map = {"hgx": "SXM", "sxm": "SXM", "wvl": "PCIe", "nvl": "PCIe"}
+    cooling_map = {"hgx": "immersion", "sxm": "air", "wvl": "immersion", "nvl": "air"}
+
+    df["machine"] = df["p1"].map(machine_map)
+    df["cooling"] = df["p1"].map(cooling_map)
+
+    df["power_clock"] = df["power"].astype(str) + " - " + df["clock"].astype(str) + " - " + df["machine"].astype(str)
+
 
     df.to_csv("timeseries.csv", index=False)
+    xaxis = "time_norm"
 
     import altair as alt
 
@@ -990,16 +1010,16 @@ if __name__ == "__main__":
         power_over_time = df
         power_over_time = power_over_time[power_over_time["metric"] == "gpudata.power"]
         chart = alt.Chart(power_over_time).mark_line().encode(
-            x=alt.X("time_bin:Q", title="Time (s)"),
+            x=alt.X(f"{xaxis}:Q", title="Time (s)"),
             y=alt.Y("value:Q", title="Power (W)", scale=alt.Scale(zero=False)),
-            color=alt.Color("power:O", title="Power"), 
+            color=alt.Color("power_clock:N", title="Power"),
             # strokeDash=alt.StrokeDash("p1:N", title="Machine")
         ).properties(
             width=500,
             height=500
         ).facet(
             column=alt.Column("bench:N", title="Bench"),
-            row=alt.Row("p1:N", title="Machine")
+            row=alt.Row("cooling:N", title="Cooling")
         ).resolve_scale(
             x='independent',
             y='independent'
@@ -1012,16 +1032,16 @@ if __name__ == "__main__":
         temperature_over_time = df
         temperature_over_time = temperature_over_time[temperature_over_time["metric"] == "gpudata.temperature"]
         chart = alt.Chart(temperature_over_time).mark_line().encode(
-            x=alt.X("time_bin:Q", title="Time (s)"),
+            x=alt.X(f"{xaxis}:Q", title="Time (s)"),
             y=alt.Y("value:Q", title="Temperature (C)", scale=alt.Scale(zero=False)),
-            color=alt.Color("power:O", title="Power"), 
+            color=alt.Color("power_clock:N", title="Power"),
             # strokeDash=alt.StrokeDash()
         ).properties(
             width=500,
             height=500
         ).facet(
             column=alt.Column("bench:N", title="Bench"),
-            row=alt.Row("p1:N", title="Machine")
+            row=alt.Row("cooling:N", title="Cooling")
         ).resolve_scale(
             x='independent',
             y='independent'
@@ -1035,16 +1055,16 @@ if __name__ == "__main__":
         perf = perf[perf["metric"] == "rate"]
 
         chart = alt.Chart(perf).mark_line().encode(
-            x=alt.X("time_bin:Q", title="Time (s)"),
+            x=alt.X(f"{xaxis}:Q", title="Time (s)"),
             y=alt.Y("value:Q", title="Perf (item/s)", scale=alt.Scale(zero=False)),
-            color=alt.Color("power:O", title="Power"), 
+            color=alt.Color("power_clock:N", title="Power"),
             # strokeDash=alt.StrokeDash()
         ).properties(
             width=500,
             height=500
         ).facet(
             column=alt.Column("bench:N", title="Bench"),
-            row=alt.Row("p1:N", title="Machine")
+            row=alt.Row("cooling:N", title="Cooling")
         ).resolve_scale(
             x='independent',
             y='independent'
@@ -1052,7 +1072,7 @@ if __name__ == "__main__":
 
         chart.save("pref_over_time.png")
         return chart
-    
+
     power_ot = power_over_time()
     temp_ot = temp_overtime()
     perf_ot = perf_overtime()
@@ -1080,8 +1100,8 @@ if __name__ == "__main__":
     # )
     # print(max_per_bench)
 
-    pd.pivot()
-    
+    # pd.pivot()
+
     # p = "/home/delaunao/workspace/benchdevenv/projects/hypertec/sxm_runs/"
     # p = "/home/delaunao/workspace/benchdevenv/projects/hypertec/sxm_runs/p600.o500.2025-12-26_07-20-23"
     # # p = "/home/delaunao/workspace/benchdevenv/projects/hypertec/sxm_runs/p600.o*"
@@ -1100,7 +1120,136 @@ if __name__ == "__main__":
     #         total += 1
     #         print(item)
 
-        
+
     # for k, v in metrics.items():
-    #     print(f"{k:>30}: {v:6d}    {v/total:5.2%}") 
+    #     print(f"{k:>30}: {v:6d}    {v/total:5.2%}")
+
+
+
+def single_run_check():
+    import pandas as pd 
+    import altair as alt
+
+    p = "/opt/milabench/runs/sepaboda.2026-04-01_19-03-47"
+
+    data = []
+    with DataProcessor(MetricExtractor, accept_file=lambda *args: True, backend=Threading) as proc:
+        for event in proc(p):
+            data.append(event)
     
+    df = pd.DataFrame(data)
+    df.to_csv("check.csv")
+
+    print(list(df["metric"].unique()))
+
+    # Convert epoch time to datetime
+    df["timestamp"] = pd.to_datetime(df["time"], unit="s")
+
+    # Normalize time to seconds from start
+    df["elapsed_s"] = df["time"] - df["time"].min()
+    
+    metric_ids = {m: i for i, m in enumerate(df["metric"].unique())}
+    df["metric_y"] = df["metric"].map(metric_ids)
+
+    chart = (
+        alt.Chart(df)
+        .mark_line(point=True)
+        .encode(
+            x=alt.X("time:Q", title="Elapsed Time (s)"),
+            y=alt.Y("metric_y:Q", title="Value"),
+            color=alt.Color("metric:N", title="Metric"),
+            # tooltip=["metric", "value", "elapsed_s", "timestamp:T"],
+        )
+        .properties(width=800, height=400, title="GPU Metrics Over Time")
+        .resolve_scale(y="independent")
+    )
+
+    chart.save("gpu_metrics.png")
+
+
+
+def single_run_check():
+    p = "/opt/milabench/runs/sepaboda.2026-04-01_19-03-47/txt-to-image-single.D0.data"
+
+    rates = []
+    with open(p, "r") as fp:
+        for line in fp.readlines():
+            line = json.loads(line)
+            if "rate" in line["data"]:
+                rates.append(line["data"])
+
+    import pandas as pd 
+    import altair as alt
+
+    df = pd.DataFrame(rates)
+
+    t0 = df["schedule_time"].min()
+    df["start_s"] = df["schedule_time"] # - t0
+    df["end_s"] = df["start_s"] + df["elapsed"]
+    df["batch_idx"] = df.index
+
+    chart = (
+        alt.Chart(df)
+        .mark_bar()
+        .encode(
+            x=alt.X("start_s:Q", title="Time (s from start)", scale=alt.Scale(zero=False)),
+            x2="end_s:Q",
+            y=alt.Y("batch_idx:O", title="Batch Step", sort="ascending", scale=alt.Scale(zero=False)),
+            color=alt.Color("rate:Q", scale=alt.Scale(scheme="viridis"), title="Rate (items/s)"),
+            tooltip=["batch_idx", "start_s", "end_s", "elapsed", "rate"],
+        )
+        .properties(width=800, height=max(300, len(df) * 8), title="Batch Work Schedule")
+    )
+
+    chart.save("gpu_metrics.png")
+
+
+def single_run_check():
+    p = "/opt/milabench/runs/sepaboda.2026-04-01_19-03-47/txt-to-image-single.D0.data"
+    p = "/opt/milabench/runs/konetedo.2026-04-02_14-56-16/"
+    p = "/opt/milabench/runs/jifenupu.2026-04-02_15-17-30"
+    p = "/opt/milabench/runs/sogorepu.2026-04-02_15-58-15"
+    data = []
+    with DataProcessor(MetricExtractor, accept_file=lambda *args: True, backend=Threading) as proc:
+        for event in proc(p):
+            data.append(event)
+
+    import pandas as pd 
+    import altair as alt
+
+    df = pd.DataFrame(data)
+
+    print(list(df["metric"].unique()))
+
+    t0 = df["time"].min()
+    df["time"] = df["time"] - t0
+    # df.loc[df["metric"] == "rate", "time"] = df.loc[df["metric"] == "rate", "time"] + 160
+
+    chart1 = (
+        alt.Chart(df[df["metric"] == "rate"])
+        .mark_point()
+        .encode(
+            x=alt.X("time:Q", title="Time", scale=alt.Scale(zero=False)),
+            y=alt.Y("value:Q", title="Batch Step", sort="ascending", scale=alt.Scale(zero=False)),
+            color=alt.Color("metric:N", scale=alt.Scale(zero=False)),
+        )
+        
+    )
+    chart2 = (
+        alt.Chart(df[df["metric"] == "gpudata.temperature"])
+        .mark_point()
+        .encode(
+            x=alt.X("time:Q", title="Time", scale=alt.Scale(zero=False)),
+            y=alt.Y("value:Q", title="Batch Step", sort="ascending", scale=alt.Scale(zero=False)),
+            color=alt.Color("metric:N", scale=alt.Scale(zero=False)),
+        )
+    )
+
+    (
+        (chart1 + chart2)
+            .properties(width=800, height=800)
+            .resolve_scale(y="independent")
+    ).save("gpu_metrics.png")
+
+if __name__ == "__main__":
+    single_run_check()

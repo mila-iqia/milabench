@@ -23,9 +23,9 @@ def arguments():
 
 def setup_flashinfer():
     commands = [
-        ["flashinfer", "clear-cache"],
+        # ["flashinfer", "clear-cache"],
         ["flashinfer", "show-config"],
-        ["flashinfer", "download-cubin"],
+        # ["flashinfer", "download-cubin"],
     ]
     for cmd in commands:
         print(f"Running: {' '.join(cmd)}")

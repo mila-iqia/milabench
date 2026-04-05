@@ -498,3 +498,49 @@ if platform_unsupported:
     )
 else:
     subreaper()
+
+
+
+def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Kill all processes currently using the GPU")
+    parser.add_argument(
+        "--signal",
+        choices=["SIGTERM", "SIGKILL"],
+        default="SIGKILL",
+        help="Signal to send to GPU processes (default: SIGKILL)",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="List GPU processes without killing them",
+    )
+    args = parser.parse_args()
+
+    warden = GPUProcessWarden(kill_on_start=False, kill_on_end=False)
+    processes = warden.fetch_processes()
+
+    if not processes:
+        print("No processes found on GPU.")
+        return
+
+    print(f"Found {len(processes)} process(es) on GPU:")
+    for proc in processes:
+        print(f"  PID {proc.pid}  {proc.process_name or ''} (mem: {proc.used_memory or 'N/A'})")
+
+    if args.dry_run:
+        return
+
+    sig = signal.SIGKILL if args.signal == "SIGKILL" else signal.SIGTERM
+
+    for proc in processes:
+        killed = warden._kill(proc.pid, sig)
+        status = "sent" if killed else "skipped"
+        print(f"  {args.signal} -> PID {proc.pid}: {status}")
+
+    print("Done.")
+
+
+if __name__ == "__main__":
+    main()

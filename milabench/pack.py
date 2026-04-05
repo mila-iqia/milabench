@@ -15,6 +15,7 @@ from sys import version_info as pyv
 from typing import Sequence
 from contextlib import contextmanager
 import tempfile
+import time
 
 from nox.sessions import Session, SessionRunner
 
@@ -23,6 +24,7 @@ from .alt_async import run, send
 from .fs import XPath
 from .merge import merge
 from .structs import BenchLogEntry
+from .system import option
 from .utils import (
     assemble_options,
     deprecated,
@@ -34,12 +36,10 @@ from .utils import (
 def should_use_uv(override):
     if override is not None:
         return override
-
-    from .system import option
+    
     return option("use_uv", int, 1)
 
 def no_build_isolation(build_isolation):
-    from .system import option
     if option("no_build_isolation", bool, not build_isolation):
         return ["--no-build-isolation"]
     return []
@@ -203,12 +203,26 @@ async def install_requires(pack: Package, *extras):
 
 
 def pip_more_args():
-    from .system import option
-
     system_extras = option("pip.args", str, "")
 
     if system_extras:
         return system_extras.split(",")
+
+    return []
+
+
+def pip_compile_extra_args():
+    # Wait for 2 weeks before updating packages
+    #   This is to mitigate supply chain attack
+    #   
+    #   Disabled by default because
+    #       numpy, flashinfer and more are not providing an upload date
+    #
+    # --generate-hashes would be an headache for arm + x86 support
+    avoid_newer = option("pip.avoid_newer", int, 0)
+
+    if avoid_newer:
+        return ["--exclude-newer", "2 weeks"]
 
     return []
 
@@ -254,14 +268,6 @@ class PackageCore:
         grp = config.get("group", config["name"])
         ig = config.get("install_group", grp)
         self.install_mark_file = self.dirs.extra / f"mark_{ig}"
-
-
-def pip_more_args():
-    from .system import option
-
-    system_extras = option("pip.args", str, "").split(",")
-
-    return system_extras
 
 
 class BasePackage:
@@ -636,6 +642,11 @@ class Package(BasePackage):
         if ivar == "unpinned":
             raise Exception("Cannot pin the 'unpinned' variant.")
 
+        #
+        sleep_time = option("pip.pin_sleep", int, 0)
+        if sleep_time > 0:
+            time.sleep(sleep_time)
+
         # assert self.phase == "pin"
         for base_reqs, reqs in self.requirements_map().items():
             if not base_reqs.exists():
@@ -682,6 +693,7 @@ class Package(BasePackage):
             "--emit-find-links",
             "--no-build-isolation",
             "--index-strategy", "unsafe-best-match",
+            *pip_compile_extra_args(),
             "-o",
             relativize(requirements_file, working_dir),
             *argv,
