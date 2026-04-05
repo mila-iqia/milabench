@@ -16,7 +16,7 @@ from ..config import build_config
 def get_benchmark_groups(config_path, exclude_tags=None):
     """Group non-private, enabled benchmarks by their definition path.
 
-    Returns a dict mapping definition path to a sorted list of benchmark names.
+    Returns a dict mapping definition path to a sorted list of (name, defn) pairs.
     """
     config = build_config(config_path)
 
@@ -37,23 +37,27 @@ def get_benchmark_groups(config_path, exclude_tags=None):
         if tags & exclude_tags:
             continue
 
-        groups[definition].append(name)
+        groups[definition].append((name, defn))
 
-    return {k: sorted(v) for k, v in groups.items()}
+    return {k: sorted(v, key=lambda x: x[0]) for k, v in groups.items()}
 
 
 def format_groups_for_ci(groups):
-    """Return a sorted list of {name, select} objects for the CI matrix.
+    """Return a sorted list of {name, select, multinode} objects for the CI matrix.
 
     ``name`` is the definition folder basename (e.g. "torchvision").
     ``select`` is the comma-separated list of benchmark names for --select.
+    ``multinode`` is true if any benchmark in the group requires more than one machine.
     """
     result = []
-    for definition, names in groups.items():
+    for definition, entries in groups.items():
         folder_name = Path(definition).name
+        names = [name for name, _ in entries]
+        multinode = any(defn.get("num_machines", 1) > 1 for _, defn in entries)
         result.append({
             "name": folder_name,
             "select": ",".join(sorted(names)),
+            "multinode": multinode,
         })
     return sorted(result, key=lambda g: g["name"])
 

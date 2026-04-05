@@ -89,6 +89,35 @@ _dinov2:
     options:
       stop: 5
 
+dinov2-giant-single:
+  enabled: false
+  argv:
+    - --output-dir
+    - "{milabench_extra}/output"
+    - --no-resume
+    - --config-file
+    - "{benchmark_folder}/src/dinov2/configs/train/vitg14.yaml"
+    # THOSE NEED TO BE LAST
+    - train.dataset_path=ImageNet:split=TRAIN:root={milabench_data}/FakeImageNet:extra={milabench_data}/FakeImageNet
+    - train.batch_size_per_gpu=2
+    - train.saveckp_freq=100
+    - train.num_workers=10
+
+dinov2-giant-gpus:
+  # Changed to be LARGE instead of GIANT
+  max_duration: 1800
+  argv:
+    - --output-dir
+    - "{milabench_extra}/output"
+    - --no-resume
+    - --config-file
+    - "{benchmark_folder}/src/dinov2/configs/train/vitl14.yaml"
+    # THOSE NEED TO BE LAST
+    - train.dataset_path=ImageNet:split=TRAIN:root={milabench_data}/FakeImageNet:extra={milabench_data}/FakeImageNet
+    - train.batch_size_per_gpu=2
+    - train.saveckp_freq=100
+    - train.num_workers=10
+
 # ---- llm ----
 
 _llm:
@@ -103,6 +132,7 @@ llm-lora-single:
 
 llm-lora-ddp-gpus:
   argv:
+    batch_size=1: true
     gradient_accumulation_steps=1: true
 
 llm-lora-mp-gpus:
@@ -111,6 +141,7 @@ llm-lora-mp-gpus:
 
 llm-full-mp-gpus:
   argv:
+    batch_size=1: true
     gradient_accumulation_steps=1: true
 
 # ---- purejaxrl ----
@@ -119,6 +150,7 @@ dqn:
   argv:
     --buffer_size: 8192
     --buffer_batch_size: 4096
+    --total_timesteps: 100000
 
 ppo:
   argv:
@@ -172,12 +204,13 @@ llama:
 vllm-dense-physics-gpus:
   client:
     argv:
-      --num-prompts: 50
+      --num-prompts: 10
 
 vllm-moe-code-gpus:
+  enabled: false
   client:
     argv:
-      --num-prompts: 50
+      --num-prompts: 10
 
 # ---- inference pipelines ----
 
@@ -185,6 +218,8 @@ whisper-transcribe-single:
   voir:
     options:
       stop: 5
+  argv:
+    --batch_size: "auto_batch(8)"
 
 txt-to-image-single:
   voir:
@@ -204,7 +239,12 @@ diffusion-nodes:
   enabled: true
 
 llm-lora-ddp-nodes:
-  enabled: true
+  # Too long on the spark
+  enabled: false
+
+  argv:
+    batch_size=1: true
+    gradient_accumulation_steps=1: true
 
 llm-full-mp-nodes:
   enabled: false

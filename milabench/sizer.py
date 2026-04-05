@@ -105,6 +105,7 @@ class Sizer:
             if config is None:
                 config = get_scaling_config()
 
+        self.scaling_config = {}
         if os.path.exists(config):
             with open(config, "r") as sconf:
                 self.scaling_config = yaml.safe_load(sconf)

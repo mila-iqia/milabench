@@ -318,7 +318,7 @@ class TimedIterator:
         self.event_fn = event_fn  # function to create a device event
         self.early_stop = get_observation_count(earlystop)  # Number of observation to target
         self.unit = 1000  # device timer is ms
-        self.last_time = time.time()
+        self.last_time = None
         self.message_push = push  # How to push the metrics usually voir or stdout
 
         # Number of times we broke out of the iterator for early stopping
@@ -381,6 +381,10 @@ class TimedIterator:
 
         self.unique_iterator = id(iterator)
         self.loader_init_time.append(ct.elapsed())
+
+        # with BENCHMATE_BATCH_FETCH this will ignore the dataloader setuptime
+        self.last_time = time.time()
+
         return self.wrapped(iterator, list(reversed(first_batches)))
 
     def _record_event(self, event: TimedEvent):
@@ -392,12 +396,10 @@ class TimedIterator:
     def wrapped(self, iterator, first_batches):
         # Time IO wait + batch compute
         self.record_lap("iter_start")
-        self.last_time = time.time()
         self.start = self.event_fn(enable_timing=True)
         self.start.record()
-        self.previous_overhead = 0
-
         next_time = None
+        self.previous_overhead = 0
 
         try:
             while True:
@@ -527,7 +529,7 @@ class TimedIterator:
         for event in self.events:
             rate, elapsed = self._make_rate(event)
             self.last_time += elapsed
-            self.log_rate(rate, time=self.last_time, elapsed=elapsed, batch_id=event.batch_id)
+            self.log_rate(rate, time=self.last_time, elapsed=elapsed, batch_id=event.batch_id, schedule_time=event.cpu_timer)
 
         self.total_obs += len(self.events)
         self.events = []
@@ -599,10 +601,10 @@ class TimedIterator:
             self.message(sync_time=sync_time.elapsed(), units="s", task=self.task)
             self.message(process_time=process_time.elapsed(), units="s", task=self.task)
 
-    def log_rate(self, rate, time=None, elapsed=None, batch_id=None):
+    def log_rate(self, rate, time=None, elapsed=None, batch_id=None, schedule_time=None):
         self.message(
             rate=rate, units="items/s", task=self.task,
-            time=time, elapsed=elapsed, batch_id=batch_id
+            time=time, elapsed=elapsed, batch_id=batch_id, schedule_time=schedule_time
         )
 
     def log_progress(self):
@@ -654,6 +656,7 @@ class ManualTimedIterator(TimedIterator):
        
     def wrapped(self, iterator, first_batches):
         # Time IO wait + batch compute
+        self.record_lap("iter_start")
         self.start = self.event_fn(enable_timing=True)
         self.start.record()
         self.previous_overhead = 0

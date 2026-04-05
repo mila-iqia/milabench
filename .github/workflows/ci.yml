@@ -116,21 +116,10 @@ jobs:
       #     pip install torch torchvision --index-url https://download.pytorch.org/whl/cu130
       #     UV_TORCH_BACKEND=cu130 MILABENCH_GPU_ARCH=cuda milabench pin --from-scratch --variant cuda
 
-      - name: Detect architecture and Dockerfile
+      - name: Detect Dockerfile
         id: arch
         run: |
-          ARCH=$(uname -m)
-          echo "arch=$ARCH" >> "$GITHUB_OUTPUT"
-
-          DOCKERFILE="${{ inputs.dockerfile }}"
-          if [ -z "$DOCKERFILE" ]; then
-            if [ "$ARCH" = "aarch64" ]; then
-              DOCKERFILE="Dockerfile-ngc"
-            else
-              DOCKERFILE="Dockerfile-cuda"
-            fi
-          fi
-
+          DOCKERFILE="${{ inputs.dockerfile || 'Dockerfile-cuda' }}"
           echo "dockerfile=docker/$DOCKERFILE" >> "$GITHUB_OUTPUT"
 
           if [ "$DOCKERFILE" = "Dockerfile-ngc" ]; then
@@ -171,6 +160,7 @@ jobs:
               ${{ steps.arch.outputs.extra_args }}
 
       - name: Push Container
+        if: ${{ matrix.group.multinode }}
         run: |
           docker save "$IMAGE_TAG-${{ matrix.group.name }}" | ssh spark2 'docker load'
   
@@ -208,11 +198,11 @@ jobs:
 
       - name: Cleanup Docker image
         if: always()
-        run: |
-          IMAGE="$IMAGE_TAG-${{ matrix.group.name }}"
+        run: docker rmi "$IMAGE_TAG-${{ matrix.group.name }}" || true
 
-          docker rmi "$IMAGE" || true
-          ssh spark2 "docker rmi '$IMAGE'" || true
+      - name: Cleanup Docker image on spark2
+        if: always() && matrix.group.multinode
+        run: ssh spark2 "docker rmi '$IMAGE_TAG-${{ matrix.group.name }}'" || true
 
   # ------------------------------------------------------------------
   # 3. Once every group passes, build a single image with ALL

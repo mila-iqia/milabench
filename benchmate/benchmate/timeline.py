@@ -207,6 +207,7 @@ class TimelineProcessor:
             self.start = min(job.start, self.start)
             self.end = max(job.end, self.end)
 
+        # Do a dynamic sample here
         self._sample(number)
 
         buckets = []
@@ -241,7 +242,7 @@ class TimelineProcessor:
             rate = bucket.tokens / (bucket.end - bucket.start)
             self.avg += rate
             self.output.append({
-                "time": bucket.end,
+                "time": bucket.end + self.start,
                 "rate": rate,
                 "active_jobs": bucket.active_jobs(),
                 "start_job": bucket.start_job_count(),

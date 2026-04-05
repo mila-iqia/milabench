@@ -3,6 +3,8 @@
 --index-url https://pypi.org/simple
 --extra-index-url https://flashinfer.ai/whl/cu130
 --extra-index-url https://download.pytorch.org/whl/cu130
+--find-links https://github.com/milabench/wheels/releases/expanded_assets/cu130-wheels
+--find-links https://github.com/vllm-project/vllm/releases/expanded_assets/v0.18.1
 --find-links https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 --find-links https://data.pyg.org/whl/torch-2.10.0+cu130.html
 
@@ -102,7 +104,7 @@ cuda-bindings==13.0.3
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   torch
-cuda-pathfinder==1.4.3
+cuda-pathfinder==1.5.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   cuda-bindings
@@ -131,7 +133,7 @@ dm-env==1.6
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   rlax
-dm-tree==0.1.9
+dm-tree==0.1.10
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   dm-env
@@ -423,7 +425,6 @@ numpy==2.2.6
     #   tfp-nightly
     #   treescope
     #   trimesh
-    #   xformers
 nvidia-cublas==13.1.0.3
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
@@ -556,8 +557,9 @@ packaging==26.0
     #   pytest
     #   setuptools-scm
     #   tensorboardx
+    #   vcs-versioning
     #   wandb
-pandas==3.0.1
+pandas==3.0.2
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   seaborn
@@ -565,7 +567,7 @@ pathspec==1.0.4
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   black
-pillow==12.1.1
+pillow==12.2.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   brax
@@ -613,7 +615,7 @@ pyflakes==3.4.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   flake8
-pygments==2.19.2
+pygments==2.20.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   pytest
@@ -655,7 +657,7 @@ reactivex==4.1.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   giving
-requests==2.32.5
+requests==2.33.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   wandb
@@ -680,7 +682,7 @@ seaborn==0.13.2
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   gymnax
-sentry-sdk==2.55.0
+sentry-sdk==2.57.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   wandb
@@ -689,7 +691,7 @@ setuptools==80.10.2
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   setuptools-scm
     #   torch
-setuptools-scm==9.2.2
+setuptools-scm==10.0.5
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   navix
@@ -720,7 +722,7 @@ tensorstore==0.1.82
     #   flashbax
     #   flax
     #   orbax-checkpoint
-tfp-nightly==0.26.0.dev20260323
+tfp-nightly==0.26.0.dev20260401
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -r benchmarks/purejaxrl/requirements.in
@@ -738,12 +740,11 @@ torch==2.10.0+cu130
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   -c .pin/../constraints/cuda.txt
     #   -r benchmarks/purejaxrl/requirements.in
-    #   xformers
 treescope==0.1.10
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   flax
-trimesh==4.11.4
+trimesh==4.11.5
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   brax
@@ -784,7 +785,7 @@ typing-inspection==0.4.2
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   pydantic
-tyro==1.0.10
+tyro==1.0.11
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   navix
@@ -801,6 +802,10 @@ varname==0.15.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   giving
+vcs-versioning==1.1.1
+    # via
+    #   -c .pin/../.pin/constraints-cuda-torch.txt
+    #   setuptools-scm
 voir==0.2.23
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
@@ -814,7 +819,7 @@ wandb==0.25.1
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   navix
-werkzeug==3.1.6
+werkzeug==3.1.7
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   flask
@@ -823,10 +828,6 @@ wrapt==2.1.2
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
     #   dm-tree
-xformers==0.0.35
-    # via
-    #   -c .pin/../.pin/constraints-cuda-torch.txt
-    #   -r .pin/../constraints/extra/torch.cuda.txt
 zipp==3.23.0
     # via
     #   -c .pin/../.pin/constraints-cuda-torch.txt
