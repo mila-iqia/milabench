@@ -28,16 +28,18 @@ numpy = ">=1.23.0,<2.0.0"
 tqdm = "^4.64.1"
 rich = "^13.3.2"
 omegaconf = "^2.3.0"
-sqlalchemy = "^2.0.15"
 pymongo =  "^4.3.3"
-psycopg2-binary = {version = "^2.9.6", optional = true}
 py-cpuinfo = "^9.0.0"
 psutil = "^7.0.0"
 importlib-resources = "^6.1.0"
 filelock = "^3.15.3"
 hrepr = ">=0.7.0"
 cantilever = ">=0.1.0"
+altair = "^5.5.0"
 nvidia-ml-py = { version = "^12.555.43", optional = true }
+sqlalchemy = "^2.0.15"
+psycopg2-binary = {version = "^2.9.6", optional = true}
+alembic = {version = "^1.16.4", optional = true}
 uv = "^0.10.4"
 
 [tool.poetry.extras]
@@ -45,20 +47,10 @@ cuda = ["nvidia-ml-py"]
 rocm = []
 hpu = []
 xpu = []
-web = ["psycopg2-binary"]
+web = ["psycopg2-binary", "alembic"]
 
 [tool.poetry.group.cuda.dependencies]
 nvidia-ml-py = "^12.575.51"
-
-[tool.poetry.group.web.dependencies]
-flask = "^3.1.1"
-flask-caching = "^2.3.1"
-flask-socketio = "^5.4.0"
-psycopg2-binary = "^2.9.10"
-altair = "^5.5.0"
-waitress = "^3.0.2"
-alembic = "^1.16.4"
-apscheduler = "^3.11"
 
 [tool.poetry.group.dev.dependencies]
 black = ">=21.10b0"

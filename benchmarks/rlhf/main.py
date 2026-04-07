@@ -131,25 +131,34 @@ def main():
     )
 
     tokenizer = AutoTokenizer.from_pretrained(
-        model_args.model_name_or_path, padding_side="left", trust_remote_code=model_args.trust_remote_code
+        model_args.model_name_or_path, 
+        padding_side="left", 
+        trust_remote_code=model_args.trust_remote_code
     )
-    tokenizer.add_special_tokens({"pad_token": "[PAD]"})
+    # tokenizer.add_special_tokens({"pad_token": "[PAD]"})
     if tokenizer.chat_template is None:
         tokenizer.chat_template = SIMPLE_CHAT_TEMPLATE
+
     value_model = AutoModelForSequenceClassification.from_pretrained(
-        training_args.reward_model_path, trust_remote_code=model_args.trust_remote_code, num_labels=1
+        training_args.reward_model_path, 
+        trust_remote_code=model_args.trust_remote_code, 
+        num_labels=1
     )
     reward_model = AutoModelForSequenceClassification.from_pretrained(
-        training_args.reward_model_path, trust_remote_code=model_args.trust_remote_code, num_labels=1
+        training_args.reward_model_path,
+         trust_remote_code=model_args.trust_remote_code, 
+         num_labels=1
     )
     policy = AutoModelForCausalLM.from_pretrained(
-        training_args.sft_model_path, trust_remote_code=model_args.trust_remote_code
+        training_args.sft_model_path, 
+        trust_remote_code=model_args.trust_remote_code
     )
 
     peft_config = get_peft_config(model_args)
     if peft_config is None:
         ref_policy = AutoModelForCausalLM.from_pretrained(
-            training_args.sft_model_path, trust_remote_code=model_args.trust_remote_code
+            training_args.sft_model_path, 
+            trust_remote_code=model_args.trust_remote_code
         )
     else:
         ref_policy = None
