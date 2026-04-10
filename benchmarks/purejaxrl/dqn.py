@@ -2,21 +2,18 @@
 PureJaxRL version of CleanRL's DQN: https://github.com/vwxyzjn/cleanrl/blob/master/cleanrl/dqn_jax.py
 """
 from dataclasses import dataclass
-import time
 
+import chex
+import flashbax as fbx
+import flax
+import flax.linen as nn
+import gymnax
 import jax
 import jax.numpy as jnp
-import chex
-import flax
 import optax
-import flax.linen as nn
-from flax.training.train_state import TrainState
-import gymnax
-from gymnax.wrappers.purerl import FlattenObservationWrapper, LogWrapper
-import flashbax as fbx
-
 from benchmate.metrics import give_push
-
+from flax.training.train_state import TrainState
+from gymnax.wrappers.purerl import FlattenObservationWrapper, LogWrapper
 
 
 class QNetwork(nn.Module):
@@ -51,8 +48,8 @@ class CustomTrainState(TrainState):
 def make_train(config):
     config["NUM_UPDATES"] = config["TOTAL_TIMESTEPS"] // config["NUM_ENVS"]
 
-    from benchmate.timings import StepTimer
     from benchmate.jaxmem import memory_peak_fetcher
+    from benchmate.timings import StepTimer
     step_timer = StepTimer(give_push())
     fetch_memory_peak = memory_peak_fetcher()
 
@@ -87,10 +84,10 @@ def make_train(config):
             sample=jax.jit(buffer.sample),
             can_sample=jax.jit(buffer.can_sample),
         )
-        rng = jax.random.PRNGKey(0)  # use a dummy rng here
-        _action = basic_env.action_space().sample(rng)
-        _, _env_state = env.reset(rng, env_params)
-        _obs, _, _reward, _done, _ = env.step(rng, _env_state, _action, env_params)
+        _dummy_rng = jax.random.PRNGKey(0)  # only used for one step to infer buffer shapes
+        _action = basic_env.action_space().sample(_dummy_rng)
+        _, _env_state = env.reset(_dummy_rng, env_params)
+        _obs, _, _reward, _done, _ = env.step(_dummy_rng, _env_state, _action, env_params)
         _timestep = TimeStep(obs=_obs, action=_action, reward=_reward, done=_done)
         buffer_state = buffer.init(_timestep)
 
@@ -241,25 +238,20 @@ def make_train(config):
                 "returns": info["returned_episode_returns"].mean(),
             }
 
-            def callback(metrics):
+            def log_metrics(metrics) -> None:
                 returns = metrics["returns"].item()
                 loss = metrics["loss"].block_until_ready().item()
                 delta = metrics["timesteps"] - step_timer.timesteps
                 step_timer.timesteps = metrics["timesteps"]
-                
                 step_timer.step(delta.item())
                 step_timer.log(returns=returns, loss=loss)
                 step_timer.log(memory_peak=fetch_memory_peak(), units="MiB")
                 step_timer.end()
 
-            def _do_callback(_metrics):
-                jax.debug.callback(callback, _metrics)
-                return jnp.int32(0)
-
             jax.lax.cond(
                 metrics["timesteps"] % 1000 == 0,
-                _do_callback,
-                lambda _: jnp.int32(0),
+                lambda m: jax.debug.callback(log_metrics, m),
+                lambda m: None,
                 metrics,
             )
 
@@ -387,7 +379,7 @@ def main(args: Arguments = None):
     from benchmate.profiler import jax_profiler
     with bench_monitor():
         with jax_profiler():
-            outs = jax.block_until_ready(compiled_fn(rngs))
+            return jax.block_until_ready(compiled_fn(rngs))
 
 
 if __name__ == "__main__":
