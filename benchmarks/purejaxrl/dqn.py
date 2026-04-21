@@ -2,21 +2,18 @@
 PureJaxRL version of CleanRL's DQN: https://github.com/vwxyzjn/cleanrl/blob/master/cleanrl/dqn_jax.py
 """
 from dataclasses import dataclass
-import time
 
+import chex
+import flashbax as fbx
+import flax
+import flax.linen as nn
+import gymnax
 import jax
 import jax.numpy as jnp
-import chex
-import flax
 import optax
-import flax.linen as nn
-from flax.training.train_state import TrainState
-import gymnax
-from gymnax.wrappers.purerl import FlattenObservationWrapper, LogWrapper
-import flashbax as fbx
-
 from benchmate.metrics import give_push
-
+from flax.training.train_state import TrainState
+from gymnax.wrappers.purerl import FlattenObservationWrapper, LogWrapper
 
 
 class QNetwork(nn.Module):
@@ -51,8 +48,8 @@ class CustomTrainState(TrainState):
 def make_train(config):
     config["NUM_UPDATES"] = config["TOTAL_TIMESTEPS"] // config["NUM_ENVS"]
 
-    from benchmate.timings import StepTimer
     from benchmate.jaxmem import memory_peak_fetcher
+    from benchmate.timings import StepTimer
     step_timer = StepTimer(give_push())
     fetch_memory_peak = memory_peak_fetcher()
 
@@ -246,7 +243,6 @@ def make_train(config):
                 loss = metrics["loss"].block_until_ready().item()
                 delta = metrics["timesteps"] - step_timer.timesteps
                 step_timer.timesteps = metrics["timesteps"]
-                
                 step_timer.step(delta.item())
                 step_timer.log(returns=returns, loss=loss)
                 step_timer.log(memory_peak=fetch_memory_peak(), units="MiB")
@@ -315,15 +311,30 @@ def make_train(config):
 # dqn.D0 [stdout]   pool_bytes: 60832.359375 MiB
 # dqn.D0 [stdout]   peak_pool_bytes: 60832.359375 MiB
 
+# When scaling `num_envs`, take care to not change the number of
+# training steps. For example, a training interval of 10 is the
+# modulod with the timestep to signal training. If there are 11
+# parallel environements, the modulo will not do what you might
+# expect. More than 110 steps will run: [11, 22, 33, 44, ..., 110].
+# Similarly, `target_update_interval` of 500 can also be skipped.
+#
+# When num_envs exceeds 10 environments, the training_interval is
+# no longer respected.
+#
+# To see num_env(1) defaults, see the cleanrl implementation at:
+# https://github.com/vwxyzjn/cleanrl/blob/master/cleanrl/dqn.py
+
 
 @dataclass
 class Arguments:
+    benchmark: str = 'dqn'
     num_envs: int = 10                  # No impact on memory
     buffer_size: int = 10000            # No impact on memory
     buffer_batch_size: int = 128
-    total_timesteps: int = 100_000      # No impact on memory
+    total_timesteps: int = 500000       # No impact on memory
     epsilon_start: float =  1.0
     epsilon_finish: float = 0.05
+    exploration_fraction: float = 0.5
     epsilon_anneal_time: int = 25e4
     target_update_interval: int = 500
     lr: float = 2.5e-4
@@ -338,11 +349,29 @@ class Arguments:
     project: str = ""
     dtype: str = "fp32"
 
+    def __post_init__(self):
+        if self.exploration_fraction * self.total_timesteps != self.epsilon_anneal_time:
+            raise ValueError(f"{self.epsilon_anneal_time=} must be equal to exploration_fraction * total_timesteps")
+        if self.target_update_interval % self.num_envs:
+            raise ValueError(f"{self.target_update_interval=} must be divisible by {self.num_envs=}")
+        if self.learning_starts > self.total_timesteps:
+            raise ValueError(f"{self.learning_starts=} exceeds {self.total_timesteps=}")
+        if self.epsilon_anneal_time > self.total_timesteps:
+            raise ValueError(f"{self.epsilon_anneal_time=} exceeds {self.total_timesteps=}")
+        if self.env_name.endswith('-MinAtar'):
+            # The DQN algorithm is the same for DQN-Atari, but the implementation
+            # differs from the original 2015 DQN paper in multiple ways:
+            #   1. Hyperparameters (larger RB)
+            #   2. Q-network architecture (CNN)
+            #   3. Different model optimizer (Adam)
+            #   4. Environment initialization (noop frames)
+            # To add support, port https://github.com/vwxyzjn/cleanrl/blob/master/cleanrl/dqn_atari.py
+            raise ValueError("Atari environments are not supported by this pipeline.")
+
 
 def add_dqn_command(subparser):
     parser = subparser.add_parser('dqn', help='RL dqn benchmark')
     parser.add_arguments(Arguments)
-
 
 
 _DTYPE_MAP = {
@@ -355,6 +384,9 @@ _DTYPE_MAP = {
 def main(args: Arguments = None):
     if args is None:
         args = Arguments()
+    else:
+        # Arguments.__post_init__() is not evaluated by main.py
+        args = Arguments(**vars(args))
 
     config = {
         "NUM_ENVS": args.num_envs,
