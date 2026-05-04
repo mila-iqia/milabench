@@ -33,7 +33,7 @@ def make_environments(args):
         envs.single_action_space = envs.action_space
         envs.single_observation_space = envs.observation_space
         envs = RecordEpisodeStatistics(envs)
-        assert isinstance(envs.action_space, gym.spaces.Discrete), "only discrete action space is supported"
+        assert hasattr(envs.action_space, 'n'), "only discrete action space is supported"
 
         return envs
     except ModuleNotFoundError:
