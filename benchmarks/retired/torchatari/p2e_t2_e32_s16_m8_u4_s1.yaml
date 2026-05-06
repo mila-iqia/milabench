@@ -1,0 +1,22 @@
+torchatari:
+  max_duration: 1440
+  inherits: _defaults
+  definition: .
+  install_variant: unpinned
+  install_group: torch
+  plan:
+    method: per_gpu
+  voir:
+    options:
+      stop: 9020
+      interval: "1s"
+      skip: 5
+  argv:
+    --num-minibatches: 8
+    --update-epochs: 4
+    --num-steps: 16
+    --num-envs: 32
+    --total-timesteps: 500000000
+    --env-id: Breakout-v5
+    --exp-name: e32s16m8u4
+    --seed: 1
