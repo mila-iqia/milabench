@@ -911,6 +911,35 @@ grpo-gpus:
     method: njobs
     n: 1
 
+_grpo_vllm:
+  inherits: _grpo
+  tags:
+    - rl
+    - grpo
+    - llm
+    - vllm
+  argv:
+    --use_vllm: true
+    --vllm_importance_sampling_correction: true
+    --vllm_mode: "colocate"
+    --vllm_gpu_memory_utilization: 0.15
+    --vllm_max_model_length: 1024
+
+grpo-vllm-single:
+  inherits: _grpo_vllm
+  tags:
+    - monogpu
+  plan:
+    method: per_gpu
+
+grpo-vllm-gpus:
+  inherits: _grpo_vllm
+  tags:
+    - multigpu
+  plan:
+    method: njobs
+    n: 1
+
 _vjepa:
   inherits: _defaults
   install_group: torch
