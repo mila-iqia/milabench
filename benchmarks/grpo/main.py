@@ -14,7 +14,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import shutil
+
+# Per-GPU launches (milabench's `per_gpu` plan) all share the same host
+# and default to MASTER_PORT=29500. With vllm_mode=colocate, vllm calls
+# torch.distributed.init_process_group inside each process, causing
+# EADDRINUSE. Derive a unique port from the first visible GPU id.
+def _setup_distributed_env():
+    visible = os.environ.get("CUDA_VISIBLE_DEVICES") or os.environ.get("HIP_VISIBLE_DEVICES") or ""
+    first = visible.split(",")[0].strip() if visible else ""
+    try:
+        offset = int(first)
+    except ValueError:
+        offset = 0
+    os.environ.setdefault("MASTER_ADDR", "127.0.0.1")
+    os.environ.setdefault("MASTER_PORT", str(29500 + offset))
+
+_setup_distributed_env()
 
 import torch
 import accelerate
