@@ -34,9 +34,9 @@ from trl import (
     get_peft_config,
     get_quantization_config,
 )
-from trl.experimental.utils import SIMPLE_CHAT_TEMPLATE
-
 import torchcompat.core as compat
+
+SIMPLE_CHAT_TEMPLATE = "{% for message in messages %}{{message['role'].capitalize() + ': ' + message['content'] + '\n\n'}}{% endfor %}{% if add_generation_prompt %}{{ 'Assistant:' }}{% endif %}"
 
 
 class GRPOTrainerInstrumented(GRPOTrainer):
