@@ -67,19 +67,22 @@ class GRPOTrainerInstrumented(GRPOTrainer):
 
         from benchmate.observer import BenchObserver
 
-        # Match the rlhf/PPO bench's tokens-per-second accounting. GRPO's
-        # dataloader yields raw `prompt` rows before generation, so multiply
-        # by num_generations * max_completion_length to count generated tokens.
-        num_generations = args.num_generations
+        # GRPO sets `data_collator=identity`, so each dataloader yield is a
+        # list of raw dataset rows. The RepeatSampler already repeats each
+        # prompt `num_generations` times, so len(batch) counts (prompt,
+        # generation) pairs. Multiply by max_completion_length to count
+        # generated tokens, matching the rlhf bench's tokens-per-second.
         max_completion_length = args.max_completion_length
 
         def batch_size_fn(batch):
+            if isinstance(batch, list):
+                return len(batch) * max_completion_length
             if isinstance(batch, dict):
-                if "prompt" in batch:
-                    return len(batch["prompt"]) * num_generations * max_completion_length
                 if "input_ids" in batch:
                     shape = batch["input_ids"].shape
                     return shape[0] * shape[-1]
+                if "prompt" in batch:
+                    return len(batch["prompt"]) * max_completion_length
             return 1
 
         self._bench_observer = BenchObserver(
