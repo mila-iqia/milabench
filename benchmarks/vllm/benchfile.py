@@ -51,7 +51,6 @@ class VLLM(Package):
 
         #  FIXME
         env["VLLM_TARGET_DEVICE"] = "rocm"
-        env["VLLM_DISABLE_FLASHINFER"] = "1"
         env["FLASH_ATTENTION_TRITON_AMD_ENABLE"] = "TRUE"
 
         return env

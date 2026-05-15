@@ -1,14 +1,17 @@
 --extra-index-url https://download.pytorch.org/whl/rocm7.2
 --extra-index-url https://pypi.amd.com/rocm-7.2.0/simple/
 --extra-index-url https://wheels.vllm.ai/rocm/
-
---find-links https://github.com/ROCm/rocm-jax/releases/expanded_assets/rocm-jax-v0.8.2
+--extra-index-url https://repo.amd.com/rocm/whl/gfx950-dcgpu/
 
 amd-flashinfer==0.5.3
 
-jax==0.8.2
-jax-rocm7-pjrt==0.8.2+rocm7.2.0
-jax-rocm7-plugin==0.8.2+rocm7.2.0
-jaxlib==0.8.2+rocm7
+jax
+jax-rocm7-pjrt
+jax-rocm7-plugin
+jaxlib
 
-# https://github.com/ROCm/rocm-jax/releases/download/rocm-jax-v0.8.2/jaxlib-0.8.2+rocm7-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
+vllm==0.21.0+rocm722
+
+# Torch for vllm is a 2.10
+# {"event": "line", "data": "Skipping import of cpp extensions due to incompatible torch version 2.10.0+git8514f05 for torchao version 0.16.0+rocm7.1  
+torchao==0.16.0+rocm7.1
