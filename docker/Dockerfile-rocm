@@ -15,6 +15,7 @@ ENV MILABENCH_CONFIG_NAME=$CONFIG
 ENV MILABENCH_DOCKER=1
 ENV MILABENCH_SELECT=$SELECT
 ENV MILABENCH_VARIANT=$VARIANT
+ENV MILABENCH_EXCLUDE=pna,dimenet,recursiongfn
 
 
 # Paths
@@ -78,7 +79,7 @@ ENV PIP_DEFAULT_TIMEOUT=800
 ENV PYTORCH_ROCM_ARCH="gfx950"
 
 RUN ln -s /milabench/.env/bin/milabench /usr/local/bin/milabench                                                                                             &&\
-    $MILAENCH_ENV/bin/milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE ${MILABENCH_SELECT:+--select $MILABENCH_SELECT} ${MILABENCH_VARIANT:+--variant $MILABENCH_VARIANT} $MILABENCH_ARGS &&\
+    $MILAENCH_ENV/bin/milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE ${MILABENCH_EXCLUDE:+--exclude $MILABENCH_EXCLUDE} ${MILABENCH_SELECT:+--select $MILABENCH_SELECT} ${MILABENCH_VARIANT:+--variant $MILABENCH_VARIANT} $MILABENCH_ARGS &&\
     python -m pip cache purge
 
 # CMD milabench run
