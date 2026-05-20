@@ -30,7 +30,6 @@ from transformers import (
 )
 
 from trl.experimental.ppo import PPOConfig, PPOTrainer
-from trl.experimental.utils import SIMPLE_CHAT_TEMPLATE
 
 from trl import (
     ModelConfig,
@@ -38,6 +37,8 @@ from trl import (
     get_peft_config,
     get_quantization_config,
 )
+
+SIMPLE_CHAT_TEMPLATE = "{% for message in messages %}{{message['role'].capitalize() + ': ' + message['content'] + '\n\n'}}{% endfor %}{% if add_generation_prompt %}{{ 'Assistant:' }}{% endif %}"
 
 import torchcompat.core as compat
 
@@ -108,7 +109,6 @@ class PPOv2TrainerIntrumented(PPOTrainer):
 
 def main():
     from trl.scripts.utils import ScriptArguments
-    # SIMPLE_CHAT_TEMPLATE = "{% for message in messages %}{{message['role'].capitalize() + ': ' + message['content'] + '\n\n'}}{% endfor %}{% if add_generation_prompt %}{{ 'Assistant:' }}{% endif %}"
 
     parser = HfArgumentParser((ScriptArguments, PPOConfig, ModelConfig))
     script_args, training_args, model_args = parser.parse_args_into_dataclasses()
