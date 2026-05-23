@@ -1,11 +1,12 @@
 
-FROM rocm/dev-ubuntu-24.04:6.4.3
+FROM rocm/dev-ubuntu-24.04:7.2.3
+
 
 # Arguments
 # ---------
 
-ARG ARCH=rocm
 ARG CONFIG=all.yaml
+ARG ARCH=rocm
 ARG SELECT=""
 ARG VARIANT=""
 
@@ -14,16 +15,16 @@ ENV MILABENCH_CONFIG_NAME=$CONFIG
 ENV MILABENCH_DOCKER=1
 ENV MILABENCH_SELECT=$SELECT
 ENV MILABENCH_VARIANT=$VARIANT
+ENV MILABENCH_EXCLUDE=pna,dimenet,recursiongfn
 
 
 # Paths
 # -----
 
 ENV MILABENCH_CONFIG=/milabench/milabench/config/$MILABENCH_CONFIG_NAME
-ENV MILABENCH_BASE=/milabench/envs
+ENV MILABENCH_BASE=/milabench/results
+ENV MILABENCH_OUTPUT=/milabench/results/
 ENV MILABENCH_ARGS=""
-ENV MILABENCH_OUTPUT="$MILABENCH_BASE/runs"
-ENV BENCHMARK_VENV="$MILABENCH_BASE/venv"
 
 # Copy milabench
 # --------------
@@ -31,31 +32,33 @@ ENV BENCHMARK_VENV="$MILABENCH_BASE/venv"
 WORKDIR /milabench
 COPY . /milabench/milabench/
 
-
 # Install Dependencies
 # --------------------
 
-#            curl: used to download anaconda
+#            curl: used to download anaconda and rust
 #             git: used by milabench
 #           rustc: used by BERT models inside https://pypi.org/project/tokenizers/
 # build-essential: for rust
 
-RUN apt-get update            &&\
-    apt-get install -y git build-essential curl python3 python3-virtualenv python-is-python3 python3-pip libgl1 libglib2.0-0 gcc g++ python3-dev &&\
-    apt-get install -y rocthrust hipsparse &&\
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update -y &&\
+    apt-get install -y --no-install-recommends ffmpeg zip ssh rsync git build-essential curl python3 python3-virtualenv python-is-python3 python3-pip libgl1 libglib2.0-0 gcc g++ python3-dev &&\
+    apt-get install -y --no-install-recommends rocm-libs libopenmpi-dev openmpi-bin &&\
     apt-get clean &&\
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* &&\
+    curl https://sh.rustup.rs -sSf | sh -s -- -y
 
-
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
 ENV ROCM_HOME="/opt/rocm"
+ENV PATH="/root/.local/bin:/root/.cargo/bin:${PATH}"
+ENV XDG_CACHE_HOME=/milabench/results/cache
+ENV HF_HOME=/milabench/results/cache
+ENV TORCH_HOME=/milabench/results/cache
 
 # Install Milabench
 # -----------------
-ENV MILAENCH_ENV=/milabench/.env
 
-RUN RUN curl -LsSf https://astral.sh/uv/install.sh | sh                 &&\
+ENV MILAENCH_ENV=/milabench/.env
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh                 &&\
     virtualenv $MILAENCH_ENV                                            &&\
     $MILAENCH_ENV/bin/python -m pip install -U pip                      &&\
     $MILAENCH_ENV/bin/python -m pip install -U setuptools               &&\
@@ -68,8 +71,15 @@ RUN RUN curl -LsSf https://astral.sh/uv/install.sh | sh                 &&\
 
 # pip times out often when downloading pytorch
 ENV PIP_DEFAULT_TIMEOUT=800
-ENV ROCM_HOME="/opt/rocm"
-RUN $MILAENCH_ENV/bin/milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE ${MILABENCH_SELECT:+--select $MILABENCH_SELECT} ${MILABENCH_VARIANT:+--variant $MILABENCH_VARIANT} $MILABENCH_ARGS &&\
+
+# MI100                 : gfx908
+# MI210/MI250/MI250X    : gfx90a
+# MI300X/MI300A/MI325X  : gfx942
+# MI355X                : gfx950
+ENV PYTORCH_ROCM_ARCH="gfx950"
+
+RUN ln -s /milabench/.env/bin/milabench /usr/local/bin/milabench                                                                                             &&\
+    $MILAENCH_ENV/bin/milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE ${MILABENCH_EXCLUDE:+--exclude $MILABENCH_EXCLUDE} ${MILABENCH_SELECT:+--select $MILABENCH_SELECT} ${MILABENCH_VARIANT:+--variant $MILABENCH_VARIANT} $MILABENCH_ARGS &&\
     python -m pip cache purge
 
-CMD ["milabench", "run"]
+# CMD milabench run

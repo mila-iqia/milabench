@@ -43,7 +43,7 @@ def main():
     download_hf_dataset(args.hf_name, args.hf_split)
     download_hf_model(args.model)
 
-    setup_flashinfer()
+    # setup_flashinfer()
 
     print("=" * 60)
     print("Prepare script completed successfully")

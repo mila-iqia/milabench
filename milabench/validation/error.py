@@ -36,7 +36,7 @@ class ParsedTraceback:
         raised_idx, _ = self.find_raise()
 
         if raised_idx is not None:
-            return self.lines[min(raised_idx + 1, len(self.lines))]
+            return self.lines[min(raised_idx + 1, len(self.lines) - 1)]
 
         return self.lines[-1]
 
