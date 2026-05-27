@@ -31,7 +31,7 @@ def upgrade() -> None:
         Metric.name == 'return_code',
         Metric.value == -15
     ).distinct()
-    
+
     session.execute(
         update(Pack)
         .where(Pack._id.in_(early_stop_packs))

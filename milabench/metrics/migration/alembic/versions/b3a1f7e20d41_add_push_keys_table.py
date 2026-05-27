@@ -6,6 +6,7 @@ Create Date: 2026-05-27 09:30:00.000000
 
 """
 from typing import Sequence, Union
+import os
 
 from alembic import op
 import sqlalchemy as sa
@@ -30,6 +31,11 @@ def upgrade() -> None:
     )
     op.create_index('push_keys_key', 'push_keys', ['key'], unique=False)
     op.create_index('push_keys_name', 'push_keys', ['name'], unique=False)
+
+    app_user = os.getenv("POSTGRES_USER")
+    if app_user:
+        op.execute(sa.text(f'GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE push_keys TO "{app_user}"'))
+        op.execute(sa.text(f'GRANT USAGE, SELECT ON SEQUENCE push_keys__id_seq TO "{app_user}"'))
 
 
 def downgrade() -> None:

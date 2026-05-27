@@ -42,9 +42,9 @@ def upgrade() -> None:
 
     # Insert default weights
     op.execute("""
-        INSERT INTO 
+        INSERT INTO
             weights (profile, weight, priority, pack, enabled, group1, group2)
-        VALUES 
+        VALUES
             ('default', 0, 1000, 'fp16', TRUE, 'SYNTHETIC', 'FLOPS'),
             ('default', 0, 1001, 'bf16', TRUE, 'SYNTHETIC', 'FLOPS'),
             ('default', 0, 1002, 'tf32', TRUE, 'SYNTHETIC', 'FLOPS'),

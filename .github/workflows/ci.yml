@@ -205,11 +205,41 @@ jobs:
         run: ssh spark2 "docker rmi '$IMAGE_TAG-${{ matrix.group.name }}'" || true
 
   # ------------------------------------------------------------------
-  # 3. Once every group passes, build a single image with ALL
+  # 3. Aggregate all bench results and publish to the dashboard.
+  # ------------------------------------------------------------------
+  report:
+    needs: bench
+    if: always() && !cancelled()
+    runs-on: [self-hosted]
+
+    env:
+      MILABENCH_BASE: ${{ vars.MILABENCH_BASE || '/opt/milabench/' }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install milabench
+        run: pip install .
+
+      - name: Generate report and publish
+        env:
+          MILABENCH_PUBLISH_KEY: ${{ secrets.MILABENCH_PUBLISH_KEY }}
+          MILABENCH_DASHBOARD_URL: ${{ vars.MILABENCH_DASHBOARD_URL || 'https://www.milabench.com' }}
+        run: |
+          milabench report \
+            --runs "$MILABENCH_BASE/runs/${{ github.sha }}" \
+            --publish "$MILABENCH_PUBLISH_KEY"
+
+  # ------------------------------------------------------------------
+  # 4. Once every group passes, build a single image with ALL
   #    benchmarks and publish it to GitHub Container Registry.
   # ------------------------------------------------------------------
   publish:
-    needs: bench
+    needs: [bench, report]
     runs-on: ubuntu-latest
 
     permissions:
