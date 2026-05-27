@@ -33,14 +33,16 @@ from benchmate.ipmi import ipmi_logger
 # fmt: off
 @dataclass
 class Arguments:
-    run_name    : str = None
-    repeat      : int = 1
-    fulltrace   : bool = False
-    report      : bool = True
-    dash        : str = os.getenv("MILABENCH_DASH", "long")
-    noterm      : bool = os.getenv("MILABENCH_NOTERM", "0") == "1"
-    validations : str = None
-    plugins     : list[str] = field(default_factory=list)
+    run_name      : str = None
+    repeat        : int = 1
+    fulltrace     : bool = False
+    report        : bool = True
+    dash          : str = os.getenv("MILABENCH_DASH", "long")
+    noterm        : bool = os.getenv("MILABENCH_NOTERM", "0") == "1"
+    validations   : str = None
+    plugins       : list[str] = field(default_factory=list)
+    publish       : str = os.getenv("MILABENCH_PUBLISH_KEY", None)
+    dashboard_url : str = os.getenv("MILABENCH_DASHBOARD_URL", None)
 # fmt: on
 
 
@@ -70,7 +72,13 @@ def arguments():
     # [nargs: +]
     plugin: Option & str = []
 
-    return Arguments(run_name, repeat, fulltrace, report, dash, noterm, validations, plugin)
+    # Push key to publish results to the dashboard after the run
+    publish: Option & str = os.getenv("MILABENCH_PUBLISH_KEY", None)
+
+    # Dashboard URL to publish results to
+    dashboard_url: Option & str = os.getenv("MILABENCH_DASHBOARD_URL", None)
+
+    return Arguments(run_name, repeat, fulltrace, report, dash, noterm, validations, plugin, publish, dashboard_url)
 
 
 
@@ -239,6 +247,7 @@ def cli_run(args=None):
     # Initialize the backend here so we can retrieve GPU stats
     init_arch(arch)
     
+    all_run_folders = set()
     success = 0
     for name, conf in multirun():
         run_name = name or args.run_name
@@ -251,5 +260,18 @@ def cli_run(args=None):
                 success += run(mp, args, run_name)
             except AssertionError as err:
                 print(err)
+            
+            all_run_folders.update(
+                pack.logdir for pack in mp.packs.values() if pack.logdir
+            )
+
+    if args.publish and all_run_folders:
+        from .push_results import publish_results
+
+        publish_results(
+            all_run_folders,
+            push_key=args.publish,
+            dashboard_url=args.dashboard_url,
+        )
 
     return success

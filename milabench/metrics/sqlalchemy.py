@@ -30,6 +30,8 @@ from ..structs import BenchLogEntry
 
 Base = declarative_base()
 
+FORCED_META_KEYS = {"contributor"}
+
 
 class Exec(Base):
     __tablename__ = "execs"
@@ -211,6 +213,30 @@ class SavedQuery(Base):
             "_id": self._id,
             "name": self.name,
             "query": self.query,
+            "created_time": self.created_time,
+        }
+
+
+class PushKey(Base):
+    __tablename__ = "push_keys"
+
+    _id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(256), nullable=False, unique=True)
+    key = Column(String(64), nullable=False, unique=True)
+    created_time = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index("push_keys_key", "key"),
+        Index("push_keys_name", "name"),
+    )
+
+    def __repr__(self):
+        return f"PushKey(name={self.name})"
+
+    def as_dict(self):
+        return {
+            "_id": self._id,
+            "name": self.name,
             "created_time": self.created_time,
         }
 
@@ -417,7 +443,7 @@ def _get_pack_ids(pack):
 
 class SQLAlchemy:
     def __init__(self, uri="sqlite:///sqlite.db", meta_override=None, meta_tags=None, visibility=0) -> None:
-        if uri.startswith("sqlite"):
+        if hasattr(uri, 'startswith') and uri.startswith("sqlite"):
             create_database(uri)
 
         self.engine = sqlalchemy.create_engine(
@@ -514,7 +540,14 @@ class SQLAlchemy:
 
     def on_new_run(self, entry):
         metadata = self.meta_override or entry.data
-        metadata.update(self.meta_tags)
+
+        for key in FORCED_META_KEYS:
+            metadata.pop(key, None)
+
+        metadata = {
+            **self.meta_tags,
+            **metadata,
+        }
 
         self.run = Exec(
             name=entry.pack.config["run_name"],

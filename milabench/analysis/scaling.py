@@ -10,8 +10,10 @@ from milabench.sizer import to_octet
 HERE = os.path.dirname(__file__)
 ROOT = os.path.join(HERE, "..", "..")
 
-
-folder_path = os.path.join(ROOT, "config", "scaling")
+folder_path = os.environ.get(
+    "MILABENCH_SCALING_DIR",
+    os.path.join(ROOT, "config", "scaling"),
+)
 
 
 def read_config(filename, output=None, benchmarks=None):

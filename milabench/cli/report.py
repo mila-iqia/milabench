@@ -21,6 +21,8 @@ class Arguments:
     price          : int  = None
     filter_failures: bool = False
     latest         : bool = False
+    publish        : str  = os.getenv("MILABENCH_PUBLISH_KEY", None)
+    dashboard_url  : str  = os.getenv("MILABENCH_DASHBOARD_URL", None)
 # fmt: on
 
 
@@ -50,7 +52,13 @@ def arguments():
     # Only consider the latest run for each benchmark
     latest: Option & bool = False
 
-    return Arguments(runs, config, compare, compare_gpus, html, price, filter_failures, latest)
+    # Push key to publish results to the dashboard
+    publish: Option & str = os.getenv("MILABENCH_PUBLISH_KEY", None)
+
+    # Dashboard URL to publish results to
+    dashboard_url: Option & str = os.getenv("MILABENCH_DASHBOARD_URL", None)
+
+    return Arguments(runs, config, compare, compare_gpus, html, price, filter_failures, latest, publish, dashboard_url)
 
 
 @tooled
@@ -103,6 +111,15 @@ def cli_report(args=None):
         errdata=reports and _error_report(reports),
         stream=sys.stdout,
     )
+
+    if args.publish and args.runs:
+        from .push_results import publish_results
+
+        publish_results(
+            args.runs,
+            push_key=args.publish,
+            dashboard_url=args.dashboard_url,
+        )
 
 
 

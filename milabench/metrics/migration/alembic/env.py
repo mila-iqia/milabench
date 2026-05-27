@@ -18,10 +18,11 @@ if config.config_file_name is not None:
 
 local_dev = "postgresql://milabench_write:1234@localhost:5432/milabench"
 
-db_url = os.getenv("DATABASE_URI", local_dev)
-
-# override the sqlalchemy.url config
-config.set_main_option("sqlalchemy.url", db_url)
+db_url = os.getenv("DATABASE_URI")
+if db_url:
+    config.set_main_option("sqlalchemy.url", db_url)
+elif not config.get_main_option("sqlalchemy.url"):
+    config.set_main_option("sqlalchemy.url", local_dev)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
