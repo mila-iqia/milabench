@@ -232,6 +232,8 @@ jobs:
         run: |
           milabench report \
             --runs "$MILABENCH_BASE/runs/${{ github.sha }}" \
+            --consolidate \
+            --run-name "${{ github.sha }}" \
             --publish "$MILABENCH_PUBLISH_KEY"
 
   # ------------------------------------------------------------------
