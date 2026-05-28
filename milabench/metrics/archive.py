@@ -15,5 +15,4 @@ def publish_archived_run(backend, folder, print_msg=False, stop_on_exception=Fal
 def publish_zipped_run(backend, folder, **options):
     """Publish an archived run to a database"""
 
-    with multilogger(backend, **options) as log:
-        replay_zipfile(folder, backend)
+    replay_zipfile(folder, backend)
