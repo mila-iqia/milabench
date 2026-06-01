@@ -718,6 +718,21 @@ class SQLAlchemy:
         elif (netdata := data.pop("netdata", None)) is not None:
             self._push_composed_data(run_id, pack_id, gpu_id, "netdata", netdata, job_id, metric_time=metric_time)
 
+        elif (rate := data.pop("rate", None)) is not None:
+            unit = data.pop("units", None)
+            task = data.pop("task", None)
+
+            self._push_metric(
+                    run_id,
+                    pack_id,
+                    "rate",
+                    rate,
+                    gpu_id=gpu_id,
+                    job_id=job_id,
+                    unit=unit,
+                    namespace=task,
+                    order=metric_time,
+            )
         else:
             # Standard
             unit = data.pop("units", None)
