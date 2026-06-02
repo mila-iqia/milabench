@@ -104,6 +104,12 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Configure podman for CI
+        run: |
+          mkdir -p ~/.config/containers
+          printf '[engine]\ncgroup_manager = "cgroupfs"\nevents_logger = "file"\n' \
+            > ~/.config/containers/containers.conf
+
       - name: Ensure host directories exist
         run: |
           mkdir -p "$MILABENCH_BASE/data"
