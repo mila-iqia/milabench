@@ -145,10 +145,11 @@ jobs:
       - name: Prepare benchmarks
         run: |
           docker run --rm --gpus all                                            \
+            --user "$(id -u):$(id -g)"                                          \
             --ipc=host --ulimit memlock=-1 --ulimit stack=67108864              \
             --network=host                                                      \
             --security-opt=label=disable                                        \
-            -v "/home/github/.ssh/id_ed25519_shared:/root/.ssh/id_rsa:Z"        \
+            -v "/home/github/.ssh/id_ed25519_shared:/tmp/.ssh/id_rsa:ro"        \
             -e HF_TOKEN=${{ secrets.MILABENCH_HF_TOKEN }}                       \
             -v "$MILABENCH_BASE/data:/milabench/results/data"                   \
             -v "$MILABENCH_BASE/cache:/milabench/results/cache"                 \
@@ -167,6 +168,7 @@ jobs:
       - name: Run benchmarks
         run: |
           docker run --rm --gpus all                                            \
+            --user "$(id -u):$(id -g)"                                          \
             --ipc=host --ulimit memlock=-1 --ulimit stack=67108864              \
             --network=host                                                      \
             --security-opt=label=disable                                        \
@@ -174,7 +176,7 @@ jobs:
             -e HF_TOKEN=${{ secrets.MILABENCH_HF_TOKEN }}                       \
             -e BENCHMATE_OBSERVATION_COUNT=10                                   \
             -e BENCHMATE_POLL_INTERVAL=5                                        \
-            -v "/home/github/.ssh/id_ed25519_shared:/root/.ssh/id_rsa:Z"        \
+            -v "/home/github/.ssh/id_ed25519_shared:/tmp/.ssh/id_rsa:ro"        \
             -v "$MILABENCH_BASE/data:/milabench/results/data"                   \
             -v "$MILABENCH_BASE/cache:/milabench/results/cache"                 \
             -v "$MILABENCH_BASE/runs/${{ github.sha }}:/milabench/results/runs" \
@@ -188,6 +190,7 @@ jobs:
       - name: report
         run: |
           docker run --rm --gpus all                                            \
+            --user "$(id -u):$(id -g)"                                          \
             --ipc=host --ulimit memlock=-1 --ulimit stack=67108864              \
             --network=host                                                      \
             --security-opt=label=disable                                        \
