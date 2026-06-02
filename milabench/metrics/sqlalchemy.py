@@ -549,10 +549,18 @@ class SQLAlchemy:
             **metadata,
         }
 
+        created_time = datetime.utcnow()
+        meta_ts = metadata.get("date")
+        if meta_ts is not None:
+            try:
+                created_time = datetime.utcfromtimestamp(float(meta_ts))
+            except (ValueError, TypeError, OSError):
+                pass
+
         self.run = Exec(
             name=entry.pack.config["run_name"],
             namespace=None,
-            created_time=datetime.utcnow(),
+            created_time=created_time,
             meta=metadata,
             status="running",
             visibility=self.visibility
