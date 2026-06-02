@@ -109,7 +109,7 @@ jobs:
           mkdir -p "$MILABENCH_BASE/data"
           mkdir -p "$MILABENCH_BASE/cache"
           mkdir -p "$MILABENCH_BASE/runs/${{ github.sha }}"
-      
+
       # - name: Pin Dependencies
       #   run: |
       #     pip install -e .
@@ -133,9 +133,9 @@ jobs:
           export MILABENCH_IMAGE="$IMAGE_TAG-${{ matrix.group.name }}"
           envsubst '$MILABENCH_IMAGE' < "$MILABENCH_BASE/data/system.yaml.in" > "$MILABENCH_BASE/data/system.yaml"
 
-      - name: Build Docker image for group
+      - name: Build image for group
         run: |
-          docker build                                                \
+          podman build                                                \
             -f "${{ steps.arch.outputs.dockerfile }}"                 \
             --build-arg CONFIG=$(basename "$MILABENCH_CONFIG")        \
             --build-arg SELECT="${{ matrix.group.select }}"           \
@@ -144,12 +144,11 @@ jobs:
 
       - name: Prepare benchmarks
         run: |
-          docker run --rm --gpus all                                            \
-            --user "$(id -u):$(id -g)"                                          \
+          podman run --rm --device nvidia.com/gpu=all                            \
             --ipc=host --ulimit memlock=-1 --ulimit stack=67108864              \
             --network=host                                                      \
             --security-opt=label=disable                                        \
-            -v "/home/github/.ssh/id_ed25519_shared:/tmp/.ssh/id_rsa:ro"        \
+            -v "/home/github/.ssh/id_ed25519_shared:/root/.ssh/id_rsa:ro"       \
             -e HF_TOKEN=${{ secrets.MILABENCH_HF_TOKEN }}                       \
             -v "$MILABENCH_BASE/data:/milabench/results/data"                   \
             -v "$MILABENCH_BASE/cache:/milabench/results/cache"                 \
@@ -163,12 +162,11 @@ jobs:
       - name: Push Container
         if: ${{ matrix.group.multinode }}
         run: |
-          docker save "$IMAGE_TAG-${{ matrix.group.name }}" | ssh spark2 'docker load'
+          podman save "$IMAGE_TAG-${{ matrix.group.name }}" | ssh spark2 'podman load'
   
       - name: Run benchmarks
         run: |
-          docker run --rm --gpus all                                            \
-            --user "$(id -u):$(id -g)"                                          \
+          podman run --rm --device nvidia.com/gpu=all                            \
             --ipc=host --ulimit memlock=-1 --ulimit stack=67108864              \
             --network=host                                                      \
             --security-opt=label=disable                                        \
@@ -176,7 +174,7 @@ jobs:
             -e HF_TOKEN=${{ secrets.MILABENCH_HF_TOKEN }}                       \
             -e BENCHMATE_OBSERVATION_COUNT=10                                   \
             -e BENCHMATE_POLL_INTERVAL=5                                        \
-            -v "/home/github/.ssh/id_ed25519_shared:/tmp/.ssh/id_rsa:ro"        \
+            -v "/home/github/.ssh/id_ed25519_shared:/root/.ssh/id_rsa:ro"       \
             -v "$MILABENCH_BASE/data:/milabench/results/data"                   \
             -v "$MILABENCH_BASE/cache:/milabench/results/cache"                 \
             -v "$MILABENCH_BASE/runs/${{ github.sha }}:/milabench/results/runs" \
@@ -189,8 +187,7 @@ jobs:
 
       - name: report
         run: |
-          docker run --rm --gpus all                                            \
-            --user "$(id -u):$(id -g)"                                          \
+          podman run --rm --device nvidia.com/gpu=all                            \
             --ipc=host --ulimit memlock=-1 --ulimit stack=67108864              \
             --network=host                                                      \
             --security-opt=label=disable                                        \
@@ -199,13 +196,13 @@ jobs:
             "$IMAGE_TAG-${{ matrix.group.name }}"                               \
             milabench report --runs /milabench/results/runs
 
-      - name: Cleanup Docker image
+      - name: Cleanup image
         if: always()
-        run: docker rmi "$IMAGE_TAG-${{ matrix.group.name }}" || true
+        run: podman rmi "$IMAGE_TAG-${{ matrix.group.name }}" || true
 
-      - name: Cleanup Docker image on spark2
+      - name: Cleanup image on spark2
         if: always() && matrix.group.multinode
-        run: ssh spark2 "docker rmi '$IMAGE_TAG-${{ matrix.group.name }}'" || true
+        run: ssh spark2 "podman rmi '$IMAGE_TAG-${{ matrix.group.name }}'" || true
 
   # ------------------------------------------------------------------
   # 3. Aggregate all bench results and publish to the dashboard.
