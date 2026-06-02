@@ -795,15 +795,17 @@ class SQLAlchemy:
             run_id, pack_id, "walltime", end - state.start, gpu_id=gpu_id, job_id=job_id
         )
 
+        return_code = entry.data["return_code"]
+
         status = "done"
         if state.early_stop:
             status = "early_stop"
 
-        if state.error > 0:
+        if state.error > 0 or return_code != 0:
             status = "error"
 
         self._push_metric(
-            run_id, pack_id, "return_code", entry.data["return_code"], gpu_id=gpu_id, job_id=job_id,
+            run_id, pack_id, "return_code", return_code, gpu_id=gpu_id, job_id=job_id,
             namespace=status
         )
 

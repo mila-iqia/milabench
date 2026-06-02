@@ -1,11 +1,12 @@
 #!/bin/bash
 
-export MILABENCH_BRANCH=realtime_tracking
+export MILABENCH_PUBLISH_KEY=""
+export MILABENCH_BRANCH=main
 export PYTHON_VERSION=3.12
 export MILABENCH_GPU_ARCH=cuda
 export PYTHONUNBUFFERED=0
 export MILABENCH_ARGS=""
-export MILABENCH_CONFIG_NAME=standard
+export MILABENCH_CONFIG_NAME=all
 export MILABENCH_REPO=https://github.com/milabench/milabench.git
 export HF_TOKEN=""
 
@@ -19,9 +20,10 @@ scontrol show job --json $SLURM_JOB_ID | jq '.jobs[0]' > $OUTPUT_DIRECTORY/meta/
 touch $SLURM_SUBMIT_DIR/.no_report
 # ===
 
-CONDA_EXEC="$(which conda)"
-CONDA_BASE=$(dirname $CONDA_EXEC)
-source $CONDA_BASE/../etc/profile.d/conda.sh
+# CONDA_EXEC="$(which conda)"
+# CONDA_BASE=$(dirname $CONDA_EXEC)
+# source $CONDA_BASE/../etc/profile.d/conda.sh
+export UV=$HOME/.local/bin/uv
 
 export MILABENCH_SHARED="$HOME/scratch/shared"
 export MILABENCH_WORDIR="/tmp/$SLURM_JOB_ID/$MILABENCH_GPU_ARCH"  
@@ -37,20 +39,23 @@ mkdir -p $MILABENCH_WORDIR
 cd $MILABENCH_WORDIR
 git clone $MILABENCH_REPO -b $MILABENCH_BRANCH
 
-conda create --prefix $MILABENCH_ENV python=$PYTHON_VERSION -y
-conda activate $MILABENCH_ENV
+# conda create --prefix $MILABENCH_ENV python=$PYTHON_VERSION -y
+# conda activate $MILABENCH_ENV
+
+$UV venv --python=$PYTHON_VERSION $MILABENCH_ENV
+. $MILABENCH_ENV/bin/activate
 
 mkdir -p $MILABENCH_WORDIR/results/runs
-python -u /home/mila/d/delaunap/beefgs.py --pipe > $MILABENCH_WORDIR/results/runs/stats.jsonl &
-BEEGFS_PID=$!
+# python -u /home/mila/d/delaunap/beefgs.py --pipe > $MILABENCH_WORDIR/results/runs/stats.jsonl &
+# BEEGFS_PID=$!
 
-pip install -e $MILABENCH_SOURCE[$MILABENCH_GPU_ARCH]
-pip install psycopg2-binary
+$UV pip install -e $MILABENCH_SOURCE[$MILABENCH_GPU_ARCH]
+$UV pip install psycopg2-binary
 
-LOCAL_PORT=8123
-export MILABENCH_DB="--plugin term --plugin sql postgresql://milabench_write:1234@localhost:$LOCAL_PORT/milabench"
-milabench tunnel --local-port $LOCAL_PORT &
-TUNNEL_PID=$!
+# LOCAL_PORT=8123
+# export MILABENCH_DB="--plugin term --plugin sql postgresql://milabench_write:1234@localhost:$LOCAL_PORT/milabench"
+# milabench tunnel --local-port $LOCAL_PORT &
+# TUNNEL_PID=$!
 
 milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
 
@@ -59,8 +64,8 @@ rm -rf $MILABENCH_WORDIR/results/venv
 
 module load cuda/12.6.0
 
-pip install torch
-milabench pin --variant cuda
+# $UV pip install torch
+# milabench pin --variant cuda
 
 milabench install --system $MILABENCH_WORDIR/system.yaml $MILABENCH_ARGS
 
@@ -74,8 +79,8 @@ rsync -az $MILABENCH_WORDIR/results/runs $OUTPUT_DIRECTORY
 scontrol show job --json $SLURM_JOB_ID | jq '.jobs[0]' > $OUTPUT_DIRECTORY/meta/info.json
 # ===
 
-kill $BEEGFS_PID
-wait $BEEGFS_PID 2>/dev/null || :
+# kill $BEEGFS_PID
+# wait $BEEGFS_PID 2>/dev/null || :
 
-kill $TUNNEL_PID
-wait $TUNNEL_PID 2>/dev/null || :
+# kill $TUNNEL_PID
+# wait $TUNNEL_PID 2>/dev/null || :

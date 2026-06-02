@@ -16,11 +16,14 @@ folder_path = os.environ.get(
 )
 
 
-def read_config(filename, output=None, benchmarks=None):
+def read_config(filename, output=None, benchmarks=None, folder=None):
     if output is None:
         output = []
 
-    with open(os.path.join(folder_path, filename), "r") as fp:
+    if folder is None:
+        folder = folder_path
+
+    with open(os.path.join(folder, filename), "r") as fp:
         data = yaml.safe_load(fp)
 
         for bench, rows in data.items():
