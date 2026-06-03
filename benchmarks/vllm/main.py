@@ -96,18 +96,18 @@ def calculate_metrics(
             ttfts.append(outputs[i].ttft)
             e2els.append(outputs[i].latency)
 
-            push_metric(ttfts=outputs[i].ttft, unit="s")
-            push_metric(e2els=outputs[i].latency, unit="s")
+            push_metric(ttfts=outputs[i].ttft, units="s")
+            push_metric(e2els=outputs[i].latency, units="s")
             
             if len(outputs[i].itl) > 0:
-                push_metric(itl=sum(outputs[i].itl)/len(outputs[i].itl), unit="s")
+                push_metric(itl=sum(outputs[i].itl)/len(outputs[i].itl), units="s")
 
             # push_metric(tpot=outputs[i].tpot, unit="ms")
-            push_metric(input_tok=input_requests[i].prompt_len, unit="count")
-            push_metric(output_tok=output_len, unit="count")
+            push_metric(input_tok=input_requests[i].prompt_len, units="count")
+            push_metric(output_tok=output_len, units="count")
 
             tok_s = (input_requests[i].prompt_len + output_len) / outputs[i].latency
-            push_metric(request_rate=tok_s, unit="tok/s")
+            push_metric(request_rate=tok_s, units="tok/s")
             
             completed += 1
         else:

@@ -35,6 +35,10 @@ tests:
 
 
 
+test-publish:
+	milabench report --publish 864d6718d5d1d6ae16f65a8ae5758a3d8600fb379020a57a795046d511b114c7 --dashboard-url http://192.168.2.116:5173/ --runs 
+
+
 # docker build                                                \
 # 	-f docker/Dockerfile-cuda                 				\
 # 	--build-arg CONFIG=all.yaml        				\

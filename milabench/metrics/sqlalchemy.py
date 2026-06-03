@@ -408,7 +408,7 @@ def base_weight_profile():
             ('default', 1, 5000, 'pna', TRUE, 'GRAPHS', 'GNN'),
             ('default', 1, 5001, 'dimenet', TRUE, 'GRAPHS', 'GNN'),
             ('default', 1, 5002, 'recursiongfn', TRUE, 'GRAPHS', 'GFlow')
-        ON CONFLICT (profile, pack) DO NOTHING 
+        ON CONFLICT (profile, pack) DO NOTHING
         ;"""
 
 def create_database(uri):
@@ -727,7 +727,7 @@ class SQLAlchemy:
             self._push_composed_data(run_id, pack_id, gpu_id, "netdata", netdata, job_id, metric_time=metric_time)
 
         elif (rate := data.pop("rate", None)) is not None:
-            unit = data.pop("units", None)
+            unit = data.pop("units", data.pop("unit", None))
             task = data.pop("task", None)
 
             self._push_metric(
@@ -743,7 +743,7 @@ class SQLAlchemy:
             )
         else:
             # Standard
-            unit = data.pop("units", None)
+            unit = data.pop("units", data.pop("unit", None))
             task = data.pop("task", None)
 
             if len(data) == 1:
@@ -761,7 +761,8 @@ class SQLAlchemy:
                     order=metric_time,
                 )
             else:
-                print(f"Unknown format {entry.data}")
+                print(f"Unknown format {entry.data}, remains: {data}")
+                print(f"Offending benchmark: {state.pack.name}")
 
         if len(self.pending_metrics) >= self.batch_size:
             self._bulk_insert()
@@ -773,7 +774,7 @@ class SQLAlchemy:
         with self.session() as sesh:
             sesh.add_all(self.pending_metrics)
             sesh.commit()
-    
+
         self.pending_metrics = []
 
     def on_stop(self, entry):

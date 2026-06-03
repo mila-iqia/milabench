@@ -184,11 +184,13 @@ def cli_report(args=None):
     if args.publish and args.runs:
         from .push_results import publish_results
 
-        publish_results(
+        success = publish_results(
             args.runs,
             push_key=args.publish,
             dashboard_url=args.dashboard_url,
         )
+        if not success:
+            sys.exit(1)
 
 
 
