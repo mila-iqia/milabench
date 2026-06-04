@@ -11,18 +11,56 @@ MILABENCH_DASHBOARD_URL = os.getenv(
     "https://www.milabench.com",
 )
 
+MAX_ZIP_SIZE = 500 * 1024 * 1024       # 500 MB
+MAX_ENTRY_SIZE = 100 * 1024 * 1024     # 100 MB per entry
+MAX_ENTRIES = 50_000
+
+
+class PublishError(Exception):
+    pass
+
 
 def zip_run_folders(run_folders):
-    """Create an in-memory zip archive from a set of run folders."""
+    """Create an in-memory zip archive from a set of run folders (.data files only).
+
+    Validates against server limits before returning.
+    """
     buf = io.BytesIO()
+    entry_count = 0
+
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_STORED) as zf:
         for folder in run_folders:
             folder = str(folder)
             for root, _dirs, files in os.walk(folder):
                 for fname in files:
+                    if not fname.endswith(".data"):
+                        continue
+
                     filepath = os.path.join(root, fname)
+                    file_size = os.path.getsize(filepath)
+
+                    if file_size > MAX_ENTRY_SIZE:
+                        raise PublishError(
+                            f"File too large: {filepath} "
+                            f"({file_size / 1024 / 1024:.1f} MB > {MAX_ENTRY_SIZE / 1024 / 1024:.0f} MB limit)"
+                        )
+
+                    entry_count += 1
+                    if entry_count > MAX_ENTRIES:
+                        raise PublishError(
+                            f"Too many files: exceeded {MAX_ENTRIES} entry limit"
+                        )
+
                     arcname = os.path.relpath(filepath, os.path.dirname(folder))
                     zf.write(filepath, arcname)
+
+    total_size = buf.tell()
+    if total_size > MAX_ZIP_SIZE:
+        raise PublishError(
+            f"Archive too large: {total_size / 1024 / 1024:.1f} MB > {MAX_ZIP_SIZE / 1024 / 1024:.0f} MB limit"
+        )
+
+    print(f"[publish] Archive: {entry_count} files, {total_size / 1024 / 1024:.1f} MB")
     buf.seek(0)
     return buf
 
@@ -32,7 +70,7 @@ def _publish_stream(endpoint, data, files):
     import json
 
     success = False
-    with requests.post(endpoint, data=data, files=files, stream=True, timeout=300) as resp:
+    with requests.post(endpoint, data=data, files=files, stream=True, timeout=3600) as resp:
         if resp.headers.get("content-type", "").startswith("text/event-stream"):
             event_type = None
             for line in resp.iter_lines(decode_unicode=True):
@@ -46,12 +84,18 @@ def _publish_stream(endpoint, data, files):
                     elif event_type == "error":
                         success = False
         else:
-            result = resp.json()
-            if result.get("status") == "OK":
-                print(f"[publish] Success: {result.get('message')}")
-                success = True
-            else:
-                print(f"[publish] Failed: {result.get('message', resp.text)}")
+            content_type = resp.headers.get("content-type", "")
+            print(f"[publish] Unexpected response (HTTP {resp.status_code}, {content_type})")
+            try:
+                result = resp.json()
+                if result.get("status") == "OK":
+                    print(f"[publish] Success: {result.get('message')}")
+                    success = True
+                else:
+                    print(f"[publish] Failed: {result.get('message', resp.text)}")
+            except (json.JSONDecodeError, ValueError):
+                print(f"[publish] Server returned non-JSON response:")
+                print(resp.text or "(empty body)")
 
     return success
 
@@ -102,25 +146,12 @@ def publish_results(run_folders, push_key, dashboard_url=None, metadata=None):
 
     files = {"file": ("results.zip", buf, "application/zip")}
 
-    # Try the streaming endpoint first, fall back to the regular one
     endpoint = f"{url}/api/push/zip/stream"
     print(f"[publish] Uploading to {endpoint} ...")
     try:
         return _publish_stream(endpoint, data, files)
-    except Exception:
-        print("[publish] Streaming endpoint unavailable, falling back to standard push...")
-        buf.seek(0)
-        files = {"file": ("results.zip", buf, "application/zip")}
-        endpoint = f"{url}/api/push/zip"
-        try:
-            resp = requests.post(endpoint, data=data, files=files, timeout=120)
-            result = resp.json()
-            if result.get("status") == "OK":
-                print(f"[publish] Success: {result.get('message', 'uploaded')}")
-                return True
-            else:
-                print(f"[publish] Failed: {result.get('message', resp.text)}")
-                return False
-        except Exception as err:
-            print(f"[publish] Error: {err}")
-            return False
+    except Exception as err:
+        import traceback
+        print(f"[publish] Push failed: {type(err).__name__}: {err}")
+        traceback.print_exc()
+        return False
