@@ -460,6 +460,7 @@ class SQLAlchemy:
         self.session = sessionmaker(bind=self.engine)
         self.meta = None
         self.run = None
+        self._run_id = None
         self.states = defaultdict(PackState)
 
         self.pending_metrics = []
@@ -471,6 +472,7 @@ class SQLAlchemy:
     def start_new_run(self):
         self.meta = None
         self.run = None
+        self._run_id = None
         self.states = defaultdict(PackState)
 
     @property
@@ -515,21 +517,28 @@ class SQLAlchemy:
         if len(self.states) > 0:
             status = "interrupted"
 
-        if self.run is not None:
+        if self._run_id is not None:
             self.update_run_status(status)
 
         self.states = defaultdict(PackState)
 
     def update_run_status(self, status):
         with self.session() as sesh:
-            self.run = sesh.get(Exec, self.run._id)
-            self.run.status = status
+            sesh.execute(
+                sqlalchemy.update(Exec)
+                .where(Exec._id == self._run_id)
+                .values(status=status)
+            )
             sesh.commit()
 
-    def update_pack_status(self, pack, status):
+    def update_pack_status(self, pack_or_id, status):
+        pack_id = pack_or_id if isinstance(pack_or_id, int) else pack_or_id._id
         with self.session() as sesh:
-            pack = sesh.get(Pack, pack._id)
-            pack.status = status
+            sesh.execute(
+                sqlalchemy.update(Pack)
+                .where(Pack._id == pack_id)
+                .values(status=status)
+            )
             sesh.commit()
 
     def on_event(self, entry: BenchLogEntry):
@@ -569,11 +578,12 @@ class SQLAlchemy:
             sesh.add(self.run)
             sesh.commit()
             sesh.refresh(self.run)
+            self._run_id = self.run._id
 
     def on_new_pack(self, entry):
         state = self.pack_state(entry)
         state.pack = Pack(
-            exec_id=self.run._id,
+            exec_id=self._run_id,
             created_time=datetime.utcnow(),
             name=entry.pack.config["name"],
             tag=entry.tag,
@@ -696,7 +706,7 @@ class SQLAlchemy:
         state = self.pack_state(entry)
         assert state.step == DATA
 
-        run_id = self.run._id
+        run_id = self._run_id
         pack_id = state.pack._id
         job_id, gpu_id = _get_pack_ids(state.pack)
 
@@ -786,7 +796,7 @@ class SQLAlchemy:
         state = self.pack_state(entry)
         assert state.step == DATA
 
-        run_id = self.run._id
+        run_id = self._run_id
         pack_id = state.pack._id
 
         job_id, gpu_id = _get_pack_ids(state.pack)
@@ -799,11 +809,12 @@ class SQLAlchemy:
         return_code = entry.data["return_code"]
 
         status = "done"
-        if state.early_stop:
-            status = "early_stop"
-
+        
         if state.error > 0 or return_code != 0:
             status = "error"
+
+        if state.early_stop:
+            status = "early_stop"
 
         self._push_metric(
             run_id, pack_id, "return_code", return_code, gpu_id=gpu_id, job_id=job_id,
