@@ -134,8 +134,10 @@ class Pack(Base):
         Index("exec_pack_query", "exec_id"),
         Index("pack_query", "name", "exec_id"),
         Index("pack_tag", "tag"),
-        # Pivot query optimization indexes
-        Index("idx_pack_name", "name"),  # For faster name lookups in Weight joins
+        Index("idx_pack_name", "name"),
+        Index("idx_pack_status", "status"),
+        Index("idx_pack_exec_status", "exec_id", "status"),
+        Index("idx_pack_exec_name_status", "exec_id", "name", "status"),
     )
 
     def as_dict(self):
@@ -290,6 +292,59 @@ class Weight(Base):
             "group2": self.group2,
             "group3": self.group3,
             "group4": self.group4,
+        }
+
+
+class ReportCache(Base):
+    """Cached report rows keyed by (exec_id, profile, bench).
+
+    Populated lazily on first report request for a given exec_id,
+    and evicted when new data is pushed or by a periodic cleanup job.
+    """
+    __tablename__ = "report_cache"
+
+    _id = Column(Integer, primary_key=True, autoincrement=True)
+    exec_id = Column(Integer, ForeignKey("execs._id"), nullable=False)
+    profile = Column(String(256), nullable=False)
+    bench = Column(String(256), nullable=False)
+
+    fail = Column(Integer, default=0)
+    n = Column(Float)
+    ngpu = Column(Float)
+    perf = Column(Float)
+    sem = Column(Float)
+    std = Column(Float)
+    score = Column(Float)
+    log_score = Column(Float)
+    weight = Column(Float)
+    enabled = Column(Float)
+    order = Column(Float)
+    weight_total = Column(Float)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_report_cache_exec_profile", "exec_id", "profile"),
+        Index("idx_report_cache_created", "created_at"),
+        UniqueConstraint("exec_id", "profile", "bench", name="uq_report_cache_row"),
+    )
+
+    def as_dict(self):
+        return {
+            "exec_id": self.exec_id,
+            "bench": self.bench,
+            "fail": self.fail,
+            "n": self.n,
+            "ngpu": self.ngpu,
+            "perf": self.perf,
+            "sem": self.sem,
+            "std": self.std,
+            "score": self.score,
+            "log_score": self.log_score,
+            "weight": self.weight,
+            "enabled": self.enabled,
+            "order": self.order,
+            "weight_total": self.weight_total,
         }
 
 
