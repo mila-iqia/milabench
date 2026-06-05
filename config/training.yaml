@@ -37,23 +37,6 @@ _torchvision_ddp:
   requires_capabilities:
     - "gpu['count'] > 1"
 
-_flops:
-  inherits: _defaults
-  definition: ../benchmarks/flops
-  group: flops
-  install_group: torch
-  plan:
-    method: per_gpu
-  
-  tags:
-    - diagnostic
-    - flops
-    - monogpu
-    - nobatch
-  
-  argv:
-    --number: 10
-    --repeat: 90
 
 _hf:
   inherits: _defaults
@@ -122,50 +105,6 @@ _accelerate_opt:
   use_deepspeed: true
   num_machines: 1
 
-fp8:
-  inherits: _flops
-
-  argv:
-    --number: 30
-    --repeat: 90
-    --m: 8192
-    --n: 8192
-    --dtype: fp8
-
-fp16:
-  inherits: _flops
-
-  argv:
-    --number: 30
-    --repeat: 90
-    --m: 8192
-    --n: 8192
-    --dtype: fp16
-
-bf16:
-  inherits: _flops
- 
-  argv:
-    --m: 8192
-    --n: 8192
-    --dtype: bf16
-
-tf32:
-  inherits: _flops
- 
-  argv:
-    --m: 8192
-    --n: 8192
-    --dtype: fp32
-    --tf32: true
-
-fp32:
-  inherits: _flops
- 
-  argv:
-    --m: 8192
-    --n: 8192
-    --dtype: fp32  
 
 resnet50:
   voir:

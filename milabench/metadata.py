@@ -82,6 +82,7 @@ def machine_metadata(pack=None):
             __tag__,
             __commit__,
             __date__,
+            include_pr=True,
         ),
         "pytorch": torchv,
     }
