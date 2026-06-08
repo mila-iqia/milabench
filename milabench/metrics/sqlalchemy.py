@@ -322,10 +322,12 @@ class ReportCache(Base):
     weight_total = Column(Float)
 
     created_at = Column(DateTime, default=datetime.utcnow)
+    last_accessed = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
         Index("idx_report_cache_exec_profile", "exec_id", "profile"),
         Index("idx_report_cache_created", "created_at"),
+        Index("idx_report_cache_last_accessed", "last_accessed"),
         UniqueConstraint("exec_id", "profile", "bench", name="uq_report_cache_row"),
     )
 

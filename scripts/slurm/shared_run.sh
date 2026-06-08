@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export MILABENCH_PUBLISH_KEY=""
+
 export MILABENCH_BRANCH=main
 export PYTHON_VERSION=3.12
 export MILABENCH_GPU_ARCH=cuda
@@ -8,9 +8,16 @@ export PYTHONUNBUFFERED=0
 export MILABENCH_ARGS=""
 export MILABENCH_CONFIG_NAME=all
 export MILABENCH_REPO=https://github.com/milabench/milabench.git
-export HF_TOKEN=""
 
+export MILABENCH_PUBLISH_KEY="{{ secrets.MILABENCH_PUBLISH_KEY }}"
+export HF_TOKEN="{{ secrets.HF_TOKEN }}"
+export MILABENCH_HF_TOKEN=$HF_TOKEN
+
+# Set it AFTER exporting the secrets :)
 set -ex
+
+# Fix
+export PATH="$HOME/.bin/:$PATH"
 
 # ===
 OUTPUT_DIRECTORY=$(scontrol show job "$SLURM_JOB_ID" --json | jq -r '.jobs[0].standard_output' | xargs dirname)
@@ -33,7 +40,7 @@ export MILABENCH_SIZER_SAVE="$MILABENCH_WORDIR/results/runs/scaling.yaml"
 export BENCHMARK_VENV="$MILABENCH_WORDIR/results/venv/torch"
 export MILABENCH_SOURCE="$MILABENCH_WORDIR/milabench"
 export MILABENCH_CONFIG="$MILABENCH_WORDIR/milabench/config/$MILABENCH_CONFIG_NAME.yaml"
-export MILABENCH_HF_TOKEN=$HF_TOKEN
+
 
 mkdir -p $MILABENCH_WORDIR
 cd $MILABENCH_WORDIR

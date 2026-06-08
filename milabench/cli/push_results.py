@@ -148,6 +148,7 @@ def publish_results(run_folders, push_key, dashboard_url=None, metadata=None):
 
     endpoint = f"{url}/api/push/zip/stream"
     print(f"[publish] Uploading to {endpoint} ...")
+    print(f"[publish] Key: {repr(push_key[:8])}...{repr(push_key[-4:])} (len={len(push_key)})")
     try:
         return _publish_stream(endpoint, data, files)
     except Exception as err:
