@@ -9,7 +9,7 @@ on:
         type: string
       exclude_tags:
         description: "Comma-separated tags to exclude (e.g. multinode,gated)"
-        default: ""
+        default: "multinode"
         type: string
       dockerfile:
         description: "Dockerfile to use (e.g. Dockerfile-cuda, Dockerfile-ngc)"
@@ -36,7 +36,7 @@ env:
   MILABENCH_CONFIG: config/${{ inputs.config || 'ci.yaml' }}
   MILABENCH_CONFIG_DOCKER: /milabench/milabench/config/${{ inputs.config || 'ci.yaml' }}
   MILABENCH_SYSTEM: /opt/milabench/data/system.yaml
-  EXCLUDE_TAGS: ${{ inputs.exclude_tags }}
+  EXCLUDE_TAGS: ${{ inputs.exclude_tags || 'multinode' }}
 
 concurrency:
   group: "ci-${{ github.workflow }}-${{ github.ref }}"
@@ -109,9 +109,16 @@ jobs:
 
       - name: Configure podman for CI
         run: |
+          if [ ! -O "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}" ] 2>/dev/null; then
+            export XDG_RUNTIME_DIR="/tmp/runtime-$(id -u)"
+            mkdir -p "$XDG_RUNTIME_DIR"
+            echo "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR" >> "$GITHUB_ENV"
+          fi
           mkdir -p ~/.config/containers
           printf '[engine]\ncgroup_manager = "cgroupfs"\nevents_logger = "file"\n' \
             > ~/.config/containers/containers.conf
+          rm -f "$XDG_RUNTIME_DIR/libpod/pause.pid" 2>/dev/null || true
+          podman system migrate 2>/dev/null || true
 
       - name: Ensure host directories exist
         run: |
