@@ -43,13 +43,13 @@ install_prepare() {
     pip install -e $MILABENCH_SOURCE
 
 
-    milabench slurm_system > $MILABENCH_WORDIR/system.yaml
+    milabench slurm system > $MILABENCH_WORDIR/system.yaml
 
     #
     # Install milabench's benchmarks in their venv
     #
     # pip install torch
-    # milabench pin --variant cuda --from-scratch $ARGS 
+    # milabench tools pin --variant cuda --from-scratch $ARGS 
     milabench install --system $MILABENCH_WORDIR/system.yaml $ARGS
 
     which pip
@@ -85,7 +85,7 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     . $MILABENCH_WORDIR/env/bin/activate
 
     # pip install torch
-    # milabench pin --variant cuda --from-scratch 
+    # milabench tools pin --variant cuda --from-scratch 
     # rm -rf $MILABENCH_WORDIR/results/venv/
     # rm -rf $MILABENCH_WORDIR/results/extra
     # milabench install --system $MILABENCH_WORDIR/system.yaml

@@ -477,7 +477,7 @@ class MemoryUsageExtractor(ValidationLayer):
             with open(self.filepath, "w") as file:
                 yaml.dump(self.memory, file, Dumper=compact_dump())
 
-    def report(self, *args):
+    def report(self, *args, **kwargs):
         for name, stats in self._benchstat.items():
             if stats.active_count > 0:
                 syslog("MemoryUsageExtractor: Could not add scaling data because bench never ended {}", stats.benchname)

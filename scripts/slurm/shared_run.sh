@@ -61,22 +61,22 @@ $UV pip install psycopg2-binary
 
 # LOCAL_PORT=8123
 # export MILABENCH_DB="--plugin term --plugin sql postgresql://milabench_write:1234@localhost:$LOCAL_PORT/milabench"
-# milabench tunnel --local-port $LOCAL_PORT &
+# milabench tools tunnel --local-port $LOCAL_PORT &
 # TUNNEL_PID=$!
 
-milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
+milabench data sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
 
-milabench slurm_system > $MILABENCH_WORDIR/system.yaml
+milabench slurm system > $MILABENCH_WORDIR/system.yaml
 rm -rf $MILABENCH_WORDIR/results/venv
 
 module load cuda/12.6.0
 
 # $UV pip install torch
-# milabench pin --variant cuda
+# milabench tools pin --variant cuda
 
 milabench install --system $MILABENCH_WORDIR/system.yaml $MILABENCH_ARGS
 
-milabench patch --venv $BENCHMARK_VENV
+milabench tools patch --venv $BENCHMARK_VENV
 
 milabench run --system $MILABENCH_WORDIR/system.yaml $MILABENCH_ARGS $MILABENCH_DB || :
 

@@ -1,0 +1,30 @@
+multirun:
+  runs:
+    # Run 1: Multiplicative scaling from the current auto-sized batch size
+    #   Gathers data at 0.25x, 0.5x, 1x, 1.5x, 2x of the baseline
+    #   to build the memory-vs-batch-size linear model.
+    - name: "mult_{sizer.mult}x.{time}"
+      matrix:
+        sizer.auto: 1
+        sizer.mult: [0.25, 0.5, 1, 1.5, 2]
+        sizer.save: ["scaling_profile.yaml"]
+        sizer.config: ["scaling_profile.yaml"]
+
+    # Run 2: Additive offsets around the baseline batch size
+    #   Fine-grained sampling near the operating point for better
+    #   interpolation accuracy in the scaling model.
+    - name: "add_{sizer.add}.{time}"
+      matrix:
+        sizer.auto: 1
+        sizer.add: [-16, -8, 0, 8, 16, 32]
+        sizer.save: ["scaling_profile.yaml"]
+        sizer.config: ["scaling_profile.yaml"]
+
+    # Run 3: Fixed batch sizes for absolute reference points
+    #   Covers a wide power-of-2 range so the scaler has anchors
+    #   across the full memory spectrum.
+    - name: "fixed_bs{sizer.batch_size}.{time}"
+      matrix:
+        sizer.batch_size: [1, 2, 4, 8, 16, 32, 64, 128]
+        sizer.save: ["scaling_profile.yaml"]
+        sizer.config: ["scaling_profile.yaml"]

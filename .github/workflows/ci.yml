@@ -69,7 +69,7 @@ jobs:
       - name: Compute benchmark groups
         id: groups
         run: |
-          matrix=$(python -m milabench.cli.ci \
+          matrix=$(python -m milabench.cli.tools.ci \
             --config "$MILABENCH_CONFIG" \
             --exclude-tags "$EXCLUDE_TAGS")
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
@@ -130,7 +130,7 @@ jobs:
       #   run: |
       #     pip install -e .
       #     pip install torch torchvision --index-url https://download.pytorch.org/whl/cu130
-      #     UV_TORCH_BACKEND=cu130 MILABENCH_GPU_ARCH=cuda milabench pin --from-scratch --variant cuda
+      #     UV_TORCH_BACKEND=cu130 MILABENCH_GPU_ARCH=cuda milabench tools pin --from-scratch --variant cuda
 
       - name: Detect Dockerfile
         id: arch

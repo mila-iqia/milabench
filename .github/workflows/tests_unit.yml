@@ -6,7 +6,7 @@ on:
   # Runs for pull requests
   pull_request:
     branches:
-      - master
+      - main
 
   # Runs on publish
   release:
@@ -71,7 +71,7 @@ jobs:
       - name: Simple Template
         run: |
           source ./env/bin/activate
-          milabench new --name simplebench --template simple
+          milabench tools new --name simplebench --template simple
           cd benchmarks/simplebench
           make tests
           cd ..
@@ -80,7 +80,7 @@ jobs:
       - name: Voir Template
         run: |
           source ./env/bin/activate
-          milabench new --name  voirbench --template voir
+          milabench tools new --name  voirbench --template voir
           cd benchmarks/voirbench
           make tests
           cd ..

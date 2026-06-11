@@ -126,7 +126,7 @@ install_prepare() {
     # Install milabench's benchmarks in their venv
     #
     # pip install torch --index-url https://download.pytorch.org/whl/rocm6.2.4
-    # milabench pin --variant rocm --from-scratch $ARGS 
+    # milabench tools pin --variant rocm --from-scratch $ARGS 
     
     milabench install $ARGS 
 

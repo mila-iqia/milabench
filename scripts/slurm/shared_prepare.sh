@@ -54,15 +54,15 @@ pip install -e "$MILABENCH_SOURCE[$MILABENCH_GPU_ARCH]"
 
 ARGS="$@"
 
-milabench slurm_system > $MILABENCH_WORDIR/system.yaml
+milabench slurm system > $MILABENCH_WORDIR/system.yaml
 rm -rf  $MILABENCH_BASE/extra
 
 pip install torch
-milabench pin --variant cuda --from-scratch $ARGS 
+milabench tools pin --variant cuda --from-scratch $ARGS 
 
 milabench install --force --system $MILABENCH_WORDIR/system.yaml $ARGS
 
-milabench patch --venv $BENCHMARK_VENV
+milabench tools patch --venv $BENCHMARK_VENV
 
 milabench prepare --system $MILABENCH_WORDIR/system.yaml $ARGS
 

@@ -34,7 +34,7 @@ maybe_run() {
         if [ "$DRY" -eq 1 ]; then
             mkdir -p dry
             echo $name
-            milabench matrix --base output --config config/standard.yaml > dry/$name.yaml
+            milabench tools matrix --base output --config config/standard.yaml > dry/$name.yaml
         else
             echo "running $name"
             milabench prepare

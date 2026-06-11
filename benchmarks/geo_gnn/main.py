@@ -79,18 +79,28 @@ def train_degree(train_dataset):
     max_degree = -1
     for data in train_dataset:
         try:
+            if data is None or data.edge_index is None:
+                continue
             d = degree(data.edge_index[1], num_nodes=data.num_nodes, dtype=torch.long)
             max_degree = max(max_degree, int(d.max()))
-        except TypeError:
+        except (TypeError, IndexError):
             pass
+
+    if max_degree < 0:
+        raise RuntimeError(
+            "Could not compute degree from training data. "
+            "All samples may be corrupted — try re-running prepare."
+        )
 
     # Compute the in-degree histogram tensor
     deg = torch.zeros(max_degree + 1, dtype=torch.long)
     for data in train_dataset:
         try:
+            if data is None or data.edge_index is None:
+                continue
             d = degree(data.edge_index[1], num_nodes=data.num_nodes, dtype=torch.long)
             deg += torch.bincount(d, minlength=deg.numel())
-        except TypeError:
+        except (TypeError, IndexError):
             pass
 
     return deg

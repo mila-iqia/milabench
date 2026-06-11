@@ -1,13 +1,15 @@
 import os
-from dataclasses import dataclass, field
-from urllib.parse import urlparse
+from dataclasses import dataclass
+from typing import Optional
 
-from coleo import Option, tooled
+from argklass.command import Command
+from argklass.arguments import argument, group
 
 from milabench.loggers.http import HTTPMetricPusher
 from milabench.utils import validation_layers
 
 from ..common import (
+    CommonArguments,
     _error_report,
     _read_reports,
     get_multipack,
@@ -25,66 +27,14 @@ from ..log import (
 from ..report import make_report
 from ..sizer import MemoryUsageExtractor
 from ..summary import make_summary
-from ..system import multirun, apply_system, SizerOptions, option
+from ..system import multirun, apply_system
 from ..config import get_config_global
 from benchmate.ipmi import ipmi_logger
 
 
-# fmt: off
-@dataclass
-class Arguments:
-    run_name      : str = None
-    repeat        : int = 1
-    fulltrace     : bool = False
-    report        : bool = True
-    dash          : str = os.getenv("MILABENCH_DASH", "long")
-    noterm        : bool = os.getenv("MILABENCH_NOTERM", "0") == "1"
-    validations   : str = None
-    plugins       : list[str] = field(default_factory=list)
-    publish       : str = os.getenv("MILABENCH_PUBLISH_KEY", None)
-    dashboard_url : str = os.getenv("MILABENCH_DASHBOARD_URL", None)
-# fmt: on
-
-
-@tooled
-def arguments():
-    # Name of the run
-    run_name: Option = None
-
-    # Number of times to repeat the benchmark
-    repeat: Option & int = 1
-
-    # On error show full stacktrace
-    fulltrace: Option & bool = False
-
-    # Do not show a report at the end
-    # [negate]
-    report: Option & bool = True
-
-    # Which type of dashboard to show (short, long, or no)
-    dash: Option & str = os.getenv("MILABENCH_DASH", "long")
-
-    noterm: Option & bool = os.getenv("MILABENCH_NOTERM", "0") == "1"
-
-    validations: Option & str = None
-
-    # [action: append]
-    # [nargs: +]
-    plugin: Option & str = []
-
-    # Push key to publish results to the dashboard after the run
-    publish: Option & str = os.getenv("MILABENCH_PUBLISH_KEY", None)
-
-    # Dashboard URL to publish results to
-    dashboard_url: Option & str = os.getenv("MILABENCH_DASHBOARD_URL", None)
-
-    return Arguments(run_name, repeat, fulltrace, report, dash, noterm, validations, plugin, publish, dashboard_url)
-
-
-
 def _fetch_arch(mp):
     from milabench.system import system_global
-    
+
     try:
         arch = system_global.get()["arch"]
     except StopIteration:
@@ -92,91 +42,62 @@ def _fetch_arch(mp):
         return None
 
 
-def dashboard(dash):
+def _dashboard(dash):
     dash_class = {
         "short": ShortDashFormatter,
         "long": LongDashFormatter,
         "no": None,
     }
-
     return dash_class.get(dash, None)
 
 
 PLUGINS = {
-    "dash": dashboard,
+    "dash": _dashboard,
     "http": HTTPMetricPusher,
     "term": TerminalFormatter,
     "mem": MemoryUsageExtractor,
     "txt": TextReporter,
-    "ipmi": ipmi_logger
+    "ipmi": ipmi_logger,
 }
 
 try:
     from milabench.metrics.sqlalchemy import SQLAlchemy
-
     PLUGINS["sql"] = SQLAlchemy
-
 except ImportError as err:
-    def sql_error(*args, **kwargs):
+    def _sql_error(*args, **kwargs):
         raise err
+    PLUGINS["sql"] = _sql_error
 
-    PLUGINS["sql"] = sql_error
 
-
-def instantiate_loggers(*plugins):
+def _instantiate_loggers(*plugins):
     objects = []
-
     for logger in plugins:
         name, *rest = logger
-
         args = []
         kwargs = {}
-
         for p in rest:
             if "=" not in p:
                 if len(kwargs) == 0:
                     args.append(p)
                 else:
                     raise RuntimeError("Positional argument after keyword argument")
-            
             else:
                 k, v = p.split("=")
                 kwargs[k] = v
-
         cls = PLUGINS.get(name, None)
-
         try:
             objects.append(cls(*args, **kwargs))
         except Exception:
             raise
-
     return objects
 
 
-def fetch_plugins(args):
-    # milabench run \
-    # --plugin term                                         # TerminalFormatter
-    # --plugin dash short                                   # ShortDashFormatter
-    # --plugin dash long                                    # LongDashFormatter
-    # --plugin txt stdout                                   # TextReporter("stdout")
-    # --plugin txt stderr                                   # TextReporter("stderr")
-    # --plugin mem                                          # MemoryUsageExtractor
-    # --plugin http localhost:5000                          # HTTPMetricPusher              # Push to a dashboard
-    # --plugin sql postgresql://<user>:<pwd>@host:port/db   # SQLAlchemyMetricPusher        # Push to a database
-    #   testing url: postgresql://milabench_write:1234@localhost:5432/milabench 
-
-    # ====
-    # --plugin sql postgresql://milabench_write:1234@127.0.0.1:5432/milabench --plugin term 
-
-    # Layer logic and plugin logic could be merged
+def _fetch_plugins(args):
     layer_names = validation_names(args.validations)
     layers = validation_layers(*layer_names, short=not args.fulltrace)
-
-    plugins = instantiate_loggers(*args.plugins)
-
+    plugins = _instantiate_loggers(*args.plugin)
     if len(plugins) == 0:
-        dash_class = dashboard(args.dash)
-
+        dash_class = _dashboard(args.dash)
         plugins = [
             TerminalFormatter() if not args.noterm else None,
             dash_class and dash_class(),
@@ -185,12 +106,11 @@ def fetch_plugins(args):
             MemoryUsageExtractor(),
             ipmi_logger(),
         ]
-    
     return plugins + layers
 
 
-def run(mp, args, name):
-    plugins = fetch_plugins(args)
+def _run(mp, args, name):
+    plugins = _fetch_plugins(args)
 
     success = run_with_loggers(
         mp.do_run(repeat=args.repeat),
@@ -199,15 +119,12 @@ def run(mp, args, name):
             *plugins,
         ],
         mp=mp,
+        short=not args.fulltrace,
+        github_issues=args.github_issues,
     )
 
     if args.report:
         runs = {pack.logdir for pack in mp.packs.values()}
-        compare = None
-        compare_gpus = False
-        html = None
-        price = None
-
         reports = None
         if runs:
             reports = _read_reports(*runs)
@@ -216,15 +133,14 @@ def run(mp, args, name):
             summary = make_summary(reports)
             assert len(summary) != 0, "No summaries"
 
-            # This gets config BEFORE filters (select & exclude)
             weights = get_config_global()
 
             make_report(
                 summary,
-                compare=compare,
-                html=html,
-                compare_gpus=compare_gpus,
-                price=price,
+                compare=None,
+                html=None,
+                compare_gpus=False,
+                price=None,
                 title=None,
                 sources=runs,
                 errdata=reports and _error_report(reports),
@@ -234,44 +150,62 @@ def run(mp, args, name):
     return success
 
 
-@tooled
-def cli_run(args=None):
+class Run(Command):
     """Run the benchmarks."""
-    if args is None:
-        args = arguments()
 
-    # Load the configuration and system
-    mp = get_multipack(run_name=args.run_name)
-    arch = _fetch_arch(mp)
+    name = "run"
 
-    # Initialize the backend here so we can retrieve GPU stats
-    init_arch(arch)
-    
-    all_run_folders = set()
-    success = 0
-    for name, conf in multirun():
-        run_name = name or args.run_name
-        
-        # Note that this function overrides the system config
-        mp = get_multipack(run_name=run_name)
-        
-        with apply_system(conf):
-            try:
-                success += run(mp, args, run_name)
-            except AssertionError as err:
-                print(err)
-            
-            all_run_folders.update(
-                pack.logdir for pack in mp.packs.values() if pack.logdir
+    # fmt: off
+    @dataclass
+    class Arguments:
+        """Run the benchmarks."""
+        shared        : CommonArguments = group(CommonArguments)
+        run_name      : Optional[str]   = None                                       # Name of the run
+        repeat        : int             = 1                                          # Number of times to repeat the benchmark
+        fulltrace     : bool            = False                                      # On error show full stacktrace
+        report        : bool            = True                                       # Show a report at the end
+        dash          : str             = os.getenv("MILABENCH_DASH", "long")        # Dashboard type (short, long, no)
+        noterm        : bool            = os.getenv("MILABENCH_NOTERM", "0") == "1"  # Disable terminal output
+        validations   : Optional[str]   = None                                       # Validation layers to enable
+        plugin        : list[str]       = argument(default=[], action="append", nargs="+")  # Logger plugin
+        publish       : Optional[str]   = os.getenv("MILABENCH_PUBLISH_KEY", None)   # Push key to publish results
+        dashboard_url : Optional[str]   = os.getenv("MILABENCH_DASHBOARD_URL", None) # Dashboard URL to publish results to
+        github_issues : bool            = False                                      # Generate GitHub issue links for failures
+    # fmt: on
+
+    @staticmethod
+    def execute(args):
+        mp = get_multipack(args, run_name=args.run_name)
+        arch = _fetch_arch(mp)
+        init_arch(arch)
+
+        all_run_folders = set()
+        success = 0
+        for name, conf in multirun():
+            run_name = name or args.run_name
+
+            mp = get_multipack(args, run_name=run_name)
+
+            with apply_system(conf):
+                try:
+                    success += _run(mp, args, run_name)
+                except AssertionError as err:
+                    print(err)
+
+                all_run_folders.update(
+                    pack.logdir for pack in mp.packs.values() if pack.logdir
+                )
+
+        if args.publish and all_run_folders:
+            from ._push_results import publish_results
+
+            publish_results(
+                all_run_folders,
+                push_key=args.publish,
+                dashboard_url=args.dashboard_url,
             )
 
-    if args.publish and all_run_folders:
-        from .push_results import publish_results
+        return success
 
-        publish_results(
-            all_run_folders,
-            push_key=args.publish,
-            dashboard_url=args.dashboard_url,
-        )
 
-    return success
+COMMANDS = Run

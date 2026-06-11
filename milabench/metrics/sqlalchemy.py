@@ -378,6 +378,12 @@ def generate_database_sql_setup(uri=None):
     """
     import os
 
+    # Import models from dashboard so they register on Base
+    try:
+        import dashboard.server.database.gpu  # noqa: F401
+    except ImportError:
+        pass
+
     dummy = "sqlite:///sqlite.db"
     if uri is None:
         uri = dummy
@@ -469,6 +475,11 @@ def base_weight_profile():
         ;"""
 
 def create_database(uri):
+    try:
+        import dashboard.server.database.gpu  # noqa: F401
+    except ImportError:
+        pass
+
     engine = sqlalchemy.create_engine(
         uri,
         echo=False,

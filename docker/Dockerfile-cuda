@@ -96,7 +96,7 @@ ENV TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6;8.9;9.0;10.0;12.0;12.1"
 # But we can also publish wheels to github and use those instead
 RUN ln -s /milabench/.env/bin/milabench /usr/local/bin/milabench                                                                                             &&\
     $MILAENCH_ENV/bin/milabench install --config $MILABENCH_CONFIG --base $MILABENCH_BASE ${MILABENCH_SELECT:+--select $MILABENCH_SELECT} ${MILABENCH_VARIANT:+--variant $MILABENCH_VARIANT} $MILABENCH_ARGS   &&\
-    $MILAENCH_ENV/bin/milabench patch --venv $MILABENCH_BASE/venv/torch                                                                                    &&\
+    $MILAENCH_ENV/bin/milabench tools patch --venv $MILABENCH_BASE/venv/torch                                                                                    &&\
     python -m pip cache purge
 
 # CMD milabench run

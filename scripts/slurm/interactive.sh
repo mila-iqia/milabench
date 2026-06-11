@@ -42,8 +42,8 @@ unset HF_HOME
 module load cuda/12.6.0
 
 pip install torch
-milabench pin --variant cuda
-milabench slurm_system > $MILABENCH_WORDIR/system.yaml
+milabench tools pin --variant cuda
+milabench slurm system > $MILABENCH_WORDIR/system.yaml
 milabench install --system $MILABENCH_WORDIR/system.yaml --force
 milabench prepare --system $MILABENCH_WORDIR/system.yaml
 milabench run --system $MILABENCH_WORDIR/system.yaml
@@ -53,7 +53,7 @@ milabench run --config "$MILABENCH_WORDIR/milabench/config/vllm.yaml"
 
 
 
-milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
+milabench data sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
 
 (
     cd $MILABENCH_BASE
@@ -62,13 +62,13 @@ milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
     ln -s ../../data/hub hub
 )
 
-milabench slurm_system > $MILABENCH_WORDIR/system.yaml
+milabench slurm system > $MILABENCH_WORDIR/system.yaml
 rm -rf $MILABENCH_WORDIR/results/venv
 
 module load cuda/12.6.0
 
 pip install torch
-milabench pin --variant cuda
+milabench tools pin --variant cuda
 milabench install --system $MILABENCH_WORDIR/system.yaml $MILABENCH_ARGS
 
 ln -s $HOME/milabench

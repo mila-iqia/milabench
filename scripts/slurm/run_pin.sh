@@ -40,7 +40,7 @@ module load cuda/12.6.0
 
 (
     cd $MILABENCH_SOURCE
-    milabench pin -c constraints/$MILABENCH_GPU_ARCH.txt --config config/standard.yaml --from-scratch
+    milabench tools pin -c constraints/$MILABENCH_GPU_ARCH.txt --config config/standard.yaml --from-scratch
 )
 
 (

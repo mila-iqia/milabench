@@ -61,7 +61,7 @@ Install+Prepare on Network nodes
 .. code-block:: bash
    
    # Sync data to local but use code from the network location
-   milabench sharedsetup --network $NETWORK_FOLDER --local /tmp/local/results
+   milabench data sharedsetup --network $NETWORK_FOLDER --local /tmp/local/results
 
    milabench run --base /tmp/local/results --config $NETWORK_FOLDER/milabench/config/standard.yaml
 
@@ -97,16 +97,16 @@ Major version updates
 
     export MILABENCH_BASE=../
     export MILABENCH_GPU_ARCH=cuda 
-    milabench pin -c constraints/cuda.txt --config config/standard.yaml --from-scratch
+    milabench tools pin -c constraints/cuda.txt --config config/standard.yaml --from-scratch
 
     export MILABENCH_GPU_ARCH=rocm 
-    milabench pin -c constraints/rocm.txt --config config/standard.yaml --from-scratch
+    milabench tools pin -c constraints/rocm.txt --config config/standard.yaml --from-scratch
 
     export MILABENCH_GPU_ARCH=xpu 
-    milabench pin -c constraints/xpu.txt --config config/standard.yaml --from-scratch
+    milabench tools pin -c constraints/xpu.txt --config config/standard.yaml --from-scratch
 
     export MILABENCH_GPU_ARCH=hpu 
-    milabench pin -c constraints/hpu.txt --config config/standard.yaml --from-scratch
+    milabench tools pin -c constraints/hpu.txt --config config/standard.yaml --from-scratch
 
 
 Minor version updates
@@ -115,16 +115,16 @@ Minor version updates
 .. code-block:: bash
 
     export MILABENCH_GPU_ARCH=cuda 
-    milabench pin -c constraints/cuda.txt --config config/standard.yaml
+    milabench tools pin -c constraints/cuda.txt --config config/standard.yaml
 
     export MILABENCH_GPU_ARCH=rocm 
-    milabench pin -c constraints/rocm.txt --config config/standard.yaml
+    milabench tools pin -c constraints/rocm.txt --config config/standard.yaml
 
     export MILABENCH_GPU_ARCH=xpu 
-    milabench pin -c constraints/xpu.txt --config config/standard.yaml
+    milabench tools pin -c constraints/xpu.txt --config config/standard.yaml
 
     export MILABENCH_GPU_ARCH=hpu 
-    milabench pin -c constraints/hpu.txt --config config/standard.yaml
+    milabench tools pin -c constraints/hpu.txt --config config/standard.yaml
 
 
 Increase Runtime
@@ -212,7 +212,7 @@ Run a benchmark without milabench
 
 .. code-block:: bash
 
-   milabench dev {benchname}  # will open bash with the benchmark venv sourced 
+   milabench tools shell {benchname}  # will open bash with the benchmark venv sourced 
 
    # alternatively
 
@@ -247,7 +247,7 @@ so make milabench install its dependencies there, then the duplicate dependencie
     export MILABENCH_GPU_ARCH=cuda
 
     # This updates the requirements for cuda
-    # milabench pin --from-scratch --variant cuda -c constraints/cuda.txt
+    # milabench tools pin --from-scratch --variant cuda -c constraints/cuda.txt
     
     # Install the new requirements (note: this will still install a new pytorch)
     milabench install --use-current-env
@@ -320,12 +320,12 @@ Multi Node & Docker
             user: username
 
 
-2. Use ``milabench docker`` to suggest the command to use to execute the benchmark
+2. Use ``milabench tools container`` to suggest the command to use to execute the benchmark
 
 .. code-block:: bash
 
    cp system.yaml /tmp/workspace/data/system.yaml
-   milabench docker --system system.yaml
+   milabench tools container --system system.yaml
 
 
 .. code-block::

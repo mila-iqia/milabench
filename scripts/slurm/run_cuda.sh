@@ -49,14 +49,14 @@ install_prepare() {
     source $MILABENCH_ENV/bin/activate
     $UV pip install -e $MILABENCH_SOURCE[$MILABENCH_GPU_ARCH]
     
-    milabench slurm_system > $MILABENCH_WORDIR/system.yaml
+    milabench slurm system > $MILABENCH_WORDIR/system.yaml
 
     export MILABENCH_CONFIG="$MILABENCH_SOURCE/config/$CONFIG"
     #
     # Install milabench's benchmarks in their venv
     #
     # pip install torch
-    # milabench pin --variant cuda --from-scratch $ARGS 
+    # milabench tools pin --variant cuda --from-scratch $ARGS 
 
     milabench install --variant cuda --system $MILABENCH_WORDIR/system.yaml $MILABENCH_ARGS
 
@@ -72,13 +72,13 @@ install_prepare() {
     # )
 
     # Copy cached datasets/models
-    milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
+    milabench data sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
 
     #   Generate/download/verify datasets, download models etc...
     milabench prepare --system $MILABENCH_WORDIR/system.yaml $MILABENCH_ARGS
 
     # Generate an archive that is cached in the network drive
-    # milabench archive --network $MILABENCH_SHARED --local $MILABENCH_BASE
+    # milabench data archive --network $MILABENCH_SHARED --local $MILABENCH_BASE
 }
 
 # module load cuda/12.3.2
@@ -99,7 +99,7 @@ if [ "$MILABENCH_PREPARE" -eq 0 ]; then
     export MILABENCH_CONFIG="$MILABENCH_SOURCE/config/$CONFIG"
 
     # pip install torch
-    # milabench pin --variant cuda --from-scratch 
+    # milabench tools pin --variant cuda --from-scratch 
     # rm -rf $MILABENCH_WORDIR/results/venv/
     # rm -rf $MILABENCH_WORDIR/results/extra
     # milabench install --system $MILABENCH_WORDIR/system.yaml

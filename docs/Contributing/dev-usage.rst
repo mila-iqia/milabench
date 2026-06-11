@@ -71,14 +71,14 @@ milabench run
   * The SCRIPT_OPTIONS are benchmark dependent.
 * Standard output/error and other data (training rates, etc.) are forwarded to the main dispatcher process and saved into ``$MILABENCH_BASE/runs/run_name/mybench.run_number.stdout`` (``.stderr`` / ``.data``) (the name of the directory is printed out for easy reference).
 
-milabench pin
-~~~~~~~~~~~~~
+milabench tools pin
+~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
-    milabench pin --config config/standard.yaml --select mybench --variant cuda
+    milabench tools pin --config config/standard.yaml --select mybench --variant cuda
 
-The basic idea behind ``milabench pin`` is to pin software versions for stability and reproducibility. Using the command above, the base requirements in ``benchmarks/mybench/requirements.in`` will be saved in ``requirements.cuda.txt``. If variant is not specified, the value of ``install_variant`` in the config file will be used (in ``standard.yaml``, which is ``install_value: "{{arch}}"``; that resolves to either "rocm" or "cuda" depending on the machine's architecture).
+The basic idea behind ``milabench tools pin`` is to pin software versions for stability and reproducibility. Using the command above, the base requirements in ``benchmarks/mybench/requirements.in`` will be saved in ``requirements.cuda.txt``. If variant is not specified, the value of ``install_variant`` in the config file will be used (in ``standard.yaml``, which is ``install_value: "{{arch}}"``; that resolves to either "rocm" or "cuda" depending on the machine's architecture).
 
 For a given variant, the installation is also constrained by ``constraints/variant.txt``, if the file exists. The file specifies appropriate constraints for the architecture, CUDA version, or other constraints that are specific to the environment.
 
@@ -93,7 +93,7 @@ TODO.
 
     milabench report --config config/standard.yaml --runs <path_to_runs>
 
-milabench compare
-~~~~~~~~~~~~~~~~~
+milabench report compare
+~~~~~~~~~~~~~~~~~~~~~~~
 
 TODO.

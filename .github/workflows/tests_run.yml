@@ -8,7 +8,7 @@ on:
   # Runs for pull requests
   pull_request:
     branches:
-      - master
+      - main
 
   # Runs on publish
   release:
@@ -86,9 +86,9 @@ jobs:
 
       - name: pin
         run: |
-          MILABENCH_GPU_ARCH=cuda  poetry run milabench pin -c constraints/cuda.txt --config config/standard.yaml 
-          MILABENCH_GPU_ARCH=rocm  poetry run milabench pin -c constraints/rocm.txt --config config/standard.yaml 
-          MILABENCH_GPU_ARCH=xpu  poetry run milabench pin -c constraints/xpu.txt --config config/standard.yaml 
+          MILABENCH_GPU_ARCH=cuda  poetry run milabench tools pin -c constraints/cuda.txt --config config/standard.yaml 
+          MILABENCH_GPU_ARCH=rocm  poetry run milabench tools pin -c constraints/rocm.txt --config config/standard.yaml 
+          MILABENCH_GPU_ARCH=xpu  poetry run milabench tools pin -c constraints/xpu.txt --config config/standard.yaml 
           git diff --stat
 
       - name: tests
@@ -111,4 +111,4 @@ jobs:
 
       - name: Summary
         run: |
-          milabench summary $MILABENCH_BASE/runs/
+          milabench report summary $MILABENCH_BASE/runs/

@@ -129,9 +129,9 @@ Create a slurm system configuration file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 | If ``milabench`` is executed in a slurm system, the generation of the
-  configuration file can be automated with the ``milabench slurm_system``
+  configuration file can be automated with the ``milabench slurm system``
   command:
-| ``milabench slurm_system > config/system.yaml``
+| ``milabench slurm system > config/system.yaml``
 
 
 Run milabench on a multi-nodes system

@@ -27,3 +27,13 @@ if __name__ == "__main__":
     args, _ = parser().parse_known_args()
 
     dataset = PCQM4Mv2Subset(args.num_samples, root=args.root)
+
+    print("Running post-processing verification...")
+    bad_indices = dataset.verify()
+    if bad_indices:
+        print(
+            f"WARNING: {len(bad_indices)} bad samples detected and excluded. "
+            f"Dataset will use {len(dataset)} valid samples."
+        )
+    else:
+        print(f"Dataset prepared successfully with {len(dataset)} samples.")
