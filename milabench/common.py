@@ -6,6 +6,7 @@ import runpy
 import sys
 import traceback
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from argklass.arguments import argument
 from datetime import datetime
@@ -84,6 +85,8 @@ def selection_keys(defn):
         defn["install_group"],
         *defn.get("tags", []),
     }
+    if "definition" in defn:
+        sel.add(Path(defn["definition"]).name)
     return sel
 
 
@@ -335,7 +338,8 @@ def _parse_report(pth, open=lambda x: x.open(), shared=None):
 def _read_reports(*runs):
     all_data = {}
     for folder in runs:
-        for parent, _, filenames in os.walk(folder):
+        for parent, dirs, filenames in os.walk(folder):
+            dirs[:] = [d for d in dirs if not d.startswith(("install", "prepare"))]
             for file in filenames:
                 if not file.endswith(".data"):
                     continue
