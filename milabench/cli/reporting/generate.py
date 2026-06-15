@@ -119,7 +119,7 @@ class Generate(Command):
     @dataclass
     class Arguments:
         """Generate a report aggregating all runs together into a final report."""
-        runs            : list[str]     = argument(default=[], action="append")      # Runs directory
+        runs            : list[str]     = argument(default=[], nargs="*")             # Runs directory
         config          : Optional[str] = os.getenv("MILABENCH_CONFIG")              # Configuration file
         compare         : Optional[str] = None                                       # Comparison summary
         compare_gpus    : bool          = False                                      # Compare the GPUs
