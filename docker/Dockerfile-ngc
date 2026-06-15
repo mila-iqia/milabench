@@ -44,6 +44,6 @@ RUN cd $HOME                                                            &&\
     /milabench/env/bin/pip install -e /milabench/milabench              &&\
     bash /milabench/milabench/docker/scripts/aa_before_install.sh       &&\
     milabench install --variant unpinned --use-current-env ${MILABENCH_SELECT:+--select $MILABENCH_SELECT}  &&\
-    milabench prefer_system                                             &&\
+    milabench tools prefer-system                                             &&\
     bash /milabench/milabench/docker/scripts/bb_after_install.sh        &&\
     /milabench/env/bin/pip cache purge

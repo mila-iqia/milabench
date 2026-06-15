@@ -17,7 +17,7 @@ export MILABENCH_MULTIRUN_CACHE=~/scratch/shared/progress.txt
 export MILABENCH_DIR_DATA=/tmp/workspace/data
 export XDG_CACHE_HOME=/tmp/workspace/cache
 export BENCHMARKS=dimenet,pna,recursiongfn
-# milabench sharedsetup --network /home/mila/d/delaunap/scratch/shared/ --local $MILABENCH_BASE
+# milabench data sharedsetup --network /home/mila/d/delaunap/scratch/shared/ --local $MILABENCH_BASE
 
 # Those 2 commands should execute faster now (it will only verify)
 # MILABENCH_USE_UV=1 milabench install --force

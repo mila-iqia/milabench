@@ -32,4 +32,4 @@ nodes:
 	milabench run $(MILABENCH_ARGS) --select $(BENCH_NAME)-nodes
 
 pin:
-	milabench pin $(MILABENCH_ARGS)
+	milabench tools pin $(MILABENCH_ARGS)

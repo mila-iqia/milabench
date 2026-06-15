@@ -37,8 +37,8 @@ pip install torch
 module load cuda/12.6.0
 
 cd $MILABENCH_SOURCE
-MILABENCH_GPU_ARCH=cuda milabench pin -c constraints/cuda.txt --config config/standard.yaml --from-scratch
-# MILABENCH_GPU_ARCH=rocm milabench pin -c constraints/rocm.txt --config config/standard.yaml --from-scratch
+MILABENCH_GPU_ARCH=cuda milabench tools pin -c constraints/cuda.txt --config config/standard.yaml --from-scratch
+# MILABENCH_GPU_ARCH=rocm milabench tools pin -c constraints/rocm.txt --config config/standard.yaml --from-scratch
 
 (
     cd $MILABENCH_SOURCE

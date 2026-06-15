@@ -10,7 +10,7 @@ To define a new benchmark (let's assume it is called ``ornatebench``),
     git checkout -b ornatebench
 
     pip install -e milabench/
-    milabench new --name ornatebench
+    milabench tools new --name ornatebench
 
 
 You should see a directory with the following structure:
@@ -144,7 +144,7 @@ The voirfile contains instrumentation for the main script. You can usually just 
 Development
 ~~~~~~~~~~~
 
-To develop the benchmark, first run ``milabench dev --config benchmarks/BENCHNAME/dev.yaml``. 
+To develop the benchmark, first run ``milabench tools shell --config benchmarks/BENCHNAME/dev.yaml``. 
 This will activate the benchmark's virtual environment and put you into a shell.
 
 Then, try and run ``voir --dash main.py``. This should show you a little dashboard and display losses, 
@@ -164,8 +164,8 @@ You can copy-paste the contents of ``dev.yaml`` into ``config/base.yaml``, you w
 
 Then, run the following commands:
 
-* ``milabench pin --select NAME_OR_INSTALL_GROUP --variant cuda``
-* ``milabench pin --select NAME_OR_INSTALL_GROUP --variant rocm``
+* ``milabench tools pin --select NAME_OR_INSTALL_GROUP --variant cuda``
+* ``milabench tools pin --select NAME_OR_INSTALL_GROUP --variant rocm``
 
 This will create ``requirements.<arch>.txt`` for these two architectures. These files must be checked in under version control.
 
@@ -186,7 +186,7 @@ without modifying the third party code.
     git checkout -b ornatebench
 
     pip install -e milabench/
-    milabench new --name ornatebench --repo-url https://github.com/Delaunay/extern_example.git
+    milabench tools new --name ornatebench --repo-url https://github.com/Delaunay/extern_example.git
 
 
 The instrumentation is inserted inside ``voirfile.py`` using the ``Overseer.probe``, examples can 

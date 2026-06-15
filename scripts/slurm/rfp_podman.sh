@@ -57,7 +57,7 @@ cd $MILABENCH_WORDIR
 git clone https://github.com/mila-iqia/milabench.git -b $MILABENCH_BRANCH
 pip install -e $MILABENCH_SOURCE[$MILABENCH_GPU_ARCH]
 
-milabench container                                         \
+milabench tools container                                         \
         --base $MILABENCH_WORDIR                            \
         --image $MILABENCH_IMAGE                            \
         --node $MILABENCH_NODES                             \

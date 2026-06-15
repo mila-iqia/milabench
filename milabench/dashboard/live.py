@@ -285,7 +285,7 @@ class ReportMachinePerf(ValidationLayer):
             else:
                 self.add_metric(name, group, metric, v)
 
-    def report(self, summary):
+    def report(self, summary, **kwargs):
         return 0
 
 

@@ -31,7 +31,7 @@ Preparing
 
 .. code-block:: yaml
 
-   milabench resolve myconfig.yaml > RFP.yaml
+   milabench tools resolve myconfig.yaml > RFP.yaml
 
 
 3. Prepare a container for your RFP

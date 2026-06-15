@@ -1,7 +1,7 @@
 import yaml
 import pytest
 
-from milabench.cli.ci import get_benchmark_groups, format_groups_for_ci
+from milabench.cli.tools.ci import get_benchmark_groups, format_groups_for_ci
 
 
 def _write_config(tmp_path, benchmarks):

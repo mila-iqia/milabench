@@ -66,9 +66,9 @@ install_prepare() {
 
     # need torch for pinning
     pip install torch
-    milabench pin --variant cuda --from-scratch "$@" 
+    milabench tools pin --variant cuda --from-scratch "$@" 
 
-    milabench slurm_system > $MILABENCH_WORDIR/system.yaml
+    milabench slurm system > $MILABENCH_WORDIR/system.yaml
 
     #
     # Install milabench's benchmarks in their venv

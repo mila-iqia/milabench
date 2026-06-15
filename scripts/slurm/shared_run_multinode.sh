@@ -41,11 +41,11 @@ pip install -e $MILABENCH_SOURCE[$MILABENCH_GPU_ARCH]
 
 pip install -e $MILABENCH_SOURCE
 
-srun --ntasks-per-node=1 bash -c "$(which milabench) sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE"
+srun --ntasks-per-node=1 bash -c "$(which milabench) data sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE"
 
 cd $MILABENCH_WORDIR
 
-milabench slurm_system > $MILABENCH_SYSTEM
+milabench slurm system > $MILABENCH_SYSTEM
 
 milabench run --select multinode --system $MILABENCH_SYSTEM $MILABENCH_ARGS || :
 

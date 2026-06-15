@@ -42,7 +42,7 @@ pip install -e $MILABENCH_SOURCE[$MILABENCH_GPU_ARCH]
 
 mkdir -p $MILABENCH_SHARED/data
 mkdir -p $MILABENCH_SHARED/venv
-milabench sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
+milabench data sharedsetup --network $MILABENCH_SHARED --local $MILABENCH_BASE
 
 podman pull $MILABENCH_IMAGE
 

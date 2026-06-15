@@ -14,7 +14,13 @@ from benchmate.warden import destroy
 from voir.proc import run as voir_run
 
 
-class FeedbackEventLoop(type(asyncio.get_event_loop())):
+try:
+    _loop_type = type(asyncio.get_event_loop())
+except RuntimeError:
+    _loop_type = type(asyncio.new_event_loop())
+
+
+class FeedbackEventLoop(_loop_type):
     """Fork of the default event loop that can be iterated upon.
 
     Iterating over `run(...)` will run the loop and yield logs or events

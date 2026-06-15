@@ -1,167 +1,73 @@
+"""milabench CLI entry point using argklass for command discovery."""
+
+import argparse
 import os
 import sys
-import atexit
-import signal
 
-from coleo import run_cli
-
-from .compare import cli_compare
-from .dev import cli_dev
-from .install import cli_install
-from .machine import cli_machine
-from .matrix import cli_matrix_run
-from .pin import cli_pin
-from .pip import cli_pip
-from .pr import cli_write_report_to_pr
-from .prepare import cli_prepare
-from .publish import cli_publish
-from .report import cli_report
-from .run import cli_run
-from .schedule import cli_schedule
-from .slurm import cli_slurm_system
-from .sql import cli_sqlsetup
-from .summary import cli_summary
-from .resolve import cli_resolve
-from .new import cli_new
-from .env import cli_env
-from .prepare_run import cli_prepare_run
-from .gated import cli_gated
-from .sharedsetup import cli_shared_setup
-from .archive import cli_archive
-from .container import cli_docker
-from .multirun import cli_multirun
-from .replay import cli_replay
-from .global_patch import cli_global_patch
-from .tunnel import cli_port_forwarding
-from .ci import cli_ci
-from .prefer_system import cli_prefer_system
+from argklass.argformat import HelpAction, HelpActionException
+from argklass.command import ParentCommand
+from argklass.plugin import discover_module_commands_no_cache
 
 from benchmate.progress import timed_flush
-
 
 timed_flush()
 
 
-class Main:
-    def new():
-        """Create a new benchmark from template"""
-        return cli_new()
+def discover_commands():
+    import milabench.cli
+    return discover_module_commands_no_cache(
+        milabench.cli,
+        None,
+    ).found_commands
 
-    def run():
-        """Run the benchmarks."""
-        return cli_run()
 
-    def prepare():
-        """Prepare a benchmark: download datasets, weights etc."""
-        return cli_prepare()
+def build_parser(commands):
+    parser = argparse.ArgumentParser(
+        prog="milabench",
+        add_help=False,
+        description="Benchmarking suite for machine learning algorithms",
+    )
+    parser.add_argument(
+        "-h", "--help", action=HelpAction, help="show this help message and exit"
+    )
 
-    def install():
-        """Install the benchmarks' dependencies."""
-        return cli_install()
+    subparsers = parser.add_subparsers(dest="command")
 
-    def pin():
-        """Pin the benchmarks' dependencies."""
-        return cli_pin()
+    ParentCommand.dispatch = dict()
+    for k, command in commands.items():
+        command.arguments(subparsers)
 
-    def dev():
-        """Create a shell in a benchmark's environment for development."""
-        return cli_dev()
-
-    def summary():
-        """Produce a JSON summary of a previous run."""
-        return cli_summary()
-
-    def compare():
-        """Compare all runs with each other."""
-        return cli_compare()
-
-    def report():
-        """Generate a report aggregating all runs together into a final report."""
-        return cli_report()
-
-    def pip():
-        """Run pip on every pack"""
-        return cli_pip()
-
-    def slurm_system():
-        """Generate a system file based of slurm environment variables"""
-        return cli_slurm_system()
-
-    def machine():
-        """Display machine metadata.
-        Used to generate metadata json to back populate archived run
-
-        """
-        return cli_machine()
-
-    def publish():
-        """Publish an archived run to a database"""
-        return cli_publish()
-
-    def schedule():
-        """Launch a slurm job to run milabench"""
-        return cli_schedule()
-
-    def sqlsetup():
-        return cli_sqlsetup()
-
-    def write_report_to_pr():
-        return cli_write_report_to_pr()
-
-    def matrix():
-        return cli_matrix_run()
-
-    def resolve():
-        return cli_resolve()
-    
-    def env():
-        """Print milabench environment variables"""
-        cli_env()
-
-    def prepare_run():
-        cli_prepare_run()
-
-    def gated():
-        cli_gated()
-
-    def sharedsetup():
-        """Restore data from a shared/network location to local disk."""
-        cli_shared_setup()
-
-    def archive():
-        """Create deterministic tar archives of data and cache for sharing."""
-        cli_archive()
-
-    def container():
-        cli_docker()
-
-    def multirun():
-        cli_multirun()
-
-    def replay():
-        cli_replay()
-
-    def patch():
-        cli_global_patch()
-
-    def tunnel():
-        cli_port_forwarding()
-
-    def ci():
-        """Output benchmark groups as JSON for CI matrix generation."""
-        cli_ci()
-
-    def prefer_system():
-        """Uninstall local packages that shadow system-provided ones."""
-        cli_prefer_system()
+    return parser
 
 
 def main(argv=None):
     sys.path.insert(0, os.path.abspath(os.curdir))
+
     if argv is None:
         argv = sys.argv[1:]
     argv = [str(x) for x in argv]
+
+    commands = discover_commands()
+
     try:
-        sys.exit(run_cli(Main, argv=argv))
+        parser = build_parser(commands)
+        parsed_args = parser.parse_args(argv)
+    except HelpActionException:
+        return 0
+
+    cmd_name = parsed_args.command
+    if cmd_name is None:
+        parser.print_usage()
+        return 1
+
+    command = commands.get(cmd_name)
+
+    if command is None:
+        print(f"Action `{cmd_name}` not implemented")
+        return 1
+
+    try:
+        returncode = command.execute(parsed_args)
+        return returncode if returncode is not None else 0
     except KeyboardInterrupt:
-        pass
+        return 130

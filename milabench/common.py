@@ -6,9 +6,10 @@ import runpy
 import sys
 import traceback
 from dataclasses import dataclass, field
+
+from argklass.arguments import argument
 from datetime import datetime
 
-from coleo import Option, default, tooled
 from omegaconf import OmegaConf
 from voir.instruments.gpu import deduce_backend, select_backend
 
@@ -32,71 +33,26 @@ def get_pack(defn):
     return pack_obj
 
 
-def dlist():
-    return field(default_factory=list)
+from typing import Optional
 
 
 # fmt: off
 @dataclass
 class CommonArguments:
-    config          : str       = None      # Configuration file
-    system          : str       = None      # System Configuration file
-    base            : str       = None      # Base path for code, venvs, data and runs
-    use_current_env : bool      = False     # Whether to use the current environment
-    select          : str       = ""        # Packs to select
-    exclude         : str       = ""        # Packs to exclude
-    override        : list[str] = dlist()   # Override configuration values
-    capabilities    : str       = ""        # Define capabilities
-    resume          : bool      = False     # Resume milabench runs
-# fmt : on
+    """Common milabench arguments."""
+    config          : Optional[str]  = None     # Configuration file
+    system          : Optional[str]  = None     # System configuration file
+    base            : Optional[str]  = None     # Base path for code, venvs, data and runs
+    use_current_env : bool           = False    # Use the current environment
+    select          : str            = ""       # Packs to select
+    exclude         : str            = ""       # Packs to exclude
+    override        : list[str]      = argument(default=[], action="append")  # Override configuration values
+    capabilities    : str            = ""       # Define capabilities
+    resume          : bool           = False    # Try to resume milabench from previous run
+# fmt: on
 
-@tooled
-def arguments():
-    # Configuration file
-    config: Option & str = None
 
-    # System Configuration file
-    system: Option & str = None
-
-    # Base path for code, venvs, data and runs
-    base: Option & str = None
-
-    # Whether to use the current environment
-    use_current_env: Option & bool = False
-
-    # Packs to select
-    select: Option & str = default("")
-
-    # Packs to exclude
-    exclude: Option & str = default("")
-
-    # Override configuration values
-    # [action: append]
-    override: Option = []
-
-    # Define capabilities
-    capabilities: Option = ""
-
-    # Try to resume milabench from previous run
-    resume: Option & bool = False
-
-    return CommonArguments(
-        config,
-        system,
-        base,
-        use_current_env,
-        select,
-        exclude,
-        override,
-        capabilities,
-        resume
-    )
-
-@tooled
-def get_multipack(args = None, run_name=None, overrides={}):
-    if args is None:
-        args = arguments()
-
+def get_multipack(args, run_name=None, overrides={}):
     override = [
         o if re.match(pattern=r"[.\w]+=", string=o) else f"={o}" for o in args.override
     ]
@@ -272,7 +228,7 @@ def _get_multipack(
     return_config=False
 ):
     if args is None:
-        args = arguments()
+        raise ValueError("args (CommonArguments) is required")
 
     if args.config is None:
         args.config = os.environ.get("MILABENCH_CONFIG", None)
@@ -405,12 +361,12 @@ def _error_report(reports):
     return out
 
 
-def run_with_loggers(coro, loggers, mp=None):
+def run_with_loggers(coro, loggers, mp=None, **report_kwargs):
     retcode = 0
     loggers = [logger for logger in loggers if logger is not None]
 
     try:
-        with multilogger(*loggers) as log:
+        with multilogger(*loggers, **report_kwargs) as log:
             for entry in proceed(coro):
                 log(entry)
 

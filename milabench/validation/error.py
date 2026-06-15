@@ -274,9 +274,16 @@ class Layer(ValidationLayer):
 
         return failures
 
-    def report(self, summary, short=False, **kwargs):
+    def report(self, summary, short=False, github_issues=False, **kwargs):
         """Print an error report and exit with an error code if any error were found"""
         failures = self.display_grouped(summary, short, **kwargs)
+
+        if github_issues and failures > 0:
+            from .github_issues import GitHubIssueLinker
+
+            linker = GitHubIssueLinker()
+            groups = self.group_errors()
+            linker.render_report(summary, groups)
 
         self.set_error_code(failures)
         return failures

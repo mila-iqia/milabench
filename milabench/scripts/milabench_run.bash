@@ -139,14 +139,14 @@ function pin() {
 
   setup
 
-  MILABENCH_GPU_ARCH=cuda milabench pin --config config/standard.yaml --from-scratch --base /tmp
-  MILABENCH_GPU_ARCH=rocm milabench pin --config config/standard.yaml --from-scratch --base /tmp
-  MILABENCH_GPU_ARCH=xpu milabench pin --config config/standard.yaml --from-scratch --base /tmp
-  MILABENCH_GPU_ARCH=hpu milabench pin --config config/standard.yaml --from-scratch --base /tmp
+  MILABENCH_GPU_ARCH=cuda milabench tools pin --config config/standard.yaml --from-scratch --base /tmp
+  MILABENCH_GPU_ARCH=rocm milabench tools pin --config config/standard.yaml --from-scratch --base /tmp
+  MILABENCH_GPU_ARCH=xpu milabench tools pin --config config/standard.yaml --from-scratch --base /tmp
+  MILABENCH_GPU_ARCH=hpu milabench tools pin --config config/standard.yaml --from-scratch --base /tmp
 
   cd $SLURM_TMPDIR/milabench
   git add --all
-  git commit -m "milabench pin"
+  git commit -m "milabench tools pin"
   git push $ORIGIN $BRANCH
 
 }
@@ -161,7 +161,7 @@ function run() {
   echo "System"
   echo "------"
 
-  milabench slurm_system > $SYSTEM
+  milabench slurm system > $SYSTEM
   cat $SYSTEM
 
   module load gcc/9.3.0 
@@ -188,7 +188,7 @@ function run() {
   # echo ""
   # echo "Report"
   # echo "------"
-  # milabench write_report_to_pr --remote $ORIGIN --branch $BRANCH --config $CONFIG
+  # milabench report pr --remote $ORIGIN --branch $BRANCH --config $CONFIG
 
   echo "----"
   echo "Done after $SECONDS"
