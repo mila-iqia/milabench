@@ -107,6 +107,18 @@ class PCQM4Mv2Subset(PCQM4Mv2):
                 if not hasattr(data, 'x') or data.x is None:
                     bad_indices.append(i)
                     continue
+                if (
+                    hasattr(data, 'pos') and data.pos is not None
+                    and data.x.shape[0] != data.pos.shape[0]
+                ):
+                    bad_indices.append(i)
+                    continue
+                if (
+                    hasattr(data, 'z') and data.z is not None
+                    and data.x.shape[0] != data.z.shape[0]
+                ):
+                    bad_indices.append(i)
+                    continue
             except (TypeError, IndexError, RuntimeError) as e:
                 print(f"  Bad entry at index {i}: {e}")
                 bad_indices.append(i)
@@ -157,6 +169,13 @@ class PCQM4Mv2Subset(PCQM4Mv2):
             return False
         if data.x.shape[0] == 0:
             print(f"  Validation failed at source index {index}: empty x tensor")
+            return False
+        num_nodes = data.x.shape[0]
+        if data.pos.shape[0] != num_nodes or data.z.shape[0] != num_nodes:
+            print(
+                f"  Validation failed at source index {index}: "
+                f"atom count mismatch x={num_nodes} pos={data.pos.shape[0]} z={data.z.shape[0]}"
+            )
             return False
         return True
 

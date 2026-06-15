@@ -26,6 +26,6 @@ Folders:
 Useful Commands:
 
     milabench run --config $MILABENCH_CONFIG --base $MILABENCH_BASE $MILABENCH_ARGS
-    milabench report summary $WORKING_DIR/results/runs/
-    milabench report summary $WORKING_DIR/results/runs/ -o $MILABENCH_OUTPUT/summary.json
+    milabench analysis summary $WORKING_DIR/results/runs/
+    milabench analysis summary $WORKING_DIR/results/runs/ -o $MILABENCH_OUTPUT/summary.json
 

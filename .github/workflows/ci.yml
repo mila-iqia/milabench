@@ -69,9 +69,9 @@ jobs:
       - name: Compute benchmark groups
         id: groups
         run: |
-          matrix=$(python -m milabench.cli.tools.ci \
+          matrix=$(milabench tools ci \
             --config "$MILABENCH_CONFIG" \
-            --exclude-tags "$EXCLUDE_TAGS")
+            --exclude_tags "$EXCLUDE_TAGS")
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
           echo "Groups: $matrix"
 

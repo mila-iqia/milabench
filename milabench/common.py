@@ -236,10 +236,10 @@ def _get_multipack(
     if args.config is None:
         sys.exit("Error: CONFIG argument not provided and no $MILABENCH_CONFIG")
 
-    if args.select:
+    if args.select and isinstance(args.select, str):
         args.select = set(args.select.split(","))
 
-    if args.exclude:
+    if args.exclude and isinstance(args.exclude, str):
         args.exclude = set(args.exclude.split(","))
 
     if args.base is None:
