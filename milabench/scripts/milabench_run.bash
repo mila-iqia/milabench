@@ -188,7 +188,7 @@ function run() {
   # echo ""
   # echo "Report"
   # echo "------"
-  # milabench report pr --remote $ORIGIN --branch $BRANCH --config $CONFIG
+  # milabench analysis pr --remote $ORIGIN --branch $BRANCH --config $CONFIG
 
   echo "----"
   echo "Done after $SECONDS"

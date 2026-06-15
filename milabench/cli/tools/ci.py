@@ -99,7 +99,7 @@ class Ci(Command):
 
     @staticmethod
     def execute(args):
-        cli_ci(args)
+        return cli_ci(args)
 
 
 COMMANDS = Ci

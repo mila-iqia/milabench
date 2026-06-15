@@ -93,7 +93,7 @@ TODO.
 
     milabench report --config config/standard.yaml --runs <path_to_runs>
 
-milabench report compare
-~~~~~~~~~~~~~~~~~~~~~~~
+milabench analysis compare
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 TODO.
