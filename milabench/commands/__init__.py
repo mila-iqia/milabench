@@ -335,8 +335,12 @@ class WorkingDir(WrapperCommand):
             f"XDG_CACHE_HOME={str(cmd.pack.dirs.cache)}",
             f"HF_HOME={str(cmd.pack.dirs.cache)}",
             f"TORCH_HOME={str(cmd.pack.dirs.cache)}",
-            "GLOO_SOCKET_IFNAME=enP7s7",
-            "NCCL_SOCKET_IFNAME=enP7s7",
+            "GLOO_SOCKET_IFNAME=bond0",
+            "NCCL_SOCKET_IFNAME=bond0",
+            "NCCL_DEBUG=WARN",
+            "TORCHELASTIC_ERROR_FILE=/tmp/elastic_error.json",
+            "HF_DATASETS_CACHE=/tmp/hf_datasets_cache",
+            #"PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True,garbage_collection_threshold:0.8",
             #  "TORCH_DISTRIBUTED_DEBUG=DETAIL"
         ]
         super().__init__(cmd, *args)

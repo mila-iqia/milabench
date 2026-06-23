@@ -181,6 +181,10 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
             world_size=self.world_size,
         )
         self.world_mesh = self.parallel_dims.build_mesh(device_type=device_type)
+
+        print(f'parallel dims {self.parallel_dims}')
+        print(f'world mesh {self.world_mesh}')
+
         if self.parallel_dims.dp_enabled:
             dp_mesh = self.world_mesh["dp"]
             self.dp_degree, self.dp_rank = (
@@ -1107,6 +1111,15 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
                             step=self.global_step,
                         )
 
+                        ms = torch.cuda.memory_stats(device=self._device)
+                        print(
+                            f"MEM STATS step={self.global_step} "
+                            f"alloc_retries={ms.get('num_alloc_retries', 0)} "
+                            f"ooms={ms.get('num_ooms', 0)} "
+                            f"reserved={ms.get('reserved_bytes.all.current', 0) / 1e9:.1f}GB "
+                            f"active_peak={ms.get('active_bytes.all.peak', 0) / 1e9:.1f}GB"
+                        )
+
                     # Save checkpoint if specified by user
                     if self.global_step % self.save_every_n_steps == 0:
                         self.save_checkpoint(epoch=curr_epoch, full_tensors=False)
@@ -1152,7 +1165,7 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
             self._metric_logger.close()
         import torchcompat.core as acc
         acc.destroy_process_group()
- 
+
     def log_loss(self, loss):
         pass
 
@@ -1172,7 +1185,7 @@ def recipe_main(cfg: DictConfig) -> None:
 
     config.log_config(recipe_name="FullFinetuneRecipeDistributed", cfg=cfg)
     recipe = FullFinetuneRecipeDistributed(cfg=cfg)
-    
+
     recipe.setup(cfg=cfg)
 
     from voir.phase import StopProgram
@@ -1181,7 +1194,7 @@ def recipe_main(cfg: DictConfig) -> None:
         _, monitor = prepare_voir(recipe)
         with monitor():
             recipe.train()
-    
+
     except StopProgram:
         print("early stopping")
     recipe.cleanup()
