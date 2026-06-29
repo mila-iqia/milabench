@@ -11,6 +11,10 @@ on:
         description: "Comma-separated tags to exclude (e.g. multinode,gated)"
         default: "multinode"
         type: string
+      select:
+        description: "Run a single benchmark by name (leave empty to run all)"
+        default: ""
+        type: string
       dockerfile:
         description: "Dockerfile to use (e.g. Dockerfile-cuda, Dockerfile-ngc)"
         default: "Dockerfile-cuda"
@@ -37,6 +41,7 @@ env:
   MILABENCH_CONFIG_DOCKER: /milabench/milabench/config/${{ inputs.config || 'ci.yaml' }}
   MILABENCH_SYSTEM: /opt/milabench/data/system.yaml
   EXCLUDE_TAGS: ${{ inputs.exclude_tags || 'multinode' }}
+  MILABENCH_SELECT: ${{ inputs.select || '' }}
 
 concurrency:
   group: "ci-${{ github.workflow }}-${{ github.ref }}"
@@ -69,9 +74,14 @@ jobs:
       - name: Compute benchmark groups
         id: groups
         run: |
+          select_flag=""
+          if [ -n "$MILABENCH_SELECT" ]; then
+            select_flag="--select $MILABENCH_SELECT"
+          fi
           matrix=$(milabench tools ci \
             --config "$MILABENCH_CONFIG" \
-            --exclude_tags "$EXCLUDE_TAGS")
+            --exclude_tags "$EXCLUDE_TAGS" \
+            $select_flag)
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
           echo "Groups: $matrix"
 
