@@ -589,6 +589,7 @@ class SQLAlchemy:
             self.update_run_status(status)
 
         self.states = defaultdict(PackState)
+        self.engine.dispose()
 
     def update_run_status(self, status):
         with self.session() as sesh:
