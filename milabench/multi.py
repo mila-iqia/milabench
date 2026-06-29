@@ -241,6 +241,10 @@ class MultiPackage:
     async def do_pin(
         self, pip_compile_args, constraints: list = tuple(), from_scratch=False, requirements: list = tuple()
     ):
+        # TOML-based pin path (opt-in)
+        if await self._try_toml_pin(from_scratch=from_scratch, extra_compile_args=pip_compile_args):
+            return
+
         groups = defaultdict(dict)
         for pack in self.packs.values():
             pack.phase = "pin"
@@ -325,6 +329,35 @@ class MultiPackage:
                         working_dir=here.parent,
                         requirements=all_requirements
                     )
+
+    async def _try_toml_pin(self, from_scratch=False, extra_compile_args=None) -> bool:
+        """Attempt TOML-based pinning. Returns True if handled, False to fall back."""
+        from .system import option
+
+        if not option("use_toml_deps", int, 0):
+            return False
+
+        from .dependencies import load_platform_config, pin_all
+
+        try:
+            platform_config = load_platform_config()
+        except FileNotFoundError:
+            return False
+
+        if platform_config.discovery is None and platform_config.pin_matrix is None:
+            return False
+
+        benchmarks_dir = here.parent / "benchmarks"
+        pin_dir = here.parent / ".pin"
+
+        await pin_all(
+            platform_config=platform_config,
+            benchmarks_dir=benchmarks_dir,
+            pin_dir=pin_dir,
+            from_scratch=from_scratch,
+            extra_compile_args=extra_compile_args,
+        )
+        return True
 
     def count_runs(self, repeat):
         total_run = 0
