@@ -582,6 +582,11 @@ class Package(BasePackage):
         """
         assert self.phase == "install"
 
+        # TOML-based dependency path (opt-in)
+        if await self._try_toml_install():
+            await install_benchmate(self)
+            return
+
         #
         # Find pytorch to install
         #   a lot of packages rely on pytorch to be built
@@ -610,6 +615,74 @@ class Package(BasePackage):
 
         # if is_editable_install():
         await install_benchmate(self)
+
+    async def _try_toml_install(self) -> bool:
+        """Attempt TOML-based install. Returns True if handled, False to fall back."""
+        from .dependencies import has_toml_requirements, install_args, load_platform_config, apply_overrides
+
+        if not option("use_toml_deps", int, 0):
+            return False
+
+        benchmark_path = self.dirs.code
+        if not has_toml_requirements(benchmark_path):
+            return False
+
+        ivar = self.config.get("install_variant", None)
+        if ivar == "unpinned":
+            unpinned = True
+        else:
+            unpinned = False
+
+        backend = ivar if ivar and ivar != "unpinned" else self.config.get("system", {}).get("arch", "cuda")
+
+        # CLI overrides come from config (set by --set args)
+        version_overrides = self.config.get("version_overrides", {})
+
+        # Allow --set backend=cu130 to override the backend name
+        if "backend" in version_overrides:
+            from .dependencies.platforms import _normalize_overrides, _BACKEND_PREFIXES
+            normalized = _normalize_overrides(version_overrides)
+            for name in _BACKEND_PREFIXES.values():
+                if name in normalized and name not in version_overrides:
+                    backend = name
+                    break
+
+        try:
+            platform_config = load_platform_config()
+        except FileNotFoundError:
+            return False
+
+        pin_dir = XPath(os.path.dirname(__file__)).parent / ".pin"
+
+        args = install_args(
+            benchmark_path=benchmark_path,
+            platform_config=platform_config,
+            backend=backend,
+            pin_dir=pin_dir,
+            overrides=version_overrides,
+            unpinned=unpinned,
+        )
+
+        try:
+            await install_requires(self)
+            await self.pip_install(*args.as_pip_args())
+
+            # Apply overrides (replaces bb_after_install.sh)
+            overrides_results = await apply_overrides(
+                benchmark_path=benchmark_path,
+                backend=backend,
+                platform_config=platform_config,
+                overrides=version_overrides,
+            )
+            for override, result in overrides_results:
+                if result and result.returncode != 0:
+                    await self.message(
+                        f"Override for '{override.package}' failed: {result.stderr[:200]}"
+                    )
+        finally:
+            args.cleanup()
+
+        return True
 
     # def ngpu(self):
     #     devices = self.pack.config.get("devices", [])

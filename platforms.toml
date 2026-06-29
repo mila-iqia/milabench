@@ -1,0 +1,123 @@
+# Milabench Platform Configuration
+# This file defines variables, index URLs, and the pin matrix for all backends.
+# Variables use str.format() syntax: {var_name}
+
+[vars]
+cuda = "130"
+rocm = "7.1"
+torch = "2.10.0"
+vllm = "v0.18.1"
+
+# ─── Pin Discovery ────────────────────────────────────────────────────────────
+# At pin time, milabench fetches the torch wheel index and discovers which
+# (backend, torch) combinations actually have published wheels.
+# No static matrix needed -- availability is determined from the index.
+
+[pin.discovery]
+torch_index = "https://download.pytorch.org/whl/torch/"
+torch_min = "2.10"                          # only pin torch >= this version
+backends = ["cuda", "rocm", "cpu"]          # which backends to discover
+latest_patch_only = true                    # keep only latest patch per minor (2.12.1, not also 2.12.0)
+platforms = ["manylinux_2_28_x86_64", "manylinux_2_28_aarch64"]  # pin for both arches
+# python = "cp312"                         # auto-detected if omitted
+
+# ─── CUDA Backend ─────────────────────────────────────────────────────────────
+
+[cuda.indexes]
+index-url = "https://pypi.org/simple"
+extra-index-url = [
+    "https://download.pytorch.org/whl/cu{cuda}",
+    "https://flashinfer.ai/whl/cu{cuda}",
+]
+find-links = [
+    # "https://github.com/milabench/wheels/releases/expanded_assets/torch{torch}-cu{cuda}",
+    "https://github.com/vllm-project/vllm/releases/expanded_assets/{vllm}",
+    "https://storage.googleapis.com/jax-releases/jax_cuda_releases.html",
+    "https://data.pyg.org/whl/torch-{torch}+cu{cuda}.html",
+]
+
+[cuda.constraints]
+torch = ">=2.10"
+voir = ">=0.2.19"
+torchcompat = ">=1.0.0"
+datasets = ">=3.5.1"
+navix = ">=0.7.1"
+gymnax = ">=0.0.8"
+
+[cuda.overrides.torchao]
+install = "pip install --no-build-isolation torchao"
+
+[cuda.overrides.vllm]
+install = "pip install --no-build-isolation --no-deps 'vllm @ git+https://github.com/vllm-project/vllm.git@{vllm}'"
+env = { VLLM_TARGET_DEVICE = "cuda" }
+
+# ─── ROCm Backend ─────────────────────────────────────────────────────────────
+
+[rocm.indexes]
+index-url = "https://pypi.org/simple"
+extra-index-url = [
+    "https://download.pytorch.org/whl/rocm{rocm}",
+]
+find-links = [
+    # "https://github.com/milabench/wheels/releases/expanded_assets/torch{torch}-rocm{rocm}",
+]
+[rocm.constraints]
+voir = ">=0.2.19"
+torchcompat = ">=1.0.0"
+gymnax = ">=0.0.8"
+
+# ─── CPU Backend ──────────────────────────────────────────────────────────────
+
+[cpu.indexes]
+index-url = "https://pypi.org/simple"
+extra-index-url = [
+    "https://download.pytorch.org/whl/cpu",
+]
+
+[cpu.constraints]
+voir = ">=0.2.19"
+torchcompat = ">=1.0.0"
+
+# ─── HPU Backend ──────────────────────────────────────────────────────────────
+
+[hpu.indexes]
+index-url = "https://pypi.org/simple"
+
+[hpu.constraints]
+voir = ">=0.2.19"
+torchcompat = ">=1.0.0"
+gymnax = ">=0.0.8"
+
+# ─── XPU Backend ──────────────────────────────────────────────────────────────
+
+[xpu.indexes]
+index-url = "https://pypi.org/simple"
+extra-index-url = [
+    "https://download.pytorch.org/whl/cpu",
+    "https://pytorch-extension.intel.com/release-whl/stable/xpu/us/",
+]
+
+[xpu.constraints]
+voir = ">=0.2.19"
+torchcompat = ">=1.0.0"
+gymnax = ">=0.0.8"
+
+# ─── Compatibility Matrix ─────────────────────────────────────────────────────
+# Keys: comma-separated conditions of the form "pkg_or_var specifier"
+#   - Evaluated against known variables (torch, cuda, rocm) and their versions
+#   - Multiple conditions are AND-ed together
+# Values: version constraint applied to the package (the table name)
+# First matching rule wins (checked top-to-bottom).
+
+[compat.torchao]
+"torch>=2.12" = "<0.19"
+"torch>=2.11,torch<2.12" = "<0.18"
+"torch>=2.10,torch<2.11" = "<0.17"
+
+[compat.torchcodec]
+"torch>=2.10,torch<2.11" = "<0.12"
+
+[compat.mslk]
+"torch>=2.12,torch<2.13" = ">=1.2,<1.3"
+"torch>=2.11,torch<2.12" = ">=1.1,<1.2"
+"torch>=2.10,torch<2.11" = ">=1.0,<1.1"

@@ -25,11 +25,18 @@ class Pin(Command):
         constraints  : list[str]       = argument(default=[], nargs="*")   # Constraints files
         variant      : Optional[str]   = None                              # Install variant
         from_scratch : bool            = False                             # Do not use previous pins if they exist
+        set          : list[str]       = argument(default=[], nargs="*")   # Version overrides: cuda=130 torch=2.12.0
     # fmt: on
 
     @staticmethod
     def execute(args):
         overrides = {"*": {"install_variant": args.variant}} if args.variant else {}
+
+        # Parse version overrides for TOML pin path
+        from ..install import parse_version_overrides
+        version_overrides = parse_version_overrides(args.set)
+        if version_overrides:
+            overrides.setdefault("*", {})["version_overrides"] = version_overrides
 
         if "-h" in args.pip_compile or "--help" in args.pip_compile:
             out = (

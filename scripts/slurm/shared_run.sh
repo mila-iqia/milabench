@@ -8,6 +8,8 @@ export PYTHONUNBUFFERED=0
 export MILABENCH_ARGS=""
 export MILABENCH_CONFIG_NAME=all
 export MILABENCH_REPO=https://github.com/milabench/milabench.git
+export CUDA_VERSION="130"
+export PYTORCH_VERSION="2.10.0"
 
 export MILABENCH_PUBLISH_KEY="{{ secrets.MILABENCH_PUBLISH_KEY }}"
 export HF_TOKEN="{{ secrets.HF_TOKEN }}"
@@ -74,7 +76,7 @@ module load cuda/12.6.0
 # $UV pip install torch
 # milabench tools pin --variant cuda
 
-milabench install --system $MILABENCH_WORDIR/system.yaml $MILABENCH_ARGS
+milabench install --system $MILABENCH_WORDIR/system.yaml --set cuda=$CUDA_VERSION torch=$PYTORCH_VERSION $MILABENCH_ARGS
 
 milabench tools patch --venv $BENCHMARK_VENV
 
