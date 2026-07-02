@@ -287,7 +287,8 @@ def _summarize(group, query=tuple([])) -> Summary:
                 continue
             gpudata[device]["memory"].append(data["memory"][0])
             gpudata[device]["load"].append(data["load"])
-            gpudata[device]["power"].append(data["power"])
+            if "power" in data:
+                gpudata[device]["power"].append(data["power"])
 
     per_gpu = defaultdict(list)
     for device, tr in agg["per_gpu"]:

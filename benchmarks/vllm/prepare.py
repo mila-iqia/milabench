@@ -40,8 +40,11 @@ def setup_flashinfer():
 def main():
     args = arguments()
 
-    download_hf_dataset(args.hf_name, args.hf_split)
-    download_hf_model(args.model)
+    if args.hf_name:
+        download_hf_dataset(args.hf_name, args.hf_split)
+
+    model = args.model or args.server_model
+    download_hf_model(model)
 
     setup_flashinfer()
 

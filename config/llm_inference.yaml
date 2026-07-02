@@ -1,0 +1,246 @@
+# =============================================================================
+# InferenceMAX-style LLM Inference Benchmarks (vLLM)
+#
+# Reproduces the InferenceMAX/InferenceX benchmark methodology from SemiAnalysis:
+#   - Random token sequences (no prefix caching)
+#   - Request rate: infinite (saturate the server)
+#   - Input length varies uniformly between 80-100% of specified ISL
+#   - Concurrency sweep to map the throughput vs latency Pareto frontier
+#   - Three workload scenarios per model:
+#       Chat:          ISL=1024, OSL=1024
+#       Reasoning:     ISL=1024, OSL=8192
+#       Summarization: ISL=8192, OSL=1024
+#
+# Models:
+#   Dense:  meta-llama/Llama-3.3-70B-Instruct  (FP8 quantized, FP8 KV cache)
+#   MoE:    openai/gpt-oss-120b                (native FP4/MXFP4 weights, FP8 KV cache)
+#
+# Reference: https://github.com/SemiAnalysisAI/InferenceX
+# =============================================================================
+
+include:
+  - _defaults.yaml
+
+_vllm:
+  inherits: _defaults
+
+  max_duration: 3600
+  voir:
+    options:
+      stop: 50
+      gpu_poll: 0.25
+  validation:
+    usage:
+      gpu_load_threshold: 0.5
+      gpu_mem_threshold: 0.5
+    
+  definition: ../benchmarks/vllm
+  group: vllm
+  install_group: torch
+  enabled: true
+  tags:
+    - inference
+    - vllm
+
+  # Inference Server Args
+  server:
+   argv:
+      --served-model-name: model
+      --dtype: bfloat16
+
+  # Benchmarking client Args
+  client:
+    argv:
+      --model: meta-llama/Meta-Llama-3-8B-Instruct
+      --served-model-name: model
+      --request-rate: inf
+      --dataset-name: random
+      --label: milabench
+      --backend: openai 
+      --num-prompts: 198
+      --endpoint: /v1/completions
+      --ready-check-timeout-sec: 1200
+
+
+# -----------------------------------------------------------------------------
+# Base configs (not runnable directly)
+# -----------------------------------------------------------------------------
+
+_inferencemax:
+  inherits: _vllm
+  enabled: false
+  max_duration: 3600
+  tags:
+    - multigpu
+    - inferencemax
+  num_machines: 1
+  plan:
+    method: njobs
+    n: 1
+
+  client:
+    argv:
+      --random-range-ratio: 0.8
+      --ignore-eos: true
+
+  server:
+    argv:
+      --dtype: auto
+      --gpu-memory-utilization: 0.9
+      --no-enable-prefix-caching: true
+      --max-num-batched-tokens: 8192
+      --max-model-len: 10240
+
+# --- Dense: Llama 3.3 70B FP8 ---
+# InferenceMAX precision: FP8 (weight quantization + FP8 KV cache)
+# Requires >= 1x 80 GB GPU (FP8) or >= 2x 40 GB GPUs
+_inferencemax_llama70b:
+  inherits: _inferencemax
+  tags:
+    - dense
+    - fp8
+  url: https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct
+  client:
+    argv:
+      --model: meta-llama/Llama-3.3-70B-Instruct
+  server:
+    argv:
+      meta-llama/Llama-3.3-70B-Instruct: true
+      --tensor-parallel-size: "{gpu_count}"
+      --quantization: fp8
+      --kv-cache-dtype: fp8
+
+# --- MoE: GPT-OSS 120B FP4 ---
+# InferenceMAX precision: FP4/MXFP4 (model weights are natively FP4)
+# Requires >= 2x 80 GB GPUs
+# On NVIDIA, set env VLLM_MXFP4_USE_MARLIN=1 for best MXFP4 performance
+_inferencemax_gptoss:
+  inherits: _inferencemax
+  tags:
+    - moe
+    - fp4
+  url: https://huggingface.co/openai/gpt-oss-120b
+  client:
+    argv:
+      --model: openai/gpt-oss-120b
+  server:
+    argv:
+      openai/gpt-oss-120b: true
+      --tensor-parallel-size: "{gpu_count}"
+      --kv-cache-dtype: fp8
+
+# =============================================================================
+# Llama 3.3 70B  –  Dense Model Benchmarks
+# =============================================================================
+
+# Chat workload: short input, short output (ISL=1024 / OSL=1024)
+inferencemax-llama70b-chat:
+  matrix:
+    concurrency: [4, 8, 16, 32, 64]
+  job:
+    name: 'inferencemax-llama70b-chat-conc{concurrency}'
+    inherits: _inferencemax_llama70b
+    enabled: true
+    weight: 1
+    tags:
+      - chat
+    client:
+      argv:
+        --random-input-len: 1024
+        --random-output-len: 1024
+        --max-concurrency: "{concurrency}"
+        --num-prompts: "expr({concurrency} * 10)"
+
+# Reasoning workload: short input, long output (ISL=1024 / OSL=8192)
+inferencemax-llama70b-reasoning:
+  matrix:
+    concurrency: [4, 8, 16, 32, 64]
+  job:
+    name: 'inferencemax-llama70b-reasoning-conc{concurrency}'
+    inherits: _inferencemax_llama70b
+    enabled: true
+    weight: 1
+    tags:
+      - reasoning
+    client:
+      argv:
+        --random-input-len: 1024
+        --random-output-len: 8192
+        --max-concurrency: "{concurrency}"
+        --num-prompts: "expr({concurrency} * 10)"
+
+# Summarization workload: long input, short output (ISL=8192 / OSL=1024)
+inferencemax-llama70b-summarize:
+  matrix:
+    concurrency: [4, 8, 16, 32, 64]
+  job:
+    name: 'inferencemax-llama70b-summarize-conc{concurrency}'
+    inherits: _inferencemax_llama70b
+    enabled: true
+    weight: 1
+    tags:
+      - summarize
+    client:
+      argv:
+        --random-input-len: 8192
+        --random-output-len: 1024
+        --max-concurrency: "{concurrency}"
+        --num-prompts: "expr({concurrency} * 10)"
+
+# =============================================================================
+# GPT-OSS 120B  –  MoE Model Benchmarks
+# =============================================================================
+
+# Chat workload: short input, short output (ISL=1024 / OSL=1024)
+inferencemax-gptoss-chat:
+  matrix:
+    concurrency: [4, 8, 16, 32, 64]
+  job:
+    name: 'inferencemax-gptoss-chat-conc{concurrency}'
+    inherits: _inferencemax_gptoss
+    enabled: true
+    weight: 1
+    tags:
+      - chat
+    client:
+      argv:
+        --random-input-len: 1024
+        --random-output-len: 1024
+        --max-concurrency: "{concurrency}"
+        --num-prompts: "expr({concurrency} * 10)"
+
+# Reasoning workload: short input, long output (ISL=1024 / OSL=8192)
+inferencemax-gptoss-reasoning:
+  matrix:
+    concurrency: [4, 8, 16, 32, 64]
+  job:
+    name: 'inferencemax-gptoss-reasoning-conc{concurrency}'
+    inherits: _inferencemax_gptoss
+    enabled: true
+    weight: 1
+    tags:
+      - reasoning
+    client:
+      argv:
+        --random-input-len: 1024
+        --random-output-len: 8192
+        --max-concurrency: "{concurrency}"
+        --num-prompts: "expr({concurrency} * 10)"
+
+# Summarization workload: long input, short output (ISL=8192 / OSL=1024)
+inferencemax-gptoss-summarize:
+  matrix:
+    concurrency: [4, 8, 16, 32, 64]
+  job:
+    name: 'inferencemax-gptoss-summarize-conc{concurrency}'
+    inherits: _inferencemax_gptoss
+    enabled: true
+    weight: 1
+    tags:
+      - summarize
+    client:
+      argv:
+        --random-input-len: 8192
+        --random-output-len: 1024
+        --max-concurrency: "{concurrency}"
+        --num-prompts: "expr({concurrency} * 10)"

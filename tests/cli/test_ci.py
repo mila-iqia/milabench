@@ -59,7 +59,8 @@ def test_groups_by_definition(multi_bench_config):
 
     alpha = [v for k, v in groups.items() if k.endswith("group_alpha")]
     assert len(alpha) == 1
-    assert alpha[0] == ["bench_a", "bench_b"]
+    names = [name for name, _ in alpha[0]]
+    assert names == ["bench_a", "bench_b"]
 
 
 def test_disabled_benchmarks_excluded(multi_bench_config):
@@ -72,7 +73,7 @@ def test_disabled_benchmarks_excluded(multi_bench_config):
 def test_exclude_tags_multinode(multi_bench_config):
     """Excluding 'multinode' drops benchmarks tagged multinode."""
     groups = get_benchmark_groups(multi_bench_config, exclude_tags={"multinode"})
-    all_names = [name for names in groups.values() for name in names]
+    all_names = [name for entries in groups.values() for name, _ in entries]
     assert "bench_d" not in all_names
     assert "bench_a" in all_names
 
@@ -80,7 +81,7 @@ def test_exclude_tags_multinode(multi_bench_config):
 def test_exclude_tags_gated(multi_bench_config):
     """Excluding 'gated' drops only gated benchmarks."""
     groups = get_benchmark_groups(multi_bench_config, exclude_tags={"gated"})
-    all_names = [name for names in groups.values() for name in names]
+    all_names = [name for entries in groups.values() for name, _ in entries]
     assert "bench_gated" not in all_names
     assert "bench_c" in all_names
 
@@ -90,7 +91,7 @@ def test_exclude_multiple_tags(multi_bench_config):
     groups = get_benchmark_groups(
         multi_bench_config, exclude_tags={"multinode", "gated"}
     )
-    all_names = [name for names in groups.values() for name in names]
+    all_names = [name for entries in groups.values() for name, _ in entries]
     assert "bench_d" not in all_names
     assert "bench_gated" not in all_names
     assert "bench_a" in all_names
@@ -100,7 +101,7 @@ def test_exclude_multiple_tags(multi_bench_config):
 def test_no_exclude_tags(multi_bench_config):
     """Without exclude_tags all enabled benchmarks appear."""
     groups = get_benchmark_groups(multi_bench_config)
-    all_names = sorted(name for names in groups.values() for name in names)
+    all_names = sorted(name for entries in groups.values() for name, _ in entries)
     assert all_names == ["bench_a", "bench_b", "bench_c", "bench_d", "bench_gated"]
 
 
@@ -175,7 +176,7 @@ def test_include_resolution(tmp_path):
     }))
 
     groups = get_benchmark_groups(main_file)
-    all_names = [name for names in groups.values() for name in names]
+    all_names = [name for entries in groups.values() for name, _ in entries]
     assert "base_bench" in all_names
     assert "extra_bench" in all_names
 
@@ -193,7 +194,7 @@ def test_inheritance_merges_tags(tmp_path):
         },
     })
     groups = get_benchmark_groups(config_file, exclude_tags={"special"})
-    all_names = [name for names in groups.values() for name in names]
+    all_names = [name for entries in groups.values() for name, _ in entries]
     assert "child_bench" not in all_names
 
 

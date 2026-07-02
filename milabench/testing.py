@@ -3,12 +3,73 @@ import os
 import time
 import zipfile
 from collections import defaultdict
+from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
 
 from milabench.pack import BasePackage
 from milabench.structs import BenchLogEntry
 from milabench.utils import multilogger, validation_layers
+
+
+@contextmanager
+def assume_gpu(ngpu=1, capacity=80000):
+    """Mock GPU device for testing (replaces removed milabench.cli.dry.assume_gpu)."""
+    try:
+        import voir.instruments.gpu as voirgpu
+
+        class MockDeviceSMI:
+            def __init__(self, n, cap):
+                self.devices = list(range(n))
+                self.used = [1]
+                self.total = [cap]
+                self.util = [40]
+                self.temp = [35]
+                self.power = [225]
+
+            def get_gpu_info(self, device):
+                return {
+                    "device": device,
+                    "product": "MockDevice",
+                    "memory": {
+                        "used": self.used[0] // (1024**2),
+                        "total": self.total[0] // (1024**2),
+                    },
+                    "utilization": {
+                        "compute": float(self.util[0]) / 100,
+                        "memory": self.used[0] / self.total[0],
+                    },
+                    "temperature": self.temp[0],
+                    "power": self.power[0],
+                    "selection_variable": "CUDA_VISIBLE_DEVICES",
+                }
+
+            @property
+            def arch(self):
+                return "mock"
+
+            @property
+            def visible_devices(self):
+                return os.environ.get("CUDA_VISIBLE_DEVICES", None)
+
+            def get_gpus_info(self, selection=None):
+                gpus = {}
+                for device in self.devices:
+                    if selection is None or str(device) in selection:
+                        gpus[device] = self.get_gpu_info(device)
+                return gpus
+
+            def close(self):
+                pass
+
+        old = voirgpu.DEVICESMI
+        voirgpu.DEVICESMI = MockDeviceSMI(ngpu, capacity)
+        try:
+            yield
+        finally:
+            voirgpu.DEVICESMI = old
+    except ImportError:
+        yield
 
 
 here = Path(__file__).parent

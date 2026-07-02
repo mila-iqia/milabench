@@ -85,6 +85,11 @@ script = "milabench/scripts/vcs.py"
 [tool.poetry.scripts]
 milabench = "milabench.cli:main"
 
+[tool.pytest.ini_options]
+markers = [
+    "slow: marks tests that require full install/prepare/run cycles (deselect with '-m \"not slow\"')",
+]
+
 [tool.isort]
 multi_line_output = 3
 include_trailing_comma = true

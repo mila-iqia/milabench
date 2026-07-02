@@ -1,3 +1,5 @@
+import pytest
+
 from milabench.cli import main
 from milabench.validation.validation import Summary
 
@@ -72,6 +74,7 @@ def test_report_folder_does_average(runs_folder, capsys, config, file_regression
     file_regression.check(output)
 
 
+@pytest.mark.skip(reason="'compare' CLI command was removed")
 def test_compare(runs_folder, capsys, file_regression):
     try:
         main(["compare", runs_folder])
@@ -84,7 +87,9 @@ def test_compare(runs_folder, capsys, file_regression):
 
 
 def test_summary_full(runs_folder):
-    from milabench.common import _read_reports, make_report, make_summary
+    from milabench.common import _read_reports
+    from milabench.summary import make_summary
+    from milabench.report import make_report
 
     run = runs_folder / "rijubigo.2023-03-24_13:45:27.512446"
 
@@ -112,7 +117,8 @@ def _read_reports_zip(folder):
 
 def test_summary_full_zip(runs_folder):
     import os
-    from milabench.common import make_report, make_summary
+    from milabench.summary import make_summary
+    from milabench.report import make_report
 
     scenario = os.path.join(runs_folder, "8GPUs.zip")
 

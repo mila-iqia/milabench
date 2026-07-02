@@ -116,6 +116,10 @@ def test_keyboard_cleaner_process_ended():
     assert elapsed < 30
 
 
+@pytest.mark.skipif(
+    os.environ.get("MILABENCH_GPU_ARCH") == "mock",
+    reason="Multiplexer subprocess spawn can hit bad FD under mock GPU",
+)
 def test_protected_multiplexer():
     from voir.proc import Multiplexer
 

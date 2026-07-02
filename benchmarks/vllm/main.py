@@ -11,7 +11,7 @@ import torchcompat.core as accelerator
 from vllm.benchmarks.serve import SampleRequest, RequestFuncOutput, BenchmarkMetrics, MILLISECONDS_TO_SECONDS_CONVERSION
 from transformers import PreTrainedTokenizerBase
 import vllm.benchmarks.datasets as datasets
-from benchmate.timeline import timeline
+from benchmate.timeline import timeline, TimelineConfig
 
 push_metric = None
 
@@ -55,7 +55,8 @@ def calculate_metrics(
 
     # log_request(input_requests, outputs)
 
-    for sampled_obs in timeline(outputs, 30):
+    config = TimelineConfig()
+    for sampled_obs in timeline(outputs, config=config):
         push_metric(**sampled_obs)
 
     actual_output_lens: list[int] = []

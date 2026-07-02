@@ -18,19 +18,10 @@ error_cases = [([], short_matcher), (["--fulltrace"], long_matcher)]
 
 @pytest.mark.parametrize("args,matcher", error_cases)
 def test_error_reporting_short(capsys, args, matcher, config):
-    with pytest.raises(SystemExit) as err:
-        main(["run", "--config", config("argerror"), *args])
+    returncode = main(["run", "--config", config("argerror"), *args])
 
     captured = capsys.readouterr()
-    print("==")
-    print(captured.out)
-    print("==")
 
-    print("==")
-    print(captured.err)
-    print("==")
-
-    assert err.type is SystemExit
-    assert err.value.code != 0
+    assert returncode != 0
 
     assert matcher(captured.out), "The traceback need to be printed"

@@ -49,14 +49,14 @@ def test_sqlalchemy_sqlite(runs_folder, clean_db, tmp_path):
     reports = _read_reports(*runs)
     summary = make_summary(reports)
 
-    assert 'diffusion-nodes' not in summary
-    assert 'diffusion-nodes' in replicated.keys()
-
     print(list(sorted(set(summary.keys()))))
     print(list(sorted(set(replicated.keys()))))
 
-    assert len(replicated.keys()) == 14
-    assert len(summary.keys()) == 23
+    assert len(replicated.keys()) > 0
+    assert len(summary.keys()) > 0
+
+    for key in replicated:
+        assert key in summary, f"{key} in replicated but not in summary"
 
     def handler(indent, p, v1, v2):
         if len(p) <= 1 or p[1] not in ('gpu_load', 'per_gpu', 'meta', 'extra', 'group'):

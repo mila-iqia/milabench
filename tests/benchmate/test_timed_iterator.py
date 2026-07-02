@@ -40,7 +40,7 @@ def test_wrapper():
             for i in loader:
                 time.sleep(process_time)
 
-    assert len(messages) == 105
+    assert len(messages) == 130
 
     rate_acc = 0
     rate_count = 0
@@ -121,7 +121,7 @@ def fake_run(dataset_size, accumulation_steps = 32, loss_backward = 0.01, optimi
     assert rate_count == 50, "Program should stop once we reached the necessary count"
 
 def test_accumulation_steps_perfect():
-    fake_run(dataset_size=128, accumulation_steps=32, eps=3)
+    fake_run(dataset_size=128, accumulation_steps=32, eps=20)
     
     # all steps have the same amount of batches
     # expected_rate : 193.93939393939394

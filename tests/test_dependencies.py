@@ -529,11 +529,6 @@ class TestPin:
             ("cuda", "130", "2.12.0", "x86_64"),
             ("rocm", "7.1", "2.12.0", "x86_64"),
         ]
-        monkeypatch.setattr(
-            "milabench.dependencies.pin.discover_combinations",
-            lambda dc: fake_combos,
-        )
-        # Need to also patch the import inside _get_combinations
         import milabench.dependencies.discovery as disc_mod
         monkeypatch.setattr(disc_mod, "discover_combinations", lambda dc: fake_combos)
         monkeypatch.setattr(disc_mod, "print_discovered_combinations", lambda c: None)

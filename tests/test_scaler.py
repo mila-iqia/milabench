@@ -63,7 +63,7 @@ def test_scaler_autoscaler_lerp_multiple(multipack, config, capacity, expected):
 
 def test_scaler_disabled(multipack):
     for k, pack in multipack.packs.items():
-        assert pack.argv == []
+        assert pack.argv == ["--batch_size", "auto_batch(12)"]
 
 
 def fakeexec(pack):
@@ -81,21 +81,19 @@ def test_scaler_enabled(multipack, config):
         "gpu": {
             "capacity": "41920 MiB"
         },
-        "options": {
-            "sizer": {
-                "multiple": 8
-            }
-        }
+        "sizer": {
+            "multiple": 8
+        },
     }
 
     for k, pack in multipack.packs.items():
-        # Sizer is only enabled when config is applied
-        assert fakeexec(pack) == []
+        assert fakeexec(pack) == ["--batch_size", "12"]
 
     with apply_system(conf):
         for k, pack in multipack.packs.items():
-            fakeexec(pack) == ["--batch_size", "232"]
+            result = fakeexec(pack)
+            assert result[0] == "--batch_size"
+            assert int(result[1]) >= 12
 
     for k, pack in multipack.packs.items():
-        # Sizer is only enabled when config is applied
-        assert fakeexec(pack) == []
+        assert fakeexec(pack) == ["--batch_size", "12"]
