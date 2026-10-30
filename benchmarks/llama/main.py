@@ -65,7 +65,7 @@ def huggingface_main(args, model, config):
     
     # Dataset here
     println("Dataset")
-    dataset = load_dataset("wikitext", "wikitext-103-v1")
+    dataset = load_dataset("Salesforce/wikitext", "wikitext-103-v1")
 
     println("Tokenizer")
     # LLAMA tokenizer official tokenizer is hidden behind a login
